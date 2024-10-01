@@ -670,6 +670,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         var tableName = writerTableNames.get(entry.getKey());
                         var rfilePath = usedWriterPaths.get(entry.getKey());
                         addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
+                        try {
+                            addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
+                        } catch (NullPointerException e) {
+                            log.warn("Failed to find load plan: " + rfilePath + " for table: " + tableName);
+                        }
                     }
 
                 }
