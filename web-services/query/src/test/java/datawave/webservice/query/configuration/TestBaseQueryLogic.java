@@ -83,7 +83,6 @@ public class TestBaseQueryLogic {
         expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();
         expect(config.getTableConsistencyLevels()).andReturn(Collections.emptyMap()).anyTimes();
         expect(config.getTableHints()).andReturn(Collections.emptyMap()).anyTimes();
-        expect(config.getTableHintsOverride()).andReturn(Collections.emptyMap()).anyTimes();
         expect(config.getConnPoolName()).andReturn("connPool1");
         expect(this.copy.getConfig()).andReturn(config).anyTimes();
 

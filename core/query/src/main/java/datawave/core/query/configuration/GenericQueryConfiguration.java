@@ -79,8 +79,6 @@ public class GenericQueryConfiguration implements Serializable {
     private Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels = new HashMap<>();
     // provides default scan hints
     private Map<String,Map<String,String>> tableHints = new HashMap<>();
-    // provides override scan hints
-    private Map<String,Map<String,String>> tableHintsOverride = new HashMap<>();
 
     /**
      * Empty default constructor
@@ -129,7 +127,6 @@ public class GenericQueryConfiguration implements Serializable {
         this.setReduceResults(other.isReduceResults());
         this.setTableConsistencyLevels(other.getTableConsistencyLevels());
         this.setTableHints(other.getTableHints());
-        this.setTableHintsOverride(other.getTableHintsOverride());
     }
 
     public Collection<QueryData> getQueries() {
@@ -318,14 +315,6 @@ public class GenericQueryConfiguration implements Serializable {
 
     public void setTableHints(Map<String,Map<String,String>> tableHints) {
         this.tableHints = tableHints;
-    }
-
-    public Map<String,Map<String,String>> getTableHintsOverride() {
-        return tableHintsOverride;
-    }
-
-    public void setTableHintsOverride(Map<String,Map<String,String>> tableHintsOverride) {
-        this.tableHintsOverride = tableHintsOverride;
     }
 
     /**

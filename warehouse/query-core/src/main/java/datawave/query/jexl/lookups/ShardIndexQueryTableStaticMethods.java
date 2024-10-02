@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +68,9 @@ public class ShardIndexQueryTableStaticMethods {
     private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
+
+    // default execution hint for all shard index static methods
+    public static final String DEFAULT_EXECUTION_HINT = "expansion";
 
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
@@ -469,10 +473,7 @@ public class ShardIndexQueryTableStaticMethods {
             options.addScanIterator(setting);
         }
 
-        if (config.getTableHintsOverride().containsKey(tableName)) {
-            Map<String,String> hintOverride = config.getTableHintsOverride().get(tableName);
-            options.setExecutionHints(hintOverride);
-        }
+        options.applyExecutionHints(Collections.singletonMap(tableName, DEFAULT_EXECUTION_HINT));
 
         bs.setOptions(options);
 
@@ -503,10 +504,7 @@ public class ShardIndexQueryTableStaticMethods {
             options.addScanIterator(setting);
         }
 
-        if (config.getTableHintsOverride().containsKey(tableName)) {
-            Map<String,String> hintOverride = config.getTableHintsOverride().get(tableName);
-            options.setExecutionHints(hintOverride);
-        }
+        options.applyExecutionHints(Collections.singletonMap(tableName, DEFAULT_EXECUTION_HINT));
 
         bs.setOptions(options);
 
@@ -522,10 +520,7 @@ public class ShardIndexQueryTableStaticMethods {
         IteratorSetting cfg = configureGlobalIndexDateRangeFilter(config, dateRange);
         bs.addScanIterator(cfg);
 
-        if (config.getTableHintsOverride().containsKey(config.getIndexTableName())) {
-            Map<String,String> hintOverride = config.getTableHintsOverride().get(config.getIndexTableName());
-            bs.setExecutionHints(hintOverride);
-        }
+        bs.setExecutionHints(Collections.singletonMap(config.getIndexTableName(), DEFAULT_EXECUTION_HINT));
     }
 
     public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
@@ -595,10 +590,7 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.addScanIterator(cfg);
 
-        if (config.getTableHintsOverride().containsKey(config.getIndexTableName())) {
-            Map<String,String> hintOverride = config.getTableHintsOverride().get(config.getIndexTableName());
-            bs.setExecutionHints(hintOverride);
-        }
+        bs.setExecutionHints(Collections.singletonMap(config.getIndexTableName(), DEFAULT_EXECUTION_HINT));
 
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }

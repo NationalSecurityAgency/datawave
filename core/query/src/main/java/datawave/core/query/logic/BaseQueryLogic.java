@@ -459,12 +459,4 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public void setTableHints(Map<String,Map<String,String>> hints) {
         getConfig().setTableHints(hints);
     }
-
-    public Map<String,Map<String,String>> getTableHintsOverride() {
-        return getConfig().getTableHintsOverride();
-    }
-
-    public void setTableHintsOverride(Map<String,Map<String,String>> hints) {
-        getConfig().setTableHintsOverride(hints);
-    }
 }

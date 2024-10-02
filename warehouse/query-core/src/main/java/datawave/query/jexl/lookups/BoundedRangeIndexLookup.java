@@ -174,10 +174,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                     bs.addScanIterator(cfg);
                 }
 
-                if (config.getTableHintsOverride().containsKey(config.getIndexTableName())) {
-                    Map<String,String> hintOverride = config.getTableHintsOverride().get(config.getIndexTableName());
-                    bs.setExecutionHints(hintOverride);
-                }
+                bs.setExecutionHints(Collections.singletonMap(config.getIndexTableName(), ShardIndexQueryTableStaticMethods.DEFAULT_EXECUTION_HINT));
 
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
             } catch (TableNotFoundException e) {
