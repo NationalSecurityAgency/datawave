@@ -209,18 +209,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
 
     public void debugDocumentSize(Key docKey) {
-        long bytes = sizeInBytes();
-        // if more than 100M, then info
-        if (bytes > (ONE_HUNDRED_M)) {
-            log.info("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        }
-        // if more than 1M, then debug
-        else if (bytes > (ONE_M)) {
-            log.debug("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        }
-        // trace everything
-        else if (log.isTraceEnabled()) {
-            log.trace("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
+        if (log.isDebugEnabled()) {
+            log.debug("Document " + docKey + "; size = " + size() + "; bytes = " + sizeInBytes());
         }
     }
 
