@@ -42,6 +42,7 @@ import com.google.common.collect.Sets;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
+import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
@@ -317,10 +318,15 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     Set<String> normalizedTerms = Sets.newHashSet();
                     List<JexlNode> normalizedNodes = Lists.newArrayList();
                     boolean failedNormalization = false;
+                    boolean regexNode = (node instanceof ASTNRNode || node instanceof ASTERNode);
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
                             if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
+                                if (regexNode) {
+                                    throw new IllegalArgumentException(
+                                                    "OneToManyNormalizers to not handle regex normalization: " + fieldName + " -> " + normalizer.getClass());
+                                }
                                 List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
                                 if (normTerms.size() == 1) {
                                     String normTerm = normTerms.iterator().next();
@@ -338,14 +344,23 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 }
 
                             } else {
-                                String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                                : normalizer.normalize(term));
+                                String normTerm = (regexNode ? normalizer.normalizeRegex(term) : normalizer.normalize(term));
                                 if (!normalizedTerms.contains(normTerm)) {
                                     if (log.isDebugEnabled()) {
                                         log.debug("normalizedTerm = " + normTerm);
                                     }
                                     normalizedTerms.add(normTerm);
-                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                    JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
+                                    // if (regexNode && normalizer.requiresOriginalEvaluation(term)) {
+                                    if (regexNode && normalizer instanceof NumberType) {
+                                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
+                                                        EVALUATION_ONLY);
+                                        // now we need to combine these two nodes so that both are required
+                                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {normalizedNode, evalOnly}));
+                                        normalizedNodes.add(combined);
+                                    } else {
+                                        normalizedNodes.add(normalizedNode);
+                                    }
                                 }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {

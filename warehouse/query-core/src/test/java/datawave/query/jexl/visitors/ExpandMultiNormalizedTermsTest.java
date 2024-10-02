@@ -573,11 +573,13 @@ public class ExpandMultiNormalizedTermsTest {
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "((" + LENIENT + " = true) && (FOO =~ '32'))";
         String expected = "(FOO =~ '\\+bE3\\.2' || FOO =~ '32')";
+        expected = "((FOO =~ '\\+bE3\\.2' && (_Eval_ = true) && (FOO =~ '32')) || FOO =~ '32')";
         expandTerms(original, expected);
 
         // This case used to fail numeric normalization, but is now supported.
         original = "((" + LENIENT + " = true) && (FOO =~ '3.*2'))";
         expected = "(FOO =~ '\\+[a-z]E3\\..*2' || FOO =~ '3.*2')";
+        expected = "((FOO =~ '\\+[a-z]E3\\..*2' && (_Eval_ = true) && (FOO =~ '3.*2')) || FOO =~ '3.*2')";
         expandTerms(original, expected);
     }
 
@@ -646,11 +648,13 @@ public class ExpandMultiNormalizedTermsTest {
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "FOO =~ '32' && FOO !~ '42'";
         String expected = "(FOO =~ '32' || FOO =~ '\\+bE3\\.2') && (FOO !~ '\\+bE4\\.2' && FOO !~ '42')";
+        expected = "((FOO =~ '\\+bE3\\.2' && ((_Eval_ = true) && (FOO =~ '32'))) || FOO =~ '32') && FOO !~ '\\+bE4\\.2' && ((_Eval_ = true) && (FOO !~ '42')) && FOO !~ '42'";
         expandTerms(original, expected);
 
         // Where this case the numeric normalization used to fail, but should now support more complex numeric normalization.
         original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
         expected = "(FOO =~ '\\+[a-z]E3\\..*2' || FOO =~ '3.*2') && FOO !~ '\\+[a-z]E3\\..*22' && FOO !~ '3.*22'";
+        expected = "((FOO =~ '\\+[a-z]E3\\..*2' && ((_Eval_ = true) && (FOO =~ '3.*2'))) || FOO =~ '3.*2') && FOO !~ '\\+[a-z]E3\\..*22' && ((_Eval_ = true) && (FOO !~ '3.*22')) && FOO !~ '3.*22'";
         expandTerms(original, expected);
     }
 
@@ -668,11 +672,13 @@ public class ExpandMultiNormalizedTermsTest {
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "FOO =~ '32' && FOO !~ '42'";
         String expected = "(FOO =~ '\\+bE3\\.2' || FOO =~ '32') && FOO !~ '\\+bE4\\.2' && FOO !~ '42'";
+        expected = "((FOO =~ '\\+bE3\\.2' && ((_Eval_ = true) && (FOO =~ '32'))) || FOO =~ '32') && FOO !~ '\\+bE4\\.2' && ((_Eval_ = true) && (FOO !~ '42')) && FOO !~ '42'";
         expandTerms(original, expected);
 
         // This case used to fail numeric normalization, but should now be supported.
         original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
         expected = "(FOO =~ '\\+[a-z]E3\\..*2' || FOO =~ '3.*2') && FOO !~ '\\+[a-z]E3\\..*22' && FOO !~ '3.*22'";
+        expected = "((FOO =~ '\\+[a-z]E3\\..*2' && ((_Eval_ = true) && (FOO =~ '3.*2'))) || FOO =~ '3.*2') && FOO !~ '\\+[a-z]E3\\..*22' && ((_Eval_ = true) && (FOO !~ '3.*22')) && FOO !~ '3.*22'";
         expandTerms(original, expected);
     }
 
