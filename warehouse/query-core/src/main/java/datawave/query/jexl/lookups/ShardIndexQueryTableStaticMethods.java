@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,9 +67,6 @@ public class ShardIndexQueryTableStaticMethods {
     private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
-
-    // default execution hint for all shard index static methods
-    public static final String DEFAULT_EXECUTION_HINT = "expansion";
 
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
