@@ -41,16 +41,6 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
-    public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-        return null;
-    }
-
-    @Override
-    public AccumuloConfiguration getConfig() {
-        return conf;
-    }
-
-    @Override
     public IteratorUtil.IteratorScope getIteratorScope() {
         return scope;
     }
@@ -62,11 +52,6 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
     @Override
     public boolean isUserCompaction() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
         throw new UnsupportedOperationException();
     }
 
@@ -110,12 +95,12 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
             }
 
             @Override
-            public <T> T instantiate(String s, Class<T> aClass) throws Exception {
+            public <T> T instantiate(String s, Class<T> aClass) {
                 return null;
             }
 
             @Override
-            public <T> T instantiate(TableId tableId, String s, Class<T> aClass) throws Exception {
+            public <T> T instantiate(TableId tableId, String s, Class<T> aClass) {
                 return null;
             }
         };
