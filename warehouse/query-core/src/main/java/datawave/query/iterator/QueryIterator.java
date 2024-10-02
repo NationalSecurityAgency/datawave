@@ -759,22 +759,25 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (log.isTraceEnabled()) {
                 log.trace("isFieldIndexSatisfyingQuery");
             }
-            docMapper = new Function<Entry<Key,Document>,Entry<DocumentData,Document>>() {
+            docMapper = new Function<>() {
                 @Nullable
                 @Override
                 public Entry<DocumentData,Document> apply(@Nullable Entry<Key,Document> input) {
-
                     Entry<DocumentData,Document> entry = null;
                     if (input != null) {
-                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST, true),
+                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.emptyList(), true),
                                         input.getValue());
                     }
                     return entry;
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(), this.includeHierarchyFields,
-                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:off
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEventFilter(), this.includeHierarchyFields,
+                            this.includeHierarchyFields)
+                            .withRangeProvider(getRangeProvider())
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:on
         }
 
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1094,9 +1097,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
+            //  @formatter:off
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider())
-                                            .withAggregationThreshold(getDocAggregationThresholdMs());
+                            getEventFilter(), this.includeHierarchyFields, this.includeHierarchyFields)
+                            .withRangeProvider(getRangeProvider())
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:on
 
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
                             new GetDocument(docMapper,
