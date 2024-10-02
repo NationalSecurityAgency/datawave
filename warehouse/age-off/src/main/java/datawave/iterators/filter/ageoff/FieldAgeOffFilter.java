@@ -9,7 +9,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.util.MutableByteSequence;
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -19,6 +18,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static java.lang.System.arraycopy;
 
 /**
  * Field age off filter. Traverses through indexed tables and non-indexed tables. Example follows. Note that any field TTL will follow the same units specified
@@ -47,9 +48,6 @@ public class FieldAgeOffFilter extends AppliedRule {
     public static final String OPTION_PREFIX = "field.";
     public static final String OPTION_MATCH_PATTERN = "matchPattern";
     public static final String OPTION_CACHE_ENABLED = "cacheEnabled";
-    public static final String OPTION_CACHE_SIZE = "cacheSize";
-
-    private static final String DEFAULT_PATTERN_CACHE_MAX = "50";
 
     public static final byte[] CV_DELIMITERS = "&|()".getBytes();
 
@@ -102,8 +100,9 @@ public class FieldAgeOffFilter extends AppliedRule {
     protected boolean isIndextable;
 
     protected TokenTtlTrie patternTrie = null;
-    protected LRUMap<ByteSequence,Boolean> patternCache = null;
-    protected boolean patternCacheEnabled = false;
+    protected byte[] prevCvBytes;
+    protected int prevCvLength;
+    protected boolean prevCvCheck;
     protected boolean checkPatterns = false;
 
     /**
@@ -139,35 +138,45 @@ public class FieldAgeOffFilter extends AppliedRule {
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
 
         ruleApplied = false;
-        Boolean patternResult = patternCacheEnabled ? patternCache.get(k.getColumnVisibilityData()) : null;
+        ByteSequence cvSeq = k.getColumnVisibilityData();
+        boolean cvCheck = false;
+        boolean cvEval = true;
 
-        // if accepted by pattern match logic or cache, pass the K/V up the iterator stack
-        // otherwise evaluate based on field
-        if (checkPatterns && (!patternCacheEnabled || patternResult == null)) {
-            patternResult = patternTrie.scan(k.getColumnVisibilityData().getBackingArray()) != null;
-            if (patternCacheEnabled) {
-                patternCache.put(k.getColumnVisibilityData(), patternResult);
-            }
-            if (!patternResult) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Accepted (reject age-off) pattern does not match: " + k.getColumnVisibility().toString());
-                }
-                return true;
-            }
+        // Determine if the colviz needs to be evaluated
+        if (prevCvBytes == null || cvSeq.length() > prevCvBytes.length) {
+            prevCvBytes = new byte[cvSeq.length()];
+            prevCvLength = 0;
+        } else if (Arrays.equals(prevCvBytes, 0, prevCvLength, cvSeq.getBackingArray(), cvSeq.offset(), cvSeq.length())) {
+            cvCheck = prevCvCheck;
+            cvEval = false;
         }
 
-        // get the column qualifier, so that we can use it throughout
+        // Evaluate the colviz against the match patterns and determine
+        // if the colviz is something we want to check against fields
+        if (cvEval) {
+            cvCheck = patternTrie.scan(cvSeq.getBackingArray()) != null;
+            arraycopy(cvSeq.getBackingArray(), cvSeq.offset(), prevCvBytes, 0, cvSeq.length());
+            prevCvLength = cvSeq.length();
+            prevCvCheck = cvCheck;
+        }
+
+        // Exit if we know the colviz is one that is not applicable
+        if (!cvCheck) {
+            if (log.isTraceEnabled()) {
+                log.trace("Accepted (reject age-off) pattern does not match: " + k.getColumnVisibility().toString());
+            }
+            return true;
+        }
+
+        // Get the column qualifier, so that we can use it throughout
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
 
         FieldExclusionType candidateExclusionType = null;
 
-        /**
-         * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
-         */
+        // Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
         if (isIndextable) {
             ByteSequence seq = k.getColumnFamilyData();
-            byte[] seqBytes = seq.getBackingArray();
-            transientKey.setArray(seqBytes, seq.offset(), seq.length());
+            transientKey.setArray(seq.getBackingArray(), seq.offset(), seq.length());
 
         } else {
             // shard table
@@ -178,10 +187,10 @@ public class FieldAgeOffFilter extends AppliedRule {
             if (cf.length >= 3 && cf[0] == FI_COLUMN_BYTES[0] && cf[1] == FI_COLUMN_BYTES[1] && cf[2] == NULL) {
                 column = FI_COLUMN_BYTES;
             } else if (cf.length == 2 && cf[0] == TF_COLUMN_BYTES[0]) {
-                // no need to check second character as we cannot have a datatype of 't' with an empty UID
+                // No need to check second character as we cannot have a datatype of 't' with an empty UID
                 column = TF_COLUMN_BYTES;
             } else if (cf.length == 1 && cf[0] == DOCUMENT_COLUMN_BYTES[0]) {
-                // if the document column family is encountered, do not attempt to filter its field
+                // If the document column family is encountered, do not attempt to filter its field
                 if (log.isTraceEnabled()) {
                     log.trace("Accepted (reject age-off) document field encountered");
                 }
@@ -224,7 +233,7 @@ public class FieldAgeOffFilter extends AppliedRule {
                     }
                 }
 
-                // event fields may have instance notations using periods
+                // Event fields may have instance notations using periods
                 // the field needs to be truncated to either the null or the first dot.
                 if (length > 0) {
                     transientKey.setArray(cq, 0, length);
@@ -232,9 +241,10 @@ public class FieldAgeOffFilter extends AppliedRule {
             }
         }
 
-        // check to see if the field is excluded based on type
+        // Check to see if the field is excluded based on type
         // if so, pass through the filter
-        if ((fieldExcludeOptions != null && candidateExclusionType != null && fieldExcludeOptions.contains(candidateExclusionType))) {
+        if ((fieldExcludeOptions != null && !fieldExcludeOptions.isEmpty() && candidateExclusionType != null
+                        && fieldExcludeOptions.contains(candidateExclusionType))) {
             if (log.isTraceEnabled()) {
                 log.trace("Accepted (reject age-off) field excluded: " + candidateExclusionType);
             }
@@ -356,11 +366,6 @@ public class FieldAgeOffFilter extends AppliedRule {
         }
 
         String matchPatternOption = options.getOption(OPTION_MATCH_PATTERN);
-        String cacheSizeOption = options.getOption(OPTION_CACHE_SIZE, DEFAULT_PATTERN_CACHE_MAX);
-        String cacheEnabledOption = options.getOption(OPTION_CACHE_ENABLED, "false");
-
-        patternCacheEnabled = Boolean.parseBoolean(cacheEnabledOption);
-        patternCache = new LRUMap<>(Integer.parseInt(cacheSizeOption));
 
         TokenTtlTrie.Builder patternTrieBuilder = new TokenTtlTrie.Builder();
         if (matchPatternOption != null) {
@@ -372,10 +377,7 @@ public class FieldAgeOffFilter extends AppliedRule {
             checkPatterns = true;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Option cache-enabled: " + matchPatternOption);
-            log.trace("Option cache-size: " + cacheSizeOption);
-        }
+        this.prevCvBytes = new byte[] {};
     }
 
     @Override
