@@ -16,12 +16,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -31,16 +31,9 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ClientSideIteratorScanner;
 import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.RowIterator;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.TableOfflineException;
+import org.apache.accumulo.core.client.admin.TabletInformation;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientConfConverter;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.ClientInfo;
-import org.apache.accumulo.core.clientImpl.ClientTabletCache;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -50,16 +43,11 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.manager.state.tables.TableState;
-import org.apache.accumulo.core.metadata.AccumuloTable;
-import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -78,6 +66,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -960,7 +949,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         }
     }
 
-    Map<String,Map<KeyExtent,List<Range>>> binOfflineTable(JobContext job, String tableName, List<Range> ranges)
+    Map<String,Map<KeyExtent,List<Range>>> binTable(JobContext job, String tableName, List<Range> ranges, boolean requireOffline)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
 
@@ -968,81 +957,64 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             String tableId = client.tableOperations().tableIdMap().get(tableName);
 
             for (Range range : ranges) {
-                Text startRow;
-
-                if (range.getStartKey() != null)
-                    startRow = range.getStartKey().getRow();
-                else
-                    startRow = new Text();
-
-                Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
-                Scanner scanner = client.createScanner(AccumuloTable.METADATA.tableName(), Authorizations.EMPTY);
-                MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME);
-                scanner.setRange(metadataRange);
-
-                RowIterator rowIter = new RowIterator(scanner);
-
+                // ACCUMULO4_TODO need to look into how these ranges are generated and ensure they work w/ what getTabletInformation is expecting.
                 KeyExtent lastExtent = null;
+                try (Stream<TabletInformation> tablets = client.tableOperations().getTabletInformation(tableName, range)) {
+                    var tabletIter = tablets.iterator();
+                    while (tabletIter.hasNext()) {
+                        var tabletInfo = tabletIter.next();
 
-                while (rowIter.hasNext()) {
-                    Iterator<Entry<Key,Value>> row = rowIter.next();
-                    String last = "";
-                    KeyExtent extent = null;
-                    String location = null;
-
-                    while (row.hasNext()) {
-                        Entry<Key,Value> entry = row.next();
-                        Key key = entry.getKey();
-
-                        if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME)) {
-                            last = entry.getValue().toString();
+                        String locationKey;
+                        if (requireOffline) {
+                            // ACCUMULO4_TODO this code used to use the last location to the key. The last location is not available via TabletInformation.
+                            // However in the context of ondemand tablets, maybe this location does not matter as much anymore. Could open an issue to add last
+                            // location to TabletInformation if needed.
+                            locationKey = "";
+                        } else {
+                            locationKey = tabletInfo.getLocation().map(loc -> {
+                                // ACCUMULO4_TODO see accumulo issue 4937
+                                var fields = loc.split(":");
+                                Preconditions.checkArgument(fields.length == 3);
+                                // ACCUMULO4_TODO do we even care about the location here w/ ondemand tablets?
+                                return fields[1] + ":" + fields[2];
+                            }).orElse("");
                         }
 
-                        if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME)
-                                        || key.getColumnFamily().equals(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME)) {
-                            location = entry.getValue().toString();
+                        if (requireOffline && tabletInfo.getLocation().isPresent())
+                            return null;
+
+                        // ACCUMULO4_TODO transition this code to using TabletId.
+                        var extent = new KeyExtent(TableId.of(tableId), tabletInfo.getTabletId().getEndRow(), tabletInfo.getTabletId().getPrevEndRow());
+
+                        if (!extent.tableId().canonical().equals(tableId)) {
+                            throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
                         }
 
-                        if (MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.hasColumns(key)) {
-                            extent = KeyExtent.fromMetaPrevRow(entry);
+                        if (lastExtent != null && !extent.isPreviousExtent(lastExtent)) {
+                            throw new AccumuloException(" " + lastExtent + " is not previous extent " + extent);
                         }
+
+                        Map<KeyExtent,List<Range>> tabletRanges = binnedRanges.get(locationKey);
+                        if (tabletRanges == null) {
+                            tabletRanges = new HashMap<>();
+                            binnedRanges.put(locationKey, tabletRanges);
+                        }
+
+                        List<Range> rangeList = tabletRanges.get(extent);
+                        if (rangeList == null) {
+                            rangeList = new ArrayList<>();
+                            tabletRanges.put(extent, rangeList);
+                        }
+
+                        rangeList.add(extent.toDataRange().clip(range));
+
+                        if (extent.endRow() == null || range.afterEndKey(new Key(extent.endRow()).followingKey(PartialKey.ROW))) {
+                            break;
+                        }
+
+                        lastExtent = extent;
                     }
-
-                    if (location != null)
-                        return null;
-
-                    if (!extent.tableId().canonical().equals(tableId)) {
-                        throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
-                    }
-
-                    if (lastExtent != null && !extent.isPreviousExtent(lastExtent)) {
-                        throw new AccumuloException(" " + lastExtent + " is not previous extent " + extent);
-                    }
-
-                    Map<KeyExtent,List<Range>> tabletRanges = binnedRanges.get(last);
-                    if (tabletRanges == null) {
-                        tabletRanges = new HashMap<>();
-                        binnedRanges.put(last, tabletRanges);
-                    }
-
-                    List<Range> rangeList = tabletRanges.get(extent);
-                    if (rangeList == null) {
-                        rangeList = new ArrayList<>();
-                        tabletRanges.put(extent, rangeList);
-                    }
-
-                    rangeList.add(range);
-
-                    if (extent.endRow() == null || range.afterEndKey(new Key(extent.endRow()).followingKey(PartialKey.ROW))) {
-                        break;
-                    }
-
-                    lastExtent = extent;
                 }
-
             }
 
             return binnedRanges;
@@ -1073,28 +1045,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Initializes an Accumulo {@link ClientTabletCache} based on the configuration.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @return an accumulo tablet locator
-     * @throws TableNotFoundException
-     *             if the table name set on the configuration doesn't exist
-     * @throws IOException
-     *             if the input format is unable to read the password file from the FileSystem
-     */
-    protected static ClientTabletCache getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
-        if (conf.getBoolean(MOCK, false))
-            return new InMemoryTabletLocator();
-        String tableName = getTablename(conf);
-        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
-        ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-        return ClientTabletCache.getInstance(context, context.getTableId(tableName));
-    }
-
-    /**
      * Read the metadata table to get tablets and match up ranges to them.
      */
     public List<InputSplit> getSplits(JobContext job) throws IOException {
@@ -1115,41 +1065,16 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        ClientTabletCache clientTabletCache;
         try {
             if (isOfflineScan(job.getConfiguration())) {
-                binnedRanges = binOfflineTable(job, tableName, ranges);
+                binnedRanges = binTable(job, tableName, ranges, true);
                 while (binnedRanges == null) {
                     // Some tablets were still online, try again
                     TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                    binnedRanges = binOfflineTable(job, tableName, ranges);
+                    binnedRanges = binTable(job, tableName, ranges, true);
                 }
             } else {
-                try (AccumuloClient client = getClient(job.getConfiguration())) {
-                    TableId tableId = null;
-                    clientTabletCache = getTabletLocator(job.getConfiguration());
-                    // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    clientTabletCache.invalidateCache();
-                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                                    Threads.UEH);
-                    while (!clientTabletCache.binRanges(context, ranges, binnedRanges).isEmpty()) {
-                        if (!(client instanceof InMemoryAccumuloClient)) {
-                            if (tableId == null)
-                                tableId = context.getTableId(tableName);
-                            if (!context.tableNodeExists(tableId))
-                                throw new TableDeletedException(tableId.canonical());
-                            if (context.getTableState(tableId) == TableState.OFFLINE)
-                                throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
-                        }
-                        binnedRanges.clear();
-                        log.warn("Unable to locate bins for specified ranges. Retrying.");
-                        TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        clientTabletCache.invalidateCache();
-                    }
-
-                    clipRanges(binnedRanges);
-                }
+                binnedRanges = binTable(job, tableName, ranges, false);
             }
         } catch (Exception e) {
             throw new IOException(e);
@@ -1205,27 +1130,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         log.info("Returning splits " + splits.size());
         return splits;
-    }
-
-    private void clipRanges(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
-        // truncate the ranges to within the tablets... this makes it easier to know what work
-        // needs to be redone when failures occurs and tablets have merged or split
-        Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
-        for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
-            Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
-            binnedRanges2.put(entry.getKey(), tabletMap);
-            for (Entry<KeyExtent,List<Range>> tabletRanges : entry.getValue().entrySet()) {
-                Range tabletRange = tabletRanges.getKey().toDataRange();
-                List<Range> clippedRanges = new ArrayList<>();
-                tabletMap.put(tabletRanges.getKey(), clippedRanges);
-                for (Range range : tabletRanges.getValue())
-                    clippedRanges.add(tabletRange.clip(range));
-            }
-        }
-
-        binnedRanges.clear();
-        binnedRanges.putAll(binnedRanges2);
-
     }
 
     /**
