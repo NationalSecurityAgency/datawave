@@ -84,7 +84,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = -4354990715046146110L;
+    private static final long serialVersionUID = 1071528787909021061L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
 
     // is this a tld query, explicitly default to false
@@ -515,6 +515,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private double fieldIndexHoleMinThreshold = 1.0d;
 
     /**
+     * The key used to select execution hints for index expansion
+     */
+    private String indexExpansionHintKey;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -753,6 +758,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setIndexExpansionHintKey(other.getIndexExpansionHintKey());
     }
 
     /**
@@ -2988,6 +2994,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
+                Objects.equals(getIndexExpansionHintKey(), that.getIndexExpansionHintKey()) &&
                 getFiFieldSeek() == that.getFiFieldSeek() &&
                 getFiNextSeek() == that.getFiNextSeek() &&
                 getEventFieldSeek() == that.getEventFieldSeek() &&
@@ -3209,7 +3216,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getUseFieldCounts(),
                 getUseTermCounts(),
                 isSortQueryBeforeGlobalIndex(),
-                isSortQueryByCounts());
+                isSortQueryByCounts(),
+                getIndexExpansionHintKey());
         // @formatter:on
     }
 
@@ -3242,5 +3250,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public String getIndexExpansionHintKey() {
+        return indexExpansionHintKey;
+    }
+
+    public void setIndexExpansionHintKey(String indexExpansionHintKey) {
+        this.indexExpansionHintKey = indexExpansionHintKey;
     }
 }

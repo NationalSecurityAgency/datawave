@@ -2973,6 +2973,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
     }
 
+    public String getIndexExpansionHintKey() {
+        return getConfig().getIndexExpansionHintKey();
+    }
+
+    public void setIndexExpansionHintKey(String indexExpansionHintKey) {
+        getConfig().setIndexExpansionHintKey(indexExpansionHintKey);
+    }
+
     public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
         getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
     }

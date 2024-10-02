@@ -50,8 +50,11 @@ public class ScannerFactory {
     protected ResourceQueue scanQueue = null;
     protected ShardQueryConfiguration config = null;
 
-    protected Map<String,ScannerBase.ConsistencyLevel> consistencyByTable = new HashMap<>();
-    protected Map<String,Map<String,String>> hintsByTable = new HashMap<>();
+    // consistency and execution hints can be mapped to table names or functional names
+    // for example, 'shardIndex' might map to a default executor pool for the shard index table
+    // while 'expansion' might map to a separate executor pool on the shard index
+    protected Map<String,ScannerBase.ConsistencyLevel> consistencyLevelMap = new HashMap<>();
+    protected Map<String,Map<String,String>> executionHintMap = new HashMap<>();
 
     private static final Logger log = Logger.getLogger(ScannerFactory.class);
 
@@ -94,7 +97,7 @@ public class ScannerFactory {
     }
 
     /**
-     * Method that allows a ScannerFactory to be updated by a config after initialization
+     * Method that allows a ScannerFactory to use scan execution and consistency hints from the provided {@link GenericQueryConfiguration}.
      *
      * @param genericConfig
      *            a {@link GenericQueryConfiguration}
@@ -105,12 +108,12 @@ public class ScannerFactory {
 
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = genericConfig.getTableConsistencyLevels();
         if (consistencyLevels != null && !consistencyLevels.isEmpty()) {
-            this.consistencyByTable = genericConfig.getTableConsistencyLevels();
+            this.consistencyLevelMap = genericConfig.getTableConsistencyLevels();
         }
 
         Map<String,Map<String,String>> hints = genericConfig.getTableHints();
         if (hints != null && !hints.isEmpty()) {
-            this.hintsByTable = genericConfig.getTableHints();
+            this.executionHintMap = genericConfig.getTableHints();
         }
 
         int numThreads = DEFAULT_MAX_THREADS;
@@ -139,6 +142,7 @@ public class ScannerFactory {
     public Scanner newSingleScanner(String tableName, Set<Authorizations> auths, Query query) throws TableNotFoundException {
         if (open.get()) {
             Scanner bs = QueryScannerHelper.createScannerWithoutInfo(client, tableName, auths, query);
+
             applyConfigs(bs, tableName);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
@@ -160,10 +164,48 @@ public class ScannerFactory {
         }
     }
 
+    /**
+     * Create a new {@link BatchScanner} using the table name as the execution hint
+     *
+     * @param tableName
+     *            the table name
+     * @param auths
+     *            the set of authorizations
+     * @param threads
+     *            the number of threads
+     * @param query
+     *            the Query
+     * @return a BatchScanner
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
     public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query) throws TableNotFoundException {
+        return newScanner(tableName, auths, threads, query, tableName);
+    }
+
+    /**
+     * Creates a new {@link BatchScanner} with execution hints
+     *
+     * @param tableName
+     *            the table name
+     * @param auths
+     *            the set of authorizations
+     * @param threads
+     *            the number of threads to use
+     * @param query
+     *            the Query
+     * @param executionHintKey
+     *            the key used to select an execution hint
+     * @return a BatchScanner
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
+    public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, String executionHintKey)
+                    throws TableNotFoundException {
         if (open.get()) {
             BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query);
-            applyConfigs(bs, tableName);
+
+            applyConfigs(bs, executionHintKey);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
@@ -186,6 +228,7 @@ public class ScannerFactory {
     public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, boolean reportErrors) throws TableNotFoundException {
         if (open.get()) {
             BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query, reportErrors);
+
             applyConfigs(bs, tableName);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
@@ -229,7 +272,28 @@ public class ScannerFactory {
      *             if there are issues
      */
     public BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
-        return newLimitedScanner(BatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
+        return newQueryScanner(tableName, auths, settings, tableName);
+    }
+
+    /**
+     * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
+     * is hardcoded, below, to 1000, but can be changed
+     *
+     * @param tableName
+     *            the table string
+     * @param auths
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @param executionHintKey
+     *            a key used to select a scan execution hint
+     * @return a new scanner session
+     * @throws Exception
+     *             if there are issues
+     */
+    public BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings, String executionHintKey)
+                    throws Exception {
+        return newLimitedScanner(BatchScannerSession.class, tableName, auths, settings, executionHintKey).setThreads(scanQueue.getCapacity());
     }
 
     /**
@@ -248,13 +312,49 @@ public class ScannerFactory {
      *            a wrapper class
      * @return a new scanner session
      * @throws NoSuchMethodException
+     *             in the case of no such method
      * @throws InvocationTargetException
+     *             in the case of no invocation target
      * @throws InstantiationException
+     *             in the case something fails to instantiate
      * @throws IllegalAccessException
+     *             in the case of an illegal access
      *
      */
     public <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths, final Query settings)
                     throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        return newLimitedScanner(wrapper, tableName, auths, settings, tableName);
+    }
+
+    /**
+     * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
+     * is hardcoded, below, to 1000, but can be changed
+     *
+     * @param tableName
+     *            the table string
+     * @param auths
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @param executionHintKey
+     *            the key used to select an execution hint
+     * @param <T>
+     *            type of the wrapper
+     * @param wrapper
+     *            a wrapper class
+     * @return a new scanner session
+     * @throws NoSuchMethodException
+     *             in the case of no such method
+     * @throws InvocationTargetException
+     *             in the case of no invocation target
+     * @throws InstantiationException
+     *             in the case something fails to instantiate
+     * @throws IllegalAccessException
+     *             in the case of an illegal access
+     *
+     */
+    public <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths, final Query settings,
+                    String executionHintKey) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open.get(), "Factory has been locked. No New scanners can be created");
@@ -274,7 +374,7 @@ public class ScannerFactory {
                             .newInstance(new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
         }
 
-        applyConfigs(session, tableName);
+        applyConfigs(session, executionHintKey);
 
         log.debug("Created session " + System.identityHashCode(session));
         if (log.isTraceEnabled()) {
@@ -423,13 +523,13 @@ public class ScannerFactory {
      * @param tableName
      *            the table
      */
-    protected void applyConfigs(ScannerBase scannerBase, String tableName) {
-        if (consistencyByTable != null && consistencyByTable.containsKey(tableName)) {
-            scannerBase.setConsistencyLevel(consistencyByTable.get(tableName));
+    public void applyConfigs(ScannerBase scannerBase, String tableName) {
+        if (consistencyLevelMap != null && consistencyLevelMap.containsKey(tableName)) {
+            scannerBase.setConsistencyLevel(consistencyLevelMap.get(tableName));
         }
 
-        if (hintsByTable != null && hintsByTable.containsKey(tableName)) {
-            scannerBase.setExecutionHints(hintsByTable.get(tableName));
+        if (executionHintMap != null && executionHintMap.containsKey(tableName)) {
+            scannerBase.setExecutionHints(executionHintMap.get(tableName));
         }
     }
 
@@ -444,12 +544,12 @@ public class ScannerFactory {
     protected void applyConfigs(ScannerSession scannerSession, String tableName) {
         SessionOptions options = scannerSession.getOptions();
 
-        if (consistencyByTable != null && consistencyByTable.containsKey(tableName)) {
-            options.setConsistencyLevel(consistencyByTable.get(tableName));
+        if (consistencyLevelMap != null && consistencyLevelMap.containsKey(tableName)) {
+            options.setConsistencyLevel(consistencyLevelMap.get(tableName));
         }
 
-        if (hintsByTable != null && hintsByTable.containsKey(tableName)) {
-            options.setExecutionHints(hintsByTable.get(tableName));
+        if (executionHintMap != null && executionHintMap.containsKey(tableName)) {
+            options.setExecutionHints(executionHintMap.get(tableName));
         }
 
         scannerSession.setOptions(options);

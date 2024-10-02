@@ -240,11 +240,15 @@
                 <entry key="shardIndex">
                     <map><entry key="scan_type" value="index-table-executor-event"/></map>
                 </entry>
+                <entry key="expansion">
+                    <map><entry key="scan_type" value="index-expansion-executor"/></map>
+                </entry>
             </map>
         </property>
 
         <property name="useQueryTreeScanHintRules" value="true"/>
         <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
+        <property name="indexExpansionHintKey" value="expansion"/>
 
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->

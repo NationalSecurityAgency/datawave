@@ -444,9 +444,13 @@ public class ShardIndexQueryTableStaticMethods {
      *            check for limiting unique terms
      * @return the scanner session
      * @throws InvocationTargetException
+     *             if no target exists
      * @throws NoSuchMethodException
+     *             if no method exists
      * @throws InstantiationException
+     *             if there is a problem initializing
      * @throws IllegalAccessException
+     *             if there is an illegal access
      * @throws IOException
      *             dates can't be formatted
      */
@@ -459,7 +463,8 @@ public class ShardIndexQueryTableStaticMethods {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(),
+                        config.getIndexExpansionHintKey());
 
         bs.setRanges(ranges);
 
@@ -472,8 +477,6 @@ public class ShardIndexQueryTableStaticMethods {
         if (setting != null) {
             options.addScanIterator(setting);
         }
-
-        options.applyExecutionHints(Collections.singletonMap(tableName, DEFAULT_EXECUTION_HINT));
 
         bs.setOptions(options);
 
@@ -489,7 +492,8 @@ public class ShardIndexQueryTableStaticMethods {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(),
+                        config.getIndexExpansionHintKey());
 
         bs.setRanges(ranges);
 
@@ -503,8 +507,6 @@ public class ShardIndexQueryTableStaticMethods {
         if (setting != null) {
             options.addScanIterator(setting);
         }
-
-        options.applyExecutionHints(Collections.singletonMap(tableName, DEFAULT_EXECUTION_HINT));
 
         bs.setOptions(options);
 
@@ -520,7 +522,12 @@ public class ShardIndexQueryTableStaticMethods {
         IteratorSetting cfg = configureGlobalIndexDateRangeFilter(config, dateRange);
         bs.addScanIterator(cfg);
 
-        bs.setExecutionHints(Collections.singletonMap(config.getIndexTableName(), DEFAULT_EXECUTION_HINT));
+        // unused method, but we'll still configure execution hints if possible
+        String executionHintKey = config.getIndexExpansionHintKey() == null ? config.getIndexTableName() : config.getIndexExpansionHintKey();
+
+        if (config.getTableHints().containsKey(executionHintKey)) {
+            bs.setExecutionHints(config.getTableHints().get(executionHintKey));
+        }
     }
 
     public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
@@ -590,7 +597,14 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.addScanIterator(cfg);
 
-        bs.setExecutionHints(Collections.singletonMap(config.getIndexTableName(), DEFAULT_EXECUTION_HINT));
+        // unused method, but we'll still configure execution hints if possible
+        if (!reverseIndex) {
+            String executionHintKey = config.getIndexExpansionHintKey() == null ? config.getIndexTableName() : config.getIndexExpansionHintKey();
+
+            if (config.getTableHints().containsKey(executionHintKey)) {
+                bs.setExecutionHints(config.getTableHints().get(executionHintKey));
+            }
+        }
 
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }

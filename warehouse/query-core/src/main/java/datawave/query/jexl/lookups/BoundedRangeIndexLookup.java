@@ -127,7 +127,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             log.debug("Range: " + range);
             bs = null;
             try {
-                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(),
+                                config.getIndexExpansionHintKey());
 
                 bs.setRanges(Collections.singleton(range));
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
@@ -173,8 +174,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                     cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
                     bs.addScanIterator(cfg);
                 }
-
-                bs.setExecutionHints(Collections.singletonMap(config.getIndexTableName(), ShardIndexQueryTableStaticMethods.DEFAULT_EXECUTION_HINT));
 
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
             } catch (TableNotFoundException e) {
