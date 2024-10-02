@@ -888,4 +888,27 @@ public abstract class ShapesTest {
         }
     }
 
+    @Test
+    public void testRewriteRegexFromIncludes() throws Exception {
+        withQuery("ONLY_HEX == 'hexa' && TYPE =~ 'reg.*'");
+        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
+        planAndExecuteQuery();
+        assertPlannedQuery("ONLY_HEX == 'hexa' && filter:includeRegex(TYPE, 'reg.*')");
+    }
+
+    @Test
+    public void testDoNotRewriteRegexWithExcludedField() throws Exception {
+        withQuery("ONLY_HEX == 'hexa' && SHAPE =~ 'hex.*'");
+        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
+        planAndExecuteQuery();
+        assertPlannedQuery("ONLY_HEX == 'hexa' && ((_Delayed_ = true) && (SHAPE =~ 'hex.*'))");
+    }
+
+    @Test
+    public void testRewriteRegexWithExcludedFieldBecauseOfPatternMatch() throws Exception {
+        withQuery("ONLY_HEX == 'hexa' && SHAPE =~ 'hexag.*'");
+        withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
+        planAndExecuteQuery();
+        assertPlannedQuery("ONLY_HEX == 'hexa' && filter:includeRegex(SHAPE, 'hexag.*')");
+    }
 }
