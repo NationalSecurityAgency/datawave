@@ -40,7 +40,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
+import org.apache.accumulo.core.clientImpl.ClientTabletCache;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -51,7 +51,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.accumulo.core.manager.state.tables.TableState;
-import org.apache.accumulo.core.metadata.MetadataTable;
+import org.apache.accumulo.core.metadata.AccumuloTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -59,7 +59,6 @@ import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
-import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -82,8 +81,8 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -271,7 +270,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Configure a {@link InMemoryInstance} for this configuration object.
+     * Configure a {@link InMemoryAccumulo} for this configuration object.
      *
      * @param conf
      *            the Hadoop configuration object
@@ -535,7 +534,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloException, AccumuloSecurityException, IOException {
         log.debug("Creating connector with user: " + getUsername(conf));
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryInstance(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryAccumulo(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {
@@ -977,7 +976,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     startRow = new Text();
 
                 Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
-                Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
+                Scanner scanner = client.createScanner(AccumuloTable.METADATA.tableName(), Authorizations.EMPTY);
                 MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
@@ -1074,7 +1073,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
+     * Initializes an Accumulo {@link ClientTabletCache} based on the configuration.
      *
      * @param conf
      *            the Hadoop configuration object
@@ -1084,7 +1083,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @throws IOException
      *             if the input format is unable to read the password file from the FileSystem
      */
-    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
+    protected static ClientTabletCache getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
         if (conf.getBoolean(MOCK, false))
             return new InMemoryTabletLocator();
         String tableName = getTablename(conf);
@@ -1092,7 +1091,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
         ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-        return TabletLocator.getLocator(context, context.getTableId(tableName));
+        return ClientTabletCache.getInstance(context, context.getTableId(tableName));
     }
 
     /**
@@ -1116,7 +1115,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        TabletLocator tl;
+        ClientTabletCache clientTabletCache;
         try {
             if (isOfflineScan(job.getConfiguration())) {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
@@ -1128,13 +1127,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
-                    tl = getTabletLocator(job.getConfiguration());
+                    clientTabletCache = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    tl.invalidateCache();
+                    clientTabletCache.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
                     ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
                                     Threads.UEH);
-                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
+                    while (!clientTabletCache.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
                                 tableId = context.getTableId(tableName);
@@ -1146,7 +1145,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
                         TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        tl.invalidateCache();
+                        clientTabletCache.invalidateCache();
                     }
 
                     clipRanges(binnedRanges);
