@@ -4,6 +4,7 @@
 [submodule "core/in-memory-accumulo"]
 	path = core/in-memory-accumulo
 	url = git@github.com:NationalSecurityAgency/datawave-in-memory-accumulo.git
+	branch = accumulo4
 [submodule "core/utils/accumulo-utils"]
 	path = core/utils/accumulo-utils
 	url = git@github.com:NationalSecurityAgency/datawave-accumulo-utils.git
