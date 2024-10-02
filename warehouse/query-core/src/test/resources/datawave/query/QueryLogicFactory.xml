@@ -243,6 +243,9 @@
             </map>
         </property>
 
+        <property name="useQueryTreeScanHintRules" value="true"/>
+        <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
+
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
@@ -279,6 +282,8 @@
         <property name="sortQueryBeforeGlobalIndex" value="true" />
         <property name="sortQueryByCounts" value="true" />
     </bean>
+
+    <bean id="IvaratorScanHintRule" class="datawave.query.planner.scanhints.IvaratorScanHint"/>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
         <property name="collapseUids" value="false"/>

@@ -120,6 +120,16 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
                         options.setQueryConfig(this.config);
 
+                        String tableName = tableId.canonical();
+
+                        if (config.getTableHints().containsKey(tableName)) {
+                            options.setExecutionHints(config.getTableHints().get(tableName));
+                        }
+
+                        if (config.getTableConsistencyLevels().containsKey(tableName)) {
+                            options.setConsistencyLevel(config.getTableConsistencyLevels().get(tableName));
+                        }
+
                         chunks.add(new ScannerChunk(options, plan.getRanges(), qd, server));
                     } catch (Exception e) {
                         log.error(e);
