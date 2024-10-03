@@ -27,8 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.ConnectionPool;
 import datawave.security.authorization.AuthorizationException;
@@ -232,11 +232,11 @@ public class TestDatawaveUserServiceTest {
     }
 
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
-        private InMemoryInstance inMemoryInstance = new InMemoryInstance();
+        private InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo();
 
         public MockAccumuloConnectionFactory() {
             try {
-                inMemoryInstance.getConnector("root", "").securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
+                new InMemoryAccumuloClient("root", inMemoryInstance).securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
             } catch (AccumuloException | AccumuloSecurityException e) {
                 throw new RuntimeException(e);
             }

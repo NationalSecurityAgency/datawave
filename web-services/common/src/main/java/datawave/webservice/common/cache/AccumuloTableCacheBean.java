@@ -30,7 +30,7 @@ import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.cache.AccumuloTableCache;
@@ -116,7 +116,7 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     }
 
     @Override
-    public InMemoryInstance getInstance() {
+    public InMemoryAccumulo getInstance() {
         return tableCache.getInstance();
     }
 
