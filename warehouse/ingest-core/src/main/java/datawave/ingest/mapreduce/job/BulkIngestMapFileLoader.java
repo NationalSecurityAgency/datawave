@@ -31,13 +31,11 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.ActiveCompaction;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.manager.thrift.ManagerClientService;
-import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
-import org.apache.accumulo.core.master.thrift.TableInfo;
 import org.apache.accumulo.core.rpc.ThriftUtil;
-import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
@@ -688,14 +686,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
         ManagerClientService.Client client = null;
         ClientContext context = (ClientContext) accumuloClient;
         try {
-            client = ThriftClientTypes.MANAGER.getConnection(context);
-            ManagerMonitorInfo mmi = client.getManagerStats(null, context.rpcCreds());
-            Map<String,TableInfo> tableStats = mmi.getTableMap();
-
-            for (java.util.Map.Entry<String,TableInfo> e : tableStats.entrySet()) {
-                majC += e.getValue().getMajors().getQueued();
-                majC += e.getValue().getMajors().getRunning();
-            }
+            // ACCUMULO4_TODO this code used to contact the monitor and get the running+queued compactions. Now it is only getting the running compaction count
+            // and it is getting that count in a very inefficient way. The following call to getActiveCompactions() will reach out to every tserver and
+            // compactor process and ask what it is compacting. It would be bettter to get this from a place where the information is already summarized like
+            // the metrics system, monitor, or manager. This change was made to get things compiling, but it is a terrible way to do things and must be fixed at
+            // some point. Opened accumulo issue #4939 based partially on this.
+            majC = (int) accumuloClient.instanceOperations().getActiveCompactions().stream()
+                            .filter(activeCompaction -> activeCompaction.getType() != ActiveCompaction.CompactionType.MINOR).count();
         } catch (Exception e) {
             // Accumulo API changed, catch exception for now until we redeploy
             // accumulo on lightning.
