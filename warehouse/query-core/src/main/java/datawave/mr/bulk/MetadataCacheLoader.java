@@ -14,7 +14,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataTable;
+import org.apache.accumulo.core.metadata.AccumuloTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.fs.Path;
@@ -61,7 +61,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         Key endKey = new Key(new KeyExtent(tableId, null, null).toMetaRow()).followingKey(PartialKey.ROW);
         Range metadataRange = new Range(inputKey.getStartKey(), inputKey.isStartKeyInclusive(), endKey, false);
 
-        Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
+        Scanner scanner = client.createScanner(AccumuloTable.METADATA.tableName(), Authorizations.EMPTY);
         MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME);

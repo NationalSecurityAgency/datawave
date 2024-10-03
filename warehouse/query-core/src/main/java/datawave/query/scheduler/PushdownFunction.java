@@ -11,12 +11,13 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.InvalidTabletHostingRequestException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
+import org.apache.accumulo.core.clientImpl.ClientTabletCache;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
@@ -55,7 +56,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     /**
      * Tablet locator
      */
-    private final TabletLocator tabletLocator;
+    private final ClientTabletCache tabletLocator;
 
     /**
      * Set of query plans
@@ -65,7 +66,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
     protected TableId tableId;
 
-    public PushdownFunction(TabletLocator tabletLocator, ShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
+    public PushdownFunction(ClientTabletCache tabletLocator, ShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
         this.tabletLocator = tabletLocator;
         this.config = config;
         this.queryPlanSet = Sets.newHashSet();
@@ -134,7 +135,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         return chunks;
     }
 
-    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan)
+    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, ClientTabletCache tl, QueryPlan currentPlan)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         List<Range> ranges = Lists.newArrayList(currentPlan.getRanges());
         if (!ranges.isEmpty()) {
@@ -182,7 +183,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
     }
 
-    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, AccumuloClient client, List<Range> ranges)
+    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(ClientTabletCache tl, AccumuloClient client, List<Range> ranges)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
 
@@ -192,7 +193,13 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
             binnedRanges.clear();
             ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
-            List<Range> failures = tl.binRanges(ctx, ranges, binnedRanges);
+            List<Range> failures = null;
+            try {
+                failures = tl.binRanges(ctx, ranges, binnedRanges);
+            } catch (InvalidTabletHostingRequestException e) {
+                // ACCUMULO4_TODO tablets no longer have to be hosted, this code does not work well w/ ondemand tablets+scan servers
+                throw new AccumuloException(e);
+            }
 
             if (!failures.isEmpty()) {
                 // tried to only do table state checks when failures.size()

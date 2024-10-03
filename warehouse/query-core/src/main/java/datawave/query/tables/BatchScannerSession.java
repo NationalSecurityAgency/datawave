@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -100,11 +99,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     protected StringBuilder threadId = new StringBuilder();
 
     protected List<Function<ScannerChunk,ScannerChunk>> visitorFunctions = Lists.newArrayList();
-
-    /**
-     * Tablet locator reference.
-     */
-    protected TabletLocator tl;
 
     protected long scanLimitTimeout = -1;
 
@@ -736,11 +730,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     public void addVisitor(Function<ScannerChunk,ScannerChunk> visitorFunction) {
         visitorFunctions.add(visitorFunction);
-
-    }
-
-    public void setTabletLocator(TabletLocator tl) {
-        this.tl = tl;
 
     }
 
