@@ -30,8 +30,8 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -104,7 +104,7 @@ public class RunningQueryTest {
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
 
         // setup mock connector
-        InMemoryInstance instance = new InMemoryInstance("test instance");
+        InMemoryAccumulo instance = new InMemoryAccumulo("test instance");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         // setup mock logic, handles the setConnection method
@@ -176,7 +176,7 @@ public class RunningQueryTest {
     @Test
     public void testWithCompositeQueryLogic() throws Exception {
         // setup
-        InMemoryInstance instance = new InMemoryInstance("test instance");
+        InMemoryAccumulo instance = new InMemoryAccumulo("test instance");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         // expected merged auths

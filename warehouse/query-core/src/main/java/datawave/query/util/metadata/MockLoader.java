@@ -6,7 +6,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -25,12 +24,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.ListeningExecutorService;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
 /**
  *
  */
-public class MockLoader extends CacheLoader<LoaderKey, InMemoryAccumulo> {
+public class MockLoader extends CacheLoader<LoaderKey,InMemoryAccumulo> {
 
     public static final Logger log = Logger.getLogger(MockLoader.class);
 
