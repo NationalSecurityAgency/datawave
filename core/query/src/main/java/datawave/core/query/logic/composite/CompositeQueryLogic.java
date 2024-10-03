@@ -440,7 +440,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 responseClass = refResponse.getClass();
             } else {
                 if (!responseClass.equals(refResponse.getClass())) {
-                    throw new RuntimeException("All query logics must use transformers that return the same object type");
+                    throw new RuntimeException("All query logics must use transformers that return the same object type: " + responseClass.getName() + " vs "
+                            + refResponse.getClass().getName());
                 }
             }
         }
