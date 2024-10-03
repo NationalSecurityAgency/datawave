@@ -240,6 +240,7 @@
                 <entry key="shardIndex">
                     <map><entry key="scan_type" value="index-table-executor-event"/></map>
                 </entry>
+                <!-- NOTE: this execution hint is reserved by datawave -->
                 <entry key="expansion">
                     <map><entry key="scan_type" value="index-expansion-executor"/></map>
                 </entry>
@@ -248,7 +249,6 @@
 
         <property name="useQueryTreeScanHintRules" value="true"/>
         <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
-        <property name="indexExpansionHintKey" value="expansion"/>
 
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->

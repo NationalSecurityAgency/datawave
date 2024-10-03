@@ -593,8 +593,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.emptyMap());
-        defaultValues.put("indexExpansionHintKey", null);
-        updatedValues.put("indexExpansionHintKey", "expansion");
 
         defaultValues.put("useQueryTreeScanHintRules", false);
         updatedValues.put("useQueryTreeScanHintRules", true);

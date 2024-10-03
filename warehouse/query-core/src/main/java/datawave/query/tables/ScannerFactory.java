@@ -194,18 +194,17 @@ public class ScannerFactory {
      *            the number of threads to use
      * @param query
      *            the Query
-     * @param executionHintKey
+     * @param hintKey
      *            the key used to select an execution hint
      * @return a BatchScanner
      * @throws TableNotFoundException
      *             if no table exists
      */
-    public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, String executionHintKey)
-                    throws TableNotFoundException {
+    public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, String hintKey) throws TableNotFoundException {
         if (open.get()) {
             BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query);
 
-            applyConfigs(bs, executionHintKey);
+            applyConfigs(bs, hintKey, tableName);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
@@ -336,7 +335,7 @@ public class ScannerFactory {
      *            a set of auths
      * @param settings
      *            query settings
-     * @param executionHintKey
+     * @param hintKey
      *            the key used to select an execution hint
      * @param <T>
      *            type of the wrapper
@@ -354,7 +353,7 @@ public class ScannerFactory {
      *
      */
     public <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths, final Query settings,
-                    String executionHintKey) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+                    String hintKey) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open.get(), "Factory has been locked. No New scanners can be created");
@@ -374,7 +373,7 @@ public class ScannerFactory {
                             .newInstance(new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
         }
 
-        applyConfigs(session, executionHintKey);
+        applyConfigs(session, hintKey, tableName);
 
         log.debug("Created session " + System.identityHashCode(session));
         if (log.isTraceEnabled()) {
@@ -516,40 +515,67 @@ public class ScannerFactory {
     }
 
     /**
-     * Apply table-specific scanner configs to the provided scanner base object
+     * Apply table-specific scanner configs to the provided scanner base object using the table name as the key
      *
      * @param scannerBase
      *            a {@link ScannerBase}
      * @param tableName
-     *            the table
+     *            the secondary hint key
      */
     public void applyConfigs(ScannerBase scannerBase, String tableName) {
-        if (consistencyLevelMap != null && consistencyLevelMap.containsKey(tableName)) {
-            scannerBase.setConsistencyLevel(consistencyLevelMap.get(tableName));
+        applyConfigs(scannerBase, tableName, tableName);
+    }
+
+    /**
+     * Apply table-specific scanner configs to the provided scanner base object using the provided hint key, falling back to the table name if necessary
+     *
+     * @param scannerBase
+     *            a {@link ScannerBase}
+     * @param hintKey
+     *            the primary hint key
+     * @param tableName
+     *            the secondary hint key
+     */
+    public void applyConfigs(ScannerBase scannerBase, String hintKey, String tableName) {
+
+        if (consistencyLevelMap != null && !consistencyLevelMap.isEmpty()) {
+            String key = consistencyLevelMap.containsKey(hintKey) ? hintKey : tableName;
+            scannerBase.setConsistencyLevel(consistencyLevelMap.get(key));
         }
 
-        if (executionHintMap != null && executionHintMap.containsKey(tableName)) {
-            scannerBase.setExecutionHints(executionHintMap.get(tableName));
+        if (executionHintMap != null && !executionHintMap.isEmpty()) {
+            String key = executionHintMap.containsKey(hintKey) ? hintKey : tableName;
+            scannerBase.setExecutionHints(executionHintMap.get(key));
         }
     }
 
     /**
-     * Apply table-specific scanner configs to the provided scanner session
+     * Apply table-specific scanner configs to the provided scanner session using the provided hint key, falling back to the table name if necessary
      *
      * @param scannerSession
      *            the {@link ScannerSession}
+     * @param hintKey
+     *            the primary hint key
      * @param tableName
-     *            the table
+     *            used as a secondary hint key
      */
-    protected void applyConfigs(ScannerSession scannerSession, String tableName) {
+    protected void applyConfigs(ScannerSession scannerSession, String hintKey, String tableName) {
         SessionOptions options = scannerSession.getOptions();
 
-        if (consistencyLevelMap != null && consistencyLevelMap.containsKey(tableName)) {
-            options.setConsistencyLevel(consistencyLevelMap.get(tableName));
+        if (consistencyLevelMap != null && !consistencyLevelMap.isEmpty()) {
+            String key = consistencyLevelMap.containsKey(hintKey) ? hintKey : tableName;
+
+            if (consistencyLevelMap.containsKey(key)) {
+                options.setConsistencyLevel(consistencyLevelMap.get(key));
+            }
         }
 
-        if (executionHintMap != null && executionHintMap.containsKey(tableName)) {
-            options.setExecutionHints(executionHintMap.get(tableName));
+        if (executionHintMap != null && !executionHintMap.isEmpty()) {
+            String key = executionHintMap.containsKey(hintKey) ? hintKey : tableName;
+
+            if (executionHintMap.containsKey(key)) {
+                options.setExecutionHints(executionHintMap.get(key));
+            }
         }
 
         scannerSession.setOptions(options);

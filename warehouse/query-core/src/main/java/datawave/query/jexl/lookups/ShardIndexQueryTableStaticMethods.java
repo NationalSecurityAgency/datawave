@@ -68,6 +68,9 @@ public class ShardIndexQueryTableStaticMethods {
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
 
+    // name reserved for executor pools
+    public static final String EXPANSION_HINT_KEY = "expansion";
+
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
      *
@@ -459,8 +462,9 @@ public class ShardIndexQueryTableStaticMethods {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(),
-                        config.getIndexExpansionHintKey());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
@@ -488,8 +492,9 @@ public class ShardIndexQueryTableStaticMethods {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(),
-                        config.getIndexExpansionHintKey());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : tableName;
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
@@ -519,7 +524,7 @@ public class ShardIndexQueryTableStaticMethods {
         bs.addScanIterator(cfg);
 
         // unused method, but we'll still configure execution hints if possible
-        String executionHintKey = config.getIndexExpansionHintKey() == null ? config.getIndexTableName() : config.getIndexExpansionHintKey();
+        String executionHintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
 
         if (config.getTableHints().containsKey(executionHintKey)) {
             bs.setExecutionHints(config.getTableHints().get(executionHintKey));
@@ -595,10 +600,11 @@ public class ShardIndexQueryTableStaticMethods {
 
         // unused method, but we'll still configure execution hints if possible
         if (!reverseIndex) {
-            String executionHintKey = config.getIndexExpansionHintKey() == null ? config.getIndexTableName() : config.getIndexExpansionHintKey();
+            // only apply hints to the global index
+            String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
 
-            if (config.getTableHints().containsKey(executionHintKey)) {
-                bs.setExecutionHints(config.getTableHints().get(executionHintKey));
+            if (config.getTableHints().containsKey(hintKey)) {
+                bs.setExecutionHints(config.getTableHints().get(hintKey));
             }
         }
 

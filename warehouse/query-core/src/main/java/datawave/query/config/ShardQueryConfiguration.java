@@ -515,11 +515,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private double fieldIndexHoleMinThreshold = 1.0d;
 
     /**
-     * The key used to select execution hints for index expansion
-     */
-    private String indexExpansionHintKey;
-
-    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -758,7 +753,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
-        this.setIndexExpansionHintKey(other.getIndexExpansionHintKey());
     }
 
     /**
@@ -2994,7 +2988,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
-                Objects.equals(getIndexExpansionHintKey(), that.getIndexExpansionHintKey()) &&
                 getFiFieldSeek() == that.getFiFieldSeek() &&
                 getFiNextSeek() == that.getFiNextSeek() &&
                 getEventFieldSeek() == that.getEventFieldSeek() &&
@@ -3216,8 +3209,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getUseFieldCounts(),
                 getUseTermCounts(),
                 isSortQueryBeforeGlobalIndex(),
-                isSortQueryByCounts(),
-                getIndexExpansionHintKey());
+                isSortQueryByCounts());
         // @formatter:on
     }
 
@@ -3250,13 +3242,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
-    }
-
-    public String getIndexExpansionHintKey() {
-        return indexExpansionHintKey;
-    }
-
-    public void setIndexExpansionHintKey(String indexExpansionHintKey) {
-        this.indexExpansionHintKey = indexExpansionHintKey;
     }
 }

@@ -40,8 +40,6 @@ public class FieldNameIndexLookupTest extends EasyMockSupport {
 
         fields = new HashSet<>();
         terms = new HashSet<>();
-
-        config.setIndexExpansionHintKey("expansion");
     }
 
     @Test
