@@ -25,6 +25,7 @@ import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
+import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
@@ -251,8 +252,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
-        return new SizeTrackingWriter(
-                        FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build());
+        // ACCUMULO4_TODO this could be converted to use accumulo's public API for writing rfiles, this was done in PR 2582
+        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(UnreferencedTabletFile.of(fs, new Path(filename)), fs, conf, cs)
+                        .withTableConfiguration(tableConf).build());
     }
 
     /**
@@ -573,9 +575,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
+                        // ACCUMULO4_TODO this could be converted to use accumulo's public API for reading rfiles
                         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                                         context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(UnreferencedTabletFile.of(fs, path), fs, conf, cs)
                                         .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
