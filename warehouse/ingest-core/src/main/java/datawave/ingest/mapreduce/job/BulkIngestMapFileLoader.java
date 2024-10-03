@@ -916,7 +916,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
                 // import the directory
                 log.info("Bringing Map Files online for " + tableName);
-                accumuloClient.tableOperations().importDirectory(tableName, tableDir.toString(), failuresDir, false);
+                // ACCUMULO4_TODO this was converted to bulk v2 and will currently examine all files being loaded in this process. Need PR #2568 or #2582 to
+                // avoid doing this examination here.
+                accumuloClient.tableOperations().importDirectory(tableDir.toString()).to(tableName).ignoreEmptyDir(true).tableTime(false).load();
                 log.info("Completed bringing map files online for " + tableName);
                 validateComplete();
             } catch (Exception e) {
