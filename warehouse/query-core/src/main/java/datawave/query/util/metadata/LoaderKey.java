@@ -17,13 +17,13 @@ public class LoaderKey {
     }
 
     public int hashCode() {
-        return client.instanceOperations().getInstanceID().hashCode() + table.hashCode() + user.hashCode();
+        return client.instanceOperations().getInstanceId().hashCode() + table.hashCode() + user.hashCode();
     }
 
     public boolean equals(Object other) {
         if (other instanceof LoaderKey) {
             LoaderKey otherLoader = (LoaderKey) other;
-            return otherLoader.client.instanceOperations().getInstanceID().equals(client.instanceOperations().getInstanceID())
+            return otherLoader.client.instanceOperations().getInstanceId().equals(client.instanceOperations().getInstanceId())
                             && otherLoader.table.equals(table) && otherLoader.user.equals(user);
         }
         return false;
@@ -31,7 +31,7 @@ public class LoaderKey {
 
     @Override
     public String toString() {
-        return client.instanceOperations().getInstanceID() + "/" + "/" + table + "/" + user;
+        return client.instanceOperations().getInstanceId() + "/" + "/" + table + "/" + user;
     }
 
 }

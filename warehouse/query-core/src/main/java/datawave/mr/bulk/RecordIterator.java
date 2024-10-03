@@ -165,20 +165,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
     public static class RFileEnvironment implements IteratorEnvironment {
 
-        AccumuloConfiguration conf;
-
-        public RFileEnvironment(AccumuloConfiguration conf) {
-            this.conf = conf;
-        }
-
-        public RFileEnvironment() {
-            this.conf = DefaultConfiguration.getInstance();
-        }
-
-        @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
-        }
+        public RFileEnvironment() {}
 
         @Override
         public IteratorScope getIteratorScope() {
@@ -212,11 +199,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-
-        @Override
-        public ServiceEnvironment getServiceEnv() {
             return null;
         }
 

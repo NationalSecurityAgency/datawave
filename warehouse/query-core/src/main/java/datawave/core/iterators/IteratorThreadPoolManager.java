@@ -42,14 +42,11 @@ public class IteratorThreadPoolManager {
     }
 
     private ThreadPoolExecutor createExecutorService(final String prop, final String name, final IteratorEnvironment env) {
-        final AccumuloConfiguration accumuloConfiguration;
         final PluginEnvironment pluginEnv;
         if (env != null) {
             pluginEnv = env.getPluginEnv();
-            accumuloConfiguration = env.getConfig();
         } else {
             pluginEnv = null;
-            accumuloConfiguration = DefaultConfiguration.getInstance();
         }
         final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, pluginEnv), name + " (" + instanceId + ')');
         threadPools.put(name, service);

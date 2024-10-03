@@ -3,6 +3,7 @@ package datawave.query.util.cache;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -142,7 +143,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
     public boolean equals(Object obj) {
         if (obj instanceof AccumuloLoader) {
             AccumuloLoader loaderObj = AccumuloLoader.class.cast(obj);
-            if (client.instanceOperations().getInstanceID().equals(loaderObj.client.instanceOperations().getInstanceID())) {
+            if (client.instanceOperations().getInstanceId().equals(loaderObj.client.instanceOperations().getInstanceId())) {
                 if (tableName.equals(loaderObj.tableName))
                     return true;
             }
@@ -152,7 +153,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
 
     @Override
     public int hashCode() {
-        return tableName.hashCode() + 31 + client.instanceOperations().getInstanceID().hashCode();
+        return Objects.hash(tableName, client.instanceOperations().getInstanceId());
     }
 
 }
