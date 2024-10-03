@@ -38,7 +38,7 @@ jobs:
         path: datawave
 
     - name: Checkout Accumulo
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4
       id: accumuloCheckout
       with:
         repository: ${{ github.event.inputs.accumuloRepo || 'apache/accumulo' }}
