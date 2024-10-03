@@ -7,6 +7,7 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
@@ -55,7 +56,7 @@ public class TableConfigHelperFactoryTest {
         conf.set("testShard.table.config.class", ShardTableConfigHelper.class.getName());
         conf.set("testShard.table.config.prefix", "test");
 
-        tops = mac.getConnector("root", "pass").tableOperations();
+        tops = mac.createAccumuloClient("root", new PasswordToken("pass")).tableOperations();
 
         recreateTable(tops, TableName.SHARD);
         recreateTable(tops, TEST_SHARD_TABLE_NAME);
