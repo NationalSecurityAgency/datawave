@@ -23,8 +23,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
 
@@ -186,14 +186,15 @@ public class NumShardsTest {
                     throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException, ParseException {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
-        InMemoryInstance i = new InMemoryInstance("mock");
+        var i = new InMemoryAccumulo("mock");
         AccumuloClient client = new InMemoryAccumuloClient("root", i);
 
         Configuration conf = new Configuration();
         conf.set(AccumuloHelper.USERNAME, "root");
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
-        conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
+        // ACCUMULO4_TODO commented out the following to get things compiling, not sure if its needed. Can probably remove this if test passes.
+        // conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
 
         client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
@@ -260,14 +261,15 @@ public class NumShardsTest {
                     throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException, ParseException {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
-        InMemoryInstance i = new InMemoryInstance("mock2");
+        var i = new InMemoryAccumulo("mock2");
         AccumuloClient client = new InMemoryAccumuloClient("root", i);
 
         Configuration conf = new Configuration();
         conf.set(AccumuloHelper.USERNAME, "root");
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock2");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
-        conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
+        // ACCUMULO4_TODO commented out the following to get things compiling, not sure if its needed. Can probably remove this if test passes.
+        // conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
 
         client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
