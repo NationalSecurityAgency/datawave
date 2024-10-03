@@ -4,13 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       accumuloBranch:
-        required: false
+        required: true
+        default: "2.1"
         description: "Branch name to build. Will be used as image tag."
       accumuloRepo:
-        required: false
+        required: true
+        default: "apache/accumulo"
         description: "Accumulo Repo to use. Expected to be at Github. Example: apache/accumulo"
       deployAccumulo:
-        required: false
+        required: true
+        default: "false"
         description: "Set to false if this accumulo version has already been pushed to Github Packages"
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
@@ -41,19 +44,19 @@ jobs:
       uses: actions/checkout@v4
       id: accumuloCheckout
       with:
-        repository: ${{ github.event.inputs.accumuloRepo || 'apache/accumulo' }}
+        repository: ${{ github.event.inputs.accumuloRepo }}
         path: accumulo
-        ref: ${{ github.event.inputs.accumuloBranch || '2.1' }}
+        ref: ${{ github.event.inputs.accumuloBranch }}
 
     - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.ACCUMULO_JAVA_VERSION}}
         cache: 'maven'
     - run: echo "ACCUMULO_JAVA=$JAVA_HOME" >> $GITHUB_ENV
     - name: Set up JDK ${{env.DATAWAVE_JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.DATAWAVE_JAVA_VERSION}}
@@ -73,7 +76,7 @@ jobs:
       run: | 
         export JAVA_HOME=$ACCUMULO_JAVA
         cd $GITHUB_WORKSPACE/accumulo   
-        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave -V -B -e -ntp "-Dstyle.color=always" -DskipTests -T1C clean deploy -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml
+        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave -V -B -e -ntp "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml
     - name: Log in to the Container registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
