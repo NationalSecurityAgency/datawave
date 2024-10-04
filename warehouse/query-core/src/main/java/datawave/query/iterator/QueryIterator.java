@@ -276,7 +276,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // update ActiveQueryLog with (potentially) updated config
         if (env != null) {
-            ActiveQueryLog.setConfig(env.getConfig());
+            // ACCUMULO4_TODO getConfig() no longer exists. What is this code doing?
+            // ActiveQueryLog.setConfig(env.getConfig());
         }
 
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
