@@ -65,9 +65,6 @@ public class MultiRfileInputformat extends RFileInputFormat {
 
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
 
-    protected static final Map<String,String> dfsUriMap = new ConcurrentHashMap<>();
-    protected static final Map<String,String> dfsDirMap = new ConcurrentHashMap<>();
-
     @Override
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         return new RangeRecordReader();
@@ -143,52 +140,13 @@ public class MultiRfileInputformat extends RFileInputFormat {
 
         Multimap<Text,Range> rowMap = TreeMultimap.create();
 
-        String defaultNamespace = null, basePath = null;
-
-        /**
-         * Attempt the following 1) try to get the default namespace from accumulo 2) Use the custom config option 3) use default name in the hdfs configuration
-         */
-        if (dfsUriMap.get(tableId) == null || dfsDirMap.get(tableId) == null) {
-
-            synchronized (MultiRfileInputformat.class) {
-                final InstanceOperations instOps = client.instanceOperations();
-                dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_URI.getKey()));
-                dfsDirMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_DIR.getKey()));
-            }
-        }
-
-        defaultNamespace = dfsUriMap.get(tableId);
-
-        if (StringUtils.isEmpty(defaultNamespace)) {
-            defaultNamespace = conf.get(FS_DEFAULT_NAMESPACE);
-
-            if (StringUtils.isEmpty(defaultNamespace)) {
-                defaultNamespace = conf.get(FS_DEFAULT_NAME);
-            }
-        }
-
-        basePath = dfsDirMap.get(tableId);
-
-        if (StringUtils.isEmpty(basePath)) {
-            basePath = ACCUMULO_BASE_PATH;
-        }
-
-        // ensure we have a separator
-        if (!basePath.startsWith(Path.SEPARATOR)) {
-            basePath = Path.SEPARATOR + basePath;
-        }
-
-        // must get the default base path since accumulo only stores the full namespace path
-        // when one is not stored on the default.
-        final String defaultBasePath = defaultNamespace + basePath;
-
         if (conf.getBoolean(CACHE_METADATA, false) == true) {
             synchronized (MultiRfileInputformat.class) {
                 if (null == locationMap) {
                     final long size = conf.getLong(CACHE_METADATA_SIZE, 10000);
                     final long seconds = conf.getInt(CACHE_METADATA_EXPIRE_SECONDS, 7200);
                     locationMap = CacheBuilder.newBuilder().maximumSize(size).expireAfterWrite(seconds, TimeUnit.SECONDS)
-                                    .build(new MetadataCacheLoader(client, defaultBasePath));
+                                    .build(new MetadataCacheLoader(client));
                 }
             }
         }
@@ -200,7 +158,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
             Set<Tuple2<String,Set<String>>> metadataEntries;
             try {
                 if (null == locationMap) {
-                    metadataEntries = new MetadataCacheLoader(client, defaultBasePath).load(metadataRange);
+                    metadataEntries = new MetadataCacheLoader(client).load(metadataRange);
                 } else {
                     metadataEntries = locationMap.get(metadataRange);
                 }
