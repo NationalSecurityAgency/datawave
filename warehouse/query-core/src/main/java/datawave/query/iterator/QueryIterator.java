@@ -6,6 +6,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -53,6 +55,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -251,7 +254,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
             this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
 
-        } catch (Exception e) {
+        } catch (ParseException e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
         }
 
@@ -297,16 +300,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (config.isValid()) {
             try {
                 Path basePath = new Path(config.getBasePathURI());
-                FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                FileSystemCache cache = this.getFileSystemCache();
+                if (cache != null) {
+                    FileSystem fileSystem = cache.getFileSystem(basePath.toUri());
 
-                // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
-                // should be no harm in creating these directories if they do not already exist by this point.
-                // Also, since we are selecting these directories intentionally for use by the ivarators, it
-                // should be a given that we have write permissions.
-                return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
+                    // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
+                    // should be no harm in creating these directories if they do not already exist by this point.
+                    // Also, since we are selecting these directories intentionally for use by the ivarators, it
+                    // should be a given that we have write permissions.
+                    return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
+                }
             } catch (InterruptedIOException ioe) {
                 throw ioe;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log.error("Failure to validate path " + config, e);
             }
         }
@@ -753,22 +759,25 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (log.isTraceEnabled()) {
                 log.trace("isFieldIndexSatisfyingQuery");
             }
-            docMapper = new Function<Entry<Key,Document>,Entry<DocumentData,Document>>() {
+            docMapper = new Function<>() {
                 @Nullable
                 @Override
                 public Entry<DocumentData,Document> apply(@Nullable Entry<Key,Document> input) {
-
                     Entry<DocumentData,Document> entry = null;
                     if (input != null) {
-                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST, true),
+                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.emptyList(), true),
                                         input.getValue());
                     }
                     return entry;
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(), this.includeHierarchyFields,
-                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:off
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEventFilter(), this.includeHierarchyFields,
+                            this.includeHierarchyFields)
+                            .withRangeProvider(getRangeProvider())
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:on
         }
 
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1088,9 +1097,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
+            //  @formatter:off
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider())
-                                            .withAggregationThreshold(getDocAggregationThresholdMs());
+                            getEventFilter(), this.includeHierarchyFields, this.includeHierarchyFields)
+                            .withRangeProvider(getRangeProvider())
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:on
 
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
                             new GetDocument(docMapper,
@@ -1602,7 +1614,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     try {
                         excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
                                         excerptIterator.getDeclaredConstructor().newInstance());
-                    } catch (Exception e) {
+                    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create excerpt transform", e);
                     }
                 }
