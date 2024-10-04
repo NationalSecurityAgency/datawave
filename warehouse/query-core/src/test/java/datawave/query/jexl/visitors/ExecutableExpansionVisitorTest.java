@@ -32,6 +32,7 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -87,6 +88,7 @@ public abstract class ExecutableExpansionVisitorTest {
 
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
             client = qtth.client;
+            Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
@@ -358,6 +360,28 @@ public abstract class ExecutableExpansionVisitorTest {
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
+    }
+
+    @Test
+    public void testNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        // extraParameters.put("query.syntax", "LUCENE");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testMatchesAtLeastCountOf");
+        }
+        String[] queryStrings = {"BAIL=~'12340.*?'"};
+        @SuppressWarnings("unchecked")
+        // THIS SHOULD
+        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO", "CORLEONE", "CAPONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        ASTJexlScript expectedQuery = JexlASTHelper.parseJexlQuery("BAIL =~ '\\+[d-z]E1\\.234'");
+        Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
     }
 
     @Test
