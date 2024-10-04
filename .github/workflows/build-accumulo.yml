@@ -1,6 +1,7 @@
 name: Build Accumulo snapshot and update DataWave to use
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       accumuloBranch:
@@ -44,9 +45,9 @@ jobs:
       uses: actions/checkout@v4
       id: accumuloCheckout
       with:
-        repository: ${{ github.event.inputs.accumuloRepo }}
+        repository: apache/accumulo
         path: accumulo
-        ref: ${{ github.event.inputs.accumuloBranch }}
+        ref: 2.1
 
     - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
       uses: actions/setup-java@v4
@@ -80,7 +81,6 @@ jobs:
         export newVersion=$(mvn -q help:evaluate -DforceStdout -Dexpression=project.version)
         echo accumuloVersion=$newVersion >> $GITHUB_OUTPUT
     - name: Deploy Accumulo
-      if: ${{ ( github.event.inputs.deployAccumulo || 'false' )  == 'true'}}
       run: | 
         export JAVA_HOME=$ACCUMULO_JAVA
         cd $GITHUB_WORKSPACE/accumulo   
