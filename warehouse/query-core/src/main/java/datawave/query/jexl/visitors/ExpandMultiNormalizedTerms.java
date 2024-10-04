@@ -351,8 +351,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     }
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
-                                    // if (regexNode && normalizer.requiresOriginalEvaluation(term)) {
-                                    if (regexNode && normalizer instanceof NumberType) {
+                                    if (regexNode && normalizer.normalizedRegexIsLossy(term)) {
                                         JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
                                                         EVALUATION_ONLY);
                                         // now we need to combine these two nodes so that both are required
