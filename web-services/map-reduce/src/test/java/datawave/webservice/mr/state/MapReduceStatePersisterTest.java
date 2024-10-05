@@ -34,8 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -63,7 +63,7 @@ public class MapReduceStatePersisterTest {
     private static final String NULL = "\u0000";
     private static String id = UUID.randomUUID().toString();
 
-    private InMemoryInstance instance = new InMemoryInstance("test instance");
+    private InMemoryAccumulo instance = new InMemoryAccumulo("test instance");
     private AccumuloClient client = null;
     private DatawavePrincipal principal = null;
 
