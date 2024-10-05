@@ -31,7 +31,6 @@ import datawave.mr.bulk.RfileScanner;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
-import datawave.webservice.common.connection.WrappedConnector;
 
 public class ScannerFactory {
 
@@ -131,7 +130,7 @@ public class ScannerFactory {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Created ScannerFactory " + System.identityHashCode(this) + " is wrapped ? " + (client instanceof WrappedConnector));
+            log.debug("Created ScannerFactory " + System.identityHashCode(this));
         }
     }
 
