@@ -30,8 +30,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.hash.HashUID;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
@@ -151,7 +151,7 @@ public class FieldIndexIntegrationTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client = new InMemoryAccumuloClient("", new InMemoryAccumulo());
         client.tableOperations().create(SHARD);
 
         loadFieldIndexData();

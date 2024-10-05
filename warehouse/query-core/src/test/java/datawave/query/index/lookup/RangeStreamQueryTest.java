@@ -37,8 +37,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.test.integration.IntegrationTest;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -62,7 +62,7 @@ public class RangeStreamQueryTest {
 
     private static final Logger log = Logger.getLogger(RangeStreamQueryTest.class);
 
-    private static InMemoryInstance instance = new InMemoryInstance(RangeStreamQueryTest.class.toString());
+    private static InMemoryAccumulo instance = new InMemoryAccumulo(RangeStreamQueryTest.class.toString());
     private static AccumuloClient connector;
     private ShardQueryConfiguration config;
 

@@ -30,8 +30,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
@@ -75,7 +75,7 @@ public class RangeStreamTestX {
 
     @BeforeClass
     public static void setupAccumulo() throws Exception {
-        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client = new InMemoryAccumuloClient("", new InMemoryAccumulo());
         client.tableOperations().create(SHARD_INDEX);
 
         BatchWriter bw = client.createBatchWriter(SHARD_INDEX,

@@ -54,8 +54,8 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.GeometryType;
@@ -173,7 +173,7 @@ public class MultiValueCompositeIndexTest {
     @SpringBean(name = "EventQuery")
     ShardQueryLogic logic;
 
-    private static InMemoryInstance instance;
+    private static InMemoryAccumulo instance;
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -251,7 +251,7 @@ public class MultiValueCompositeIndexTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        instance = new InMemoryAccumulo();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 

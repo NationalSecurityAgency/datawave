@@ -37,8 +37,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
@@ -61,7 +61,7 @@ import datawave.test.JexlNodeAssert;
  */
 public class RangeStreamTest {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(RangeStreamTest.class.toString());
+    private static final InMemoryAccumulo instance = new InMemoryAccumulo(RangeStreamTest.class.toString());
     private static AccumuloClient client;
     private ShardQueryConfiguration config;
 
@@ -70,7 +70,7 @@ public class RangeStreamTest {
 
         final String SHARD_INDEX = "shardIndex";
 
-        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client = new InMemoryAccumuloClient("", new InMemoryAccumulo());
         client.tableOperations().create(SHARD_INDEX);
 
         BatchWriter bw = client.createBatchWriter(SHARD_INDEX,

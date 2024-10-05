@@ -30,8 +30,8 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
@@ -64,7 +64,7 @@ public class SSDeepSimilarityQueryTest {
     public static void loadData() throws Exception {
         final String tableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
 
-        InMemoryInstance inMemoryInstance = new InMemoryInstance("ssdeepTestInstance");
+        InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo("ssdeepTestInstance");
         accumuloClient = new InMemoryAccumuloClient("root", inMemoryInstance);
 
         /* create the table */

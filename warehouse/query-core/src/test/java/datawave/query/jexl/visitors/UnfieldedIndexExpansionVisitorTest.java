@@ -31,8 +31,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
@@ -45,7 +45,7 @@ import datawave.util.time.DateHelper;
 
 public class UnfieldedIndexExpansionVisitorTest {
 
-    private static InMemoryInstance instance = new InMemoryInstance(UnfieldedIndexExpansionVisitorTest.class.toString());
+    private static InMemoryAccumulo instance = new InMemoryAccumulo(UnfieldedIndexExpansionVisitorTest.class.toString());
     private static AccumuloClient conn;
 
     private final static Long timestamp = DateHelper.parse("20210101").getTime();

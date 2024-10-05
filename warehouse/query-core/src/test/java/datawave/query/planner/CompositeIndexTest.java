@@ -54,8 +54,8 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.ColumnFamilyConstants;
@@ -188,7 +188,7 @@ public class CompositeIndexTest {
     @SpringBean(name = "EventQuery")
     ShardQueryLogic logic;
 
-    private static InMemoryInstance instance;
+    private static InMemoryAccumulo instance;
 
     private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
 
@@ -279,7 +279,7 @@ public class CompositeIndexTest {
         keyValues.put(new BulkIngestKey(new Text(TableName.METADATA), tdKey), new Value());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        instance = new InMemoryAccumulo();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 

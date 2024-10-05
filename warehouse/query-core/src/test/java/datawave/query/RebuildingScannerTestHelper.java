@@ -31,9 +31,9 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryBatchScanner;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.InMemoryScannerBase;
 import datawave.accumulo.inmemory.ScannerRebuilder;
@@ -245,22 +245,22 @@ public class RebuildingScannerTestHelper {
         }
     }
 
-    public static AccumuloClient getClient(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
+    public static AccumuloClient getClient(InMemoryAccumulo i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
-    public static AccumuloClient getClient(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
+    public static AccumuloClient getClient(InMemoryAccumulo i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
-    public static AccumuloClient getClient(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
+    public static AccumuloClient getClient(InMemoryAccumulo i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
-    public static AccumuloClient getClient(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
+    public static AccumuloClient getClient(InMemoryAccumulo i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(principal, i, teardown, interrupt);
     }
@@ -606,7 +606,7 @@ public class RebuildingScannerTestHelper {
         private final TEARDOWN teardown;
         private final INTERRUPT interrupt;
 
-        public RebuildingAccumuloClient(String user, InMemoryInstance instance, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloSecurityException {
+        public RebuildingAccumuloClient(String user, InMemoryAccumulo instance, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloSecurityException {
             super(user, instance);
             this.teardown = teardown;
             this.interrupt = interrupt;

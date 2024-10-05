@@ -37,8 +37,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.github.benmanes.caffeine.cache.Cache;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.util.TableName;
@@ -74,7 +74,7 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         System.setProperty("file.encoding", "UTF8");
 
         // create mock instance and connector
-        InMemoryInstance i = new InMemoryInstance(DateIndexHelperTest.class.getName());
+        InMemoryAccumulo i = new InMemoryAccumulo(DateIndexHelperTest.class.getName());
         client = new InMemoryAccumuloClient("root", i);
         recordWriter = new MockAccumuloRecordWriter();
         TableOperations tops = client.tableOperations();

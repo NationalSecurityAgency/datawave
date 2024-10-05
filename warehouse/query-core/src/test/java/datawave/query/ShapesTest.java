@@ -40,8 +40,8 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
@@ -107,7 +107,7 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(ShardRange.class.getName());
+            InMemoryAccumulo i = new InMemoryAccumulo(ShardRange.class.getName());
             client = new InMemoryAccumuloClient("", i);
 
             ShapesIngest.writeData(client, ShapesIngest.RangeType.SHARD);
@@ -130,7 +130,7 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(DocumentRange.class.getName());
+            InMemoryAccumulo i = new InMemoryAccumulo(DocumentRange.class.getName());
             client = new InMemoryAccumuloClient("", i);
 
             ShapesIngest.writeData(client, ShapesIngest.RangeType.DOCUMENT);

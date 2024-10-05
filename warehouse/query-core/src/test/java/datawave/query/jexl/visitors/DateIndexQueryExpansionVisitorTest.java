@@ -17,8 +17,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.helpers.PrintUtility;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -48,7 +48,7 @@ public class DateIndexQueryExpansionVisitorTest {
     @BeforeClass
     public static void before() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        InMemoryInstance i = new InMemoryInstance(DateIndexQueryExpansionVisitorTest.class.getName());
+        InMemoryAccumulo i = new InMemoryAccumulo(DateIndexQueryExpansionVisitorTest.class.getName());
         client = new InMemoryAccumuloClient("root", i);
     }
 
