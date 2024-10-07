@@ -14,6 +14,7 @@ import datawave.util.flag.processor.DateFlagDistributor;
 import datawave.util.flag.processor.DateFolderFlagDistributor;
 import datawave.util.flag.processor.DateUtils;
 import datawave.util.flag.processor.FlagDistributor;
+import datawave.util.flag.processor.RandomFlagDistributor;
 import datawave.util.flag.processor.SimpleFlagDistributor;
 
 /**
@@ -251,6 +252,8 @@ public class FlagMakerConfig {
             fd = new DateFlagDistributor();
         } else if ("folderdate".equals(this.distributorType)) {
             fd = new DateFolderFlagDistributor();
+        } else if ("randomized".equals(this.distributorType)) {
+            fd = new RandomFlagDistributor();
         }
 
         return fd;
@@ -290,9 +293,9 @@ public class FlagMakerConfig {
             throw new IllegalArgumentException(prefix + "Default Max Flags must be set.");
         }
 
-        if (this.distributorType == null || !this.distributorType.matches("(simple|date|folderdate)")) {
+        if (this.distributorType == null || !this.distributorType.matches("(simple|date|folderdate|randomized)")) {
             throw new IllegalArgumentException(
-                            "Invalid Distributor type provided: " + this.distributorType + ". Must be one of the following: simple|date|folderdate");
+                            "Invalid Distributor type provided: " + this.distributorType + ". Must be one of the following: simple|date|folderdate|randomized");
         }
 
         for (FlagDataTypeConfig cfg : this.flagCfg) {
