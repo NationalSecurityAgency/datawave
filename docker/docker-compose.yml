@@ -80,6 +80,24 @@ services:
       consul:
         condition: service_started
 
+  qr-rabbitmq:
+    image: docker.io/rabbitmq:3.12.4
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=25672, 15672, 5672
+      - RABBITMQ_ERLANG_COOKIE="mycookie"
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+      - "25673:25672"
+    networks:
+      - demo
+    depends_on:
+      consul:
+        condition: service_started
+
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
     profiles:
