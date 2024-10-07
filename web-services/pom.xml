@@ -47,7 +47,6 @@
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.9.0</version.commons-net>
         <version.commons-pool2>2.6.1</version.commons-pool2>
-        <version.dnsjava>2.1.8</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
@@ -115,11 +114,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>dnsjava</groupId>
-                <artifactId>dnsjava</artifactId>
-                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
