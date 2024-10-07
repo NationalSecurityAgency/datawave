@@ -134,6 +134,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
     protected Set<Authorizations> authSet = Collections.singleton(auths);
 
+    private int maxTermsToPrint;
+
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
@@ -501,6 +503,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
 
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             EasyMock.replay(config, helper);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
@@ -530,6 +534,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
 
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             EasyMock.replay(config, helper);
 
             // find an orNode in the tree
@@ -558,6 +564,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
 
             EasyMock.replay(config, helper);
 
@@ -589,6 +597,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
 
             EasyMock.replay(config, helper);
 
@@ -628,6 +638,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
 
             EasyMock.replay(config, helper);
 
@@ -680,6 +692,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
 
             EasyMock.replay(config, helper);
 
@@ -738,6 +752,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
 
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             EasyMock.replay(config, helper);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
@@ -785,6 +801,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
 
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             EasyMock.replay(config, helper);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
@@ -826,6 +844,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             Set<String> dataTypes = new HashSet<>();
             dataTypes.add("test");
             Set<String> nonEventFields = new HashSet<>();
@@ -868,6 +888,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             Set<String> dataTypes = new HashSet<>();
             dataTypes.add("test");
             // QUOTE being delayed creates a query that is non-executable we cannot delay a field which is nonEvent
@@ -922,6 +944,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
 
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             EasyMock.replay(config, helper);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
@@ -969,6 +993,8 @@ public abstract class ExecutableExpansionVisitorTest {
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
 
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+
             EasyMock.replay(config, helper);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
@@ -1004,6 +1030,8 @@ public abstract class ExecutableExpansionVisitorTest {
             indexedFields.add("QUOTE");
 
             EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+
+            EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
 
             EasyMock.replay(config, helper);
 
