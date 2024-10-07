@@ -244,6 +244,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("defaultDateTypeName", "DOCUMENT");
         defaultValues.put("cleanupShardsAndDaysQueryHints", true);
         updatedValues.put("cleanupShardsAndDaysQueryHints", false);
+        defaultValues.put("cachePreviouslyExpandedFields", true);
+        updatedValues.put("cachePreviouslyExpandedFields", false);
         defaultValues.put("numQueryThreads", 8);
         updatedValues.put("numQueryThreads", 80);
         defaultValues.put("numDateIndexThreads", 8);

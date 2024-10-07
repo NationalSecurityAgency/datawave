@@ -34,6 +34,8 @@ import datawave.data.type.TrimLeadingZerosType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
+import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 
@@ -496,7 +498,8 @@ public class ExpandMultiNormalizedTermsTest {
 
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
         ASTJexlScript smashed = TreeFlatteningRebuildingVisitor.flatten(queryTree);
-        ASTJexlScript script = ExpandMultiNormalizedTerms.expandTerms(config, helper, smashed);
+        ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
+        ASTJexlScript script = ExpandMultiNormalizedTerms.expandTerms(config, helper, smashed, previouslyExpandedFieldCache);
 
         JexlNodeAssert.assertThat(script).isEqualTo(smashed).isEqualTo(queryTree).hasValidLineage();
         JexlNodeAssert.assertThat(queryTree).isEqualTo(query).hasValidLineage();
@@ -692,9 +695,51 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, expected);
     }
 
+    @Test
+    public void testPreviouslyExpandedFieldsCache() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        // This would trigger a cache lookup and a skipping of normalization if the field / term pair is found
+        dataTypes.put("FOO", new NumberType());
+        // This would trigger a cache lookup and a skipping of normalization if the field / term pair is found
+        dataTypes.put("FIELD2", new LcType());
+        // This should get normalized because it has more than one normalizer, regardless if the field / term pair is in the cache or not.
+        dataTypes.putAll("FIELD9", Sets.newHashSet(new NumberType(), new LcType()));
+
+        ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
+        IndexLookupMap lookupMap = new IndexLookupMap(10, 10);
+        lookupMap.put("FOO", "32");
+        lookupMap.put("FIELD2", "42");
+        lookupMap.put("FOO", "33");
+        lookupMap.put("FIELD9", "99");
+        previouslyExpandedFieldCache.addExpansion(lookupMap);
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setCachePreviouslyExpandedFields(true);
+
+        // this tests for the successful 'skipping' of normalizing terms that we already have the actual value from the index for.
+        String original = "FOO == '32' && FIELD9 == '99' && FIELD2 == '42'";
+        String expected = "FOO == '32' && (FIELD9 == '+bE9.9' || FIELD9 == '99') && FIELD2 == '42'";
+        expandTermsCacheTest(original, expected, previouslyExpandedFieldCache);
+    }
+
     private void expandTerms(String original, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);
+        ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
+        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script, previouslyExpandedFieldCache);
+
+        // Verify the script is as expected, and has a valid lineage.
+        JexlNodeAssert.assertThat(expanded).isEqualTo(expected).hasValidLineage();
+
+        // Verify the original script was not modified, and still has a valid lineage.
+        JexlNodeAssert.assertThat(script).isEqualTo(original).hasValidLineage();
+    }
+
+    private void expandTermsCacheTest(String original, String expected, ExpandedFieldCache previouslyExpandedFieldCache) throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
+        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script, previouslyExpandedFieldCache);
 
         // Verify the script is as expected, and has a valid lineage.
         JexlNodeAssert.assertThat(expanded).isEqualTo(expected).hasValidLineage();
