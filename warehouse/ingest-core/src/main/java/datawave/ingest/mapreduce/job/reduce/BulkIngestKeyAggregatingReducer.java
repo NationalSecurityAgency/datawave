@@ -182,15 +182,6 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
                     }
                     ctx.getCounter(IngestOutput.TIMESTAMP_DUPLICATE).increment(duplicates);
                 } else {
-                    /**
-                     * Aggregator values if ts < 0, it is a by product of the ts deduper (combiner)
-                     *
-                     */
-                    ts = outKey.getKey().getTimestamp();
-
-                    if (usingCombiner && (ts < 0)) {
-                        outKey.getKey().setTimestamp(-1 * ts * MILLISPERDAY);
-                    }
 
                     Iterator<Value> valueItr = values.iterator();
 
