@@ -17,7 +17,7 @@ shopt -s compat31 > /dev/null 2>&1
 
 # load the external password specifications.  The following needs to be defined in this script: PASSWORD, TRUSTSTORE_PASSWORD, KEYSTORE_PASSWORD
 function checkForVar (){
-   found=`cat $1 | egrep " $2 *="`
+   found=$(cat $1 | grep -E " $2 *=")
    if [[ "$found" == "" ]]; then
       echo "$2,"
    fi
