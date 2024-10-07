@@ -614,6 +614,20 @@ public class TestLuceneToJexlQueryParser {
                         .contains("unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
     }
 
+    @Test
+    public void testStartsWithFunction() throws ParseException {
+        assertParse("#STARTS_WITH(FIELD, 'value')", "FIELD =~ 'value.*'");
+    }
+
+    @Test
+    public void testEndsWithFunction() throws ParseException {
+        assertParse("#ENDS_WITH(FIELD, 'value')", "FIELD =~ '.*value'");
+    }
+
+    private void assertParse(String query, String expected) throws ParseException {
+        assertEquals(expected, parser.parse(query).getOriginalQuery());
+    }
+
     private static class TestQueryNodeProcessorFactory extends QueryNodeProcessorFactory {
         @Override
         public QueryNodeProcessor create(QueryConfigHandler configHandler) {

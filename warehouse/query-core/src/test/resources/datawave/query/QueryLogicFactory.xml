@@ -51,6 +51,8 @@
         <bean class="datawave.query.language.functions.jexl.Max"/>
         <bean class="datawave.query.language.functions.jexl.Average"/>
         <bean class="datawave.query.language.functions.jexl.Count"/>
+        <bean class="datawave.query.language.functions.jexl.StartsWith"/>
+        <bean class="datawave.query.language.functions.jexl.EndsWith"/>
     </util:list>
 
     <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" >
