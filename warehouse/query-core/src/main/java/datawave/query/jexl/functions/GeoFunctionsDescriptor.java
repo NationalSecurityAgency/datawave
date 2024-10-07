@@ -308,25 +308,29 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            try {
-                Set<String> allFields = helper.getAllFields(datatypeFilter);
-                Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
-                if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
-                    // if we have an or node anywhere, then we need to produce a cartesion product
-                    for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0), args.get(1))) {
-                        filteredSets.add(filterSet(allFields, aFieldSet));
-                    }
-                } else {
-                    for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0))) {
-                        filteredSets.add(filterSet(allFields, aFieldSet));
-                    }
+            Set<String> allFields = null;
+            if (helper != null) {
+                try {
+                    allFields = helper.getAllFields(datatypeFilter);
+                } catch (TableNotFoundException e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                    log.error(qe);
+                    throw new DatawaveFatalQueryException(qe);
                 }
-                return filteredSets;
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                log.error(qe);
-                throw new DatawaveFatalQueryException(qe);
             }
+            Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
+            if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
+                // if we have an or node anywhere, then we need to produce a cartesion product
+                for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0), args.get(1))) {
+                    filteredSets.add(filterSet(allFields, aFieldSet));
+                }
+            } else {
+                for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0))) {
+                    filteredSets.add(filterSet(allFields, aFieldSet));
+                }
+            }
+            return filteredSets;
+
         }
 
         /**
