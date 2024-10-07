@@ -3,28 +3,35 @@ package datawave.ingest.protobuf;
 import java.util.Comparator;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
 
 /**
  * This is a utility class for processing a single term weight position. These get aggregated into a TermWeight,
  */
 public class TermWeightPosition implements Comparable<TermWeightPosition> {
-    private static final Logger log = Logger.getLogger(TermWeightPosition.class);
     public static final int DEFAULT_OFFSET = -1;
     public static final int DEFAULT_PREV_SKIPS = -1;
     public static final int DEFAULT_SCORE = -1;
     public static final boolean DEFAULT_ZERO_OFFSET_MATCH = true;
+    public static final int DEFAULT_INGEST_HASH = -1;
+    public static final int DEFAULT_SECONDARY_VALUE = -1;
+    public static final int DEFAULT_DATA_TYPE = -1;
 
     private final int offset;
     private final int prevSkips;
     private final int score;
     private final boolean zeroOffsetMatch;
+    private final int ingestHash;
+    private final int secondaryValue;
+    private final int dataType;
 
     public TermWeightPosition(Builder builder) {
         offset = builder.offset;
         prevSkips = builder.prevSkips;
         score = builder.score;
         zeroOffsetMatch = builder.zeroOffsetMatch;
+        ingestHash = builder.ingestHash;
+        secondaryValue = builder.secondaryValue;
+        dataType = builder.dataType;
     }
 
     public TermWeightPosition(TermWeightPosition other) {
@@ -32,6 +39,9 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
         prevSkips = other.prevSkips;
         score = other.score;
         zeroOffsetMatch = other.zeroOffsetMatch;
+        ingestHash = other.ingestHash;
+        secondaryValue = other.secondaryValue;
+        dataType = other.dataType;
     }
 
     public TermWeightPosition clone() {
@@ -70,40 +80,6 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
         return (float) (termWeightScore * -.0000001);
     }
 
-    @Override
-    public int compareTo(TermWeightPosition o) {
-        int result = Integer.compare(getLowOffset(), o.getLowOffset());
-        if (result != 0) {
-            return result;
-        }
-
-        return Integer.compare(getOffset(), o.getOffset());
-    }
-
-    @Override
-    public String toString() {
-        return "{zeroMatch=" + zeroOffsetMatch + ", offset=" + offset + ", prevSkips=" + prevSkips + ", score=" + score + '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof TermWeightPosition) {
-            return this.equals((TermWeightPosition) o);
-        }
-
-        return false;
-    }
-
-    public boolean equals(TermWeightPosition o) {
-
-        return (compareTo(o) == 0);
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(offset).append(prevSkips).append(score).append(zeroOffsetMatch).toHashCode();
-    }
-
     /**
      * @return Maximum possible offset, skips can not increase the value
      */
@@ -134,11 +110,61 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
         return zeroOffsetMatch;
     }
 
+    public int getIngestHash() {
+        return ingestHash;
+    }
+
+    public int getSecondaryValue() {
+        return secondaryValue;
+    }
+
+    public int getDataType() {
+        return dataType;
+    }
+
+    @Override
+    public int compareTo(TermWeightPosition o) {
+        int result = Integer.compare(getLowOffset(), o.getLowOffset());
+        if (result != 0) {
+            return result;
+        }
+
+        return Integer.compare(getOffset(), o.getOffset());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof TermWeightPosition) {
+            return this.equals((TermWeightPosition) o);
+        }
+
+        return false;
+    }
+
+    public boolean equals(TermWeightPosition o) {
+        return (compareTo(o) == 0);
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder().append(offset).append(prevSkips).append(score).append(zeroOffsetMatch).append(ingestHash).append(secondaryValue)
+                        .append(dataType).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "TermWeightPosition{" + "zeroOffsetMatch=" + zeroOffsetMatch + ", offset=" + offset + ", prevSkips=" + prevSkips + ", score=" + score
+                        + ", ingestHash=" + ingestHash + ", secondaryValue=" + secondaryValue + ", dataType=" + dataType + '}';
+    }
+
     public static class Builder {
         private int offset = DEFAULT_OFFSET;
         private int prevSkips = DEFAULT_PREV_SKIPS;
         private int score = DEFAULT_SCORE;
         private boolean zeroOffsetMatch = DEFAULT_ZERO_OFFSET_MATCH;
+        private int ingestHash = DEFAULT_INGEST_HASH;
+        private int secondaryValue = DEFAULT_SECONDARY_VALUE;
+        private int dataType = DEFAULT_DATA_TYPE;
 
         public Builder setOffset(int offset) {
             this.offset = offset;
@@ -160,10 +186,25 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
             return this;
         }
 
+        public Builder setIngestHash(int ingestHash) {
+            this.ingestHash = ingestHash;
+            return this;
+        }
+
+        public Builder setSecondaryValue(int secondaryValue) {
+            this.secondaryValue = secondaryValue;
+            return this;
+        }
+
+        public Builder setDataType(int dataType) {
+            this.dataType = dataType;
+            return this;
+        }
+
         public Builder setTermWeightOffsetInfo(TermWeight.Info info, int i) {
             setOffset(info.getTermOffset(i));
 
-            // Only pull the previous skips if the counts match the offsets
+            // Only pull the previous skips if the counts match the offsets.
             // offsets, skips, and scores are linked by index so array lengths must match
             if (info.getTermOffsetCount() == info.getPrevSkipsCount()) {
                 setPrevSkips(info.getPrevSkips(i));
@@ -175,6 +216,18 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
             }
 
             setZeroOffsetMatch(info.getZeroOffsetMatch());
+
+            if (info.getTermOffsetCount() == info.getIngestHashCount()) {
+                setIngestHash(info.getIngestHash(i));
+            }
+
+            if (info.getTermOffsetCount() == info.getSecondaryValueCount()) {
+                setSecondaryValue(info.getSecondaryValue(i));
+            }
+
+            if (info.getTermOffsetCount() == info.getDataTypeCount()) {
+                setDataType(info.getDataType(i));
+            }
 
             return this;
         }
@@ -188,6 +241,9 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
             prevSkips = DEFAULT_PREV_SKIPS;
             score = DEFAULT_SCORE;
             zeroOffsetMatch = DEFAULT_ZERO_OFFSET_MATCH;
+            ingestHash = DEFAULT_INGEST_HASH;
+            secondaryValue = DEFAULT_SECONDARY_VALUE;
+            dataType = DEFAULT_DATA_TYPE;
         }
 
     }
