@@ -100,7 +100,7 @@
         <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>4.0.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>4.0.0</version.microservice.accumulo-utils>
+        <version.microservice.accumulo-utils>5.0.0-SNAPSHOT</version.microservice.accumulo-utils>
         <version.microservice.audit-api>4.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>4.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>4.0.0</version.microservice.base-rest-responses>
@@ -137,7 +137,8 @@
         <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
-        <version.zookeeper>3.8.3</version.zookeeper>
+        <!-- ACCUMULO4_TODO test were failing until the zookeeper version was set to the same as accumulo, needs investigation -->
+        <version.zookeeper>3.9.2</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
     </properties>
     <dependencyManagement>
