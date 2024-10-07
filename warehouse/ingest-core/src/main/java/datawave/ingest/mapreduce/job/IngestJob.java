@@ -79,6 +79,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.springframework.util.StopWatch;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
@@ -249,7 +250,11 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
-        long setupStart = System.currentTimeMillis();
+
+        long start = System.currentTimeMillis();
+
+        StopWatch sw = new StopWatch("Ingest Job");
+        sw.start("local init");
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -365,8 +370,9 @@ public class IngestJob implements Tool {
         URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory(conf));
 
         startDaemonProcesses(conf);
-        long start = System.currentTimeMillis();
-        log.info("JOB SETUP TIME: " + (start - setupStart));
+        sw.stop();
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        sw.start("AM Init");
 
         job.submit();
         JobID jobID = job.getJobID();
@@ -420,11 +426,17 @@ public class IngestJob implements Tool {
                 }
             }
         }
-        long setupStop = System.currentTimeMillis();
-        log.info("JOB SETUP TIME: " + (setupStop - setupStart) + "ms");
+        sw.stop();
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
 
+        sw.start("MR Job");
         job.waitForCompletion(true);
+        sw.stop();
+
         long stop = System.currentTimeMillis();
+
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        log.info(sw.prettyPrint());
 
         // output the counters to the log
         Counters counters = job.getCounters();
@@ -531,6 +543,10 @@ public class IngestJob implements Tool {
         }
 
         return 0;
+    }
+
+    private String formatTaskInfo(StopWatch.TaskInfo taskInfo) {
+        return "Timing - " + taskInfo.getTaskName() + ": " + taskInfo.getTimeSeconds() + " s";
     }
 
     private void setupHandlers(Configuration conf) {
