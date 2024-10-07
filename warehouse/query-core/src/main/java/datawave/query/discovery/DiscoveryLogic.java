@@ -145,6 +145,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             }
         }
 
+        // Set the currently indexed fields
+        getConfig().setIndexedFields(metadataHelper.getIndexedFields(Collections.emptySet()));
         // Set the connector
         getConfig().setClient(client);
         // Set the auths
@@ -267,8 +269,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             for (String cf : qd.getColumnFamilies()) {
                 bs.fetchColumnFamily(new Text(cf));
             }
-
-            iterators.add(transformScanner(bs, qd));
+            iterators.add(transformScanner(bs, qd, config.getIndexedFields()));
         }
         this.iterator = concat(iterators.iterator());
     }
@@ -355,13 +356,16 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     }
 
     /**
-     * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
+     * Takes in a batch scanner, removes all DiscoveredThings that do not have an indexed field, and returns an iterator over the DiscoveredThing objects
+     * contained in the value.
      *
      * @param scanner
      *            a batch scanner
+     * @param indexedFields
+     *            set of currently indexed fields
      * @return iterator for discoveredthings
      */
-    public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData) {
+    public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData, Set<String> indexedFields) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
             DataInputBuffer in = new DataInputBuffer();
 
@@ -379,7 +383,12 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 }
                 ArrayList<DiscoveredThing> thangs = Lists.newArrayListWithCapacity(aw.get().length);
                 for (Writable w : aw.get()) {
-                    thangs.add((DiscoveredThing) w);
+                    // Check to see if the field is currently indexed, if it's not, we should NOT be adding it to 'thangs'
+                    if (indexedFields.contains(((DiscoveredThing) w).getField())) {
+                        thangs.add((DiscoveredThing) w);
+                    } else {
+                        log.debug(((DiscoveredThing) w).getField() + " was NOT found in IndexedFields");
+                    }
                 }
                 return thangs.iterator();
             }
