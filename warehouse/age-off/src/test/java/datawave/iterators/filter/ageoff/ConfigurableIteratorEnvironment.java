@@ -1,12 +1,14 @@
 package datawave.iterators.filter.ageoff;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
@@ -18,21 +20,22 @@ import org.apache.accumulo.core.util.ConfigurationImpl;
 
 public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
+    private static final TableId FAKE_ID = TableId.of("FAKE");
     private IteratorUtil.IteratorScope scope;
-    private AccumuloConfiguration conf;
+    private PluginEnvironment.Configuration conf;
 
     public ConfigurableIteratorEnvironment() {
         scope = null;
         conf = null;
     }
 
-    public ConfigurableIteratorEnvironment(AccumuloConfiguration conf, IteratorUtil.IteratorScope scope) {
+    public ConfigurableIteratorEnvironment(PluginEnvironment.Configuration conf, IteratorUtil.IteratorScope scope) {
         this.conf = conf;
         this.scope = scope;
 
     }
 
-    public void setConf(AccumuloConfiguration conf) {
+    public void setConf(PluginEnvironment.Configuration conf) {
         this.conf = conf;
     }
 
@@ -76,17 +79,22 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    public TableId getTableId() {
+        return FAKE_ID;
+    }
+
+    @Override
     public PluginEnvironment getPluginEnv() {
         return new PluginEnvironment() {
 
             @Override
             public Configuration getConfiguration() {
-                return null;
+                return conf;
             }
 
             @Override
             public Configuration getConfiguration(TableId tableId) {
-                return new ConfigurationImpl(conf);
+                return conf;
             }
 
             @Override

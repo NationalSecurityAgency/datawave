@@ -1,5 +1,6 @@
 package datawave.iterators.filter;
 
+import static datawave.iterators.filter.ageoff.FieldAgeOffFilterTest.newConfig;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -35,11 +36,9 @@ public class ConfigurableAgeOffFilterTest {
     // reused in tests but contents never accessed
     private static Value VALUE = new Value();
 
-    private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
-
     private SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(Map.<Key,Value> of().entrySet().iterator());
 
-    private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment(conf, IteratorUtil.IteratorScope.majc) {
+    private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment(newConfig(Map.of()), IteratorUtil.IteratorScope.majc) {
         @Override
         public boolean isFullMajorCompaction() {
             return false;
