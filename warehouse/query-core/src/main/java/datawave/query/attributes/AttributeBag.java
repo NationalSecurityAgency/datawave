@@ -12,7 +12,6 @@ import com.google.common.collect.Sets;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
-import datawave.marking.MarkingFunctionsFactory;
 
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
 
@@ -23,10 +22,8 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
 
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
 
-    protected static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
-
     public MarkingFunctions getMarkingFunctions() {
-        return markingFunctions;
+        return MarkingFunctions.Factory.createMarkingFunctions();
     }
 
     protected AttributeBag() {
@@ -83,7 +80,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         for (Attribute<?> attr : attributes) {
             columnVisibilities.add(attr.getColumnVisibility());
         }
-        return AttributeBag.markingFunctions.combine(columnVisibilities);
+        return MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
     }
 
     private long updateTimestamps() {

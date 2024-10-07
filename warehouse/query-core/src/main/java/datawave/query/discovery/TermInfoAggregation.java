@@ -21,7 +21,6 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
 
     private static final Logger log = Logger.getLogger(TermInfoAggregation.class);
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-    private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     private final boolean separateCountsByColumnVisibility;
     private boolean showReferenceCountInsteadOfTermCount = false;
     private boolean reverseIndex = false;
@@ -74,7 +73,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                 chosenCount = showReferenceCountInsteadOfTermCount ? referenceCount : termCount;
 
                 try {
-                    markingFunctions.translateFromColumnVisibility(ti.vis); // just to test parsing
+                    MarkingFunctions.Factory.createMarkingFunctions().translateFromColumnVisibility(ti.vis); // just to test parsing
                     columnVisibilities.add(ti.vis);
 
                     // Keep track of counts for individual vis
@@ -108,7 +107,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                 ColumnVisibility columnVisibility = null;
                 try {
 
-                    columnVisibility = markingFunctions.combine(columnVisibilities);
+                    columnVisibility = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
 
                 } catch (Exception e) {
                     log.warn("Invalid columnvisibility after combining!", e);
