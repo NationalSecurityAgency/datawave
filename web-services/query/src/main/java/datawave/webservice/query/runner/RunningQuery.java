@@ -411,14 +411,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         long pageStartTime = System.currentTimeMillis();
         this.logic.setPageProcessingStartTime(pageStartTime);
         List<Object> resultList = new ArrayList<>();
-        boolean hitPageByteTrigger = false;
-        boolean hitPageTimeTrigger = false;
         boolean hitIntermediateResult = false;
         boolean hitShortCircuitForLongRunningQuery = false;
+
+        int currentPageCount = 0;
+        long currentPageBytes = 0;
+        int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
+
         try {
             addNDC();
-            int currentPageCount = 0;
-            long currentPageBytes = 0;
 
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
@@ -450,7 +451,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // if the logic had a page byte trigger, and we have reached that, then break out
                     if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
                         log.info("Query logic max page byte trigger has been reached, aborting query.next call");
-                        hitPageByteTrigger = true;
                         break;
                     }
                     // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
@@ -476,11 +476,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // this page.
                     long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
 
-                    int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                     if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                         log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                         + pageTimeInCall + " " + timing);
-                        hitPageTimeTrigger = true;
                         break;
                     }
 
@@ -560,10 +558,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (!resultList.isEmpty()) {
             log.info("Returning page of results");
             // we have results!
-            return new ResultsPage(resultList,
-                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery)
-                                            ? ResultsPage.Status.PARTIAL
-                                            : ResultsPage.Status.COMPLETE));
+            // we also indicate whether we returned less than the requested page size in the response
+            return new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && currentPageCount < maxPageSize) || hitIntermediateResult
+                            || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
         } else {
             // we have no results. Let us determine whether we are done or not.
 
