@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -33,7 +32,6 @@ import com.google.common.collect.Sets;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.QueryData;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
@@ -118,7 +116,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                             options.fetchColumnFamily(new Text(cf));
                         }
 
-                        options.setQueryConfig(this.config);
+                        options.setQueryConfiguration(this.config);
 
                         chunks.add(new ScannerChunk(options, plan.getRanges(), qd, server));
                     } catch (Exception e) {
