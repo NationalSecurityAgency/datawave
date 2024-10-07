@@ -152,15 +152,11 @@ public class ShardRangeStream extends RangeStream {
         try {
             String serializedTypeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
             DefaultQueryPlanner.addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        }
 
-        try {
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
             requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
             DefaultQueryPlanner.addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
-        } catch (IOException e) {
+        } catch (TableNotFoundException | IOException e) {
             throw new RuntimeException(e);
         }
 
