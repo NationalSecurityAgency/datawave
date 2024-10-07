@@ -32,6 +32,7 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -87,6 +88,7 @@ public abstract class ExecutableExpansionVisitorTest {
 
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
             client = qtth.client;
+            Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
@@ -358,6 +360,30 @@ public abstract class ExecutableExpansionVisitorTest {
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
+    }
+
+    @Test
+    public void testNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        // extraParameters.put("query.syntax", "LUCENE");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testMatchesAtLeastCountOf");
+        }
+        String[] queryStrings = {"BAIL=~'12340.*?'"};
+        @SuppressWarnings("unchecked")
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401' || BAIL == '+gE1.234987') && ((_Eval_ = true) && (BAIL =~ '12340.*?'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
     }
 
     @Test

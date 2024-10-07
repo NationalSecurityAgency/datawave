@@ -26,6 +26,11 @@ public class IdentityDataType implements Type<String> {
     }
 
     @Override
+    public boolean normalizedRegexIsLossy(String in) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Collection<String> expand(String in) {
         throw new UnsupportedOperationException();
     }

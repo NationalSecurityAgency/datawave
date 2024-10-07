@@ -405,6 +405,21 @@ public abstract class NumericListQueryTest {
     }
 
     @Test
+    public void testMoreWildcards() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+
+        String queryString = "SIZE =~ '20*'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '20*'))";
+
+        Set<String> goodResults = Sets.newHashSet();
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
     public void testLeadingWildcardNonReverseIndexed() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
