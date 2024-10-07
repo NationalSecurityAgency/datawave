@@ -374,14 +374,16 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"BAIL=~'12340.*?'"};
         @SuppressWarnings("unchecked")
-        // THIS SHOULD
-        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO", "CORLEONE", "CAPONE")};
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO")};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        ASTJexlScript expectedQuery = JexlASTHelper.parseJexlQuery("BAIL =~ '\\+[d-z]E1\\.234'");
-        Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401' || BAIL == '+gE1.234987') && ((_Eval_ = true) && (BAIL =~ '12340.*?'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
     }
 
     @Test
