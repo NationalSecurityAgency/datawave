@@ -10,13 +10,19 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.sun.net.httpserver.HttpServer;
 
 import datawave.TestBaseIngestHelper;
@@ -27,6 +33,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
 
@@ -228,6 +235,42 @@ public class XMLFieldConfigHelperTest {
         // B* should sort after *A and hence should be the one used.
         assertTrue(types.get(0) instanceof datawave.data.type.HexStringType);
         assertFalse(helper.isIndexedField("BANANA"));
+    }
+
+    @Test
+    public void testCombineFile() throws Exception {
+        String fileName = "datawave/ingest/test-combined-list.xml";
+        URL file = ClassLoader.getSystemResource(fileName);
+
+        String field1 = "A";
+        String field2 = "D";
+
+        HashMap<String,String[]> expectedMap = new HashMap<>();
+        expectedMap.put(field1, datawave.util.StringUtils.split("B.C", '.'));
+        expectedMap.put(field2, datawave.util.StringUtils.split("E.F", '.'));
+
+        conf.addResource(file);
+        conf.set("test" + BaseIngestHelper.FIELD_CONFIG_FILE, fileName);
+        conf.set("test" + VirtualIngest.VirtualFieldNormalizer.VIRTUAL_FIELD_VALUE_START_SEPATATOR, "(");
+        conf.set("test" + VirtualIngest.VirtualFieldNormalizer.VIRTUAL_FIELD_VALUE_END_SEPATATOR, ")");
+        ingestHelper.setup(conf);
+
+        assertTrue(ingestHelper.getVirtualFieldDefinitions().size() == 2);
+        assertTrue(Arrays.equals(expectedMap.get(field1), ingestHelper.getVirtualFieldDefinitions().get(field1)));
+        assertTrue(Arrays.equals(expectedMap.get(field2), ingestHelper.getVirtualFieldDefinitions().get(field2)));
+
+        Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
+        eventFields.put("B", new NormalizedFieldAndValue("B", "banana"));
+        eventFields.put("C", new NormalizedFieldAndValue("C", "cantaloupe"));
+        eventFields.put("E", new NormalizedFieldAndValue("E", "elderberry"));
+        eventFields.put("F", new NormalizedFieldAndValue("F", "fig"));
+
+        Multimap<String,NormalizedContentInterface> results = ingestHelper.getVirtualFields(eventFields);
+
+        assertTrue(results.containsKey("A"));
+        assertTrue(results.containsKey("D"));
+        assertEquals("banana(cantaloupe)", results.get("A").iterator().next().getEventFieldValue());
+        assertEquals("elderberry(fig)", results.get("D").iterator().next().getEventFieldValue());
     }
 
     @Test

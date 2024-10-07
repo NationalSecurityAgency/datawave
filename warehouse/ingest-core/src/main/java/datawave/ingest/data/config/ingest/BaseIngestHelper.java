@@ -258,6 +258,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
             }
             this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
+            this.getVirtualIngest().setVirtualFieldDefinitions(this.fieldConfigHelper.getVirtualFieldMap());
+            this.getVirtualIngest().setGroupingPolicies(this.fieldConfigHelper.getGroupingPolicies());
+            this.getVirtualIngest().setAllowMissing(this.fieldConfigHelper.getAllowMissing());
         }
 
         // Process the indexed fields
@@ -1189,6 +1192,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     @Override
     public void setVirtualFieldDefinitions(Map<String,String[]> virtualFieldDefinitions) {
         getVirtualIngest().setVirtualFieldDefinitions(virtualFieldDefinitions);
+    }
+
+    @Override
+    public void setGroupingPolicies(Map<String,VirtualIngest.GroupingPolicy> groupingPolicies) {
+        getVirtualIngest().setGroupingPolicies(groupingPolicies);
+    }
+
+    @Override
+    public void setAllowMissing(Map<String,Boolean> allowMissing) {
+        getVirtualIngest().setAllowMissing(allowMissing);
     }
 
     @Override
