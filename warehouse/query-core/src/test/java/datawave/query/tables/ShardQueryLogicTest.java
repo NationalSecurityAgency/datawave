@@ -193,23 +193,27 @@ public abstract class ShardQueryLogicTest {
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
 
-        for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
-            Set<String> expectedSet = it.next();
-            boolean found = false;
+        if (expected.isEmpty()) {
+            Assert.assertTrue(eventQueryResponse.getEvents() == null || eventQueryResponse.getEvents().isEmpty());
+        } else {
+            for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
+                Set<String> expectedSet = it.next();
+                boolean found = false;
 
-            for (EventBase event : eventQueryResponse.getEvents()) {
+                for (EventBase event : eventQueryResponse.getEvents()) {
 
-                if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
-                    expectedSet.remove("UID:" + event.getMetadata().getInternalId());
-                    ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));
-                    if (expectedSet.isEmpty()) {
-                        found = true;
-                        it.remove();
+                    if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
+                        expectedSet.remove("UID:" + event.getMetadata().getInternalId());
+                        ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));
+                        if (expectedSet.isEmpty()) {
+                            found = true;
+                            it.remove();
+                        }
+                        break;
                     }
-                    break;
                 }
+                Assert.assertTrue("field not found " + expectedSet, found);
             }
-            Assert.assertTrue("field not found " + expectedSet, found);
         }
     }
 
@@ -312,8 +316,9 @@ public abstract class ShardQueryLogicTest {
 
         String queryString = "UUID=='CAPONE' AND QUOTE!~'.*ind'";
         Set<Set<String>> expected = new HashSet<>();
-        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
 
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
     }
 
     @Test
@@ -323,8 +328,9 @@ public abstract class ShardQueryLogicTest {
 
         String queryString = "UUID=='CAPONE' AND !(QUOTE=~'.*ind')";
         Set<Set<String>> expected = new HashSet<>();
-        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
 
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
     }
 
     @Test
@@ -359,5 +365,51 @@ public abstract class ShardQueryLogicTest {
         Set<Set<String>> expected = new HashSet<>();
 
         runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesBangDataType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "!test2");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='TATTAGLIA'";
+        Set<Set<String>> expected = new HashSet<>();
+        // No results expected
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesNegateDataType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "test2,!test2");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='TATTAGLIA'";
+        Set<Set<String>> expected = new HashSet<>();
+        // Expect one result, since the negated data type results in empty set, which is treated by Datawave as all data types
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.tattagliaUID));
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesIncludeOneTypeExcludeOneType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "test2,!test");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='TATTAGLIA' || UUID=='CAPONE'";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.tattagliaUID));
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
     }
 }

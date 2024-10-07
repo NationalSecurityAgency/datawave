@@ -16,7 +16,6 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
@@ -429,22 +428,24 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      */
     @Override
     public synchronized QueryLogicTransformer getTransformer(Query settings) {
-        ResultsPage emptyList = new ResultsPage();
-        Class<? extends BaseResponse> responseClass = null;
-        List<QueryLogicTransformer> delegates = new ArrayList<>();
-        for (QueryLogic logic : getQueryLogics().values()) {
-            QueryLogicTransformer t = logic.getTransformer(settings);
-            delegates.add(t);
-            BaseResponse refResponse = t.createResponse(emptyList);
-            if (null == responseClass) {
-                responseClass = refResponse.getClass();
-            } else {
-                if (!responseClass.equals(refResponse.getClass())) {
-                    throw new RuntimeException("All query logics must use transformers that return the same object type");
+        if (this.transformer == null) {
+            ResultsPage emptyList = new ResultsPage();
+            Class<? extends BaseResponse> responseClass = null;
+            List<QueryLogicTransformer> delegates = new ArrayList<>();
+            for (QueryLogic logic : getQueryLogics().values()) {
+                QueryLogicTransformer t = logic.getTransformer(settings);
+                delegates.add(t);
+                BaseResponse refResponse = t.createResponse(emptyList);
+                if (null == responseClass) {
+                    responseClass = refResponse.getClass();
+                } else {
+                    if (!responseClass.equals(refResponse.getClass())) {
+                        throw new RuntimeException("All query logics must use transformers that return the same object type");
+                    }
                 }
             }
+            this.transformer = new CompositeQueryLogicTransformer(delegates);
         }
-        this.transformer = new CompositeQueryLogicTransformer(delegates);
         return this.transformer;
     }
 
@@ -459,8 +460,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             return Iterables.getOnlyElement(queryLogics.values()).getTransformIterator(settings);
         } else {
             // The objects put into the pageQueue have already been transformed.
-            // We will iterate over the pagequeue with the No-Op transformer
-            return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
+            // CompositeQueryLogicTransformer will iterate over the pageQueue with no change to the objects
+            return new TransformIterator(results.iterator(), getTransformer(settings));
         }
     }
 
