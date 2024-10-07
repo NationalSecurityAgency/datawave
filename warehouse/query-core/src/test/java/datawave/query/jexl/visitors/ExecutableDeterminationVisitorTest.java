@@ -45,7 +45,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     public void testNegationErrorCheck() throws ParseException, TableNotFoundException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && !(INDEXONLYFIELD == null)");
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
         HashSet<String> indexOnlyFields = new HashSet<>();
@@ -84,7 +84,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     public void testIndexOnlyEqNull() throws ParseException, TableNotFoundException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXONLYFIELD == null");
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
 
         HashSet<String> indexOnlyFields = new HashSet<>();
@@ -125,7 +125,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
 
         HashSet<String> indexOnlyFields = new HashSet<>();
@@ -164,7 +164,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -204,7 +204,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -251,7 +251,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -298,7 +298,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -345,7 +345,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -392,7 +392,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -439,7 +439,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -488,7 +488,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -571,7 +571,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -605,7 +605,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -637,7 +637,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
@@ -671,7 +671,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
         LinkedList<String> output = new LinkedList<>();
 
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
 
