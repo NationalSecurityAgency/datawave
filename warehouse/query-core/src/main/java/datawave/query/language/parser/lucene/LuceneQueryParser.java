@@ -30,7 +30,6 @@ import datawave.query.search.FieldedTerm;
 import datawave.query.search.RangeFieldedTerm;
 import datawave.query.search.Term;
 
-@Deprecated
 public class LuceneQueryParser implements QueryParser {
     private static Logger log = Logger.getLogger(LuceneQueryParser.class.getName());
     private Map<String,String> filters = new HashMap<>();

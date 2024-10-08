@@ -12,13 +12,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMultimap;
@@ -32,6 +35,8 @@ import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
@@ -41,13 +46,12 @@ import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.util.TableName;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<Class<?>,Class<?>>();
+    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -64,6 +68,7 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicates for the subset of defaultValues that will
     // be used to evaluate the equality instead of .equals(Object).
+    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> defaultPredicates = new HashMap<>();
 
     // The set of alternate values to test the setters/getters
@@ -75,6 +80,7 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicate for the subset of alternateValues that will
     // be used to evaluate the equality instead of .equals(Object).
+    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> updatedPredicates = new HashMap<>();
 
     // The set of fields that are already set via one of the other fields.
@@ -85,6 +91,29 @@ public class ShardQueryConfigurationTest {
         // The set of default values (optionally as predicates,
         // alternate values (to test the setters/getters),
         // and optional alternate predicates for testing equality.
+        defaultValues.put("checkpointable", false);
+        updatedValues.put("checkpointable", true);
+
+        defaultValues.put("auths", Sets.newHashSet());
+        updatedValues.put("auths", Sets.newHashSet("FOO", "BAR"));
+
+        defaultValues.put("queries", Collections.emptyList());
+        updatedValues.put("queries", Lists.newArrayList(new QueryImpl()));
+
+        defaultValues.put("bloom", null);
+        updatedValues.put("bloom", null);
+        alreadySet.add("bloom");
+
+        defaultValues.put("activeQueryLogName", "");
+        updatedValues.put("activeQueryLogName", "ShardQueryConfiguration");
+        alreadySet.add("activeQueryLogName");
+
+        defaultValues.put("limitTermExpansionToModel", false);
+        updatedValues.put("limitTermExpansionToModel", true);
+
+        defaultValues.put("shardDateFormat", "yyyyMMdd");
+        updatedValues.put("shardDateFormat", "yyyyMMddHHmmss");
+
         defaultValues.put("authorizations", Collections.singleton(Authorizations.EMPTY));
         updatedValues.put("authorizations", Collections.singleton(new Authorizations("FOO", "BAR")));
 
@@ -107,6 +136,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("bypassAccumulo", true);
         defaultValues.put("accumuloPassword", "");
         updatedValues.put("accumuloPassword", "secret");
+        defaultValues.put("connPoolName", null);
+        updatedValues.put("connPoolName", "default");
+        defaultValues.put("reduceResults", false);
+        updatedValues.put("reduceResults", true);
         defaultValues.put("tldQuery", false);
         updatedValues.put("tldQuery", true);
         defaultValues.put("filterOptions", Maps.newHashMap());
@@ -121,6 +154,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("allTermsIndexOnly", true);
         defaultValues.put("maxIndexScanTimeMillis", Long.MAX_VALUE);
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
+        defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
+        updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
         defaultValues.put("ignoreNonExistentFields", false);
@@ -133,6 +168,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("enforceUniqueTermsWithinExpressions", true);
         defaultValues.put("reduceQueryFields", false);
         updatedValues.put("reduceQueryFields", true);
+        defaultValues.put("reduceQueryFieldsPerShard", false);
+        updatedValues.put("reduceQueryFieldsPerShard", true);
+        defaultValues.put("rebuildDatatypeFilter", false);
+        updatedValues.put("rebuildDatatypeFilter", true);
+        defaultValues.put("rebuildDatatypeFilterPerShard", false);
+        updatedValues.put("rebuildDatatypeFilterPerShard", true);
         defaultValues.put("reduceTypeMetadata", false);
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
@@ -319,6 +360,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("shardsPerDayThreshold", 18);
         defaultValues.put("initialMaxTermThreshold", 2500);
         updatedValues.put("initialMaxTermThreshold", 2540);
+        defaultValues.put("intermediateMaxTermThreshold", 2500);
+        updatedValues.put("intermediateMaxTermThreshold", 5500);
+        defaultValues.put("indexedMaxTermThreshold", 2500);
+        updatedValues.put("indexedMaxTermThreshold", 5500);
         defaultValues.put("finalMaxTermThreshold", 2500);
         updatedValues.put("finalMaxTermThreshold", 2501);
         defaultValues.put("maxDepthThreshold", 2500);
@@ -373,6 +418,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIvaratorSources", 16);
         defaultValues.put("maxIvaratorResults", -1L);
         updatedValues.put("maxIvaratorResults", 10000L);
+        defaultValues.put("maxIvaratorTerms", -1);
+        updatedValues.put("maxIvaratorTerms", 50);
+        defaultValues.put("maxIvaratorSourceWait", 1000L * 60 * 30);
+        updatedValues.put("maxIvaratorSourceWait", 1000L * 60 * 10);
         defaultValues.put("maxEvaluationPipelines", 25);
         updatedValues.put("maxEvaluationPipelines", 24);
         defaultValues.put("maxPipelineCachedResults", 25);
@@ -432,6 +481,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfFieldSeek", 14);
         defaultValues.put("tfNextSeek", -1);
         updatedValues.put("tfNextSeek", 15);
+        defaultValues.put("seekingEventAggregation", false);
+        updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
         defaultValues.put("lazySetMechanismEnabled", false);
@@ -442,12 +493,14 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfAggregationThresholdMs", 10000);
         defaultValues.put("pruneQueryOptions", false);
         updatedValues.put("pruneQueryOptions", true);
+        defaultValues.put("reduceIngestTypes", false);
+        updatedValues.put("reduceIngestTypes", true);
+        defaultValues.put("reduceIngestTypesPerShard", false);
+        updatedValues.put("reduceIngestTypesPerShard", true);
         defaultValues.put("pruneQueryByIngestTypes", false);
         updatedValues.put("pruneQueryByIngestTypes", true);
         defaultValues.put("numIndexLookupThreads", 8);
         updatedValues.put("numIndexLookupThreads", 18);
-        defaultValues.put("expansionLimitedToModelContents", false);
-        updatedValues.put("expansionLimitedToModelContents", true);
         defaultValues.put("accrueStats", false);
         updatedValues.put("accrueStats", true);
         defaultValues.put("dataTypes", HashMultimap.create());
@@ -456,15 +509,9 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("enricherClassNames", null);
         updatedValues.put("enricherClassNames", Lists.newArrayList("proj.datawave.query.enricher.someEnricherClass"));
-        defaultValues.put("enricherClassNamesAsString", null);
-        updatedValues.put("enricherClassNamesAsString", "proj.datawave.query.enricher.someEnricherClass");
-        alreadySet.add("enricherClassNamesAsString");
 
-        defaultValues.put("filterClassNames", null);
+        defaultValues.put("filterClassNames", Collections.emptyList());
         updatedValues.put("filterClassNames", Lists.newArrayList("proj.datawave.query.filter.someFilterClass"));
-        defaultValues.put("filterClassNamesAsString", null);
-        updatedValues.put("filterClassNamesAsString", "proj.datawave.query.filter.someFilterClass");
-        alreadySet.add("filterClassNamesAsString");
 
         defaultValues.put("nonEventKeyPrefixes", Sets.newHashSet("d", "tf"));
         updatedValues.put("nonEventKeyPrefixes", Sets.newHashSet("d", "tf", "fi"));
@@ -474,9 +521,6 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("unevaluatedFields", Sets.newHashSet());
         updatedValues.put("unevaluatedFields", Sets.newHashSet("FIELD_U", "FIELD_V"));
-        defaultValues.put("unevaluatedFieldsAsString", "");
-        updatedValues.put("unevaluatedFieldsAsString", "FIELD_U,FIELD_V");
-        alreadySet.add("unevaluatedFieldsAsString");
 
         defaultValues.put("datatypeFilter", Sets.newHashSet());
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
@@ -489,6 +533,12 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("projectFieldsAsString", "");
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
+
+        defaultValues.put("renameFields", Sets.newHashSet());
+        updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
+
+        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
+        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
 
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
@@ -530,6 +580,24 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("groupFields", new GroupFields());
         updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
+
+        defaultValues.put("useFieldCounts", false);
+        updatedValues.put("useFieldCounts", true);
+        defaultValues.put("useTermCounts", false);
+        updatedValues.put("useTermCounts", true);
+        defaultValues.put("sortQueryBeforeGlobalIndex", false);
+        updatedValues.put("sortQueryBeforeGlobalIndex", true);
+        defaultValues.put("sortQueryByCounts", false);
+        updatedValues.put("sortQueryByCounts", true);
+        defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
+        updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
+        defaultValues.put("tableHints", Collections.emptyMap());
+        updatedValues.put("tableHints", Collections.emptyMap());
+
+        defaultValues.put("useQueryTreeScanHintRules", false);
+        updatedValues.put("useQueryTreeScanHintRules", true);
+        defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
+        updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
     }
 
     private Query createQuery(String query) {
@@ -555,7 +623,7 @@ public class ShardQueryConfigurationTest {
     }
 
     private void testValues(ShardQueryConfiguration config, Map<String,Object> values, Map<String,Predicate> predicates) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonMapper.builder().enable(MapperFeature.PROPAGATE_TRANSIENT_MARKER).build();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
         Set<String> fieldsFound = new HashSet<>();
         for (Iterator<String> it = root.fieldNames(); it.hasNext();) {

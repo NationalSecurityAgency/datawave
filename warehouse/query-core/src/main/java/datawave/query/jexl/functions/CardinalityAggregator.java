@@ -24,7 +24,7 @@ public class CardinalityAggregator extends IdentityAggregator {
 
     private static final Logger log = Logger.getLogger(CardinalityAggregator.class);
     private static final Text EMPTY_TEXT = new Text();
-    private boolean setDocIds;
+    private final boolean setDocIds;
 
     public CardinalityAggregator(Set<String> fieldsToKeep, boolean setDocIds) {
         super(fieldsToKeep);

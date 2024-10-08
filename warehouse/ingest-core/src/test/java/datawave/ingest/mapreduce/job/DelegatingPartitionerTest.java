@@ -336,5 +336,15 @@ public class DelegatingPartitionerTest {
         public int getPartition(BulkIngestKey bulkIngestKey, Value value, int numPartitions) {
             return 4; // deliberate
         }
+
+        @Override
+        public boolean needSplits() {
+            return false;
+        }
+
+        @Override
+        public boolean needSplitLocations() {
+            return false;
+        }
     }
 }

@@ -7,7 +7,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
-import datawave.webservice.query.QueryPersistence;
+import datawave.microservice.query.QueryPersistence;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.QueryImplListResponse;

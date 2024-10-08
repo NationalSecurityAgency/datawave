@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
@@ -56,7 +56,7 @@ public class DocumentKeysFunction {
         for (String key : functions.keySet()) {
             Collection<Function> coll = functions.get(key);
             for (Function f : coll) {
-                parent = f.args().get(0).jjtGetParent();
+                parent = f.args().get(0).jjtGetParent().jjtGetParent();
 
                 if (!(parent instanceof ASTFunctionNode)) {
                     throw new IllegalArgumentException("parent was not a function node");

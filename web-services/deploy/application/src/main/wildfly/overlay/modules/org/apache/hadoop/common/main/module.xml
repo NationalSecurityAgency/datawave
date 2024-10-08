@@ -2,7 +2,8 @@
 <module xmlns="urn:jboss:module:1.3" name="org.apache.hadoop.common">
     <resources>
         <resource-root path="hadoop-auth-${version.hadoop}.jar"/>
-        <resource-root path="hadoop-common-${version.hadoop}.jar"/>
+        <resource-root path="hadoop-client-api-${version.hadoop}.jar"/>
+        <resource-root path="hadoop-client-runtime-${version.hadoop}.jar"/>
         <resource-root path="hadoop-shaded-guava-${version.hadoop-shaded}.jar"/>
         <resource-root path="hadoop-shaded-protobuf_3_7-${version.hadoop-shaded}.jar"/>
         <resource-root path="protobuf-java-${version.protobuf}.jar"/>

@@ -1,0 +1,7 @@
+spring:
+  main:
+    web-application-type: NONE
+
+logging:
+  level:
+    root: FATAL

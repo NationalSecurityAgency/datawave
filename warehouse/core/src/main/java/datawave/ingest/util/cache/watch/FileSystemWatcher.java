@@ -11,7 +11,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * File System Watch
  */
 public abstract class FileSystemWatcher<V> extends Reloadable<V> {
 
@@ -34,9 +34,12 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
 
     /**
      * @param filePath
-     * @return
+     *            file path
+     * @return checksum
      * @throws NoSuchAlgorithmException
+     *             if the algorithm doesn't excist
      * @throws IOException
+     *             when an IO error occurs
      */
     private byte[] checksumFile(Path filePath) throws NoSuchAlgorithmException, IOException {
 

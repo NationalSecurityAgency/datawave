@@ -3,7 +3,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="http://enunciate.webcohesion.com/schemas/enunciate-2.9.1.xsd">
     <api-classes>
-      <exclude pattern="datawave.webservice.atom.AtomServiceBean"/>
+        <include pattern="datawave.**" />
+        <exclude pattern="datawave.webservice.atom.AtomServiceBean" />
     </api-classes>
     <modules>
         <docs includeApplicationPath="true" apiRelativePath="/" />

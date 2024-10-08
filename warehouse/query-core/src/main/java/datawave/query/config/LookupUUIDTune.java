@@ -10,6 +10,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -17,8 +19,6 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
 
 public class LookupUUIDTune implements Profile {
 
@@ -46,6 +46,7 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceQuery = false;
     private boolean enforceUniqueTermsWithinExpressions = false;
     private boolean reduceQueryFields = false;
+    private boolean seekingEventAggregation;
     protected List<NodeTransformRule> transforms = null;
     protected Map<String,QueryParser> querySyntaxParsers = null;
 
@@ -64,6 +65,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setFiNextSeek(getFiNextSeek());
             rsq.setEventFieldSeek(getEventFieldSeek());
             rsq.setEventNextSeek(getEventNextSeek());
+            rsq.setSeekingEventAggregation(isSeekingEventAggregation());
 
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -136,6 +138,7 @@ public class LookupUUIDTune implements Profile {
             rsqc.setFiNextSeek(getFiNextSeek());
             rsqc.setEventFieldSeek(getEventFieldSeek());
             rsqc.setEventNextSeek(getEventNextSeek());
+            rsqc.setSeekingEventAggregation(isSeekingEventAggregation());
 
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
@@ -241,10 +244,12 @@ public class LookupUUIDTune implements Profile {
         return queryIteratorClass;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getMaxShardsPerDayThreshold() {
         return maxShardsPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
         this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
     }
@@ -351,5 +356,13 @@ public class LookupUUIDTune implements Profile {
 
     public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
         this.querySyntaxParsers = querySyntaxParsers;
+    }
+
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        this.seekingEventAggregation = seekingEventAggregation;
     }
 }

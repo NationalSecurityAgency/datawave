@@ -13,16 +13,22 @@ public final class CachedresultMessages {
         // required string visibility = 1;
         /**
          * <code>required string visibility = 1;</code>
+         *
+         * @return if it has visibility
          */
         boolean hasVisibility();
 
         /**
          * <code>required string visibility = 1;</code>
+         *
+         * @return the visibility
          */
         java.lang.String getVisibility();
 
         /**
          * <code>required string visibility = 1;</code>
+         *
+         * @return the visibility as a byte string
          */
         com.google.protobuf.ByteString getVisibilityBytes();
     }
@@ -102,6 +108,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string visibility = 1;</code>
+         *
+         * @return if it has visibility
          */
         public boolean hasVisibility() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -109,6 +117,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string visibility = 1;</code>
+         *
+         * @return the visibility
          */
         public java.lang.String getVisibility() {
             java.lang.Object ref = visibility_;
@@ -126,6 +136,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string visibility = 1;</code>
+         *
+         * @return the visibility as a byte string
          */
         public com.google.protobuf.ByteString getVisibilityBytes() {
             java.lang.Object ref = visibility_;
@@ -347,6 +359,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string visibility = 1;</code>
+             *
+             * @return if it has visibility
              */
             public boolean hasVisibility() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -354,6 +368,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string visibility = 1;</code>
+             *
+             * @return the visibility
              */
             public java.lang.String getVisibility() {
                 java.lang.Object ref = visibility_;
@@ -368,6 +384,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string visibility = 1;</code>
+             *
+             * @return the visibility byte string
              */
             public com.google.protobuf.ByteString getVisibilityBytes() {
                 java.lang.Object ref = visibility_;
@@ -382,6 +400,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string visibility = 1;</code>
+             *
+             * @param value
+             *            the new visibility value
+             *
+             * @return builder to set visibility to the provided value
              */
             public Builder setVisibility(java.lang.String value) {
                 if (value == null) {
@@ -395,6 +418,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string visibility = 1;</code>
+             *
+             * @return builder to clear visibility
              */
             public Builder clearVisibility() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -405,6 +430,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string visibility = 1;</code>
+             *
+             * @param value
+             *            visibility byte string
+             *
+             * @return builder to set the visibility bytes
              */
             public Builder setVisibilityBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -432,16 +462,22 @@ public final class CachedresultMessages {
         // required string name = 1;
         /**
          * <code>required string name = 1;</code>
+         *
+         * @return if it has a name
          */
         boolean hasName();
 
         /**
          * <code>required string name = 1;</code>
+         *
+         * @return the name
          */
         java.lang.String getName();
 
         /**
          * <code>required string name = 1;</code>
+         *
+         * @return the name as a byte string
          */
         com.google.protobuf.ByteString getNameBytes();
     }
@@ -521,6 +557,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string name = 1;</code>
+         *
+         * @return if it has a name
          */
         public boolean hasName() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -528,6 +566,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string name = 1;</code>
+         *
+         * @return the name
          */
         public java.lang.String getName() {
             java.lang.Object ref = name_;
@@ -545,6 +585,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string name = 1;</code>
+         *
+         * @return the name as a byte string
          */
         public com.google.protobuf.ByteString getNameBytes() {
             java.lang.Object ref = name_;
@@ -765,6 +807,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string name = 1;</code>
+             *
+             * @return if it has a name
              */
             public boolean hasName() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -772,6 +816,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string name = 1;</code>
+             *
+             * @return the name
              */
             public java.lang.String getName() {
                 java.lang.Object ref = name_;
@@ -786,6 +832,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string name = 1;</code>
+             *
+             * @return the name as a byte string
              */
             public com.google.protobuf.ByteString getNameBytes() {
                 java.lang.Object ref = name_;
@@ -800,6 +848,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string name = 1;</code>
+             *
+             * @param value
+             *            the new name value
+             *
+             * @return builder to set the name
              */
             public Builder setName(java.lang.String value) {
                 if (value == null) {
@@ -813,6 +866,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string name = 1;</code>
+             *
+             * @return builder to clear the name
              */
             public Builder clearName() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -823,6 +878,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string name = 1;</code>
+             *
+             * @param value
+             *            the name byte string
+             *
+             * @return builder to set the name to the provided byte string
              */
             public Builder setNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -850,48 +910,73 @@ public final class CachedresultMessages {
         // required string view = 1;
         /**
          * <code>required string view = 1;</code>
+         *
+         * @return if it has a view
          */
         boolean hasView();
 
         /**
          * <code>required string view = 1;</code>
+         *
+         * @return the view
          */
         java.lang.String getView();
 
         /**
          * <code>required string view = 1;</code>
+         *
+         * @return the view as a byte string
+         *
          */
         com.google.protobuf.ByteString getViewBytes();
 
         // repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @return list of attributes
          */
         java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList();
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the attribute at the provided index
          */
         datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index);
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @return the number of attributes
          */
         int getAttributesCount();
 
         // repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @return the visibility list
          */
         java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList();
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the visibility at the provided index
          */
         datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index);
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @return the number of visibility
          */
         int getVisibilitiesCount();
     }
@@ -995,6 +1080,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string view = 1;</code>
+         *
+         * @return if there is a view
          */
         public boolean hasView() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1002,6 +1089,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string view = 1;</code>
+         *
+         * @return the view
          */
         public java.lang.String getView() {
             java.lang.Object ref = view_;
@@ -1019,6 +1108,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>required string view = 1;</code>
+         *
+         * @return the view as a byte string
          */
         public com.google.protobuf.ByteString getViewBytes() {
             java.lang.Object ref = view_;
@@ -1037,6 +1128,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @return the attributes list
          */
         public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList() {
             return attributes_;
@@ -1044,6 +1137,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @return list of attributes
          */
         public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList() {
             return attributes_;
@@ -1051,6 +1146,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @return the number of attributes in the list
          */
         public int getAttributesCount() {
             return attributes_.size();
@@ -1058,6 +1155,11 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the attribute at the provided index
          */
         public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index) {
             return attributes_.get(index);
@@ -1065,6 +1167,11 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the attribute at the provided index
          */
         public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index) {
             return attributes_.get(index);
@@ -1076,6 +1183,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @return the visibility list
          */
         public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList() {
             return visibilities_;
@@ -1083,6 +1192,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @return the visibility list
          */
         public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList() {
             return visibilities_;
@@ -1090,6 +1201,8 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @return the number of visibilities in the list
          */
         public int getVisibilitiesCount() {
             return visibilities_.size();
@@ -1097,6 +1210,11 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the visibility at the provided index
          */
         public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index) {
             return visibilities_.get(index);
@@ -1104,6 +1222,11 @@ public final class CachedresultMessages {
 
         /**
          * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return visibility at the provided index
          */
         public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index) {
             return visibilities_.get(index);
@@ -1390,6 +1513,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string view = 1;</code>
+             *
+             * @return if it has a view
              */
             public boolean hasView() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1397,6 +1522,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string view = 1;</code>
+             *
+             * @return the view
              */
             public java.lang.String getView() {
                 java.lang.Object ref = view_;
@@ -1411,6 +1538,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string view = 1;</code>
+             *
+             * @return the view as a byte string
              */
             public com.google.protobuf.ByteString getViewBytes() {
                 java.lang.Object ref = view_;
@@ -1425,6 +1554,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string view = 1;</code>
+             *
+             * @param value
+             *            the new view
+             *
+             * @return builder to set the view to the provided value
              */
             public Builder setView(java.lang.String value) {
                 if (value == null) {
@@ -1438,6 +1572,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string view = 1;</code>
+             *
+             * @return builder to clear the view
              */
             public Builder clearView() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -1448,6 +1584,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>required string view = 1;</code>
+             *
+             * @param value
+             *            the new view value
+             *
+             * @return builder to set view bytes to provided value
              */
             public Builder setViewBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1471,6 +1612,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @return attributes list
              */
             public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList() {
                 return java.util.Collections.unmodifiableList(attributes_);
@@ -1478,6 +1621,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @return the number of attributes in the list
              */
             public int getAttributesCount() {
                 return attributes_.size();
@@ -1485,6 +1630,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the attribute at the provided index
              */
             public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index) {
                 return attributes_.get(index);
@@ -1492,6 +1642,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new attribute
+             *
+             * @return builder to set the attribute at the provided index to the provided value
              */
             public Builder setAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
                 if (value == null) {
@@ -1505,6 +1662,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            the new attribute builder
+             *
+             * @return builder to set the attribute at the provided index to the provided value
              */
             public Builder setAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
                 ensureAttributesIsMutable();
@@ -1515,6 +1679,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param value
+             *            the new attribute
+             *
+             * @return builder to add the provided attribute
              */
             public Builder addAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
                 if (value == null) {
@@ -1528,6 +1697,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the attribute to add
+             *
+             * @return builder to add the provided attribute to the provided index
              */
             public Builder addAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
                 if (value == null) {
@@ -1541,6 +1717,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param builderForValue
+             *            builder to create attribute
+             *
+             * @return builder to add attribute provided
              */
             public Builder addAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
                 ensureAttributesIsMutable();
@@ -1551,6 +1732,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            builder to create attribute
+             *
+             * @return builder to add attribute at provided index
              */
             public Builder addAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
                 ensureAttributesIsMutable();
@@ -1561,6 +1749,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param values
+             *            iterable of values to add
+             *
+             * @return builder to add iterable of attributes
              */
             public Builder addAllAttributes(java.lang.Iterable<? extends datawave.webservice.results.cached.result.CachedresultMessages.Attribute> values) {
                 ensureAttributesIsMutable();
@@ -1571,6 +1764,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @return builder to clear attributes
              */
             public Builder clearAttributes() {
                 attributes_ = java.util.Collections.emptyList();
@@ -1581,6 +1776,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove attributes
              */
             public Builder removeAttributes(int index) {
                 ensureAttributesIsMutable();
@@ -1602,6 +1802,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @return list of visibilities
              */
             public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList() {
                 return java.util.Collections.unmodifiableList(visibilities_);
@@ -1609,6 +1811,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @return the number of visibilities in the list
              */
             public int getVisibilitiesCount() {
                 return visibilities_.size();
@@ -1616,6 +1820,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the visibility at the provided index
              */
             public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index) {
                 return visibilities_.get(index);
@@ -1623,6 +1832,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the visibility to add
+             *
+             * @return builder to set the visibility at the provided index to the provided value
              */
             public Builder setVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
                 if (value == null) {
@@ -1636,6 +1852,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            visibility builder
+             *
+             * @return builder to set the visibility at the provided index to the provided value
              */
             public Builder setVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
                 ensureVisibilitiesIsMutable();
@@ -1646,6 +1869,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param value
+             *            visibility to add
+             *
+             * @return builder to add visibility
              */
             public Builder addVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
                 if (value == null) {
@@ -1659,6 +1887,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the visibility to add
+             *
+             * @return builder to add visibility
              */
             public Builder addVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
                 if (value == null) {
@@ -1672,6 +1907,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param builderForValue
+             *            visibility builder
+             *
+             * @return builder to add visibility
              */
             public Builder addVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
                 ensureVisibilitiesIsMutable();
@@ -1682,6 +1922,13 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            visibility builder
+             *
+             * @return builder to add visibility at provided index
              */
             public Builder addVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
                 ensureVisibilitiesIsMutable();
@@ -1692,6 +1939,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param values
+             *            iterable of visilibities
+             *
+             * @return builder to add all visibilities provided
              */
             public Builder addAllVisibilities(
                             java.lang.Iterable<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> values) {
@@ -1703,6 +1955,8 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @return builder to clear visibilities
              */
             public Builder clearVisibilities() {
                 visibilities_ = java.util.Collections.emptyList();
@@ -1713,6 +1967,11 @@ public final class CachedresultMessages {
 
             /**
              * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove the visibility at the proivided index
              */
             public Builder removeVisibilities(int index) {
                 ensureVisibilitiesIsMutable();

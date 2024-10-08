@@ -1,6 +1,6 @@
 package datawave.query.tld;
 
-import static datawave.query.tld.TLD.parsePointerFromFI;
+import static datawave.query.tld.TLD.parseDatatypeUidFromFI;
 import static datawave.query.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
@@ -24,8 +24,8 @@ import datawave.query.jexl.functions.SeekingAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 
 public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldIndexAggregator {
-    private Set<String> fieldsToAggregate;
-    private EventDataQueryFilter attrFilter;
+    private final Set<String> fieldsToAggregate;
+    private final EventDataQueryFilter attrFilter;
 
     public TLDFieldIndexAggregator(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter) {
         this(fieldsToAggregate, attrFilter, -1);
@@ -55,7 +55,7 @@ public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldI
                             && (attrFilter == null || attrFilter.keep(key)));
             d.put(field, attr);
 
-            ByteSequence thisId = parsePointerFromFI(key.getColumnQualifierData());
+            ByteSequence thisId = parseDatatypeUidFromFI(key.getColumnQualifierData());
             if (docId == null || !docId.equals(thisId)) {
                 docId = thisId;
                 Key docKey = new Key(key.getRow(), new Text(docId.toArray()), new Text(), ColumnVisibilityCache.get(key.getColumnVisibilityData()),

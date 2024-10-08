@@ -13,48 +13,75 @@ public final class ResponseMessages {
         // required uint64 operation_time_ms = 1 [default = 0];
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return if it has operation time in ms
          */
         boolean hasOperationTimeMs();
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return the operation time in ms
          */
         long getOperationTimeMs();
 
         // repeated string messages = 2;
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return list of messages
          */
         java.util.List<java.lang.String> getMessagesList();
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the number of messages in the list
          */
         int getMessagesCount();
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message at the provided index
          */
         java.lang.String getMessages(int index);
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message byte string at the provided index
          */
         com.google.protobuf.ByteString getMessagesBytes(int index);
 
         // repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return list of exceptions
          */
         java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList();
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the provided index
          */
         datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the number of exceptions
          */
         int getExceptionsCount();
     }
@@ -157,6 +184,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return if it has an operation time
          */
         public boolean hasOperationTimeMs() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -164,6 +193,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return the operation time in ms
          */
         public long getOperationTimeMs() {
             return operationTimeMs_;
@@ -175,6 +206,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the list of messages
          */
         public java.util.List<java.lang.String> getMessagesList() {
             return messages_;
@@ -182,6 +215,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the number of messages
          */
         public int getMessagesCount() {
             return messages_.size();
@@ -189,6 +224,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message at the index provided
          */
         public java.lang.String getMessages(int index) {
             return messages_.get(index);
@@ -196,6 +236,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return message byte string at the provided index
          */
         public com.google.protobuf.ByteString getMessagesBytes(int index) {
             return messages_.getByteString(index);
@@ -207,6 +252,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return list of exceptions
          */
         public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
             return exceptions_;
@@ -214,6 +261,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return list of exceptions
          */
         public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
             return exceptions_;
@@ -221,6 +270,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the number of exceptions in the list
          */
         public int getExceptionsCount() {
             return exceptions_.size();
@@ -228,6 +279,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the index
          */
         public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
             return exceptions_.get(index);
@@ -235,6 +291,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the index
          */
         public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
             return exceptions_.get(index);
@@ -497,6 +558,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return if it has operation time in ms
              */
             public boolean hasOperationTimeMs() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -504,6 +567,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return operation time in ms
              */
             public long getOperationTimeMs() {
                 return operationTimeMs_;
@@ -511,6 +576,11 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @param value
+             *            the new operation time in ms
+             *
+             * @return builder to set operation time in ms
              */
             public Builder setOperationTimeMs(long value) {
                 bitField0_ |= 0x00000001;
@@ -521,6 +591,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return builder to clear operation time
              */
             public Builder clearOperationTimeMs() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -541,6 +613,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return the message list
              */
             public java.util.List<java.lang.String> getMessagesList() {
                 return java.util.Collections.unmodifiableList(messages_);
@@ -548,6 +622,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return the number of messages in the list
              */
             public int getMessagesCount() {
                 return messages_.size();
@@ -555,6 +631,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the message at the provided index
              */
             public java.lang.String getMessages(int index) {
                 return messages_.get(index);
@@ -562,6 +643,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the message byte string at the provided index
              */
             public com.google.protobuf.ByteString getMessagesBytes(int index) {
                 return messages_.getByteString(index);
@@ -569,6 +655,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new messagew
+             *
+             * @return builder to set the message value at the provided index
              */
             public Builder setMessages(int index, java.lang.String value) {
                 if (value == null) {
@@ -582,6 +675,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            a message to add to the lsit
+             *
+             * @return builder to add the provided message
              */
             public Builder addMessages(java.lang.String value) {
                 if (value == null) {
@@ -595,6 +693,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            iterable of messages to add
+             *
+             * @return builder to add all messages provided
              */
             public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
                 ensureMessagesIsMutable();
@@ -605,6 +708,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return builder to clear the message list
              */
             public Builder clearMessages() {
                 messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -615,6 +720,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            new message byte string
+             *
+             * @return builder to add the provided message as byte string
              */
             public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -638,6 +748,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return list of exceptions
              */
             public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
                 return java.util.Collections.unmodifiableList(exceptions_);
@@ -645,6 +757,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return the number of exceptions in the list
              */
             public int getExceptionsCount() {
                 return exceptions_.size();
@@ -652,6 +766,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the exception at the provided index
              */
             public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
                 return exceptions_.get(index);
@@ -659,6 +778,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new exception type
+             *
+             * @return builder to set exception at provided index to the value
              */
             public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -672,6 +798,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            query exception type builder
+             *
+             * @return builder to set the exception at the index to the provided value
              */
             public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -682,6 +815,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param value
+             *            the exception type to add
+             *
+             * @return builder to add the provided value
              */
             public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -695,6 +833,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the exception to add
+             *
+             * @return builder to add the provided exception to the provided index
              */
             public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -708,6 +853,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param builderForValue
+             *            the builder with new value
+             *
+             * @return builder to add provided exception
              */
             public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -718,6 +868,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            the builder to add a value
+             *
+             * @return builder to add exception at provided index
              */
             public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -728,6 +885,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param values
+             *            iterable of values to add to exceptions list
+             *
+             * @return builder to add provided values
              */
             public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
                 ensureExceptionsIsMutable();
@@ -738,6 +900,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return builder to clear exceptions
              */
             public Builder clearExceptions() {
                 exceptions_ = java.util.Collections.emptyList();
@@ -748,6 +912,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove exceptions at the provided index
              */
             public Builder removeExceptions(int index) {
                 ensureExceptionsIsMutable();
@@ -772,75 +941,115 @@ public final class ResponseMessages {
         // required uint64 operation_time_ms = 1 [default = 0];
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return if it has operation time
          */
         boolean hasOperationTimeMs();
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return the operation time in ms
          */
         long getOperationTimeMs();
 
         // repeated string messages = 2;
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the messages list
          */
         java.util.List<java.lang.String> getMessagesList();
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the number of messages in the list
          */
         int getMessagesCount();
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message at the provided index
          */
         java.lang.String getMessages(int index);
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message byte string at the provided index
          */
         com.google.protobuf.ByteString getMessagesBytes(int index);
 
         // repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return list of exceptions
          */
         java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList();
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the provided index
          */
         datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the number of exceptions in the list
          */
         int getExceptionsCount();
 
         // repeated .datawave.webservice.query.QueryImpl query = 4;
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @return the query list
          */
         java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList();
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the query message at the provided index
          */
         datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index);
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @return the number of queries in the list
          */
         int getQueryCount();
 
         // optional uint32 numResults = 5 [default = 0];
         /**
          * <code>optional uint32 numResults = 5 [default = 0];</code>
+         *
+         * @return if it has a number of results
          */
         boolean hasNumResults();
 
         /**
          * <code>optional uint32 numResults = 5 [default = 0];</code>
+         *
+         * @return the number of results
          */
         int getNumResults();
     }
@@ -959,6 +1168,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return if it has operation time
          */
         public boolean hasOperationTimeMs() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -966,6 +1177,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return the operation time in ms
          */
         public long getOperationTimeMs() {
             return operationTimeMs_;
@@ -977,6 +1190,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the messages list
          */
         public java.util.List<java.lang.String> getMessagesList() {
             return messages_;
@@ -984,6 +1199,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the number of messages in the list
          */
         public int getMessagesCount() {
             return messages_.size();
@@ -991,6 +1208,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message at the provided index
          */
         public java.lang.String getMessages(int index) {
             return messages_.get(index);
@@ -998,6 +1220,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message byte string at the provided index
          */
         public com.google.protobuf.ByteString getMessagesBytes(int index) {
             return messages_.getByteString(index);
@@ -1009,6 +1236,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the exception list
          */
         public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
             return exceptions_;
@@ -1016,6 +1245,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the exception list
          */
         public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
             return exceptions_;
@@ -1023,6 +1254,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the number of exceptions in the list
          */
         public int getExceptionsCount() {
             return exceptions_.size();
@@ -1030,6 +1263,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the provided index
          */
         public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
             return exceptions_.get(index);
@@ -1037,6 +1275,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return exception at the provided index
          */
         public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
             return exceptions_.get(index);
@@ -1048,6 +1291,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @return the query list
          */
         public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList() {
             return query_;
@@ -1055,6 +1300,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @return the query list
          */
         public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> getQueryOrBuilderList() {
             return query_;
@@ -1062,6 +1309,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @return the number of queries in the list
          */
         public int getQueryCount() {
             return query_.size();
@@ -1069,6 +1318,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the query at the provided index
          */
         public datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index) {
             return query_.get(index);
@@ -1076,6 +1330,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the query at the provided index
          */
         public datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(int index) {
             return query_.get(index);
@@ -1087,6 +1346,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional uint32 numResults = 5 [default = 0];</code>
+         *
+         * @return if there are a number of results
          */
         public boolean hasNumResults() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -1094,6 +1355,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional uint32 numResults = 5 [default = 0];</code>
+         *
+         * @return the number of results
          */
         public int getNumResults() {
             return numResults_;
@@ -1410,6 +1673,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return if it has operation time
              */
             public boolean hasOperationTimeMs() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1417,6 +1682,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return the operation time in ms
              */
             public long getOperationTimeMs() {
                 return operationTimeMs_;
@@ -1424,6 +1691,11 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @param value
+             *            new operation time in ms
+             *
+             * @return builder to set operation time to provided value
              */
             public Builder setOperationTimeMs(long value) {
                 bitField0_ |= 0x00000001;
@@ -1434,6 +1706,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return builder to clear operation time
              */
             public Builder clearOperationTimeMs() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -1454,6 +1728,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return the messages list
              */
             public java.util.List<java.lang.String> getMessagesList() {
                 return java.util.Collections.unmodifiableList(messages_);
@@ -1461,6 +1737,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return the number of messages in the list
              */
             public int getMessagesCount() {
                 return messages_.size();
@@ -1468,6 +1746,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the message at the provided index
              */
             public java.lang.String getMessages(int index) {
                 return messages_.get(index);
@@ -1475,6 +1758,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the message byte string at the provided index
              */
             public com.google.protobuf.ByteString getMessagesBytes(int index) {
                 return messages_.getByteString(index);
@@ -1482,6 +1770,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new message
+             *
+             * @return builder to set the message at the provided index to the provided value
              */
             public Builder setMessages(int index, java.lang.String value) {
                 if (value == null) {
@@ -1495,6 +1790,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            the new message
+             *
+             * @return builder to add the message
              */
             public Builder addMessages(java.lang.String value) {
                 if (value == null) {
@@ -1508,6 +1808,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            iterable of messages to add to the list
+             *
+             * @return builder to add all messages
              */
             public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
                 ensureMessagesIsMutable();
@@ -1518,6 +1823,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return builder to clear messages
              */
             public Builder clearMessages() {
                 messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -1528,6 +1835,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            message byte string
+             *
+             * @return builder to add message byte string
              */
             public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1551,6 +1863,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return list of exceptions
              */
             public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
                 return java.util.Collections.unmodifiableList(exceptions_);
@@ -1558,6 +1872,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return the size of the exceptions list
              */
             public int getExceptionsCount() {
                 return exceptions_.size();
@@ -1565,6 +1881,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the exception at the provided index
              */
             public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
                 return exceptions_.get(index);
@@ -1572,6 +1893,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the exception to add
+             *
+             * @return builder to set the exception at the provided index
              */
             public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -1585,6 +1913,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            builder with the value for the exception to add
+             *
+             * @return builder to set exception to provided builder
              */
             public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -1595,6 +1930,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param value
+             *            exception to add
+             *
+             * @return builder to add exceptions provided
              */
             public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -1608,6 +1948,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the exception to add
+             *
+             * @return builder to add exception to provided index
              */
             public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -1621,6 +1968,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param builderForValue
+             *            builder for the exception
+             *
+             * @return builder to add exception provided
              */
             public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -1631,6 +1983,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            builder to create exception
+             *
+             * @return builder to add exception from builder to provided index
              */
             public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -1641,6 +2000,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param values
+             *            iterable of exceptions to add
+             *
+             * @return builder to add provided exceptions
              */
             public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
                 ensureExceptionsIsMutable();
@@ -1651,6 +2015,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return builder to clear exceptions
              */
             public Builder clearExceptions() {
                 exceptions_ = java.util.Collections.emptyList();
@@ -1661,6 +2027,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove the exception at the provided index
              */
             public Builder removeExceptions(int index) {
                 ensureExceptionsIsMutable();
@@ -1681,6 +2052,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @return the query list
              */
             public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList() {
                 return java.util.Collections.unmodifiableList(query_);
@@ -1688,6 +2061,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @return the number of queries in the list
              */
             public int getQueryCount() {
                 return query_.size();
@@ -1695,6 +2070,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return return the query at the provided index
              */
             public datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index) {
                 return query_.get(index);
@@ -1702,6 +2082,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the query to set
+             *
+             * @return builder to set the query at the provided index to the provided value
              */
             public Builder setQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl value) {
                 if (value == null) {
@@ -1715,6 +2102,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            the builder for the value
+             *
+             * @return builder to set query at the provided index
              */
             public Builder setQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
                 ensureQueryIsMutable();
@@ -1725,6 +2119,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param value
+             *            the query to add
+             *
+             * @return builder to add the query value
              */
             public Builder addQuery(datawave.webservice.query.QueryMessages.QueryImpl value) {
                 if (value == null) {
@@ -1738,6 +2137,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the query to add
+             *
+             * @return builder to add query to provided index
              */
             public Builder addQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl value) {
                 if (value == null) {
@@ -1751,6 +2157,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param builderForValue
+             *            builder with the query to add
+             *
+             * @return builder to add query
              */
             public Builder addQuery(datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
                 ensureQueryIsMutable();
@@ -1761,6 +2172,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            query to add
+             *
+             * @return builder to add query to provided index
              */
             public Builder addQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
                 ensureQueryIsMutable();
@@ -1771,6 +2189,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param values
+             *            iterable of queries to add
+             *
+             * @return builder to add all provided queries
              */
             public Builder addAllQuery(java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl> values) {
                 ensureQueryIsMutable();
@@ -1781,6 +2204,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @return builder to clear the query list
              */
             public Builder clearQuery() {
                 query_ = java.util.Collections.emptyList();
@@ -1791,6 +2216,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove the query at the provided index
              */
             public Builder removeQuery(int index) {
                 ensureQueryIsMutable();
@@ -1804,6 +2234,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional uint32 numResults = 5 [default = 0];</code>
+             *
+             * @return if it has a number of results
              */
             public boolean hasNumResults() {
                 return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -1811,6 +2243,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional uint32 numResults = 5 [default = 0];</code>
+             *
+             * @return the number of results
              */
             public int getNumResults() {
                 return numResults_;
@@ -1818,6 +2252,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional uint32 numResults = 5 [default = 0];</code>
+             *
+             * @param value
+             *            new number of results
+             *
+             * @return builder to set the number of results
              */
             public Builder setNumResults(int value) {
                 bitField0_ |= 0x00000010;
@@ -1828,6 +2267,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional uint32 numResults = 5 [default = 0];</code>
+             *
+             * @return builder to clear the number of results
              */
             public Builder clearNumResults() {
                 bitField0_ = (bitField0_ & ~0x00000010);
@@ -1852,157 +2293,225 @@ public final class ResponseMessages {
         // required uint64 operation_time_ms = 1 [default = 0];
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return if it has operation time
          */
         boolean hasOperationTimeMs();
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return the operation time in ms
          */
         long getOperationTimeMs();
 
         // repeated string messages = 2;
+
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return list of messages
          */
         java.util.List<java.lang.String> getMessagesList();
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the number of messages
          */
         int getMessagesCount();
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message at the provided index
          */
         java.lang.String getMessages(int index);
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the byte string for the message at the provided index
          */
         com.google.protobuf.ByteString getMessagesBytes(int index);
 
         // repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the list of exceptions
          */
         java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList();
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the provided index
          */
         datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the number of exceptions
          */
         int getExceptionsCount();
 
         // required string result_class_name = 4;
         /**
          * <code>required string result_class_name = 4;</code>
+         *
+         * @return if it has a result class name
          */
         boolean hasResultClassName();
 
         /**
          * <code>required string result_class_name = 4;</code>
+         *
+         * @return the result class name
          */
         java.lang.String getResultClassName();
 
         /**
          * <code>required string result_class_name = 4;</code>
+         *
+         * @return the result class name byte string
          */
         com.google.protobuf.ByteString getResultClassNameBytes();
 
         // optional string result_as_string = 5;
         /**
          * <code>optional string result_as_string = 5;</code>
+         *
+         * @return if it has result as a string
          */
         boolean hasResultAsString();
 
         /**
          * <code>optional string result_as_string = 5;</code>
+         *
+         * @return the results as a string
          */
         java.lang.String getResultAsString();
 
         /**
          * <code>optional string result_as_string = 5;</code>
+         *
+         * @return the result as a byte string
          */
         com.google.protobuf.ByteString getResultAsStringBytes();
 
         // optional bool result_as_boolean = 6;
         /**
          * <code>optional bool result_as_boolean = 6;</code>
+         *
+         * @return if it has the result as boolean
          */
         boolean hasResultAsBoolean();
 
         /**
          * <code>optional bool result_as_boolean = 6;</code>
+         *
+         * @return the result as a boolean
          */
         boolean getResultAsBoolean();
 
         // optional sint32 result_as_int = 7;
         /**
          * <code>optional sint32 result_as_int = 7;</code>
+         *
+         * @return if it has result as integer
          */
         boolean hasResultAsInt();
 
         /**
          * <code>optional sint32 result_as_int = 7;</code>
+         *
+         * @return the result as an integer
          */
         int getResultAsInt();
 
         // optional sint64 result_as_long = 8;
         /**
          * <code>optional sint64 result_as_long = 8;</code>
+         *
+         * @return if it has result as a long
          */
         boolean hasResultAsLong();
 
         /**
          * <code>optional sint64 result_as_long = 8;</code>
+         *
+         * @return the result as a long
          */
         long getResultAsLong();
 
         // optional float result_as_float = 9;
         /**
          * <code>optional float result_as_float = 9;</code>
+         *
+         * @return if it has the result as a float
          */
         boolean hasResultAsFloat();
 
         /**
          * <code>optional float result_as_float = 9;</code>
+         *
+         * @return the result as a float
          */
         float getResultAsFloat();
 
         // optional double result_as_double = 10;
         /**
          * <code>optional double result_as_double = 10;</code>
+         *
+         * @return if it has the result as a double
          */
         boolean hasResultAsDouble();
 
         /**
          * <code>optional double result_as_double = 10;</code>
+         *
+         * @return the result as a double
          */
         double getResultAsDouble();
 
         // optional bytes result_as_bytes = 11;
         /**
          * <code>optional bytes result_as_bytes = 11;</code>
+         *
+         * @return if it has result as bytes
          */
         boolean hasResultAsBytes();
 
         /**
          * <code>optional bytes result_as_bytes = 11;</code>
+         *
+         * @return the result as bytes
          */
         com.google.protobuf.ByteString getResultAsBytes();
 
         // optional .datawave.webservice.results.cached.result.Description result_as_description = 12;
         /**
          * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return if the result is a description
          */
         boolean hasResultAsDescription();
 
         /**
          * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return the result as a description
          */
         datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription();
     }
@@ -2159,6 +2668,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return if it has an operation time
          */
         public boolean hasOperationTimeMs() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -2166,6 +2677,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+         *
+         * @return the operation time in ms
          */
         public long getOperationTimeMs() {
             return operationTimeMs_;
@@ -2177,6 +2690,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the message list
          */
         public java.util.List<java.lang.String> getMessagesList() {
             return messages_;
@@ -2184,6 +2699,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @return the number of messages in the lsit
          */
         public int getMessagesCount() {
             return messages_.size();
@@ -2191,6 +2708,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the message at the provided index
          */
         public java.lang.String getMessages(int index) {
             return messages_.get(index);
@@ -2198,6 +2720,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return message as byte string at the provided index
          */
         public com.google.protobuf.ByteString getMessagesBytes(int index) {
             return messages_.getByteString(index);
@@ -2209,6 +2736,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the exceptions list
          */
         public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
             return exceptions_;
@@ -2216,6 +2745,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the exceptions list
          */
         public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
             return exceptions_;
@@ -2223,6 +2754,8 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @return the number of exceptions in the list
          */
         public int getExceptionsCount() {
             return exceptions_.size();
@@ -2230,6 +2763,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the provided index
          */
         public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
             return exceptions_.get(index);
@@ -2237,6 +2775,11 @@ public final class ResponseMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the exception at the index provided
          */
         public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
             return exceptions_.get(index);
@@ -2248,6 +2791,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required string result_class_name = 4;</code>
+         *
+         * @return if it has a result class name
          */
         public boolean hasResultClassName() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -2255,6 +2800,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required string result_class_name = 4;</code>
+         *
+         * @return the result class name
          */
         public java.lang.String getResultClassName() {
             java.lang.Object ref = resultClassName_;
@@ -2272,6 +2819,8 @@ public final class ResponseMessages {
 
         /**
          * <code>required string result_class_name = 4;</code>
+         *
+         * @return the result class name byte string
          */
         public com.google.protobuf.ByteString getResultClassNameBytes() {
             java.lang.Object ref = resultClassName_;
@@ -2290,6 +2839,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional string result_as_string = 5;</code>
+         *
+         * @return if it has results as a string
          */
         public boolean hasResultAsString() {
             return ((bitField0_ & 0x00000004) == 0x00000004);
@@ -2297,6 +2848,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional string result_as_string = 5;</code>
+         *
+         * @return the results as a string
          */
         public java.lang.String getResultAsString() {
             java.lang.Object ref = resultAsString_;
@@ -2314,6 +2867,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional string result_as_string = 5;</code>
+         *
+         * @return the result as a byte string
          */
         public com.google.protobuf.ByteString getResultAsStringBytes() {
             java.lang.Object ref = resultAsString_;
@@ -2332,6 +2887,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional bool result_as_boolean = 6;</code>
+         *
+         * @return if it has result as a boolean
          */
         public boolean hasResultAsBoolean() {
             return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -2339,6 +2896,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional bool result_as_boolean = 6;</code>
+         *
+         * @return the result as a boolean
          */
         public boolean getResultAsBoolean() {
             return resultAsBoolean_;
@@ -2350,6 +2909,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional sint32 result_as_int = 7;</code>
+         *
+         * @return if it has result as an integer
          */
         public boolean hasResultAsInt() {
             return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -2357,6 +2918,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional sint32 result_as_int = 7;</code>
+         *
+         * @return result as an integer
          */
         public int getResultAsInt() {
             return resultAsInt_;
@@ -2368,6 +2931,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional sint64 result_as_long = 8;</code>
+         *
+         * @return if it has result as a long
          */
         public boolean hasResultAsLong() {
             return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -2375,6 +2940,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional sint64 result_as_long = 8;</code>
+         *
+         * @return the result as a long
          */
         public long getResultAsLong() {
             return resultAsLong_;
@@ -2386,6 +2953,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional float result_as_float = 9;</code>
+         *
+         * @return if it has result as a float
          */
         public boolean hasResultAsFloat() {
             return ((bitField0_ & 0x00000040) == 0x00000040);
@@ -2393,6 +2962,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional float result_as_float = 9;</code>
+         *
+         * @return the result as a float
          */
         public float getResultAsFloat() {
             return resultAsFloat_;
@@ -2404,6 +2975,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional double result_as_double = 10;</code>
+         *
+         * @return if it has a result as a double
          */
         public boolean hasResultAsDouble() {
             return ((bitField0_ & 0x00000080) == 0x00000080);
@@ -2411,6 +2984,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional double result_as_double = 10;</code>
+         *
+         * @return the result as a double
          */
         public double getResultAsDouble() {
             return resultAsDouble_;
@@ -2422,6 +2997,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional bytes result_as_bytes = 11;</code>
+         *
+         * @return if it has result as a byte string
          */
         public boolean hasResultAsBytes() {
             return ((bitField0_ & 0x00000100) == 0x00000100);
@@ -2429,6 +3006,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional bytes result_as_bytes = 11;</code>
+         *
+         * @return the result as a byte string
          */
         public com.google.protobuf.ByteString getResultAsBytes() {
             return resultAsBytes_;
@@ -2440,6 +3019,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return if iut has the result as a description
          */
         public boolean hasResultAsDescription() {
             return ((bitField0_ & 0x00000200) == 0x00000200);
@@ -2447,6 +3028,8 @@ public final class ResponseMessages {
 
         /**
          * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return the result as a description
          */
         public datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription() {
             return resultAsDescription_;
@@ -2877,6 +3460,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return if it has operation time
              */
             public boolean hasOperationTimeMs() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -2884,6 +3469,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return the operation time in ms
              */
             public long getOperationTimeMs() {
                 return operationTimeMs_;
@@ -2891,6 +3478,11 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @param value
+             *            the new operation time in ms
+             *
+             * @return builder to set operation time in ms
              */
             public Builder setOperationTimeMs(long value) {
                 bitField0_ |= 0x00000001;
@@ -2901,6 +3493,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required uint64 operation_time_ms = 1 [default = 0];</code>
+             *
+             * @return builder to clear operation time
              */
             public Builder clearOperationTimeMs() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -2921,6 +3515,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return the message list
              */
             public java.util.List<java.lang.String> getMessagesList() {
                 return java.util.Collections.unmodifiableList(messages_);
@@ -2928,6 +3524,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return the messages count
              */
             public int getMessagesCount() {
                 return messages_.size();
@@ -2935,6 +3533,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the message at the provided index
              */
             public java.lang.String getMessages(int index) {
                 return messages_.get(index);
@@ -2942,6 +3545,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the message byte string for the provided index
              */
             public com.google.protobuf.ByteString getMessagesBytes(int index) {
                 return messages_.getByteString(index);
@@ -2949,6 +3557,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the message to add
+             *
+             * @return builder to set the message at the provided index
              */
             public Builder setMessages(int index, java.lang.String value) {
                 if (value == null) {
@@ -2962,6 +3577,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            the new message
+             *
+             * @return builder to add the provided value
              */
             public Builder addMessages(java.lang.String value) {
                 if (value == null) {
@@ -2975,6 +3595,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            iterable of messages to add
+             *
+             * @return builder to add the values provided
              */
             public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
                 ensureMessagesIsMutable();
@@ -2985,6 +3610,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @return builder to clear messages
              */
             public Builder clearMessages() {
                 messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -2995,6 +3622,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            message byte string
+             *
+             * @return builder to add message byte string
              */
             public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -3018,6 +3650,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return the list of exceptions
              */
             public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
                 return java.util.Collections.unmodifiableList(exceptions_);
@@ -3025,6 +3659,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return the number of exceptions
              */
             public int getExceptionsCount() {
                 return exceptions_.size();
@@ -3032,6 +3668,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the exception at the provided index
              */
             public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
                 return exceptions_.get(index);
@@ -3039,6 +3680,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new exception to add
+             *
+             * @return builder to set exception at index to provided value
              */
             public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -3052,6 +3700,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            builder for the value
+             *
+             * @return builder to set exception at provided index
              */
             public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -3062,6 +3717,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param value
+             *            the exception to add
+             *
+             * @return builder to add exception
              */
             public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -3075,6 +3735,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the exception to add
+             *
+             * @return builder to add exception to the list
              */
             public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
                 if (value == null) {
@@ -3088,6 +3755,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param builderForValue
+             *            builder to create exception to add
+             *
+             * @return builder to add exception
              */
             public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -3098,6 +3770,13 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            builder to create exception
+             *
+             * @return builder to add exception at provided index
              */
             public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
                 ensureExceptionsIsMutable();
@@ -3108,6 +3787,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param values
+             *            iterable of exceptions to add
+             *
+             * @return builder to add exceptions
              */
             public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
                 ensureExceptionsIsMutable();
@@ -3118,6 +3802,8 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @return builder to clear exceptions
              */
             public Builder clearExceptions() {
                 exceptions_ = java.util.Collections.emptyList();
@@ -3128,6 +3814,11 @@ public final class ResponseMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove exception at given index
              */
             public Builder removeExceptions(int index) {
                 ensureExceptionsIsMutable();
@@ -3141,6 +3832,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required string result_class_name = 4;</code>
+             *
+             * @return if it has result class name
              */
             public boolean hasResultClassName() {
                 return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -3148,6 +3841,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required string result_class_name = 4;</code>
+             *
+             * @return the result class name
              */
             public java.lang.String getResultClassName() {
                 java.lang.Object ref = resultClassName_;
@@ -3162,6 +3857,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required string result_class_name = 4;</code>
+             *
+             * @return result class name byte string
              */
             public com.google.protobuf.ByteString getResultClassNameBytes() {
                 java.lang.Object ref = resultClassName_;
@@ -3176,6 +3873,11 @@ public final class ResponseMessages {
 
             /**
              * <code>required string result_class_name = 4;</code>
+             *
+             * @param value
+             *            the new result class name
+             *
+             * @return builder to set result class name
              */
             public Builder setResultClassName(java.lang.String value) {
                 if (value == null) {
@@ -3189,6 +3891,8 @@ public final class ResponseMessages {
 
             /**
              * <code>required string result_class_name = 4;</code>
+             *
+             * @return builder to clear the result class name
              */
             public Builder clearResultClassName() {
                 bitField0_ = (bitField0_ & ~0x00000008);
@@ -3199,6 +3903,11 @@ public final class ResponseMessages {
 
             /**
              * <code>required string result_class_name = 4;</code>
+             *
+             * @param value
+             *            result class name byte string
+             *
+             * @return builder to set result class name
              */
             public Builder setResultClassNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -3215,6 +3924,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional string result_as_string = 5;</code>
+             *
+             * return if it has result as a string
              */
             public boolean hasResultAsString() {
                 return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -3222,6 +3933,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional string result_as_string = 5;</code>
+             *
+             * @return the result as a string
              */
             public java.lang.String getResultAsString() {
                 java.lang.Object ref = resultAsString_;
@@ -3236,6 +3949,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional string result_as_string = 5;</code>
+             *
+             * @return the result as a string
              */
             public com.google.protobuf.ByteString getResultAsStringBytes() {
                 java.lang.Object ref = resultAsString_;
@@ -3250,6 +3965,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional string result_as_string = 5;</code>
+             *
+             * @param value
+             *            new result string
+             *
+             * @return builder to set result string
              */
             public Builder setResultAsString(java.lang.String value) {
                 if (value == null) {
@@ -3263,6 +3983,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional string result_as_string = 5;</code>
+             *
+             * @return builder to clear string result
              */
             public Builder clearResultAsString() {
                 bitField0_ = (bitField0_ & ~0x00000010);
@@ -3273,6 +3995,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional string result_as_string = 5;</code>
+             *
+             * @param value
+             *            byte string
+             *
+             * @return builder to set result to byte string
              */
             public Builder setResultAsStringBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -3289,6 +4016,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bool result_as_boolean = 6;</code>
+             *
+             * @return if the result is a boolean
              */
             public boolean hasResultAsBoolean() {
                 return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -3296,6 +4025,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bool result_as_boolean = 6;</code>
+             *
+             * @return the result as a boolean
              */
             public boolean getResultAsBoolean() {
                 return resultAsBoolean_;
@@ -3303,6 +4034,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bool result_as_boolean = 6;</code>
+             *
+             * @param value
+             *            the new boolean value
+             *
+             * @return the result as a boolean
              */
             public Builder setResultAsBoolean(boolean value) {
                 bitField0_ |= 0x00000020;
@@ -3313,6 +4049,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bool result_as_boolean = 6;</code>
+             *
+             * @return builder to clear result as a boolean
              */
             public Builder clearResultAsBoolean() {
                 bitField0_ = (bitField0_ & ~0x00000020);
@@ -3326,6 +4064,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint32 result_as_int = 7;</code>
+             *
+             * @return if the result has an integer
              */
             public boolean hasResultAsInt() {
                 return ((bitField0_ & 0x00000040) == 0x00000040);
@@ -3333,6 +4073,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint32 result_as_int = 7;</code>
+             *
+             * @return the result as an integer
              */
             public int getResultAsInt() {
                 return resultAsInt_;
@@ -3340,6 +4082,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint32 result_as_int = 7;</code>
+             *
+             * @param value
+             *            the new int value
+             *
+             * @return builder to set result to provided value
              */
             public Builder setResultAsInt(int value) {
                 bitField0_ |= 0x00000040;
@@ -3350,6 +4097,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint32 result_as_int = 7;</code>
+             *
+             * @return builder to clear results as int
              */
             public Builder clearResultAsInt() {
                 bitField0_ = (bitField0_ & ~0x00000040);
@@ -3363,6 +4112,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint64 result_as_long = 8;</code>
+             *
+             * @return if it has result as a long
              */
             public boolean hasResultAsLong() {
                 return ((bitField0_ & 0x00000080) == 0x00000080);
@@ -3370,6 +4121,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint64 result_as_long = 8;</code>
+             *
+             * @return the result as a long
              */
             public long getResultAsLong() {
                 return resultAsLong_;
@@ -3377,6 +4130,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint64 result_as_long = 8;</code>
+             *
+             * @param value
+             *            the new long value
+             *
+             * @return builder to set result to long value provided
              */
             public Builder setResultAsLong(long value) {
                 bitField0_ |= 0x00000080;
@@ -3387,6 +4145,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional sint64 result_as_long = 8;</code>
+             *
+             * @return builder to clear result as long
              */
             public Builder clearResultAsLong() {
                 bitField0_ = (bitField0_ & ~0x00000080);
@@ -3400,6 +4160,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional float result_as_float = 9;</code>
+             *
+             * @return if the result is a float
              */
             public boolean hasResultAsFloat() {
                 return ((bitField0_ & 0x00000100) == 0x00000100);
@@ -3407,6 +4169,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional float result_as_float = 9;</code>
+             *
+             * @return the result as a float
              */
             public float getResultAsFloat() {
                 return resultAsFloat_;
@@ -3414,6 +4178,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional float result_as_float = 9;</code>
+             *
+             * @param value
+             *            the new float value
+             *
+             * @return builder to set result as float provided
              */
             public Builder setResultAsFloat(float value) {
                 bitField0_ |= 0x00000100;
@@ -3424,6 +4193,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional float result_as_float = 9;</code>
+             *
+             * @return builder to clear results as float
              */
             public Builder clearResultAsFloat() {
                 bitField0_ = (bitField0_ & ~0x00000100);
@@ -3437,6 +4208,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional double result_as_double = 10;</code>
+             *
+             * @return if it has result as a double
              */
             public boolean hasResultAsDouble() {
                 return ((bitField0_ & 0x00000200) == 0x00000200);
@@ -3444,6 +4217,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional double result_as_double = 10;</code>
+             *
+             * @return results as a double
              */
             public double getResultAsDouble() {
                 return resultAsDouble_;
@@ -3451,6 +4226,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional double result_as_double = 10;</code>
+             *
+             * @param value
+             *            the new double value
+             *
+             * @return builder to set result as a double
              */
             public Builder setResultAsDouble(double value) {
                 bitField0_ |= 0x00000200;
@@ -3461,6 +4241,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional double result_as_double = 10;</code>
+             *
+             * @return builder to clear result as double
              */
             public Builder clearResultAsDouble() {
                 bitField0_ = (bitField0_ & ~0x00000200);
@@ -3474,6 +4256,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bytes result_as_bytes = 11;</code>
+             *
+             * @return if it has result as byte string
              */
             public boolean hasResultAsBytes() {
                 return ((bitField0_ & 0x00000400) == 0x00000400);
@@ -3481,6 +4265,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bytes result_as_bytes = 11;</code>
+             *
+             * @return the result as byte string
              */
             public com.google.protobuf.ByteString getResultAsBytes() {
                 return resultAsBytes_;
@@ -3488,6 +4274,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bytes result_as_bytes = 11;</code>
+             *
+             * @param value
+             *            new value as byte string
+             *
+             * @return builder to set result as byte string
              */
             public Builder setResultAsBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -3501,6 +4292,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional bytes result_as_bytes = 11;</code>
+             *
+             * @return builder to clear rseult as byte string
              */
             public Builder clearResultAsBytes() {
                 bitField0_ = (bitField0_ & ~0x00000400);
@@ -3515,6 +4308,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @return if it has result as a description
              */
             public boolean hasResultAsDescription() {
                 return ((bitField0_ & 0x00000800) == 0x00000800);
@@ -3522,6 +4317,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @return the result as a description
              */
             public datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription() {
                 return resultAsDescription_;
@@ -3529,6 +4326,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @param value
+             *            the new description value
+             *
+             * @return builder to set result as description provided
              */
             public Builder setResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
                 if (value == null) {
@@ -3542,6 +4344,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @param builderForValue
+             *            builder to create description
+             *
+             * @return builder to set result to provided description
              */
             public Builder setResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder builderForValue) {
                 resultAsDescription_ = builderForValue.build();
@@ -3552,6 +4359,11 @@ public final class ResponseMessages {
 
             /**
              * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @param value
+             *            the new description value
+             *
+             * @return builder to merge result as description provided
              */
             public Builder mergeResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
                 if (((bitField0_ & 0x00000800) == 0x00000800)
@@ -3568,6 +4380,8 @@ public final class ResponseMessages {
 
             /**
              * <code>optional .datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @return builder to clear the result as description
              */
             public Builder clearResultAsDescription() {
                 resultAsDescription_ = datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance();

@@ -16,7 +16,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -32,9 +32,6 @@ import datawave.query.attributes.Document;
 import datawave.query.function.DataTypeAsField;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.LogTiming;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.errors.UnindexedException;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
@@ -347,31 +344,9 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new LogTiming(trackingSpan));
         }
 
-        if (this.getReturnType() == ReturnType.kryo) {
-            // Serialize the Document using Kryo
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
-        } else if (this.getReturnType() == ReturnType.writable) {
-            // Use the Writable interface to serialize the Document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new WritableDocumentSerializer(isReducedResponse()));
-        } else if (this.getReturnType() == ReturnType.tostring) {
-            // Just return a toString() representation of the document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new ToStringDocumentSerializer(isReducedResponse()));
-        } else {
-            throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
-        }
+        documentIterator = fieldIndexDocuments;
 
-        // Determine if we have items to return
-        if (this.serializedDocuments.hasNext()) {
-            Entry<Key,Value> entry = this.serializedDocuments.next();
-
-            this.key = entry.getKey();
-            this.value = entry.getValue();
-
-            entry = null;
-        } else {
-            this.key = null;
-            this.value = null;
-        }
+        prepareKeyValue();
     }
 
     /**

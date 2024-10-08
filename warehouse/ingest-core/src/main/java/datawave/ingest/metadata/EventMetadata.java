@@ -36,7 +36,7 @@ import datawave.util.time.DateHelper;
  * <p>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>EventMetadata</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -89,24 +89,27 @@ import datawave.util.time.DateHelper;
  */
 public class EventMetadata implements RawRecordMetadata {
 
-    private MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
-    private MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
-    private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
-    private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
-
     private static final Logger log = getLogger(EventMetadata.class);
     private final Text metadataTableName;
     private final Text loadDatesTableName;
+
+    private final MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
+    private final MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
+    private final MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
+    private final MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
+
     // stores field name, data type, and most recent event date
     private final MetadataWithMostRecentDate eventFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_E);
-    private final MetadataWithMostRecentDate indexedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_I);
-    private final MetadataWithMostRecentDate reverseIndexedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_RI);
     private final MetadataWithMostRecentDate termFrequencyFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_TF);
+
     // stores counts
     private final MetadataCounterGroup frequencyCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_F); // by event date
     private final MetadataCounterGroup indexedFieldsLoadDateCounts;
     private final MetadataCounterGroup reverseIndexedFieldsLoadDateCounts;
-    private boolean frequency = false;
+    private final MetadataCounterGroup indexedCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_I);
+    private final MetadataCounterGroup reverseIndexedCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_RI);
+
+    private boolean writeFrequencyCounts = false;
 
     /**
      * @param shardTableName
@@ -119,14 +122,14 @@ public class EventMetadata implements RawRecordMetadata {
      *            used as part of column family within LOAD_DATES_TABLE_NAME
      * @param loadDatesTableName
      *            the table name for the load dates
-     * @param frequency
+     * @param writeFrequencyCounts
      *            whether to add to the metadata table's counts for field name by event date
      */
     public EventMetadata(@SuppressWarnings("UnusedParameters") Text shardTableName, Text metadataTableName, Text loadDatesTableName, Text shardIndexTableName,
-                    Text shardReverseIndexTableName, boolean frequency) {
+                    Text shardReverseIndexTableName, boolean writeFrequencyCounts) {
         this.metadataTableName = metadataTableName;
         this.loadDatesTableName = loadDatesTableName;
-        this.frequency = frequency;
+        this.writeFrequencyCounts = writeFrequencyCounts;
 
         this.indexedFieldsLoadDateCounts = new MetadataCounterGroup("FIELD_NAME", shardIndexTableName);
         this.reverseIndexedFieldsLoadDateCounts = new MetadataCounterGroup("FIELD_NAME", shardReverseIndexTableName);
@@ -134,17 +137,17 @@ public class EventMetadata implements RawRecordMetadata {
 
     @Override
     public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, long loadTimeInMillis) {
-        addEvent(helper, event, fields, this.frequency, INCLUDE_LOAD_DATES, loadTimeInMillis);
+        addEvent(helper, event, fields, this.writeFrequencyCounts, INCLUDE_LOAD_DATES, loadTimeInMillis);
     }
 
     @Override
     public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields) {
-        addEvent(helper, event, fields, this.frequency, INCLUDE_LOAD_DATES, System.currentTimeMillis());
+        addEvent(helper, event, fields, this.writeFrequencyCounts, INCLUDE_LOAD_DATES, System.currentTimeMillis());
     }
 
     @Override
     public void addEventWithoutLoadDates(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields) {
-        addEvent(helper, event, fields, this.frequency, EXCLUDE_LOAD_DATES, System.currentTimeMillis());
+        addEvent(helper, event, fields, this.writeFrequencyCounts, EXCLUDE_LOAD_DATES, System.currentTimeMillis());
     }
 
     @Override
@@ -241,17 +244,17 @@ public class EventMetadata implements RawRecordMetadata {
 
     protected void updateForIndexedField(@SuppressWarnings("UnusedParameters") IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, long countDelta, String loadDate, String tokenDesignator, String fieldName) {
-        update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, indexedFieldsInfo, indexedFieldsLoadDateCounts);
+        update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, indexedCounts, indexedFieldsLoadDateCounts);
     }
 
     private void updateForCompositeField(@SuppressWarnings("UnusedParameters") IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, long countDelta, String loadDate, String tokenDesignator, String fieldName) {
-        update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, indexedFieldsInfo, indexedFieldsLoadDateCounts);
+        update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, indexedCounts, indexedFieldsLoadDateCounts);
     }
 
     protected void updateForReverseIndexedField(@SuppressWarnings("UnusedParameters") IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, long countDelta, String loadDate, String tokenDesignator, String fieldName) {
-        update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, reverseIndexedFieldsInfo, reverseIndexedFieldsLoadDateCounts);
+        update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, reverseIndexedCounts, reverseIndexedFieldsLoadDateCounts);
     }
 
     protected void update(List<datawave.data.type.Type<?>> types, RawRecordContainer event, Collection<NormalizedContentInterface> norms,
@@ -296,6 +299,28 @@ public class EventMetadata implements RawRecordMetadata {
             mostRecentDatesByIdentifier.createOrUpdate(norm.getIndexedFieldName() + tokenDesignator, dataType.outputName(), null, eventDate);
             if (null != loadDate) {
                 updateLoadDateCounters(counts, event, norm.getIndexedFieldName() + tokenDesignator, countDelta, loadDate);
+            }
+        }
+    }
+
+    protected void update(RawRecordContainer event, Collection<NormalizedContentInterface> norms, String tokenDesignator, long countDelta, String loadDate,
+                    MetadataWithEventDate metadata, MetadataCounterGroup counts) {
+        for (NormalizedContentInterface norm : norms) {
+            String field = norm.getIndexedFieldName() + tokenDesignator;
+            metadata.put(field, event.getDataType().outputName(), event.getDate());
+            if (null != loadDate) {
+                updateLoadDateCounters(counts, event, field, countDelta, loadDate);
+            }
+        }
+    }
+
+    protected void update(RawRecordContainer event, Collection<NormalizedContentInterface> norms, String tokenDesignator, long countDelta, String loadDate,
+                    MetadataCounterGroup metadata, MetadataCounterGroup counts) {
+        for (NormalizedContentInterface norm : norms) {
+            String field = norm.getIndexedFieldName() + tokenDesignator;
+            metadata.addToCount(countDelta, event.getDataType().outputName(), field, DateHelper.format(event.getDate()));
+            if (null != loadDate) {
+                updateLoadDateCounters(counts, event, field, countDelta, loadDate);
             }
         }
     }
@@ -381,10 +406,9 @@ public class EventMetadata implements RawRecordMetadata {
         addIndexedFieldToMetadata(bulkData, eventFieldsInfo);
         addIndexedFieldToMetadata(bulkData, termFrequencyFieldsInfo);
 
-        addIndexedFieldToMetadata(bulkData, indexedFieldsInfo);
-        addIndexedFieldToMetadata(bulkData, reverseIndexedFieldsInfo);
-
-        addFrequenciesToMetadata(bulkData);
+        addCountsToMetadata(bulkData, indexedCounts);
+        addCountsToMetadata(bulkData, reverseIndexedCounts);
+        addCountsToMetadata(bulkData, frequencyCounts);
 
         addIndexedFieldToMetadata(bulkData, dataTypeFieldsInfo);
         addIndexedFieldToMetadata(bulkData, normalizedFieldsInfo);
@@ -400,7 +424,7 @@ public class EventMetadata implements RawRecordMetadata {
 
     protected void addToLoadDates(Multimap<BulkIngestKey,Value> results, MetadataCounterGroup countsGroup) {
         if (loadDatesTableName != null) {
-            for (MetadataCounterGroup.CountAndKeyComponents entry : countsGroup.getEntries()) {
+            for (MetadataCounterGroup.Components entry : countsGroup.getEntries()) {
                 Long count = entry.getCount();
                 Key k = new Key(new Text(entry.getRowId()), countsGroup.getColumnFamily(), new Text(entry.getDate() + DELIMITER + entry.getDataType()));
 
@@ -409,13 +433,14 @@ public class EventMetadata implements RawRecordMetadata {
         }
     }
 
-    protected void addFrequenciesToMetadata(Multimap<BulkIngestKey,Value> results) {
-        if (frequency) {
-            for (MetadataCounterGroup.CountAndKeyComponents entry : frequencyCounts.getEntries()) {
+    protected void addCountsToMetadata(Multimap<BulkIngestKey,Value> results, MetadataCounterGroup frequencies) {
+        // Do not write the counts if these are for "f" rows and writeFrequencyCounts is false.
+        if (!frequencies.getColumnFamily().equals(ColumnFamilyConstants.COLF_F) || writeFrequencyCounts) {
+            for (MetadataCounterGroup.Components entry : frequencies.getEntries()) {
                 Long count = entry.getCount();
-                Key k = new Key(new Text(entry.getRowId()), frequencyCounts.getColumnFamily(), new Text(entry.getDataType() + DELIMITER + entry.getDate()),
+                Key key = new Key(new Text(entry.getRowId()), frequencies.getColumnFamily(), new Text(entry.getDataType() + DELIMITER + entry.getDate()),
                                 DateHelper.parse(entry.getDate()).getTime());
-                addToResults(results, count, k, this.metadataTableName);
+                addToResults(results, count, key, this.metadataTableName);
             }
         }
     }
@@ -426,7 +451,7 @@ public class EventMetadata implements RawRecordMetadata {
     }
 
     protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithMostRecentDate mostRecentDates) {
-        for (MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents entry : mostRecentDates.entries()) {
+        for (MetadataWithMostRecentDate.Components entry : mostRecentDates.entries()) {
             long mostRecentDate = entry.getMostRecentDate();
             Text fieldName = new Text(entry.getFieldName());
             Text colq = new Text(entry.getDataType());
@@ -445,10 +470,9 @@ public class EventMetadata implements RawRecordMetadata {
         this.termFrequencyFieldsInfo.clear();
         this.frequencyCounts.clear();
 
-        this.indexedFieldsInfo.clear();
-        this.indexedFieldsLoadDateCounts.clear();
+        this.indexedCounts.clear();
+        this.reverseIndexedCounts.clear();
 
-        this.reverseIndexedFieldsInfo.clear();
         this.reverseIndexedFieldsLoadDateCounts.clear();
     }
 }

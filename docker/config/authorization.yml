@@ -1,0 +1,27 @@
+# Authorization requires a client certificate
+server:
+  ssl:
+    client-auth: NEED
+
+# Use trusted headers for the authorization service. This simply trusts values that appear in the
+# X-SSL-clientcert-subject/issuer headers, which is necessary when someone is calling the service
+# using HTTP (e.g., behind a load-balancer that does SSL termination and calls using HTTP rather
+# than paying the penalty to set up a new SSL connection -- only do this if you are behind a
+# firewall and trust those with access)
+spring:
+  security:
+    datawave:
+      use-trusted-subject-headers: true
+      oauth:
+        authCodeTtl: 60
+        idTokenTtl: 86400
+        refreshTokenTtl: 604800
+
+logging:
+  level:
+    datawave.microservice.authorization: DEBUG
+
+datawave:
+  swagger:
+    title: "Authorization Service"
+    description: "REST API provided by the Authorization Service"

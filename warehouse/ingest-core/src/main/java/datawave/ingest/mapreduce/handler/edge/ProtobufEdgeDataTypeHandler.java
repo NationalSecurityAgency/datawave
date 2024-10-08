@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlScript;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -135,7 +135,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     private EdgePreconditionJexlEvaluation edgePreconditionEvaluation;
     private EdgePreconditionCacheHelper edgePreconditionCacheHelper;
     private EdgePreconditionArithmetic arithmetic = new EdgePreconditionArithmetic();
-    private Map<String,Script> scriptCache;
+    private Map<String,JexlScript> scriptCache;
 
     protected String edgeTableName = null;
     protected String metadataTableName = null;
@@ -574,8 +574,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         Multimap<String,NormalizedContentInterface> mSink = null;
 
         for (EdgeDefinition edgeDef : edgeDefs) {
-            arithmetic.clearMatchingGroups();
+            arithmetic.clear();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
+            Map<String,Set<String>> excludedGroups = new HashMap<>();
+
             String jexlPreconditions = null;
 
             // don't bother evaluating preconditions if we know this event doesn't have the necessary fields for this edge
@@ -612,8 +614,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
                     } else {
                         matchingGroups = arithmetic.getMatchingGroups();
+                        excludedGroups = arithmetic.getExcludedGroups();
+
+                        for (Entry excluded : excludedGroups.entrySet()) {
+                            matchingGroups.remove(excluded.getKey(), excluded.getValue());
+                        }
+
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
+                        }
+
+                        if (edgeDef.isGroupAware() && matchingGroups.size() == 0) {
+                            continue;
                         }
 
                     }
@@ -916,7 +928,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
                         edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
-
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
         Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
 
@@ -1020,7 +1031,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long eventDate)
                     throws IOException, InterruptedException {
-
         long edgesCreated = 0;
         if (eventDate < newFormatStartDate) {
             edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.OLD_EVENT);

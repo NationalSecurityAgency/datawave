@@ -4,16 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
 
 import datawave.query.Constants;
 
@@ -62,19 +58,19 @@ public class TLDTest {
     }
 
     @Test
-    public void testParsePointerFromFI() {
+    public void testParseDatatypeUidFromFI() {
         Key fiKey = buildFiKey(rootId);
-        ByteSequence parsed = TLD.parsePointerFromFI(fiKey.getColumnQualifierData());
+        ByteSequence parsed = TLD.parseDatatypeUidFromFI(fiKey.getColumnQualifierData());
         ByteSequence expected = new ArrayByteSequence(datatype + '\u0000' + rootId);
         assertEquals(expected, parsed);
 
         fiKey = buildFiKey(childId);
-        parsed = TLD.parsePointerFromFI(fiKey.getColumnQualifierData());
+        parsed = TLD.parseDatatypeUidFromFI(fiKey.getColumnQualifierData());
         expected = new ArrayByteSequence(datatype + '\u0000' + childId);
         assertEquals(expected, parsed);
 
         fiKey = buildFiKey(grandchildId);
-        parsed = TLD.parsePointerFromFI(fiKey.getColumnQualifierData());
+        parsed = TLD.parseDatatypeUidFromFI(fiKey.getColumnQualifierData());
         expected = new ArrayByteSequence(datatype + '\u0000' + grandchildId);
         assertEquals(expected, parsed);
     }
@@ -131,6 +127,22 @@ public class TLDTest {
     }
 
     @Test
+    public void testparseDatatypeAndRootUidFromEvent() {
+        Key eventKey = buildEventDataKey(rootId);
+        ByteSequence parsed = TLD.parseDatatypeAndRootUidFromEvent(eventKey.getColumnFamilyData());
+        ByteSequence expected = new ArrayByteSequence(datatype + '\u0000' + rootId);
+        assertEquals(expected, parsed);
+
+        eventKey = buildEventDataKey(childId);
+        parsed = TLD.parseDatatypeAndRootUidFromEvent(eventKey.getColumnFamilyData());
+        assertEquals(expected, parsed);
+
+        eventKey = buildEventDataKey(grandchildId);
+        parsed = TLD.parseDatatypeAndRootUidFromEvent(eventKey.getColumnFamilyData());
+        assertEquals(expected, parsed);
+    }
+
+    @Test
     public void testParseRootPointerFromId_String() {
         assertEquals(rootId, TLD.parseRootPointerFromId(rootId));
         assertEquals(rootId, TLD.parseRootPointerFromId(childId));
@@ -169,9 +181,9 @@ public class TLDTest {
         ByteSequence root = new ArrayByteSequence(rootId);
         ByteSequence child = new ArrayByteSequence(childId);
         ByteSequence grandchild = new ArrayByteSequence(grandchildId);
-        assertTrue(TLD.isRootPointer(root));
-        assertFalse(TLD.isRootPointer(child));
-        assertFalse(TLD.isRootPointer(grandchild));
+        assertTrue(isRootPointer(root));
+        assertFalse(isRootPointer(child));
+        assertFalse(isRootPointer(grandchild));
     }
 
     @Test
@@ -190,50 +202,6 @@ public class TLDTest {
         assertEquals(root, TLD.parseParentPointerFromId(root));
         assertEquals(root, TLD.parseParentPointerFromId(child));
         assertEquals(child, TLD.parseParentPointerFromId(grandchild));
-    }
-
-    @Test
-    public void testInstancesOf() {
-        ByteSequence bytes = new ArrayByteSequence("how.many.dots.do.we.have?");
-        ArrayList<Integer> expectedPositions = Lists.newArrayList(3, 8, 13, 16, 19);
-        ArrayList<Integer> instances = TLD.instancesOf('.', bytes);
-        assertEquals(expectedPositions, instances);
-    }
-
-    @Test
-    public void testInstancesOfWithRepeat() {
-        ByteSequence bytes = new ArrayByteSequence("how.many.dots.do.we.have?");
-        ArrayList<Integer> expectedPositions = Lists.newArrayList(3, 8, 13);
-        ArrayList<Integer> instances = TLD.instancesOf('.', bytes, 3);
-        assertEquals(expectedPositions, instances);
-    }
-
-    @Test
-    public void testLastInstancesOf() {
-        ByteSequence bytes = new ArrayByteSequence("how.many.dots.do.we.have?");
-        ArrayList<Integer> expectedPositions = Lists.newArrayList(19, 16, 13, 8, 3);
-        ArrayList<Integer> instances = TLD.lastInstancesOf('.', bytes, -1);
-        assertEquals(expectedPositions, instances);
-    }
-
-    @Test
-    public void testLastInstancesOfWithRepeat() {
-        ByteSequence bytes = new ArrayByteSequence("how.many.dots.do.we.have?");
-        ArrayList<Integer> expectedPositions = Lists.newArrayList(19, 16, 13);
-        ArrayList<Integer> instances = TLD.lastInstancesOf('.', bytes, 3);
-        assertEquals(expectedPositions, instances);
-    }
-
-    @Test
-    public void testInstancesOfWithNullBytes() {
-        // Even indices contain a null byte
-        ByteSequence bytes = new ArrayByteSequence(new byte[] {0, 1, 0, 1, 0});
-        ArrayList<Integer> positions = TLD.instancesOf(0, bytes);
-        assertEquals(3, positions.size());
-
-        for (int ii = 0; ii < positions.size(); ii++) {
-            assertEquals(ii * 2, positions.get(ii).intValue());
-        }
     }
 
     // Build parent keys from FI keys
@@ -284,5 +252,15 @@ public class TLDTest {
         parentKey = buildEventDataKey(grandchildId);
         nextParent = TLD.getNextParentKey(parentKey);
         assertEquals(expectedKey, nextParent);
+    }
+
+    private boolean isRootPointer(ByteSequence id) {
+        int count = 0;
+        for (int i = 0; i < id.length(); ++i) {
+            if (id.byteAt(i) == '.' && ++count == 3) {
+                return false;
+            }
+        }
+        return true;
     }
 }

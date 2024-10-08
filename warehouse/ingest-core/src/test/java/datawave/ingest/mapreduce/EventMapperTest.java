@@ -10,7 +10,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -26,7 +28,9 @@ import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
+import datawave.data.hash.UIDConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -199,6 +203,127 @@ public class EventMapperTest {
         assertEquals(4, written.size());
     }
 
+    public abstract static class TestPredicate implements RawRecordPredicate {
+        public static ThreadLocal<Set<String>> seenTypes = ThreadLocal.withInitial(() -> new HashSet<>());
+        public static ThreadLocal<Set<RawRecordContainer>> allowed = ThreadLocal.withInitial(() -> new HashSet<>());
+        public static ThreadLocal<Set<RawRecordContainer>> denied = ThreadLocal.withInitial(() -> new HashSet<>());
+
+        public static void reset() {
+            seenTypes.get().clear();
+            allowed.get().clear();
+            denied.get().clear();
+        }
+
+        @Override
+        public void setConfiguration(String type, Configuration conf) {
+            seenTypes.get().add(type);
+        }
+
+        @Override
+        public boolean test(RawRecordContainer record) {
+            boolean value = RawRecordPredicate.super.test(record);
+            if (value) {
+                allowed.get().add(record);
+            } else {
+                denied.get().add(record);
+            }
+            return value;
+        }
+
+        @Override
+        public int hashCode() {
+            return getClass().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return getClass().equals(obj.getClass());
+        }
+    }
+
+    public static class AlwaysProcessPredicate extends TestPredicate {
+        @Override
+        public boolean shouldProcess(RawRecordContainer record) {
+            return true;
+        }
+    }
+
+    public static class DroppingAllPredicate extends TestPredicate {
+        @Override
+        public boolean shouldProcess(RawRecordContainer record) {
+            return false;
+        }
+    }
+
+    public static class CantConfigureEventPredicate extends AlwaysProcessPredicate implements RawRecordPredicate {
+        @Override
+        public void setConfiguration(String type, Configuration conf) {
+            throw new RuntimeException();
+        }
+    }
+
+    @Test
+    public void testBaseEventPredicates() throws IOException, InterruptedException {
+        try {
+            conf.set(EventMapper.RECORD_PREDICATES, AlwaysProcessPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+            eventMapper.cleanup(mapContext);
+            Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+            assertEquals(5, written.size());
+            assertEquals(Sets.newHashSet("all", "file"), TestPredicate.seenTypes.get());
+            assertEquals(0, TestPredicate.denied.get().size());
+            assertEquals(1, TestPredicate.allowed.get().size());
+        } finally {
+            TestPredicate.reset();
+        }
+    }
+
+    @Test
+    public void testTypePredicates() throws IOException, InterruptedException {
+        try {
+            conf.set("file." + EventMapper.RECORD_PREDICATES, AlwaysProcessPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+            eventMapper.cleanup(mapContext);
+            Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+            assertEquals(5, written.size());
+            assertEquals(Sets.newHashSet("file"), TestPredicate.seenTypes.get());
+            assertEquals(0, TestPredicate.denied.get().size());
+            assertEquals(1, TestPredicate.allowed.get().size());
+        } finally {
+            TestPredicate.reset();
+        }
+    }
+
+    @Test
+    public void testMultTypePredicates() throws IOException, InterruptedException {
+        try {
+            conf.set("file." + EventMapper.RECORD_PREDICATES, AlwaysProcessPredicate.class.getName() + "," + DroppingAllPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+            eventMapper.cleanup(mapContext);
+            Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+            assertEquals(0, written.size());
+            assertEquals(Sets.newHashSet("file"), TestPredicate.seenTypes.get());
+            assertEquals(1, TestPredicate.denied.get().size());
+            // allowed size may be 1 or 0, depending on the order of the predicates in the set. No need to test allowed size.
+        } finally {
+            TestPredicate.reset();
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFailedPredicates() throws IOException, InterruptedException {
+        try {
+            conf.set("file." + EventMapper.RECORD_PREDICATES, CantConfigureEventPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+        } finally {
+            TestPredicate.reset();
+        }
+    }
+
     @Test
     public void errorEventWithZeroTimestampNotDropped() throws IOException, InterruptedException {
         eventMapper.setup(mapContext);
@@ -210,6 +335,72 @@ public class EventMapperTest {
         // two fields mutations + LOAD_DATE + ORIG_FILE
         // previously this would have been zero
         assertEquals(4, written.size());
+    }
+
+    @Test
+    public void testHitDiscardInterval() throws IOException, InterruptedException {
+        // event date < now minus discard interval
+        long yesterday = -1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL, yesterday);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // discard interval lower bound is yesterday. data from today should be dropped
+        assertEquals(0, written.size());
+    }
+
+    @Test
+    public void testMissDiscardInterval() throws IOException, InterruptedException {
+        // event date < now minus discard interval
+        long tomorrow = 1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL, tomorrow);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // discard interval lower bound is tomorrow. data from today should be ok
+        assertEquals(5, written.size());
+    }
+
+    @Test
+    public void testHitFutureDiscardInterval() throws IOException, InterruptedException {
+        // event date > now plus future discard interval
+        long yesterday = -1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL, yesterday);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // future discard is yesterday. data from today should be dropped
+        assertEquals(0, written.size());
+
+    }
+
+    @Test
+    public void testMissFutureDiscardInterval() throws IOException, InterruptedException {
+        // event date > now plus future discard interval
+        long tomorrow = 1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL, tomorrow);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // future discard is tomorrow. data from today should be ok
+        assertEquals(5, written.size());
+
     }
 
     private Map.Entry<BulkIngestKey,Value> getMetric(Multimap<BulkIngestKey,Value> written) {

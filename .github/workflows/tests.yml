@@ -6,7 +6,6 @@ on:
     branches:
     - 'integration'
     - 'release/version*'
-    - 'feature/accumulo-2.0'
   pull_request:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
   workflow_dispatch:
@@ -24,24 +23,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
-      with:
-        submodules: 'recursive'
+      uses: actions/checkout@v4
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         maven-version: 3.9.5
         cache: 'maven'
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
     - name: Format code
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
       run: |
         if [ "$diffs_found" = true ]; then
+          git checkout -b ${{ steps.extract_branch.outputs.branch }}
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
           git commit -am "Formatting job fix"
@@ -55,17 +60,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         maven-version: 3.9.5
         cache: 'maven'
     - name: Build and Run Unit Tests
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -80,15 +88,15 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout Code
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v4
   #       with:
   #         submodules: 'recursive'
   #     - name: Set up JDK ${{env.JAVA_VERSION}}
-  #       uses: actions/setup-java@v3
+  #       uses: actions/setup-java@v4
   #       with:
   #         distribution: ${{env.JAVA_DISTRIBUTION}}
   #         java-version: ${{env.JAVA_VERSION}}
-  #     - uses: actions/cache@v3
+  #     - uses: actions/cache@v4
   #       with:
   #         path: ~/.m2/repository
   #         key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
@@ -97,12 +105,18 @@ jobs:
   #           ${{ runner.os }}-maven-format-
   #           ${{ runner.os }}-maven-
   #     - name: Build Project
+  #       env:
+  #         USER_NAME: ${{ secrets.USER_NAME }}
+  #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
+  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
   #         $BUILD
   #     - name: Run Microservice Unit Tests
+  #       env:
+  #         USER_NAME: ${{ secrets.USER_NAME }}
+  #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         RUN_TESTS="mvn -V -B -e -Dmaven.build.cache.enabled=false verify"
+  #         RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dmaven.build.cache.enabled=false verify"
   #         cd microservices
   #         $RUN_TESTS \
   #           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
@@ -112,9 +126,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
@@ -133,11 +147,153 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        TAG=$(mvn -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+        TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
+
+  compose-build-and-test-latest-snapshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up some space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf $AGENT_TOOLSDIRECTORY
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Set up JDK ${{env.JAVA_VERSION}}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{env.JAVA_DISTRIBUTION}}
+          java-version: ${{env.JAVA_VERSION}}
+          maven-version: 3.9.5
+          cache: 'maven'
+      # Builds the quickstart and microservice docker images and runs a query test
+      - name: Docker Compose Query Tests
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          # update datawave dependencies to use the latest snapshots
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+          
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+          
+          # free up some space so that we don't run out
+          docker system prune -f
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+          
+          cd docker
+          ./bootstrap.sh
+          
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+          
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+          
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+          
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+          
+          cd scripts
+          ./testAll.sh
+
+      - name: Dump Logs
+        if: failure()
+        run: |
+          cd docker
+          docker compose logs
+
+  compose-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up some space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf $AGENT_TOOLSDIRECTORY
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Set up JDK ${{env.JAVA_VERSION}}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{env.JAVA_DISTRIBUTION}}
+          java-version: ${{env.JAVA_VERSION}}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-
+            ${{ runner.os }}-maven-format-
+            ${{ runner.os }}-maven-
+      # Builds the quickstart and microservice docker images and runs a query test
+      - name: Docker Compose Query Tests
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          # set some bogus URLs to trigger dependency download via maven
+          DIST_URLS="-Durl.zookeeper=https://bogus.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz.tar.gz \
+                     -Durl.accumulo=https://bogus.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz \
+                     -Durl.wildfly=https://bogus.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz \
+                     -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
+                     -Durl.maven=https://bogus.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz"
+          
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
+          # free up some space so that we don't run out
+          docker system prune -f
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          cd docker
+          ./bootstrap.sh
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+          cd scripts
+          ./testAll.sh
+      - name: Dump Logs
+        if: failure()
+        run: |
+          cd docker
+          docker compose logs
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
@@ -148,9 +304,11 @@ jobs:
     #     IMAGE_REGISTRY: "docker.pkg.github.com"
     #     IMAGE_USERNAME: "brianloss"
     #     IMAGE_NAME: "datawave/quickstart"
+    #     USER_NAME: ${{ secrets.USER_NAME }}
+    #     ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
     #   run: |
     #     # Set up env vars
-    #     TAG=$(mvn -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+    #     TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
     #     REMOTE_IMAGE_NAME="${IMAGE_REGISTRY}/${IMAGE_USERNAME}/${IMAGE_NAME}"
     #     # Log in to the package registry
     #     echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
@@ -158,4 +316,3 @@ jobs:
     #     docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
     #     docker images
     #     docker push ${REMOTE_IMAGE_NAME}:${TAG}
-

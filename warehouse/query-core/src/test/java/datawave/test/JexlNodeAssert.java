@@ -2,9 +2,10 @@ package datawave.test;
 
 import java.util.Objects;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.assertj.core.api.AbstractAssert;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -45,8 +46,8 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasNullImage() {
         isNotNull();
-        if (actual.image != null) {
-            failWithMessage("Expected image to be null, but was %s", actual.image);
+        if (JexlNodes.getIdentifierOrLiteral(actual) != null) {
+            failWithMessage("Expected image to be null, but was %s", JexlNodes.getIdentifierOrLiteral(actual));
         }
         return this;
     }
@@ -58,7 +59,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasNonNullImage() {
         isNotNull();
-        if (actual.image == null) {
+        if (JexlNodes.getIdentifierOrLiteral(actual) == null) {
             failWithMessage("Expected image to not be null");
         }
         return this;
@@ -73,8 +74,8 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasImage(String image) {
         isNotNull();
-        if (!Objects.equals(actual.image, image)) {
-            failWithMessage("Expected image to be %s but was %s", image, actual.image);
+        if (!Objects.equals(JexlNodes.getIdentifierOrLiteralAsString(actual), image)) {
+            failWithMessage("Expected image to be %s but was %s", image, JexlNodes.getIdentifierOrLiteral(actual));
         }
         return this;
     }

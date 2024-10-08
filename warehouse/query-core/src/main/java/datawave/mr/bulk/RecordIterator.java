@@ -1,7 +1,5 @@
 package datawave.mr.bulk;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -22,6 +20,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
@@ -50,6 +49,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
@@ -186,6 +186,21 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
 
         @Override
+        public boolean isFullMajorCompaction() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isUserCompaction() {
+            return false;
+        }
+
+        @Override
+        public Authorizations getAuthorizations() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public IteratorEnvironment cloneWithSamplingEnabled() {
             throw new SampleNotPresentException();
         }
@@ -200,6 +215,15 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             return null;
         }
 
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
     }
 
     public RecordIterator(final TabletSplitSplit fileSplit, Configuration conf) {

@@ -501,6 +501,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             }
 
             @Override
+            public boolean isUserCompaction() {
+                return false;
+            }
+
+            @Override
             public boolean isFullMajorCompaction() {
                 return false;
             }

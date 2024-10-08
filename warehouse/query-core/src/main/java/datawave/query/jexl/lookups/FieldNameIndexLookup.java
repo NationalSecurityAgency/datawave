@@ -1,5 +1,7 @@
 package datawave.query.jexl.lookups;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -10,6 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -21,6 +24,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
@@ -36,8 +40,9 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
     protected Set<String> terms;
 
     protected Future<Boolean> timedScanFuture;
-    protected long lookupStartTimeMillis = Long.MAX_VALUE;
+    protected AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
     protected CountDownLatch lookupStartedLatch;
+    protected CountDownLatch lookupStoppedLatch;
 
     private final Collection<ScannerSession> sessions = Lists.newArrayList();
 
@@ -73,7 +78,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
             Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
 
-            ScannerSession bs;
+            ScannerSession bs = null;
 
             try {
                 if (!fields.isEmpty()) {
@@ -97,14 +102,18 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
                         sessions.add(bs);
 
-                        iter = Iterators.concat(iter, bs);
+                        iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                     }
                 }
 
                 timedScanFuture = execService.submit(createTimedCallable(iter));
-            } catch (TableNotFoundException e) {
+            } catch (IOException | InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
                 log.error(e);
-            } catch (Exception e) {
+                // ensure the scanner is cleaned up if no longer listening
+                if (bs != null) {
+                    bs.close();
+                    sessions.remove(bs);
+                }
                 throw new RuntimeException(e);
             }
         }
@@ -115,7 +124,10 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
         if (!sessions.isEmpty()) {
             try {
                 // for field name lookups, we wait indefinitely
-                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStartTimeMillis, Long.MAX_VALUE);
+                // TODO consider if this really should be Long.MAX_VALUE or some time less. Other index scanners are set to config.getMaxIndexScanTimeMillis().
+                // However the code currently can't handle a failure here, where other index lookup failures can conditionally still allow the query to be
+                // executed. See UnfieldedIndexExpansionVisitor.expandUnfielded()
+                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStoppedLatch, lookupStartTimeMillis, config.getMaxAnyFieldScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : sessions) {
                     scannerFactory.close(sesh);
@@ -129,56 +141,66 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
         lookupStartedLatch = new CountDownLatch(1);
+        lookupStoppedLatch = new CountDownLatch(1);
 
         return () -> {
-            lookupStartTimeMillis = System.currentTimeMillis();
-            lookupStartedLatch.countDown();
-
-            final Text holder = new Text();
-
             try {
-                while (iter.hasNext()) {
-                    Entry<Key,Value> entry = iter.next();
-                    if (log.isTraceEnabled()) {
-                        log.trace("Index entry: " + entry.getKey());
-                    }
+                lookupStartTimeMillis.set(System.currentTimeMillis());
+                lookupStartedLatch.countDown();
 
-                    entry.getKey().getRow(holder);
-                    String row = holder.toString();
+                final Text holder = new Text();
 
-                    entry.getKey().getColumnFamily(holder);
-                    String colfam = holder.toString();
+                try {
+                    while (iter.hasNext()) {
+                        // check for interrupt which may be triggered by closing the batch scanner
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException();
+                        }
 
-                    entry.getKey().getColumnQualifier(holder);
+                        Entry<Key,Value> entry = iter.next();
+                        if (log.isTraceEnabled()) {
+                            log.trace("Index entry: " + entry.getKey());
+                        }
 
-                    if (config.getDatatypeFilter() != null && !config.getDatatypeFilter().isEmpty()) {
-                        try {
-                            String dataType = holder.toString().split(Constants.NULL)[1];
-                            if (!config.getDatatypeFilter().contains(dataType))
+                        entry.getKey().getRow(holder);
+                        String row = holder.toString();
+
+                        entry.getKey().getColumnFamily(holder);
+                        String colfam = holder.toString();
+
+                        entry.getKey().getColumnQualifier(holder);
+
+                        if (config.getDatatypeFilter() != null && !config.getDatatypeFilter().isEmpty()) {
+                            try {
+                                String dataType = holder.toString().split(Constants.NULL)[1];
+                                if (!config.getDatatypeFilter().contains(dataType))
+                                    continue;
+                            } catch (Exception e) {
+                                // skip the bad key
                                 continue;
-                        } catch (Exception e) {
-                            // skip the bad key
-                            continue;
+                            }
+                        }
+                        // We are only returning a mapping of field name to field value, no need to
+                        // determine cardinality and such at this point.
+                        indexLookupMap.put(colfam, row);
+
+                        // if we passed the term expansion threshold, then simply return
+                        if (indexLookupMap.isKeyThresholdExceeded()) {
+                            break;
                         }
                     }
-                    // We are only returning a mapping of field name to field value, no need to
-                    // determine cardinality and such at this point.
-                    indexLookupMap.put(colfam, row);
-
-                    // if we passed the term expansion threshold, then simply return
-                    if (indexLookupMap.isKeyThresholdExceeded()) {
-                        break;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    for (ScannerSession session : sessions) {
+                        scannerFactory.close(session);
                     }
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                for (ScannerSession session : sessions) {
-                    scannerFactory.close(session);
-                }
-            }
 
-            return true;
+                return true;
+            } finally {
+                lookupStoppedLatch.countDown();
+            }
         };
     }
 }

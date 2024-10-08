@@ -2,7 +2,7 @@
    <img src="datawave-readme.png" />
 </p>
 
-[![Apache License][li]][ll] ![Build Status](https://github.com/NationalSecurityAgency/datawave/workflows/Tests/badge.svg)
+[![Apache License][li]][ll] ![Build Status](https://github.com/NationalSecurityAgency/datawave/actions/workflows/tests.yml/badge.svg)
 
 DataWave is a Java-based ingest and query framework that leverages [Apache Accumulo](http://accumulo.apache.org/) to provide fast, secure access to your data. DataWave supports a wide variety of use cases, including but not limited to...
 
@@ -55,6 +55,10 @@ mvn -Pdocker,dist -DskipMicroservices clean install -T 1C
 # If you decide that you no longer need the submodules, you can remove them.
 git submodule deinit --all
 ```
+
+### DataWave Microservices
+
+For more information about deploying the datawave quickstart and microservices, check out the [Docker Readme](docker/README.md#usage)
 
 [li]: http://img.shields.io/badge/license-ASL-blue.svg
 [ll]: https://www.apache.org/licenses/LICENSE-2.0

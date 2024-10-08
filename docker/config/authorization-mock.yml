@@ -1,0 +1,62 @@
+
+mock:
+  users:
+    # Defines a regex such that, if the incoming subject DN matches the regex, the user is considered to be a server UserType
+    server-DN-regex: .*ou=servers.*
+    # Define roles (and the associated Accumulo auths) that are applied to all incoming users unless the name is found in the per-user map
+    global-roles-to-auths:
+      AuthorizedUser: DW_USER
+      JBossAdministrator: JBOSS_ADMIN
+      Administrator: DW_ADMIN
+    # Define per-user roles and auths. If the incoming DN (in lower-case subjectDN<issuerDN> form) matches an entry here, the
+    # corresponding roles and authorizations are provided instead of the global ones.
+    mockUsers:
+    #
+    #  "[subjectDN<issuerDN>]":
+    #    ROLE1: auth1
+    #    ROLE2: auth2
+    #    ROLE3: auth3
+    #
+    # E.g., the users below match the testUser.p12 and testServer.p12 certs in spring-boot-starter-datawave/src/main/resources/
+    # (password: ChangeIt) and will also work with the datawave quickstart and its example datasets
+
+      "[cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+        roles-to-auths: 
+          AuthorizedUser: DW_USER
+          JBossAdministrator: JBOSS_ADMIN
+          Administrator: DW_ADMIN
+          FooRole: FOO
+          BarRole: BAR
+          DefRole: DEF
+          PublicRole: PUBLIC
+          PrivateRole: PRIVATE
+          RoleA: A
+          RoleB: B
+          RoleC: C
+          RoleD: D
+          RoleE: E
+          RoleF: F
+          RoleG: G
+          RoleH: H
+          RoleI: I
+
+      "[cn=testserver.example.com, ou=servers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+        roles-to-auths:
+          AuthorizedServer: DW_SERV
+          MetricsAdministrator: METRICS_ADMIN
+          JBossAdministrator: JBOSS_ADMIN
+          Administrator: DW_ADMIN
+          FooRole: FOO
+          BarRole: BAR
+          DefRole: DEF
+          PublicRole: PUBLIC
+          PrivateRole: PRIVATE
+          RoleA: A
+          RoleB: B
+          RoleC: C
+          RoleD: D
+          RoleE: E
+          RoleF: F
+          RoleG: G
+          RoleH: H
+          RoleI: I

@@ -1,6 +1,7 @@
 package datawave.query.jexl.lookups;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
@@ -16,21 +17,22 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.ColumnQualifierRangeIterator;
@@ -437,12 +439,16 @@ public class ShardIndexQueryTableStaticMethods {
      * @param limitToUniqueTerms
      *            check for limiting unique terms
      * @return the scanner session
-     * @throws Exception
-     *             if there are issues
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws IOException
+     *             dates can't be formatted
      */
     public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -470,7 +476,7 @@ public class ShardIndexQueryTableStaticMethods {
 
     public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -578,7 +584,13 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     public static final void setExpansionFields(ShardQueryConfiguration config, ScannerBase bs, boolean reverseIndex, Collection<String> expansionFields) {
+        for (String field : getColumnFamilies(config, reverseIndex, expansionFields)) {
+            bs.fetchColumnFamily(new Text(field));
+        }
+    }
 
+    public static final List<String> getColumnFamilies(ShardQueryConfiguration config, boolean reverseIndex, Collection<String> expansionFields) {
+        List<String> cfs = Lists.newLinkedList();
         // Now restrict the fields returned to those that are specified and then only those that are indexed or reverse indexed
         if (expansionFields == null || expansionFields.isEmpty()) {
             expansionFields = (reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
@@ -587,16 +599,14 @@ public class ShardIndexQueryTableStaticMethods {
             expansionFields.retainAll(reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
         }
         if (expansionFields.isEmpty()) {
-            bs.fetchColumnFamily(new Text(Constants.NO_FIELD));
+            cfs.add(Constants.NO_FIELD);
         } else {
-            for (String field : expansionFields) {
-                bs.fetchColumnFamily(new Text(field));
-            }
+            cfs.addAll(expansionFields);
         }
-
+        return cfs;
     }
 
-    private static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
+    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
         if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return null;
@@ -808,7 +818,7 @@ public class ShardIndexQueryTableStaticMethods {
         else if (null == leadingLiteral && null != trailingLiteral) {
             return true;
         }
-        // we have neither leading or trailing, use foward index
+        // we have neither leading or trailing, use forward index
         if (trailingLiteral == null && leadingLiteral == null) {
             return false;
         }

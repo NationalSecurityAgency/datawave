@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,24 +7,26 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
-import datawave.edge.model.EdgeModelAware;
+import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.tables.edge.contexts.EdgeContext;
 import datawave.query.tables.edge.contexts.IdentityContext;
@@ -43,6 +43,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * The high level design of how the parsing works is as follows: There are two data structures that are built during the traversal to keep track of information.
  * Once the traversal is complete and the data structures are built they are sent to the VisitationContext which then builds the ranges and normalized query and
  * gets returned.<br>
+ * </p>
  * <br>
  * <p>
  * All data is expected to be passed up since this is a depth first search nothing will be passed down<br>
@@ -70,7 +71,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * ranges/normalized query.<br>
  * <br>
  * <p>
- * <p>
  * The 3 basic rules that are enforced are:<br>
  * for equivalence expressions (== =~)<br>
  * 1) cant and like identifiers<br>
@@ -91,7 +91,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * {@code (SOURCE == 's1' && SINK == 's2') || (SOURCE == 's2 && SINK == 's2) || ...}<br>
  * <br>
  */
-public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeModelAware {
+public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(EdgeTableRangeBuildingVisitor.class);
     protected boolean includeStats;
     protected List<? extends Type<?>> regexDataTypes;
@@ -104,12 +104,14 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     private long maxTerms = 10000;
     private boolean sawEquivalenceRegexSource = false;
     private boolean sawEquivalenceRegexSink = false;
+    private final EdgeModelFields fields;
 
-    public EdgeTableRangeBuildingVisitor(boolean stats, List<? extends Type<?>> types, long maxTerms, List<? extends Type<?>> rTypes) {
+    public EdgeTableRangeBuildingVisitor(boolean stats, List<? extends Type<?>> types, long maxTerms, List<? extends Type<?>> rTypes, EdgeModelFields fields) {
         this.includeStats = stats;
         this.dataTypes = types;
         this.maxTerms = maxTerms;
         regexDataTypes = rTypes;
+        this.fields = fields;
     }
 
     /*
@@ -133,7 +135,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         if (context.get(0) instanceof IdentityContext) {
             // this can only happen if there is no AND node in the query
             // Build singleton list of QueryContexts then create VisitationContext
-            QueryContext qContext = new QueryContext();
+            QueryContext qContext = new QueryContext(fields);
             qContext.packageIdentities((List<IdentityContext>) context);
 
             return computeVisitaionContext(Collections.singletonList(qContext));
@@ -168,15 +170,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
-        }
-
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
-        for (JexlNode child : children(node)) {
-            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            childContexts.add((List<? extends EdgeContext>) node.jjtGetChild(i).jjtAccept(this, null));
         }
 
         if (childContexts.isEmpty()) {
@@ -191,7 +188,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             List<? extends EdgeContext> childContext = childContexts.remove(childContexts.size() - 1);
 
             if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof IdentityContext)) {
-                QueryContext qContext = new QueryContext();
+                QueryContext qContext = new QueryContext(fields);
 
                 qContext.packageIdentities((List<IdentityContext>) childContext);
                 qContext.packageIdentities((List<IdentityContext>) mergedContext);
@@ -274,15 +271,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        if (termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
-        }
-
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
-        for (JexlNode child : children(node)) {
-            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            childContexts.add((List<? extends EdgeContext>) node.jjtGetChild(i).jjtAccept(this, null));
         }
 
         if (childContexts.isEmpty()) {
@@ -339,7 +331,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             else if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof QueryContext)) {
                 checkNotExclusion((IdentityContext) childContext.get(0), "Can't OR exclusion expressions");
 
-                QueryContext queryContext = new QueryContext();
+                QueryContext queryContext = new QueryContext(fields);
                 queryContext.packageIdentities((List<IdentityContext>) childContext, false);
 
                 if (isSourceList((List<IdentityContext>) childContext)) {
@@ -352,7 +344,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof IdentityContext)) {
                 checkNotExclusion((IdentityContext) mergedContext.get(0), "Can't OR exclusion expressions");
 
-                QueryContext queryContext = new QueryContext();
+                QueryContext queryContext = new QueryContext(fields);
                 queryContext.packageIdentities((List<IdentityContext>) mergedContext, false);
 
                 if (isSourceList((List<IdentityContext>) mergedContext)) {
@@ -383,7 +375,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     }
 
     private boolean isSourceList(List<IdentityContext> context) {
-        if (context.get(0).getIdentity().equals(EDGE_SOURCE)) {
+        if (context.get(0).getIdentity().equals(EdgeModelFields.FieldKey.EDGE_SOURCE)) {
             return true;
         } else {
             return false;
@@ -410,8 +402,16 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        termCount++;
-        return visitExpresionNode(node, EQUALS);
+        incrementTermCountAndCheck();
+        return visitExpresionNode(node, EdgeModelFields.EQUALS);
+    }
+
+    private void incrementTermCountAndCheck() {
+        if (++termCount > maxTerms) {
+            String message = "Exceeded max term limit of " + maxTerms;
+            log.error(message);
+            throw new IllegalArgumentException(message);
+        }
     }
 
     /**
@@ -428,11 +428,11 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTERNode node, Object data) {
-        termCount++;
-        List<IdentityContext> contexts = (List<IdentityContext>) visitExpresionNode(node, EQUALS_REGEX);
-        if (contexts.get(0).getIdentity().equals(EDGE_SOURCE)) {
+        incrementTermCountAndCheck();
+        List<IdentityContext> contexts = (List<IdentityContext>) visitExpresionNode(node, EdgeModelFields.EQUALS_REGEX);
+        if (contexts.get(0).getIdentity().equals(EdgeModelFields.FieldKey.EDGE_SOURCE)) {
             sawEquivalenceRegexSource = true;
-        } else if (contexts.get(0).getIdentity().equals(EDGE_SINK)) {
+        } else if (contexts.get(0).getIdentity().equals(EdgeModelFields.FieldKey.EDGE_SINK)) {
             sawEquivalenceRegexSink = true;
         }
         return contexts;
@@ -440,14 +440,14 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        termCount++;
-        return visitExpresionNode(node, NOT_EQUALS_REGEX);
+        incrementTermCountAndCheck();
+        return visitExpresionNode(node, EdgeModelFields.NOT_EQUALS_REGEX);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        termCount++;
-        return visitExpresionNode(node, NOT_EQUALS);
+        incrementTermCountAndCheck();
+        return visitExpresionNode(node, EdgeModelFields.NOT_EQUALS);
     }
 
     private Object visitExpresionNode(SimpleNode node, String operator) {
@@ -458,13 +458,14 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             throw new IllegalArgumentException("Problem parsing query");
         }
 
-        String identifier = getIdentity(node.jjtGetChild(0));
-        String literal = getLiteral(node.jjtGetChild(1));
+        String identifier = JexlNodes.getIdentifierOrLiteralAsString(node.jjtGetChild(0)).toUpperCase();
+        String literal = JexlNodes.getIdentifierOrLiteralAsString(node.jjtGetChild(1));
         List<IdentityContext> contexts = new ArrayList<>();
 
-        if (identifier.equals(EDGE_SOURCE) || identifier.equals(EDGE_SINK) || identifier.equals(EDGE_ATTRIBUTE3) || identifier.equals(EDGE_ATTRIBUTE2)) {
+        if (identifier.equals(fields.getSourceFieldName()) || identifier.equals(fields.getSinkFieldName()) || identifier.equals(fields.getAttribute3FieldName())
+                        || identifier.equals(fields.getAttribute2FieldName())) {
 
-            if (operator.equals(EQUALS_REGEX) || operator.equals(NOT_EQUALS_REGEX)) {
+            if (operator.equals(EdgeModelFields.EQUALS_REGEX) || operator.equals(EdgeModelFields.NOT_EQUALS_REGEX)) {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeRegexSource(literal, regexDataTypes, true)) {
                     try { // verify that the normalized regex is valid here instead of letting it fail on tserver
                           // TODO: right now the edge filter iterator calls toLowerCase on the query string by default
@@ -472,7 +473,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                           // so for right now throw out any regex's that would cause the edge filter iterator to fail but this should probably change in the
                           // future
                         Pattern.compile(normalizedLiteral.toLowerCase());
-                        IdentityContext iContext = new IdentityContext(identifier, normalizedLiteral, operator);
+                        IdentityContext iContext = new IdentityContext(identifier, normalizedLiteral, operator, fields);
                         contexts.add(iContext);
                     } catch (PatternSyntaxException e) {
                         continue;
@@ -484,50 +485,17 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 }
             } else {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeSource(literal, dataTypes, true)) {
-                    IdentityContext iContext = new IdentityContext(identifier, normalizedLiteral, operator);
+                    IdentityContext iContext = new IdentityContext(identifier, normalizedLiteral, operator, fields);
                     contexts.add(iContext);
                 }
             }
 
         } else {
-            IdentityContext iContext = new IdentityContext(identifier, literal, operator);
+            IdentityContext iContext = new IdentityContext(identifier, literal, operator, fields);
             contexts.add(iContext);
         }
 
         return contexts;
-    }
-
-    /**
-     * Gets the Identity of an expression eg. SOURCE
-     *
-     * @param referenceNode
-     *            a reference node
-     * @return the identity
-     */
-    private String getIdentity(SimpleNode referenceNode) {
-
-        if (referenceNode.jjtGetNumChildren() != 1) {
-            log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
-        }
-
-        return referenceNode.jjtGetChild(0).image.toUpperCase();
-    }
-
-    /**
-     * Gets the string literal
-     *
-     * @param referenceNode
-     *            reference node
-     * @return string literal
-     */
-    private String getLiteral(SimpleNode referenceNode) {
-        if (referenceNode.jjtGetNumChildren() != 1) {
-            log.error("Reference node (literal) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
-        }
-
-        return referenceNode.jjtGetChild(0).image;
     }
 
     /**
@@ -549,30 +517,33 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
         StringBuilder sb = new StringBuilder();
 
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            if (0 == i) {
-                sb.append(node.jjtGetChild(i).image);
-            } else if (1 == i) {
-                if (!allowedFunctions.contains(node.jjtGetChild(i).image.toLowerCase())) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
-                                    node.jjtGetChild(i).image + " not supported function for EdgeQuery");
-                    throw new UnsupportedOperationException(qe);
-                }
-                sb.append(":");
-                sb.append(node.jjtGetChild(i).image);
-            } else if (2 == i) {
+        ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
+        if (!allowedFunctions.contains(namespaceNode.getName().toLowerCase())) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                            namespaceNode.getName() + " not supported function for EdgeQuery");
+            throw new UnsupportedOperationException(qe);
+        }
+
+        sb.append(namespaceNode.getNamespace());
+        sb.append(":");
+        sb.append(namespaceNode.getName());
+
+        ASTArguments argsNode = (ASTArguments) node.jjtGetChild(1);
+        for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
+            if (i == 0) {
                 sb.append("(");
-                sb.append(getLiteral(node.jjtGetChild(i)));
-            } else if (2 < i) {
+                sb.append(JexlNodes.getIdentifierOrLiteral(argsNode.jjtGetChild(i)));
+            } else {
                 sb.append(", ");
-                sb.append("'" + getLiteral(node.jjtGetChild(i)).toLowerCase() + "'");
+                sb.append("'").append(JexlNodes.getIdentifierOrLiteralAsString(argsNode.jjtGetChild(i)).toLowerCase()).append("'");
             }
         }
 
         sb.append(")");
 
         List<IdentityContext> contexts = new ArrayList<>();
-        IdentityContext iContext = new IdentityContext(FUNCTION, sb.toString(), FUNCTION);
+        IdentityContext iContext = new IdentityContext(EdgeModelFields.FieldKey.FUNCTION.name(), sb.toString(), EdgeModelFields.FieldKey.FUNCTION.name(),
+                        fields);
 
         contexts.add(iContext);
         return contexts;
@@ -626,8 +597,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 }
             }
         }
-        VisitationContext vContext = new VisitationContext(includeStats);
-
+        VisitationContext vContext = new VisitationContext(fields, includeStats);
         vContext.setHasAllCompleteColumnFamilies(!includColumnFamilyTerms);
 
         for (QueryContext qContext : queryContexts) {

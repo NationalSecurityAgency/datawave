@@ -805,7 +805,6 @@ public class BulkIngestMapFileLoaderTest {
 
             Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
-
         } finally {
 
             BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMajCDelay completed.");
@@ -845,7 +844,6 @@ public class BulkIngestMapFileLoaderTest {
 
             Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
-
         } finally {
 
             BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMajCDelay completed.");

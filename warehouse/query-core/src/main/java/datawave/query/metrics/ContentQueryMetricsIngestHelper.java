@@ -13,16 +13,16 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.util.QueryUtil;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.RangeCounts;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.util.QueryUtil;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
 

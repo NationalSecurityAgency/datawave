@@ -33,6 +33,7 @@ public class AbstractTableConfigHelperTest {
     private static final String BAD_TABLE_NAME = "VERY_BAD_TABLE_NAME";
     private static final Logger logger = Logger.getLogger(AbstractTableConfigHelperTest.class);
     private static Level testDriverLevel;
+    private Configuration config;
 
     @BeforeClass
     public static void adjustLogLevels() {
@@ -111,7 +112,9 @@ public class AbstractTableConfigHelperTest {
         }
 
         @Override
-        public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {}
+        public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {
+            this.config = config;
+        }
 
         @Override
         public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {}
@@ -250,13 +253,13 @@ public class AbstractTableConfigHelperTest {
                 areAggregatorsConfiguredCalled = false;
                 AbstractTableConfigHelperTest.GET_PROPERTIES_THROWS_ACCUMULO_EXCEPTION = false;
 
-                boolean results = this.areAggregatorsConfigured(tableName, aggregators, tops);
+                boolean results = this.areAggregatorsConfigured(tableName, aggregators, tops, config);
 
                 Assert.assertTrue("AreAggregatorsConfigured called", areAggregatorsConfiguredCalled);
                 Assert.assertFalse("AreAggregatorsConfigured returned and unexpected results", results);
 
                 parent.tableProperties.clear();
-                Map<String,String> props = generateInitialTableProperties();
+                Map<String,String> props = generateInitialTableProperties(config, tableName);
                 props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
 
                 int counter = 0;
@@ -274,18 +277,18 @@ public class AbstractTableConfigHelperTest {
                     parent.tableProperties.put(key, value);
                 }
 
-                results = this.areAggregatorsConfigured(tableName, aggregators, tops);
+                results = this.areAggregatorsConfigured(tableName, aggregators, tops, config);
 
                 Assert.assertTrue("AreAggregatorsConfigured called", areAggregatorsConfiguredCalled);
                 Assert.assertFalse("AreAggregatorsConfigured returned and unexpected results", results);
 
                 parent.tableProperties.clear();
-                props = generateInitialTableProperties();
+                props = generateInitialTableProperties(config, tableName);
                 props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
 
                 parent.tableProperties.putAll(props);
 
-                results = this.areAggregatorsConfigured(tableName, aggregators, tops);
+                results = this.areAggregatorsConfigured(tableName, aggregators, tops, config);
 
                 Assert.assertTrue("AreAggregatorsConfigured called", areAggregatorsConfiguredCalled);
                 Assert.assertTrue("AreAggregatorsConfigured returned and unexpected results", results);
@@ -298,7 +301,7 @@ public class AbstractTableConfigHelperTest {
 
                     tableName = AbstractTableConfigHelperTest.BAD_TABLE_NAME;
 
-                    this.areAggregatorsConfigured(tableName, aggregators, tops);
+                    this.areAggregatorsConfigured(tableName, aggregators, tops, config);
 
                     Assert.fail("AreAggregratorsConfigured failed to throw the expected exception.");
 
@@ -319,7 +322,7 @@ public class AbstractTableConfigHelperTest {
 
                     tableName = AbstractTableConfigHelperTest.TABLE_NAME;
 
-                    this.areAggregatorsConfigured(tableName, aggregators, tops);
+                    this.areAggregatorsConfigured(tableName, aggregators, tops, config);
 
                     Assert.fail("AreAggregratorsConfigured failed to throw the expected exception.");
 
@@ -354,7 +357,7 @@ public class AbstractTableConfigHelperTest {
             resultsForOverridenAreAggregatorsConfigured = true;
             areAggregatorsConfiguredCalled = false;
 
-            this.setAggregatorConfigurationIfNecessary(tableName, aggregators, tops, log);
+            this.setAggregatorConfigurationIfNecessary(tableName, aggregators, tops, config, log);
 
             Assert.assertTrue("SetCombinerConfigurationIfNecessary() failed to call areAggregatorsConfigured", areAggregatorsConfiguredCalled);
             Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.", 1, debugMessages.size());
@@ -365,13 +368,13 @@ public class AbstractTableConfigHelperTest {
             resultsForOverridenAreAggregatorsConfigured = false;
             areAggregatorsConfiguredCalled = false;
 
-            this.setAggregatorConfigurationIfNecessary(tableName, aggregators, tops, log);
+            this.setAggregatorConfigurationIfNecessary(tableName, aggregators, tops, config, log);
 
             Assert.assertTrue("SetCombinerConfigurationIfNecessary() failed to call areAggregatorsConfigured", areAggregatorsConfiguredCalled);
             Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.", 0, debugMessages.size());
             Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of info messages.", 1, infoMessages.size());
 
-            Map<String,String> props = generateInitialTableProperties();
+            Map<String,String> props = generateInitialTableProperties(config, tableName);
             props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
             for (int counter = 0; counter < AbstractTableConfigHelperTest.FIXED_KEYS.length; counter++) {
 
@@ -408,7 +411,7 @@ public class AbstractTableConfigHelperTest {
         public boolean resultsForSetLocalityGroupsConfigured = false;
 
         @Override
-        protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops)
+        protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config)
                         throws TableNotFoundException {
 
             boolean results = false;
@@ -420,7 +423,7 @@ public class AbstractTableConfigHelperTest {
                 results = resultsForOverridenAreAggregatorsConfigured;
             } else {
 
-                results = super.areAggregatorsConfigured(tableName, aggregators, tops);
+                results = super.areAggregatorsConfigured(tableName, aggregators, tops, config);
             }
 
             return results;

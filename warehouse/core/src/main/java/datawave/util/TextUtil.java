@@ -56,6 +56,13 @@ public class TextUtil {
 
     /**
      * Appends the UTF-8 bytes of the given string to the given {@link Text}
+     *
+     * @param t
+     *            the Text to which append
+     * @param s
+     *            the String to append
+     * @param replaceBadChar
+     *            flag to replace bad characters
      */
     public static void textAppendNoNull(Text t, String s, boolean replaceBadChar) {
         try {
@@ -90,6 +97,7 @@ public class TextUtil {
      * Converts a UTF-8 encoded byte array back into a String.
      *
      * @param bytes
+     *            UTF8 string of bytes
      * @return string
      */
     public static String fromUtf8(byte[] bytes) {
@@ -98,5 +106,14 @@ public class TextUtil {
         } catch (CharacterCodingException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    public static byte[] getBytes(Text text) {
+        byte[] bytes = text.getBytes();
+        if (bytes.length != text.getLength()) {
+            bytes = new byte[text.getLength()];
+            System.arraycopy(text.getBytes(), 0, bytes, 0, bytes.length);
+        }
+        return bytes;
     }
 }

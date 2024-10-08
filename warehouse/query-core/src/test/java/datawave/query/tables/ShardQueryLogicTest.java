@@ -35,8 +35,11 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -45,9 +48,6 @@ import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -135,7 +135,7 @@ public abstract class ShardQueryLogicTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -193,23 +193,27 @@ public abstract class ShardQueryLogicTest {
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
 
-        for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
-            Set<String> expectedSet = it.next();
-            boolean found = false;
+        if (expected.isEmpty()) {
+            Assert.assertTrue(eventQueryResponse.getEvents() == null || eventQueryResponse.getEvents().isEmpty());
+        } else {
+            for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
+                Set<String> expectedSet = it.next();
+                boolean found = false;
 
-            for (EventBase event : eventQueryResponse.getEvents()) {
+                for (EventBase event : eventQueryResponse.getEvents()) {
 
-                if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
-                    expectedSet.remove("UID:" + event.getMetadata().getInternalId());
-                    ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));
-                    if (expectedSet.isEmpty()) {
-                        found = true;
-                        it.remove();
+                    if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
+                        expectedSet.remove("UID:" + event.getMetadata().getInternalId());
+                        ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));
+                        if (expectedSet.isEmpty()) {
+                            found = true;
+                            it.remove();
+                        }
+                        break;
                     }
-                    break;
                 }
+                Assert.assertTrue("field not found " + expectedSet, found);
             }
-            Assert.assertTrue("field not found " + expectedSet, found);
         }
     }
 
@@ -228,6 +232,184 @@ public abstract class ShardQueryLogicTest {
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.sopranoUID, "MAGIC_COPY:18"));
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.corleoneUID, "MAGIC_COPY:18"));
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID, "MAGIC_COPY:18"));
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE=~'.*kind'";
+        Set<Set<String>> expected = new HashSet<>();
+        // todo: make this work someday
+        // expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testFwdRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE=~'kin.*'";
+        Set<Set<String>> expected = new HashSet<>();
+        // todo: make this work someday
+        // expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testEvalRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND ((_Eval_ = true) && QUOTE=~'.*alone')";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeEvalRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND ((_Eval_ = true) && QUOTE!~'.*alone')";
+        Set<Set<String>> expected = new HashSet<>();
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testNegativeEvalRegexV2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND ((_Eval_ = true) && !(QUOTE=~'.*alone'))";
+        Set<Set<String>> expected = new HashSet<>();
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testDoubeWildcard() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE=~'.*ind.*'";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE!~'.*ind'";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeRegexV2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND !(QUOTE=~'.*ind')";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testFilterRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND filter:includeRegex(QUOTE,'.*kind word alone.*')";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeFilterRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND !filter:includeRegex(QUOTE,'.*kind word alone.*')";
+        Set<Set<String>> expected = new HashSet<>();
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeFilterRegexV2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND !(filter:includeRegex(QUOTE,'.*kind word alone.*'))";
+        Set<Set<String>> expected = new HashSet<>();
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesBangDataType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "!test2");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='TATTAGLIA'";
+        Set<Set<String>> expected = new HashSet<>();
+        // No results expected
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesNegateDataType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "test2,!test2");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='TATTAGLIA'";
+        Set<Set<String>> expected = new HashSet<>();
+        // Expect one result, since the negated data type results in empty set, which is treated by Datawave as all data types
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.tattagliaUID));
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesIncludeOneTypeExcludeOneType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "test2,!test");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='TATTAGLIA' || UUID=='CAPONE'";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.tattagliaUID));
+
         runTestQuery(expected, queryString, startDate, endDate, extraParameters);
     }
 }

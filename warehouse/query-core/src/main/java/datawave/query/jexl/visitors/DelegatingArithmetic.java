@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 
-import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl3.JexlArithmetic;
 
 public class DelegatingArithmetic extends JexlArithmetic {
     private final JexlArithmetic delegate;
@@ -15,11 +15,6 @@ public class DelegatingArithmetic extends JexlArithmetic {
     }
 
     @Override
-    public boolean isLenient() {
-        return delegate.isLenient();
-    }
-
-    @Override
     public MathContext getMathContext() {
         return delegate.getMathContext();
     }
@@ -27,11 +22,6 @@ public class DelegatingArithmetic extends JexlArithmetic {
     @Override
     public int getMathScale() {
         return delegate.getMathScale();
-    }
-
-    @Override
-    public BigDecimal roundBigDecimal(BigDecimal number) {
-        return delegate.roundBigDecimal(number);
     }
 
     @Override
@@ -65,28 +55,8 @@ public class DelegatingArithmetic extends JexlArithmetic {
     }
 
     @Override
-    public boolean matches(Object left, Object right) {
-        return delegate.matches(left, right);
-    }
-
-    @Override
-    public Object bitwiseAnd(Object left, Object right) {
-        return delegate.bitwiseAnd(left, right);
-    }
-
-    @Override
-    public Object bitwiseOr(Object left, Object right) {
-        return delegate.bitwiseOr(left, right);
-    }
-
-    @Override
-    public Object bitwiseXor(Object left, Object right) {
-        return delegate.bitwiseXor(left, right);
-    }
-
-    @Override
-    public Object bitwiseComplement(Object val) {
-        return delegate.bitwiseComplement(val);
+    public Boolean contains(Object container, Object value) {
+        return delegate.contains(container, value);
     }
 
     @Override
