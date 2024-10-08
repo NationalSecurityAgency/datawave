@@ -40,7 +40,7 @@ public class TestLogCollector extends ExternalResource {
     @Override
     protected void before() {
         StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
-        Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(new FilterAdapter(new Filter() {
+        Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(FilterAdapter.adapt(new Filter() {
             @Override
             public int decide(LoggingEvent event) {
                 messages.add(event.getMessage().toString());
