@@ -168,7 +168,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> documents = null;
 
         if (!configuration.getFacetedFields().isEmpty()) {
-            projection = new EventDataQueryFieldFilter(configuration.getFacetedFields(), Projection.ProjectionType.INCLUDES);
+            projection = new EventDataQueryFieldFilter().withFields(configuration.getFacetedFields());
         }
 
         if (!configuration.hasFieldLimits() || projection != null) {

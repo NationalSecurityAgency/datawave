@@ -54,8 +54,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
     private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[] {});
 
-    protected static final Collection<ByteSequence> columnFamilies = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
-    protected static final boolean inclusive = false;
+    protected final Collection<ByteSequence> columnFamilies = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
 
     private final DescendantCountFunction countFunction;
 
@@ -153,7 +152,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
     @Override
     public Entry<DocumentData,Document> apply(Entry<Key,Document> from) {
-        // We want to ensure that we have a non-empty colqual
+        // We want to ensure that we have a non-empty column qualifier
         if (null == from || null == from.getKey() || null == from.getValue()) {
             return null;
         }
@@ -162,7 +161,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
         try {
             logStart();
-            source.seek(keyRange, columnFamilies, inclusive);
+            source.seek(keyRange, columnFamilies, false);
 
             if (log.isDebugEnabled())
                 log.debug(source.hasTop() + " Key range is " + keyRange);
@@ -201,32 +200,6 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *             for issues with read/write
      */
     public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
-        return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
-    }
-
-    /**
-     * Given a Key pointing to the start of an document to aggregate, construct a Range that should encapsulate the "document" to be aggregated together. Also
-     * checks to see if data was found for the constructed Range before returning.
-     *
-     * @param documentStartKey
-     *            A Key of the form "bucket type\x00uid: "
-     * @param keyRange
-     *            the Range used to initialize source with seek()
-     * @param source
-     *            a source
-     * @param equality
-     *            an equality
-     * @param docKeys
-     *            set of keys
-     * @param filter
-     *            a query filter
-     * @return the attributes
-     * @throws IOException
-     *             for issues with read/write
-     */
-    private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
-                    EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
-
         // set up the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
             filter.startNewDocument(documentStartKey);
@@ -256,7 +229,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         // request a seek range from the filter
                         Range seekRange = filter.getSeekRange(docAttrKey.get(), keyRange.getEndKey(), keyRange.isEndKeyInclusive());
                         if (seekRange != null) {
-                            source.seek(seekRange, columnFamilies, inclusive);
+                            source.seek(seekRange, columnFamilies, false);
                             seeked = true;
                         }
                     }
@@ -292,7 +265,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, Range seekRange,
                     DescendantCountFunction function, boolean includeParent) {
-        if ((null != function) || includeParent) {
+        if (function != null || includeParent) {
 
             // get the minimal timestamp and majority visibility from the
             // attributes
@@ -329,7 +302,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             applyDescendantCounts(function, seekRange, key, documentAttributes, visibility, minTimestamp);
 
             // include the parent uid
-            if (includeParent && uid.getExtra() != null && !uid.getExtra().equals("")) {
+            if (includeParent && uid.getExtra() != null && !uid.getExtra().isEmpty()) {
                 String parentUid = uidString.substring(0, uidString.lastIndexOf(UIDConstants.DEFAULT_SEPARATOR));
                 Key parentUidKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_PARENT_UID_FIELDNAME + '\0' + parentUid),
                                 new ColumnVisibility(visibility), minTimestamp);
@@ -343,44 +316,46 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     private static int applyDescendantCounts(final DescendantCountFunction function, final Range range, final Key key,
                     final List<Entry<Key,Value>> documentAttributes, final String visibility, long timestamp) {
         int basicChildCount = 0;
-        if ((null != function) && (null != key)) {
-            // Count the descendants, generating keys based on query options and
-            // document attributes
-            final Tuple3<Range,Key,List<Entry<Key,Value>>> tuple = new Tuple3<>(range, key, documentAttributes);
-            final DescendantCount count = function.apply(tuple);
+        if (null == function || null == key) {
+            return basicChildCount;
+        }
 
-            // No need to do any more work if there aren't any descendants
-            if ((null != count) && count.hasDescendants()) {
-                // Extract the basic, first-generation count
-                basicChildCount = count.getFirstGenerationCount();
+        // Count the descendants, generating keys based on query options and
+        // document attributes
+        final Tuple3<Range,Key,List<Entry<Key,Value>>> tuple = new Tuple3<>(range, key, documentAttributes);
+        final DescendantCount count = function.apply(tuple);
 
-                // Get any generated keys, apply any specified visibility, and
-                // add to the document attributes
-                final List<Key> keys = count.getKeys();
-                if ((null != documentAttributes) && !documentAttributes.isEmpty() && !keys.isEmpty()) {
-                    // Create a Text for the Keys' visibility
-                    Text appliedVis;
-                    if ((null != visibility) && !visibility.isEmpty()) {
-                        appliedVis = new Text(visibility);
-                    } else {
-                        appliedVis = new Text();
+        // No need to do any more work if there aren't any descendants
+        if (count != null && count.hasDescendants()) {
+            // Extract the basic, first-generation count
+            basicChildCount = count.getFirstGenerationCount();
+
+            // Get any generated keys, apply any specified visibility, and
+            // add to the document attributes
+            final List<Key> keys = count.getKeys();
+            if (documentAttributes != null && !documentAttributes.isEmpty() && !keys.isEmpty()) {
+                // Create a Text for the Keys' visibility
+                Text appliedVis;
+                if (visibility != null && !visibility.isEmpty()) {
+                    appliedVis = new Text(visibility);
+                } else {
+                    appliedVis = new Text();
+                }
+
+                // Conditionally adjust visibility and timestamp
+                for (final Key childCountKey : keys) {
+                    final Text appliedRow = childCountKey.getRow();
+                    final Text appliedCf = childCountKey.getColumnFamily();
+                    final Text appliedCq = childCountKey.getColumnQualifier();
+                    if (visibility == null || visibility.isEmpty()) {
+                        childCountKey.getColumnVisibility(appliedVis);
+                    }
+                    if (timestamp <= 0) {
+                        timestamp = childCountKey.getTimestamp();
                     }
 
-                    // Conditionally adjust visibility and timestamp
-                    for (final Key childCountKey : keys) {
-                        final Text appliedRow = childCountKey.getRow();
-                        final Text appliedCf = childCountKey.getColumnFamily();
-                        final Text appliedCq = childCountKey.getColumnQualifier();
-                        if ((null == visibility) || visibility.isEmpty()) {
-                            childCountKey.getColumnVisibility(appliedVis);
-                        }
-                        if (timestamp <= 0) {
-                            timestamp = childCountKey.getTimestamp();
-                        }
-
-                        final Key appliedKey = new Key(appliedRow, appliedCf, appliedCq, appliedVis, timestamp);
-                        documentAttributes.add(Maps.immutableEntry(appliedKey, EMPTY_VALUE));
-                    }
+                    final Key appliedKey = new Key(appliedRow, appliedCf, appliedCq, appliedVis, timestamp);
+                    documentAttributes.add(Maps.immutableEntry(appliedKey, EMPTY_VALUE));
                 }
             }
         }
