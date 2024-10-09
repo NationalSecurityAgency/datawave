@@ -586,6 +586,11 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo\\ Foo.*'", parser.parse("FOO:bar BAZ:/Foo\\/Foo\\ Foo.*/").getOriginalQuery());
         assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo Foo.*?'", parser.parse("FOO:bar BAZ:/Foo\\/Foo Foo.*?/").getOriginalQuery());
     }
+    
+    @Test
+    public void testTimeFunction() throws ParseException {
+        System.out.println(parseQuery(""));
+    }
 
     @Test
     public void testUniqueFunctions() throws ParseException {
