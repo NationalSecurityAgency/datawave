@@ -80,7 +80,7 @@ jobs:
         export newVersion=$(mvn -q help:evaluate -DforceStdout -Dexpression=project.version)
         echo accumuloVersion=$newVersion >> $GITHUB_OUTPUT
     - name: Deploy Accumulo
-      if: ${{ ( github.event.inputs.deployAccumulo || 'false' )  == 'true'}}
+      if: ${{ github.event.inputs.deployAccumulo }}
       run: | 
         export JAVA_HOME=$ACCUMULO_JAVA
         cd $GITHUB_WORKSPACE/accumulo   
