@@ -87,13 +87,13 @@ jobs:
     - name: Update DataWave Dependency Version
       run: |
 
-        export JAVA_HOME=$DATAWAVE_JAVA
-        cd $GITHUB_WORKSPACE/datawave
-        mvn -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
+        export JAVA_HOME="$DATAWAVE_JAVA"
+        cd "$GITHUB_WORKSPACE/datawave"
+        mvn -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml" versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
-        export JAVA_HOME=$DATAWAVE_JAVA
-        cd $GITHUB_WORKSPACE/datawave
-        mvn -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        export JAVA_HOME="$DATAWAVE_JAVA"
+        cd "$GITHUB_WORKSPACE/datawave"
+        mvn -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml" clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  
