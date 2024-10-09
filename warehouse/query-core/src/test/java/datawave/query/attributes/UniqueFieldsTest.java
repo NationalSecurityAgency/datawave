@@ -71,7 +71,7 @@ public class UniqueFieldsTest {
         uniqueFields.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         uniqueFields.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
 
-        assertEquals("fieldA[ALL],fieldB[ALL,DAY],fieldC[HOUR],fieldD[HOUR,MINUTE]", uniqueFields.toString());
+        assertEquals("FIELDA[ALL],FIELDB[ALL,DAY],FIELDC[HOUR],FIELDD[HOUR,MINUTE]", uniqueFields.toString());
     }
 
     /**
@@ -345,7 +345,7 @@ public class UniqueFieldsTest {
         UniqueFields uniqueFields = new UniqueFields(sortedFields);
 
         String json = objectMapper.writeValueAsString(uniqueFields);
-        assertEquals("\"fieldA[ALL],fieldB[ALL,DAY],fieldC[HOUR],fieldD[HOUR,MINUTE]\"", json);
+        assertEquals("\"FIELDA[ALL],FIELDB[ALL,DAY],FIELDC[HOUR],FIELDD[HOUR,MINUTE]\"", json);
     }
 
     /**
@@ -387,7 +387,7 @@ public class UniqueFieldsTest {
         uniqueFields.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         Set<String> values = Sets.newHashSet("2020-01-12 15:30:45", "nonDateValue");
 
-        SortedSet<String> actual = Sets.newTreeSet(uniqueFields.transformValues("fieldA", values));
+        SortedSet<String> actual = Sets.newTreeSet(uniqueFields.transformValues("FIELDA", values));
 
         assertEquals(expected, actual);
     }
@@ -406,8 +406,6 @@ public class UniqueFieldsTest {
         uniqueFields.put("$FIELDA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         uniqueFields.put("$FIELDB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         uniqueFields.put("FIELDC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
-
-        uniqueFields.deconstructIdentifierFields();
 
         SortedSet<String> actual = Sets.newTreeSet(uniqueFields.getFields());
 

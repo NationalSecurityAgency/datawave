@@ -79,9 +79,9 @@ public class FieldIndexIntegrationTest {
             put("FIELD_A", 2);
             put("FIELD_B", 2);
             put("FIELD_C", 2);
-            put("TLD_FIELD_A", 6);
-            put("TLD_FIELD_B", 26);
-            put("TLD_FIELD_C", 8);
+            put("TLD_FIELD_A", 4); // 3 record ids, 1 value
+            put("TLD_FIELD_B", 14); // 13 record ids, 1 value
+            put("TLD_FIELD_C", 5); // 4 record ids, 1 value
             put("FIELD_X", 2);
             put("FIELD_Y", 2);
             put("FIELD_Z", 2);

@@ -54,6 +54,11 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         return Constants.EMPTY_VISIBILITY;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return false;
+    }
+
     public void setColumnVisibility(ColumnVisibility columnVisibility) {
         if (isMetadataSet()) {
             metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), metadata.getColumnQualifier(), columnVisibility, metadata.getTimestamp());

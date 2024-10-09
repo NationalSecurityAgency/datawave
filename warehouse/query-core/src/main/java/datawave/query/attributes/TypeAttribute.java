@@ -104,7 +104,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
         if (o instanceof TypeAttribute) {
             TypeAttribute other = (TypeAttribute) o;
-            return this.getType().equals(other.getType()) && (0 == this.compareMetadata(other));
+            return this.getType().equals(other.getType());
         }
 
         return false;
