@@ -54,14 +54,6 @@ jobs:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.ACCUMULO_JAVA_VERSION}}
         cache: 'maven'
-    - uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-build-
-          ${{ runner.os }}-maven-format-
-          ${{ runner.os }}-maven-
     - run: echo "ACCUMULO_JAVA=$JAVA_HOME" >> $GITHUB_ENV
     - name: Set up JDK ${{env.DATAWAVE_JAVA_VERSION}}
       uses: actions/setup-java@v4
