@@ -3007,7 +3007,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
-    @Path("/{logicName}/validateQuery")
+    @Path("/{logicName}/validate")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.validateQuery", absolute = true)
     public GenericResponse<String> validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
