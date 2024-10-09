@@ -74,8 +74,8 @@ jobs:
     - name: Get Accumulo Version
       id: get-accumulo-version
       run: |
-        export JAVA_HOME=$ACCUMULO_JAVA
-        cd $GITHUB_WORKSPACE/accumulo
+        export JAVA_HOME="$ACCUMULO_JAVA"
+        cd "$GITHUB_WORKSPACE/accumulo"
         mvn build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-dwv-$(git rev-parse --short HEAD)
         export newVersion=$(mvn -q help:evaluate -DforceStdout -Dexpression=project.version)
         echo accumuloVersion=$newVersion >> $GITHUB_OUTPUT
