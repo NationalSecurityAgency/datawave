@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
@@ -19,9 +20,11 @@ import datawave.ingest.data.tokenize.StandardAnalyzer;
 import datawave.ingest.data.tokenize.TokenSearch;
 import datawave.query.Constants;
 import datawave.query.language.parser.ParseException;
+import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
+import datawave.query.lucene.visitors.PrintingVisitor;
 
 public class TestLuceneToJexlQueryParser {
 

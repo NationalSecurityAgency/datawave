@@ -49,6 +49,11 @@ import datawave.query.jexl.functions.QueryFunctions;
  * <li>{@code f:unique_by_second()}: Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g.
  * {@code unique_by_second('field1','field2')}</li>
  * <li>{@code f:rename}: Expects a comma-delimited list field/field mappings e.g. {@code f:rename('field1=field2','field3=field4')}</li>
+ * <li>{@code f:sum}: Expects a comma-delimited list of fields to sum the values of in a grouping.</li>
+ * <li>{@code f:min}: Expects a comma-delimited list of fields to find the minimum value of in a grouping.</li>
+ * <li>{@code f:max}: Expects a comma-delimited list of fields to find the maximum value of in a grouping.</li>
+ * <li>{@code f:average}: Expects a comma-delimited list of fields to find the average value of in a grouping.</li>
+ * <li>{@code f:count}: Expects a comma-delimited list of fields to count the occurrences of in a grouping.</li>
  * </ul>
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {

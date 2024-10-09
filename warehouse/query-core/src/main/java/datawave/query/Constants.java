@@ -40,6 +40,8 @@ public class Constants {
 
     public static final String PIPE = "|";
 
+    public static final String ASTERISK = "*";
+
     public static final Text TEXT_NULL = new Text(NULL);
 
     public static final Text FI_PREFIX = new Text("fi");
@@ -95,4 +97,11 @@ public class Constants {
     public static final String END_DATE = "end.date";
 
     public static final String COLUMN_VISIBILITY = "columnVisibility";
+
+    public static final Character BACKSLASH_CHAR = '\\';
+    public static final Character ASTERISK_CHAR = '*';
+
+    public static final String JEXL = "JEXL";
+    public static final String LUCENE = "LUCENE";
+    public static final String LUCENE_UUID = "LUCENE-UUID";
 }

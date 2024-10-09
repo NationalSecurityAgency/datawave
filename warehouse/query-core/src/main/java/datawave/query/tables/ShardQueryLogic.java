@@ -30,6 +30,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -78,15 +79,26 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuilder;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
+import datawave.query.language.parser.lucene.LuceneSyntaxQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
+import datawave.query.planner.QueryOptionsSwitch;
 import datawave.query.planner.QueryPlanner;
+import datawave.query.rules.QueryRule;
+import datawave.query.rules.QueryValidationResult;
+import datawave.query.rules.ShardQueryValidationConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -96,15 +108,19 @@ import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
+import datawave.query.transformer.QueryValidationResultTransformer;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.ShardQueryUtils;
 import datawave.util.time.TraceStopwatch;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.QueryValidationResponse;
 
 /**
  * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
@@ -193,14 +209,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
     protected Profile selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    protected Transformer<Object,QueryValidationResponse> validationResponseTransformer = null;
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-
     private CardinalityConfiguration cardinalityConfiguration = null;
+    private List<QueryRule> validationRules = null;
 
     /**
      * Basic constructor
@@ -321,11 +338,74 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         String originalQuery = settings.getQuery();
 
         originalQuery = this.expandQueryMacros(originalQuery);
+        if (originalQuery == null) {
+            throw new IllegalArgumentException("Query cannot be null");
+        }
 
-        // Determine query syntax (i.e. JEXL, LUCENE, etc.)
+        // Determine the valid query syntax to use (i.e. JEXL, LUCENE, etc.)
+        String querySyntax = getValidQuerySyntax(settings);
+
+        if (querySyntax.equals(Constants.JEXL)) {
+            return originalQuery;
+        } else {
+            QueryParser queryParser = getQueryParser(querySyntax);
+            QueryNode node = queryParser.parse(originalQuery);
+            String jexlQuery = node.getOriginalQuery();
+            if (log.isTraceEnabled()) {
+                log.trace("luceneQueryString: " + originalQuery + " --> jexlQueryString: " + jexlQuery);
+            }
+            return jexlQuery;
+        }
+    }
+
+    /**
+     * Returns the {@link QueryParser} that should be used to parse a query of the given syntax to JEXL.
+     *
+     * @param syntax
+     *            the syntax
+     * @return the query parser
+     */
+    private QueryParser getQueryParser(String syntax) {
+        if (this.querySyntaxParsers == null) {
+            throw new IllegalStateException("Query syntax parsers not configured");
+        }
+        QueryParser queryParser = this.querySyntaxParsers.get(syntax);
+        if (queryParser == null) {
+            queryParser = getParser();
+            if (queryParser == null) {
+                throw new IllegalArgumentException("QueryParser not configured for syntax: " + syntax);
+            }
+        }
+        return queryParser;
+    }
+
+    /**
+     * Returns the query syntax that should be used when parsing the query for the given settings. If any mandatory query syntaxes are specified, the syntax
+     * will be checked to verify if it is one of the allowed mandatory query syntaxes. After this check, if the query syntax is blank and no default parser has
+     * been configured, the syntax {@value Constants#JEXL} will be returned, otherwise the original query syntax extracted from the query settings will be
+     * returned.
+     *
+     * @param settings
+     *            the query settings
+     * @return the query syntax
+     * @throws IllegalStateException
+     *             if mandatory query syntaxes were configured and the query syntax does not match any of them
+     */
+    private String getValidQuerySyntax(Query settings) {
         String querySyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
+        checkMandatoryQuerySyntaxes(querySyntax);
+        return (StringUtils.isBlank(querySyntax) && getParser() == null) ? Constants.JEXL : querySyntax;
+    }
 
-        // enforce mandatoryQuerySyntax if set
+    /**
+     * Checks if the given query syntax is one of the allowed mandatory query syntaxes, if any mandatory query syntaxes were specified.
+     *
+     * @param querySyntax
+     * @throws IllegalStateException
+     *             if {@link ShardQueryLogic#mandatoryQuerySyntax} is not null and the given query syntax is either empty or not present within the set of
+     *             mandatory query syntaxes
+     */
+    private void checkMandatoryQuerySyntaxes(String querySyntax) {
         if (null != this.mandatoryQuerySyntax) {
             if (StringUtils.isEmpty(querySyntax)) {
                 throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
@@ -336,47 +416,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 }
             }
         }
+    }
 
-        QueryParser querySyntaxParser = getParser();
-
-        if (StringUtils.isBlank(querySyntax)) {
-            // Default to the class's query parser when one is not provided
-            // Falling back to Jexl when one is not set on this class
-            if (null == querySyntaxParser) {
-                querySyntax = "JEXL";
-            }
-        } else if (!"JEXL".equals(querySyntax)) {
-            if (null == querySyntaxParsers) {
-                throw new IllegalStateException("Query syntax parsers not configured");
-            }
-
-            querySyntaxParser = querySyntaxParsers.get(querySyntax);
-
-            if (null == querySyntaxParser) {
-                // No parser was specified, try to default to the parser on the
-                // class
-                querySyntaxParser = getParser();
-
-                if (null == querySyntaxParser) {
-                    throw new IllegalArgumentException("QueryParser not configured for syntax: " + querySyntax);
-                }
-            }
-        }
-
-        if (null == originalQuery) {
-            throw new IllegalArgumentException("Query cannot be null");
-        } else {
-            if ("JEXL".equals(querySyntax)) {
-                queryString = originalQuery;
-            } else {
-                QueryNode node = querySyntaxParser.parse(originalQuery);
-                queryString = node.getOriginalQuery();
-                if (log.isTraceEnabled()) {
-                    log.trace("luceneQueryString: " + originalQuery + " --> jexlQueryString: " + queryString);
-                }
-            }
-        }
-        return queryString;
+    private String getQuerySyntaxOrDefault(String querySyntax) {
+        return StringUtils.isBlank(querySyntax) && getParser() == null ? Constants.JEXL : querySyntax;
     }
 
     public void initialize(ShardQueryConfiguration config, AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
@@ -420,33 +463,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
 
-        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
-        QueryPlanner queryPlanner = getQueryPlanner();
-        DefaultQueryPlanner defaultQueryPlanner = null;
-        if (queryPlanner instanceof DefaultQueryPlanner) {
-            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-        } else if (queryPlanner instanceof FederatedQueryPlanner) {
-            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
-        }
-
-        if (defaultQueryPlanner != null) {
-            defaultQueryPlanner.setMetadataHelper(metadataHelper);
-            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
-
-            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
-            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
-            }
-
-            if (null != queryModelProvider.getQueryModel()) {
-                queryModel = queryModelProvider.getQueryModel();
-            }
-        }
-
-        if (this.queryModel == null) {
-            loadQueryModel(metadataHelper, config);
-        }
+        initializeQueryModel(config, metadataHelper, dateIndexHelper);
 
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
@@ -486,6 +503,40 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         config.setQueryString(getQueryPlanner().getPlannedScript());
 
         stopwatch.stop();
+    }
+
+    private QueryModel initializeQueryModel(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper)
+                    throws TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
+
+        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
+        QueryPlanner queryPlanner = getQueryPlanner();
+        DefaultQueryPlanner defaultQueryPlanner = null;
+        if (queryPlanner instanceof DefaultQueryPlanner) {
+            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+        } else if (queryPlanner instanceof FederatedQueryPlanner) {
+            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        }
+
+        if (defaultQueryPlanner != null) {
+            defaultQueryPlanner.setMetadataHelper(metadataHelper);
+            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
+
+            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
+            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
+            }
+
+            if (null != queryModelProvider.getQueryModel()) {
+                queryModel = queryModelProvider.getQueryModel();
+            }
+        }
+
+        if (this.queryModel == null) {
+            loadQueryModel(metadataHelper, config);
+        }
+
+        return this.queryModel;
     }
 
     private void setupQueryPlanner(ShardQueryConfiguration config)
@@ -1344,7 +1395,163 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 log.error("Caught exception trying to close Scheduler", e);
             }
         }
+    }
 
+    @Override
+    public Object validateQuery(AccumuloClient client, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+        this.config = ShardQueryConfiguration.create(this, settings);
+        if (log.isTraceEnabled()) {
+            log.trace("Initializing ShardQueryLogic for query validation: " + System.identityHashCode(this) + '('
+                            + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
+        }
+
+        // todo - maybe unnecessary, we could just return early if no rules configured.
+        if (validationRules == null || validationRules.isEmpty()) {
+            throw new IllegalStateException("Query validation rules not configured.");
+        }
+
+        // todo - verify if we should allow these to be configured, or always stick to an established default.
+        this.config.setExpandFields(expandFields);
+        this.config.setExpandValues(expandValues);
+
+        // Set the connector and authorizations for the config object.
+        config.setClient(client);
+        config.setAuthorizations(auths);
+        config.setMaxScannerBatchSize(getMaxScannerBatchSize());
+        config.setMaxIndexBatchSize(getMaxIndexBatchSize());
+
+        // Load the query parameters.
+        loadQueryParameters(config, settings);
+
+        // Initialize the metadata helper and query model.
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(), config.isRawTypes());
+        initializeQueryModel(config, metadataHelper, null);
+        config.setQueryModel(this.queryModel);
+
+        // Set up the initial validation configuration.
+        ShardQueryValidationConfiguration validationConfig = new ShardQueryValidationConfiguration();
+        validationConfig.setQuerySettings(settings);
+        validationConfig.setQueryConfiguration(config);
+        validationConfig.setMetadataHelper(metadataHelper);
+        validationConfig.setTypeMetadata(metadataHelper.getTypeMetadata());
+
+        // Fetch the query syntax considered to be correct for the query.
+        String querySyntax = getValidQuerySyntax(settings);
+
+        // Create a copy of the rules. Rules will be removed from this list as they are executed so that we do not execute the same rule twice.
+        List<QueryRule> unexecutedRules = new ArrayList<>(getValidationRules());
+        QueryValidationResult result = new QueryValidationResult();
+
+        // If the query syntax is not JEXL, i.e. LUCENE or otherwise, fetch the query parser and see if it supplies a lucene syntax parser. If so, the query
+        // needs to be validated against all LUCENE-specific rules that support the given syntax.
+        if (!querySyntax.equals(Constants.JEXL)) {
+            // Fetch the query parser for the query syntax.
+            QueryParser queryParser = getQueryParser(querySyntax);
+            // If the query parser is one that parses LUCENE, parse the query to LUCENE.
+            if (queryParser instanceof LuceneSyntaxQueryParser) {
+                org.apache.lucene.queryparser.flexible.core.nodes.QueryNode luceneQuery;
+                try {
+                    luceneQuery = ((LuceneSyntaxQueryParser) queryParser).parseToLuceneQueryNode(settings.getQuery());
+                } catch (Exception e) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Failed to parse query " + settings.getQuery() + " to LUCENE for syntax " + querySyntax + ": " + System.identityHashCode(this)
+                                        + '(' + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')', e);
+                    }
+                    QueryException exception = new QueryException("Failed to parse query as " + querySyntax, e,
+                                    DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR.getErrorCode());
+                    result.setException(exception);
+                    return result;
+                }
+
+                // Update the validation configuration with the parsed lucene
+                validationConfig.setParsedQuery(luceneQuery);
+                validationConfig.setQueryString(settings.getQuery());
+
+                // Validate the lucene query against all rules that support the syntax.
+                Iterator<QueryRule> ruleIter = unexecutedRules.iterator();
+                while (ruleIter.hasNext()) {
+                    QueryRule rule = ruleIter.next();
+                    try {
+                        // Check if the rule supports validating a query of the query's syntax.
+                        if (rule.canValidate(validationConfig)) {
+                            // Validate the query against the rule's criteria.
+                            result.addRuleResult(rule.validate(validationConfig));
+                            // Remove the rule from the underlying list so that it is not executed again later.
+                            ruleIter.remove();
+                        }
+                    } catch (Exception e) {
+                        QueryException exception = new QueryException("Error occurred when validating against rule " + rule.getName(), e);
+                        result.setException(exception);
+                        return result;
+                    }
+                }
+            }
+        }
+
+        // Some rules expect to validate a JEXL query. Even if the query was originally provided in a syntax other than JEXL, e.g. LUCENE, we should validate
+        // the JEXL version of the query against the remaining rules.
+
+        // Parse the query to JEXL.
+        String jexlQuery;
+        try {
+            jexlQuery = getJexlQueryString(settings);
+            config.setQueryTree(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery));
+        } catch (Exception e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Failed to parse query to JEXL: " + System.identityHashCode(this) + '('
+                                + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')', e);
+            }
+            QueryException exception = new QueryException("Failed to parse query as JEXL", e, DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR.getErrorCode());
+            result.setException(exception);
+            return result;
+        }
+
+        // Normalize the JEXL query on a very basic level, and apply the query model to the query.
+        // Extract any query options and add them to the configuration.
+        Map<String,String> optionsMap = new HashMap<>();
+        if (jexlQuery.contains(QueryFunctions.QUERY_FUNCTION_NAMESPACE + ':')) {
+            // only do the extra tree visit if the function is present
+            config.setQueryTree(QueryOptionsFromQueryVisitor.collect(config.getQueryTree(), optionsMap));
+            if (!optionsMap.isEmpty()) {
+                QueryOptionsSwitch.apply(optionsMap, config);
+            }
+        }
+
+        // Ensure any nodes with the literal on the left and the identifier on the right are re-ordered.
+        config.setQueryTree(InvertNodeVisitor.invertSwappedNodes(config.getQueryTree()));
+        // Uppercase all identifiers.
+        config.setQueryTree(ShardQueryUtils.upperCaseIdentifiers(metadataHelper, config, config.getQueryTree()));
+        // Flatten the tree.
+        config.setQueryTree(TreeFlatteningRebuilder.flatten(config.getQueryTree()));
+        // Apply the query model.
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+                        this.queryModel));
+
+        // todo - should any other normalization steps be applied?
+
+        // Update the configurations with the target syntax JEXL and the jexl query string. Execute any remaining rules that expect to run against a JEXL query.
+        validationConfig.setParsedQuery(config.getQueryTree());
+        validationConfig.setQueryString(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
+
+        // Validate the JEXL query against all rules that support JEXL.
+        Iterator<QueryRule> ruleIter = unexecutedRules.iterator();
+        while (ruleIter.hasNext()) {
+            QueryRule rule = ruleIter.next();
+            try {
+                // Check if the rule supports validating a JEXL query.
+                if (rule.canValidate(validationConfig)) {
+                    // Validate the query against the rule's criteria.
+                    result.addRuleResult(rule.validate(validationConfig));
+                }
+            } catch (Exception e) {
+                QueryException exception = new QueryException("Error occurred when validating against rule " + rule.getName(), e);
+                result.setException(exception);
+                return result;
+            }
+
+        }
+
+        return result;
     }
 
     @Override
@@ -3002,5 +3209,37 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
+    }
+
+    public List<QueryRule> getValidationRules() {
+        return validationRules;
+    }
+
+    public void setValidationRules(List<QueryRule> validationRules) {
+        if (validationRules == null) {
+            this.validationRules = List.of();
+        } else {
+            this.validationRules = new ArrayList<>();
+            for (QueryRule rule : validationRules) {
+                QueryRule copy = rule.copy();
+                // If a rule name was not specified, use the name of the class for easier identification later.
+                if (StringUtils.isBlank(copy.getName())) {
+                    copy.setName(copy.getClass().getSimpleName());
+                }
+                this.validationRules.add(copy);
+            }
+        }
+    }
+
+    @Override
+    public Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+        if (this.validationResponseTransformer == null) {
+            this.validationResponseTransformer = new QueryValidationResultTransformer();
+        }
+        return validationResponseTransformer;
+    }
+
+    public void setValidationResponseTransformer(Transformer<Object,QueryValidationResponse> queryValidationResponseTransformer) {
+        this.validationResponseTransformer = queryValidationResponseTransformer;
     }
 }
