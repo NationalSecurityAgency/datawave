@@ -538,7 +538,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         }
     }
 
-    protected int scannerInvariant(final Iterator<Result> iter) {
+    protected int scannerInvariant(final Iterator<Result> iter) throws InterruptedException {
         int retrievalCount = 0;
 
         Result myEntry = null;
@@ -554,6 +554,19 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // this creates a bottleneck on the resultQueue size, but guarantees no results will be lost
             boolean accepted = false;
             while (!accepted) {
+                // this thread exists in between the batch scanner and the other side of the queue, so check both side
+                // are still running, otherwise terminate
+                if (!isRunning() || state().equals(State.TERMINATED) || state().equals(State.FAILED)) {
+                    log.info("aborting offer on scanner invariant due to thread no longer running");
+                    throw new InterruptedException("aborting offer on scanner invariant due to thread no longer running");
+                } else if (uncaughtExceptionHandler.getThrowable() != null) {
+                    log.warn("aborting offer on scanner invariant due to throwable", uncaughtExceptionHandler.getThrowable());
+                    throw new RuntimeException("aborting offer on scanner invariant due to throwable", uncaughtExceptionHandler.getThrowable());
+                } else if (forceClose) {
+                    log.info("cleaning up scanner due to external close");
+                    throw new InterruptedException("cleaning up scanner due to external close");
+                }
+
                 try {
                     accepted = resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {

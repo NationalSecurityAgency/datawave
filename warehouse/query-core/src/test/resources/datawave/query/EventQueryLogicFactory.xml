@@ -128,6 +128,7 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <property name="eventFieldSeek" value="3" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

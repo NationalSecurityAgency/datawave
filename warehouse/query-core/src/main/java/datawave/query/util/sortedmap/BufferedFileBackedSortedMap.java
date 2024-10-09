@@ -19,8 +19,10 @@ import datawave.query.util.sortedmap.FileSortedMap.SortedMapFileHandler;
  * "persist" call is supplied to force flushing to disk. The iterator.remove and the submap operations will work up until any buffer has been flushed to disk.
  * After that, those operations will not work as specified by the underlying FileSortedMap.
  *
- * @param <K,V>
- *            type of the map
+ * @param <K>
+ *            The sorted map key type
+ * @param <V>
+ *            The sorted map value type
  */
 public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, RewritableSortedMap<K,V> {
     private static final Logger log = Logger.getLogger(BufferedFileBackedSortedMap.class);

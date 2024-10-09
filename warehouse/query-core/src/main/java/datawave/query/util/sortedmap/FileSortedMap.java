@@ -36,8 +36,10 @@ import datawave.webservice.query.exception.QueryException;
  *
  * A RewriteStrategy can be supplied that will determine whether a value gets replaced when putting a key,value pair.
  *
- * @param <K,V>
- *            type of map
+ * @param <K>
+ *            The sorted map key type
+ * @param <V>
+ *            The sorted map value type
  */
 public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, RewritableSortedMap<K,V> {
     private static final Logger log = Logger.getLogger(FileSortedMap.class);
@@ -784,8 +786,10 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     /**
      * An interface for a sorted map factory
      *
-     * @param <K,V>
-     *            type of the factory
+     * @param <K>
+     *            The sorted map key type
+     * @param <V>
+     *            The sorted map value type
      */
     public interface FileSortedMapFactory<K,V> {
         /**
@@ -855,8 +859,10 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     /**
      * A sorted map input stream
      *
-     * @param <K,V>
-     *            type of the stream
+     * @param <K>
+     *            The sorted map key type
+     * @param <V>
+     *            The sorted map value type
      */
     public interface SortedMapInputStream<K,V> extends AutoCloseable {
         Map.Entry<K,V> readObject() throws IOException;
@@ -869,8 +875,10 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     /**
      * A sorted map output stream
      *
-     * @param <K,V>
-     *            type of the stream
+     * @param <K>
+     *            The sorted map key type
+     * @param <V>
+     *            The sorted map value type
      */
     public interface SortedMapOutputStream<K,V> extends AutoCloseable {
         void writeObject(K key, V value) throws IOException;
@@ -918,6 +926,10 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     /**
      * A factory that will provide the input stream and output stream to the same underlying file.
      *
+     * @param <K>
+     *            The sorted map key type
+     * @param <V>
+     *            The sorted map value type
      */
     public interface TypedSortedMapFileHandler<K,V> {
         /**
@@ -954,6 +966,10 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
      * A factory that will provide the input stream and output stream to the same underlying file. An additional input stream method allows for creating a
      * stream submap.
      *
+     * @param <K>
+     *            The sorted map key type
+     * @param <V>
+     *            The sorted map value type
      */
     public interface BoundedTypedSortedMapFileHandler<K,V> extends TypedSortedMapFileHandler<K,V> {
         /**
@@ -1047,6 +1063,14 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         }
     }
 
+    /**
+     * The rewrite strategy to determine when to actually replace the value
+     *
+     * @param <K>
+     *            The sorted map key type
+     * @param <V>
+     *            The sorted map value type
+     */
     public interface RewriteStrategy<K,V> {
         /**
          * Determine if the object should be rewritten

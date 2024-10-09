@@ -51,7 +51,7 @@ public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBac
         attrs.add(new UnmodifiableMapEntry(attrKey, new Value()));
         Document doc = new Document(docKey, Collections.singleton(docKey), false, attrs.iterator(),
                         new TypeMetadata().put("FIELD", "datatype", LcNoDiacriticsType.class.getName()), new CompositeMetadata(), true, true,
-                        new EventDataQueryFieldFilter(new KeyProjection()));
+                        new EventDataQueryFieldFilter());
         return doc;
     }
 
