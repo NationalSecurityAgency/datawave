@@ -493,13 +493,13 @@ public class IsNotNullPruningVisitorTest {
 
         // union of same field should allow us to perform a partial prune
         String query = "(!(FOO == null) || !(FOO2 == null)) && (FOO == 'bar' || FOO == 'baz')";
-        // String expected = "!(FOO2 == null) && (FOO == 'bar' || FOO == 'baz')";
-        test(query, query);
+        String expected = "(FOO == 'bar' || FOO == 'baz')";
+        test(query, expected);
 
         // should also work for filter:includeRegex
         query = "(!(FOO == null) || !(FOO2 == null)) && (filter:includeRegex(FOO, 'bar.*') || filter:includeRegex(FOO, 'baz.*'))";
-        // expected = "!(FOO2 == null) && (filter:includeRegex(FOO, 'bar.*') || filter:includeRegex(FOO, 'baz.*'))";
-        test(query, query);
+        expected = "(filter:includeRegex(FOO, 'bar.*') || filter:includeRegex(FOO, 'baz.*'))";
+        test(query, expected);
     }
 
     // test cases where nothing should be done
@@ -537,10 +537,12 @@ public class IsNotNullPruningVisitorTest {
 
         // cannot prune half of a union
         query = "(!(FOO == null) || !(FOO2 == null)) && FOO == 'bar'";
-        test(query, query);
+        String expected = "(!(FOO2 == null)) && FOO == 'bar'";
+        test(query, expected);
 
         query = "(!(FOO == null) || !(FOO2 == null)) && FOO =~ 'ba.*'";
-        test(query, query);
+        expected = "(!(FOO2 == null)) && FOO == 'bar'";
+        test(query, expected);
     }
 
     @Test
@@ -575,11 +577,23 @@ public class IsNotNullPruningVisitorTest {
         test(query, query);
     }
 
+    @Test
+    public void testFutureCase_Custom() {
+        // logically, these unions are equivalent and the 'is not null' side can be pruned
+        String query = "FOO == 'bar' && (!(FOO == null) || !(FOO2 == null) || !(FOO3 == null) || !(FOO4 == null))";
+        String expected = "FOO == 'bar'";
+
+        test(query, expected);
+    }
+
     private void test(String query, String expected) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ASTJexlScript visited = (ASTJexlScript) IsNotNullPruningVisitor.prune(script);
+            System.out.println(PrintingVisitor.formattedQueryString(script));
+
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+            System.out.println(PrintingVisitor.formattedQueryString(expectedScript));
 
             assertTrue("visit produced an invalid tree", validator.isValid(visited));
             assertTrue(JexlStringBuildingVisitor.buildQueryWithoutParse(visited), TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual());

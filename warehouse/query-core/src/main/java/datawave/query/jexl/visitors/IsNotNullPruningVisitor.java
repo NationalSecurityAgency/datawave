@@ -217,17 +217,31 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
      * @return the original node, or null if it is pruned
      */
     private JexlNode pruneUnion(JexlNode node, Set<String> fields) {
+        boolean willPrune = false;
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
-            if (!isIsNotNullFunction(deref)) {
-                return node;
+            if (isIsNotNullFunction(deref) && !willPrune) {
+                willPrune = true;
+                // return node;
             }
 
             String field = fieldForNode(deref);
-            if (!fields.contains(field)) {
-                return node;
+            if (!fields.contains(field) && !willPrune) {
+                System.out.println("willPrune: " + willPrune);
+                System.out.println("fields does not contain: " + field);
+                // return node;
+            }
+
+            if (fields.contains(field) && !willPrune) {
+                willPrune = true;
             }
         }
+
+        if (!willPrune) {
+            return node;
+        }
+
         return null;
     }
 
