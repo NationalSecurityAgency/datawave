@@ -590,10 +590,7 @@ public class IsNotNullPruningVisitorTest {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ASTJexlScript visited = (ASTJexlScript) IsNotNullPruningVisitor.prune(script);
-            System.out.println(PrintingVisitor.formattedQueryString(script));
-
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
-            System.out.println(PrintingVisitor.formattedQueryString(expectedScript));
 
             assertTrue("visit produced an invalid tree", validator.isValid(visited));
             assertTrue(JexlStringBuildingVisitor.buildQueryWithoutParse(visited), TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual());
