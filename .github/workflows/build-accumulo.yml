@@ -82,9 +82,9 @@ jobs:
     - name: Deploy Accumulo
       if: ${{ github.event.inputs.deployAccumulo }}
       run: | 
-        export JAVA_HOME=$ACCUMULO_JAVA
-        cd $GITHUB_WORKSPACE/accumulo   
-        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave -V -B -e -ntp "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml
+        export JAVA_HOME="$ACCUMULO_JAVA"
+        cd "$GITHUB_WORKSPACE/accumulo"
+        mvn -DaltDeploymentRepository=github-datawave::https://maven.pkg.github.com/NationalSecurityAgency/datawave -V -B -e -ntp "-Dstyle.color=always" -DskipTests -T1C clean source:jar deploy -s "$GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml"
     - name: Log in to the Container registry
       uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
       with:
