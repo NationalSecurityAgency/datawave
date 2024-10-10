@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -91,6 +92,8 @@ import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ScannerManager;
+import datawave.query.tables.ScannerSessionBuilder;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
@@ -114,7 +117,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      */
 
     protected final ShardQueryConfiguration config;
-    protected final ScannerFactory scanners;
+    protected final AccumuloClient client;
     protected final MetadataHelper metadataHelper;
     protected Iterator<QueryPlan> itr;
     protected StreamContext context;
@@ -145,12 +148,28 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected boolean termCounts = false;
 
     protected Set<String> indexOnlyFields = Sets.newHashSet();
+    protected ScannerManager scannerManager = new ScannerManager();
 
-    public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
+    /**
+     * Deprecated, left in for reverse compatibility
+     *
+     * @param config
+     *            the config
+     * @param scannerFactory
+     *            the factory
+     * @param metadataHelper
+     *            the metadata helper
+     */
+    @Deprecated
+    public RangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+        this(config, config.getClient(), metadataHelper);
+    }
+
+    public RangeStream(ShardQueryConfiguration config, AccumuloClient client, MetadataHelper metadataHelper) {
         this.config = config;
-        this.scanners = scanners;
+        this.client = client;
         this.metadataHelper = metadataHelper;
-        int maxLookup = (int) Math.max(config.getNumIndexLookupThreads(), 1);
+        int maxLookup = Math.max(config.getNumIndexLookupThreads(), 1);
         executor = Executors.newFixedThreadPool(maxLookup);
         runnables = new LinkedBlockingDeque<>();
         int executeLookupMin = Math.max(maxLookup / 2, 1);
@@ -557,7 +576,15 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             int stackStart = config.getBaseIteratorPriority();
 
-            RangeStreamScanner scannerSession;
+            //  @formatter:off
+            RangeStreamScanner scannerSession = new ScannerSessionBuilder(client)
+                            .withWrapper(RangeStreamScanner.class)
+                            .withTableName(config.getIndexTableName())
+                            .withAuths(config.getAuthorizations())
+                            .withQuery(config.getQuery())
+                            .build();
+            //  @formatter:on
+            scannerManager.addScanner(scannerSession);
 
             SessionOptions options = new SessionOptions();
             options.fetchColumnFamily(new Text(fieldName));
@@ -570,8 +597,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
-
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
                 uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.toString(config.getParseTldUids()));
@@ -580,8 +605,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
-
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));
                 uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.toString(false));
@@ -989,5 +1012,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public void close() {
         streamExecutor.shutdownNow();
         executor.shutdownNow();
+        scannerManager.close();
     }
 }

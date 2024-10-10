@@ -50,7 +50,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.Tuple2;
@@ -1266,7 +1265,6 @@ public class RangeStreamTest {
         Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
 
-        ScannerFactory scannerFactory = new ScannerFactory(config);
         RangeStream rangeStream = getRangeStream(helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
@@ -1533,7 +1531,6 @@ public class RangeStreamTest {
     }
 
     private RangeStream getRangeStream(MetadataHelper helper) {
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        return new RangeStream(config, scannerFactory, helper);
+        return new RangeStream(config, config.getClient(), helper);
     }
 }
