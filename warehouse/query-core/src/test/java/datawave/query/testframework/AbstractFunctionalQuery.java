@@ -608,6 +608,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             error condition from query initialization
      */
     protected String getPlan(final String queryStr, boolean expandFields, boolean expandValues) throws Exception {
+        return getPlan(client, queryStr, expandFields, expandValues);
+    }
+
+    protected String getPlan(AccumuloClient client, final String queryStr, boolean expandFields, boolean expandValues) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");

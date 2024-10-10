@@ -257,12 +257,12 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList(),
 
-                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE"),
 
                 Arrays.asList("CAPONE"),
