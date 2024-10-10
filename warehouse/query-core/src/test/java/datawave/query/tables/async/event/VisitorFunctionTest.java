@@ -22,10 +22,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.RangeCounts;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
@@ -222,7 +222,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         try {
             function.apply(chunk);
         } catch (Exception e) {
@@ -233,7 +233,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         config.setMaxIvaratorTerms(1);
 
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         function.apply(chunk);
     }
 

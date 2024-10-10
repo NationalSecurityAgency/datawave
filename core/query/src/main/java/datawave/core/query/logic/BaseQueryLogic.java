@@ -103,6 +103,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         return settings.getQuery();
     }
 
+    public void setQueryMetric(BaseQueryMetric metric) {
+        this.metric = metric;
+    }
+
+    public BaseQueryMetric getQueryMetric() {
+        return metric;
+    }
+
     public MarkingFunctions getMarkingFunctions() {
         return markingFunctions;
     }
@@ -142,17 +150,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public void setRequiredRoles(Set<String> requiredRoles) {
         this.requiredRoles = requiredRoles;
     }
-
-    public void setQueryMetric(BaseQueryMetric metric) {
-        this.metric = metric;
-    }
-
-    public BaseQueryMetric getQueryMetric() {
-        return metric;
-    }
-
-    public void setPrincipal(Principal principal) {
-        this.principal = principal;
 
     @Override
     public String getTableName() {

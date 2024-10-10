@@ -58,7 +58,6 @@ import datawave.metrics.remote.RemoteQueryMetricService;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
-import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -169,38 +168,6 @@ public class QueryMetricsBean {
                 user = dp.getShortName();
             }
             return queryHandler.query(user, id, dp);
-        }
-    }
-
-    /**
-     * Returns subplans for the current users queries that are identified by the id
-     *
-     * @param id
-     *
-     * @return datawave.webservice.result.QueryMetricListResponse
-     *
-     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
-     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
-     * @HTTP 200 success
-     * @HTTP 500 internal server error
-     */
-    @GET
-    @POST
-    @Path("/id/{id}/subplans")
-    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    public BaseQueryMetricSubplanResponse subplan(@PathParam("id") @Required("id") String id) {
-        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
-            return remoteQueryMetricService.subplan(id);
-        } else {
-            // Find out who/what called this method
-            DatawavePrincipal dp = null;
-            Principal p = ctx.getCallerPrincipal();
-            String user = p.getName();
-            if (p instanceof DatawavePrincipal) {
-                dp = (DatawavePrincipal) p;
-                user = dp.getShortName();
-            }
-            return queryHandler.subplan(user, id, dp);
         }
     }
 

@@ -40,9 +40,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.RangeCounts;
-import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -140,6 +140,16 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         // @formatter:on
     }
 
+    public void updateRangeCounts(Range range) {
+        Key key = range.getStartKey();
+        String cf = key.getColumnFamily().toString();
+        if (cf.length() > 0) {
+            documentRangeCount++;
+        } else {
+            shardRangeCount++;
+        }
+    }
+
     private Date getEarliestBeginDate(Collection<Range> ranges) {
         SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT_STRING_TO_DAY);
         Date minDate = null;
@@ -158,16 +168,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             throw new DatawaveFatalQueryException(e);
         }
         return minDate;
-    }
-
-    public void updateRangeCounts(Range range) {
-        Key key = range.getStartKey();
-        String cf = key.getColumnFamily().toString();
-        if (cf.length() > 0) {
-            documentRangeCount++;
-        } else {
-            shardRangeCount++;
-        }
     }
 
     @Override
@@ -382,7 +382,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         ranges.setShardRangeCount(shardRangeCount);
                         metric.addSubPlan(newQuery, ranges);
                     }
-
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }
