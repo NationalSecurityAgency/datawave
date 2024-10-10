@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -16,15 +17,13 @@ import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.Text;
@@ -277,12 +276,20 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
         job.setInputFormatClass(AccumuloInputFormat.class);
-        AccumuloInputFormat.setConnectorInfo(job, userName, new PasswordToken(password));
-        AccumuloInputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instance).withZkHosts(zookeepers));
-        AccumuloInputFormat.setInputTableName(job, inputTable);
-        AccumuloInputFormat.setScanAuthorizations(job, Authorizations.EMPTY);
-        AccumuloInputFormat.setRanges(job, Collections.singletonList(dayRange));
 
+        // @formatter:off
+        Properties clientProperties = Accumulo.newClientProperties()
+                        .to(instance, zookeepers)
+                        .as(userName, password)
+                        .build();
+
+        AccumuloInputFormat.configure()
+                        .clientProperties(clientProperties)
+                        .table(inputTable)
+                        .auths(Authorizations.EMPTY)
+                        .ranges(Collections.singletonList(dayRange))
+                        .store(job);
+        // @formatter:on
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
 
