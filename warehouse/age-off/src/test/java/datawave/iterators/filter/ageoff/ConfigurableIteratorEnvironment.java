@@ -26,7 +26,7 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
     public ConfigurableIteratorEnvironment() {
         scope = null;
-        conf = null;
+        conf = PluginEnvironment.Configuration.from(Map.of(), false);
     }
 
     public ConfigurableIteratorEnvironment(PluginEnvironment.Configuration conf, IteratorUtil.IteratorScope scope) {
