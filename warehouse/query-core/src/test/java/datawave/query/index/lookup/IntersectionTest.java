@@ -27,8 +27,8 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;

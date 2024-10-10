@@ -9,7 +9,7 @@ import java.util.List;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.JexlNodeFactory;
 
 public class DefaultNodeCostComparatorTest {
 

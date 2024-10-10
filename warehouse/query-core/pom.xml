@@ -97,6 +97,21 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-geo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-jexl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-language</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-query</artifactId>
             <version>${project.version}</version>
         </dependency>

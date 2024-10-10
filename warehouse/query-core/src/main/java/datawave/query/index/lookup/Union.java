@@ -16,9 +16,9 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.language.parser.jexl.JexlNodeSet;
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 import datawave.util.StringUtils;

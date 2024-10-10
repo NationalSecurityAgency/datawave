@@ -1,12 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -70,7 +70,6 @@ import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.NodeTypeCount;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 public class NodeTypeCountVisitorTest {
 

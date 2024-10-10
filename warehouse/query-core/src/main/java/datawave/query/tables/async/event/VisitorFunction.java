@@ -39,6 +39,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.PrintingVisitor;
 import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -50,8 +52,6 @@ import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;

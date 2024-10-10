@@ -27,7 +27,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 
 public class IndexStreamComparatorTest {

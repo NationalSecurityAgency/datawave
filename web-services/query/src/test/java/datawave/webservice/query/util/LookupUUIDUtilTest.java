@@ -17,10 +17,10 @@ import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import datawave.core.query.data.UUIDType;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.data.UUIDType;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.result.event.ResponseObjectFactory;

@@ -12,6 +12,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;

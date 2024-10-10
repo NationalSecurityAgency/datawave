@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * Compare nodes based on arbitrary cost.

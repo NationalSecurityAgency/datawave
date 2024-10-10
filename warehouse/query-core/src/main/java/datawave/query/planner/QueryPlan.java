@@ -16,8 +16,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.count.CountMap;
 
 /**

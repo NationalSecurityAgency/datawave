@@ -104,14 +104,15 @@
         <version.microservice.audit-api>4.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>4.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>4.0.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>3.0.0</version.microservice.common-utils>
+        <version.microservice.common-utils>3.0.1-SNAPSHOT</version.microservice.common-utils>
         <version.microservice.dictionary-api>4.0.1</version.microservice.dictionary-api>
+        <version.microservice.map-api>1.0.0-SNAPSHOT</version.microservice.map-api>
         <version.microservice.mapreduce-query-api>1.0.0</version.microservice.mapreduce-query-api>
-        <version.microservice.metadata-utils>4.0.6</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>4.0.7-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>3.0.0</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0.0</version.microservice.query-api>
         <version.microservice.query-metric-api>4.0.7</version.microservice.query-metric-api>
-        <version.microservice.type-utils>3.0.3</version.microservice.type-utils>
+        <version.microservice.type-utils>3.1.2-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.28</version.mysql-connector>
@@ -366,6 +367,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>dictionary-api</artifactId>
                 <version>${version.microservice.dictionary-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>map-api</artifactId>
+                <version>${version.microservice.map-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -1343,6 +1349,27 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>io.github.git-commit-id</groupId>
+                    <artifactId>git-commit-id-maven-plugin</artifactId>
+                    <version>6.0.0</version>
+                    <configuration>
+                        <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
+                        <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <gitDescribe>
+                            <skip>true</skip>
+                        </gitDescribe>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>revision</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>net.revelc.code</groupId>
                     <artifactId>impsort-maven-plugin</artifactId>
                     <version>1.9.0</version>
@@ -1749,27 +1776,6 @@
                     <artifactId>maven-jetty-plugin</artifactId>
                     <version>6.1.26</version>
                 </plugin>
-                <plugin>
-                    <groupId>pl.project13.maven</groupId>
-                    <artifactId>git-commit-id-plugin</artifactId>
-                    <version>2.2.3</version>
-                    <configuration>
-                        <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
-                        <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
-                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
-                        <gitDescribe>
-                            <skip>true</skip>
-                        </gitDescribe>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>revision</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1908,6 +1914,10 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>io.github.git-commit-id</groupId>
+                        <artifactId>git-commit-id-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <dependencies>
@@ -1996,10 +2006,6 @@
                                 <phase>package</phase>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>pl.project13.maven</groupId>
-                        <artifactId>git-commit-id-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

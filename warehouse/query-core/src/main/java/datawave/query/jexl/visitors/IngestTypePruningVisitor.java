@@ -27,9 +27,10 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.nodes.ExceededOr;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededOr;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.TypeMetadata;
 
 /**

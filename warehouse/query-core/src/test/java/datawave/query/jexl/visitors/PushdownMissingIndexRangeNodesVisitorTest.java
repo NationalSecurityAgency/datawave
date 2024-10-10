@@ -14,6 +14,7 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;

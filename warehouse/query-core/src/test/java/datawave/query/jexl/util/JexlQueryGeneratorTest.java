@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 
 class JexlQueryGeneratorTest {
 

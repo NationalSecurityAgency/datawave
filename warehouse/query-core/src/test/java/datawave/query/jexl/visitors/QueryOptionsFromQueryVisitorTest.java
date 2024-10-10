@@ -12,6 +12,7 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import datawave.core.query.jexl.visitors.PrintingVisitor;
 import datawave.query.QueryParameters;
 import datawave.query.jexl.JexlASTHelper;
 

@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.test.JexlNodeAssertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -12,8 +12,10 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.PrintingVisitor;
+import datawave.core.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 public class QueryPropertyMarkerVisitorTest {
 

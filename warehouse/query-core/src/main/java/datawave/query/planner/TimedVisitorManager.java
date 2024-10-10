@@ -4,9 +4,9 @@ import static datawave.query.planner.DefaultQueryPlanner.logQuery;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
+import datawave.core.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.InvalidQueryTreeException;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 

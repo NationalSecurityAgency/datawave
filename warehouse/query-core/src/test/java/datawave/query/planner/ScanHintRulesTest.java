@@ -1,6 +1,6 @@
 package datawave.query.planner;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 
@@ -24,15 +24,15 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ArrayListMultimap;
 
+import datawave.core.query.jexl.nodes.ExceededOr;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededOr;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.scanhints.ExecutorScanHintRule;
 import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.query.planner.scanhints.PriorityScanHintRule;

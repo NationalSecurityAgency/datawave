@@ -15,10 +15,10 @@ import org.apache.commons.jexl3.parser.ASTEQNode;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.jexl.visitors.BaseVisitor;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.util.MetadataHelper;
 

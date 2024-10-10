@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,10 +30,12 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.BaseVisitor;
+import datawave.core.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.util.UniversalSet;
 
 /**

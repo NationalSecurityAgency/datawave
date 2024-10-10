@@ -6,9 +6,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.QueryPropertyMarkerVisitor;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * This visitor will ensure that query marker nodes always have a singular, root source node. If multiple source nodes are found, they will be bundled within a

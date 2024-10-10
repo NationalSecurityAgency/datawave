@@ -8,8 +8,8 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 
 /**
  * This class contains all of the required components necessary to create a whindex term.

@@ -6,6 +6,8 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 
+import datawave.core.query.jexl.visitors.BaseVisitor;
+
 /**
  * Determine the depth of the query (nested and, or, or parens) up to maxDepth+1.
  *

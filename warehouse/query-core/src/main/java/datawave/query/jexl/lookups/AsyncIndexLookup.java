@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 

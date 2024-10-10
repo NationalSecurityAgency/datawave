@@ -34,9 +34,14 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 
+import datawave.core.geo.utils.GeoQueryConfig;
+import datawave.core.query.attributes.ExcerptFields;
+import datawave.core.query.attributes.UniqueFields;
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -46,16 +51,12 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -189,9 +190,17 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private double geoWaveMaxRangeOverlap = 0.25;
     /**
+     * Determines whether or not we should attempt to optimize the Geo ranges which are produced.
+     */
+    private boolean optimizeGeoRanges = true;
+    /**
      * Determines whether or not we should attempt to optimize the GeoWave ranges which are produced.
      */
     private boolean optimizeGeoWaveRanges = true;
+    /**
+     * Used to determine the maximum number of envelopes which can be used when generating ranges for a geo query.
+     */
+    private int geoMaxEnvelopes = 4;
     /**
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
@@ -588,7 +597,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGeoMaxExpansion(other.getGeoMaxExpansion());
         this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
         this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
+        this.setOptimizeGeoRanges(other.isOptimizeGeoRanges());
         this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
+        this.setGeoMaxEnvelopes(other.getGeoMaxEnvelopes());
         this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setShardTableName(other.getShardTableName());
         this.setIndexTableName(other.getIndexTableName());
@@ -1185,12 +1196,28 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.geoWaveMaxRangeOverlap = geoWaveMaxRangeOverlap;
     }
 
+    public boolean isOptimizeGeoRanges() {
+        return optimizeGeoRanges;
+    }
+
+    public void setOptimizeGeoRanges(boolean optimizeGeoRanges) {
+        this.optimizeGeoRanges = optimizeGeoRanges;
+    }
+
     public boolean isOptimizeGeoWaveRanges() {
         return optimizeGeoWaveRanges;
     }
 
     public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
         this.optimizeGeoWaveRanges = optimizeGeoWaveRanges;
+    }
+
+    public int getGeoMaxEnvelopes() {
+        return geoMaxEnvelopes;
+    }
+
+    public void setGeoMaxEnvelopes(int geoMaxEnvelopes) {
+        this.geoMaxEnvelopes = geoMaxEnvelopes;
     }
 
     public int getGeoWaveMaxEnvelopes() {
@@ -2795,6 +2822,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setSortQueryByCounts(boolean sortQueryByCounts) {
         this.sortQueryByCounts = sortQueryByCounts;
+    }
+
+    public GeoQueryConfig getGeoQueryConfig() {
+        // @formatter:off
+        return GeoQueryConfig.builder()
+                .setGeowaveMaxEnvelopes(this.geoWaveMaxEnvelopes)
+                .setGeometryMaxExpansion(this.geometryMaxExpansion)
+                .setPointMaxExpansion(this.pointMaxExpansion)
+                .setOptimizeGeoWaveRanges(this.optimizeGeoWaveRanges)
+                .setRangeSplitThreshold(this.geoWaveRangeSplitThreshold)
+                .setMaxRangeOverlap(this.geoWaveMaxRangeOverlap)
+                .setGeoMaxEnvelopes(this.geoMaxEnvelopes)
+                .setGeoMaxExpansion(this.geoMaxExpansion)
+                .setOptimizeGeoRanges(this.optimizeGeoRanges)
+                .build();
+        // @formatter:on
     }
 
     @Override

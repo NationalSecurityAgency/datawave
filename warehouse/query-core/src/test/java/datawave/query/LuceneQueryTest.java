@@ -11,10 +11,10 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import datawave.core.query.language.functions.jexl.EvaluationOnly;
+import datawave.core.query.language.functions.jexl.JexlQueryFunction;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.query.language.functions.jexl.EvaluationOnly;
-import datawave.query.language.functions.jexl.JexlQueryFunction;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;

@@ -39,13 +39,13 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.query.attributes.UniqueFields;
+import datawave.core.query.attributes.UniqueGranularity;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.LogTiming;
 import datawave.query.jexl.JexlASTHelper;
 

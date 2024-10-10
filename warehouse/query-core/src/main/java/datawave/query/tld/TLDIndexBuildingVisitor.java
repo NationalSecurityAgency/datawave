@@ -19,12 +19,12 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import datawave.core.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.core.query.jexl.LiteralRange;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.EventFieldAggregator;
 import datawave.query.jexl.functions.TLDEventFieldAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;

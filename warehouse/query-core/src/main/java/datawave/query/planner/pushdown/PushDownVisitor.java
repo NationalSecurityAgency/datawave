@@ -1,6 +1,6 @@
 package datawave.query.planner.pushdown;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 import java.util.Collection;
 
@@ -10,9 +10,9 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.planner.pushdown.rules.DelayedPredicatePushDown;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;

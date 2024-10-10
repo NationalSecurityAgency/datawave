@@ -30,6 +30,7 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.core.query.configuration.Result;
+import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;

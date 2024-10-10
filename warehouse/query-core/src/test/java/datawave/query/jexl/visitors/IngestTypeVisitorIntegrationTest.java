@@ -28,6 +28,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.data.type.LcType;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.util.JexlQueryGenerator;

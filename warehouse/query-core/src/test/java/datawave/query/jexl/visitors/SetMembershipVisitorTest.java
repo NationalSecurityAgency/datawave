@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;

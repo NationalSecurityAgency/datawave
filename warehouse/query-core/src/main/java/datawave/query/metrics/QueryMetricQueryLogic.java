@@ -6,8 +6,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.language.parser.ParseException;
 import datawave.microservice.query.Query;
-import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 
 /**

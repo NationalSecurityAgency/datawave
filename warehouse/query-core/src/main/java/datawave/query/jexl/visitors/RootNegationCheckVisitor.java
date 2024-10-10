@@ -5,7 +5,7 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Determine if all query terms are negated

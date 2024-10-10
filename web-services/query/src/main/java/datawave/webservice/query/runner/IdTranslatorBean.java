@@ -42,13 +42,13 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.data.UUIDType;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
-import datawave.query.data.UUIDType;
 import datawave.resteasy.util.DateFormatter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.WSAuthorizationsUtil;

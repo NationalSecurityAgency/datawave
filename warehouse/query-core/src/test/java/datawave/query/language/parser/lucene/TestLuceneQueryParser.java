@@ -7,7 +7,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.query.language.parser.ParseException;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.lucene.LuceneQueryParser;
 
 public class TestLuceneQueryParser {
 

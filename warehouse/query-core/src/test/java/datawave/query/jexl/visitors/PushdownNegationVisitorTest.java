@@ -1,6 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -17,9 +17,10 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.test.JexlNodeAssert;
 
 public class PushdownNegationVisitorTest {

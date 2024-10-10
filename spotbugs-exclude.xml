@@ -120,7 +120,7 @@
     Needs further review. See inline code comments
     -->
     <Match>
-        <Class name="datawave.query.language.functions.jexl.Chain" />
+        <Class name="datawave.core.query.language.functions.jexl.Chain" />
         <Bug pattern="RE_POSSIBLE_UNINTENDED_PATTERN" />
     </Match>
 

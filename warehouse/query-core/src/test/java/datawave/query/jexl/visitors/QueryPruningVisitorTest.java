@@ -14,13 +14,14 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import datawave.common.test.logging.TestLogCollector;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.Tuple3;
 
 public class QueryPruningVisitorTest {

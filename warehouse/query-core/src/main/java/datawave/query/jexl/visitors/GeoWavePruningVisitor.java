@@ -19,16 +19,17 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.data.normalizer.GeometryNormalizer;
+import datawave.core.geo.utils.CommonGeoUtils;
+import datawave.core.geo.utils.GeoUtils;
+import datawave.core.geo.utils.GeoWaveUtils;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.GeoFunctionJexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.util.GeoUtils;
-import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
 
 /**
@@ -66,11 +67,11 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
             JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
             if (child instanceof ASTFunctionNode) {
                 JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) child);
-                if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-                    GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc = (GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc;
-                    if (isPrunable(geoWaveDesc)) {
-                        Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
-                        Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
+                if (desc instanceof GeoFunctionJexlArgumentDescriptor) {
+                    GeoFunctionJexlArgumentDescriptor geoFunctionDescriptor = (GeoFunctionJexlArgumentDescriptor) desc;
+                    if (isPrunable(desc)) {
+                        Geometry geom = CommonGeoUtils.geometriesToGeometry(geoFunctionDescriptor.getGeoFunction().getGeometry());
+                        Set<String> fields = desc.fields(metadataHelper, null);
                         for (String field : fields) {
                             fieldToGeometryMap.put(field, geom);
                         }
@@ -81,8 +82,8 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         return super.visit(node, (fieldToGeometryMap.isEmpty() ? null : fieldToGeometryMap));
     }
 
-    private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) {
-        Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
+    private boolean isPrunable(JexlArgumentDescriptor jexlArgDescriptor) {
+        Set<String> fields = jexlArgDescriptor.fields(metadataHelper, null);
         // @formatter:off
         return fields.stream().anyMatch(
                         field -> getDatatypesForField(field).stream().anyMatch(
@@ -141,7 +142,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                     Geometry nodeGeometry = null;
                     try {
                         if (isGeoWaveType(field)) {
-                            nodeGeometry = GeoWaveUtils.positionToGeometry(value);
+                            nodeGeometry = GeoWaveUtils.termToGeometry(value);
                         } else if (isGeoType(field)) {
                             nodeGeometry = GeoUtils.indexToGeometry(value);
                         }

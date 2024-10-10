@@ -34,8 +34,8 @@ import com.google.gson.GsonBuilder;
 
 import datawave.core.iterators.GlobalIndexTermMatchingIterator;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
+import datawave.core.query.jexl.LiteralRange;
 import datawave.query.iterator.UniqueColumnFamilyIterator;
-import datawave.query.jexl.LiteralRange;
 
 /**
  * A combination of {@link GlobalIndexTermMatchingIterator} and {@link GlobalIndexTermMatchingFilter} with the ability to consider column families.

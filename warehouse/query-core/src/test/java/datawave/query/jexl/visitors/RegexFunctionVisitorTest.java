@@ -13,10 +13,11 @@ import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.test.JexlNodeAssert;
 
 public class RegexFunctionVisitorTest {

@@ -1,5 +1,6 @@
 package datawave.query.jexl.lookups;
 
+import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.query.config.ShardQueryConfiguration;
 
 /**

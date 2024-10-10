@@ -38,6 +38,8 @@ import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.core.iterators.TermFrequencyIterator;
+import datawave.core.query.postprocessing.tf.Function;
+import datawave.core.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;

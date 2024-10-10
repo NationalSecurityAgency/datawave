@@ -36,12 +36,12 @@ import org.infinispan.commons.util.Base64;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.ingest.data.tokenize.DefaultTokenSearch;
+import datawave.core.ingest.data.tokenize.TokenSearch;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.data.tokenize.DefaultTokenSearch;
-import datawave.ingest.data.tokenize.TokenSearch;
 import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;

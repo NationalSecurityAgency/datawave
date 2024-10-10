@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;

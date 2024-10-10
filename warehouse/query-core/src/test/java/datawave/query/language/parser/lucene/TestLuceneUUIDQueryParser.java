@@ -6,8 +6,9 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import datawave.query.data.UUIDType;
-import datawave.query.language.parser.ParseException;
+import datawave.core.query.data.UUIDType;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.lucene.LuceneUUIDQueryParser;
 
 public class TestLuceneUUIDQueryParser {
     @Test

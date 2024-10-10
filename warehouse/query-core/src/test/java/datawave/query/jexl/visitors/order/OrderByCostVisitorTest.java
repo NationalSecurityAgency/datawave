@@ -22,9 +22,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 
 public class OrderByCostVisitorTest {

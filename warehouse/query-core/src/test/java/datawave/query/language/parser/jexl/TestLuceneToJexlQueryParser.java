@@ -15,13 +15,14 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
-import datawave.ingest.data.tokenize.StandardAnalyzer;
-import datawave.ingest.data.tokenize.TokenSearch;
+import datawave.core.ingest.data.tokenize.StandardAnalyzer;
+import datawave.core.ingest.data.tokenize.TokenSearch;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.core.query.language.processor.lucene.QueryNodeProcessorFactory;
+import datawave.core.query.language.tree.QueryNode;
+import datawave.core.query.language.tree.ServerHeadNode;
 import datawave.query.Constants;
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlQueryParser {
 

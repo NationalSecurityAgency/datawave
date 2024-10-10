@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.jexl.visitors.PrintingVisitor;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;

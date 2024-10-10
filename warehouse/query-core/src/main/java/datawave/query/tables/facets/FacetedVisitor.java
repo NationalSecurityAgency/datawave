@@ -25,13 +25,13 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import datawave.core.query.jexl.visitors.BaseVisitor;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SourceManager;
 import datawave.query.iterator.builder.IndexIteratorBuilder;
 import datawave.query.iterator.builder.IteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.predicate.NegationPredicate;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.SortedKeyValueIteratorToIterator;

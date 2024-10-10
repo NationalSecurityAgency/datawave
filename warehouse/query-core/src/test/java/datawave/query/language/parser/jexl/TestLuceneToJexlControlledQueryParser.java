@@ -13,9 +13,10 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.jexl.LuceneToJexlControlledQueryParser;
+import datawave.core.query.language.tree.QueryNode;
+import datawave.core.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlControlledQueryParser {
 
@@ -54,7 +55,7 @@ public class TestLuceneToJexlControlledQueryParser {
     }
 
     /**
-     * MetadataQuery logic doesn't accept lowercase field names. It previously threw: datawave.query.language.parser.ParseException: Unallowed field(s)
+     * MetadataQuery logic doesn't accept lowercase field names. It previously threw: datawave.core.query.language.parser.ParseException: Unallowed field(s)
      * '[field2]' for this type of query
      *
      * It should accept these fields when checking against the allowed list.

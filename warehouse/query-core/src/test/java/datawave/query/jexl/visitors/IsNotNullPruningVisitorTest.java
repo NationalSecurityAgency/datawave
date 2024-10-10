@@ -7,9 +7,10 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 
 public class IsNotNullPruningVisitorTest {
 

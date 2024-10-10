@@ -11,7 +11,7 @@ import org.assertj.core.api.AbstractIterableAssert;
 import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.ListAssert;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * A {@link AbstractIterableAssert} implementation that supports performing AssertJ assertions on an {@link Iterable} of {@link JexlNode} instances. Equality

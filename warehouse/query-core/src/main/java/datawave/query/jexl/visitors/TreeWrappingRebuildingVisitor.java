@@ -6,7 +6,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 
 public class TreeWrappingRebuildingVisitor extends RebuildingVisitor {
 

@@ -15,12 +15,13 @@ import org.apache.commons.lang.math.NumberUtils;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

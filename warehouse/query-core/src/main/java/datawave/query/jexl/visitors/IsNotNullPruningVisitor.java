@@ -61,8 +61,11 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.core.query.jexl.visitors.BaseVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 
 /**
  * This visitor prunes unnecessary 'is not null' functions from the query tree.

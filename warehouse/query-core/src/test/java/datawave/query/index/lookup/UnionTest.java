@@ -21,7 +21,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 

@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +23,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.LcType;

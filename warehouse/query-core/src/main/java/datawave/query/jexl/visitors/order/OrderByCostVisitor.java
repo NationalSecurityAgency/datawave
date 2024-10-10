@@ -12,13 +12,13 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.BaseVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.DefaultNodeCostComparator;
 import datawave.query.jexl.nodes.FieldOrTermNodeCostComparator;
 import datawave.query.jexl.nodes.NodeCostComparator;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * Orders query nodes by cost.

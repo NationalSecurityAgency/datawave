@@ -8,12 +8,12 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.jexl.visitors.PrintingVisitor;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.AllTermsIndexedVisitor;
-import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;

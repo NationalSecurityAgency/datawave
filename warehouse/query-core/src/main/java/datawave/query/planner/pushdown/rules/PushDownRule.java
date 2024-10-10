@@ -3,7 +3,7 @@ package datawave.query.planner.pushdown.rules;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.PushDownVisitor;
 

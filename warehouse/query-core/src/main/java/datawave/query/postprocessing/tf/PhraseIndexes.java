@@ -18,6 +18,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.query.attributes.ExcerptFields;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -33,8 +34,8 @@ public class PhraseIndexes {
 
     private static final Comparator<Integer> reverseIntegerCompare = ((Comparator<Integer>) Integer::compareTo).reversed();
 
-    private static final String WHITESPACE = "\\s";
-    public static final Pattern whitespacePattern = Pattern.compile(WHITESPACE);
+    private static final String WHITESPACE = ExcerptFields.WHITESPACE;
+    public static final Pattern whitespacePattern = ExcerptFields.whitespacePattern;
 
     /**
      * A Map of field name to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventId(key)

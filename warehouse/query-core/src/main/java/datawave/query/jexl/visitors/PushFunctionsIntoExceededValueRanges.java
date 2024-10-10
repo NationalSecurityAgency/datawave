@@ -1,6 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
 import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 
@@ -28,10 +28,11 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 
 /**

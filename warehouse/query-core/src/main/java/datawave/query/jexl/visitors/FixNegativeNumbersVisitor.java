@@ -9,6 +9,8 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
+
 public class FixNegativeNumbersVisitor extends RebuildingVisitor {
 
     public static ASTJexlScript fix(JexlNode root) {

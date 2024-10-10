@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor.distributeFunctionIntoIndexQuery;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 import java.util.Arrays;
 
@@ -18,13 +18,14 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 

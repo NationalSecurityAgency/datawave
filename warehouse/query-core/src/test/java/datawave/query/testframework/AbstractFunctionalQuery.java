@@ -1,6 +1,6 @@
 package datawave.query.testframework;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +54,7 @@ import com.google.common.collect.Sets;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -70,7 +71,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;

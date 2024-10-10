@@ -31,6 +31,8 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 
+import datawave.core.query.jexl.visitors.BaseVisitor;
+
 public class ShortCircuitBaseVisitor extends BaseVisitor {
 
     @Override

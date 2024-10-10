@@ -13,9 +13,10 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.util.StringUtils;
 
 /**

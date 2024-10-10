@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.attributes.ExcerptFields;
+
 public class ExcerptFieldsTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
