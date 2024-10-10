@@ -785,7 +785,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         if (StringUtils.isNotBlank(typeList)) {
             HashSet<String> typeFilter = new HashSet<>();
-            typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
+            HashSet<String> excludeSet = new HashSet<>();
+
+            for (String dataType : Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP))) {
+                if (dataType.charAt(0) == '!') {
+                    excludeSet.add(StringUtils.substring(dataType, 1));
+                } else {
+                    typeFilter.add(dataType);
+                }
+            }
+
+            if (!excludeSet.isEmpty()) {
+                if (typeFilter.isEmpty()) {
+                    MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(),
+                                    config.isRawTypes());
+
+                    try {
+                        typeFilter.addAll(metadataHelper.getDatatypes(null));
+                    } catch (TableNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                typeFilter.removeAll(excludeSet);
+            }
 
             if (log.isDebugEnabled()) {
                 log.debug("Type Filter: " + typeFilter);
@@ -2438,6 +2461,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMaxIndexScanTimeMillis(long maxTime) {
         getConfig().setMaxIndexScanTimeMillis(maxTime);
+    }
+
+    public long getMaxAnyFieldScanTimeMillis() {
+        return getConfig().getMaxAnyFieldScanTimeMillis();
+    }
+
+    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
+        getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
     }
 
     public Function getQueryMacroFunction() {

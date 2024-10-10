@@ -105,9 +105,21 @@ public class FileByteSummaryLoader extends Configured implements Tool {
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
         job.setInputFormatClass(AccumuloInputFormat.class);
-        Properties accumuloClientProps = Accumulo.newClientProperties().to(instance.trim(), zookeepers.trim()).as(userName, password).build();
-        AccumuloInputFormat.configure().clientProperties(accumuloClientProps).table(inputTable).auths(Authorizations.EMPTY)
-                        .ranges(Collections.singletonList(dayRange)).store(job);
+
+        // @formatter:off
+        Properties clientProperties = Accumulo.newClientProperties()
+                        .to(instance.trim(), zookeepers.trim())
+                        .as(userName, password)
+                        .build();
+
+        AccumuloInputFormat.configure()
+                        .clientProperties(clientProperties)
+                        .table(inputTable)
+                        .auths(Authorizations.EMPTY)
+                        .ranges(Collections.singletonList(dayRange))
+                        .store(job);
+        // @formatter:on
+
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
 

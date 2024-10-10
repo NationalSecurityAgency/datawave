@@ -285,15 +285,28 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         job.setMapperClass(QueryMetricsMapper.class);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
+        job.setInputFormatClass(AccumuloInputFormat.class);
+
+        // @formatter:off
+        Properties clientProperties = Accumulo.newClientProperties()
+                        .to(instance, zookeepers)
+                        .as(userName, password)
+                        .build();
+        // @formatter:on
 
         IteratorSetting regex = new IteratorSetting(50, RegExFilter.class);
         regex.addOption(RegExFilter.COLF_REGEX, QUERY_METRICS_REGEX);
 
-        job.setInputFormatClass(AccumuloInputFormat.class);
-        Properties accumuloClientProps = Accumulo.newClientProperties().to(instance, zookeepers).as(userName, password).build();
-        AccumuloInputFormat.configure().clientProperties(accumuloClientProps).table(inputTable).auths(auths).ranges(dayRanges).autoAdjustRanges(false)
-                        .addIterator(regex).store(job);
-
+        // @formatter:off
+        AccumuloInputFormat.configure()
+                        .clientProperties(clientProperties)
+                        .table(inputTable)
+                        .auths(auths)
+                        .ranges(dayRanges)
+                        .autoAdjustRanges(false)
+                        .addIterator(regex)
+                        .store(job);
+        // @formatter:on
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
 
