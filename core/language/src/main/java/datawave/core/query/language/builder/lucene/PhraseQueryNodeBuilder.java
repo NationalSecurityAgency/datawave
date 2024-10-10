@@ -1,16 +1,5 @@
 package datawave.core.query.language.builder.lucene;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNode;
-import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
-import org.apache.lucene.search.PhraseQuery;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,6 +16,17 @@ import org.apache.lucene.search.PhraseQuery;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNode;
+import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
+import org.apache.lucene.search.PhraseQuery;
+
 import datawave.core.query.language.tree.AdjNode;
 import datawave.core.query.language.tree.SelectorNode;
 

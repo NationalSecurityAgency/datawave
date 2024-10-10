@@ -145,15 +145,32 @@ public class GeoQueryConfig {
         if (o == null || getClass() != o.getClass())
             return false;
         GeoQueryConfig that = (GeoQueryConfig) o;
-        return geowaveMaxEnvelopes == that.geowaveMaxEnvelopes && geometryMaxExpansion == that.geometryMaxExpansion
-                        && pointMaxExpansion == that.pointMaxExpansion && optimizeGeoWaveRanges == that.optimizeGeoWaveRanges
-                        && rangeSplitThreshold == that.rangeSplitThreshold && Double.compare(maxRangeOverlap, that.maxRangeOverlap) == 0
-                        && geoMaxEnvelopes == that.geoMaxEnvelopes && geoMaxExpansion == that.geoMaxExpansion && optimizeGeoRanges == that.optimizeGeoRanges;
+        // @formatter:off
+        return geowaveMaxEnvelopes == that.geowaveMaxEnvelopes &&
+                geometryMaxExpansion == that.geometryMaxExpansion &&
+                pointMaxExpansion == that.pointMaxExpansion &&
+                optimizeGeoWaveRanges == that.optimizeGeoWaveRanges &&
+                rangeSplitThreshold == that.rangeSplitThreshold &&
+                Double.compare(maxRangeOverlap, that.maxRangeOverlap) == 0 &&
+                geoMaxEnvelopes == that.geoMaxEnvelopes &&
+                geoMaxExpansion == that.geoMaxExpansion &&
+                optimizeGeoRanges == that.optimizeGeoRanges;
+        // @formatter:on
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(geowaveMaxEnvelopes, geometryMaxExpansion, pointMaxExpansion, optimizeGeoWaveRanges, rangeSplitThreshold, maxRangeOverlap,
-                        geoMaxEnvelopes, geoMaxExpansion, optimizeGeoRanges);
+        // @formatter:off
+        return Objects.hash(
+                geowaveMaxEnvelopes,
+                geometryMaxExpansion,
+                pointMaxExpansion,
+                optimizeGeoWaveRanges,
+                rangeSplitThreshold,
+                maxRangeOverlap,
+                geoMaxEnvelopes,
+                geoMaxExpansion,
+                optimizeGeoRanges);
+        // @formatter:on
     }
 }

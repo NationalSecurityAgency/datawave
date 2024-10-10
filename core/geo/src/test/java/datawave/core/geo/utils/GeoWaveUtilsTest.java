@@ -24,9 +24,6 @@ import datawave.data.normalizer.PointNormalizer;
 
 public class GeoWaveUtilsTest {
 
-    // add tests that showcase geo fields used in geowave functions
-    // add tests that showcase geowave fields used in geo functions
-
     @Test
     public void optimizeSinglePointTest() throws Exception {
         String wktString = "POINT(12.34567890123 9.87654321098)";
