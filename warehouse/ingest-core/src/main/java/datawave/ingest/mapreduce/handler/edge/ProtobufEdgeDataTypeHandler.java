@@ -617,7 +617,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         excludedGroups = arithmetic.getExcludedGroups();
 
                         for (Entry excluded : excludedGroups.entrySet()) {
-                            matchingGroups.remove(excluded.getKey(), excluded.getValue());
+                            for (Object value : (HashSet) excluded.getValue()) {
+                                if (matchingGroups.containsKey(excluded.getKey())) {
+                                    matchingGroups.get(excluded.getKey()).remove(value);
+                                    if (matchingGroups.get(excluded.getKey()).isEmpty()) {
+                                        matchingGroups.remove(excluded.getKey());
+                                    }
+                                }
+                            }
+
                         }
 
                         if (log.isTraceEnabled()) {
