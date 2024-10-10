@@ -41,6 +41,7 @@ import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.util.ConfigurationImpl;
@@ -147,10 +148,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("INDEX_ONLY_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
 
+        var fakeId = TableId.of("fake");
+
         environment = createMock(IteratorEnvironment.class);
         penvironment = createMock(PluginEnvironment.class);
         EasyMock.expect(environment.getPluginEnv()).andReturn(penvironment).anyTimes();
-        EasyMock.expect(penvironment.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
+        EasyMock.expect(environment.getTableId()).andReturn(fakeId).anyTimes();
+        EasyMock.expect(penvironment.getConfiguration()).andReturn(PluginEnvironment.Configuration.from(Map.of(), true)).anyTimes();
+        EasyMock.expect(penvironment.getConfiguration(fakeId)).andReturn(PluginEnvironment.Configuration.from(Map.of(), true)).anyTimes();
         filter = createMock(EventDataQueryFilter.class);
     }
 

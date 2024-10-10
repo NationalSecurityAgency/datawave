@@ -24,9 +24,7 @@ public class FieldAgeOffFilterTest {
     private static final int ONE_MIN = 60 * ONE_SEC;
 
     public static PluginEnvironment.Configuration newConfig(Map<String,String> props) {
-        var conf = new ConfigurationCopy(DefaultConfiguration.getInstance());
-        props.forEach(conf::set);
-        return new ConfigurationImpl(conf);
+        return PluginEnvironment.Configuration.from(props, true);
     }
 
     private ConfigurableIteratorEnvironment iterEnv = new ConfigurableIteratorEnvironment(newConfig(Map.of()), null);

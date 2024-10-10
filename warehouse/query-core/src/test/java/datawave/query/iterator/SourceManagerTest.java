@@ -353,14 +353,10 @@ public class SourceManagerTest {
 
     public static class MockIteratorEnvironment implements IteratorEnvironment {
 
-        AccumuloConfiguration conf;
-
-        public MockIteratorEnvironment(AccumuloConfiguration conf) {
-            this.conf = conf;
-        }
+        PluginEnvironment.Configuration conf;
 
         public MockIteratorEnvironment() {
-            this.conf = DefaultConfiguration.getInstance();
+            this.conf = PluginEnvironment.Configuration.from(Map.of(), true);
         }
 
         @Override
@@ -403,15 +399,22 @@ public class SourceManagerTest {
             return null;
         }
 
+        private static final TableId FAKE_ID = TableId.of("fake");
+
+        @Override
+        public TableId getTableId() {
+            return FAKE_ID;
+        }
+
         public class MockPluginEnvironment implements PluginEnvironment {
             @Override
             public Configuration getConfiguration() {
-                return new ConfigurationImpl(conf);
+                return conf;
             }
 
             @Override
             public Configuration getConfiguration(TableId tableId) {
-                return new ConfigurationImpl(conf);
+                return conf;
             }
 
             @Override

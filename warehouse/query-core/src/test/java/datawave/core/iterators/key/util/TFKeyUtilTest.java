@@ -63,9 +63,9 @@ class TFKeyUtilTest {
 
     @Test
     void testParseNoValue() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             Key k = new Key("row", "tf", "datatype\0uid\0FIELD");
-            assertEquals(".getValueString() should have thrown an IllegalArgumentException error: ", "", TFKeyUtil.getValueString(k));
+            assertEquals(".getValueString() should have thrown an IndexOutOfBoundsException error: ", "", TFKeyUtil.getValueString(k));
         });
     }
 
