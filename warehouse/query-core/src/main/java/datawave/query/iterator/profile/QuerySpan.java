@@ -30,6 +30,9 @@ public class QuerySpan {
 
     protected long seek = 0;
 
+    protected long evaluated = 0;
+    protected long rejected = 0;
+
     protected boolean yield = false;
 
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
@@ -90,6 +93,34 @@ public class QuerySpan {
         return nextCount;
     }
 
+    public void evaluatedIncrement(long evaluatedCount) {
+        evaluated += evaluatedCount;
+        System.out.println("Evaluated Count: " + evaluated);
+    }
+
+    public long getEvaluatedCount() {
+        long evaluatedCount = evaluated;
+        for (QuerySpan subSpan : sources) {
+            evaluatedCount += subSpan.getEvaluatedCount();
+        }
+        System.out.println("Evaluated Count: " + evaluatedCount);
+        return evaluatedCount;
+    }
+
+    public void rejectedIncrement(long rejectedCount) {
+        rejected += rejectedCount;
+        System.out.println("Rejected Count: " + rejected);
+    }
+
+    public long getRejectedCount() {
+        long rejectedCount = rejected;
+        for (QuerySpan subSpan : sources) {
+            rejectedCount += subSpan.getRejectedCount();
+        }
+        System.out.println("Rejected Count: " + rejectedCount);
+        return rejectedCount;
+    }
+
     public long getSeekCount() {
         long seekCount = seek;
         for (QuerySpan subSpan : sources) {
@@ -113,7 +144,7 @@ public class QuerySpan {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" sources:").append(getSourceCount()).append(" next:").append(getNextCount()).append(" seek:").append(getSeekCount())
-                        .append(" yield:").append(getYield());
+                        .append(" evaluated:").append(getEvaluatedCount()).append(" rejected:").append(getRejectedCount()).append(" yield:").append(getYield());
         return sb.toString();
     }
 
@@ -165,6 +196,8 @@ public class QuerySpan {
         sourceCount = 0;
         next = 0;
         seek = 0;
+        rejected = 0;
+        evaluated = 0;
         yield = false;
         stageTimerTotal = 0;
         stageTimers.clear();
@@ -200,6 +233,14 @@ public class QuerySpan {
 
     public void setSeek(long seek) {
         this.seek = seek;
+    }
+
+    public void setEvaluatedCount(long evaluatedCount) {
+        this.evaluated = evaluatedCount;
+    }
+
+    public void setRejectedCount(long rejectedCount) {
+        this.rejected = rejectedCount;
     }
 
     public void setNext(long next) {

@@ -11,6 +11,8 @@ public class TimingMetadata extends Metadata {
     private static final String NEXT_COUNT = "NEXT_COUNT";
     private static final String SOURCE_COUNT = "SOURCE_COUNT";
     private static final String SEEK_COUNT = "SEEK_COUNT";
+    private static final String EVALUATED_COUNT = "EVALUATED_COUNT";
+    private static final String REJECTED_COUNT = "REJECTED_COUNT";
     private static final String YIELD_COUNT = "YIELD_COUNT";
     private static final String STAGE_TIMERS = "STAGE_TIMERS";
     private static final String HOST = "HOST";
@@ -53,6 +55,32 @@ public class TimingMetadata extends Metadata {
 
     public void setSeekCount(long seekCount) {
         put(SEEK_COUNT, new Numeric(seekCount, this.getMetadata(), this.isToKeep()));
+    }
+
+    public long getEvaluatedCount() {
+        Numeric numericValue = (Numeric) get(EVALUATED_COUNT);
+        if (numericValue != null) {
+            return ((Number) numericValue.getData()).longValue();
+        } else {
+            return 0;
+        }
+    }
+
+    public void setEvaluatedCount(long evaluatedCount) {
+        put(EVALUATED_COUNT, new Numeric(evaluatedCount, this.getMetadata(), this.isToKeep()));
+    }
+
+    public long getRejectedCount() {
+        Numeric numericValue = (Numeric) get(REJECTED_COUNT);
+        if (numericValue != null) {
+            return ((Number) numericValue.getData()).longValue();
+        } else {
+            return 0;
+        }
+    }
+
+    public void setRejectedCount(long rejectedCount) {
+        put(REJECTED_COUNT, new Numeric(rejectedCount, this.getMetadata(), this.isToKeep()));
     }
 
     public long getYieldCount() {

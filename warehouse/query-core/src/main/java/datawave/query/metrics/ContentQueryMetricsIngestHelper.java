@@ -179,6 +179,8 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("SOURCE_COUNT", Long.toString(updatedQueryMetric.getSourceCount()));
             fields.put("NEXT_COUNT", Long.toString(updatedQueryMetric.getNextCount()));
             fields.put("SEEK_COUNT", Long.toString(updatedQueryMetric.getSeekCount()));
+            fields.put("EVALUATED_COUNT", Long.toString(updatedQueryMetric.getEvaluatedCount()));
+            fields.put("REJECTED_COUNT", Long.toString(updatedQueryMetric.getRejectedCount()));
             fields.put("YIELD_COUNT", Long.toString(updatedQueryMetric.getYieldCount()));
             fields.put("DOC_RANGES", Long.toString(updatedQueryMetric.getDocRanges()));
             fields.put("FI_RANGES", Long.toString(updatedQueryMetric.getFiRanges()));
@@ -285,6 +287,12 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             if (updatedQueryMetric.getSeekCount() != storedQueryMetric.getSeekCount()) {
                 fields.put("SEEK_COUNT", Long.toString(storedQueryMetric.getSeekCount()));
+            }
+            if (updatedQueryMetric.getEvaluatedCount() != storedQueryMetric.getEvaluatedCount()) {
+                fields.put("EVALUATED_COUNT", Long.toString(storedQueryMetric.getEvaluatedCount()));
+            }
+            if (updatedQueryMetric.getRejectedCount() != storedQueryMetric.getRejectedCount()) {
+                fields.put("REJECTED_COUNT", Long.toString(storedQueryMetric.getRejectedCount()));
             }
             if (updatedQueryMetric.getYieldCount() != storedQueryMetric.getYieldCount()) {
                 fields.put("YIELD_COUNT", Long.toString(storedQueryMetric.getYieldCount()));

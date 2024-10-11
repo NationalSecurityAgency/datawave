@@ -81,6 +81,7 @@ import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
@@ -1681,7 +1682,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(POSTPROCESSING_CLASSES)) {
             this.postProcessingFunctions = options.get(POSTPROCESSING_CLASSES);
             // test parsing of the functions
-            getPostProcessingChain(new WrappingIterator<>());
+            getPostProcessingChain(new WrappingIterator<>(), null);
         }
 
         if (options.containsKey(NON_INDEXED_DATATYPES)) {
@@ -2099,7 +2100,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public Iterator<Entry<Key,Document>> getPostProcessingChain(Iterator<Entry<Key,Document>> postProcessingBase) {
+    public Iterator<Entry<Key,Document>> getPostProcessingChain(Iterator<Entry<Key,Document>> postProcessingBase, QuerySpan trackingSpan) {
         String functions = postProcessingFunctions;
         if (functions != null && !functions.isEmpty()) {
             try {
@@ -2124,7 +2125,7 @@ public class QueryOptions implements OptionDescriber {
                             ((ConfiguredPredicate) p).configure(options);
                         }
 
-                        tforms = QueryIterator.statelessFilter(tforms, p);
+                        tforms = QueryIterator.statelessFilter(tforms, p, trackingSpan);
                     } else {
                         log.error(fClass + " is not a function or predicate.");
                         throw new RuntimeException(fClass + " is not a function or predicate.");
