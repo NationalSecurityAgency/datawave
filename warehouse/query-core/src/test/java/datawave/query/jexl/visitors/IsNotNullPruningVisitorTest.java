@@ -537,11 +537,11 @@ public class IsNotNullPruningVisitorTest {
 
         // cannot prune half of a union
         query = "(!(FOO == null) || !(FOO2 == null)) && FOO == 'bar'";
-        String expected = "(!(FOO2 == null)) && FOO == 'bar'";
+        String expected = "FOO == 'bar'";
         test(query, expected);
 
         query = "(!(FOO == null) || !(FOO2 == null)) && FOO =~ 'ba.*'";
-        expected = "(!(FOO2 == null)) && FOO == 'bar'";
+        expected = "FOO =~ 'ba.*'";
         test(query, expected);
     }
 
@@ -584,6 +584,13 @@ public class IsNotNullPruningVisitorTest {
         String expected = "FOO == 'bar'";
 
         test(query, expected);
+    }
+
+    @Test
+    public void testFutureCase_CustomTwo() {
+        // logically, these unions are equivalent and the 'is not null' side can be pruned
+        String query = "FOO == 'bar' && (!(FOO2 == null) || !(FOO4 == null))";
+        test(query, query);
     }
 
     private void test(String query, String expected) {

@@ -224,13 +224,12 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
             if (isIsNotNullFunction(deref) && !willPrune) {
-                willPrune = true;
+                String field = fieldForNode(deref);
+                if (fields.contains(field)) {
+                    willPrune = true;
+                }
             }
 
-            String field = fieldForNode(deref);
-            if (fields.contains(field) && !willPrune) {
-                willPrune = true;
-            }
         }
 
         if (!willPrune) {
