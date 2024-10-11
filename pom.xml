@@ -1241,7 +1241,7 @@
                 <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>false</enabled>
+                <enabled>true</enabled>
             </snapshots>
             <id>github-datawave</id>
             <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
