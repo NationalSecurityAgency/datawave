@@ -1,9 +1,12 @@
 package datawave.query.jexl.lookups;
 
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
@@ -126,7 +129,10 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             log.debug("Range: " + range);
             bs = null;
             try {
-                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+                // the 'newScanner' method in the ScannerFactory has no knowledge about the 'expansion' hint, so determine hint here
+                String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
 
                 bs.setRanges(Collections.singleton(range));
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
