@@ -34,6 +34,8 @@
         </repository>
     </distributionManagement>
     <properties>
+        <!-- suppress noise about missing javadocs, but keep other javadoc warnings -->
+        <doclint>all,-missing</doclint>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
@@ -1298,7 +1300,7 @@
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>3.1.11</version>
+                    <version>4.8.6.4</version>
                     <configuration>
                         <effort>Max</effort>
                         <threshold>High</threshold>
