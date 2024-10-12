@@ -48,7 +48,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
 
         if (null != options.get(SYSTEM_LOAD_THRESHOLD)) {
             try {
-                loadThresholdAboveProcs = Double.valueOf(options.get(SYSTEM_LOAD_THRESHOLD));
+                loadThresholdAboveProcs = Double.parseDouble(options.get(SYSTEM_LOAD_THRESHOLD));
             } catch (NumberFormatException e) {
                 // no worries, keep default
             }
