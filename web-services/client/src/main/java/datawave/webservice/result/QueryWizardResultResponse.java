@@ -91,9 +91,9 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         StringBuilder builder = new StringBuilder();
 
         builder.append("<br/><br/>");
-        builder.append("<H2>Query ID : " + queryId + "</H2><br/><br/>");
+        builder.append("<h2>Query ID : " + queryId + "</h2><br/><br/>");
         if (response == null || !response.getHasResults()) {
-            builder.append("<H2>There aren't anymore results</H2>");
+            builder.append("<h2>There aren't anymore results</h2>");
             return builder.toString();
         }
 
@@ -181,11 +181,11 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         builder.append("</div>\n");
         builder.append("</div>");
 
-        builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/" + queryId
+        builder.append("<form id=\"queryform\" action=\"/DataWave/BasicQuery/" + queryId
                         + "/showQueryWizardResults\"  method=\"get\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
         builder.append("<center><input type=\"submit\" value=\"Next\" align=\"left\" width=\"50\" /></center>");
 
-        builder.append("</FORM>");
+        builder.append("</form>");
 
         return builder.toString();
     }

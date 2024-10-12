@@ -42,7 +42,6 @@ import datawave.query.jexl.JexlASTHelper;
  * Provides for the parsing and execution of a Jexl query string for test execution only. The {@link #evaluate()} method should produce the same results that
  * are produced from the production code base.
  * <p>
- * </P>
  * <b>Current Limitations</b><br>
  * <ul>
  * <li>Differences in the manner in which the Datawave Interpreter and the Jexl Interpreter work may result in the results. One difference in with multivalue

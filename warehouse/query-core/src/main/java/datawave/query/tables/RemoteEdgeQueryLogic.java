@@ -23,7 +23,7 @@ import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 /**
- * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote edge query logic (i.e. one that returns an extension of
+ * <h2>Overview</h2> This is a query logic implementation that can handle delegating to a remote edge query logic (i.e. one that returns an extension of
  * EdgeQueryResponseBase).
  */
 public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> implements RemoteQueryLogic<EdgeBase> {
