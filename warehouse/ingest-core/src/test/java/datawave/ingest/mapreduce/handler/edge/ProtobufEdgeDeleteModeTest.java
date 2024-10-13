@@ -4,19 +4,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -35,25 +27,18 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.hash.UID;
-import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.BaseNormalizedContent;
-import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.FakeIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.time.Now;
-import datawave.metadata.protobuf.EdgeMetadata;
-import datawave.util.time.DateHelper;
 
 public class ProtobufEdgeDeleteModeTest {
 
@@ -197,7 +182,8 @@ public class ProtobufEdgeDeleteModeTest {
         // Order delete mode via conf property
         //
 
-        conf.set("command.line.injected.delete.mode.property", "true");
+        conf.set("ingest.mode.delete", "true");
+
         context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
         edgeHandler = new MyDerivedProtobufEdgeDataTypeHandler<>();
@@ -211,7 +197,8 @@ public class ProtobufEdgeDeleteModeTest {
         // set conf injected value to false
         //
 
-        conf.set("command.line.injected.delete.mode.property", "false");
+        conf.set("ingest.mode.delete", "false");
+
         context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
         edgeHandler = new MyDerivedProtobufEdgeDataTypeHandler<>();
@@ -243,141 +230,12 @@ public class ProtobufEdgeDeleteModeTest {
         public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                         TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                         throws IOException, InterruptedException {
-            long edgesCreated = 0;
-            long activityDate = -1;
-            boolean validActivityDate = false;
-            boolean activityEqualsEvent = false;
-            String edgeAttribute2 = null, edgeAttribute3 = null;
 
-            String loadDateStr = null;
-
-            if (event.fatalError()) {
-                return edgesCreated;
-            } // early short circuit return
-
-            // get edge definitions for this event type
-            Type dataType = event.getDataType();
-            String typeName = dataType.typeName();
-            List<EdgeDefinition> edgeDefs = null;
-            EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
-            if (!edges.containsKey(typeName)) {
-                return edgesCreated; // short circuit, no edges defined for this type
-            }
-            edgeDefConfigs = (EdgeDefinitionConfigurationHelper) edges.get(typeName);
-            edgeDefs = edgeDefConfigs.getEdges();
-
-            loadDateStr = DateHelper.format(new Date(now.get()));
-
-            /*
-             * normalize field names with groups
-             */
-            Multimap<String,NormalizedContentInterface> normalizedFields = HashMultimap.create();
-            Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList = new HashMap<>();
-            Multimap<String,NormalizedContentInterface> tmp = null;
-            for (Map.Entry<String,NormalizedContentInterface> e : fields.entries()) {
-                NormalizedContentInterface value = e.getValue();
-                String subGroup = null;
-                if (value instanceof GroupedNormalizedContentInterface) {
-                    subGroup = ((GroupedNormalizedContentInterface) value).getSubGroup();
-                }
-                String fieldName = getGroupedFieldName(value);
-                tmp = depthFirstList.get(fieldName);
-                if (tmp == null) {
-                    tmp = HashMultimap.create();
-                }
-                tmp.put(subGroup, value);
-                depthFirstList.put(fieldName, tmp);
-
-                normalizedFields.put(fieldName, value);
-            }
-
-            // get the activity date from the event fields map
-            if (normalizedFields.containsKey(edgeDefConfigs.getActivityDateField())) {
-                String actDate = normalizedFields.get(edgeDefConfigs.getActivityDateField()).iterator().next().getEventFieldValue();
-                try {
-                    activityDate = DateNormalizer.parseDate(actDate, DateNormalizer.FORMAT_STRINGS).getTime();
-                    validActivityDate = validateActivityDate(activityDate, event.getDate());
-                } catch (ParseException e1) {
-                    log.error("Parse exception when getting the activity date: " + actDate + " for edge creation " + e1.getMessage());
-                }
-            }
-
-            // If the activity date is valid check to see if it is on the same day as the event date
-            if (validActivityDate) {
-                activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
-            }
-
-            // Track metadata for this event
-            Map<Key,Set<EdgeMetadata.MetadataValue.Metadata>> eventMetadataRegistry = new HashMap<>();
-
-            activityLog = new HashSet<>();
-            durationLog = new HashSet<>();
-
-            /*
-             * Create Edge Values from Edge Definitions
-             */
-            for (EdgeDefinition edgeDef : edgeDefs) {
-
-                String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
-                String jexlPreconditions = null;
-
-                if (null != edgeDef.getEnrichmentField()) {
-                    if (normalizedFields.containsKey(edgeDef.getEnrichmentField()) && !(normalizedFields.get(edgeDef.getEnrichmentField()).isEmpty())) {
-                        edgeDef.setEnrichmentEdge(true);
-                    } else {
-                        edgeDef.setEnrichmentEdge(false);
-                    }
-                }
-
-                Multimap<String,NormalizedContentInterface> mSource = null;
-                Multimap<String,NormalizedContentInterface> mSink = null;
-
-                String sourceGroup = getEdgeDefGroup(edgeDef.getSourceFieldName());
-                String sinkGroup = getEdgeDefGroup(edgeDef.getSinkFieldName());
-
-                if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
-                    mSource = depthFirstList.get(edgeDef.getSourceFieldName());
-                    mSink = depthFirstList.get(edgeDef.getSinkFieldName());
-                } else {
-                    continue;
-                }
-
-                // bail if the event doesn't contain any values for the source or sink field
-                if (null == mSource || null == mSink) {
-                    continue;
-                }
-                if (mSource.isEmpty() || mSink.isEmpty()) {
-                    continue;
-                }
-
-                // NOTE: A simple test case that supports only the test edge configuration...
-                for (String sourceSubGroup : mSource.keySet()) {
-                    for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
-                        for (String sinkSubGroup : mSink.keySet()) {
-                            for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
-                                EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup,
-                                                sinkSubGroup, edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate,
-                                                validActivityDate);
-                                if (edgeValue != null) {
-
-                                    // NOTE: The only difference in this test class
-                                    edgeValue.setIsDeleting(this.deleteMode);
-
-                                    // have to write out the keys as the edge values are generated, so counters get updated
-                                    // and the system doesn't timeout.
-                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
-
-                                    if (this.enableMetadata) {
-                                        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } // end edge defs
-
-            return edgesCreated;
+            // setup the helper again to force the current delete mode
+            this.getHelper(event.getDataType()).setup(context.getConfiguration());
+            // this method used to be some partial copypasta out of the real ProtobufedgeDTH but that seemed really error prone to me and it made me mad so I
+            // removed it
+            return super.process(key, event, fields, context, contextWriter);
         }
 
     }

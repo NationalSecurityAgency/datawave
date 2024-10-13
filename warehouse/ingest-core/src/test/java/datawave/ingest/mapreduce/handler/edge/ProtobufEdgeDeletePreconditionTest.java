@@ -5,6 +5,7 @@ import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,8 +47,8 @@ public class ProtobufEdgeDeletePreconditionTest {
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/edge-ingest-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/metadata-config.xml"));
-        conf.setBoolean(ProtobufEdgeDataTypeHandler.EVALUATE_PRECONDITIONS, true);
-        conf.set(ProtobufEdgeDataTypeHandler.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigPrecon.xml");
+        conf.setBoolean(EdgeIngestConfiguration.EVALUATE_PRECONDITIONS, true);
+        conf.set(EdgeIngestConfiguration.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigPrecon.xml");
         conf.set(KEY_VERSION_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
         conf.set(KEY_VERSION_DIST_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
         conf.setBoolean("ingest.mode.delete", true);
@@ -65,6 +66,8 @@ public class ProtobufEdgeDeletePreconditionTest {
         myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
+        myEvent.setAltIds(Collections.singleton("0016dd72-0000-827d-dd4d-001b2163ba09"));
+
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));

@@ -68,6 +68,8 @@ public class EdgeDataBundle {
     private long activityDate;
     private boolean validActivityDate;
 
+    private EdgeKey.DATE_TYPE dateType;
+
     public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
         this.mf = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
@@ -95,6 +97,17 @@ public class EdgeDataBundle {
         // prevents future bug
         this.initFieldMasking(helper, event);
         this.initMarkings(getSource().getMarkings(), getSink().getMarkings());
+    }
+
+    public EdgeDataBundle(RawRecordContainer event) {
+        this.mf = MarkingFunctions.Factory.createMarkingFunctions();
+        this.event = event;
+
+    }
+
+    public void clearNonEventFields() {
+        this.source = null;
+        this.sink = null;
     }
 
     private int getHour(long time) {
@@ -140,7 +153,7 @@ public class EdgeDataBundle {
     }
 
     @SuppressWarnings("unchecked")
-    private void initMarkings(Map<String,String> m1, Map<String,String> m2) {
+    public void initMarkings(Map<String,String> m1, Map<String,String> m2) {
         if (m1 != null) {
             if (m2 != null) {
                 try {
@@ -537,6 +550,25 @@ public class EdgeDataBundle {
 
             return (null);
         }
+    }
+
+    public void setDateType(EdgeKey.DATE_TYPE dateType) {
+        this.dateType = dateType;
+    }
+
+    public void setEdgeDefinition(EdgeDefinition edgeDef) {
+        this.edgeDefinition = edgeDef;
+        this.edgeDirection = edgeDef.getDirection();
+        this.edgeType = edgeDef.getEdgeType().toString();
+    }
+
+    public void setUUID(String uuid) {
+        this.uuid = uuid;
+
+    }
+
+    public EdgeKey.DATE_TYPE getDateType() {
+        return this.dateType;
     }
 
 } /* end EdgeValue */
