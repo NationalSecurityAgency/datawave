@@ -113,8 +113,8 @@ DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserv
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
-    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
-    [ -z "${DW_HADOOP_PID_LIST}" ] && return 1 || return 0
+    local pidArray=( $(hadoopPidList) )
+    [[ ${#pidArray[@]} -eq 5 ]] && return 0 || return 1
 }
 
 function hadoopStart() {
@@ -144,6 +144,7 @@ function hadoopStatus() {
         local _pid
         local _opt=pid
 
+        DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
         local -r _pids=${DW_HADOOP_PID_LIST// /|}
         echo "pids: ${DW_HADOOP_PID_LIST}"
         for _arg in $(jps -l | egrep "${_pids}"); do
@@ -218,8 +219,8 @@ function hadoopPrintenv() {
 }
 
 function hadoopPidList() {
-
-   hadoopIsRunning && echo "${DW_HADOOP_PID_LIST}"
+   DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
+   echo "${DW_HADOOP_PID_LIST}"
 
 }
 
