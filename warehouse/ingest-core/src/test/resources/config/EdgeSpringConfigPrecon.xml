@@ -165,7 +165,7 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
-                                <property name="selector" value="CHEESE.FOOD"/>
+                                <property name="selector" value="FRUIT.FOOD"/>
                                 <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
                                                                           defined by 'protobufedge.table.relationships' bean below -->
                                 <property name="relationship" value="FROM"/>
