@@ -98,7 +98,6 @@ import datawave.query.util.count.CountMap;
 import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
-import datawave.util.UniversalSet;
 
 /**
  * QueryOptions are set on the iterators.
@@ -1441,17 +1440,15 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
-            this.useAllowListedFields = true;
 
             String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.allowListedFields = UniversalSet.instance();
-            } else if (fieldList != null && !fieldList.trim().equals("")) {
+            if (fieldList != null && !EVERYTHING.equals(fieldList) && !fieldList.trim().equals("")) {
+                this.useAllowListedFields = true;
                 this.allowListedFields = new HashSet<>();
                 Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
-            }
-            if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
+                    this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                }
             }
         }
 
@@ -1470,6 +1467,9 @@ public class QueryOptions implements OptionDescriber {
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
+
+        // if we never actually set an allow or deny list, then no need to project results
+        this.projectResults = this.useDisallowListedFields || this.useAllowListedFields;
 
         if (options.containsKey(FIELD_COUNTS)) {
             String serializedMap = options.get(FIELD_COUNTS);
