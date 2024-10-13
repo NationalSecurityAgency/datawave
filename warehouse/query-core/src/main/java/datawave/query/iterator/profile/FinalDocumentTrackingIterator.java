@@ -14,8 +14,10 @@ import org.apache.hadoop.io.Text;
 
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.WaitWindowExceededMetadata;
 import datawave.query.function.LogTiming;
 import datawave.query.iterator.Util;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Document>> {
 
@@ -31,19 +33,21 @@ public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Documen
     private final QuerySpanCollector querySpanCollector;
     private final QuerySpan querySpan;
     private final YieldCallback yield;
+    private final WaitWindowObserver waitWindowObserver;
 
     @Deprecated
     public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Range seekRange, Iterator<Entry<Key,Document>> itr,
                     DocumentSerialization.ReturnType returnType, boolean isReducedResponse, boolean isCompressResults, YieldCallback<Key> yield) {
-        this(querySpanCollector, querySpan, seekRange, itr, yield);
+        this(querySpanCollector, querySpan, null, seekRange, itr, yield);
     }
 
-    public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Range seekRange, Iterator<Entry<Key,Document>> itr,
-                    YieldCallback<Key> yield) {
+    public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, WaitWindowObserver waitWindowObserver, Range seekRange,
+                    Iterator<Entry<Key,Document>> itr, YieldCallback<Key> yield) {
         this.itr = itr;
         this.seekRange = seekRange;
         this.querySpanCollector = querySpanCollector;
         this.querySpan = querySpan;
+        this.waitWindowObserver = waitWindowObserver;
         this.yield = yield;
 
         // check for the special case where we were torn down just after returning the final document
@@ -69,18 +73,26 @@ public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Documen
         return false;
     }
 
-    private Entry<Key,Document> getStatsEntry(Key statsKey) {
+    private Entry<Key,Document> getStatsEntry(Key statsKey, boolean waitWindowOverrun) {
 
-        // now add our marker
-        statsKey = new Key(statsKey.getRow(), statsKey.getColumnFamily(), Util.appendText(statsKey.getColumnQualifier(), MARKER_TEXT),
-                        statsKey.getColumnVisibility(), statsKey.getTimestamp());
+        if (!waitWindowOverrun) {
+            // now add our marker
+            statsKey = new Key(statsKey.getRow(), statsKey.getColumnFamily(), Util.appendText(statsKey.getColumnQualifier(), MARKER_TEXT),
+                            statsKey.getColumnVisibility(), statsKey.getTimestamp());
+        }
 
         HashMap<Key,Document> documentMap = new HashMap<>();
 
         QuerySpan combinedQuerySpan = querySpanCollector.getCombinedQuerySpan(this.querySpan);
-        if (combinedQuerySpan != null) {
+
+        if (combinedQuerySpan != null || waitWindowOverrun) {
             Document document = new Document();
-            LogTiming.addTimingMetadata(document, combinedQuerySpan);
+            if (combinedQuerySpan != null) {
+                LogTiming.addTimingMetadata(document, combinedQuerySpan);
+            }
+            if (waitWindowOverrun) {
+                document.put(WaitWindowObserver.WAIT_WINDOW_OVERRUN, new WaitWindowExceededMetadata());
+            }
             documentMap.put(statsKey, document);
         }
 
@@ -132,13 +144,17 @@ public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Documen
                         }
                     }
 
-                    nextEntry = getStatsEntry(statsKey);
+                    nextEntry = getStatsEntry(statsKey, false);
 
                     statsEntryReturned = true;
                 }
             } else {
                 nextEntry = this.itr.next();
                 if (nextEntry != null) {
+                    if (WaitWindowObserver.hasMarker(nextEntry.getKey())) {
+                        nextEntry = getStatsEntry(nextEntry.getKey(), true);
+                        statsEntryReturned = true;
+                    }
                     this.lastKey = nextEntry.getKey();
                 }
             }

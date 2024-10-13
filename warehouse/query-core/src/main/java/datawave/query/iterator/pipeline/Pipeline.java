@@ -3,16 +3,14 @@ package datawave.query.iterator.pipeline;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.DocumentSpecificNestedIterator;
 import datawave.query.iterator.NestedQueryIterator;
-import datawave.query.iterator.profile.QuerySpanCollector;
 
 /**
  * A pipeline that can be executed as a runnable
@@ -28,15 +26,13 @@ public class Pipeline implements Runnable {
 
     // the result
     private Entry<Key,Document> result = null;
+    // exception
+    private RuntimeException exception = null;
     // the pipeline
     private Iterator<Entry<Key,Document>> iterator = null;
+    private AtomicBoolean running = new AtomicBoolean(false);
 
-    private QuerySpanCollector querySpanCollector = null;
-
-    public Pipeline(QuerySpanCollector querySpanCollector, SortedKeyValueIterator<Key,Value> sourceForDeepCopy) {
-        this.querySpanCollector = querySpanCollector;
-        this.iterator = null;
-    }
+    public Pipeline() {}
 
     public void setSourceIterator(Iterator<Entry<Key,Document>> sourceIter) {
         this.iterator = sourceIter;
@@ -55,25 +51,57 @@ public class Pipeline implements Runnable {
     }
 
     public void clear() {
+        this.exception = null;
         this.result = null;
         this.documentSpecificSource.setDocumentKey(null);
     }
 
     public Entry<Key,Document> getResult() {
-        return result;
+        if (exception == null) {
+            return result;
+        } else {
+            throw exception;
+        }
+    }
+
+    public void waitUntilComplete() {
+        if (running.get()) {
+            synchronized (running) {
+                while (running.get()) {
+                    try {
+                        running.wait();
+                    } catch (InterruptedException e) {
+
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public void run() {
-        if (iterator.hasNext()) {
-            result = iterator.next();
-        } else {
-            result = null;
-        }
+        try {
+            running.set(true);
+            if (iterator.hasNext()) {
+                result = iterator.next();
+            } else {
+                result = null;
+            }
 
-        if (log.isTraceEnabled()) {
-            log.trace("next() returned " + result);
+            if (log.isTraceEnabled()) {
+                log.trace("next() returned " + result);
+            }
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                exception = (RuntimeException) e;
+            } else {
+                exception = new RuntimeException(e);
+            }
+        } finally {
+            synchronized (running) {
+                running.set(false);
+                running.notify();
+            }
         }
     }
-
 }

@@ -10,9 +10,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -34,18 +36,18 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Multimap;
 
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
-import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
+import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.CachingIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileKeySortedSet;
@@ -73,6 +75,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     public abstract static class Builder<B extends Builder<B>> {
         private String queryId;
+        private String scanId;
+        private WaitWindowObserver waitWindowObserver;
         private Text fieldName;
         protected Text fieldValue;
         private Predicate<Key> datatypeFilter;
@@ -106,6 +110,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         public B withQueryId(String queryId) {
             this.queryId = queryId;
+            return self();
+        }
+
+        public B withScanId(String scanId) {
+            this.scanId = scanId;
+            return self();
+        }
+
+        public B withWaitWindowObserver(WaitWindowObserver waitWindowObserver) {
+            this.waitWindowObserver = waitWindowObserver;
             return self();
         }
 
@@ -254,6 +268,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     // This is the query id which is used for tracking purposes
     protected final String queryId;
+    // This is the scan id which is used for tracking purposes
+    protected final String scanId;
+    // WaitWindowObserver to ensure that scan returns within a given timeframe
+    protected final WaitWindowObserver waitWindowObserver;
     // This is the fieldname of interest
     private final Text fieldName;
     // part of the datawave shard structure: fi\0fieldname
@@ -364,6 +382,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public DatawaveFieldIndexCachingIteratorJexl() {
         super();
         this.queryId = null;
+        this.scanId = null;
+        this.waitWindowObserver = null;
         this.fieldName = null;
         this.fieldValue = null;
         this.fiName = null;
@@ -398,6 +418,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
 
         this.queryId = builder.queryId;
+        this.scanId = builder.scanId;
+        this.waitWindowObserver = builder.waitWindowObserver;
         this.ivaratorSourcePool = builder.ivaratorSourcePool;
 
         if (builder.fieldName.toString().startsWith("fi" + NULL_BYTE)) {
@@ -456,6 +478,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
         setSource(other.getSource().deepCopy(env));
         this.queryId = other.queryId;
+        this.scanId = other.scanId;
+        this.waitWindowObserver = other.waitWindowObserver;
         this.fieldName = other.fieldName;
         this.fiName = other.fiName;
         this.returnKeyType = other.returnKeyType;
@@ -555,14 +579,19 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         // if we are not sorting UIDs, then determine whether we have a cq and capture the lastFiKey
         Key lastFiKey = null;
-        if (!sortedUIDs && r.getStartKey().getColumnFamily().getLength() > 0 && r.getStartKey().getColumnQualifier().getLength() > 0) {
-            Key startKey = r.getStartKey();
-            String cq = startKey.getColumnQualifier().toString();
-            int fieldnameIndex = cq.indexOf('\0');
-            if (fieldnameIndex >= 0) {
-                String cf = startKey.getColumnFamily().toString();
-                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex),
-                                cq.substring(fieldnameIndex + 1) + '\0' + cf + '\0');
+        Key startKey = r.getStartKey();
+        if (!sortedUIDs) {
+            String cq = WaitWindowObserver.removeMarkers(startKey.getColumnQualifier()).toString();
+            if (r.getStartKey().getColumnFamily().getLength() > 0 && cq.length() > 0) {
+                int fieldnameIndex = cq.indexOf('\0');
+                if (fieldnameIndex >= 0) {
+                    // If startKey colQual has YIELD_AT_BEGIN marker then we want to include keys with the
+                    // fieldName / fieldValue in the key, otherwise we seek past this key by adding a \0
+                    String cqSuffix = WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier()) ? "" : "\0";
+                    String cf = startKey.getColumnFamily().toString();
+                    lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex),
+                                    cq.substring(fieldnameIndex + 1) + '\0' + cf + cqSuffix);
+                }
             }
         }
 
@@ -624,7 +653,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                                 log.trace("Starting in range: " + boundingFiRanges.get(0));
                             }
                             Range boundingFiRange = boundingFiRanges.get(0);
-                            boundingFiRange = new Range(lastFiKey, false, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
+                            // default to startKeyInclusive = false unless we have yielded with begin marker
+                            boolean startKeyInclusive = WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier());
+                            boundingFiRange = new Range(lastFiKey, startKeyInclusive, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
                             boundingFiRanges.set(0, boundingFiRange);
                             if (log.isTraceEnabled()) {
                                 log.trace("Reset range to: " + boundingFiRanges.get(0));
@@ -688,6 +719,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      */
     public Text getFiName() {
         return fiName;
+    }
+
+    public Text getFiRow() {
+        return fiRow;
     }
 
     public PartialKey getReturnKeyType() {
@@ -837,83 +872,95 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
     }
 
-    /**
-     * A class to keep track of the total result size across all of the bounding ranges
-     */
-    public static class TotalResults {
-
-        private final long maxResults;
-        private AtomicLong size = new AtomicLong();
-
-        public TotalResults(long maxResults) {
-            this.maxResults = maxResults;
-        }
-
-        public boolean increment() {
-            if (maxResults <= 0) {
-                return true;
-            }
-            return size.incrementAndGet() <= maxResults;
-        }
-
-        public boolean add(long val) {
-            if (maxResults <= 0) {
-                return true;
-            }
-            return size.addAndGet(val) <= maxResults;
-        }
-    }
-
     private void fillSortedSets() throws IOException {
         String sourceRow = this.fiRow.toString();
-        setupRowBasedHdfsBackedSet(sourceRow);
-
-        // if keys is not null, then we already had a completed set which was loaded in setupRowBasedHdfsBackedSet
-        if (keys != null) {
-            moveToNextRow();
-            return;
+        // if we are running fillSortedSets as part of a re-seek after yield, then the fillSet threads would not have
+        // completed when a WaitWindowOverrunException was thrown and therefore the set would not have been marked as
+        // complete when setupRowBasedHdfsBackedSet was called at the top of this method. We will try to copy the
+        // RowBasedHdfsBackedSet from the previously used Ivarator and resume processing.
+        // If this re-seek is from an Ivarator yielding, the startKey will have a yield marker in either the
+        // colFam (for a shard range) or colQual (for a document range)
+        boolean usePreviousSortedSet = WaitWindowObserver.hasMarker(lastRangeSeeked.getStartKey());
+        if (usePreviousSortedSet) {
+            if (!resumeFromPreviousCall()) {
+                // if resuming from the previous call fails, then set usePreviousSortedSet
+                // to false to force setup of a new HDFS backed set
+                usePreviousSortedSet = false;
+            }
+        }
+        if (!usePreviousSortedSet) {
+            setupRowBasedHdfsBackedSet(sourceRow);
+            // if keys is not null, then we already had a completed set which was loaded in setupRowBasedHdfsBackedSet
+            if (keys != null) {
+                moveToNextRow();
+                return;
+            }
         }
 
-        // for each range, fork off a runnable
-        List<Future<?>> futures = new ArrayList<>(boundingFiRanges.size());
+        List<IvaratorFuture> futures = new ArrayList<>(boundingFiRanges.size());
         if (log.isDebugEnabled()) {
             log.debug("Processing " + boundingFiRanges + " for " + this);
         }
         long startFillSets = System.currentTimeMillis();
 
-        TotalResults totalResults = new TotalResults(maxResults);
+        IvaratorRunnable.TotalResults totalResults = new IvaratorRunnable.TotalResults(maxResults);
 
         for (Range range : boundingFiRanges) {
             if (log.isTraceEnabled()) {
                 log.trace("range -> " + range);
             }
+            // For each range, get either a new or pre-existing IvaratorFuture
             futures.add(fillSet(range, totalResults));
         }
 
         boolean failed = false;
         Exception exception = null;
         Object result = null;
+        Key yieldKey = null;
+        try {
+            // wait for all of the threads to complete
+            for (IvaratorFuture future : futures) {
+                checkTiming();
 
-        // wait for all of the threads to complete
-        for (Future<?> future : futures) {
-            checkTiming();
-
-            if (failed || this.setControl.isCancelledQuery()) {
-                future.cancel(false);
-            } else {
-                try {
-                    result = future.get();
-                } catch (Exception e) {
-                    exception = e;
-                    result = e;
+                if (!failed && !this.setControl.isCancelledQuery()) {
+                    try {
+                        result = future.get(this.waitWindowObserver.remainingTimeMs(), TimeUnit.MILLISECONDS);
+                    } catch (TimeoutException e) {
+                        // If the remaining time on the WaitWindowObserver has passed, then throw
+                        // a WaitWindowOverrunException to yield at the startKey of the seekRange
+                        yieldKey = this.waitWindowObserver.createYieldKey(lastRangeSeeked.getStartKey(), true);
+                        throw new WaitWindowOverrunException(yieldKey);
+                    } catch (Exception e) {
+                        exception = e;
+                        result = e;
+                    }
+                    if (result != null) {
+                        failed = true;
+                        this.setControl.setCancelled();
+                    }
                 }
-                if (result != null) {
-                    failed = true;
-                    this.setControl.setCancelled();
+                if (this.setControl.isCancelledQuery()) {
+                    break;
                 }
             }
-            if (this.setControl.isCancelledQuery()) {
-                break;
+        } finally {
+            if (yieldKey == null) {
+                // Whether we succeeded or failed, we should remove all Futures associated with this Ivarator
+                // The only exception is if we interrupted the fillSortedSets with a WaitWindowOverrunException
+                // in which case we want the IvaratorFutures to remain so that we can reconnect the HDFSBackedSortedSet
+                // on the next call
+                for (Range range : boundingFiRanges) {
+                    IteratorThreadPoolManager.removeIvaratorFuture(getTaskName(range), this.initEnv);
+                }
+            } else {
+                // We can't use the source anymore since it is issued by Accumulo Tablet. We suspend
+                // the IvaratorRunnable until the new call when it will be resumed with a new source
+                for (IvaratorFuture future : futures) {
+                    // this will cause the run method save state and exit to free up the executor thread
+                    // we will be able to retrieve the state and start a new IvaratorRunnable with a
+                    // source from the new IvaratorPool
+                    future.getIvaratorRunnable().suspend();
+                }
             }
         }
 
@@ -923,6 +970,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (failed) {
             log.error("Failed to complete ivarator cache: " + result + " for " + this, exception);
             throw new IvaratorException("Failed to complete ivarator cache: " + result, exception);
+        }
+
+        if (usePreviousSortedSet) {
+            forcePersistence();
+            setupRowBasedHdfsBackedSet(sourceRow);
         }
 
         // now reset the current source to the next viable range
@@ -974,7 +1026,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
 
             if (this.fiSource.hasTop()) {
-                addKey(this.fiSource.getTopKey(), this.fiSource.getTopValue());
+                addKey(this.fiSource.getTopKey());
                 this.fiSource.next();
             }
         }
@@ -1055,13 +1107,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      *
      * @param topFiKey
      *            the top index key
-     * @param value
-     *            the value
      * @return true if it matched
      * @throws IOException
      *             for issues with read/write
      */
-    protected boolean addKey(Key topFiKey, Value value) throws IOException {
+    protected boolean addKey(Key topFiKey) throws IOException {
         if (log.isTraceEnabled()) {
             log.trace("addKey evaluating " + topFiKey);
         }
@@ -1090,6 +1140,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         return false;
     }
 
+    public long getScanTimeout() {
+        return scanTimeout;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
     /**
      * This method will asynchronously fill the set with matches from within the specified bounding FI range.
      *
@@ -1099,146 +1157,28 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      *            total results
      * @return the Future
      */
-    protected Future<?> fillSet(final Range boundingFiRange, final TotalResults totalResults) {
-
-        // this will block until an ivarator source becomes available
-        final SortedKeyValueIterator<Key,Value> source = takePoolSource();
+    protected IvaratorFuture fillSet(final Range boundingFiRange, final IvaratorRunnable.TotalResults totalResults) {
 
         // create runnable
-        Runnable runnable = () -> {
-            long startFillSet = System.currentTimeMillis();
-            if (log.isDebugEnabled()) {
-                log.debug("Starting fillSet(" + boundingFiRange + ')');
-            }
-            int scanned = 0;
-            int matched = 0;
-            QuerySpan querySpan = null;
-            Key nextSeekKey = null;
-            int nextCount = 0;
-            try {
-                if (collectTimingDetails && source instanceof SourceTrackingIterator) {
-                    querySpan = ((SourceTrackingIterator) source).getQuerySpan();
-                }
-
-                // seek the source to a range covering the entire row....the bounding box will dictate the actual scan
-                source.seek(boundingFiRange, EMPTY_CFS, false);
-                scanned++;
-                DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
-
-                // if this is a range iterator, build the composite-safe Fi range
-                Range compositeSafeFiRange = (this instanceof DatawaveFieldIndexRangeIteratorJexl)
-                                ? ((DatawaveFieldIndexRangeIteratorJexl) this).buildCompositeSafeFiRange(fiRow, fiName, fieldValue)
-                                : null;
-
-                while (source.hasTop()) {
-                    checkTiming();
-
-                    Key top = source.getTopKey();
-
-                    // if we are setup for composite seeking, seek if we are out of range
-                    if (compositeSeeker != null && compositeSafeFiRange != null) {
-                        String colQual = top.getColumnQualifier().toString();
-                        String ingestType = colQual.substring(colQual.indexOf('\0') + 1, colQual.lastIndexOf('\0'));
-                        String colFam = top.getColumnFamily().toString();
-                        String fieldName = colFam.substring(colFam.indexOf('\0') + 1);
-
-                        Collection<String> componentFields = null;
-                        String separator = null;
-                        Multimap<String,String> compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType().get(ingestType);
-                        Map<String,String> compositeSeparatorMap = compositeMetadata.getCompositeFieldSeparatorsByType().get(ingestType);
-                        if (compositeToFieldMap != null && compositeSeparatorMap != null) {
-                            componentFields = compositeToFieldMap.get(fieldName);
-                            separator = compositeSeparatorMap.get(fieldName);
-                        }
-
-                        if (componentFields != null && separator != null && !compositeSeeker.isKeyInRange(top, compositeSafeFiRange, separator)) {
-                            boolean shouldSeek = false;
-
-                            // top key precedes nextSeekKey
-                            if (nextSeekKey != null && top.compareTo(nextSeekKey) < 0) {
-                                // if we hit the seek threshold, seek
-                                if (nextCount >= compositeSeekThreshold)
-                                    shouldSeek = true;
-                            }
-                            // top key exceeds nextSeekKey, or nextSeekKey unset
-                            else {
-                                nextCount = 0;
-                                nextSeekKey = null;
-
-                                // get a new seek key
-                                Key newStartKey = compositeSeeker.nextSeekKey(new ArrayList<>(componentFields), top, compositeSafeFiRange, separator);
-                                if (newStartKey != boundingFiRange.getStartKey() && newStartKey.compareTo(boundingFiRange.getStartKey()) > 0
-                                                && newStartKey.compareTo(boundingFiRange.getEndKey()) <= 0) {
-                                    nextSeekKey = newStartKey;
-
-                                    // if we hit the seek threshold (i.e. if it is set to 0), seek
-                                    if (nextCount >= compositeSeekThreshold)
-                                        shouldSeek = true;
-                                }
-                            }
-
-                            if (shouldSeek) {
-                                source.seek(new Range(nextSeekKey, boundingFiRange.isStartKeyInclusive(), boundingFiRange.getEndKey(),
-                                                boundingFiRange.isEndKeyInclusive()), EMPTY_CFS, false);
-
-                                // reset next count and seek key
-                                nextSeekKey = null;
-                                nextCount = 0;
-                            } else {
-                                nextCount++;
-                                source.next();
-                            }
-
-                            scanned++;
-                            continue;
-                        }
-                    }
-
-                    // terminate if timed out or cancelled
-                    if (DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
-                        break;
-                    }
-
-                    if (addKey(top, source.getTopValue())) {
-                        matched++;
-                        if (!totalResults.increment()) {
-                            throw new DatawaveIvaratorMaxResultsException("Exceeded the maximum set size");
-                        }
-                    }
-
-                    source.next();
-                    scanned++;
-                    DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
-                }
-            } catch (Exception e) {
-                // throw the exception up which will be available via the Future
-                log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
-                throw new RuntimeException(e);
-            } finally {
-                long timing = System.currentTimeMillis() - startFillSet;
-                log.info("Completed " + boundingFiRange + " ivarator in " + timing + "ms");
-                // return the ivarator source back to the pool.
-                returnPoolSource(source);
-                if (log.isDebugEnabled()) {
-                    StringBuilder builder = new StringBuilder();
-                    builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
-                                    .append(DatawaveFieldIndexCachingIteratorJexl.this);
-                    log.debug(builder.toString());
-                }
-                if (collectTimingDetails && querySpanCollector != null && querySpan != null) {
-                    querySpanCollector.addQuerySpan(querySpan);
-                }
-            }
-        };
-
-        try {
-            return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
-        } catch (Exception e) {
-            log.error("Failed to execute a fill Set", e);
-            // if the execute somehow failed, we need to return the pool source.
-            returnPoolSource(source);
-            throw new RuntimeException(e);
+        String taskName = getTaskName(boundingFiRange);
+        IvaratorFuture future = IteratorThreadPoolManager.getIvaratorFuture(taskName, this.initEnv);
+        if (future == null) {
+            // no future exists, so get a source and create/execute a new IvaratorRunnable
+            // this will block until an ivarator source becomes available
+            SortedKeyValueIterator<Key,Value> source = takePoolSource();
+            IvaratorRunnable ivaratorRunnable = new IvaratorRunnable(this, source, boundingFiRange, boundingFiRange, totalResults);
+            future = IteratorThreadPoolManager.executeIvarator(ivaratorRunnable, taskName, this.initEnv);
         }
+        return future;
+    }
+
+    public String getTaskName(Range boundingFiRange) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getSimpleName()).append(" in ");
+        sb.append(queryId);
+        sb.append('_').append(scanId);
+        sb.append('_').append(boundingFiRange);
+        return sb.toString();
     }
 
     /**
@@ -1264,6 +1204,64 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.keys = null;
         this.currentRow = null;
         this.set = null;
+    }
+
+    protected boolean resumeFromPreviousCall() {
+        boolean canResume = true;
+        // Only copy previous Ivarator's RowBasedHdfsBackedSet if all futures are available
+        // and the Ivarator in the IvaratorFuture is the same object
+        DatawaveFieldIndexCachingIteratorJexl previousIvarator = null;
+        List<IvaratorFuture> suspended = new ArrayList<>();
+        for (Range r : boundingFiRanges) {
+            IvaratorFuture f = IteratorThreadPoolManager.getIvaratorFuture(getTaskName(r), initEnv);
+            if (f == null) {
+                canResume = false;
+                break;
+            } else {
+                if (f.getIvaratorRunnable().isSupended()) {
+                    suspended.add(f);
+                }
+                if (previousIvarator == null) {
+                    previousIvarator = f.getIvarator();
+                } else if (previousIvarator != f.getIvarator()) {
+                    canResume = false;
+                    break;
+                }
+            }
+        }
+
+        // ivaratorCacheDirs is declared final, but must be the same
+        if (canResume) {
+            Set<String> currentUriSet = this.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
+            Set<String> previousUriSet = previousIvarator.ivaratorCacheDirs.stream().map(d -> d.getPathURI()).collect(Collectors.toSet());
+            if (currentUriSet.equals(previousUriSet)) {
+                this.currentRow = previousIvarator.currentRow;
+                this.threadSafeSet = previousIvarator.threadSafeSet;
+                this.set = previousIvarator.set;
+                this.setControl = previousIvarator.setControl;
+                this.startTime = previousIvarator.startTime;
+                // resume processing of each suspended IvaratorRunnable
+                for (IvaratorFuture f : suspended) {
+                    IvaratorRunnable resumingRunnable = f.getIvaratorRunnable();
+                    resumingRunnable.prepareForResume(this);
+                    String taskName = resumingRunnable.getTaskName();
+                    // remove the previous IvaratorFuture from IteratorThreadPoolManager
+                    IteratorThreadPoolManager.removeIvaratorFuture(taskName, this.initEnv);
+                    // execute new IvaratorRunnable and add it to IteratorThreadPoolManager
+                    IteratorThreadPoolManager.executeIvarator(resumingRunnable, taskName, initEnv);
+                }
+            } else {
+                canResume = false;
+            }
+        }
+
+        if (!canResume) {
+            // if can not resume from the previous Ivarator, then ensure that the previous IvaratorFutures are removed
+            for (Range r : boundingFiRanges) {
+                IteratorThreadPoolManager.removeIvaratorFuture(getTaskName(r), initEnv);
+            }
+        }
+        return canResume;
     }
 
     /**
@@ -1648,6 +1646,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.collectTimingDetails = collectTimingDetails;
     }
 
+    public boolean getCollectTimingDetails() {
+        return collectTimingDetails;
+    }
+
     public void setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
     }
@@ -1660,4 +1662,27 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         return builder.toString();
     }
 
+    public AtomicLong getScannedKeys() {
+        return scannedKeys;
+    }
+
+    public QuerySpanCollector getQuerySpanCollector() {
+        return querySpanCollector;
+    }
+
+    public HdfsBackedControl getSetControl() {
+        return setControl;
+    }
+
+    public FieldIndexCompositeSeeker getCompositeSeeker() {
+        return compositeSeeker;
+    }
+
+    public CompositeMetadata getCompositeMetadata() {
+        return compositeMetadata;
+    }
+
+    public int getCompositeSeekThreshold() {
+        return compositeSeekThreshold;
+    }
 }
