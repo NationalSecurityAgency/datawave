@@ -36,6 +36,9 @@ public class IvaratorCacheDirConfig implements Serializable {
     // the minimum percent of available storage required to use this filesystem
     protected double minAvailableStoragePercent;
 
+    // Do we require the ivarators to cleanup after completion (true by default)
+    final protected boolean requiresCleanup;
+
     static {
         objectMapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
@@ -49,23 +52,32 @@ public class IvaratorCacheDirConfig implements Serializable {
         this(basePathURI, DEFAULT_PRIORITY);
     }
 
+    public IvaratorCacheDirConfig(String basePathURI, boolean requiresCleanup) {
+        this(basePathURI, DEFAULT_PRIORITY, requiresCleanup);
+    }
+
+    public IvaratorCacheDirConfig(String basePathURI, int priority, boolean requiresCleanup) {
+        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT, requiresCleanup);
+    }
+
     public IvaratorCacheDirConfig(String basePathURI, int priority) {
-        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT);
+        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT, true);
     }
 
     public IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMiB) {
-        this(basePathURI, priority, minAvailableStorageMiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT);
+        this(basePathURI, priority, minAvailableStorageMiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT, true);
     }
 
     public IvaratorCacheDirConfig(String basePathURI, int priority, double minAvailableStoragePercent) {
-        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, minAvailableStoragePercent);
+        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, minAvailableStoragePercent, true);
     }
 
-    private IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMiB, double minAvailableStoragePercent) {
+    private IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMiB, double minAvailableStoragePercent, boolean requiresCleanup) {
         this.basePathURI = basePathURI;
         this.priority = priority;
         this.minAvailableStorageMiB = minAvailableStorageMiB;
         this.minAvailableStoragePercent = minAvailableStoragePercent;
+        this.requiresCleanup = requiresCleanup;
     }
 
     @JsonIgnore
@@ -120,6 +132,10 @@ public class IvaratorCacheDirConfig implements Serializable {
 
     public void setMinAvailableStoragePercent(double minAvailableStoragePercent) {
         this.minAvailableStoragePercent = minAvailableStoragePercent;
+    }
+
+    public boolean isRequiresCleanup() {
+        return requiresCleanup;
     }
 
     public static String toJson(IvaratorCacheDirConfig ivaratorCacheDirConfig) throws JsonProcessingException {

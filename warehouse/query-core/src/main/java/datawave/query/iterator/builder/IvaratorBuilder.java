@@ -1,5 +1,6 @@
 package datawave.query.iterator.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -43,18 +44,30 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
 
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
-        FileSystem hdfsFileSystem = ivaratorCacheDir.getFs();
+        FileSystem fileSystem = ivaratorCacheDir.getFs();
 
-        final URI hdfsCacheURI;
         try {
-            hdfsCacheURI = new URI(ivaratorCacheDirURI);
-            hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
+            final Path cachePath = new Path(new URI(ivaratorCacheDirURI));
+            // get the parent directory
+            final Path parentCachePath = cachePath.getParent();
+            final URI parentURI = parentCachePath.toUri();
+            if (!fileSystem.exists(parentCachePath)) {
+                // being able to make the parent directory is proof enough
+                fileSystem.mkdirs(parentCachePath);
+            } else if (fileSystem.getFileStatus(parentCachePath).isFile()) {
+                throw new IOException(parentCachePath + " exists but is a file.  Expecting directory");
+            } else if (parentURI.getScheme().equals("file")) {
+                File parent = new File(parentURI.getPath());
+                if (!parent.canWrite() || !parent.canRead()) {
+                    throw new IllegalStateException("Invalid permissions to directory " + parentCachePath);
+                }
+            }
         } catch (MalformedURLException e) {
-            throw new IllegalStateException("Unable to load hadoop configuration", e);
+            throw new IllegalStateException("Invalid ivarator configuration: " + ivaratorCacheDirURI, e);
         } catch (IOException e) {
-            throw new IllegalStateException("Unable to create hadoop file system", e);
+            throw new IllegalStateException("Unable to create file system", e);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
+            throw new IllegalStateException("Invalid cache dir URI: " + ivaratorCacheDirURI, e);
         }
     }
 
