@@ -124,7 +124,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String METADATA_TABLE_NAME = "model.table.name";
 
     public static final String REDUCED_RESPONSE = "reduced.response";
-    public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
+    public static final String FULL_TABLE_SCAN_ONLY = "is.full.table.scan";
 
     public static final String PROJECTION_FIELDS = "projection.fields";
     public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
@@ -133,7 +133,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String COMPOSITE_FIELDS = "composite.fields";
     public static final String COMPOSITE_METADATA = "composite.metadata";
     public static final String COMPOSITE_SEEK_THRESHOLD = "composite.seek.threshold";
-    public static final String CONTAINS_COMPOSITE_TERMS = "composite.terms";
     public static final String IGNORE_COLUMN_FAMILIES = "ignore.column.families";
     public static final String INCLUDE_GROUPING_CONTEXT = "include.grouping.context";
     public static final String DOCUMENT_PERMUTATION_CLASSES = "document.permutation.classes";
@@ -1361,6 +1360,8 @@ public class QueryOptions implements OptionDescriber {
         // we aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
             this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
+        } else {
+            this.disableEvaluation = false;
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
@@ -1377,6 +1378,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DISABLE_DOCUMENTS_WITHOUT_EVENTS)) {
             this.disableIndexOnlyDocuments = Boolean.parseBoolean(options.get(DISABLE_DOCUMENTS_WITHOUT_EVENTS));
+        } else {
+            this.disableIndexOnlyDocuments = false;
         }
 
         // If we're not provided a query, we may not be performing any
@@ -1429,15 +1432,20 @@ public class QueryOptions implements OptionDescriber {
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
             setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
+        } else {
+            setReducedResponse(false);
         }
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+        } else {
+            setFullTableScanOnly(false);
         }
 
-        if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
-            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
-        }
+        /*
+         * if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) { setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES))); } else {
+         * setTrackSizes(true); }
+         */
 
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
@@ -1487,6 +1495,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
             this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
+        } else {
+            this.filterMaskedValues = true;
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
@@ -1613,6 +1623,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
             this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
+        } else {
+            this.setIncludeGroupingContext(false);
         }
 
         if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
@@ -1788,6 +1800,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
             this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
+        } else {
+            this.setCompressResults(true);
         }
 
         if (options.containsKey(MAX_EVALUATION_PIPELINES)) {
@@ -1814,6 +1828,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(SORTED_UIDS)) {
             this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
+        } else {
+            this.sortedUIDs = true;
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {

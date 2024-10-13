@@ -540,7 +540,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
-        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
+        // addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
@@ -2606,7 +2606,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.DISABLE_EVALUATION, Boolean.toString(config.isDisableEvaluation()), false);
         addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.isDisableIndexOnlyDocuments()), false);
         addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
-        addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(config.isContainsCompositeTerms()), false);
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
