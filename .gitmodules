@@ -85,3 +85,6 @@
 [submodule "microservices/services/map"]
 	path = microservices/services/map
 	url = git@github.com:NationalSecurityAgency/datawave-map-service.git
+[submodule "microservices/services/file-provider"]
+	path = microservices/services/file-provider
+	url = git@github.com:NationalSecurityAgency/datawave-file-provider-service.git
