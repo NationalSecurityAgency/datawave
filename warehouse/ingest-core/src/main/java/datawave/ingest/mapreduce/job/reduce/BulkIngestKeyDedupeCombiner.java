@@ -56,6 +56,9 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
         try {
             setContextWriter(contextWriterClass.getDeclaredConstructor().newInstance());
             contextWriter.setup(conf, conf.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         }

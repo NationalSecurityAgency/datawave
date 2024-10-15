@@ -347,6 +347,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             } catch (ExecutionException e) {
                 close();
                 throw new RuntimeException(e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
 
             }
@@ -562,6 +564,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         try {
             Thread.sleep(failureSleep);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             try {
                 close();
             } catch (IOException e1) {
@@ -590,6 +593,11 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
             seekLastSeen();
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            if (!callClosed.get() && !Thread.interrupted()) {
+                fail(e);
+            }
         } catch (Exception e) {
             if (!callClosed.get() && !Thread.interrupted())
                 fail(e);
@@ -853,7 +861,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             this.reader = reader;
         }
 
-        public FSDataInputStream getInputStream() {
+        public synchronized FSDataInputStream getInputStream() {
             return inputStream;
         }
 

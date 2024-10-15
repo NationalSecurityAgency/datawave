@@ -24,6 +24,8 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
     private static String host = null;
     private static Logger log = Logger.getLogger(QuerySpan.class);
 
+    private static final Object LOCK = new Object();
+
     static {
         try {
             host = InetAddress.getLocalHost().getCanonicalHostName();
@@ -47,7 +49,7 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
 
         if (document != null && querySpan != null) {
             TimingMetadata timingMetadata = new TimingMetadata();
-            synchronized (querySpan) {
+            synchronized (LOCK) {
                 timingMetadata.setHost(host);
                 timingMetadata.setSourceCount(querySpan.getSourceCount());
                 timingMetadata.setSeekCount(querySpan.getSeekCount());

@@ -253,6 +253,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         try {
             contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
             contextWriter.setup(filterConf, filterConf.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         }
@@ -480,7 +483,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                     NDC.push(origFiles.iterator().next());
                     reprocessedNDCPush = true;
                 }
-
+            } catch (InterruptedException e) {
+                contextWriter.rollback();
+                Thread.currentThread().interrupt();
+                log.error("Failed to clean event from error table.  Terminating map", e);
+                throw new IOException("Failed to clean event from error table, Terminating map", e);
             } catch (Exception e) {
                 contextWriter.rollback();
                 log.error("Failed to clean event from error table.  Terminating map", e);

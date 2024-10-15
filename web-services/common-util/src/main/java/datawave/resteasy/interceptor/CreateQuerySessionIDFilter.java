@@ -43,7 +43,7 @@ public class CreateQuerySessionIDFilter implements ContainerResponseFilter {
                 // If we're sending an error response, then there's no need to set a cookie since
                 // there's no query "session" to stick to this server.
                 setCookie = false;
-                QUERY_ID.set(null);
+                QUERY_ID.remove();
                 break;
 
             default:
@@ -51,7 +51,7 @@ public class CreateQuerySessionIDFilter implements ContainerResponseFilter {
                     log.error(method.getResourceClass() + "." + method.getMethod().getName() + " did not set QUERY_ID threadlocal.");
                 } else {
                     id = QUERY_ID.get();
-                    QUERY_ID.set(null);
+                    QUERY_ID.remove();
                 }
                 break;
         }
