@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
@@ -150,7 +149,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 bs.addScanIterator(cfg);
 
                 // If this is a composite field, with multiple terms, we need to setup our query to filter based on each component of the composite range
-                if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null) {
+                if (!config.getCompositeToFieldMap().get(literalRange.getFieldName()).isEmpty()) {
 
                     String compositeSeparator = null;
                     if (config.getCompositeFieldSeparators() != null)
