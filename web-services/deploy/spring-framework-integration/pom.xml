@@ -180,6 +180,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${version.surefire.plugin}</version>
                 <configuration>
+                    <argLine>@{argLine}</argLine>
                     <reuseForks>false</reuseForks>
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.build.directory}/conf</additionalClasspathElement>
