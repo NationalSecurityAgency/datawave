@@ -107,7 +107,7 @@ public class BaseVisitor {
                 case FUNCTION:
                     return visit((FunctionQueryNode) node, data);
                 case NOT_BOOLEAN:
-                    return visit((FuzzyQueryNode) node, data);
+                    return visit((NotBooleanQueryNode) node, data);
                 default:
                     throw new UnsupportedOperationException("No visit() method defined for " + QueryNodeType.class.getSimpleName() + " " + type);
             }
