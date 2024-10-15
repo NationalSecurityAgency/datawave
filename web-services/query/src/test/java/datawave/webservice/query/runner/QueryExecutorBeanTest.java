@@ -3,7 +3,7 @@ package datawave.webservice.query.runner;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
@@ -219,8 +219,8 @@ public class QueryExecutorBeanTest {
     public void testTriple_Nulls() throws Exception {
         Triple subject = new Triple(null, null, null);
         subject.hashCode();
-        assertTrue("Should not be equal", !subject.equals(null));
-        assertTrue("Should not be equal", !subject.equals(new Triple("test", null, null)));
+        assertNotEquals("Should not be equal", subject, null);
+        assertNotEquals("Should not be equal", subject, new Triple("test", null, null));
     }
 
     private QueryImpl createNewQuery() throws Exception {
@@ -446,7 +446,7 @@ public class QueryExecutorBeanTest {
         metric.setQueryType(RunningQuery.class.getSimpleName());
 
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
-            public static final long serialVersionUID = 1L;
+            public static final long serialVersionUID = 7210890100446871775L;
 
             @Override
             public boolean equals(Object o) {

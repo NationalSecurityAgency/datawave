@@ -29,6 +29,7 @@ import datawave.query.model.util.LoadModel;
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
 public class EdgeQueryModel extends QueryModel {
+    private static final long serialVersionUID = -590763583662768646L;
 
     private final EdgeModelFields fields;
 
@@ -37,6 +38,8 @@ public class EdgeQueryModel extends QueryModel {
      *
      * @param other
      *            the other model
+     * @param fields
+     *            the edge model fields
      * @throws InvalidModelException
      *             if the model is invalid
      */
@@ -55,6 +58,8 @@ public class EdgeQueryModel extends QueryModel {
      *
      * @param queryModelXml
      *            the model xml
+     * @param fields
+     *            the edge model fields
      * @return EdgeQueryModel instance
      * @throws Exception
      *             if there is an issue
@@ -66,7 +71,13 @@ public class EdgeQueryModel extends QueryModel {
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      *
+     * @param queryModelXml
+     *            the query model
+     * @param fieldsFactory
+     *            the fields factory
      * @return EdgeQueryModel instance
+     * @throws Exception
+     *             if there is an issue
      */
     public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFieldsFactory fieldsFactory) throws Exception {
         return loadModel(queryModelXml, fieldsFactory.createFields());
@@ -75,7 +86,11 @@ public class EdgeQueryModel extends QueryModel {
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      *
+     * @param queryModelXml
+     *            the query model
      * @return EdgeQueryModel instance
+     * @throws Exception
+     *             if there is an issue
      */
     public static EdgeQueryModel loadModel(String queryModelXml) throws Exception {
         return loadModel(queryModelXml, new DefaultEdgeModelFieldsFactory());
@@ -85,7 +100,7 @@ public class EdgeQueryModel extends QueryModel {
      * Thrown whenever an invalid edge query model is detected.
      */
     public static class InvalidModelException extends Exception {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -312834628767055149L;
 
         public InvalidModelException() {
             super();

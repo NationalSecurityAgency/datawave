@@ -18,7 +18,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class IpAddress extends Attribute<IpAddress> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7099603124284651752L;
 
     private datawave.data.type.util.IpAddress value;
     private String normalizedValue;

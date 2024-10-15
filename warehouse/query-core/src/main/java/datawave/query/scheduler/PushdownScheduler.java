@@ -136,11 +136,15 @@ public class PushdownScheduler extends Scheduler {
     }
 
     /**
-     * @return
+     * @return iterator of results
      * @throws ParseException
+     *             if there is an error parsing
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws AccumuloSecurityException
+     *             if there is a security issue
      * @throws AccumuloException
+     *             if there is an accumulo issue
      */
     protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         boolean hasNext = config.getQueriesIter().hasNext();

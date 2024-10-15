@@ -15,6 +15,8 @@ public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements
 
     protected Map<String,String> markings;
 
+    private static final long serialVersionUID = 5957852042933196910L;
+
     public abstract void addEdge(EdgeBase edge);
 
     public abstract void setEdges(List<EdgeBase> edges);

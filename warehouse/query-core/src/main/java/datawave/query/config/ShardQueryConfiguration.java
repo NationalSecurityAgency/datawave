@@ -760,7 +760,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * needs to be copied over here.
      *
      * @param other
+     *            another ShardQueryConfiguration
      * @param queries
+     *            collection of queries
      */
     public ShardQueryConfiguration(ShardQueryConfiguration other, Collection<QueryData> queries) {
         super(other);

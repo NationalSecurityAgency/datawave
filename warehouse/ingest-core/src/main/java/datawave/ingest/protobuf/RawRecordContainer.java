@@ -875,7 +875,7 @@ public final class RawRecordContainer {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 1837305830954470331L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

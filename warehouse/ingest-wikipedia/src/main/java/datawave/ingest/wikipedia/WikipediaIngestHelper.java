@@ -20,7 +20,6 @@ import com.google.common.collect.Sets;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.IndexOnlyIngestHelperInterface;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIngestHelper;

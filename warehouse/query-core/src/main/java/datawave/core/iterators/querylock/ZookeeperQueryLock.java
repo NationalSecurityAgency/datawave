@@ -233,6 +233,7 @@ public class ZookeeperQueryLock implements QueryLock {
     }
 
     public static class ZookeeperLockException extends Exception {
+        private static final long serialVersionUID = 3715643514712028373L;
 
         public ZookeeperLockException() {
             super();

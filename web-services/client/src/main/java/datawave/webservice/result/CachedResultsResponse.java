@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class CachedResultsResponse extends BaseResponse {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -6229367579974681065L;
 
     @XmlElement(name = "OriginalQueryId")
     private String originalQueryId = null;

@@ -255,7 +255,7 @@ public final class QueryMessages {
      */
     public static final class QueryImpl extends com.google.protobuf.GeneratedMessageLite implements QueryImplOrBuilder {
         // Use QueryImpl.newBuilder() to construct.
-        private QueryImpl(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private QueryImpl(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
             super(builder);
 
         }
@@ -431,7 +431,7 @@ public final class QueryMessages {
          */
         public static final class Parameter extends com.google.protobuf.GeneratedMessageLite implements ParameterOrBuilder {
             // Use Parameter.newBuilder() to construct.
-            private Parameter(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+            private Parameter(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
                 super(builder);
 
             }
@@ -648,7 +648,7 @@ public final class QueryMessages {
                 return size;
             }
 
-            private static final long serialVersionUID = 0L;
+            private static final long serialVersionUID = 7775810273121957009L;
 
             @java.lang.Override
             protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -1650,7 +1650,7 @@ public final class QueryMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -8624669227387781661L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -2953,7 +2953,7 @@ public final class QueryMessages {
              */
             public Builder addAllParameters(java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl.Parameter> values) {
                 ensureParametersIsMutable();
-                super.addAll(values, parameters_);
+                Builder.addAll(values, parameters_);
 
                 return this;
             }

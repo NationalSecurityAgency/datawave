@@ -701,6 +701,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      * Setting the current user is called after the logic is created. Pass this on to the children.
      *
      * @param user
+     *            the proxied user
      */
     @Override
     public void setCurrentUser(ProxiedUserDetails user) {
@@ -714,6 +715,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      * /** Setting the server user is called after the logic is created. Pass this on to the children.
      *
      * @param user
+     *            the proxied user
      */
     @Override
     public void setServerUser(ProxiedUserDetails user) {

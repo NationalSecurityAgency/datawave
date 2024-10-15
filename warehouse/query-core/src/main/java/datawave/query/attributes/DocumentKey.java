@@ -19,7 +19,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.util.StringUtils;
 
 public class DocumentKey extends Attribute<DocumentKey> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5322007904914187326L;
 
     private static final LcNoDiacriticsNormalizer normalizer = new LcNoDiacriticsNormalizer();
 

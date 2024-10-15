@@ -25,7 +25,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class Geometry extends Attribute<Geometry> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2655645012559296781L;
 
     private org.locationtech.jts.geom.Geometry geometry;
 

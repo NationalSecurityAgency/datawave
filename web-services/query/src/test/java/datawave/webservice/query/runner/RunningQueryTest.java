@@ -56,7 +56,7 @@ public class RunningQueryTest {
         // in the datawave-query package. This is not a dependency in maven though, but added from the lib. See
         // the setup() below. Here is an instantiatable class for testing.
         @SuppressWarnings("unused")
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -2981779719095867631L;
     }
 
     // variables common to all current tests
@@ -111,7 +111,7 @@ public class RunningQueryTest {
         SampleGenericQueryConfiguration config = new SampleGenericQueryConfiguration();
         expect(logic.initialize(anyObject(), anyObject(), anyObject())).andReturn(config);
         logic.setupQuery(config);
-        TransformIterator iter = new TransformIterator();
+        TransformIterator<?,?> iter = new TransformIterator<>();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
         expect(logic.isLongRunningQuery()).andReturn(false);
@@ -184,7 +184,7 @@ public class RunningQueryTest {
         auths[0] = "A";
         auths[1] = "C";
         Map<String,QueryLogic<?>> logics = new HashMap<>();
-        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic<?> logic1 = new TestQueryLogic<>();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
         logic1.setTableName("thisTable");

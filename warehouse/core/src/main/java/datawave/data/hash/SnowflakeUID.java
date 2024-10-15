@@ -5,7 +5,6 @@ import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigInteger;
 
 import org.apache.commons.lang.builder.CompareToBuilder;

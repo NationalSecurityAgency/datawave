@@ -56,6 +56,7 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
     }
 
     private static class PlaceholderEvaluationOnly extends JexlNode {
+        private static final long serialVersionUID = 1933855216340968520L;
         private final JexlNode origNode;
 
         public PlaceholderEvaluationOnly(JexlNode origNode) {

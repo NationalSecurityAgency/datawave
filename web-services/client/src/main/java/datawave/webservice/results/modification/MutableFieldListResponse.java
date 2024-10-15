@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MutableFieldListResponse implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4794647301830698358L;
 
     @XmlAttribute(name = "Datatype", required = true)
     private String datatype = null;

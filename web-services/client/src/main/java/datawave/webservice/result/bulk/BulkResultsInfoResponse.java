@@ -29,13 +29,13 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class BulkResultsInfoResponse implements Serializable, Message<BulkResultsInfoResponse> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5649535965108367421L;
 
     @XmlAccessorType(XmlAccessType.NONE)
     @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
     public static class Job implements Serializable, Message<Job> {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -2233623554379806055L;
 
         @XmlElement(name = "jobId")
         private String jobId = null;
@@ -179,7 +179,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
     @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
     public static class History implements Serializable, Comparator<History>, Comparable<History>, Message<History> {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -1748288951028158302L;
 
         @XmlAttribute(name = "timestamp")
         private Long timestamp = 0L;

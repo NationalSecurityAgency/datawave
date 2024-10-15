@@ -44,7 +44,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
     private Integer buckets[] = {180, 90, 60, 30, 14, 7, 2};
 
-    private ArrayList<String>[] dataBuckets;
+    private ArrayList<ArrayList<String>> dataBuckets;
 
     public AccumuloIndexAgeDisplay(AccumuloClient accumuloClient, String tableName, String columns, Integer[] buckets) {
         this.tableName = tableName;
@@ -163,9 +163,10 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
      * Pull data from accumulo, create a collection of delete cmds for th accumulo script for {@code indexes > 1 day}
      */
     public void extractDataFromAccumulo() {
-        dataBuckets = new ArrayList[buckets.length];
-        for (int ii = 0; ii < dataBuckets.length; ii++) {
-            dataBuckets[ii] = new ArrayList<>();
+        dataBuckets = new ArrayList<>();
+
+        for (int ii = 0; ii < buckets.length; ii++) {
+            dataBuckets.add(new ArrayList<>());
         }
 
         Scanner scanner = null;
@@ -187,7 +188,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
                     // separate the data according to the bucket they will be dropped into
                     for (int age : buckets) {
                         if (rowAge <= (currentTime - (age * MILLIS_IN_DAY))) { // don't delete indexes < 1 day old
-                            dataBuckets[bucketIndex].add((deleteCommand.toString()).replace("\0", "\\x00"));
+                            dataBuckets.get(bucketIndex).add((deleteCommand.toString()).replace("\0", "\\x00"));
                             break;
                         }
                         bucketIndex++;
@@ -236,7 +237,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
         StringBuilder sb = new StringBuilder();
         for (int ii = buckets.length - 1; ii >= 0; --ii) {
-            sb.append(String.format("\nIndexes older than %1$-3d %2$-6s %3$10d", buckets[ii], "days:", dataBuckets[ii].size()));
+            sb.append(String.format("\nIndexes older than %1$-3d %2$-6s %3$10d", buckets[ii], "days:", dataBuckets.get(ii).size()));
         }
         sb.append("\n");
 
@@ -263,7 +264,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
                 for (int ii = 0; ii < buckets.length; ii++) {
                     pw.println("# Indexes older than " + buckets[ii] + " days:");
-                    ArrayList<String> al = dataBuckets[ii];
+                    ArrayList<String> al = dataBuckets.get(ii);
                     for (String row : al) {
                         pw.println(row);
                     }

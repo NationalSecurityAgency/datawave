@@ -1,7 +1,7 @@
 package datawave.query.exceptions;
 
 public class DoNotPerformOptimizedQueryException extends DatawaveFatalQueryException {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 8550522292180353602L;
 
     public DoNotPerformOptimizedQueryException() {
         super();

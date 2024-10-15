@@ -2,6 +2,8 @@
 package datawave.query.language.parser.lucene;
 
 public class TokenMgrError extends Error {
+    private static final long serialVersionUID = -4429645198105082676L;
+
     /*
      * Ordinals for various reasons why an Error of this type can be thrown.
      */

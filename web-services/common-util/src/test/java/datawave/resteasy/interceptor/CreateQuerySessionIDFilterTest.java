@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 
 import java.lang.annotation.Annotation;
 
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
@@ -15,6 +16,7 @@ import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.MockType;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
+import org.jboss.resteasy.core.ServerResponseWriter;
 import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.ResponseContainerRequestContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
@@ -56,7 +58,8 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         request = new ResponseContainerRequestContext(MockHttpRequest.post("/mock"));
         request.setProperty(ResourceMethodInvoker.class.getName(), method);
 
-        response = new ContainerResponseContextImpl(request.getHttpRequest(), new MockHttpResponse(), new BuiltResponse());
+        response = new ContainerResponseContextImpl(request.getHttpRequest(), new MockHttpResponse(), new BuiltResponse(), null, new ContainerResponseFilter[0],
+                        (t) -> {}, null);
 
         filter = new CreateQuerySessionIDFilter();
     }
@@ -83,7 +86,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         // More method calls due to logging the error about QUERY_ID threadlocal not set.
         EasyMock.expect(method.getResourceClass()).andReturn(null);
         // noinspection ConfusingArgumentToVarargsMethod
-        EasyMock.expect(method.getMethod()).andReturn(getClass().getMethod("filterNoQueryId", null));
+        EasyMock.expect(method.getMethod()).andReturn(getClass().getMethod("filterNoQueryId"));
         replayAll();
 
         CreateQuerySessionIDFilter.QUERY_ID.set(null);

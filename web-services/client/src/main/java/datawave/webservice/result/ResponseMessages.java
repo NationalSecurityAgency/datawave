@@ -91,7 +91,7 @@ public final class ResponseMessages {
      */
     public static final class VoidResponse extends com.google.protobuf.GeneratedMessageLite implements VoidResponseOrBuilder {
         // Use VoidResponse.newBuilder() to construct.
-        private VoidResponse(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private VoidResponse(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
             super(builder);
 
         }
@@ -361,7 +361,7 @@ public final class ResponseMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -7009650631794263060L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -701,7 +701,7 @@ public final class ResponseMessages {
              */
             public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
                 ensureMessagesIsMutable();
-                super.addAll(values, messages_);
+                Builder.addAll(values, messages_);
 
                 return this;
             }
@@ -893,7 +893,7 @@ public final class ResponseMessages {
              */
             public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
                 ensureExceptionsIsMutable();
-                super.addAll(values, exceptions_);
+                Builder.addAll(values, exceptions_);
 
                 return this;
             }
@@ -1059,7 +1059,7 @@ public final class ResponseMessages {
      */
     public static final class QueryImplListResponse extends com.google.protobuf.GeneratedMessageLite implements QueryImplListResponseOrBuilder {
         // Use QueryImplListResponse.newBuilder() to construct.
-        private QueryImplListResponse(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private QueryImplListResponse(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
             super(builder);
 
         }
@@ -1442,7 +1442,7 @@ public final class ResponseMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -7423919207101835993L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -1816,7 +1816,7 @@ public final class ResponseMessages {
              */
             public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
                 ensureMessagesIsMutable();
-                super.addAll(values, messages_);
+                Builder.addAll(values, messages_);
 
                 return this;
             }
@@ -2008,7 +2008,7 @@ public final class ResponseMessages {
              */
             public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
                 ensureExceptionsIsMutable();
-                super.addAll(values, exceptions_);
+                Builder.addAll(values, exceptions_);
 
                 return this;
             }
@@ -2197,7 +2197,7 @@ public final class ResponseMessages {
              */
             public Builder addAllQuery(java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl> values) {
                 ensureQueryIsMutable();
-                super.addAll(values, query_);
+                Builder.addAll(values, query_);
 
                 return this;
             }
@@ -2521,7 +2521,7 @@ public final class ResponseMessages {
      */
     public static final class GenericResponse extends com.google.protobuf.GeneratedMessageLite implements GenericResponseOrBuilder {
         // Use GenericResponse.newBuilder() to construct.
-        private GenericResponse(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private GenericResponse(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
             super(builder);
 
         }
@@ -3168,7 +3168,7 @@ public final class ResponseMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 7667771308689699557L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -3603,7 +3603,7 @@ public final class ResponseMessages {
              */
             public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
                 ensureMessagesIsMutable();
-                super.addAll(values, messages_);
+                Builder.addAll(values, messages_);
 
                 return this;
             }
@@ -3795,7 +3795,7 @@ public final class ResponseMessages {
              */
             public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
                 ensureExceptionsIsMutable();
-                super.addAll(values, exceptions_);
+                Builder.addAll(values, exceptions_);
 
                 return this;
             }

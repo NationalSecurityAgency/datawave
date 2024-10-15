@@ -14,6 +14,7 @@ import datawave.webservice.query.result.event.HasMarkings;
  */
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class FacetQueryResponseBase extends BaseQueryResponse implements HasMarkings {
+    private static final long serialVersionUID = -3483112784845232037L;
 
     protected transient Map<String,String> markings;
 

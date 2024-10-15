@@ -163,6 +163,7 @@ public class CounterToStatsDConfigurationTest {
         }
 
         @Override
+        @Deprecated
         public void setDisplayName(String displayName) {
 
         }

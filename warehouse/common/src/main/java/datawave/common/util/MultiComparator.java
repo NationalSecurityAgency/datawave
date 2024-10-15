@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 
 public class MultiComparator<T> implements Comparator<T>, Serializable {
@@ -15,6 +16,8 @@ public class MultiComparator<T> implements Comparator<T>, Serializable {
         this.comparators = comparators;
     }
 
+    @SafeVarargs
+    @SuppressWarnings("varargs")
     public MultiComparator(Comparator<T>... comparators) {
         this((comparators != null && comparators.length > 0) ? Arrays.asList(comparators) : new ArrayList<>());
     }

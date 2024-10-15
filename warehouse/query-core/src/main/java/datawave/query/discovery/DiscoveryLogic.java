@@ -359,7 +359,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      *
      * @param scanner
      *            a batch scanner
-     * @return iterator for discoveredthings
+     * @param queryData
+     *            the query data
+     * @return iterator for discovered things
      */
     public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {

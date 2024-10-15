@@ -94,7 +94,7 @@ public class CompositeQueryLogicTest {
 
     public static class TestQueryResponse extends BaseQueryResponse {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -8977255842676463890L;
 
         private String key;
         private String value;
@@ -118,6 +118,7 @@ public class CompositeQueryLogicTest {
     }
 
     public static class TestEdgeQueryResponse extends EdgeQueryResponseBase {
+        private static final long serialVersionUID = 5788757064512932158L;
         private ArrayList<EdgeBase> edges = new ArrayList<>();
         private long totalResults = 0;
 
@@ -159,7 +160,7 @@ public class CompositeQueryLogicTest {
 
     public static class TestQueryResponseList extends BaseQueryResponse {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 5163411310145179709L;
 
         private List<TestQueryResponse> responses = new ArrayList<>();
 

@@ -12,7 +12,7 @@ import datawave.microservice.querymetric.QueryMetricFactory;
  */
 public abstract class AbstractRunningQuery implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4599084781571971425L;
 
     private volatile long lastUsed = 0;
     private volatile long timeOfCurrentCall = 0;

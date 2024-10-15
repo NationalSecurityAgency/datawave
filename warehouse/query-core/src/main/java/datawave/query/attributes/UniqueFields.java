@@ -26,6 +26,7 @@ import datawave.query.jexl.JexlASTHelper;
  * {@link UniqueFields#from(String)}.
  */
 public class UniqueFields implements Serializable {
+    private static final long serialVersionUID = 2269249452109902433L;
 
     private Multimap<String,UniqueGranularity> fieldMap;
 
@@ -185,7 +186,9 @@ public class UniqueFields implements Serializable {
      * Replace a field mapping with another field
      *
      * @param field
+     *            the field
      * @param replacement
+     *            the replacement field
      */
     public void replace(String field, String replacement) {
         Collection<UniqueGranularity> value = fieldMap.removeAll(field);

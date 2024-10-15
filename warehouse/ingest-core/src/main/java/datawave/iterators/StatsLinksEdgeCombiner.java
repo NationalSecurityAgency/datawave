@@ -154,7 +154,7 @@ public class StatsLinksEdgeCombiner extends WrappingIterator implements OptionDe
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(final IteratorEnvironment env) {
         try {
-            final StatsLinksEdgeCombiner newInstance = this.getClass().newInstance();
+            final StatsLinksEdgeCombiner newInstance = this.getClass().getDeclaredConstructor().newInstance();
             newInstance.setSource(getSource().deepCopy(env));
 
             return (newInstance);

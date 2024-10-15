@@ -60,7 +60,7 @@ public final class ExceptionMessages {
      */
     public static final class QueryExceptionType extends com.google.protobuf.GeneratedMessageLite implements QueryExceptionTypeOrBuilder {
         // Use QueryExceptionType.newBuilder() to construct.
-        private QueryExceptionType(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private QueryExceptionType(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
             super(builder);
 
         }
@@ -269,7 +269,7 @@ public final class ExceptionMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -5415438289429744565L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

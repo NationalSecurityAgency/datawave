@@ -333,6 +333,7 @@ public class CachedResultsBean {
 
     }
 
+    @SuppressWarnings("unchecked")
     protected GenericResponse<String> load(@Required("queryId") String queryId, String alias, String nameBase) {
 
         GenericResponse<String> response = new GenericResponse<>();
@@ -370,7 +371,7 @@ public class CachedResultsBean {
             // This RunningQuery may be in use. Make a copy using the defined Query.
 
             RunningQuery rq = null;
-            QueryLogic<?> logic = null;
+            QueryLogic logic = null;
             Query q = null;
             BaseQueryMetric queryMetric = null;
             try {
@@ -437,7 +438,7 @@ public class CachedResultsBean {
             }
 
             CacheableLogic cacheableLogic;
-            Transformer t = logic.getTransformer(q);
+            Transformer<?,?> t = logic.getTransformer(q);
 
             // Audit the query. This may be duplicative if the caller called
             // QueryExecutorBean.create() or QueryExecutorBean.reset() first.
@@ -2475,11 +2476,11 @@ public class CachedResultsBean {
         return viewCreated;
     }
 
-    public QueryPredictor getPredictor() {
+    public QueryPredictor<?> getPredictor() {
         return predictor;
     }
 
-    public void setPredictor(QueryPredictor predictor) {
+    public void setPredictor(QueryPredictor<?> predictor) {
         this.predictor = predictor;
     }
 

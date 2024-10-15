@@ -48,7 +48,11 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
         return overlappingNgrams;
     }
 
-    /** Return a String representing the sorted list of ngrams that are shared by both the query and the matching ssdeep */
+    /**
+     * Return a String representing the sorted list of ngrams that are shared by both the query and the matching ssdeep
+     *
+     * @return string of ngrams
+     */
     public String getOverlapsAsString() {
         return String.join(", ", getOverlappingNgrams().stream().map(NGramTuple::toString).collect(Collectors.toCollection(TreeSet::new)));
     }
