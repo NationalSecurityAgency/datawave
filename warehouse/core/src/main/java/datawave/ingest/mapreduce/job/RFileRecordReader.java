@@ -36,7 +36,7 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         end = fileSplit.getLength() - start;
         pos = start;
 
-        FileOperations ops = RFileOperations.getInstance();
+        FileOperations ops = FileOperations.getInstance();
         String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,

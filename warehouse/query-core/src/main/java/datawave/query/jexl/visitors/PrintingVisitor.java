@@ -255,6 +255,8 @@ public class PrintingVisitor extends ParserVisitor {
      *            a query node
      * @param maxChildNodes
      *            maximum number of child nodes
+     * @param maxTermsToPrint
+     *            maximum number of terms to print
      * @return formatted string
      * @throws ParseException
      *             for parsing issues
@@ -289,6 +291,8 @@ public class PrintingVisitor extends ParserVisitor {
      *            a query node
      * @param maxChildNodes
      *            maximum number of child nodes
+     * @param maxTermsToPrint
+     *            maximum number of terms to print
      * @return a formatted string
      */
     public static String formattedQueryString(JexlNode query, int maxChildNodes, int maxTermsToPrint) {
@@ -323,6 +327,8 @@ public class PrintingVisitor extends ParserVisitor {
      *            a query node
      * @param maxChildNodes
      *            maximum number of child nodes
+     * @param maxTermsToPrint
+     *            maximum number of terms to print
      * @return list of the formatted strings
      */
     public static List<String> formattedQueryStringList(JexlNode query, int maxChildNodes, int maxTermsToPrint) {

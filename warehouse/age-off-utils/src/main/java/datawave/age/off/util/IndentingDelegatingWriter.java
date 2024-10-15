@@ -21,7 +21,7 @@ public class IndentingDelegatingWriter extends Writer {
             this.shouldIndentNextWrite = false;
         }
 
-        String indentedLine = line.replaceAll("\n", "\n" + indentation);
+        String indentedLine = line.replace("\n", "\n" + indentation);
 
         // withhold indentation until later
         if (indentedLine.endsWith("\n" + indentation)) {

@@ -21,7 +21,7 @@ public class MarkingFunctionsFactory {
 
     @Inject
     @SpringBean(refreshable = true)
-    private MarkingFunctions applicationMarkingFunctions;
+    private static MarkingFunctions applicationMarkingFunctions;
 
     public static final Logger log = LoggerFactory.getLogger(MarkingFunctionsFactory.class);
 
@@ -59,7 +59,7 @@ public class MarkingFunctionsFactory {
     }
 
     @PostConstruct
-    public void postContruct() {
+    public static void postContruct() {
         markingFunctions = applicationMarkingFunctions;
     }
 }

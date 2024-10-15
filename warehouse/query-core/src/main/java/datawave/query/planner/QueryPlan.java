@@ -282,7 +282,9 @@ public class QueryPlan {
     }
 
     /**
-     * @return
+     * Get the settings
+     *
+     * @return the settings
      */
     public List<IteratorSetting> getSettings() {
         return settings;

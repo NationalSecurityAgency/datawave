@@ -155,12 +155,6 @@ public final class Uid {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
                         case 8: {
                             bitField0_ |= 0x00000001;
                             iGNORE_ = input.readBool();
@@ -185,6 +179,12 @@ public final class Uid {
                                 mutable_bitField0_ |= 0x00000008;
                             }
                             rEMOVEDUID_.add(input.readBytes());
+                            break;
+                        }
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
                             break;
                         }
                     }
@@ -273,7 +273,7 @@ public final class Uid {
 
         // repeated string UID = 3;
         public static final int UID_FIELD_NUMBER = 3;
-        private com.google.protobuf.LazyStringList uID_;
+        private transient com.google.protobuf.LazyStringList uID_;
 
         /**
          * <code>repeated string UID = 3;</code>

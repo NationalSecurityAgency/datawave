@@ -64,7 +64,9 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
      * needs to be copied over here.
      *
      * @param other
+     *            the other configuration
      * @param queries
+     *            the collection of queries
      */
     public EdgeExtendedSummaryConfiguration(EdgeExtendedSummaryConfiguration other, Collection<QueryData> queries) {
         this(other);
