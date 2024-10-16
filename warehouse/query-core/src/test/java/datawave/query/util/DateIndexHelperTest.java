@@ -187,13 +187,50 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         Assert.assertEquals(5, countCacheEntries());
     }
 
+    @Test
+    public void testDateIndexHelperDescription2() throws Exception {
+        DateIndexHelper helper2 = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
+                        0.9f);
+
+        // if a filter is present, fields should be returned as such - in this case no fields returned since there isn't a match
+        DateIndexHelper.DateTypeDescription dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"),
+                        DateIndexUtil.getEndDate("20100102"), Collections.singleton("foo"));
+        Assert.assertEquals(Collections.EMPTY_SET, dtd.getFields());
+        Assert.assertEquals(DateIndexUtil.getBeginDate("20100102"), dtd.getBeginDate());
+        Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
+
+        // empty but non-null datatypeFilter should have the same behavior since we allow nothing to pass through
+        dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"), Collections.EMPTY_SET);
+        Assert.assertEquals(Collections.EMPTY_SET, dtd.getFields());
+        Assert.assertEquals(DateIndexUtil.getBeginDate("20100103"), dtd.getBeginDate());
+        Assert.assertEquals(DateIndexUtil.getEndDate("20100103"), dtd.getEndDate());
+
+        // a null filter should indicate allowance of all the things
+        dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), null);
+        Assert.assertEquals(Collections.singleton("LOAD_DATE"), dtd.getFields());
+        Assert.assertEquals(DateIndexUtil.getBeginDate("20100101"), dtd.getBeginDate());
+        Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
+
+        // there should be 3 entries in the cache
+        Assert.assertEquals(3, countCacheEntries());
+        clearCache();
+    }
+
     private int countCacheEntries() {
+        Map map = getCache().asMap();
+        return map.size();
+    }
+
+    private void clearCache() {
+        getCache().invalidateAll();
+    }
+
+    private Cache getCache() {
         CacheManager cacheManager = this.applicationContext.getBean("dateIndexHelperCacheManager", CacheManager.class);
         String cacheName = "getTypeDescription";
         Object nativeCache = cacheManager.getCache(cacheName).getNativeCache();
-        Cache cache = (Cache) nativeCache;
-        Map map = cache.asMap();
-        return map.size();
+
+        return (Cache) nativeCache;
     }
 
     @Test
@@ -224,5 +261,20 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"),
                         DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
         Assert.assertEquals("", hint);
+
+        // expect empty filter to allow nothing
+        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton(""));
+        Assert.assertEquals("", hint);
+
+        // expect non-matching filter to allow nothing
+        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("foo"));
+        Assert.assertEquals("", hint);
+
+        // except null filter to allow all the things
+        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), null);
+        Assert.assertEquals("20100101_1,20100102_5", hint);
     }
 }

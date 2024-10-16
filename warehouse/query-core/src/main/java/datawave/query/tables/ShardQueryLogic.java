@@ -782,16 +782,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         // Get the datatype set if specified
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim();
+        boolean typeFilterWasPopulated = false;
 
         if (StringUtils.isNotBlank(typeList)) {
             HashSet<String> typeFilter = new HashSet<>();
             HashSet<String> excludeSet = new HashSet<>();
 
-            for (String dataType : Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP))) {
+            for (String dataType : StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)) {
                 if (dataType.charAt(0) == '!') {
                     excludeSet.add(StringUtils.substring(dataType, 1));
                 } else {
                     typeFilter.add(dataType);
+                    typeFilterWasPopulated = true;
                 }
             }
 
@@ -812,6 +814,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
             if (log.isDebugEnabled()) {
                 log.debug("Type Filter: " + typeFilter);
+            }
+
+            if (typeFilter.isEmpty() && typeFilterWasPopulated) {
+                typeFilter = null;
             }
 
             config.setDatatypeFilter(typeFilter);

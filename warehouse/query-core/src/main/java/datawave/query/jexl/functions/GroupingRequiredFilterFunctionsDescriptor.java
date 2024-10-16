@@ -5,28 +5,32 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
+    private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctionsDescriptor.class);
+
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
-     *
-     *
-     *
      */
     public static class GroupingRequiredFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final ImmutableSet<String> groupingRequiredFunctions = ImmutableSet.of("atomValuesMatch", "matchesInGroup", "matchesInGroupLeft",
@@ -87,19 +91,44 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
 
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
-            FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
-            node.jjtAccept(functionMetadata, null);
-            if ((!functionMetadata.name().equals("atomValuesMatch")) && ((arg % 2) == 1)) {
-                return JexlASTHelper.getIdentifierNames(functionMetadata.args().get(arg - 1));
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                Set<String> filteredFields = Sets.newHashSet();
+
+                FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
+                node.jjtAccept(functionMetadata, null);
+                if ((!functionMetadata.name().equals("atomValuesMatch")) && ((arg % 2) == 1)) {
+                    Set<String> fields = JexlASTHelper.getIdentifierNames(functionMetadata.args().get(arg - 1));
+                    for (String field : fields) {
+                        filterField(allFields, field, filteredFields);
+                    }
+                    return filteredFields;
+                }
+                return Collections.emptySet();
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
-            return Collections.emptySet();
         }
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
+            Set<String> allFields = null;
+            Set<String> fields = Sets.newHashSet();
+
+            if (helper != null) {
+                try {
+                    allFields = helper.getAllFields(datatypeFilter);
+                } catch (TableNotFoundException e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                    log.error(qe);
+                    throw new DatawaveFatalQueryException(qe);
+                }
+            }
+
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            Set<String> fields = Sets.newHashSet();
             if (functionMetadata.name().equals("atomValuesMatch")) {
                 for (JexlNode node : functionMetadata.args()) {
                     fields.addAll(JexlASTHelper.getIdentifierNames(node));
@@ -110,29 +139,70 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                     fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(i)));
                 }
             }
-            return fields;
+            if (allFields != null) {
+                return filterField(allFields, fields);
+            } else {
+                return fields;
+            }
         }
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
-            node.jjtAccept(functionMetadata, null);
+            try {
+                FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
+                node.jjtAccept(functionMetadata, null);
+                Set<Set<String>> fieldSets = JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0));
+                Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
 
-            if (functionMetadata.name().equals("atomValuesMatch")) {
-                Set<Set<String>> fieldSets = JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0));
-                // don't include the last argument if the size is odd as that is a position arg
-                for (int i = 1; i < functionMetadata.args().size(); i++) {
-                    fieldSets = JexlArgumentDescriptor.Fields.product(fieldSets, functionMetadata.args().get(i));
+                if (functionMetadata.name().equals("atomValuesMatch")) {
+                    // don't include the last argument if the size is odd as that is a position arg
+                    for (int i = 1; i < functionMetadata.args().size(); i++) {
+                        fieldSets = JexlArgumentDescriptor.Fields.product(fieldSets, functionMetadata.args().get(i));
+                    }
+                } else {
+                    // don't include the last argument if the size is odd as that is a position arg
+                    for (int i = 2; i < functionMetadata.args().size() - 1; i += 2) {
+                        fieldSets = JexlArgumentDescriptor.Fields.product(fieldSets, functionMetadata.args().get(i));
+                    }
                 }
-                return fieldSets;
-            } else {
-                Set<Set<String>> fieldSets = JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0));
-                // don't include the last argument if the size is odd as that is a position arg
-                for (int i = 2; i < functionMetadata.args().size() - 1; i += 2) {
-                    fieldSets = JexlArgumentDescriptor.Fields.product(fieldSets, functionMetadata.args().get(i));
+
+                for (Set<String> aFieldSet : fieldSets) {
+                    filteredSets.add(filterField(allFields, aFieldSet));
                 }
-                return fieldSets;
+
+                return filteredSets;
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
+        }
+
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s)
+         *
+         * @param allFields
+         * @param fieldToAdd
+         * @param returnedFields
+         */
+        private void filterField(Set<String> allFields, String fieldToAdd, Set<String> returnedFields) {
+            if (allFields.contains(fieldToAdd)) {
+                returnedFields.add(fieldToAdd);
+            }
+        }
+
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s)
+         *
+         * @param allFields
+         * @param fields
+         */
+        private Set<String> filterField(Set<String> allFields, Set<String> fields) {
+            Set<String> returnedFields = Sets.newHashSet();
+            returnedFields.addAll(allFields);
+            returnedFields.retainAll(fields);
+            return returnedFields;
         }
 
         @Override

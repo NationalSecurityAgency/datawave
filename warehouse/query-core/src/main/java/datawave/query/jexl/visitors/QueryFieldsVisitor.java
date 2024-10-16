@@ -51,6 +51,7 @@ import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -65,6 +66,8 @@ import datawave.query.util.MetadataHelper;
 public class QueryFieldsVisitor extends BaseVisitor {
 
     private final MetadataHelper helper;
+
+    private static final Logger LOGGER = Logger.getLogger(QueryFieldsVisitor.class);
 
     public static Set<String> parseQueryFields(String query, MetadataHelper helper) {
         try {
@@ -157,8 +160,12 @@ public class QueryFieldsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        Set<String> fields = desc.fields(helper, null);
-        ((Set<String>) data).addAll(fields);
+        Set<String> fields = null;
+        if (desc != null) {
+            fields = desc.fields(helper, null);
+            ((Set<String>) data).addAll(fields);
+        }
+
         return data;
     }
 

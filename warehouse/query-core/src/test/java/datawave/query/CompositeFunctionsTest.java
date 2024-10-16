@@ -467,7 +467,7 @@ public abstract class CompositeFunctionsTest {
 
         for (int i = 0; i < queryStrings.length; i++) {
             // filter must be reset between each run when pruning ingest types
-            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
+            eventQueryLogic.getConfig().setDatatypeFilter(null);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -522,7 +522,7 @@ public abstract class CompositeFunctionsTest {
 
         for (int i = 0; i < queryStrings.length; i++) {
             // filter must be reset between each run when pruning ingest types
-            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
+            eventQueryLogic.getConfig().setDatatypeFilter(null);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

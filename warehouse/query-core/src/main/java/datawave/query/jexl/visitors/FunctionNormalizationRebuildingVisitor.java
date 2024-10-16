@@ -54,7 +54,6 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         Preconditions.checkNotNull(normalizers);
         Preconditions.checkNotNull(descriptor);
         Preconditions.checkNotNull(helper);
-        Preconditions.checkNotNull(datatypeFilter);
 
         this.normalizers = normalizers;
         this.descriptor = descriptor;

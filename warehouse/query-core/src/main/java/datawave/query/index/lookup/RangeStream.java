@@ -320,8 +320,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             if (typeMetadata != null) {
                 JexlNode node = plan.getQueryTree();
                 JexlNode result;
-                if (ingestTypes.isEmpty()) {
-                    // datatype filter was empty signifying a search across all ingest types
+                if (ingestTypes == null) {
+                    // datatype filter was null signifying a search across all ingest types
                     result = IngestTypePruningVisitor.prune(node, typeMetadata);
                 } else {
                     // datatype filter can be used to prune the resulting query tree

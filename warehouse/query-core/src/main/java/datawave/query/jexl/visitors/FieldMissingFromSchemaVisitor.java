@@ -34,8 +34,9 @@ import datawave.query.util.MetadataHelper;
  * Class to check that each query node contains a field which exists in the schema.
  *
  * <pre>
- * 1. If a datatype filter was specified, then the existence check is limited to only those datatypes
- * 2. If a datatype filter is NOT specified (null or empty), this implies ALL datatypes.
+ * 1. If a datatype filter was specified, then the existence check is limited to only those datatypes.
+ * 2. If a datatype filter is NOT specified (null), this implies ALL datatypes.
+ * 3. If a datatype filter is specified but not populated (empty), this implies NO datatypes.
  * </pre>
  */
 public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
@@ -51,10 +52,6 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         this.helper = helper;
         this.specialFields = specialFields;
         try {
-            // if given datatypeFilter is empty or null, assume that means ALL datatypes
-            if (datatypeFilter == null) {
-                datatypeFilter = Collections.emptySet();
-            }
             this.allFieldsForDatatypes = this.helper.getAllFields(datatypeFilter);
         } catch (TableNotFoundException e) {
             log.error(e);
@@ -96,11 +93,15 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
         for (ASTIdentifier identifier : identifiers) {
             String fieldName = JexlASTHelper.deconstructIdentifier(identifier);
-            if (!this.allFieldsForDatatypes.contains(fieldName) && !specialFields.contains(fieldName)) {
-                nonExistentFieldNames.add(fieldName);
-            }
+            addField(fieldName, fieldName, nonExistentFieldNames);
         }
         return nonExistentFieldNames;
+    }
+
+    private void addField(String fieldToAdd, String specialFieldsField, Set<String> fields) {
+        if (!this.allFieldsForDatatypes.contains(fieldToAdd) && !specialFields.contains(specialFieldsField)) {
+            fields.add(fieldToAdd);
+        }
     }
 
     @Override
@@ -148,14 +149,16 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
-
-        for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
-            // deconstruct the identifier
-            final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            // changed to allow _ANYFIELD_ in functions
-            if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
-                nonExistentFieldNames.add(testFieldName);
+        Set<String> fields = desc.fields(this.helper, this.datatypeFilter);
+        if (!fields.isEmpty()) {
+            for (String fieldName : fields) {
+                // deconstruct the identifier
+                final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+                // changed to allow _ANYFIELD_ in functions
+                addField(testFieldName, fieldName, nonExistentFieldNames);
             }
+        } else {
+            genericVisit(node, data);
         }
 
         return nonExistentFieldNames;

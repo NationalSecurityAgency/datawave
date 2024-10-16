@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
@@ -21,7 +22,9 @@ import datawave.query.util.MetadataHelper;
  * This is a visitor which is used to break up geowave functions which have multiple fields into separate geowave functions.
  */
 class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
-    private MetadataHelper metadataHelper;
+    private final MetadataHelper metadataHelper;
+
+    private static final Logger LOGGER = Logger.getLogger(SplitGeoWaveFunctionVisitor.class);
 
     private SplitGeoWaveFunctionVisitor(MetadataHelper metadataHelper) {
         this.metadataHelper = metadataHelper;
@@ -36,8 +39,9 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        Set<String> fields;
         if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-            Set<String> fields = descriptor.fields(metadataHelper, Collections.emptySet());
+            fields = descriptor.fields(metadataHelper, null);
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
 
@@ -60,7 +64,7 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                 return JexlNodeFactory.createOrNode(functionNodes);
             }
         } else if (descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-            Set<String> fields = descriptor.fields(metadataHelper, Collections.emptySet());
+            fields = descriptor.fields(metadataHelper, null);
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
 

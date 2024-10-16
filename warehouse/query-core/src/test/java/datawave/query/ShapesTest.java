@@ -480,7 +480,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -498,7 +498,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -507,7 +507,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -537,7 +537,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(allTypes);
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -644,7 +644,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon' && ONLY_HEX == 'hexa'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -653,7 +653,7 @@ public abstract class ShapesTest {
         withExpected(otherUids);
         planAndExecuteQuery();
         assertPlannedQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -685,7 +685,7 @@ public abstract class ShapesTest {
         withExpected(otherUids);
         planAndExecuteQuery();
         assertPlannedQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -853,7 +853,7 @@ public abstract class ShapesTest {
                     logic.setPruneQueryByIngestTypes(pruneOption);
                     logic.setReduceIngestTypes(reduceOption);
                     logic.setRebuildDatatypeFilter(rebuildOption);
-                    logic.getConfig().setDatatypeFilter(Collections.emptySet());
+                    logic.getConfig().setDatatypeFilter(null);
 
                     withQuery(query);
                     withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));

@@ -84,19 +84,19 @@ public class CostEstimator {
 
                     // if the term is _ANYFIELD_ (could not expand), then treat as 0 cost
                     if (fieldName.equals(Constants.ANY_FIELD) || fieldName.equals(Constants.NO_FIELD)) {
-                        return new Cost(0l, 0l);
+                        return new Cost(0L, 0L);
                     }
 
                     // If the term is not indexed (could be _ANYFIELD_), treat it as infinite cost
                     try {
                         if (!helper.isIndexed(fieldName, config.getDatatypeFilter())) {
-                            return new Cost(0l, Long.MAX_VALUE);
+                            return new Cost(0L, Long.MAX_VALUE);
                         }
                     } catch (TableNotFoundException e) {
                         log.error("Could not find metadata table", e);
                     }
 
-                    return new Cost(0l, helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter()));
+                    return new Cost(0L, helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter()));
                 } catch (NoSuchElementException e) {
                     log.trace("Could not find field name for EQ node, ignoring for cost");
                     return new Cost();
@@ -110,7 +110,7 @@ public class CostEstimator {
                     // Retain the least-costly child in an AND
                     if (null == andCost) {
                         andCost = childCost;
-                    } else if (0l == childCost.getERCost() && 0l == childCost.getOtherCost()) {
+                    } else if (0L == childCost.getERCost() && 0L == childCost.getOtherCost()) {
                         // We don't care to do anything if we got the default costs
                     } else if (andCost.totalCost() > childCost.totalCost()) {
                         andCost = childCost;

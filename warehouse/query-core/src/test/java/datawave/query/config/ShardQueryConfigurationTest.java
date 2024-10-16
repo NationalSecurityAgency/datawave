@@ -522,7 +522,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("unevaluatedFields", Sets.newHashSet());
         updatedValues.put("unevaluatedFields", Sets.newHashSet("FIELD_U", "FIELD_V"));
 
-        defaultValues.put("datatypeFilter", Sets.newHashSet());
+        defaultValues.put("datatypeFilter", null);
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
         defaultValues.put("datatypeFilterAsString", "");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
