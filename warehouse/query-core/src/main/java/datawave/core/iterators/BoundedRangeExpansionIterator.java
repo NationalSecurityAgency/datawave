@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.TreeSet;
 
-import datawave.query.jexl.LiteralRange;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -22,13 +21,15 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Splitter;
 
 import datawave.query.Constants;
+import datawave.query.jexl.LiteralRange;
 
 /**
  * A {@link SeekingFilter} that attempts to expand bounded ranges using the global index
  * <p>
  * The caller is responsible for fetching the appropriate column families. The range is constructed from a {@link LiteralRange}.
  * <p>
- * The only thing this iterator does is advance through datatypes if a filter is supplied, advance to the start date, and advance to the next row within the range.
+ * The only thing this iterator does is advance through datatypes if a filter is supplied, advance to the start date, and advance to the next row within the
+ * range.
  */
 public class BoundedRangeExpansionIterator extends SeekingFilter implements OptionDescriber {
 
