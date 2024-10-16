@@ -1,12 +1,12 @@
 package datawave.core.query.runner;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.accumulo.core.util.Pair;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -21,22 +21,22 @@ public class AccumuloConnectionRequestMap {
     /**
      * This maps the query-id to a pair containing the tracking map (see the AccumuloConnectionFactory) and the thread handling the request
      */
-    private Map<String,List<Pair<Map<String,String>,Thread>>> connectionThreadMap = new HashMap<>();
+    private Map<String,List<AbstractMap.SimpleEntry<Map<String,String>,Thread>>> connectionThreadMap = new HashMap<>();
 
     public boolean cancelConnectionRequest(String id, String userDn) {
         // this call checks that the Principal used for the connection request and the connection cancel are the same
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
         boolean connectionRequestCanceled = false;
         synchronized (connectionThreadMap) {
-            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
+            List<AbstractMap.SimpleEntry<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
             if (connectionRequestPairs != null) {
-                for (Pair<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
+                for (AbstractMap.SimpleEntry<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
                     try {
-                        if (connectionRequestPair != null && connectionRequestPair.getFirst() != null) {
-                            String connectionRequestPrincipalName = connectionRequestPair.getFirst().get(AccumuloConnectionFactory.USER_DN);
+                        if (connectionRequestPair != null && connectionRequestPair.getKey() != null) {
+                            String connectionRequestPrincipalName = connectionRequestPair.getKey().get(AccumuloConnectionFactory.USER_DN);
                             String connectionCancelPrincipalName = userDn;
                             if (connectionRequestPrincipalName.equals(connectionCancelPrincipalName)) {
-                                connectionRequestPair.getSecond().interrupt();
+                                connectionRequestPair.getValue().interrupt();
                                 connectionRequestCanceled = true;
                             }
                         }
@@ -53,12 +53,12 @@ public class AccumuloConnectionRequestMap {
         // it is assumed that admin status is already checked, so this call does not check the calling Principals
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
         boolean connectionRequestCanceled = false;
-        List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
+        List<AbstractMap.SimpleEntry<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
         if (connectionRequestPairs != null) {
-            for (Pair<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
+            for (AbstractMap.SimpleEntry<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
                 try {
-                    if (connectionRequestPair != null && connectionRequestPair.getFirst() != null) {
-                        connectionRequestPair.getSecond().interrupt();
+                    if (connectionRequestPair != null && connectionRequestPair.getKey() != null) {
+                        connectionRequestPair.getValue().interrupt();
                         connectionRequestCanceled = true;
                     }
                 } catch (Exception e) {
@@ -72,12 +72,12 @@ public class AccumuloConnectionRequestMap {
 
     public void requestBegin(String id, String userDN, Map<String,String> trackingMap) {
         synchronized (connectionThreadMap) {
-            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
+            List<AbstractMap.SimpleEntry<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
             if (connectionRequestPairs == null) {
                 connectionRequestPairs = new ArrayList<>();
                 connectionThreadMap.put(id, connectionRequestPairs);
             }
-            Pair<Map<String,String>,Thread> connectionRequestPair = new Pair<>(trackingMap, Thread.currentThread());
+            AbstractMap.SimpleEntry<Map<String,String>,Thread> connectionRequestPair = new AbstractMap.SimpleEntry<>(trackingMap, Thread.currentThread());
             if (userDN != null && trackingMap != null)
                 trackingMap.put(AccumuloConnectionFactory.USER_DN, userDN);
             connectionRequestPairs.add(connectionRequestPair);
@@ -86,13 +86,13 @@ public class AccumuloConnectionRequestMap {
 
     public void requestEnd(String id) {
         synchronized (connectionThreadMap) {
-            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
+            List<AbstractMap.SimpleEntry<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
             Thread t = Thread.currentThread();
-            Iterator<Pair<Map<String,String>,Thread>> it = connectionRequestPairs.iterator();
+            Iterator<AbstractMap.SimpleEntry<Map<String,String>,Thread>> it = connectionRequestPairs.iterator();
             boolean found = false;
             while (!found && it.hasNext()) {
-                Pair<Map<String,String>,Thread> connectionRequestPair = it.next();
-                if (connectionRequestPair.getSecond().equals(t)) {
+                AbstractMap.SimpleEntry<Map<String,String>,Thread> connectionRequestPair = it.next();
+                if (connectionRequestPair.getValue().equals(t)) {
                     it.remove();
                     found = true;
                 }

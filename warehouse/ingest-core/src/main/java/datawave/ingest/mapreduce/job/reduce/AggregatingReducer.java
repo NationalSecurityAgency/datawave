@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.job.reduce;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,10 +23,8 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -176,7 +175,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             Map<String,Entry<Map<String,String>,String>> columnMap = Maps.newHashMap();
 
                             for (String column : columns) {
-                                columnMap.put(ColumnSet.encodeColumns(new Text(column), null), Maps.immutableEntry(options, clazz));
+                                columnMap.put(ColumnTransform.encodeColumns(new Text(column), null), Maps.immutableEntry(options, clazz));
                             }
 
                             mapping = new CustomColumnToClassMapping(columnMap, priority);
@@ -382,11 +381,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
 
                 final String className = entry.getValue();
 
-                Pair<Text,Text> pcic;
+                AbstractMap.SimpleEntry<Text,Text> pcic;
                 if (ALL_CF_STR.equals(column)) {
-                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                    pcic = new AbstractMap.SimpleEntry<>(ALL_CF_KEY.getColumnFamily(), null);
                 } else {
-                    pcic = ColumnSet.decodeColumns(column);
+                    pcic = ColumnTransform.decodeColumns(column);
                 }
 
                 Combiner agg = null;
@@ -401,10 +400,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     throw new RuntimeException(e);
                 }
 
-                if (pcic.getSecond() == null) {
-                    addObject(pcic.getFirst(), agg);
+                if (pcic.getValue() == null) {
+                    addObject(pcic.getKey(), agg);
                 } else {
-                    addObject(pcic.getFirst(), pcic.getSecond(), agg);
+                    addObject(pcic.getKey(), pcic.getValue(), agg);
                 }
             }
 
@@ -422,11 +421,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
 
                 final String className = clazzOptions.getValue();
 
-                Pair<Text,Text> pcic;
+                AbstractMap.SimpleEntry<Text,Text> pcic;
                 if (ALL_CF_STR.equals(column)) {
-                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                    pcic = new AbstractMap.SimpleEntry<>(ALL_CF_KEY.getColumnFamily(), null);
                 } else {
-                    pcic = ColumnSet.decodeColumns(column);
+                    pcic = ColumnTransform.decodeColumns(column);
                 }
 
                 Combiner agg = null;
@@ -442,10 +441,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     throw new RuntimeException(e);
                 }
 
-                if (pcic.getSecond() == null) {
-                    addObject(pcic.getFirst(), agg);
+                if (pcic.getValue() == null) {
+                    addObject(pcic.getKey(), agg);
                 } else {
-                    addObject(pcic.getFirst(), pcic.getSecond(), agg);
+                    addObject(pcic.getKey(), pcic.getValue(), agg);
                 }
             }
 

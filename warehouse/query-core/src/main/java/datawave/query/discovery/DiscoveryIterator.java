@@ -5,6 +5,7 @@ import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Lists.newArrayList;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +18,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
@@ -66,9 +66,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                 if (things.isEmpty()) {
                     continue;
                 } else {
-                    Pair<Key,Value> top = makeTop(things);
-                    tk = top.getFirst();
-                    tv = top.getSecond();
+                    AbstractMap.SimpleEntry<Key,Value> top = makeTop(things);
+                    tk = top.getKey();
+                    tv = top.getValue();
                     return;
                 }
             }
@@ -103,7 +103,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         return true;
     }
 
-    private Pair<Key,Value> makeTop(List<DiscoveredThing> things) {
+    private AbstractMap.SimpleEntry<Key,Value> makeTop(List<DiscoveredThing> things) {
         Writable[] returnedThings = new Writable[things.size()];
         for (int i = 0; i < returnedThings.length; ++i)
             returnedThings[i] = things.get(i);
@@ -114,7 +114,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         // we want the key to be the last possible key for this date. Return the key as it is in the index (reversed if necessary) to
         // ensure the keys are consistent with the initial seek range.
         String row = (reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
-        return new Pair<>(new Key(row, thing.getField(), thing.getDate() + '\uffff'), new Value(WritableUtils.toByteArray(aw)));
+        return new AbstractMap.SimpleEntry<>(new Key(row, thing.getField(), thing.getDate() + '\uffff'), new Value(WritableUtils.toByteArray(aw)));
     }
 
     @Override

@@ -15,6 +15,7 @@ import static org.junit.Assert.fail;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +46,6 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -213,7 +213,7 @@ public class ExtendedQueryExecutorBeanTest {
     UserTransaction transaction;
 
     @Mock
-    Pair<QueryLogic<?>,AccumuloClient> tuple;
+    AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> tuple;
 
     @Mock
     HttpHeaders httpHeaders;
@@ -244,6 +244,8 @@ public class ExtendedQueryExecutorBeanTest {
         queryExpirationConf.setShortCircuitCheckTime(45);
         queryExpirationConf.setShortCircuitTimeout(58);
         queryExpirationConf.setIdleTimeout(60);
+
+        this.tuple = new AbstractMap.SimpleEntry<>(this.queryLogic1, this.client);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -254,9 +256,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the create logic
         expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.tuple.getSecond()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
@@ -418,9 +418,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations
         expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.tuple.getSecond()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
@@ -485,11 +483,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getDNs()).andReturn(new String[] {userName});
         expect(this.principal.getShortName()).andReturn(userSid);
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<>(0)).anyTimes();
+
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         this.closedCache.remove(queryId.toString());
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.tuple.getSecond()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
@@ -663,10 +660,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<>(0)).anyTimes();
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
-        expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
         PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
-        expect(this.tuple.getSecond()).andThrow(ILLEGAL_STATE_EXCEPTION);
 
         // Run the test
         PowerMock.replayAll();

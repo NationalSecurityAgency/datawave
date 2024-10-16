@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -37,7 +37,7 @@ public class QueryCacheBeanTest {
     QueryLogic<?> logic;
 
     @Mock
-    Pair<QueryLogic<?>,AccumuloClient> pair;
+    AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> pair;
 
     @Mock
     CreatedQueryLogicCacheBean remoteCache;
@@ -55,10 +55,10 @@ public class QueryCacheBeanTest {
     public void testListRunningQueries() {
         // Set expectations
         expect(altCache.iterator()).andReturn((Iterator<RunningQuery>) new HashMap().values().iterator());
-        Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot = new HashMap<>();
+        Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> snapshot = new HashMap<>();
+        this.pair = new AbstractMap.SimpleEntry<>(this.logic, null);
         snapshot.put("key", this.pair);
         expect(this.remoteCache.snapshot()).andReturn(snapshot);
-        expect(this.pair.getFirst()).andReturn((QueryLogic) this.logic);
 
         // Run the test
         PowerMock.replayAll();

@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.text.MessageFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,7 +72,6 @@ import javax.xml.bind.Marshaller;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -2190,7 +2190,7 @@ public class QueryExecutorBean implements QueryExecutor {
         try {
             QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, qd.userDn);
-            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
+            AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
             if (!id.matches(UUID_REGEX_RULE)) {
                 log.error("Invalid query id: " + id);
                 GenericResponse<String> genericResponse = new GenericResponse<>();
@@ -2214,13 +2214,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " closed.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getKey();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getValue());
                 response.addMessage(id + " closed before create completed.");
             }
 
@@ -2261,7 +2261,7 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(id);
-            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.poll(id);
+            AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> tuple = qlCache.poll(id);
             if (tuple == null) {
                 try {
                     RunningQuery query = adminGetQueryById(id);
@@ -2276,13 +2276,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " closed.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getKey();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getValue());
                 response.addMessage(id + " closed before create completed.");
             }
 
@@ -2349,7 +2349,7 @@ public class QueryExecutorBean implements QueryExecutor {
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
             QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
-            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
+            AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
 
             if (tuple == null) {
                 try {
@@ -2370,13 +2370,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " canceled.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getKey();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getValue());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
 
@@ -2415,7 +2415,7 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(id);
-            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.poll(id);
+            AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> tuple = qlCache.poll(id);
             if (tuple == null) {
                 try {
                     RunningQuery query = adminGetQueryById(id);
@@ -2431,13 +2431,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 response.addMessage(id + " closed.");
             } else {
-                QueryLogic<?> logic = tuple.getFirst();
+                QueryLogic<?> logic = tuple.getKey();
                 try {
                     logic.close();
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnClient(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getValue());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
 

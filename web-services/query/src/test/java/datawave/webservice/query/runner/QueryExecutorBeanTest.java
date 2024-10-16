@@ -14,6 +14,7 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,7 +35,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.time.DateUtils;
@@ -770,13 +770,13 @@ public class QueryExecutorBeanTest {
             // initialize has not completed yet so it will not appear in the cache
             Object cachedRunningQuery = cache.get(q.getId().toString());
             Assert.assertNull(cachedRunningQuery);
-            Pair<QueryLogic<?>,AccumuloClient> pair = qlCache.poll(q.getId().toString());
+            AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> pair = qlCache.poll(q.getId().toString());
             Assert.assertNotNull(pair);
-            Assert.assertEquals(logic, pair.getFirst());
-            Assert.assertEquals(c, pair.getSecond());
+            Assert.assertEquals(logic, pair.getKey());
+            Assert.assertEquals(c, pair.getValue());
 
             // Have to add these back because poll was destructive
-            qlCache.add(q.getId().toString(), principal.getShortName(), pair.getFirst(), pair.getSecond());
+            qlCache.add(q.getId().toString(), principal.getShortName(), pair.getKey(), pair.getValue());
 
             // Call close
             bean.close(q.getId().toString());

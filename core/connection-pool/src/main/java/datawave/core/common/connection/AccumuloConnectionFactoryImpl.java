@@ -1,6 +1,7 @@
 package datawave.core.common.connection;
 
 import java.text.SimpleDateFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +16,6 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.log4j.Logger;
@@ -69,7 +69,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             log.error("connectionPoolsConfiguration was null - aborting init()");
             return;
         }
-        HashMap<String,Pair<String,PasswordToken>> instances = new HashMap<>();
+        HashMap<String,AbstractMap.SimpleEntry<String,PasswordToken>> instances = new HashMap<>();
         this.defaultPoolName = connectionPoolsConfiguration.getDefaultPool();
         for (Entry<String,ConnectionPoolProperties> entry : connectionPoolsConfiguration.getPools().entrySet()) {
             Map<Priority,AccumuloClientPool> p = new HashMap<>();
@@ -115,17 +115,17 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         return pool;
     }
 
-    private void setupMockAccumuloUser(ConnectionPoolProperties conf, AccumuloClientPool pool, HashMap<String,Pair<String,PasswordToken>> instances)
-                    throws Exception {
+    private void setupMockAccumuloUser(ConnectionPoolProperties conf, AccumuloClientPool pool,
+                    HashMap<String,AbstractMap.SimpleEntry<String,PasswordToken>> instances) throws Exception {
         AccumuloClient c = null;
         try {
             c = pool.borrowObject(new HashMap<>());
 
-            Pair<String,PasswordToken> pair = instances.get(cache.getInstance().getInstanceID());
+            AbstractMap.SimpleEntry<String,PasswordToken> pair = instances.get(cache.getInstance().getInstanceID());
             String user = "root";
             PasswordToken password = new PasswordToken(new byte[0]);
-            if (pair != null && user.equals(pair.getFirst()))
-                password = pair.getSecond();
+            if (pair != null && user.equals(pair.getKey()))
+                password = pair.getValue();
             SecurityOperations security = new InMemoryAccumuloClient(user, cache.getInstance()).securityOperations();
             Set<String> users = security.listLocalUsers();
             if (!users.contains(conf.getUsername())) {
@@ -136,10 +136,10 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
                 // If we're changing root's password, and trying to change then keep track of that. If we have multiple instances
                 // that specify mismatching passwords, then throw an error.
                 if (user.equals(conf.getUsername())) {
-                    if (pair != null && !newPassword.equals(pair.getSecond()))
+                    if (pair != null && !newPassword.equals(pair.getValue()))
                         throw new IllegalStateException(
                                         "Invalid AccumuloConnectionFactoryBean configuration--multiple pools are configured with different root passwords!");
-                    instances.put(cache.getInstance().getInstanceID(), new Pair<>(conf.getUsername(), newPassword));
+                    instances.put(cache.getInstance().getInstanceID(), new AbstractMap.SimpleEntry<>(conf.getUsername(), newPassword));
                 }
                 // match root's password on mock to the password on the actual Accumulo instance
                 security.changeLocalUserPassword(conf.getUsername(), newPassword);
