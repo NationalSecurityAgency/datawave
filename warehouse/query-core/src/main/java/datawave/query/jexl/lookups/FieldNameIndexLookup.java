@@ -1,5 +1,7 @@
 package datawave.query.jexl.lookups;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -10,8 +12,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -37,7 +39,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
     protected Set<String> terms;
 
     protected Future<Boolean> timedScanFuture;
-    protected long lookupStartTimeMillis = Long.MAX_VALUE;
+    protected AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
     protected CountDownLatch lookupStartedLatch;
     protected CountDownLatch lookupStoppedLatch;
 
@@ -75,7 +77,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
             Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
 
-            ScannerSession bs;
+            ScannerSession bs = null;
 
             try {
                 if (!fields.isEmpty()) {
@@ -104,9 +106,13 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                 }
 
                 timedScanFuture = execService.submit(createTimedCallable(iter));
-            } catch (TableNotFoundException e) {
+            } catch (IOException | InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
                 log.error(e);
-            } catch (Exception e) {
+                // ensure the scanner is cleaned up if no longer listening
+                if (bs != null) {
+                    bs.close();
+                    sessions.remove(bs);
+                }
                 throw new RuntimeException(e);
             }
         }
@@ -117,7 +123,10 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
         if (!sessions.isEmpty()) {
             try {
                 // for field name lookups, we wait indefinitely
-                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStoppedLatch, lookupStartTimeMillis, Long.MAX_VALUE);
+                // TODO consider if this really should be Long.MAX_VALUE or some time less. Other index scanners are set to config.getMaxIndexScanTimeMillis().
+                // However the code currently can't handle a failure here, where other index lookup failures can conditionally still allow the query to be
+                // executed. See UnfieldedIndexExpansionVisitor.expandUnfielded()
+                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStoppedLatch, lookupStartTimeMillis, config.getMaxAnyFieldScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : sessions) {
                     scannerFactory.close(sesh);
@@ -135,13 +144,18 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
         return () -> {
             try {
-                lookupStartTimeMillis = System.currentTimeMillis();
+                lookupStartTimeMillis.set(System.currentTimeMillis());
                 lookupStartedLatch.countDown();
 
                 final Text holder = new Text();
 
                 try {
                     while (iter.hasNext()) {
+                        // check for interrupt which may be triggered by closing the batch scanner
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException();
+                        }
+
                         Entry<Key,Value> entry = iter.next();
                         if (log.isTraceEnabled()) {
                             log.trace("Index entry: " + entry.getKey());
