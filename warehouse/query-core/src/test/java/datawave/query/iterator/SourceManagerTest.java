@@ -364,23 +364,8 @@ public class SourceManagerTest {
         }
 
         @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-            Configuration conf = new Configuration();
-            FileSystem fs = FileSystem.get(conf);
-            CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
-                            DefaultConfiguration.getInstance().getAllCryptoProperties());
-            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf, cs)
-                            .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
-        }
-
-        @Override
         public PluginEnvironment getPluginEnv() {
             return new MockPluginEnvironment();
-        }
-
-        @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
         }
 
         @Override
@@ -416,11 +401,6 @@ public class SourceManagerTest {
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
             return null;
-        }
-
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
         }
 
         public class MockPluginEnvironment implements PluginEnvironment {

@@ -124,11 +124,6 @@ public class PropogatingIteratorTest {
         }
 
         @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Authorizations getAuthorizations() {
             throw new UnsupportedOperationException();
         }

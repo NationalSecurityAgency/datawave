@@ -66,11 +66,6 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
-    public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Authorizations getAuthorizations() {
         throw new UnsupportedOperationException();
     }
@@ -96,7 +91,11 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
             @Override
             public Configuration getConfiguration() {
-                return null;
+                if (conf != null) {
+                    return new ConfigurationImpl(conf);
+                } else {
+                    return null;
+                }
             }
 
             @Override

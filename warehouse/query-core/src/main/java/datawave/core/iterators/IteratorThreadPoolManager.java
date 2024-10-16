@@ -15,6 +15,7 @@ import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -42,14 +43,11 @@ public class IteratorThreadPoolManager {
     }
 
     private ThreadPoolExecutor createExecutorService(final String prop, final String name, final IteratorEnvironment env) {
-        final AccumuloConfiguration accumuloConfiguration;
         final PluginEnvironment pluginEnv;
         if (env != null) {
             pluginEnv = env.getPluginEnv();
-            accumuloConfiguration = env.getConfig();
         } else {
             pluginEnv = null;
-            accumuloConfiguration = DefaultConfiguration.getInstance();
         }
         final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, pluginEnv), name + " (" + instanceId + ')');
         threadPools.put(name, service);

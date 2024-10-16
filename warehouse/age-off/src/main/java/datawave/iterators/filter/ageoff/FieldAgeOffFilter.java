@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.Text;
@@ -270,8 +271,8 @@ public class FieldAgeOffFilter extends AppliedRule {
 
         isIndextable = false;
         if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
-            if (iterEnv != null && iterEnv.getConfig() != null) {
-                isIndextable = Boolean.parseBoolean(iterEnv.getConfig().get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
+            if (iterEnv != null && iterEnv.getPluginEnv().getConfiguration() != null) {
+                isIndextable = Boolean.parseBoolean(iterEnv.getPluginEnv().getConfiguration().get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
             }
         } else { // legacy
             isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
