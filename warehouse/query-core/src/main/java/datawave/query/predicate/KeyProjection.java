@@ -21,15 +21,6 @@ public final class KeyProjection implements PeekingPredicate<Entry<Key,String>> 
         projection = new Projection(projections, projectionType);
     }
 
-    public KeyProjection(KeyProjection other) {
-        projection = other.getProjection();
-    }
-
-    @Deprecated
-    public Projection getProjection() {
-        return projection;
-    }
-
     /*
      * (non-Javadoc)
      *

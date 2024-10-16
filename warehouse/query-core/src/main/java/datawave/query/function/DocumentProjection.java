@@ -45,19 +45,6 @@ public class DocumentProjection implements DocumentPermutation {
         this.trackSizes = trackSizes;
     }
 
-    /*
-     * This constructor will not include the grouping context and will not reduce the document
-     */
-    @Deprecated
-    public DocumentProjection(Set<String> projections, Projection.ProjectionType projectionType) {
-        this(false, false, projections, projectionType);
-    }
-
-    @Deprecated
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, Set<String> projections, Projection.ProjectionType projectionType) {
-        this(includeGroupingContext, reducedResponse, true, projections, projectionType);
-    }
-
     public DocumentProjection(boolean includeGroupingContext, boolean isReducedResponse, boolean isTrackSizes, Projection projection) {
         this.includeGroupingContext = includeGroupingContext;
         this.reducedResponse = isReducedResponse;

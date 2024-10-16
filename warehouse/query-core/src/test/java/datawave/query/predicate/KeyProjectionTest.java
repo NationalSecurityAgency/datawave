@@ -41,7 +41,7 @@ public class KeyProjectionTest {
 
     @Test(expected = RuntimeException.class)
     public void testNoConfiguration() {
-        KeyProjection projection = new KeyProjection(null);
+        KeyProjection projection = new KeyProjection(Sets.newHashSet(), Projection.ProjectionType.INCLUDES);
 
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next()));
@@ -50,9 +50,6 @@ public class KeyProjectionTest {
     @Test
     public void testIncludes() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-
-        assertTrue(projection.getProjection().isUseIncludes());
-        assertFalse(projection.getProjection().isUseExcludes());
 
         // test against field index data
         Iterator<Entry<Key,String>> iter = fiData.iterator();
@@ -79,9 +76,6 @@ public class KeyProjectionTest {
     public void testExcludes() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
-        assertFalse(projection.getProjection().isUseIncludes());
-        assertTrue(projection.getProjection().isUseExcludes());
-
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next())); // FIELD_A
         assertTrue(projection.apply(iter.next())); // FIELD_B
@@ -105,9 +99,6 @@ public class KeyProjectionTest {
     @Test
     public void testIncludesDeprecated() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-
-        assertTrue(projection.getProjection().isUseIncludes());
-        assertFalse(projection.getProjection().isUseExcludes());
 
         // test against field index data
         Iterator<Entry<Key,String>> iter = fiData.iterator();
@@ -133,9 +124,6 @@ public class KeyProjectionTest {
     @Test
     public void testExcludesDeprecated() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
-
-        assertFalse(projection.getProjection().isUseIncludes());
-        assertTrue(projection.getProjection().isUseExcludes());
 
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next())); // FIELD_A
