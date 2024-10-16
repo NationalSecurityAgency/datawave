@@ -1,15 +1,19 @@
 package datawave.query.jexl.lookups;
 
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -50,7 +54,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private final LiteralRange<?> literalRange;
 
     protected Future<Boolean> timedScanFuture;
-    protected long lookupStartTimeMillis = Long.MAX_VALUE;
+    protected AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
     protected CountDownLatch lookupStartedLatch;
     protected CountDownLatch lookupStoppedLatch;
 
@@ -125,7 +129,10 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             log.debug("Range: " + range);
             bs = null;
             try {
-                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+                // the 'newScanner' method in the ScannerFactory has no knowledge about the 'expansion' hint, so determine hint here
+                String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
 
                 bs.setRanges(Collections.singleton(range));
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
@@ -182,6 +189,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             } catch (IOException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
                 log.debug(qe);
+                if (bs != null) {
+                    scannerFactory.close(bs);
+                }
                 throw new IllegalRangeArgumentException(qe);
             }
         }
@@ -211,7 +221,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
         return () -> {
             try {
-                lookupStartTimeMillis = System.currentTimeMillis();
+                lookupStartTimeMillis.set(System.currentTimeMillis());
                 lookupStartedLatch.countDown();
 
                 Text holder = new Text();

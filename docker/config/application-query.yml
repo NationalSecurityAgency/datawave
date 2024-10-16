@@ -84,6 +84,9 @@ warehouse:
     edgeModelName: 'DATAWAVE_EDGE'
 
 datawave:
+  connection:
+    factory:
+      defaultPool: 'WAREHOUSE'
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC
@@ -91,6 +94,14 @@ datawave:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
   query:
+    poolLimits:
+      'pool1': &defaultPoolLimits
+        maxQueriesPerExecutor:
+          'WAREHOUSE': 40
+          'UUID': 20
+        livenessTimeout: 90
+        livenessTimeoutUnit: SECONDS
+      'pool2': *defaultPoolLimits
     parser:
       skipTokenizeUnfieldedFields:
         - "DOMETA"
@@ -516,59 +527,45 @@ datawave:
           - fieldName: "SOURCE"
             modelFieldName: "VERTEXA"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "SOURCE"
             modelFieldName: "VERTEXA"
             direction: "FORWARD"
-            indexOnly: false
           - fieldName: "SINK"
             modelFieldName: "VERTEXB"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "SINK"
             modelFieldName: "VERTEXB"
             direction: "FORWARD"
-            indexOnly: false
           - fieldName: "RELATION"
             modelFieldName: "RELATION"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "RELATION"
             modelFieldName: "RELATION"
             direction: "FORWARD"
-            indexOnly: false
           - fieldName: "TYPE"
             modelFieldName: "TYPE"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "TYPE"
             modelFieldName: "TYPE"
             direction: "FORWARD"
-            indexOnly: false
           - fieldName: "ATTRIBUTE1"
             modelFieldName: "ATTR1"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "ATTRIBUTE1"
             modelFieldName: "ATTR1"
             direction: "FORWARD"
-            indexOnly: false
           - fieldName: "ATTRIBUTE2"
             modelFieldName: "ATTR2"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "ATTRIBUTE2"
             modelFieldName: "ATTR2"
             direction: "FORWARD"
-            indexOnly: false
           - fieldName: "ATTRIBUTE3"
             modelFieldName: "ATTR3"
             direction: "REVERSE"
-            indexOnly: false
           - fieldName: "ATTRIBUTE3"
             modelFieldName: "ATTR3"
             direction: "FORWARD"
-            indexOnly: false
 
 # Enable additional Hazelcast cluster for use by the query and executor services
 hazelcast:

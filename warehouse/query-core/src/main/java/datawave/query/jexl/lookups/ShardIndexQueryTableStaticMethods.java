@@ -1,6 +1,7 @@
 package datawave.query.jexl.lookups;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
@@ -66,6 +67,9 @@ public class ShardIndexQueryTableStaticMethods {
     private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
+
+    // name reserved for executor pools
+    public static final String EXPANSION_HINT_KEY = "expansion";
 
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
@@ -438,19 +442,29 @@ public class ShardIndexQueryTableStaticMethods {
      * @param limitToUniqueTerms
      *            check for limiting unique terms
      * @return the scanner session
-     * @throws Exception
-     *             if there are issues
+     * @throws InvocationTargetException
+     *             if no target exists
+     * @throws NoSuchMethodException
+     *             if no method exists
+     * @throws InstantiationException
+     *             if there is a problem initializing
+     * @throws IllegalAccessException
+     *             if there is an illegal access
+     * @throws IOException
+     *             dates can't be formatted
      */
     public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
@@ -471,14 +485,16 @@ public class ShardIndexQueryTableStaticMethods {
 
     public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : tableName;
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
@@ -506,6 +522,13 @@ public class ShardIndexQueryTableStaticMethods {
         }
         IteratorSetting cfg = configureGlobalIndexDateRangeFilter(config, dateRange);
         bs.addScanIterator(cfg);
+
+        // unused method, but we'll still configure execution hints if possible
+        String executionHintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        if (config.getTableHints().containsKey(executionHintKey)) {
+            bs.setExecutionHints(config.getTableHints().get(executionHintKey));
+        }
     }
 
     public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
@@ -574,6 +597,16 @@ public class ShardIndexQueryTableStaticMethods {
         IteratorSetting cfg = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
 
         bs.addScanIterator(cfg);
+
+        // unused method, but we'll still configure execution hints if possible
+        if (!reverseIndex) {
+            // only apply hints to the global index
+            String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+            if (config.getTableHints().containsKey(hintKey)) {
+                bs.setExecutionHints(config.getTableHints().get(hintKey));
+            }
+        }
 
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }
