@@ -19,7 +19,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -30,6 +29,7 @@ import com.google.gson.Gson;
 import datawave.data.hash.UID;
 import datawave.data.type.NumberType;
 import datawave.data.type.util.NumericalEncoder;
+import datawave.iterators.IterationInterruptException;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.SourcedOptions;
@@ -693,7 +693,7 @@ public abstract class AbstractVersionFilter<A> {
                     isValid = validate(range);
                 }
             }
-        } catch (final IterationInterruptedException e) {
+        } catch (final IterationInterruptException e) {
             // Re-throw iteration interrupted as-is since this is an expected event from
             // a client going away. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.

@@ -20,9 +20,9 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.junit.jupiter.api.Test;
 
+import datawave.iterators.IterationInterruptException;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
@@ -74,7 +74,7 @@ class OrIteratorIT {
         indexOnlyCounts.put("FIELD_B", 3);
 
         OrIterator itr = new OrIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
     }
 
     // A union with a negated term cannot be evaluated by itself

@@ -14,7 +14,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.InterruptibleIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -70,7 +69,7 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
             throw new IllegalStateException();
 
         if (interruptFlag != null && interruptCheckCount++ % 100 == 0 && interruptFlag.get())
-            throw new IterationInterruptedException();
+            throw new IterationInterruptException();
 
         if (iter.hasNext()) {
             entry = iter.next();
@@ -86,7 +85,7 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
 
         if (interruptFlag != null && interruptFlag.get())
-            throw new IterationInterruptedException();
+            throw new IterationInterruptException();
 
         this.range = range;
 
