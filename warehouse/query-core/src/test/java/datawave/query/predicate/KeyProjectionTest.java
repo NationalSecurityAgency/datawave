@@ -41,7 +41,7 @@ public class KeyProjectionTest {
 
     @Test(expected = RuntimeException.class)
     public void testNoConfiguration() {
-        KeyProjection projection = new KeyProjection(Sets.newHashSet(), Projection.ProjectionType.INCLUDES);
+        KeyProjection projection = new KeyProjection(null, Projection.ProjectionType.INCLUDES);
 
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next()));
