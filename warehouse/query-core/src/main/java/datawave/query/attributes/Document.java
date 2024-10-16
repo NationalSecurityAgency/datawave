@@ -50,7 +50,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
     long _bytes = 0;
     private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
     private static final long ONE_M = 1024L * 1000;
-    private static final long FIVE_HUNDRED_K = 1024L * 500;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
     /**
@@ -59,7 +58,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private boolean trackSizes;
 
     /**
-     * Whether or not this document represents an intermediate result. If true, then the document fields should also be empty.
+     * Whether this document represents an intermediate result. If true, then the document fields should also be empty.
      */
     private boolean intermediateResult;
 
