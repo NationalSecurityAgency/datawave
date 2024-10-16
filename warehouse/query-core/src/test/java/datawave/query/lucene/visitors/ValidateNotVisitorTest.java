@@ -9,24 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ValidateNotVisitorTest {
 
-    @Test
-    public void baseTest() throws QueryNodeParseException {
-
-        printQueryStructure(("FIELD1:123 NOT FIELD2:456 OR FIELD3:abc")); //ask ivan if invalid or not
-        printQueryStructure("FIELD1:abc OR FIELD2:def NOT FIELD3:123");
-        printQueryStructure("FIELD2:def NOT FIELD3:123");
-        printQueryStructure("FIELD2:def NOT (FIELD3:123 FIELD4:456)");
-        printQueryStructure("(FIELD1:abc or FIELD2:def) NOT FIELD3:123");
-        printQueryStructure("FIELD2:def NOT (FIELD3:123 NOT FIELD4:ghi)");
-        System.out.println("--------------------------------------------------");
-        printQueryStructure("FIELD1:abc or FIELD2:def NOT FIELD3:123");
-        printQueryStructure("FIELD2:def NOT FIELD3:123 or FIELD4:ghi");
-        printQueryStructure("FIELD2:def NOT FIELD3:123 and FIELD4:ghi");
-        printQueryStructure("FIELD1:def FIELD2:123 FIELD4:ghi NOT FIELD5:jkl");
-    }
+    private boolean logQueryTrees = true;
 
     /**
-     * Validates that when a NOT is not present in a query, no exception is thrown.
+     * Validates the simplest case without a NOT.
+     * @throws Exception If an error occurs while validating the query.
      */
     @Test
     public void testNotAbsent() throws Exception {
@@ -36,6 +23,7 @@ public class ValidateNotVisitorTest {
     /**
      * Validates that when a NOT is present in a query
      * and no junction is present, no exception is thrown.
+     * @throws Exception If an error occurs while validating the query.
      */
     @Test
     public void testNotWithoutJunction() throws Exception {
@@ -45,6 +33,7 @@ public class ValidateNotVisitorTest {
     /**
      * Validates that when a NOT is present in a query
      * and a AND is present without parentheses, an exception is thrown.
+     * @throws Exception If an error occurs while validating the query.
      */
     @Test
     public void testNotWithJunctionWithoutParens() throws Exception {
@@ -53,22 +42,51 @@ public class ValidateNotVisitorTest {
         assertInvalid("FIELD1:123 NOT FIELD2:456 NOT FIELD3:abc");
     }
 
+    /**
+     * Generates a LUCENE {@link QueryNode} tree from the given query string.
+     * @param query The query string to parse.
+     * @return The LUCENE {@link QueryNode} tree generated from the query string.
+     * @throws QueryNodeParseException If the query cannot be parsed.
+     */
     private QueryNode parseQuery(String query) throws QueryNodeParseException {
         AccumuloSyntaxParser parser = new AccumuloSyntaxParser();
         return parser.parse(query, "");
     }
 
+    /**
+     * Asserts that the given query is valid.
+     * Useful when expecting no exception to be thrown.
+     * @param query The query to validate.
+     * @throws Exception If an error occurs while validating the query.
+     */
     private void assertValid(String query) throws Exception {
+        printQueryStructure(query);
         ValidateNotVisitor.validate(parseQuery(query));
     }
 
+    /**
+     * Asserts that the given query is invalid.
+     * Useful when expecting an exception to be thrown.
+     * @param query The query to validate.
+     * @throws Exception If an error occurs while validating the query.
+     */
     private void assertInvalid(String query) throws Exception {
+        printQueryStructure(query);
         assertThrows(IllegalArgumentException.class,
                 () -> ValidateNotVisitor.validate(parseQuery(query)),
         "Query did not throw an exception: " + query);
     }
 
+    /**
+     * Prints the structure of the query tree to the console if logQueryTrees is true.
+     * Useful for debugging.
+     * @param query The query to print the structure of.
+     * @throws QueryNodeParseException If the query cannot be parsed.
+     */
     private void printQueryStructure(String query) throws QueryNodeParseException {
+
+        if(!logQueryTrees) return;
+
         System.out.println("Query: " + query);
         AccumuloSyntaxParser parser = new AccumuloSyntaxParser();
         QueryNode node = parser.parse(query, "");
