@@ -28,6 +28,7 @@ import datawave.query.iterator.errors.ErrorKey;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlan;
+import datawave.query.tables.BatchScannerBuilder;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
@@ -35,7 +36,7 @@ import datawave.util.time.DateHelper;
 public class ShardRangeStream extends RangeStream {
 
     public ShardRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
-        super(config, scanners, helper);
+        super(config, config.getClient(), helper);
     }
 
     @Override
@@ -44,8 +45,16 @@ public class ShardRangeStream extends RangeStream {
             String queryString = JexlStringBuildingVisitor.buildQuery(node);
 
             int stackStart = config.getBaseIteratorPriority() + 40;
-            BatchScanner scanner = scanners.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(),
-                            true);
+            //  @formatter:off
+            BatchScanner scanner = new BatchScannerBuilder(client)
+                            .withTableName(config.getShardTableName())
+                            .withAuths(config.getAuthorizations())
+                            .withNumThreads(config.getNumQueryThreads())
+                            .withQuery(config.getQuery())
+                            .build();
+            //  @formatter:on
+
+            scannerManager.addScanner(scanner);
 
             IteratorSetting cfg = new IteratorSetting(stackStart++, "query", FieldIndexOnlyQueryIterator.class);
 
@@ -97,7 +106,7 @@ public class ShardRangeStream extends RangeStream {
 
             }
 
-        } catch (TableNotFoundException | DatawaveQueryException e) {
+        } catch (DatawaveQueryException e) {
             throw new RuntimeException(e);
         } finally {
             // shut down the executor as all threads have completed
