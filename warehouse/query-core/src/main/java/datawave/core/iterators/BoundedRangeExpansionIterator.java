@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.TreeSet;
 
+import datawave.query.jexl.LiteralRange;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -25,7 +26,9 @@ import datawave.query.Constants;
 /**
  * A {@link SeekingFilter} that attempts to expand bounded ranges using the global index
  * <p>
- * The caller is responsible for fetching the appropriate column families
+ * The caller is responsible for fetching the appropriate column families. The range is constructed from a {@link LiteralRange}.
+ * <p>
+ * The only thing this iterator does is advance through datatypes if a filter is supplied, advance to the start date, and advance to the next row within the range.
  */
 public class BoundedRangeExpansionIterator extends SeekingFilter implements OptionDescriber {
 
@@ -76,7 +79,7 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
 
     @Override
     public FilterResult filter(Key k, Value v) {
-        log.debug("filter key: {}", k.toStringNoTime());
+        log.trace("filter key: {}", k.toStringNoTime());
 
         // shard + null + datatype
         String cq = k.getColumnQualifier().toString();
@@ -84,18 +87,18 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
         String date = cq.substring(0, index);
 
         if (date.compareTo(startDate) < 0) {
-            log.debug("{} is before the start date {}, advancing to start date", date, startDate);
+            log.trace("{} is before the start date {}, advancing to start date", date, startDate);
             return new FilterResult(false, AdvanceResult.USE_HINT);
         }
 
         if (date.compareTo(endDate) > 0) {
-            log.debug("{} is past the end date {}, advancing to next row", date, endDate);
+            log.trace("{} is past the end date {}, advancing to next row", date, endDate);
             return new FilterResult(false, AdvanceResult.NEXT_ROW);
         }
 
         String datatype = cq.substring(index + 1);
         if (!datatypes.isEmpty() && !datatypes.contains(datatype)) {
-            log.debug("datatype {} was filtered out, advancing to next key", datatype);
+            log.trace("datatype {} was filtered out, advancing to next key", datatype);
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
@@ -120,7 +123,7 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
      */
     @Override
     public Key getNextKeyHint(Key k, Value v) {
-        log.debug("get next key hint: {}", k.toStringNoTime());
+        log.trace("get next key hint: {}", k.toStringNoTime());
 
         // shard + null + datatype
         String cq = k.getColumnQualifier().toString();
@@ -131,17 +134,17 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
             Text columnQualifier;
 
             if (datatypes.isEmpty()) {
-                log.debug("seek to start date");
+                log.trace("seek to start date");
                 columnQualifier = new Text(startDate + '\u0000');
             } else {
-                log.debug("seek to start date and datatype");
+                log.trace("seek to start date and datatype");
                 columnQualifier = new Text(startDate + '\u0000' + datatypes.first());
             }
 
             return new Key(k.getRow(), k.getColumnFamily(), columnQualifier);
         }
 
-        log.debug("next hint key was called in a bad state, reverting to no-op");
+        log.trace("next hint key was called in a bad state, reverting to no-op");
         return k;
     }
 
