@@ -20,46 +20,6 @@ import datawave.query.jexl.JexlASTHelper;
 public final class Projection implements Predicate<String> {
 
     private boolean initialized;
-
-    @Deprecated
-    public void setIncludes(Set<String> includes) {
-        if (this.initialized) {
-            throw new RuntimeException("This Projection instance was already initialized");
-        }
-
-        // do not make a copy of the incoming include fields. It could be a UniversalSet
-        this.projections = includes;
-        this.initialized = true;
-        type = ProjectionType.INCLUDES;
-    }
-
-    @Deprecated
-    public void setExcludes(Set<String> excludes) {
-        if (this.initialized) {
-            throw new RuntimeException("This Projection instance was already initialized");
-        }
-
-        this.projections = Sets.newHashSet(excludes);
-        this.initialized = true;
-        type = ProjectionType.EXCLUDES;
-    }
-
-    @Deprecated
-    public Set<String> getIncludes() {
-        return Collections.unmodifiableSet(this.projections);
-    }
-
-    @Deprecated
-    public Set<String> getExcludes() {
-        return Collections.unmodifiableSet(this.projections);
-    }
-
-    /* Explicit constructor needed now that the new constructor was added */
-    @Deprecated
-    public Projection() {
-        this.initialized = false;
-    }
-
     private Set<String> projections;
     private ProjectionType type;
 

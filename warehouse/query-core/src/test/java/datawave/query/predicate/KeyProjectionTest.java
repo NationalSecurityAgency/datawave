@@ -39,38 +39,9 @@ public class KeyProjectionTest {
         eventData.add(Maps.immutableEntry(new Key("20200314_1", "datatype\0uid", "FIELD_Z\0value_z"), "data"));
     }
 
-    @Deprecated
-    @Test(expected = RuntimeException.class)
-    public void testNoConfigurationDeprecated() {
-        KeyProjection projection = new KeyProjection();
-
-        Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
-    }
-
     @Test(expected = RuntimeException.class)
     public void testNoConfiguration() {
-        KeyProjection projection = new KeyProjection(null);
-
-        Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchConfiguration() {
-        KeyProjection projection = new KeyProjection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-
-        Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchOfTheSameConfiguration() {
-        KeyProjection projection = new KeyProjection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        KeyProjection projection = new KeyProjection(null, Projection.ProjectionType.INCLUDES);
 
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next()));
@@ -79,9 +50,6 @@ public class KeyProjectionTest {
     @Test
     public void testIncludes() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-
-        assertTrue(projection.getProjection().isUseIncludes());
-        assertFalse(projection.getProjection().isUseExcludes());
 
         // test against field index data
         Iterator<Entry<Key,String>> iter = fiData.iterator();
@@ -108,9 +76,6 @@ public class KeyProjectionTest {
     public void testExcludes() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
-        assertFalse(projection.getProjection().isUseIncludes());
-        assertTrue(projection.getProjection().isUseExcludes());
-
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next())); // FIELD_A
         assertTrue(projection.apply(iter.next())); // FIELD_B
@@ -131,14 +96,9 @@ public class KeyProjectionTest {
         assertTrue(projection.apply(iter.next())); // FIELD_Z
     }
 
-    @Deprecated
     @Test
     public void testIncludesDeprecated() {
-        KeyProjection projection = new KeyProjection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-
-        assertTrue(projection.getProjection().isUseIncludes());
-        assertFalse(projection.getProjection().isUseExcludes());
+        KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
 
         // test against field index data
         Iterator<Entry<Key,String>> iter = fiData.iterator();
@@ -161,14 +121,9 @@ public class KeyProjectionTest {
         assertFalse(projection.apply(iter.next())); // FIELD_Z
     }
 
-    @Deprecated
     @Test
-    public void testExcludesDepricated() {
-        KeyProjection projection = new KeyProjection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-
-        assertFalse(projection.getProjection().isUseIncludes());
-        assertTrue(projection.getProjection().isUseExcludes());
+    public void testExcludesDeprecated() {
+        KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next())); // FIELD_A
