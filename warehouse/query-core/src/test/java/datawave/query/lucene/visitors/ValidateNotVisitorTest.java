@@ -114,10 +114,6 @@ public class ValidateNotVisitorTest {
 
     private boolean logQueryTrees = true;
 
-    /****************************************************************************
-     * Grouped Test Cases
-     */
-
     @Test
     public void testSingleTermQueries() throws Exception {
         assertValid("FIELD1:abc");                        // Simple term
@@ -214,41 +210,6 @@ public class ValidateNotVisitorTest {
     public void testTestingPrecedenceAndGrouping() throws Exception {
         assertValid("FIELD1:abc AND ((FIELD2:def OR FIELD3:ghi) NOT FIELD4:jkl)");
         assertInvalid("FIELD1:abc AND FIELD2:def OR FIELD3:ghi NOT FIELD4:jkl FIELD5:mno"); // Ambiguous without parentheses
-    }
-
-    /*******************************************************************************
-     * Initial Test Cases
-     ******************************************************************************/
-
-    /**
-     * Validates the simplest case without a NOT.
-     * @throws Exception If an error occurs while validating the query.
-     */
-    @Test
-    public void testNotAbsent() throws Exception {
-        assertValid("FIELD1:def");
-    }
-
-    /**
-     * Validates that when a NOT is present in a query
-     * and no junction is present, no exception is thrown.
-     * @throws Exception If an error occurs while validating the query.
-     */
-    @Test
-    public void testNotWithoutJunction() throws Exception {
-        assertValid("FIELD2:def NOT FIELD3:123");
-    }
-
-    /**
-     * Validates that when a NOT is present in a query
-     * and a AND is present without parentheses, an exception is thrown.
-     * @throws Exception If an error occurs while validating the query.
-     */
-    @Test
-    public void testNotWithJunctionWithoutParens() throws Exception {
-        assertInvalid("FIELD1:abc OR FIELD2:def NOT FIELD3:123");
-        assertInvalid("FIELD1:abc AND FIELD2:def NOT FIELD3:123");
-        assertInvalid("FIELD1:123 NOT FIELD2:456 NOT FIELD3:abc");
     }
 
     /**
