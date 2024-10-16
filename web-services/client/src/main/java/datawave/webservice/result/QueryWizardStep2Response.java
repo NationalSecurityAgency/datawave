@@ -69,14 +69,14 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        builder.append("<H1>DataWave Query Form</H1>");
-        builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/" + theQLD.getName()
+        builder.append("<h1>DataWave Query Form</h1>");
+        builder.append("<form id=\"queryform\" action=\"/DataWave/BasicQuery/" + theQLD.getName()
                         + "/showQueryWizardStep3\"  method=\"post\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
         builder.append("<br/>");
         builder.append("<br/>");
-        builder.append("<H2>" + theQLD.getName() + " (" + theQLD.getLogicDescription() + ")</H2>");
+        builder.append("<h2>" + theQLD.getName() + " (" + theQLD.getLogicDescription() + ")</h2>");
         builder.append("<br/>");
-        builder.append("<H2>Required parameters</H2>");
+        builder.append("<h2>Required parameters</h2>");
         builder.append("<br/><br/>");
         builder.append("<table>");
         builder.append("<tr><td align=\"left\" width=\"10%\">Query Name:</td><td width=\"90%\"> <input type=\"text\" name=\"queryName\" placeholder=\"Enter value\" align=\"left\" size=\"150\" /></td><tr>");
@@ -109,7 +109,7 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
 
             builder.append("<br/><br/>\n");
 
-            builder.append("<H2>" + theQLD.getName() + " Supported parameters</H2>");
+            builder.append("<h2>" + theQLD.getName() + " Supported parameters</h2>");
             builder.append("<table>");
 
             for (String optional : theQLD.getSupportedParams()) {
@@ -132,7 +132,7 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
         }
 
         builder.append("<input type=\"submit\" value=\"Submit\"  align=\"center\">");
-        builder.append("</FORM>");
+        builder.append("</form>");
 
         /*
          * if (theQLD != null) { // There aren't any example queries so this doesn't look good in the UI builder.append("Example Queries: ");

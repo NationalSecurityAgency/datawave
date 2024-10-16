@@ -69,27 +69,27 @@ public class QueryWizardStep3Response extends BaseResponse implements HtmlProvid
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        builder.append("<H1>DataWave Query Plan</H1>");
+        builder.append("<h1>DataWave Query Plan</h1>");
         builder.append("<br/>");
         builder.append("<br/>");
         if (plan != null)
-            builder.append("<H2>The query plan: " + plan + "</H2>");
+            builder.append("<h2>The query plan: " + plan + "</h2>");
         else {
-            builder.append("<H2>Datawave could not generate a plan for the query");
+            builder.append("<h2>Datawave could not generate a plan for the query</h2>");
             if (errorMessage != null && !errorMessage.isEmpty()) {
-                builder.append("<br><H3>" + errorMessage + "</H3>");
+                builder.append("<br><h3>" + errorMessage + "</h3>");
             }
             return builder.toString();
         }
 
         builder.append("<br/>");
-        builder.append("<H2>Results</H2>");
+        builder.append("<h2>Results</h2>");
         builder.append("<br/><br/>");
-        builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/" + queryId
+        builder.append("<form id=\"queryform\" action=\"/DataWave/BasicQuery/" + queryId
                         + "/showQueryWizardResults\"  method=\"get\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
         builder.append("<center><input type=\"submit\" value=\"Next\" align=\"left\" width=\"50\" /></center>");
 
-        builder.append("</FORM>");
+        builder.append("</form>");
 
         return builder.toString();
     }

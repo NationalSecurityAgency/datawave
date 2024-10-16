@@ -36,8 +36,8 @@ import datawave.query.attributes.TypeAttribute;
 /**
  * This class provides the primary functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
  * client-side).
- * <H2>Grouping</H2>
- * <P>
+ * <h2>Grouping</h2>
+ * <p>
  * Grouping fields across documents will result in groupings of distinct value groupings for each specified field to group, as well as the total number of times
  * each particular grouping combination was seen. Fields to group by can be specified by the following options:
  * <ul>
@@ -57,11 +57,11 @@ import datawave.query.attributes.TypeAttribute;
  * Values of fields with the same context and instance are considered direct one-to-one grouping matches, and will be placed within the same groupings. Direct
  * matches cannot be determined for values of fields that do not have a context, and as such they will be combined with each possible grouping, effectively a
  * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them.
- * <H2>Aggregation</H2>
- * <P>
+ * <h2>Aggregation</h2>
+ * <p>
  * Once all valid groupings have been identified and counted, aggregation can be performed on the values of any specified fields for each grouping. The
  * aggregation fields can differ from the group-by fields. The following aggregation operations are supported:
- * <P>
+ * <p>
  * <strong>SUM</strong>: Sum up all the values for specified fields across groupings. This operation is limited to fields with numerical values. Fields may be
  * specified via:
  * <ul>
@@ -94,8 +94,8 @@ import datawave.query.attributes.TypeAttribute;
  * <li>The JEXL function {@code f:average()}.</li>
  * <li>The query parameter {@code average.fields}.</li>
  * </ul>
- * <H2>Model Mapping Notes</H2>
- * <P>
+ * <h2>Model Mapping Notes</h2>
+ * <p>
  * It is possible to supply a mapping model mappings derived from the query model. If supplied, the field names of entries will be mapped to their respective
  * root model mapping (if one exists) before they are grouped or aggregated. It is important to note that it is possible for multiple fields in a document to be
  * mapped to the same root model mapping. In this case, if multiple fields with the same value in a document are mapped to the same root model mapping, they

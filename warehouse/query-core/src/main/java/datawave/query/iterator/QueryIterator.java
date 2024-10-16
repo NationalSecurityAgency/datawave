@@ -133,7 +133,7 @@ import datawave.util.StringUtils;
  *
  * <br>
  *
- * <h1>Document Keys</h1>
+ * <h2>Document Keys</h2>
  * <p>
  * The source of Document Keys is one of the following:
  * <ol>
@@ -145,7 +145,7 @@ import datawave.util.StringUtils;
  *
  * <br>
  *
- * <h1>Transformations/Predicates</h1>
+ * <h2>Transformations/Predicates</h2>
  * <p>
  * The following transformations/predicates are applied (order sensitive):
  * <ol>

@@ -26,7 +26,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 
 /**
- * <h1>Overview</h1> This is a base query logic implementation that can handle delegating to a remote query logic
+ * <h2>Overview</h2> This is a base query logic implementation that can handle delegating to a remote query logic
  */
 public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implements RemoteQueryLogic<T> {
 

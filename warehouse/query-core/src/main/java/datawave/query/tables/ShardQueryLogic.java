@@ -107,7 +107,7 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 /**
- * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
+ * <h2>Overview</h2> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
  * table to return results based on the query. The runServerQuery method is the main method that is called from the web service, and it contains the logic used
  * to run the queries against ACCUMULO. Example queries:
  *
@@ -134,10 +134,10 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
  * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
  *
- * <h1>Constraints on Query Structure</h1> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
+ * <h2>Constraints on Query Structure</h2> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
  * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
  *
- * <h1>Notes on Optimization</h1> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
+ * <h2>Notes on Optimization</h2> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
  *
  * <pre>
  *  1. An 'or' conjunction exists in the query but not all of the terms are indexed.
@@ -145,7 +145,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  *  3. An unsupported operator exists in the query
  * </pre>
  *
- * <h1>Notes on Features</h1>
+ * <h2>Notes on Features</h2>
  *
  * <pre>
  *  1. If there is no type specified for a field in the metadata table, then it defaults to using the NoOpType. The default
