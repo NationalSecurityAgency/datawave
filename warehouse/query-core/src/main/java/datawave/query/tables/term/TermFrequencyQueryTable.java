@@ -14,12 +14,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
 
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -34,7 +34,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(TermFrequencyQueryTable.class);
+    protected static final Logger log = LoggerFactory.getLogger(TermFrequencyQueryTable.class);
 
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";

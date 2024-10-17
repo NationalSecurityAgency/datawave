@@ -12,13 +12,13 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Geometry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
@@ -38,7 +38,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class GeoWavePruningVisitor extends RebuildingVisitor {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(GeoWavePruningVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(GeoWavePruningVisitor.class);
 
     private final Multimap<String,String> prunedTerms;
     private final MetadataHelper metadataHelper;

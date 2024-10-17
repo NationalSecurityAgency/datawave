@@ -4,12 +4,12 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -22,7 +22,7 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
     public static final String INDEX_MISMATCH = "INDEX_MISMATCH";
     public static final String REVERSE_INDEX_MISMATCH = "REVERSE_INDEX_MISMATCH";
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(AbstractColumnBasedHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractColumnBasedHandler.class);
 
     protected IngestHelperInterface helper = null;
     protected Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();

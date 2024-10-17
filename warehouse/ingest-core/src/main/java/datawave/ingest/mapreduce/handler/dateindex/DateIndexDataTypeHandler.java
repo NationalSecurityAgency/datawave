@@ -20,12 +20,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -78,7 +78,7 @@ import datawave.util.StringUtils;
  */
 public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, RawRecordMetadata {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(DateIndexDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(DateIndexDataTypeHandler.class);
 
     public static final String DATEINDEX_TNAME = "date.index.table.name";
     public static final String DATEINDEX_LPRIORITY = "date.index.table.loader.priority";

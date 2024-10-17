@@ -14,16 +14,16 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Count the number of terms where bounded ranges count as 1 term
  */
 public class TermCountingVisitor extends BaseVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(TermCountingVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(TermCountingVisitor.class);
 
     public static int countTerms(JexlNode script) {
         TermCountingVisitor visitor = new TermCountingVisitor();

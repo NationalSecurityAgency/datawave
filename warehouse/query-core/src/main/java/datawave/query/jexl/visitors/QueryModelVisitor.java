@@ -34,14 +34,14 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.Node;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -56,7 +56,7 @@ import datawave.webservice.query.exception.QueryException;
  * Apply the forward mapping
  */
 public class QueryModelVisitor extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(QueryModelVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryModelVisitor.class);
 
     private final QueryModel queryModel;
     private final HashSet<ASTAndNode> expandedNodes;

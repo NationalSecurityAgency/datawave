@@ -5,9 +5,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -28,7 +28,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  */
 public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> implements RemoteQueryLogic<EdgeBase> {
 
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEdgeQueryLogic.class);
+    protected static final Logger log = LoggerFactory.getLogger(RemoteEdgeQueryLogic.class);
 
     protected EdgeModelFields edgeFields;
 

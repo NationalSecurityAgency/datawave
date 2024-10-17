@@ -1,9 +1,9 @@
 package datawave.query.planner;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.model.QueryModel;
@@ -16,7 +16,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class MetadataHelperQueryModelProvider implements QueryModelProvider {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(MetadataHelperQueryModelProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(MetadataHelperQueryModelProvider.class);
 
     // this must be the correct, initialized metadatahalper.Don't inject it, set it before calling getQueryModel
     protected MetadataHelper metadataHelper;
@@ -36,7 +36,7 @@ public class MetadataHelperQueryModelProvider implements QueryModelProvider {
                 config.setQueryModel(queryModel);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_MODEL_FETCH_ERROR, e);
-                log.error(qe);
+                log.error(String.valueOf(qe));
                 throw new DatawaveFatalQueryException(qe);
             }
 

@@ -12,12 +12,12 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeOverrideHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
@@ -28,7 +28,7 @@ import datawave.util.StringUtils;
 
 public class TypeRegistry extends HashMap<String,Type> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(TypeRegistry.class);
+    private static final Logger log = LoggerFactory.getLogger(TypeRegistry.class);
 
     public static final String ALL_PREFIX = "all";
 

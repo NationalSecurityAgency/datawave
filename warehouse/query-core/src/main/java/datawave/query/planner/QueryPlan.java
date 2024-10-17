@@ -10,12 +10,12 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.count.CountMap;
@@ -25,7 +25,7 @@ import datawave.query.util.count.CountMap;
  */
 public class QueryPlan {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(QueryPlan.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryPlan.class);
 
     protected String tableName = null;
     protected JexlNode queryTree = null;

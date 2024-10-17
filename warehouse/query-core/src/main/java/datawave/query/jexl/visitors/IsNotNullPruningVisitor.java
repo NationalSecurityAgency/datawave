@@ -58,9 +58,9 @@ import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 
@@ -90,7 +90,7 @@ import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
  */
 public class IsNotNullPruningVisitor extends BaseVisitor {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(IsNotNullPruningVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(IsNotNullPruningVisitor.class);
 
     private IsNotNullPruningVisitor() {}
 
