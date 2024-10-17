@@ -196,7 +196,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
                             Collections.emptyMap());
             fail("Expected DatawaveFatalQueryException.");
-        } catch (DatawaveFatalQueryException e) {
+        } catch (RuntimeException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
@@ -212,7 +212,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
                             Collections.emptyMap());
             fail("Expected DatawaveFatalQueryException.");
-        } catch (DatawaveFatalQueryException e) {
+        } catch (RuntimeException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }

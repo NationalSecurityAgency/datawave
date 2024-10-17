@@ -33,14 +33,14 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
     }
 
     @Override
-    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
+                    boolean isPreload) throws DatawaveQueryException {
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
             throw new FullTableScansDisallowedException(qe);
         }
 
-        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
+        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, queryString, isFullTable, isPreload);
         if (null == cfg) {
             try {
                 cfg = settingFuture.get();

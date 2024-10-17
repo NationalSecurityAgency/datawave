@@ -8,6 +8,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
@@ -28,8 +29,9 @@ import datawave.webservice.query.exception.NotFoundQueryException;
  *
  */
 public class QueryStopwatch {
-    public static final String NEWLINE = "\n", INDENT = "    ";
-    protected ArrayDeque<Entry<String,TraceStopwatch>> watches = Queues.newArrayDeque();
+    public static final String NEWLINE = "\n";
+    public static final String INDENT = "    ";
+    protected final ArrayDeque<Entry<String,TraceStopwatch>> watches = Queues.newArrayDeque();
 
     /**
      * Creates a new Stopwatch for use but does not start it
@@ -43,7 +45,9 @@ public class QueryStopwatch {
 
         TraceStopwatch sw = new TraceStopwatch(header);
 
-        watches.add(Maps.immutableEntry(header, sw));
+        synchronized (watches) {
+            watches.add(Maps.immutableEntry(header, sw));
+        }
 
         return sw;
     }
@@ -55,7 +59,7 @@ public class QueryStopwatch {
         return sw;
     }
 
-    public TraceStopwatch peek() {
+    public synchronized TraceStopwatch peek() {
         Entry<String,TraceStopwatch> entry = watches.peekLast();
         if (null == entry) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.STOPWATCH_MISSING);
@@ -65,13 +69,31 @@ public class QueryStopwatch {
         return entry.getValue();
     }
 
+    /**
+     * Get the stopwatch associated with the stage name, or null if no such stopwatch exists
+     *
+     * @param stageName
+     *            the stage name
+     * @return the stopwatch, or null if no such stopwatch exists
+     */
+    public TraceStopwatch get(String stageName) {
+        synchronized (watches) {
+            for (Map.Entry<String,TraceStopwatch> entry : watches) {
+                if (entry.getKey().equals(stageName)) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
     public String summarize() {
         List<String> logLines = summarizeAsList();
 
         return Joiner.on('\n').join(logLines);
     }
 
-    public List<String> summarizeAsList() {
+    public synchronized List<String> summarizeAsList() {
         if (this.watches.isEmpty()) {
             return Collections.emptyList();
         }
@@ -109,7 +131,9 @@ public class QueryStopwatch {
     }
 
     public void appendTimers(QueryStopwatch queryStopwatch) {
-        this.watches.addAll(queryStopwatch.watches);
+        synchronized (watches) {
+            this.watches.addAll(queryStopwatch.watches);
+        }
     }
 
     protected String formatMillis(long elapsedMillis) {
