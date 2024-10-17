@@ -31,7 +31,8 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -40,7 +41,6 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -70,7 +70,7 @@ import datawave.query.util.MetadataHelper;
  *
  */
 public class WhindexVisitor extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(WhindexVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(WhindexVisitor.class);
 
     private final Set<String> mappingFields;
     private final Map<String,Map<String,String>> valueSpecificFieldMappings;

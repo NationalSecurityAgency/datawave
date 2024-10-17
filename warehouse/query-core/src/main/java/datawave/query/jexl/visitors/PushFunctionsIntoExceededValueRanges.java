@@ -21,13 +21,13 @@ import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
@@ -41,7 +41,7 @@ import datawave.query.util.MetadataHelper;
  *
  */
 public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(PushFunctionsIntoExceededValueRanges.class);
+    private static final Logger log = LoggerFactory.getLogger(PushFunctionsIntoExceededValueRanges.class);
 
     private MetadataHelper helper;
     private Set<String> datatypeFilter;

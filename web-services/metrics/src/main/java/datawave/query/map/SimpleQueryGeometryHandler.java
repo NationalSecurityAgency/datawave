@@ -13,10 +13,10 @@ import javax.inject.Inject;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -34,7 +34,7 @@ import datawave.query.metrics.ShardTableQueryMetricHandler;
 @ApplicationScoped
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardTableQueryMetricHandler.class);
 
     private static final String LUCENE = "LUCENE";
     private static final String JEXL = "JEXL";
@@ -88,7 +88,7 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
 
             return !GeoFeatureVisitor.getGeoFeatures(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery)).isEmpty();
         } catch (Exception e) {
-            log.trace(new Exception("Unable to parse the geo features"));
+            log.trace(String.valueOf(new Exception("Unable to parse the geo features")));
         }
         return false;
     }

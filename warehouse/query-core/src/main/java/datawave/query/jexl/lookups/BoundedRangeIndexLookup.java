@@ -23,12 +23,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import com.google.common.base.Preconditions;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
@@ -49,7 +49,7 @@ import datawave.webservice.query.exception.QueryException;
  * An asynchronous index lookup which looks up concrete values for the specified bounded range.
  */
 public class BoundedRangeIndexLookup extends AsyncIndexLookup {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexLookup.class);
+    private static final Logger log = LoggerFactory.getLogger(BoundedRangeIndexLookup.class);
 
     private final LiteralRange<?> literalRange;
 
@@ -122,7 +122,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 range = new Range(startKey, true, endKey, literalRange.isUpperInclusive());
             } catch (IllegalArgumentException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
-                log.debug(qe);
+                log.debug(String.valueOf(qe));
                 throw new IllegalRangeArgumentException(qe);
             }
 
@@ -183,12 +183,12 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             } catch (TableNotFoundException e) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e,
                                 MessageFormat.format("Table: {0}", config.getIndexTableName()));
-                log.error(qe);
+                log.error(String.valueOf(qe));
                 throw new DatawaveFatalQueryException(qe);
 
             } catch (IOException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
-                log.debug(qe);
+                log.debug(String.valueOf(qe));
                 if (bs != null) {
                     scannerFactory.close(bs);
                 }

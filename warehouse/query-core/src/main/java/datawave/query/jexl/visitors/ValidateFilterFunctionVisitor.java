@@ -35,11 +35,11 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
@@ -55,7 +55,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  */
 public class ValidateFilterFunctionVisitor extends BaseVisitor {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ValidateFilterFunctionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(ValidateFilterFunctionVisitor.class);
 
     private final Set<String> indexOnlyFields;
 

@@ -12,9 +12,9 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -36,7 +36,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexFunctionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(RegexFunctionVisitor.class);
 
     protected Set<String> indexOnlyFields;
 

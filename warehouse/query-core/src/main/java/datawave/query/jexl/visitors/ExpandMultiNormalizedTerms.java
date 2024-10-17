@@ -33,13 +33,13 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -64,7 +64,7 @@ import datawave.webservice.query.exception.QueryException;
  * `LcNoDiacriticsType`, then a subtree of the form `TEXT == 'goOfBAlL'` will be transformed into `TEXT == 'goofball'`.
  */
 public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
+    private static final Logger log = LoggerFactory.getLogger(ExpandMultiNormalizedTerms.class);
 
     private final ShardQueryConfiguration config;
     private final HashSet<JexlNode> expandedNodes;
@@ -448,7 +448,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e,
                                     MessageFormat.format("Node: {0}, Datatypes: {1}", PrintingVisitor.formattedQueryString(node), dataTypes));
-                    log.error(qe);
+                    log.error(String.valueOf(qe));
                     throw new DatawaveFatalQueryException(qe);
                 }
             }

@@ -22,9 +22,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
@@ -59,7 +59,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
+    private static final Logger log = LoggerFactory.getLogger(FederatedQueryPlanner.class);
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
     private final Calendar calendar = Calendar.getInstance();

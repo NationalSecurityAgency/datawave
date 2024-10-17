@@ -31,7 +31,8 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -39,7 +40,6 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -63,7 +63,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class ExpandCompositeTerms extends RebuildingVisitor {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandCompositeTerms.class);
+    private static final Logger log = LoggerFactory.getLogger(ExpandCompositeTerms.class);
 
     private final ShardQueryConfiguration config;
 

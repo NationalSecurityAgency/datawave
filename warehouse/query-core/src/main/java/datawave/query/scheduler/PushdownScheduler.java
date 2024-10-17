@@ -21,7 +21,8 @@ import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -31,7 +32,6 @@ import com.google.common.collect.Lists;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
@@ -53,7 +53,7 @@ import datawave.query.util.MetadataHelperFactory;
  */
 public class PushdownScheduler extends Scheduler {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(PushdownScheduler.class);
 
     /**
      * Configuration reference.
