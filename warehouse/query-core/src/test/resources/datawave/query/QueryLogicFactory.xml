@@ -370,7 +370,26 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
         <property name="visitorManager" ref="TimedVisitorManager"/>
+        <property name="rewriteRegexTerms" value="true"/>
+        <property name="regexIncludeFields" ref="RegexIncludes"/>
+        <property name="regexExcludeFields" ref="RegexExcludes"/>
+        <property name="regexRewritePatterns" ref="RewritePatterns"/>
     </bean>
+
+    <util:set id="RegexIncludes" value-type="java.lang.String">
+        <value>TYPE</value>
+    </util:set>
+
+    <util:set id="RegexExcludes" value-type="java.lang.String">
+        <value>SHAPE</value>
+    </util:set>
+
+    <util:set id="RewritePatterns" value-type="datawave.query.jexl.visitors.RegexRewritePattern">
+        <bean class="datawave.query.jexl.visitors.RegexRewritePattern">
+            <constructor-arg index="0" value="SHAPE"/>
+            <constructor-arg index="1" value="hexag.*"/>
+        </bean>
+    </util:set>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
         <property name="debugEnabled" value="false"/>
