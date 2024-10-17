@@ -59,7 +59,8 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -67,7 +68,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
@@ -107,7 +107,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     private static final int MAX_MEDIAN = 20;
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RangeStream.class);
+    private static final Logger log = LoggerFactory.getLogger(RangeStream.class);
 
     /**
      * An assignment to this variable can be used to specify a stream of shards and days anywhere in the query. Used by the date function index query creation.
@@ -544,7 +544,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.unindexed(node);
                 }
             } catch (TableNotFoundException e) {
-                log.error(e);
+                log.error(String.valueOf(e));
                 throw new RuntimeException(e);
             }
             log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
@@ -617,7 +617,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.initialized(scannerSession, entryParser, node);
 
         } catch (Exception e) {
-            log.error(e);
+            log.error(String.valueOf(e));
             throw new RuntimeException(e);
         }
     }
@@ -673,7 +673,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 return ScannerStream.unknownField(node);
             }
         } catch (TableNotFoundException e) {
-            log.error(e);
+            log.error(String.valueOf(e));
             throw new RuntimeException(e);
         }
 

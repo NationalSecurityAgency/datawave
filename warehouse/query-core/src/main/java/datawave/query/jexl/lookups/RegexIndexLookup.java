@@ -19,14 +19,14 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.core.query.configuration.Result;
@@ -47,7 +47,7 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
 public class RegexIndexLookup extends AsyncIndexLookup {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
+    private static final Logger log = LoggerFactory.getLogger(RegexIndexLookup.class);
 
     protected MetadataHelper helper;
     protected Set<String> reverseFields;
@@ -130,7 +130,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 if (config.getDisallowedRegexPatterns().contains(pattern)) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
                                     MessageFormat.format("Pattern: {0}", pattern));
-                    log.debug(qe);
+                    log.debug(String.valueOf(qe));
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
 
@@ -141,7 +141,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     log.debug("Ignoring pattern that was not capable of being looked up in the index: " + pattern, e);
                     continue;
                 } catch (TableNotFoundException e) {
-                    log.error(e);
+                    log.error(String.valueOf(e));
                     throw new DatawaveFatalQueryException(e);
                 } catch (ExecutionException e) {
                     throw new DatawaveFatalQueryException(e);

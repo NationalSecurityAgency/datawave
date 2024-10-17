@@ -6,11 +6,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
@@ -21,7 +21,7 @@ import datawave.util.StringUtils;
 
 public class QueryOptionsSwitch {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(QueryOptionsSwitch.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryOptionsSwitch.class);
 
     public static void apply(Map<String,String> optionsMap, ShardQueryConfiguration config) {
         GroupFields groupFields;

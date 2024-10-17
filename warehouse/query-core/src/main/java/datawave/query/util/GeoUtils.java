@@ -10,15 +10,14 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
-
-import datawave.core.common.logging.ThreadConfigurableLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This utility class contains a variety of methods which can be used to perform operations on Geo ranges.
@@ -28,7 +27,7 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
  */
 public class GeoUtils {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(GeoUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(GeoUtils.class);
 
     /**
      * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.

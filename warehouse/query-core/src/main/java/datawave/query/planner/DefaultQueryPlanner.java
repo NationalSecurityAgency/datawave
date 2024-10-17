@@ -48,7 +48,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -60,7 +61,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
@@ -181,7 +181,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultQueryPlanner.class);
 
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
 
@@ -423,7 +423,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("Stack trace for overflow " + e);
             }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
+            log.warn(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         } catch (NoResultsException e) {
             if (log.isTraceEnabled()) {
@@ -1240,7 +1240,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return metadataHelper.getExpansionFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            log.info(qe);
+            log.info(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         }
     }
@@ -1416,11 +1416,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (EmptyUnfieldedTermExpansionException e) {
             // The visitor will only throw this if we cannot expand anything resulting in empty query
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ", query));
-            log.info(qe);
+            log.info(String.valueOf(qe));
             throw new NoResultsException(qe);
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            log.info(qe);
+            log.info(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         }
     }
@@ -1488,7 +1488,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, MessageFormat.format(
                             "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, settings.getQueryAuthorizations()));
-            log.error(qe);
+            log.error(String.valueOf(qe));
             throw new InvalidQueryException(qe);
         }
 
@@ -1945,7 +1945,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.FIELD_FETCH_ERROR, e);
-            log.error(qe);
+            log.error(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         }
 
@@ -1980,21 +1980,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 stopwatch.stop();
             }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, soe);
-            log.warn(qe);
+            log.warn(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         } catch (ParseException e) {
             if (stopwatch != null) {
                 stopwatch.stop();
             }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e, MessageFormat.format("Query: {0}", query));
-            log.warn(qe);
+            log.warn(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         } catch (PatternSyntaxException e) {
             if (stopwatch != null) {
                 stopwatch.stop();
             }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REGEX, e, MessageFormat.format("Query: {0}", query));
-            log.warn(qe);
+            log.warn(String.valueOf(qe));
             throw new DatawaveFatalQueryException(qe);
         }
         return queryTree;

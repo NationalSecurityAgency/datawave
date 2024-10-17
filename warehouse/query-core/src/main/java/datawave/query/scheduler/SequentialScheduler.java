@@ -9,11 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
@@ -27,7 +27,7 @@ import datawave.query.tables.stats.ScanSessionStats;
  *
  */
 public class SequentialScheduler extends Scheduler {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(SequentialScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(SequentialScheduler.class);
 
     protected final ShardQueryConfiguration config;
     protected final ScannerFactory scannerFactory;

@@ -15,19 +15,19 @@ import java.util.UUID;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 
 public class ExceededOr {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
+    private static final Logger log = LoggerFactory.getLogger(ExceededOr.class);
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 

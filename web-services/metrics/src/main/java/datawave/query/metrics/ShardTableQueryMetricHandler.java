@@ -62,7 +62,6 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
@@ -109,7 +108,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 @SuppressWarnings("unused")
 public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
+    private static final Logger log = Logger.getLogger(ShardTableQueryMetricHandler.class);
 
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
     protected static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
@@ -367,7 +366,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Date lastUpdated = updatedQueryMetric.getLastUpdated();
 
         try {
-            enableLogs(false);
             String sid = updatedQueryMetric.getUser();
             if (sid == null) {
                 sid = datawavePrincipal.getShortName();
@@ -439,8 +437,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
 
             // write new entry
             writeMetrics(updatedQueryMetric, Collections.singletonList(updatedQueryMetric), lastUpdated, false);
-        } finally {
-            enableLogs(true);
+        } catch (Exception e) {
+
         }
     }
 
@@ -524,7 +522,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         QueryMetricListResponse response = new QueryMetricListResponse();
 
         try {
-            enableLogs(false);
 
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             Date end = new Date();
@@ -550,8 +547,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             response.setResult(queryMetrics);
 
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
-        } finally {
-            enableLogs(true);
+        } catch (Exception e) {
+
         }
 
         return response;
@@ -774,38 +771,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return helperMap;
     }
 
-    private void enableLogs(boolean enable) {
-        if (enable) {
-            ThreadConfigurableLogger.clearThreadLevels();
-        } else {
-            // All loggers that are encountered in the call chain during metrics calls should be included here.
-            // If you need to add a logger name here, you also need to change the Logger declaration where that Logger is instantiated
-            // Change:
-            // Logger log = Logger.getLogger(MyClass.class);
-            // to
-            // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
-
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.index.lookup.RangeStream", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.planner.ThreadedRangeBundlerIterator", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.tables.ShardQueryLogic", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
-
-            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.TypeRegistry", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.config.ingest.BaseIngestHelper", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.util.RegionTimer", Level.ERROR);
-            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.Event", Level.OFF);
-        }
-    }
-
     @Override
     public void reload() {
         try {
@@ -844,7 +809,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     QueryMetricsSummaryResponse response) {
 
         try {
-            enableLogs(false);
 
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
@@ -870,10 +834,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             response = processQueryMetricsSummary(queryMetrics, end, response);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
-        } finally {
-            enableLogs(true);
         }
-
         return response;
     }
 }

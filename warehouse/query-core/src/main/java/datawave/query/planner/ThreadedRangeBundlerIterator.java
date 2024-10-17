@@ -16,13 +16,13 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
@@ -31,7 +31,7 @@ import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.count.CountMapSerDe;
 
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(ThreadedRangeBundlerIterator.class);
 
     private final long maxWaitValue;
     private final TimeUnit maxWaitUnit;
@@ -324,7 +324,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                 try {
                     this.rangeConsumerThread.join(500);
                 } catch (InterruptedException e) {
-                    log.warn(e);
+                    log.warn(String.valueOf(e));
                     this.rangeConsumerThread.interrupt();
                 }
             }
@@ -362,7 +362,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             try {
                 rangeIterable.close();
             } catch (IOException e) {
-                log.error(e);
+                log.error(String.valueOf(e));
             }
         }
 

@@ -28,13 +28,13 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -55,7 +55,7 @@ import datawave.query.util.MetadataHelper;
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
  */
 public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(RegexIndexExpansionVisitor.class);
 
     protected boolean expandUnfieldedNegations;
 

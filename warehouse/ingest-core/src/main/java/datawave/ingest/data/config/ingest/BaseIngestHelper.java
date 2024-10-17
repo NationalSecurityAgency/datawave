@@ -15,7 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
@@ -25,7 +26,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -138,7 +138,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
     private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;
