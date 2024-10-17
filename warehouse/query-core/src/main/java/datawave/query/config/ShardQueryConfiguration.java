@@ -515,6 +515,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private double fieldIndexHoleMinThreshold = 1.0d;
 
     /**
+     * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
+     * debug logging is enabled.
+     */
+    private int maxLinesToPrint = -1;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -753,6 +759,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setMaxLinesToPrint(other.getMaxLinesToPrint());
     }
 
     /**
@@ -3242,5 +3249,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public int getMaxLinesToPrint() {
+        return maxLinesToPrint;
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        this.maxLinesToPrint = maxLinesToPrint;
     }
 }
