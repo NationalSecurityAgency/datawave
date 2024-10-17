@@ -240,8 +240,15 @@
                 <entry key="shardIndex">
                     <map><entry key="scan_type" value="index-table-executor-event"/></map>
                 </entry>
+                <!-- NOTE: this execution hint is reserved by datawave -->
+                <entry key="expansion">
+                    <map><entry key="scan_type" value="index-expansion-executor"/></map>
+                </entry>
             </map>
         </property>
+
+        <property name="useQueryTreeScanHintRules" value="true"/>
+        <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
 
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
@@ -279,6 +286,8 @@
         <property name="sortQueryPostIndexWithTermCounts" value="true" />
         <property name="sortQueryPostIndexWithFieldCounts" value="true" />
     </bean>
+
+    <bean id="IvaratorScanHintRule" class="datawave.query.planner.scanhints.IvaratorScanHint"/>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
         <property name="collapseUids" value="false"/>

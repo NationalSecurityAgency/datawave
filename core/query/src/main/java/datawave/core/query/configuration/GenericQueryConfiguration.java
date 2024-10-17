@@ -77,6 +77,9 @@ public class GenericQueryConfiguration implements Serializable {
 
     // either IMMEDIATE or EVENTUAL
     private Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels = new HashMap<>();
+    // provides default scan hints
+    // NOTE: accumulo reserves the execution hint name 'meta'
+    // NOTE: datawave reserves the execution hint name 'expansion' for index expansion
     private Map<String,Map<String,String>> tableHints = new HashMap<>();
 
     /**

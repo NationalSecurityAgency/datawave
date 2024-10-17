@@ -602,6 +602,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             String queryString = fieldName + "=='" + literal + "'";
             options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
 
+            // easier to apply hints to new options than deal with copying existing hints between
+            options.applyExecutionHints(config.getIndexTableName(), config.getTableHints());
+            options.applyConsistencyLevel(config.getIndexTableName(), config.getTableConsistencyLevels());
+
             scannerSession.setOptions(options);
             scannerSession.setMaxResults(config.getMaxIndexBatchSize());
             scannerSession.setExecutor(streamExecutor);
