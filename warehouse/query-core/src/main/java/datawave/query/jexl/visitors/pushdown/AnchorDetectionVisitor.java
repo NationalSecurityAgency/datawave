@@ -194,12 +194,12 @@ public class AnchorDetectionVisitor extends ShortCircuitBaseVisitor {
 
         switch (instance.getType()) {
             case BOUNDED_RANGE:
-            case DELAYED:
-            case EVALUATION_ONLY:
             case EXCEEDED_OR:
             case EXCEEDED_TERM:
             case EXCEEDED_VALUE:
                 return true;
+            case DELAYED:
+            case EVALUATION_ONLY:
             default:
                 return false;
         }

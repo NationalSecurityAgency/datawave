@@ -893,7 +893,7 @@ public abstract class ShapesTest {
         withQuery("ONLY_HEX == 'hexa' && TYPE =~ 'reg.*'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertPlannedQuery("ONLY_HEX == 'hexa' && filter:includeRegex(TYPE, 'reg.*')");
+        assertPlannedQuery("ONLY_HEX == 'hexa' && ((_Eval_ = true) && (TYPE =~ 'reg.*'))");
     }
 
     @Test
@@ -909,6 +909,6 @@ public abstract class ShapesTest {
         withQuery("ONLY_HEX == 'hexa' && SHAPE =~ 'hexag.*'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertPlannedQuery("ONLY_HEX == 'hexa' && filter:includeRegex(SHAPE, 'hexag.*')");
+        assertPlannedQuery("ONLY_HEX == 'hexa' && ((_Eval_ = true) && (SHAPE =~ 'hexag.*'))");
     }
 }

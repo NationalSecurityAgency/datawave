@@ -115,8 +115,6 @@ class AnchorDetectionVisitorTest {
         //  @formatter:off
         String[] anchorMarkers = new String[] {
                         "((_Bounded_ = true) && (F > '2' && F < '5'))",
-                        "((_Delayed_ = true) && (F == '1'))",
-                        "((_Eval_ = true) && (F == '1'))",
                         "((_List_ = true) && ((id = 'id') && (field = 'F') && (params = '{\"ranges\":[[\"[r1\",\"r2]\"],[\"[r3\",\"f4]\"]]}')))",
                         "((_Value_ = true) && (F =~ 'ba.*'))",
                         "((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))"
@@ -127,6 +125,8 @@ class AnchorDetectionVisitorTest {
 
         //  @formatter:off
         String[] nonAnchorMarkers = new String[]{
+                        "((_Delayed_ = true) && (F == '1'))",
+                        "((_Eval_ = true) && (F == '1'))",
                         "((_Hole_ = true) && (F == '1'))",
                         "((_Drop_ = true) && (F == '1'))",
                         "((_Lenient_ = true) && (F == '1'))",

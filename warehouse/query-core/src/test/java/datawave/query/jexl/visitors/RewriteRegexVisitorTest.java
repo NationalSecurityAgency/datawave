@@ -34,8 +34,8 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testSingleTermAndRegex() {
         // term and indexed regex
-        test("F == 'a' && F =~ 'ba.*'", "F == 'a' && filter:includeRegex(F, 'ba.*')");
-        test("IO == 'a' && F =~ 'ba.*'", "IO == 'a' && filter:includeRegex(F, 'ba.*')");
+        test("F == 'a' && F =~ 'ba.*'", "F == 'a' && ((_Eval_ = true) && (F =~ 'ba.*'))");
+        test("IO == 'a' && F =~ 'ba.*'", "IO == 'a' && ((_Eval_ = true) && (F =~ 'ba.*'))");
         test("NA == 'a' && F =~ 'ba.*'");
 
         // term and index only regex is never rewritten
@@ -44,9 +44,9 @@ public class RewriteRegexVisitorTest {
         test("NA == 'a' && IO =~ 'ba.*'");
 
         // term and non-indexed regex is always rewritten
-        test("F == 'a' && NA =~ 'ba.*'", "F == 'a' && filter:includeRegex(NA, 'ba.*')");
-        test("IO == 'a' && NA =~ 'ba.*'", "IO == 'a' && filter:includeRegex(NA, 'ba.*')");
-        test("NA == 'a' && NA =~ 'ba.*'", "NA == 'a' && filter:includeRegex(NA, 'ba.*')");
+        test("F == 'a' && NA =~ 'ba.*'", "F == 'a' && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("IO == 'a' && NA =~ 'ba.*'", "IO == 'a' && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("NA == 'a' && NA =~ 'ba.*'", "NA == 'a' && ((_Eval_ = true) && (NA =~ 'ba.*'))");
     }
 
     // A or regex
@@ -63,9 +63,9 @@ public class RewriteRegexVisitorTest {
         test("NA == 'a' || IO =~ 'ba.*'");
 
         // top level union with non-indexed regex is a full table scan, do not rewrite
-        test("F == 'a' || NA =~ 'ba.*'", "F == 'a' || filter:includeRegex(NA, 'ba.*')");
-        test("IO == 'a' || NA =~ 'ba.*'", "IO == 'a' || filter:includeRegex(NA, 'ba.*')");
-        test("NA == 'a' || NA =~ 'ba.*'", "NA == 'a' || filter:includeRegex(NA, 'ba.*')");
+        test("F == 'a' || NA =~ 'ba.*'", "F == 'a' || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("IO == 'a' || NA =~ 'ba.*'", "IO == 'a' || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("NA == 'a' || NA =~ 'ba.*'", "NA == 'a' || ((_Eval_ = true) && (NA =~ 'ba.*'))");
     }
 
     // (A and B) or regex
@@ -89,22 +89,22 @@ public class RewriteRegexVisitorTest {
 
         // the input queries are non-executable, non-indexed field still gets rewritten
         // all combinations of nested intersection and non-indexed regex
-        test("(F == 'a' && F == 'b') || NA =~ 'ba.*'", "(F == 'a' && F == 'b') || filter:includeRegex(NA, 'ba.*')");
-        test("(F == 'a' && IO == 'b') || NA =~ 'ba.*'", "(F == 'a' && IO == 'b') || filter:includeRegex(NA, 'ba.*')");
-        test("(F == 'a' && NA == 'b') || NA =~ 'ba.*'", "(F == 'a' && NA == 'b') || filter:includeRegex(NA, 'ba.*')");
-        test("(IO == 'a' && IO == 'b') || NA =~ 'ba.*'", "(IO == 'a' && IO == 'b') || filter:includeRegex(NA, 'ba.*')");
-        test("(IO == 'a' && NA == 'b') || NA =~ 'ba.*'", "(IO == 'a' && NA == 'b') || filter:includeRegex(NA, 'ba.*')");
-        test("(NA == 'a' && NA == 'b') || Na =~ 'ba.*'", "(NA == 'a' && NA == 'b') || filter:includeRegex(Na, 'ba.*')");
+        test("(F == 'a' && F == 'b') || NA =~ 'ba.*'", "(F == 'a' && F == 'b') || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(F == 'a' && IO == 'b') || NA =~ 'ba.*'", "(F == 'a' && IO == 'b') || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(F == 'a' && NA == 'b') || NA =~ 'ba.*'", "(F == 'a' && NA == 'b') || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(IO == 'a' && IO == 'b') || NA =~ 'ba.*'", "(IO == 'a' && IO == 'b') || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(IO == 'a' && NA == 'b') || NA =~ 'ba.*'", "(IO == 'a' && NA == 'b') || ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(NA == 'a' && NA == 'b') || NA =~ 'ba.*'", "(NA == 'a' && NA == 'b') || ((_Eval_ = true) && (NA =~ 'ba.*'))");
     }
 
     // (A or B) and regex
     @Test
     public void testNestedUnionAndRegex() {
         // all combinations of nested intersection and indexed regex
-        test("(F == 'a' || F == 'b') && F =~ 'ba.*'", "(F == 'a' || F == 'b') && filter:includeRegex(F, 'ba.*')");
-        test("(F == 'a' || IO == 'b') && F =~ 'ba.*'", "(F == 'a' || IO == 'b') && filter:includeRegex(F, 'ba.*')");
+        test("(F == 'a' || F == 'b') && F =~ 'ba.*'", "(F == 'a' || F == 'b') && ((_Eval_ = true) && (F =~ 'ba.*'))");
+        test("(F == 'a' || IO == 'b') && F =~ 'ba.*'", "(F == 'a' || IO == 'b') && ((_Eval_ = true) && (F =~ 'ba.*'))");
         test("(F == 'a' || NA == 'b') && F =~ 'ba.*'");
-        test("(IO == 'a' || IO == 'b') && F =~ 'ba.*'", "(IO == 'a' || IO == 'b') && filter:includeRegex(F, 'ba.*')");
+        test("(IO == 'a' || IO == 'b') && F =~ 'ba.*'", "(IO == 'a' || IO == 'b') && ((_Eval_ = true) && (F =~ 'ba.*'))");
         test("(IO == 'a' || NA == 'b') && F =~ 'ba.*'");
         test("(NA == 'a' || NA == 'b') && F =~ 'ba.*'");
 
@@ -117,21 +117,21 @@ public class RewriteRegexVisitorTest {
         test("(NA == 'a' || NA == 'b') && IO =~ 'ba.*'");
 
         // all combinations of nested intersection and non-indexed regex
-        test("(F == 'a' || F == 'b') && NA =~ 'ba.*'", "(F == 'a' || F == 'b') && filter:includeRegex(NA, 'ba.*')");
-        test("(F == 'a' || IO == 'b') && NA =~ 'ba.*'", "(F == 'a' || IO == 'b') && filter:includeRegex(NA, 'ba.*')");
-        test("(F == 'a' || NA == 'b') && NA =~ 'ba.*'", "(F == 'a' || NA == 'b') && filter:includeRegex(NA, 'ba.*')");
-        test("(IO == 'a' || IO == 'b') && NA =~ 'ba.*'", "(IO == 'a' || IO == 'b') && filter:includeRegex(NA, 'ba.*')");
-        test("(IO == 'a' || NA == 'b') && NA =~ 'ba.*'", "(IO == 'a' || NA == 'b') && filter:includeRegex(NA, 'ba.*')");
-        test("(NA == 'a' || NA == 'b') && Na =~ 'ba.*'", "(NA == 'a' || NA == 'b') && filter:includeRegex(Na, 'ba.*')");
+        test("(F == 'a' || F == 'b') && NA =~ 'ba.*'", "(F == 'a' || F == 'b') && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(F == 'a' || IO == 'b') && NA =~ 'ba.*'", "(F == 'a' || IO == 'b') && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(F == 'a' || NA == 'b') && NA =~ 'ba.*'", "(F == 'a' || NA == 'b') && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(IO == 'a' || IO == 'b') && NA =~ 'ba.*'", "(IO == 'a' || IO == 'b') && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(IO == 'a' || NA == 'b') && NA =~ 'ba.*'", "(IO == 'a' || NA == 'b') && ((_Eval_ = true) && (NA =~ 'ba.*'))");
+        test("(NA == 'a' || NA == 'b') && NA =~ 'ba.*'", "(NA == 'a' || NA == 'b') && ((_Eval_ = true) && (NA =~ 'ba.*'))");
     }
 
     // A and (B or regex)
     @Test
     public void testIntersectionWithNestedUnionWithSingleRegex() {
         // top level indexed term, variable indexed state for nested term, indexed regex
-        test("F == 'a' && (F == 'b' || F =~ 'ba.*')", "F == 'a' && (F == 'b' || filter:includeRegex(F, 'ba.*'))");
-        test("F == 'a' && (IO == 'b' || F =~ 'ba.*')", "F == 'a' && (IO == 'b' || filter:includeRegex(F, 'ba.*'))");
-        test("F == 'a' && (NA == 'b' || F =~ 'ba.*')", "F == 'a' && (NA == 'b' || filter:includeRegex(F, 'ba.*'))");
+        test("F == 'a' && (F == 'b' || F =~ 'ba.*')", "F == 'a' && (F == 'b' || ((_Eval_ = true) && (F =~ 'ba.*')))");
+        test("F == 'a' && (IO == 'b' || F =~ 'ba.*')", "F == 'a' && (IO == 'b' || ((_Eval_ = true) && (F =~ 'ba.*')))");
+        test("F == 'a' && (NA == 'b' || F =~ 'ba.*')", "F == 'a' && (NA == 'b' || ((_Eval_ = true) && (F =~ 'ba.*')))");
 
         // top level indexed term, variable indexed state for nested term, index only regex
         test("F == 'a' && (F == 'b' || IO =~ 'ba.*')");
@@ -139,14 +139,14 @@ public class RewriteRegexVisitorTest {
         test("F == 'a' && (NA == 'b' || IO =~ 'ba.*')");
 
         // top level indexed term, variable indexed state for nested term, non-indexed regex
-        test("F == 'a' && (F == 'b' || NA =~ 'ba.*')", "F == 'a' && (F == 'b' || filter:includeRegex(NA, 'ba.*'))");
-        test("F == 'a' && (IO == 'b' || NA =~ 'ba.*')", "F == 'a' && (IO == 'b' || filter:includeRegex(NA, 'ba.*'))");
-        test("F == 'a' && (NA == 'b' || NA =~ 'ba.*')", "F == 'a' && (NA == 'b' || filter:includeRegex(NA, 'ba.*'))");
+        test("F == 'a' && (F == 'b' || NA =~ 'ba.*')", "F == 'a' && (F == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
+        test("F == 'a' && (IO == 'b' || NA =~ 'ba.*')", "F == 'a' && (IO == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
+        test("F == 'a' && (NA == 'b' || NA =~ 'ba.*')", "F == 'a' && (NA == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
 
         // top level index only term, variable indexed state for nested term, indexed regex
-        test("IO == 'a' && (F == 'b' || F =~ 'ba.*')", "IO == 'a' && (F == 'b' || filter:includeRegex(F, 'ba.*'))");
-        test("IO == 'a' && (IO == 'b' || F =~ 'ba.*')", "IO == 'a' && (IO == 'b' || filter:includeRegex(F, 'ba.*'))");
-        test("IO == 'a' && (NA == 'b' || F =~ 'ba.*')", "IO == 'a' && (NA == 'b' || filter:includeRegex(F, 'ba.*'))");
+        test("IO == 'a' && (F == 'b' || F =~ 'ba.*')", "IO == 'a' && (F == 'b' || ((_Eval_ = true) && (F =~ 'ba.*')))");
+        test("IO == 'a' && (IO == 'b' || F =~ 'ba.*')", "IO == 'a' && (IO == 'b' || ((_Eval_ = true) && (F =~ 'ba.*')))");
+        test("IO == 'a' && (NA == 'b' || F =~ 'ba.*')", "IO == 'a' && (NA == 'b' || ((_Eval_ = true) && (F =~ 'ba.*')))");
 
         // top level index only term, variable indexed state for nested term, index only regex
         test("IO == 'a' && (F == 'b' || IO =~ 'ba.*')");
@@ -154,9 +154,9 @@ public class RewriteRegexVisitorTest {
         test("IO == 'a' && (NA == 'b' || IO =~ 'ba.*')");
 
         // top level index only term, variable indexed state for nested term, non-indexed regex
-        test("IO == 'a' && (F == 'b' || NA =~ 'ba.*')", "IO == 'a' && (F == 'b' || filter:includeRegex(NA, 'ba.*'))");
-        test("IO == 'a' && (IO == 'b' || NA =~ 'ba.*')", "IO == 'a' && (IO == 'b' || filter:includeRegex(NA, 'ba.*'))");
-        test("IO == 'a' && (NA == 'b' || NA =~ 'ba.*')", "IO == 'a' && (NA == 'b' || filter:includeRegex(NA, 'ba.*'))");
+        test("IO == 'a' && (F == 'b' || NA =~ 'ba.*')", "IO == 'a' && (F == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
+        test("IO == 'a' && (IO == 'b' || NA =~ 'ba.*')", "IO == 'a' && (IO == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
+        test("IO == 'a' && (NA == 'b' || NA =~ 'ba.*')", "IO == 'a' && (NA == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
 
         // top level non-indexed term, variable indexed state for nested term, indexed regex
         test("NA == 'a' && (F == 'b' || F =~ 'ba.*')");
@@ -169,9 +169,9 @@ public class RewriteRegexVisitorTest {
         test("NA == 'a' && (NA == 'b' || IO =~ 'ba.*')");
 
         // top level non-indexed term, variable indexed state for nested term, non-indexed regex
-        test("NA == 'a' && (F == 'b' || NA =~ 'ba.*')", "NA == 'a' && (F == 'b' || filter:includeRegex(NA, 'ba.*'))");
-        test("NA == 'a' && (IO == 'b' || NA =~ 'ba.*')", "NA == 'a' && (IO == 'b' || filter:includeRegex(NA, 'ba.*'))");
-        test("NA == 'a' && (NA == 'b' || NA =~ 'ba.*')", "NA == 'a' && (NA == 'b' || filter:includeRegex(NA, 'ba.*'))");
+        test("NA == 'a' && (F == 'b' || NA =~ 'ba.*')", "NA == 'a' && (F == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
+        test("NA == 'a' && (IO == 'b' || NA =~ 'ba.*')", "NA == 'a' && (IO == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
+        test("NA == 'a' && (NA == 'b' || NA =~ 'ba.*')", "NA == 'a' && (NA == 'b' || ((_Eval_ = true) && (NA =~ 'ba.*')))");
     }
 
     // A or (B and regex)
@@ -227,67 +227,67 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testIntersectionWithNestedUnionOfRegexes() {
         // indexed term and union of regexes with all possible index states
-        test("F == 'a' && (F =~ 'ab.*' || F =~ 'ac.*')", "F == 'a' && (filter:includeRegex(F, 'ab.*') || filter:includeRegex(F, 'ac.*'))");
-        test("F == 'a' && (F =~ 'ab.*' || IO =~ 'ac.*')", "F == 'a' && (filter:includeRegex(F, 'ab.*') || IO =~ 'ac.*')");
-        test("F == 'a' && (F =~ 'ab.*' || NA =~ 'ac.*')", "F == 'a' && (filter:includeRegex(F, 'ab.*') || filter:includeRegex(NA, 'ac.*'))");
+        test("F == 'a' && (F =~ 'ab.*' || F =~ 'ac.*')", "F == 'a' && (((_Eval_ = true) && (F =~ 'ab.*')) || ((_Eval_ = true) && (F =~ 'ac.*')))");
+        test("F == 'a' && (F =~ 'ab.*' || IO =~ 'ac.*')", "F == 'a' && (((_Eval_ = true) && (F =~ 'ab.*')) || IO =~ 'ac.*')");
+        test("F == 'a' && (F =~ 'ab.*' || NA =~ 'ac.*')", "F == 'a' && (((_Eval_ = true) && (F =~ 'ab.*')) || ((_Eval_ = true) && (NA =~ 'ac.*')))");
         test("F == 'a' && (IO =~ 'ab.*' || IO =~ 'ac.*')");
-        test("F == 'a' && (IO =~ 'ab.*' || NA =~ 'ac.*')", "F == 'a' && (IO =~ 'ab.*' || filter:includeRegex(NA, 'ac.*'))");
-        test("F == 'a' && (NA =~ 'ab.*' || NA =~ 'ac.*')", "F == 'a' && (filter:includeRegex(NA, 'ab.*') || filter:includeRegex(NA, 'ac.*'))");
+        test("F == 'a' && (IO =~ 'ab.*' || NA =~ 'ac.*')", "F == 'a' && (IO =~ 'ab.*' || ((_Eval_ = true) && (NA =~ 'ac.*')))");
+        test("F == 'a' && (NA =~ 'ab.*' || NA =~ 'ac.*')", "F == 'a' && (((_Eval_ = true) && (NA =~ 'ab.*')) || ((_Eval_ = true) && (NA =~ 'ac.*')))");
 
         // index only term and union of regexes with all possible index states
-        test("IO == 'a' && (F =~ 'ab.*' || F =~ 'ac.*')", "IO == 'a' && (filter:includeRegex(F, 'ab.*') || filter:includeRegex(F, 'ac.*'))");
-        test("IO == 'a' && (F =~ 'ab.*' || IO =~ 'ac.*')", "IO == 'a' && (filter:includeRegex(F, 'ab.*') || IO =~ 'ac.*')");
-        test("IO == 'a' && (F =~ 'ab.*' || NA =~ 'ac.*')", "IO == 'a' && (filter:includeRegex(F, 'ab.*') || filter:includeRegex(NA, 'ac.*'))");
+        test("IO == 'a' && (F =~ 'ab.*' || F =~ 'ac.*')", "IO == 'a' && (((_Eval_ = true) && (F =~ 'ab.*')) || ((_Eval_ = true) && (F =~ 'ac.*')))");
+        test("IO == 'a' && (F =~ 'ab.*' || IO =~ 'ac.*')", "IO == 'a' && (((_Eval_ = true) && (F =~ 'ab.*')) || IO =~ 'ac.*')");
+        test("IO == 'a' && (F =~ 'ab.*' || NA =~ 'ac.*')", "IO == 'a' && (((_Eval_ = true) && (F =~ 'ab.*')) || ((_Eval_ = true) && (NA =~ 'ac.*')))");
         test("IO == 'a' && (IO =~ 'ab.*' || IO =~ 'ac.*')");
-        test("IO == 'a' && (IO =~ 'ab.*' || NA =~ 'ac.*')", "IO == 'a' && (IO =~ 'ab.*' || filter:includeRegex(NA, 'ac.*'))");
-        test("IO == 'a' && (NA =~ 'ab.*' || NA =~ 'ac.*')", "IO == 'a' && (filter:includeRegex(NA, 'ab.*') || filter:includeRegex(NA, 'ac.*'))");
+        test("IO == 'a' && (IO =~ 'ab.*' || NA =~ 'ac.*')", "IO == 'a' && (IO =~ 'ab.*' || ((_Eval_ = true) && (NA =~ 'ac.*')))");
+        test("IO == 'a' && (NA =~ 'ab.*' || NA =~ 'ac.*')", "IO == 'a' && (((_Eval_ = true) && (NA =~ 'ab.*')) || ((_Eval_ = true) && (NA =~ 'ac.*')))");
 
         // non-indexed tem and union of regexes with all possible index states
         test("NA == 'a' && (F =~ 'ab.*' || F =~ 'ac.*')");
         test("NA == 'a' && (F =~ 'ab.*' || IO =~ 'ac.*')");
-        test("NA == 'a' && (F =~ 'ab.*' || NA =~ 'ac.*')", "NA == 'a' && (F =~ 'ab.*' || filter:includeRegex(NA, 'ac.*'))");
+        test("NA == 'a' && (F =~ 'ab.*' || NA =~ 'ac.*')", "NA == 'a' && (F =~ 'ab.*' || ((_Eval_ = true) && (NA =~ 'ac.*')))");
         test("NA == 'a' && (IO =~ 'ab.*' || IO =~ 'ac.*')");
-        test("NA == 'a' && (IO =~ 'ab.*' || NA =~ 'ac.*')", "NA == 'a' && (IO =~ 'ab.*' || filter:includeRegex(NA, 'ac.*'))");
-        test("NA == 'a' && (NA =~ 'ab.*' || NA =~ 'ac.*')", "NA == 'a' && (filter:includeRegex(NA, 'ab.*') || filter:includeRegex(NA, 'ac.*'))");
+        test("NA == 'a' && (IO =~ 'ab.*' || NA =~ 'ac.*')", "NA == 'a' && (IO =~ 'ab.*' || ((_Eval_ = true) && (NA =~ 'ac.*')))");
+        test("NA == 'a' && (NA =~ 'ab.*' || NA =~ 'ac.*')", "NA == 'a' && (((_Eval_ = true) && (NA =~ 'ab.*')) || ((_Eval_ = true) && (NA =~ 'ac.*')))");
     }
 
     // A or (regex and regex)
     @Test
     public void testUnionWithNestedIntersectionOfRegexes() {
         // indexed term or intersection of regexes with all possible index states
-        test("F == 'a' || (F =~ 'ab.*' && F =~ 'ac.*')", "F == 'a' || (filter:includeRegex(F, 'ab.*') && F =~ 'ac.*')");
-        test("F == 'a' || (F =~ 'ab.*' && IO =~ 'ac.*')", "F == 'a' || (filter:includeRegex(F, 'ab.*') && IO =~ 'ac.*')");
-        test("F == 'a' || (F =~ 'ab.*' && NA =~ 'ac.*')", "F == 'a' || (F =~ 'ab.*' && filter:includeRegex(NA, 'ac.*'))");
+        test("F == 'a' || (F =~ 'ab.*' && F =~ 'ac.*')", "F == 'a' || (((_Eval_ = true) && (F =~ 'ab.*')) && F =~ 'ac.*')");
+        test("F == 'a' || (F =~ 'ab.*' && IO =~ 'ac.*')", "F == 'a' || (((_Eval_ = true) && (F =~ 'ab.*')) && IO =~ 'ac.*')");
+        test("F == 'a' || (F =~ 'ab.*' && NA =~ 'ac.*')", "F == 'a' || (F =~ 'ab.*' && ((_Eval_ = true) && (NA =~ 'ac.*')))");
         test("F == 'a' || (IO =~ 'ab.*' && IO =~ 'ac.*')");
-        test("F == 'a' || (IO =~ 'ab.*' && NA =~ 'ac.*')", "F == 'a' || (IO =~ 'ab.*' && filter:includeRegex(NA, 'ac.*'))");
-        test("F == 'a' || (NA =~ 'ab.*' && NA =~ 'ac.*')", "F == 'a' || (filter:includeRegex(NA, 'ab.*') && filter:includeRegex(NA, 'ac.*'))");
+        test("F == 'a' || (IO =~ 'ab.*' && NA =~ 'ac.*')", "F == 'a' || (IO =~ 'ab.*' && ((_Eval_ = true) && (NA =~ 'ac.*')))");
+        test("F == 'a' || (NA =~ 'ab.*' && NA =~ 'ac.*')", "F == 'a' || (((_Eval_ = true) && (NA =~ 'ab.*')) && ((_Eval_ = true) && (NA =~ 'ac.*')))");
 
         // index only term or intersection of regexes with all possible index states
-        test("IO == 'a' || (F =~ 'ab.*' && F =~ 'ac.*')", "IO == 'a' || (filter:includeRegex(F, 'ab.*') && F =~ 'ac.*')");
-        test("IO == 'a' || (F =~ 'ab.*' && IO =~ 'ac.*')", "IO == 'a' || (filter:includeRegex(F, 'ab.*') && IO =~ 'ac.*')");
-        test("IO == 'a' || (F =~ 'ab.*' && NA =~ 'ac.*')", "IO == 'a' || (F =~ 'ab.*' && filter:includeRegex(NA, 'ac.*'))");
+        test("IO == 'a' || (F =~ 'ab.*' && F =~ 'ac.*')", "IO == 'a' || (((_Eval_ = true) && (F =~ 'ab.*')) && F =~ 'ac.*')");
+        test("IO == 'a' || (F =~ 'ab.*' && IO =~ 'ac.*')", "IO == 'a' || (((_Eval_ = true) && (F =~ 'ab.*')) && IO =~ 'ac.*')");
+        test("IO == 'a' || (F =~ 'ab.*' && NA =~ 'ac.*')", "IO == 'a' || (F =~ 'ab.*' && ((_Eval_ = true) && (NA =~ 'ac.*')))");
         test("IO == 'a' || (IO =~ 'ab.*' && IO =~ 'ac.*')");
-        test("IO == 'a' || (IO =~ 'ab.*' && NA =~ 'ac.*')", "IO == 'a' || (IO =~ 'ab.*' && filter:includeRegex(NA, 'ac.*'))");
-        test("IO == 'a' || (NA =~ 'ab.*' && NA =~ 'ac.*')", "IO == 'a' || (filter:includeRegex(NA, 'ab.*') && filter:includeRegex(NA, 'ac.*'))");
+        test("IO == 'a' || (IO =~ 'ab.*' && NA =~ 'ac.*')", "IO == 'a' || (IO =~ 'ab.*' && ((_Eval_ = true) && (NA =~ 'ac.*')))");
+        test("IO == 'a' || (NA =~ 'ab.*' && NA =~ 'ac.*')", "IO == 'a' || (((_Eval_ = true) && (NA =~ 'ab.*')) && ((_Eval_ = true) && (NA =~ 'ac.*')))");
 
         // non-indexed tem or intersection of regexes with all possible index states
-        test("NA == 'a' || (F =~ 'ab.*' && F =~ 'ac.*')", "NA == 'a' || (filter:includeRegex(F, 'ab.*') && F =~ 'ac.*')");
-        test("NA == 'a' || (F =~ 'ab.*' && IO =~ 'ac.*')", "NA == 'a' || (filter:includeRegex(F, 'ab.*') && IO =~ 'ac.*')");
-        test("NA == 'a' || (F =~ 'ab.*' && NA =~ 'ac.*')", "NA == 'a' || (F =~ 'ab.*' && filter:includeRegex(NA, 'ac.*'))");
+        test("NA == 'a' || (F =~ 'ab.*' && F =~ 'ac.*')", "NA == 'a' || (((_Eval_ = true) && (F =~ 'ab.*')) && F =~ 'ac.*')");
+        test("NA == 'a' || (F =~ 'ab.*' && IO =~ 'ac.*')", "NA == 'a' || (((_Eval_ = true) && (F =~ 'ab.*')) && IO =~ 'ac.*')");
+        test("NA == 'a' || (F =~ 'ab.*' && NA =~ 'ac.*')", "NA == 'a' || (F =~ 'ab.*' && ((_Eval_ = true) && (NA =~ 'ac.*')))");
         test("NA == 'a' || (IO =~ 'ab.*' && IO =~ 'ac.*')");
-        test("NA == 'a' || (IO =~ 'ab.*' && NA =~ 'ac.*')", "NA == 'a' || (IO =~ 'ab.*' && filter:includeRegex(NA, 'ac.*'))");
-        test("NA == 'a' || (NA =~ 'ab.*' && NA =~ 'ac.*')", "NA == 'a' || (filter:includeRegex(NA, 'ab.*') && filter:includeRegex(NA, 'ac.*'))");
+        test("NA == 'a' || (IO =~ 'ab.*' && NA =~ 'ac.*')", "NA == 'a' || (IO =~ 'ab.*' && ((_Eval_ = true) && (NA =~ 'ac.*')))");
+        test("NA == 'a' || (NA =~ 'ab.*' && NA =~ 'ac.*')", "NA == 'a' || (((_Eval_ = true) && (NA =~ 'ab.*')) && ((_Eval_ = true) && (NA =~ 'ac.*')))");
     }
 
     // (A or regex) and (B or regex)
     @Test
     public void testNestedUnionsWithDistributedRegexes() {
         String query = "(F == 'a' || F =~ 'ab.*') && (F == 'b' || F =~ 'ac.*')";
-        String expected = "(F == 'a' || filter:includeRegex(F, 'ab.*')) && (F == 'b' || F =~ 'ac.*')";
+        String expected = "(F == 'a' || ((_Eval_ = true) && (F =~ 'ab.*'))) && (F == 'b' || F =~ 'ac.*')";
         test(query, expected);
 
         query = "(F == 'a' || NA =~ 'ab.*') && (F == 'b' || F =~ 'ac.*')";
-        expected = "(F == 'a' || filter:includeRegex(NA, 'ab.*')) && (F == 'b' || F =~ 'ac.*')";
+        expected = "(F == 'a' || ((_Eval_ = true) && (NA =~ 'ab.*'))) && (F == 'b' || F =~ 'ac.*')";
         test(query, expected);
     }
 
@@ -295,7 +295,7 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testNestedIntersectionsWithDistributedRegexes() {
         String query = "(F == 'a' && F =~ 'ab.*') || (F == 'b' && F =~ 'ac.*')";
-        String expected = "(F == 'a' && filter:includeRegex(F, 'ab.*')) || (F == 'b' && filter:includeRegex(F, 'ac.*'))";
+        String expected = "(F == 'a' && ((_Eval_ = true) && (F =~ 'ab.*'))) || (F == 'b' && ((_Eval_ = true) && (F =~ 'ac.*')))";
         test(query, expected);
     }
 
@@ -303,7 +303,7 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testPartialAnchorAndNestedUnionRegex() {
         String query = "(F == 'a' || F == 'b') && (F =~ 'ab.*' || F =~ 'ac.*')";
-        String expected = "(F == 'a' || F == 'b') && (filter:includeRegex(F, 'ab.*') || filter:includeRegex(F, 'ac.*'))";
+        String expected = "(F == 'a' || F == 'b') && (((_Eval_ = true) && (F =~ 'ab.*')) || ((_Eval_ = true) && (F =~ 'ac.*')))";
         test(query, expected);
     }
 
@@ -311,7 +311,7 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testLeftAnchorAndDeeplyNestedRegex() {
         String query = "F == 'a' && (F == 'b' || (F == 'c' && F =~ 'ab.*'))";
-        String expected = "F == 'a' && (F == 'b' || (F == 'c' && filter:includeRegex(F, 'ab.*')))";
+        String expected = "F == 'a' && (F == 'b' || (F == 'c' && ((_Eval_ = true) && (F =~ 'ab.*'))))";
         test(query, expected);
     }
 
@@ -319,14 +319,14 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testRightAnchorAndDeeplyNestedRegex() {
         String query = "((F =~ 'ab.*' && F == 'c') || F == 'b') && F == 'a'";
-        String expected = "((filter:includeRegex(F, 'ab.*') && F == 'c') || F == 'b') && F == 'a'";
+        String expected = "((((_Eval_ = true) && (F =~ 'ab.*')) && F == 'c') || F == 'b') && F == 'a'";
         test(query, expected);
     }
 
     @Test
     public void testUnionOfTwoLegalRewrites() {
         String query = "(F == 'a' && F =~ 'ab.*') || (F == 'b' && F =~ 'ac.*')";
-        String expected = "(F == 'a' && filter:includeRegex(F, 'ab.*')) || (F == 'b' && filter:includeRegex(F, 'ac.*'))";
+        String expected = "(F == 'a' && ((_Eval_ = true) && (F =~ 'ab.*'))) || (F == 'b' && ((_Eval_ = true) && (F =~ 'ac.*')))";
         test(query, expected);
     }
 
@@ -340,13 +340,13 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testIncludeFieldsPreventNoRewrites() {
         withIncludeFields(Set.of("F", "F2"));
-        test("IO == 'a' && F =~ 'ab.*' && F2 =~ 'ac.*'", "IO == 'a' && filter:includeRegex(F, 'ab.*') && filter:includeRegex(F2, 'ac.*')");
+        test("IO == 'a' && F =~ 'ab.*' && F2 =~ 'ac.*'", "IO == 'a' && ((_Eval_ = true) && (F =~ 'ab.*')) && ((_Eval_ = true) && (F2 =~ 'ac.*'))");
     }
 
     @Test
     public void testIncludeFieldsPreventSomeLegalRewrites() {
         withIncludeFields(Set.of("F2"));
-        test("IO == 'a' && F =~ 'ab.*' && F2 =~ 'ac.*'", "IO == 'a' && F =~ 'ab.*' && filter:includeRegex(F2, 'ac.*')");
+        test("IO == 'a' && F =~ 'ab.*' && F2 =~ 'ac.*'", "IO == 'a' && F =~ 'ab.*' && ((_Eval_ = true) && (F2 =~ 'ac.*'))");
     }
 
     @Test
@@ -358,7 +358,7 @@ public class RewriteRegexVisitorTest {
     @Test
     public void testExcludeFieldsPreventSomeLegalRewrites() {
         withExcludeFields(Set.of("F2"));
-        test("IO == 'a' && F =~ 'ab.*' && F2 =~ 'ac.*'", "IO == 'a' && filter:includeRegex(F, 'ab.*') && F2 =~ 'ac.*'");
+        test("IO == 'a' && F =~ 'ab.*' && F2 =~ 'ac.*'", "IO == 'a' && ((_Eval_ = true) && (F =~ 'ab.*')) && F2 =~ 'ac.*'");
     }
 
     @Test
@@ -374,7 +374,7 @@ public class RewriteRegexVisitorTest {
         withPattern("F", "zz.*");
         withExcludeFields(Set.of("F"));
         // pattern beats exclude fields
-        test("IO == 'a' && F =~ 'zz.*'", "IO == 'a' && filter:includeRegex(F, 'zz.*')");
+        test("IO == 'a' && F =~ 'zz.*'", "IO == 'a' && ((_Eval_ = true) && (F =~ 'zz.*'))");
     }
 
     @Test
@@ -382,7 +382,7 @@ public class RewriteRegexVisitorTest {
         withPattern("F", "zz.*");
         withIncludeFields(Set.of("F2"));
         // pattern beats include fields
-        test("IO == 'a' && F =~ 'zz.*'", "IO == 'a' && filter:includeRegex(F, 'zz.*')");
+        test("IO == 'a' && F =~ 'zz.*'", "IO == 'a' && ((_Eval_ = true) && (F =~ 'zz.*'))");
     }
 
     @Test
@@ -391,7 +391,7 @@ public class RewriteRegexVisitorTest {
         withIncludeFields(Set.of("F2"));
         withExcludeFields(Set.of("F"));
         // pattern beats include fields
-        test("IO == 'a' && F =~ 'zz.*'", "IO == 'a' && filter:includeRegex(F, 'zz.*')");
+        test("IO == 'a' && F =~ 'zz.*'", "IO == 'a' && ((_Eval_ = true) && (F =~ 'zz.*'))");
     }
 
     /**

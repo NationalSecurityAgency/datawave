@@ -12,13 +12,13 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.jexl.visitors.pushdown.AnchorDetectionVisitor;
 
 /**
- * Rewrites regex terms as filter functions provided an anchor exists.
+ * Rewrites regex terms provided an anchor exists. Regex terms are wrapped in EvalOnly marker
  * <p>
  * An anchor is an executable term or subtree.
  * <p>
@@ -175,8 +175,8 @@ public class RewriteRegexVisitor extends ShortCircuitBaseVisitor {
             String literal = (String) JexlASTHelper.getLiteralValue(node);
 
             if (isNodeRewritableFromRules(field, literal)) {
-                JexlNode rewrite = JexlNodeFactory.buildFunctionNode("filter", "includeRegex", field, literal);
-                JexlNodes.replaceChild(node.jjtGetParent(), node, rewrite);
+                JexlNode marker = QueryPropertyMarker.create(node, MarkerType.EVALUATION_ONLY);
+                JexlNodes.replaceChild(node.jjtGetParent(), node, marker);
             }
         }
 
