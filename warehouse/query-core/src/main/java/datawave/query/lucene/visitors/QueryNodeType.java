@@ -90,6 +90,78 @@ public enum QueryNodeType {
         }
         ENUM_MAP = map;
     }
+
+    public static BaseVisitor getVisitorFromQueryNode(QueryNode node) {
+        QueryNodeType type = get(node.getClass());
+        switch (type) {
+            case AND:
+                return new ValidateAndVisitor();
+            case ANY:
+                return new ValidateAnyVisitor();
+            case FIELD:
+                return new ValidateFieldVisitor();
+            case BOOLEAN:
+                return new ValidateBooleanVisitor();
+            case BOOST:
+                return new ValidateBoostVisitor();
+            case DELETED:
+                return new ValidateDeletedVisitor();
+            case FUZZY:
+                return new ValidateFuzzyVisitor();
+            case GROUP:
+                return new ValidateGroupVisitor();
+            case MATCH_ALL_DOCS:
+                return new ValidateMatchAllDocsVisitor();
+            case MATCH_NO_DOCS:
+                return new ValidateMatchNoDocsVisitor();
+            case MODIFIER:
+                return new ValidateModifierVisitor();
+            case NO_TOKEN_FOUND:
+                return new ValidateNoTokenFoundVisitor();
+            case OPAQUE:
+                return new ValidateOpaqueVisitor();
+            case OR:
+                return new ValidateOrVisitor();
+            case PATH:
+                return new ValidatePathVisitor();
+            case PHRASE_SLOP:
+                return new ValidatePhraseSlopVisitor();
+            case PROXIMITY:
+                return new ValidateProximityVisitor();
+            case QUOTED_FIELD:
+                return new ValidateQuotedFieldVisitor();
+            case SLOP:
+                return new ValidateSlopVisitor();
+            case TOKENIZED_PHRASE:
+                return new ValidateTokenizedPhraseVisitor();
+            case ABSTRACT_RANGE:
+                return new ValidateAbstractRangeVisitor();
+            case BOOLEAN_MODIFIER:
+                return new ValidateBooleanModifierVisitor();
+            case MULTI_PHRASE:
+                return new ValidateMultiPhraseVisitor();
+            case POINT:
+                return new ValidatePointVisitor();
+            case POINT_RANGE:
+                return new ValidatePointRangeVisitor();
+            case PREFIX_WILDCARD:
+                return new ValidatePrefixWildcardVisitor();
+            case REGEX:
+                return new ValidateRegexVisitor();
+            case SYNONYM:
+                return new ValidateSynonymVisitor();
+            case TERM_RANGE:
+                return new ValidateTermRangeVisitor();
+            case WILDCARD:
+                return new ValidateWildcardVisitor();
+            case FUNCTION:
+                return new ValidateFunctionVisitor();
+            case NOT_BOOLEAN:
+                return new ValidateNotVisitor();
+            default:
+                throw new IllegalArgumentException("No visitor for " + type);
+        }
+    }
     
     /**
      * Returns the {@link QueryNodeType} for the given {@link QueryNode} class, or null if one does not exist.
