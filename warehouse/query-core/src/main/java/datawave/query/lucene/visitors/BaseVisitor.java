@@ -40,8 +40,8 @@ import java.util.Map;
 
 public class BaseVisitor {
 
-    public static void validate(QueryNode node) {
-        BaseVisitor visitor = QueryNodeType.getVisitorFromQueryNode(node);
+    public static void validate(QueryNode node) throws InstantiationException, IllegalAccessException {
+        BaseVisitor visitor = QueryNodeType.getVisitorInstanceFor(node);
         visitor.visit(node, null);
     }
 

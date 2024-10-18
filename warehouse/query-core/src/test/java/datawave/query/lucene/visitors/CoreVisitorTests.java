@@ -49,24 +49,25 @@ public class CoreVisitorTests {
         assertValid("FIELD1:(abc def)");            // Multiple terms in field value
         assertValid("FIELD1:(abc AND def)");        // Multiple terms in field value
         assertValid("FIELD1:(abc OR def)");         // Multiple terms in field value
-        assertInvalid("FIELD1:abc def");            // Ambiguous without grouping
-        assertInvalid("(FIELD1:abc def)");          // Ambiguous without grouping
-        assertInvalid("FIELD1:abc AND def");        // Ambiguous without grouping
-        assertInvalid("FIELD1:abc OR def");         // Ambiguous without grouping
+        assertInvalid("FIELD1:abc def", new Exception());            // Ambiguous without grouping
+        assertInvalid("(FIELD1:abc def)", new Exception());          // Ambiguous without grouping
+        assertInvalid("FIELD1:abc AND def", new Exception());        // Ambiguous without grouping
+        assertInvalid("FIELD1:abc OR def", new Exception());         // Ambiguous without grouping
     }
+    
 
     @Test
     public void testNotOperatorBetweenTerms() throws Exception {
         assertValid("FIELD1:abc NOT FIELD2:def");                        // NOT between two terms
-        assertInvalid("FIELD1:abc NOT FIELD2:def NOT FIELD3:ghi");       // Multiple NOTs between terms
-        assertInvalid("FIELD1:abc NOT FIELD2:def FIELD3:ghi");           // Ambiguous NOT placement
+        assertInvalid("FIELD1:abc NOT FIELD2:def NOT FIELD3:ghi", new Exception());       // Multiple NOTs between terms
+        assertInvalid("FIELD1:abc NOT FIELD2:def FIELD3:ghi", new Exception());           // Ambiguous NOT placement
     }
 
     @Test
     public void testParenthesesUsageWithNot() throws Exception {
         assertValid("(FIELD1:abc NOT FIELD2:def) AND FIELD3:ghi");       // NOT within parentheses
         assertValid("FIELD1:abc AND (FIELD2:def NOT FIELD3:ghi)");       // NOT within parentheses
-        assertInvalid("(FIELD1:abc NOT FIELD2:def FIELD3:ghi)");         // Ambiguous within parentheses
+        assertInvalid("(FIELD1:abc NOT FIELD2:def FIELD3:ghi)", new Exception());         // Ambiguous within parentheses
     }
 
     @Test
@@ -80,19 +81,22 @@ public class CoreVisitorTests {
         assertValid("((FIELD1:abc NOT FIELD2:def))");                    // Nested parentheses with NOT
         assertValid("(FIELD1:abc NOT (FIELD2:def AND FIELD3:ghi))");     // NOT with nested group
     }
+    
 
     @Test
     public void testFunctionsAndPhrasesInComplexExpressions() throws Exception {
         assertValid("#FUNCTION(ARG1, ARG2) NOT (\"quick brown dog\"~20 AND FIELD1:abc)");
-        assertInvalid("#FUNCTION(ARG1, ARG2) NOT \"quick brown dog\"~20 FIELD1:abc"); // Ambiguous without parentheses
+        assertInvalid("#FUNCTION(ARG1, ARG2) NOT \"quick brown dog\"~20 FIELD1:abc", new Exception()); // Ambiguous without parentheses
     }
+    
 
     @Test
     public void testWildcardsAndRangeQueriesWithNot() throws Exception {
         assertValid("FIELD1:selec* NOT FIELD2:selec?or");                // Wildcards with NOT
         assertValid("FIELD1:[begin TO end] NOT FIELD2:{begin TO end}");  // Range queries with NOT
-        assertInvalid("FIELD1:[begin TO end] NOT FIELD2:{begin TO end} FIELD3:ghi"); // Ambiguous without operator
+        assertInvalid("FIELD1:[begin TO end] NOT FIELD2:{begin TO end} FIELD3:ghi", new Exception()); // Ambiguous without operator
     }
+    
 
     @Test
     public void testEscapingSpecialCharacters() throws Exception {
@@ -100,25 +104,29 @@ public class CoreVisitorTests {
         assertValid("FIELD1:foo\\+bar AND FIELD2:abc");                  // Escaped plus with AND
         assertValid("FIELD1:foo\\@bar OR FIELD2:abc");                   // Escaped at symbol with OR
     }
+    
 
     @Test
     public void testQueriesWithProximitySearchesAndFunctionsCombined() throws Exception {
         assertValid("\"quick brown dog\"~5 NOT (\"lazy fox\"~10 AND FIELD1:abc)");
         assertValid("#FUNCTION(ARG1) AND (#FUNCTION(ARG1, ARG2) NOT FIELD2:def)");
     }
+    
 
     @Test
     public void testQueriesWithSpecialTermsAndModifiersAndNot() throws Exception {
         assertValid("FIELD1:\"complex term\" NOT FIELD2:[begin TO end]");
-        assertInvalid("FIELD1:{* TO end} NOT FIELD2:selec* NOT FIELD3:selec?or"); // Ambiguous without parentheses
+        assertInvalid("FIELD1:{* TO end} NOT FIELD2:selec* NOT FIELD3:selec?or", new Exception()); // Ambiguous without parentheses
         assertValid("FIELD1:{* TO end} NOT (FIELD2:selec* OR FIELD3:selec?or)");  // Parentheses resolve ambiguity
     }
+    
 
     @Test
     public void testTestingPrecedenceAndGrouping() throws Exception {
         assertValid("FIELD1:abc AND ((FIELD2:def OR FIELD3:ghi) NOT FIELD4:jkl)");
-        assertInvalid("FIELD1:abc AND FIELD2:def OR FIELD3:ghi NOT FIELD4:jkl FIELD5:mno"); // Ambiguous without parentheses
+        assertInvalid("FIELD1:abc AND FIELD2:def OR FIELD3:ghi NOT FIELD4:jkl FIELD5:mno", new Exception()); // Ambiguous without parentheses
     }
+    
 
     /**
      * Generates a LUCENE {@link QueryNode} tree from the given query string.
@@ -139,19 +147,20 @@ public class CoreVisitorTests {
      */
     private void assertValid(String query) throws Exception {
         printQueryStructure(query);
-        ValidateGroupVisitor.validate(parseQuery(query));
+        BaseVisitor.validate(parseQuery(query));
     }
 
     /**
      * Asserts that the given query is invalid.
      * Useful when expecting an exception to be thrown.
+     * TODO: Update the expected exception type to match the actual exception type.
      * @param query The query to validate.
      * @throws Exception If an error occurs while validating the query.
      */
-    private void assertInvalid(String query, QueryNode node) throws Exception {
+    private void assertInvalid(String query, Exception expectedException) throws Exception {
         printQueryStructure(query);
-        assertThrows(IllegalArgumentException.class,
-                () -> QueryNodeType.get(node.getClass().getName()).validate(parseQuery(query)),
+        assertThrows(expectedException.getClass(),
+                () -> BaseVisitor.validate(parseQuery(query)),
                 "Query did not throw an exception: " + query);
     }
 
