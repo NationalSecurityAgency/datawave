@@ -69,7 +69,7 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
         IteratorOptions opts = new IteratorOptions(getClass().getName(), "Expands bounded ranges using the global index", null, null);
         opts.addNamedOption(START_DATE, "The start date");
         opts.addNamedOption(END_DATE, "The end date");
-        opts.addNamedOption(DATATYPES_OPT, "The set of datatypes used to filter keys");
+        opts.addNamedOption(DATATYPES_OPT, "The set of datatypes used to filter keys (optional)");
         return opts;
     }
 
@@ -104,7 +104,7 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
         }
 
         if (prevRow != null && prevRow.equals(k.getRow())) {
-            // should never get here
+            // this iterator should only return a single key per unique row, thus the previous row should never match the current row.
             log.warn("should never see a duplicate row -- skip to next row");
             return new FilterResult(false, AdvanceResult.NEXT_ROW);
         }
