@@ -147,7 +147,7 @@ public class CoreVisitorTests {
         assertValid("FIELD:\"term1 OR term2\"");
     }
 
-    /*Generated test cases*/
+    /*General test cases*/
 
     @Test
     public void testSingleTermQueries() throws Exception {
@@ -179,7 +179,8 @@ public class CoreVisitorTests {
         assertValid("FIELD1:abc AND FIELD2:def AND FIELD3:ghi");
         assertValid("FIELD1:abc OR FIELD2:def");          // Simple OR
         assertValid("FIELD1:abc OR FIELD2:def OR FIELD3:ghi");
-        assertValid("FIELD1:abc AND FIELD2:def OR FIELD3:ghi");  // Combining AND and OR
+        assertInvalid("FIELD1:abc AND FIELD2:def OR FIELD3:ghi", new Exception());  // Combining AND and OR
+        assertInvalid("FIELD1:abc OR FIELD2:def AND FIELD3:ghi", new Exception());  // Also ambiguous
     }
 
     @Test
