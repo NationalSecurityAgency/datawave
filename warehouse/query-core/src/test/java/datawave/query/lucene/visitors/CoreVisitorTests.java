@@ -91,7 +91,7 @@ public class CoreVisitorTests {
      * assertValid("FIELD1:abc AND ((FIELD2:def OR FIELD3:ghi) NOT FIELD4:jkl)");
      * assertInvalid("FIELD1:abc AND FIELD2:def OR FIELD3:ghi NOT FIELD4:jkl FIELD5:mno"); // Ambiguous without parentheses
      *
-     * </pre>
+     * }</pre>
      *
      * <strong>Explanation:</strong>
      * <ul>
@@ -114,6 +114,40 @@ public class CoreVisitorTests {
      */
 
     private boolean logQueryTrees = true;
+
+    /*Specific test cases*/
+
+    /**
+     * Ivan's ask #1
+     */
+    @Test
+    public void testAmbiguousJunctions() throws Exception {
+        assertInvalid("FIELD1:1234 5678", new Exception());            // Ambiguous without grouping
+        assertInvalid("(FIELD1:1234 5678)", new Exception());          // Ambiguous without grouping
+        assertInvalid("FIELD1:1234 AND 5678", new Exception());        // Ambiguous without grouping
+        assertInvalid("FIELD1:1234 OR 5678", new Exception());         // Ambiguous without grouping
+        assertValid("FIELD1:(1234 AND 5678)");                         // Grouped terms
+        assertValid("FIELD1:(1234 OR 5678)");                          // Grouped terms
+        assertValid("FIELD1:(1234 5678)");                             // Grouped terms
+    }
+
+    /**
+     * Ivan's ask #2
+     */
+    @Test
+    public void testUnquotedPhrases() throws Exception {
+        assertInvalid("FIELD:term1 term2", new Exception());        // Ambiguous without quotes
+        assertInvalid("FIELD:term1 AND term2", new Exception());    // Ambiguous without quotes
+        assertInvalid("FIELD:term1 OR term2", new Exception());     // Ambiguous without quotes
+        assertInvalid("\"FIELD:term1 term2\"", new Exception());    //Wrong quote placement
+        assertInvalid("\"FIELD:term1 AND term2\"", new Exception());//Wrong quote placement
+        assertInvalid("\"FIELD:term1 OR term2\"", new Exception()); //Wrong quote placement
+        assertValid("FIELD:\"term1 term2\"");
+        assertValid("FIELD:\"term1 AND term2\"");
+        assertValid("FIELD:\"term1 OR term2\"");
+    }
+
+    /*Generated test cases*/
 
     @Test
     public void testSingleTermQueries() throws Exception {
