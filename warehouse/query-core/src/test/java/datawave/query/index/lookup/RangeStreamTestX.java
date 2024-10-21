@@ -42,7 +42,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
 
 /**
@@ -3430,13 +3429,12 @@ public class RangeStreamTestX {
         helper.setIndexedFields(dataTypes.keySet());
 
         // Run a standard limited-scanner range stream.
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
+        RangeStream rangeStream = new RangeStream(config, config.getClient(), helper);
         rangeStream.setLimitScanners(true);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
         // Run a default range stream.
-        rangeStream = new RangeStream(config, scannerFactory, helper);
+        rangeStream = new RangeStream(config, config.getClient(), helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 

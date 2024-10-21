@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
@@ -88,7 +89,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     public boolean seeking = false;
     protected String seekShard = null;
 
-    protected ScannerFactory scannerFactory;
+    protected AccumuloClient client;
+    protected ScannerManager scannerManager = new ScannerManager();
 
     @Override
     protected String serviceName() {
@@ -106,8 +108,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
         myExecutor = MoreExecutors.newDirectExecutorService();
-        if (null != stats)
+        if (null != stats) {
             initializeTimers();
+        }
     }
 
     public RangeStreamScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
@@ -118,8 +121,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
         myExecutor = MoreExecutors.newDirectExecutorService();
-        if (null != stats)
+        if (null != stats) {
             initializeTimers();
+        }
     }
 
     public RangeStreamScanner(ScannerSession other) {
@@ -130,8 +134,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         myExecutor = service;
     }
 
-    public RangeStreamScanner setScannerFactory(ScannerFactory factory) {
-        this.scannerFactory = factory;
+    public RangeStreamScanner setAccumuloClient(AccumuloClient client) {
+        this.client = client;
         return this;
     }
 
@@ -684,7 +688,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (null != stats)
                 stats.getTimer(TIMERS.SCANNER_START).resume();
 
-            baseScanner = scannerFactory.newSingleScanner(tableName, auths, settings);
+            baseScanner = new ScannerBuilder(client).withTableName(tableName).withAuths(auths).build();
+            scannerManager.addScanner(baseScanner);
 
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setReadaheadThreshold(Long.MAX_VALUE);
@@ -768,8 +773,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
              * we've finished with this range. As a result, we set lastSeenKey to null, so that on our next pass through, we pop the next range from the queue
              * and continue or finish. We're going to timeslice and come back as know this range is likely finished.
              */
-            if (log.isTraceEnabled())
+            if (log.isTraceEnabled()) {
                 log.trace(lastSeenKey + " is lastSeenKey, previous range is " + currentRange, e);
+            }
+
+            log.error(e); // adding the same iterator twice will also cause an IllegalArgumentException
 
             lastSeenKey = null;
 
@@ -780,10 +788,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
         } finally {
 
-            if (null != stats)
+            if (null != stats) {
                 stats.getTimer(TIMERS.SCANNER_START).suspend();
+            }
 
-            scannerFactory.close(baseScanner);
+            scannerManager.close(baseScanner);
+
             // no point in running again
             if (ranges.isEmpty() && lastSeenKey == null) {
                 finished = true;
