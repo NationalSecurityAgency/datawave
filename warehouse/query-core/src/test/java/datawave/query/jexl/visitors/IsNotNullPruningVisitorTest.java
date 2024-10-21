@@ -578,7 +578,7 @@ public class IsNotNullPruningVisitorTest {
     }
 
     @Test
-    public void testFutureCase_Custom() {
+    public void testPruningNestedUnionOfIsNotNullFunctions() {
         // logically, these unions are equivalent and the 'is not null' side can be pruned
         String query = "FOO == 'bar' && (!(FOO == null) || !(FOO2 == null) || !(FOO3 == null) || !(FOO4 == null))";
         String expected = "FOO == 'bar'";
@@ -587,8 +587,8 @@ public class IsNotNullPruningVisitorTest {
     }
 
     @Test
-    public void testFutureCase_CustomTwo() {
-        // logically, these unions are equivalent and the 'is not null' side can be pruned
+    public void testPruningNestedUnionOfIsNotNullFunctions_Two() {
+        // in this case, since the FOO field is not in the union nothing will be pruned.
         String query = "FOO == 'bar' && (!(FOO2 == null) || !(FOO4 == null))";
         test(query, query);
     }
