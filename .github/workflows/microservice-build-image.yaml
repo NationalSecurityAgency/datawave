@@ -3,6 +3,14 @@ name: Create and publish a Docker image
 
 on:
   workflow_call:
+    secrets:
+      USER_NAME:
+        description: "User Name for maven pulls"
+        required: true
+      ACCESS_TOKEN:
+        description: "Access token for maven pulls"
+        required: true
+
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
@@ -10,8 +18,7 @@ env:
   IMAGE_NAME: ${{ github.repository.lowercase }}
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
-  USER_NAME: ${{ github.actor }}
-  ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
 jobs:
   build-and-push-datawave-images:
