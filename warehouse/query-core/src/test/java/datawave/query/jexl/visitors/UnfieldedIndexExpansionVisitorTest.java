@@ -245,6 +245,13 @@ public class UnfieldedIndexExpansionVisitorTest {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             ScannerFactory scannerFactory = new ScannerFactory(config);
             metadataHelper.addExpansionFields(ImmutableSet.of("FOOBAR"));
+
+            // need to ensure expansion field is indexed
+            Set<String> fields = new HashSet<>();
+            fields.addAll(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
+            fields.add("FOOBAR");
+            metadataHelper.setIndexedFields(fields);
+
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
 
             // assert and validate
