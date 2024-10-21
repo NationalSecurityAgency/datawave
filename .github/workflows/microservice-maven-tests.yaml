@@ -35,7 +35,6 @@ jobs:
           ${{ runner.os }}-maven-format-
           ${{ runner.os }}-maven-
     - name: Format code
-
       run: |
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e clean formatter:format sortpom:sort -Pautoformat
         git status
