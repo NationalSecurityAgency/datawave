@@ -141,17 +141,17 @@ public class RemoteQueryMetricService extends RemoteHttpService {
         HttpEntity postBody = new StringEntity(objectMapper.writeValueAsString(body), "UTF-8");
         // @formatter:off
         return executePostMethodWithRuntimeException(
-                        suffix,
-                        uriBuilder -> {
-			    uriBuilder.addParameter("metricType", "COMPLETE");
-			},
-                        httpPost -> {
-                            httpPost.setEntity(postBody);
-                            httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-                            httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-                        },
-                        entity -> voidResponseReader.readValue(entity.getContent()),
-                        () -> suffix);
+                suffix,
+                uriBuilder -> {
+                    uriBuilder.addParameter("metricType", "COMPLETE");
+                },
+                httpPost -> {
+                    httpPost.setEntity(postBody);
+                    httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+                    httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                },
+                entity -> voidResponseReader.readValue(entity.getContent()),
+                () -> suffix);
         // @formatter:on
     }
 
@@ -159,14 +159,14 @@ public class RemoteQueryMetricService extends RemoteHttpService {
         String suffix = String.format(ID_METRIC_SUFFIX, queryId);
         // @formatter:off
         return executeGetMethodWithRuntimeException(
-                        suffix,
-                        uriBuilder -> {},
-                        httpGet -> {
-                            httpGet.setHeader(AUTH_HEADER_NAME, getBearer());
-                            httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-                        },
-                        entity -> baseQueryMetricListResponseReader.readValue(entity.getContent()),
-                        () -> suffix);
+                suffix,
+                uriBuilder -> {},
+                httpGet -> {
+                    httpGet.setHeader(AUTH_HEADER_NAME, getBearer());
+                    httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                },
+                entity -> baseQueryMetricListResponseReader.readValue(entity.getContent()),
+                () -> suffix);
         // @formatter:on
     }
 

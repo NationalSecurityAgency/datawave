@@ -19,6 +19,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -54,6 +55,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected AccumuloClientConfiguration clientConfig = null;
 
     public static final String BYPASS_ACCUMULO = "rfile.debug";
+
+    private BaseQueryMetric metric;
 
     public BaseQueryLogic() {
         getConfig().setBaseIteratorPriority(100);
@@ -98,6 +101,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
                     throws Exception {
         // for many query logics, the query is what it is
         return settings.getQuery();
+    }
+
+    public void setQueryMetric(BaseQueryMetric metric) {
+        this.metric = metric;
+    }
+
+    public BaseQueryMetric getQueryMetric() {
+        return metric;
     }
 
     public MarkingFunctions getMarkingFunctions() {

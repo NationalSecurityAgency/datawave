@@ -184,6 +184,7 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
+        this.queryLogic.setQueryMetric(isA(QueryMetric.class));
 
         // Run the test
         PowerMock.replayAll();
@@ -276,6 +277,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
+        this.queryLogic.setQueryMetric(isA(QueryMetric.class));
 
         // Run the test
         PowerMock.replayAll();
@@ -345,6 +347,7 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
+        this.queryLogic.setQueryMetric(isA(QueryMetric.class));
 
         // Run the test
         PowerMock.replayAll();
@@ -400,6 +403,7 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setupQuery(this.genericConfiguration);
+        this.queryLogic.setQueryMetric(isA(QueryMetric.class));
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -490,6 +494,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
+        this.queryLogic.setQueryMetric(isA(QueryMetric.class));
 
         // Run the test
         PowerMock.replayAll();
