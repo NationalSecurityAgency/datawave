@@ -81,6 +81,7 @@ import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
@@ -3272,9 +3273,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                log.error("Failed to fetch CompositeMetadata");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch CompositeMetadata", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch CompositeMetadata", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3290,9 +3290,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                log.error("Failed to fetch TypeMetadata");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch TypeMetadata", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch TypeMetadata", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3308,9 +3307,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                log.error("Failed to fetch Content Expansion fields");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch Content Expansion fields", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch Content Expansion fields", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3326,9 +3324,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                log.error("Failed to serialize ivarator cache dirs");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to serialize ivarator cache dirs", e);
+                throw new DatawaveAsyncOperationException("Failed to serialize ivarator cache dirs", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3345,9 +3342,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 return indexedFields;
             } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch indexed fields");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch indexed fields", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch indexed fields", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3369,9 +3365,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 return indexOnlyFields;
             } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch index only fields");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch index only fields", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch index only fields", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3393,9 +3388,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 return nonEventFields;
             } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch non-event fields");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch non-event fields", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch non-event fields", e);
             } finally {
                 stopwatch.stop();
             }
@@ -3417,9 +3411,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 return termFrequencyFields;
             } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch term frequency fields");
-                log.error(e.getStackTrace());
-                throw new RuntimeException(e);
+                log.error("Failed to fetch term frequency fields", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch term frequency fields", e);
             } finally {
                 stopwatch.stop();
             }
