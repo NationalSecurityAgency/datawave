@@ -13,9 +13,9 @@
         </repository>
     </distributionManagement>
     <properties>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spotbugs.excludes.file />
@@ -152,7 +152,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>3.1.12.2</version>
+                <version>4.8.6.4</version>
                 <executions>
                     <execution>
                         <goals>
@@ -209,9 +209,6 @@
                 <configuration>
                     <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                     <lineEnding>LF</lineEnding>
-                    <compilerSource>${maven.compiler.source}</compilerSource>
-                    <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                    <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
                 </configuration>
             </plugin>
             <plugin>

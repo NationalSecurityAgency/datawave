@@ -10,8 +10,8 @@
     <url>https://code.nsa.gov/datawave</url>
     <licenses>
         <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
     <modules>
@@ -34,8 +34,11 @@
         </repository>
     </distributionManagement>
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <!-- suppress noise about missing javadocs, but keep other javadoc warnings -->
+        <doclint>all,-missing</doclint>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>2.1.2</version.accumulo>
@@ -1297,7 +1300,7 @@
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>3.1.11</version>
+                    <version>4.8.6.4</version>
                     <configuration>
                         <effort>Max</effort>
                         <threshold>High</threshold>
@@ -1371,9 +1374,6 @@
                         <removeTrailingWhitespace>true</removeTrailingWhitespace>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1483,11 +1483,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
-                        <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xlint:-processing</arg>
@@ -1671,7 +1668,6 @@
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>2.7</version>
                     <configuration>
-                        <encoding>UTF-8</encoding>
                         <escapeString>\</escapeString>
                     </configuration>
                     <dependencies>
@@ -1814,10 +1810,6 @@
                 <artifactId>read-properties</artifactId>
             </plugin>
             <?SORTPOM RESUME?>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -1937,7 +1929,6 @@
                                 </goals>
                                 <phase>package</phase>
                                 <configuration>
-                                    <encoding>UTF-8</encoding>
                                     <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <tags>

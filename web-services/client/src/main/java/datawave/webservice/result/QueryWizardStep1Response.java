@@ -63,8 +63,8 @@ public class QueryWizardStep1Response extends BaseResponse implements HtmlProvid
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        builder.append("<H1>Query Wizard Step 1 - Choose Query Type</H1>");
-        builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/showQueryWizardStep2\"  method=\"post\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
+        builder.append("<h1>Query Wizard Step 1 - Choose Query Type</h1>");
+        builder.append("<form id=\"queryform\" action=\"/DataWave/BasicQuery/showQueryWizardStep2\"  method=\"post\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
         builder.append("<br/>");
         builder.append("<select form=\"queryform\" name=\"queryType\" align=\"left\">");
 
@@ -75,7 +75,7 @@ public class QueryWizardStep1Response extends BaseResponse implements HtmlProvid
 
         builder.append("</select><br/><br/>\n");
         builder.append("<input type=\"submit\" value=\"Submit\"  align=\"center\">");
-        builder.append("</FORM>");
+        builder.append("</form>");
 
         return builder.toString();
     }
