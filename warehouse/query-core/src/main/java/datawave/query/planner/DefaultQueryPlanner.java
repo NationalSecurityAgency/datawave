@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -3335,94 +3336,59 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected Set<String> getIndexedFields() {
         if (indexedFields == null && indexedFieldsCallable != null) {
-            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(indexedFieldsCallable.stageName());
-            try {
-                while (indexedFields == null) {
-                    indexedFields = indexedFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
-                }
-                return indexedFields;
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch indexed fields", e);
-                throw new DatawaveAsyncOperationException("Failed to fetch indexed fields", e);
-            } finally {
-                stopwatch.stop();
-            }
+            indexedFields = getFieldSet(indexedFieldsCallable.stageName(), indexedFieldsFuture);
         }
 
-        if (indexedFields == null) {
-            return Collections.emptySet();
-        }
-
-        return indexedFields;
+        return Objects.requireNonNullElse(indexedFields, Collections.emptySet());
     }
 
     protected Set<String> getIndexOnlyFields() {
         if (indexOnlyFields == null && indexOnlyFieldsCallable != null) {
-            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(indexOnlyFieldsCallable.stageName());
-            try {
-                while (indexOnlyFields == null) {
-                    indexOnlyFields = indexOnlyFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
-                }
-                return indexOnlyFields;
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch index only fields", e);
-                throw new DatawaveAsyncOperationException("Failed to fetch index only fields", e);
-            } finally {
-                stopwatch.stop();
-            }
+            indexOnlyFields = getFieldSet(indexOnlyFieldsCallable.stageName(), indexOnlyFieldsFuture);
         }
 
-        if (indexOnlyFields == null) {
-            return Collections.emptySet();
-        }
-
-        return indexOnlyFields;
+        return Objects.requireNonNullElse(indexOnlyFields, Collections.emptySet());
     }
 
     protected Set<String> getNonEventFields() {
         if (nonEventFields == null && nonEventFieldsCallable != null) {
-            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(nonEventFieldsCallable.stageName());
-            try {
-                while (nonEventFields == null) {
-                    nonEventFields = nonEventFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
-                }
-                return nonEventFields;
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch non-event fields", e);
-                throw new DatawaveAsyncOperationException("Failed to fetch non-event fields", e);
-            } finally {
-                stopwatch.stop();
-            }
+            nonEventFields = getFieldSet(nonEventFieldsCallable.stageName(), nonEventFieldsFuture);
         }
 
-        if (nonEventFields == null) {
-            return Collections.emptySet();
-        }
-
-        return nonEventFields;
+        return Objects.requireNonNullElse(nonEventFields, Collections.emptySet());
     }
 
     protected Set<String> getTermFrequencyFields() {
         if (termFrequencyFields == null && termFrequencyFieldsCallable != null) {
-            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(termFrequencyFieldsCallable.stageName());
-            try {
-                while (termFrequencyFields == null) {
-                    termFrequencyFields = termFrequencyFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
-                }
-                return termFrequencyFields;
-            } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                log.error("Failed to fetch term frequency fields", e);
-                throw new DatawaveAsyncOperationException("Failed to fetch term frequency fields", e);
-            } finally {
-                stopwatch.stop();
+            termFrequencyFields = getFieldSet(termFrequencyFieldsCallable.stageName(), termFrequencyFieldsFuture);
+        }
+
+        return Objects.requireNonNullElse(termFrequencyFields, Collections.emptySet());
+    }
+
+    /**
+     * Common code to fetch a field set or throw an exception
+     *
+     * @param stageName
+     *            the stage name associated with the callable
+     * @param future
+     *            the future
+     * @return the field set
+     */
+    protected Set<String> getFieldSet(String stageName, Future<Set<String>> future) {
+        TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(stageName);
+        try {
+            Set<String> fields = null;
+            while (fields == null) {
+                fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
             }
+            return fields;
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.error("Stage[" + stageName + "] failed", e);
+            throw new DatawaveAsyncOperationException("Stage[" + stageName + "] failed", e);
+        } finally {
+            stopwatch.stop();
         }
-
-        if (termFrequencyFields == null) {
-            return Collections.emptySet();
-        }
-
-        return termFrequencyFields;
     }
 
     /**
