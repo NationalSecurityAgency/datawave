@@ -3,6 +3,7 @@ package datawave.query.discovery;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import com.google.common.collect.Multimap;
 
@@ -17,8 +18,9 @@ import datawave.query.jexl.LiteralRange;
 public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration implements Serializable {
     private Multimap<String,String> literals, patterns;
     private Multimap<String,LiteralRange<String>> ranges;
-    private Boolean separateCountsByColVis = false;
-    private Boolean showReferenceCount = false;
+    private boolean separateCountsByColVis = false;
+    private boolean showReferenceCount = false;
+    private boolean sumCounts = false;
 
     public DiscoveryQueryConfiguration() {}
 
@@ -116,21 +118,29 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         this.patterns = patterns;
     }
 
-    public Boolean getSeparateCountsByColVis() {
+    public boolean getSeparateCountsByColVis() {
         return separateCountsByColVis;
     }
 
-    public Boolean getShowReferenceCount() {
+    public boolean getShowReferenceCount() {
         return showReferenceCount;
+    }
+
+    public boolean getSumCounts() {
+        return sumCounts;
     }
 
     public void setSeparateCountsByColVis(boolean separateCountsByColVis) {
         this.separateCountsByColVis = separateCountsByColVis;
     }
 
-    public void setShowReferenceCount(Boolean showReferenceCount) {
+    public void setShowReferenceCount(boolean showReferenceCount) {
         this.showReferenceCount = showReferenceCount;
 
+    }
+
+    public void setSumCounts(boolean sumCounts) {
+        this.sumCounts = sumCounts;
     }
 
     @Override
@@ -155,5 +165,12 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), literals, patterns, ranges, separateCountsByColVis, showReferenceCount);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DiscoveryQueryConfiguration.class.getSimpleName() + "[", "]").add("literals=" + literals).add("patterns=" + patterns)
+                        .add("ranges=" + ranges).add("separateCountsByColVis=" + separateCountsByColVis).add("showReferenceCount=" + showReferenceCount)
+                        .add("sumCounts=" + sumCounts).toString();
     }
 }
