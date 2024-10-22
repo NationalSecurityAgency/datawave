@@ -7,7 +7,7 @@ on:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', '.github/workflows/microservice*.yaml']
   workflow_dispatch:
   
 env:
