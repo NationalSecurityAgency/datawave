@@ -289,7 +289,7 @@ public class PrintingVisitor extends BaseVisitor {
     public Object visit(FunctionQueryNode node, Object data) {
         String line = formatProperties(node, "begin", node.getBegin(), "end", node.getEnd(), "function", node.getFunction(), "parameters",
                         node.getParameterList());
-        return super.visit(node, data);
+        return writeLineAndVisitChildren(node, data, line);
     }
     
     @Override

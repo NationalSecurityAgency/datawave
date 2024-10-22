@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class FetchFunctionFieldsVisitor extends BaseVisitor {
-
+    
     private final Set<String> functions;
     
     public static Set<String> fetchFields(QueryNode node) {
@@ -23,16 +23,17 @@ public class FetchFunctionFieldsVisitor extends BaseVisitor {
     }
     
     private FetchFunctionFieldsVisitor(Set<String> functions) {
-        this.functions = functions.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        this.functions = functions.stream().map(String::toUpperCase).collect(Collectors.toSet());
     }
     
     @Override
     public Object visit(FunctionQueryNode node, Object data) {
-        String function = node.getFunction().toLowerCase();
+        String function = node.getFunction().toUpperCase();
         Set<String> fields = (Set<String>) data;
         if (isTargetFunction(node.getFunction())) {
             switch (function) {
-            
+                
+                default:
             }
         }
         return fields;

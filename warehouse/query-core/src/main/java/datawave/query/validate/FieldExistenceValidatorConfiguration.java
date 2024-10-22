@@ -1,18 +1,16 @@
 package datawave.query.validate;
 
+import com.google.common.collect.Sets;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.util.MetadataHelper;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import java.util.Set;
 
-public class FieldExistenceValidatorConfiguration implements QueryValidatorConfiguration {
+public class FieldExistenceValidatorConfiguration extends AbstractQueryValidatorConfiguration {
     
-    @XmlElementWrapper(name = "specialFields")
-    @XmlElement(name = "field")
     private Set<String> specialFields;
-    
-    private MetadataHelper metadataHelper;
     
     public Set<String> getSpecialFields() {
         return specialFields;
@@ -23,12 +21,9 @@ public class FieldExistenceValidatorConfiguration implements QueryValidatorConfi
     }
     
     @Override
-    public MetadataHelper getMetadataHelper() {
-        return metadataHelper;
-    }
-    
-    @Override
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
+    public QueryValidatorConfiguration getBaseCopy() {
+        FieldExistenceValidatorConfiguration configuration = new FieldExistenceValidatorConfiguration();
+        configuration.setSpecialFields(Sets.newHashSet(this.specialFields));
+        return configuration;
     }
 }

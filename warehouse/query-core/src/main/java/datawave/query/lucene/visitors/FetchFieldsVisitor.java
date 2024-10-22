@@ -16,8 +16,16 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Fetches all fields from a lucene query tree.
+ */
 public class FetchFieldsVisitor extends BaseVisitor {
     
+    /**
+     * Returns the set of unique fields found in the given query node.
+     * @param node the node
+     * @return the fields
+     */
     public static Set<String> fetchFields(QueryNode node) {
         Set<String> fields = new HashSet<>();
         FetchFieldsVisitor visitor = new FetchFieldsVisitor();
@@ -71,7 +79,10 @@ public class FetchFieldsVisitor extends BaseVisitor {
     
     @Override
     public Object visit(FunctionQueryNode node, Object data) {
-        return super.visit(node, data);
+        Set<String> functionFields = FetchFunctionFieldsVisitor.fetchFields(node);
+        Set<String> fields = (Set<String>) data;
+        fields.addAll(functionFields);
+        return fields;
     }
     
     private Object addFieldAndVisitChildren(QueryNode node, Object data, String field) {

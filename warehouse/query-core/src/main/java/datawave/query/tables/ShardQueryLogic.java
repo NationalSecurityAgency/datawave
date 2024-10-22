@@ -21,6 +21,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import datawave.query.validate.QueryValidator;
+import datawave.query.validate.QueryValidatorConfiguration;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -199,9 +203,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-
     private CardinalityConfiguration cardinalityConfiguration = null;
-
+    private List<QueryValidator> queryValidators = null;
+    
     /**
      * Basic constructor
      */
@@ -1344,9 +1348,76 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 log.error("Caught exception trying to close Scheduler", e);
             }
         }
-
     }
-
+    
+    @Override
+    public List<String> validateQuery(AccumuloClient client, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues)
+                    throws Exception {
+        this.config = ShardQueryConfiguration.create(this, settings);
+        if (log.isTraceEnabled()) {
+            log.trace("Initializing ShardQueryLogic for query validation: " + System.identityHashCode(this) + '('
+                            + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
+        }
+        
+        // todo - verify if we should allow these to be configured, or always stick to an established default.
+        this.config.setExpandFields(expandFields);
+        this.config.setExpandValues(expandValues);
+        
+        // Avoid generating the full plan (possibly not needed).
+        this.config.setGeneratePlanOnly(true);
+        
+        // Set the connector and authorizations for the config object.
+        config.setClient(client);
+        config.setAuthorizations(auths);
+        config.setMaxScannerBatchSize(getMaxScannerBatchSize());
+        config.setMaxIndexBatchSize(getMaxIndexBatchSize());
+        
+        setScannerFactory(new ScannerFactory(config));
+        loadQueryParameters(config, settings);
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
+        
+        String originalQuery = settings.getQuery();
+        String originalSyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
+        String jexlQuery = getJexlQueryString(settings);
+        
+        Multimap<String,QueryValidator> validatorSyntaxMap = ArrayListMultimap.create();
+        for (QueryValidator validator : this.queryValidators) {
+            for (String syntax : validator.getSupportedQuerySyntaxes()) {
+                validatorSyntaxMap.put(syntax, validator);
+            }
+        }
+        
+        List<String> messages = new ArrayList<>();
+        // If the original query was provided in a syntax other than JEXL, validate it with any validators that support the specified syntax.
+        if (!originalSyntax.equals("JEXL")) {
+            messages.addAll(validate(validatorSyntaxMap.get(originalSyntax), originalQuery, originalSyntax, metadataHelper, this.config));
+        }
+        
+        // Validate the JEXL query against any validators that support the JEXL syntax.
+        for (QueryValidator validator : validatorSyntaxMap.get("JEXL")) {
+            messages.addAll(validate(validatorSyntaxMap.get("JEXL"), jexlQuery, "JEXL", metadataHelper, this.config));
+        }
+        
+        return messages;
+    }
+    
+    private List<String> validate(Collection<QueryValidator> validators, String query, String syntax, MetadataHelper metadataHelper,
+                    GenericQueryConfiguration configuration) throws Exception {
+        List<String> messages = new ArrayList<>();
+        
+        for (QueryValidator validator : validators) {
+            QueryValidatorConfiguration validatorConfig = validator.getConfigBaseCopy();
+            validatorConfig.setQuery(query);
+            validatorConfig.setQuerySyntax(syntax);
+            validatorConfig.setMetadataHelper(metadataHelper);
+            validatorConfig.setQueryConfiguration(this.config);
+            messages.addAll(validator.validate(validatorConfig));
+        }
+        
+        return messages;
+    }
+    
+    
     @Override
     public ShardQueryConfiguration getConfig() {
         if (config == null) {
@@ -3002,5 +3073,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
+    }
+    
+    public List<QueryValidator> getQueryValidators() {
+        return queryValidators;
+    }
+    
+    public void setQueryValidators(List<QueryValidator> queryValidators) {
+        this.queryValidators = queryValidators;
     }
 }

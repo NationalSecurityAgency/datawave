@@ -3012,7 +3012,116 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.validateQuery", absolute = true)
     public GenericResponse<String> validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters) {
+        QueryData queryData = validateQuery(queryLogicName, queryParameters, null);
         GenericResponse<String> response = new GenericResponse<>();
+        
+        Query query = null;
+        AccumuloClient client = null;
+        AccumuloConnectionFactory.Priority priority;
+        RunningQuery runningQuery = null;
+        
+        try {
+            // Default hasResults to true.
+            response.setHasResults(true);
+            
+            // by default we will expand the fields but not the values.
+            boolean expandFields = true;
+            boolean expandValues = false;
+            if (queryParameters.containsKey(EXPAND_FIELDS)) {
+                expandFields = Boolean.valueOf(queryParameters.getFirst(EXPAND_FIELDS));
+            }
+            if (queryParameters.containsKey(EXPAND_VALUES)) {
+                expandValues = Boolean.valueOf(queryParameters.getFirst(EXPAND_VALUES));
+            }
+            
+            AuditType auditType = queryData.logic.getAuditType();
+            try {
+                // The query should be transient.
+                qp.setPersistenceMode(QueryPersistence.TRANSIENT);
+                Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultivaluedMap(queryParameters));
+                query = persister.create(queryData.userDn, queryData.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
+                auditType = queryData.logic.getAuditType();
+            } finally {
+                queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                
+                if (!auditType.equals(AuditType.NONE)) {
+                    // audit the query before its executed.
+                    try {
+                        try {
+                            List<String> selectors = queryData.logic.getSelectors(query);
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
+                        } catch (Exception e) {
+                            log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID) && query != null) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, query.getId().toString());
+                        }
+                        auditor.audit(MapUtils.toMultiValueMap(queryParameters));
+                    } catch (IllegalArgumentException e) {
+                        log.error("Error validating audit parameters", e);
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
+                    } catch (Exception e) {
+                        log.error("Error auditing query", e);
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
+                    }
+                }
+            }
+            
+            priority = queryData.logic.getConnectionPriority();
+            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            query.populateTrackingMap(trackingMap);
+            accumuloConnectionRequestBean.requestBegin(query.getId().toString(), queryData.userDn, trackingMap);
+            try {
+                client = connectionFactory.getClient(queryData.userDn, queryData.proxyServers, queryData.logic.getConnPoolName(), priority, trackingMap);
+            } finally {
+                accumuloConnectionRequestBean.requestEnd(query.getId().toString());
+            }
+            
+            // the query principal is our local principal unless the query logic has a different user operations
+            if (qp.getAuths() != null) {
+                queryData.logic.preInitialize(query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
+            } else {
+                queryData.logic.preInitialize(query, WSAuthorizationsUtil.buildAuthorizations(null));
+            }
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((queryData.logic.getUserOperations() == null) ? queryData.p
+                            : queryData.logic.getUserOperations().getRemoteUser((DatawavePrincipal) queryData.p));
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
+            DatawavePrincipal overallPrincipal = (DatawavePrincipal) userOperationsBean.getRemoteUser((DatawavePrincipal) queryData.p);
+            Set<Authorizations> calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
+            
+            // Validate the query and fetch any resulting messages to be returned in the response.
+            List<String> messages = queryData.logic.validateQuery(client, query, calculatedAuths, expandFields, expandValues);
+            response.setMessages(messages);
+            return response;
+        } catch (Throwable throwable) {
+            response.setHasResults(false);
+            
+            // Close the logic on exception.
+            try {
+                if (null != queryData.logic) {
+                    queryData.logic.close();
+                }
+            } catch (Exception e) {
+                log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
+            }
+            
+            // Depersist the query.
+            try {
+                if (null != query) {
+                    persister.remove(query);
+                }
+            } catch (Exception e) {
+                response.addException(new QueryException(DatawaveErrorCode.DEPERSIST_ERROR, e).getBottomQueryException());
+            }
+        }
+        
         response.setMessages(Collections.singletonList("Query validator coming soon."));
         throw new DatawaveWebApplicationException(new UnsupportedOperationException("Query validator not implemented"), response, 501);
     }

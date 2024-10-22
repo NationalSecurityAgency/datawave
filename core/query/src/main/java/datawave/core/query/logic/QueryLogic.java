@@ -1,6 +1,7 @@
 package datawave.core.query.logic;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -480,5 +481,19 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     ProxiedUserDetails getServerUser();
 
     void setServerUser(ProxiedUserDetails serverUser);
-
+    
+    /**
+     * Validates the given query according to the validation criteria established for the query logic.
+     *
+     * @param client          the Accumulo connector to use for this query
+     * @param query           the query settings (query, begin date, end date, etc.)
+     * @param auths the authorizations that have been calculated for this query based on the caller and server.
+     * @param expandFields
+     * @param expandValues
+     * @return a list of messages detailing any issues found for the query
+     */
+    default List<String> validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths, boolean expandFields, boolean expandValues)
+                    throws Exception {
+        return Collections.emptyList();
+    }
 }
