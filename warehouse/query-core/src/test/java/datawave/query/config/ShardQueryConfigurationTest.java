@@ -154,6 +154,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("allTermsIndexOnly", true);
         defaultValues.put("maxIndexScanTimeMillis", Long.MAX_VALUE);
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
+        defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
+        updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
         defaultValues.put("ignoreNonExistentFields", false);
@@ -479,6 +481,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfFieldSeek", 14);
         defaultValues.put("tfNextSeek", -1);
         updatedValues.put("tfNextSeek", 15);
+        defaultValues.put("seekingEventAggregation", false);
+        updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
         defaultValues.put("lazySetMechanismEnabled", false);

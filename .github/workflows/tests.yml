@@ -7,7 +7,7 @@ on:
     - 'integration'
     - 'release/version*'
   pull_request:
-    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', '.github/workflows/microservice*.yaml']
   workflow_dispatch:
   
 env:
@@ -23,9 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
@@ -60,9 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
@@ -88,15 +88,15 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout Code
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v4
   #       with:
   #         submodules: 'recursive'
   #     - name: Set up JDK ${{env.JAVA_VERSION}}
-  #       uses: actions/setup-java@v3
+  #       uses: actions/setup-java@v4
   #       with:
   #         distribution: ${{env.JAVA_DISTRIBUTION}}
   #         java-version: ${{env.JAVA_VERSION}}
-  #     - uses: actions/cache@v3
+  #     - uses: actions/cache@v4
   #       with:
   #         path: ~/.m2/repository
   #         key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
@@ -126,9 +126,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
@@ -165,11 +165,11 @@ jobs:
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf $AGENT_TOOLSDIRECTORY
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: ${{env.JAVA_DISTRIBUTION}}
           java-version: ${{env.JAVA_VERSION}}
@@ -234,15 +234,15 @@ jobs:
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf $AGENT_TOOLSDIRECTORY
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: ${{env.JAVA_DISTRIBUTION}}
           java-version: ${{env.JAVA_VERSION}}
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
@@ -256,10 +256,17 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+          # set some bogus URLs to trigger dependency download via maven
+          DIST_URLS="-Durl.zookeeper=https://bogus.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz.tar.gz \
+                     -Durl.accumulo=https://bogus.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz \
+                     -Durl.wildfly=https://bogus.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz \
+                     -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
+                     -Durl.maven=https://bogus.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz"
+          
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0

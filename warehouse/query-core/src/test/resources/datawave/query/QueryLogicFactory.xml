@@ -231,6 +231,25 @@
                 <!-- JEXL is the default Jexl query syntax -->
             </map>
         </property>
+
+        <property name="tableHints">
+            <map key-type="java.lang.String" value-type="java.util.Map">
+                <entry key="shard">
+                    <map><entry key="scan_type" value="shard-table-executor-event"/></map>
+                </entry>
+                <entry key="shardIndex">
+                    <map><entry key="scan_type" value="index-table-executor-event"/></map>
+                </entry>
+                <!-- NOTE: this execution hint is reserved by datawave -->
+                <entry key="expansion">
+                    <map><entry key="scan_type" value="index-expansion-executor"/></map>
+                </entry>
+            </map>
+        </property>
+
+        <property name="useQueryTreeScanHintRules" value="true"/>
+        <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
+
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
@@ -242,7 +261,7 @@
         <!--   variables that control when a seek is issued     -->
         <property name="fiFieldSeek" value="-1" />
         <property name="fiNextSeek" value="-1" />
-        <property name="eventFieldSeek" value="-1" />
+        <property name="eventFieldSeek" value="3" />
         <property name="eventNextSeek" value="-1" />
         <property name="tfFieldSeek" value="-1" />
         <property name="tfNextSeek" value="-1" />
@@ -268,12 +287,24 @@
         <property name="sortQueryByCounts" value="true" />
     </bean>
 
+    <bean id="IvaratorScanHintRule" class="datawave.query.planner.scanhints.IvaratorScanHint"/>
+
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
         <property name="collapseUids" value="false"/>
         <property name="indexFilteringClassNames">
             <list value-type="java.lang.String">
                 <value>datawave.query.function.NormalizedVersionPredicate</value>
             </list>
+        </property>
+        <property name="tableHints">
+            <map key-type="java.lang.String" value-type="java.util.Map">
+                <entry key="shard">
+                    <map><entry key="scan_type" value="shard-table-executor-tld"/></map>
+                </entry>
+                <entry key="shardIndex">
+                    <map><entry key="scan_type" value="index-table-executor-tld"/></map>
+                </entry>
+            </map>
         </property>
     </bean>
 

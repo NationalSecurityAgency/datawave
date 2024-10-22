@@ -84,7 +84,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = -4354990715046146110L;
+    private static final long serialVersionUID = 1071528787909021061L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
 
     // is this a tld query, explicitly default to false
@@ -99,6 +99,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
+    private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
+
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
     private boolean collapseUids = false;
@@ -450,6 +452,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int tfNextSeek = -1;
 
     /**
+     * Flag that enables a field-based seeking aggregation in the standard event query. Must be used in conjunction with {@link #eventFieldSeek}
+     */
+    private boolean seekingEventAggregation = false;
+
+    /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
      * cache. Default is 5m characters, which is roughly 10MB
      */
@@ -545,6 +552,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
+        this.setMaxAnyFieldScanTimeMillis(other.getMaxAnyFieldScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
@@ -730,6 +738,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setEventNextSeek(other.getEventNextSeek());
         this.setTfFieldSeek(other.getTfFieldSeek());
         this.setTfNextSeek(other.getTfNextSeek());
+        this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
@@ -2648,6 +2657,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfNextSeek = tfNextSeek;
     }
 
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        this.seekingEventAggregation = seekingEventAggregation;
+    }
+
     public long getVisitorFunctionMaxWeight() {
         return visitorFunctionMaxWeight;
     }
@@ -2977,6 +2994,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEventNextSeek() == that.getEventNextSeek() &&
                 getTfFieldSeek() == that.getTfFieldSeek() &&
                 getTfNextSeek() == that.getTfNextSeek() &&
+                isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
@@ -3181,6 +3199,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEventNextSeek(),
                 getTfFieldSeek(),
                 getTfNextSeek(),
+                isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
                 isLazySetMechanismEnabled(),
@@ -3215,5 +3234,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
         this.queryTreeScanHintRules = queryTreeScanHintRules;
+    }
+
+    public long getMaxAnyFieldScanTimeMillis() {
+        return maxAnyFieldScanTimeMillis;
+    }
+
+    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
+        this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
     }
 }
