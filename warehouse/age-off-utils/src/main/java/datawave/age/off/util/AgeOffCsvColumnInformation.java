@@ -35,6 +35,8 @@ public class AgeOffCsvColumnInformation {
                 case DURATION_OVERRIDE_COLUMN_HEADER:
                     this.overrideColumnNumber = columnNumber;
                     break;
+                default:
+                    break;
             }
             columnNumber++;
         }
