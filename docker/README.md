@@ -341,7 +341,7 @@ Start the default services, the kafka services, and the dictionary service:
 
 Start the default services, and the file provider service:
 
-```docker compose --profile file-provider up -d```
+```docker compose --profile quickstart --profile file-provider up -d```
 
 Start all services:
 
