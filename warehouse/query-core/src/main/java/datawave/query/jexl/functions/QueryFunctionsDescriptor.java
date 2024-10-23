@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -19,10 +20,15 @@ import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
 
+import com.google.common.collect.Sets;
+
+import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -32,8 +38,11 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
+    private static final Logger log = Logger.getLogger(QueryFunctionsDescriptor.class);
 
     public static final String BETWEEN = "between";
     public static final String LENGTH = "length";
@@ -56,36 +65,46 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
-            switch (name) {
-                case BETWEEN:
-                    JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
-                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
-                    JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
-                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
-                    // Return a bounded range.
-                    return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
-                case LENGTH:
-                    // Return a regex node with the appropriate number of matching characters
-                    return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                    ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
-                case QueryFunctions.MATCH_REGEX:
-                    // Return an index query.
-                    return getIndexQuery();
-                case QueryFunctions.INCLUDE_TEXT:
-                    // Return the appropriate index query.
-                    return getTextIndexQuery();
-                default:
-                    // Return the true node if unable to parse arguments.
-                    return TRUE_NODE;
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                switch (name) {
+                    case BETWEEN:
+                        JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
+                                        JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                        JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
+                                        JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
+                        // Return a bounded range.
+                        return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
+                    case LENGTH:
+                        // Return a regex node with the appropriate number of matching characters
+                        return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
+                                        ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
+                    case QueryFunctions.MATCH_REGEX:
+                        // Return an index query.
+                        return getIndexQuery(allFields);
+                    case QueryFunctions.INCLUDE_TEXT:
+                        // Return the appropriate index query.
+                        return getTextIndexQuery(allFields);
+                    default:
+                        // Return the true node if unable to parse arguments.
+                        return TRUE_NODE;
+                }
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
             }
         }
 
-        private JexlNode getIndexQuery() {
+        private JexlNode getIndexQuery(Set<String> allFields) throws TableNotFoundException {
             JexlNode node0 = args.get(0);
             final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
             if (node0 instanceof ASTIdentifier) {
                 final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
-                return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
+                    return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                } else {
+                    return null;
+                }
             } else {
                 // node0 is an Or node or an And node
                 // copy it
@@ -93,20 +112,26 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
                     String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
-                    kid.jjtSetParent(newParent);
-                    newParent.jjtAddChild(kid, i++);
+                    if (allFields.contains(field)) {
+                        JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                        kid.jjtSetParent(newParent);
+                        newParent.jjtAddChild(kid, i++);
+                    }
                 }
                 return newParent;
             }
         }
 
-        private JexlNode getTextIndexQuery() {
+        private JexlNode getTextIndexQuery(Set<String> allFields) {
             JexlNode node0 = args.get(0);
             final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
             if (node0 instanceof ASTIdentifier) {
                 final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
-                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
+                    return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                } else {
+                    return null;
+                }
             } else {
                 // node0 is an Or node or an And node
                 // copy it
@@ -142,6 +167,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             Set<String> fields = new HashSet<>();
+            Set<String> allFields = null;
+            if (helper != null) {
+                try {
+                    allFields = helper.getAllFields(datatypeFilter);
+                } catch (TableNotFoundException e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                    log.error(qe);
+                    throw new DatawaveFatalQueryException(qe);
+                }
+            }
             switch (name) {
                 case QueryFunctions.COUNT:
                 case QueryFunctions.SUM:
@@ -187,17 +222,47 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 default:
                     fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
             }
-            return fields;
+            if (allFields != null) {
+                return filterSet(allFields, fields);
+            } else {
+                return fields;
+            }
         }
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            Set<Set<String>> fieldSet = new HashSet<>();
+            Set<Set<String>> fieldSet = Sets.newHashSet();
             Set<String> fields = fields(helper, datatypeFilter);
             for (String field : fields) {
                 fieldSet.add(Set.of(field));
             }
             return fieldSet;
+        }
+
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s)
+         *
+         * @param allFields
+         * @param fieldToAdd
+         * @param returnedFields
+         */
+        private void filterField(Set<String> allFields, String fieldToAdd, Set<String> returnedFields) {
+            if (allFields.contains(fieldToAdd)) {
+                returnedFields.add(fieldToAdd);
+            }
+        }
+
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s)
+         *
+         * @param allFields
+         * @param fields
+         */
+        private Set<String> filterSet(Set<String> allFields, Set<String> fields) {
+            Set<String> returnedFields = Sets.newHashSet();
+            returnedFields.addAll(allFields);
+            returnedFields.retainAll(fields);
+            return returnedFields;
         }
 
         @Override

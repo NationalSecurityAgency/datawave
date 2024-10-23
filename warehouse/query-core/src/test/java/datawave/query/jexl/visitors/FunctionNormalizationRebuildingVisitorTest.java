@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -162,7 +161,7 @@ public class FunctionNormalizationRebuildingVisitorTest {
 
         assertInstanceOf(ASTFunctionNode.class, child);
 
-        JexlNode node = FunctionNormalizationRebuildingVisitor.normalize((ASTFunctionNode) child, normalizers, helper, Collections.emptySet());
+        JexlNode node = FunctionNormalizationRebuildingVisitor.normalize((ASTFunctionNode) child, normalizers, helper, null);
         String result = JexlStringBuildingVisitor.buildQuery(node);
         assertEquals(expected, result);
     }

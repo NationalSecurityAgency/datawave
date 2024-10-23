@@ -398,7 +398,7 @@ public class IngestTypeVisitor extends BaseVisitor {
                 log.warn("could not get descriptor for function: " + JexlStringBuildingVisitor.buildQuery(node));
                 return new HashSet<>();
             }
-            return descriptor.fields(null, Collections.emptySet());
+            return descriptor.fields(null, null);
         }
     }
 

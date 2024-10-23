@@ -1914,7 +1914,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields = null;
         try {
-            String dataTypeHash = String.valueOf(dataTypes.hashCode());
+            String dataTypeHash = dataTypes == null ? "" : String.valueOf(dataTypes.hashCode());
             if (cacheDataTypes) {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
@@ -1926,11 +1926,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             if (log.isTraceEnabled()) {
                 StringBuilder builder = new StringBuilder();
-                for (String dataType : dataTypes) {
-                    if (builder.length() > 0) {
-                        builder.append(',');
+                if (null != dataTypes) {
+                    for (String dataType : dataTypes) {
+                        if (builder.length() > 0) {
+                            builder.append(',');
+                        }
+                        builder.append(dataType);
                     }
-                    builder.append(dataType);
                 }
                 log.trace("Datatypes: " + builder);
                 builder.delete(0, builder.length());
@@ -2708,7 +2710,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || ingestTypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
                 // could not reduce ingest types based on the query structure, do nothing
-            } else if (config.getDatatypeFilter().isEmpty()) {
+            } else if (config.getDatatypeFilter() == null) {
                 // if no filter specified, build and set filter from query fields
                 config.setDatatypeFilter(ingestTypes);
             } else {
@@ -2727,7 +2729,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // only reduce datatype filter if not rebuilding and there's a filter to reduce
-        if (!config.getDatatypeFilter().isEmpty() && !config.isRebuildDatatypeFilter() && config.getReduceIngestTypes()) {
+        if (config.getDatatypeFilter() != null && !config.getDatatypeFilter().isEmpty() && !config.isRebuildDatatypeFilter() && config.getReduceIngestTypes()) {
             Set<String> parameterTypes = config.getDatatypeFilter();
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
 
@@ -2758,7 +2760,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (!types.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
                     if (types.isEmpty()) {
                         throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
-                    } else if (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size())) {
+                    } else if (config.getDatatypeFilter() != null
+                                    && (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size()))) {
                         config.setDatatypeFilter(types);
                     }
                 }
