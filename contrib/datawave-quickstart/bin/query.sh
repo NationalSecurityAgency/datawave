@@ -132,31 +132,22 @@ function setQueryIdFromResponse() {
 
 function prettyPrintJson() {
     PY_CMD='"from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True)"'
-        PY3=$(which python3 2>/dev/null)
-        PY2=$(which python2 2>/dev/null)
-        if [ -n "${PY3}" ] ; then
-                echo "${1}" | "${PY3}" -c "${PY_CMD}"
-            local exitStatus=$?
-            echo
-            if [ "${exitStatus}" != "0" ] ; then
-              printRawResponse "${1}"
-              warn "Python encountered error. Printed response without formatting"
-              echo
-            fi
-          elif [ -n "${PY2}" ] ; then
-            echo "${1}" | "${PY2}" -c "${PY_CMD}"
-            local exitStatus=$?
-            echo
-            if [ "${exitStatus}" != "0" ] ; then
-              printRawResponse "${1}"
-              warn "Python encountered error. Printed response without formatting"
-              echo
-            fi
-          else
-            printRawResponse "${1}"
-                warn "Couldn't find Python in your environment. Json response was printed without formatting"
-                echo
-        fi
+    PY3=$(which python3 2>/dev/null)
+    PY2=$(which python2 2>/dev/null)
+    if [[ ( -n "${PY3}" ) || ( -n "${PY2}" ) ]] ; then
+      echo "${1}" | ( "${PY3}" -c "${PY_CMD}" || "${PY2}" -c "${PY_CMD}" )
+      local exitStatus=$?
+      echo
+      if [ "${exitStatus}" != "0" ] ; then
+        printRawResponse "${1}"
+        warn "Python encountered error. Printed response without formatting"
+        echo
+      fi
+    else
+      printRawResponse "${1}"
+      warn "Couldn't find Python in your environment. Json response was printed without formatting"
+      echo
+    fi
 }
 
 function printRawResponse() {

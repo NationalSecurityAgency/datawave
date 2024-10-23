@@ -41,14 +41,14 @@ TVMAZE_RESPONSE_STATUS=$( echo ${CURL_RESPONSE} | tr -d '\n' | sed -e 's/.*HTTP_
 PY_CMD="-c 'from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))' "
 PY3="/usr/bin/python3"
 PY2="/usr/bin/python2"
-  if [ "${PRETTY}" == true ] ; then
-    if [ -d "${PY3}" ]; then
-      echo "${TVMAZE_RESPONSE_BODY}" | "${PY3}" ${PY_CMD}
-    elif [ -d "${PY2}" ]; then
-      echo "${TVMAZE_RESPONSE_BODY}" | "${PY2}" ${PY_CMD}
-    fi
-  else
-    echo "${TVMAZE_RESPONSE_BODY}"
+if [ "${PRETTY}" == true ] ; then
+  if [ -d "${PY3}" ]; then
+    echo "${TVMAZE_RESPONSE_BODY}" | "${PY3}" ${PY_CMD}
+  elif [ -d "${PY2}" ]; then
+    echo "${TVMAZE_RESPONSE_BODY}" | "${PY2}" ${PY_CMD}
   fi
+else
+  echo "${TVMAZE_RESPONSE_BODY}"
+fi
 
 exit 0
