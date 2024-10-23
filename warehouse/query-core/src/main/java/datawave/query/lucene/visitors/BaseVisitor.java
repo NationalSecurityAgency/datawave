@@ -40,11 +40,6 @@ import java.util.Map;
 
 public class BaseVisitor {
 
-    public static void validate(QueryNode node) throws InstantiationException, IllegalAccessException {
-        BaseVisitor visitor = QueryNodeType.getVisitorInstanceFor(node);
-        visitor.visit(node, null);
-    }
-
     public Object visit(QueryNode node, Object data) {
         // The class QueryNode does not have an accept method to support the visitor pattern. The switch below is a workaround to ensure that we call the
         // correct visit() method based on the node's type.
