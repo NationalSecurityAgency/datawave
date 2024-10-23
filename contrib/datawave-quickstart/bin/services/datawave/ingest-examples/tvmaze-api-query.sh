@@ -38,15 +38,9 @@ TVMAZE_RESPONSE_STATUS=$( echo ${CURL_RESPONSE} | tr -d '\n' | sed -e 's/.*HTTP_
 [ "${TVMAZE_RESPONSE_STATUS}" != "200" ] && error "api.tvmaze.com returned invalid response status: ${TVMAZE_RESPONSE_STATUS}" && exit 1
 [ -z "${TVMAZE_RESPONSE_BODY}" ] && error "Response body is empty!" && exit 1
 
-PY_CMD="-c 'from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))' "
-PY3="/usr/bin/python3"
-PY2="/usr/bin/python2"
+PY_CMD='from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
 if [ "${PRETTY}" == true ] ; then
-  if [ -d "${PY3}" ]; then
-    echo "${TVMAZE_RESPONSE_BODY}" | "${PY3}" ${PY_CMD}
-  elif [ -d "${PY2}" ]; then
-    echo "${TVMAZE_RESPONSE_BODY}" | "${PY2}" ${PY_CMD}
-  fi
+  echo "${TVMAZE_RESPONSE_BODY}" | ( python3 -c "${PY_CMD}" 2>/dev/null || python2 -c "${PY_CMD}" 2>/dev/null ) || ( warn "Unable to pretty print, Python not detected" && echo "${TVMAZE_RESPONSE_BODY}" )
 else
   echo "${TVMAZE_RESPONSE_BODY}"
 fi
