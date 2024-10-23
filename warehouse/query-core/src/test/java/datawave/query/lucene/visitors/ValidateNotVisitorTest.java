@@ -28,6 +28,10 @@ public class ValidateNotVisitorTest {
     public void testNotWithoutJunction() throws Exception {
         System.out.println("\n---------- testNotWithoutJunction ----------\n");
         assertValid("FIELD2:def NOT FIELD3:123");
+        assertValid("(FIELD2:def NOT FIELD3:123)");
+        assertValid("FIELD2:def NOT (FIELD3:123)");
+        assertValid("(FIELD2:def) NOT FIELD3:123");
+        assertValid("(FIELD2:def) NOT (FIELD3:123)");
     }
 
     /**
@@ -65,7 +69,7 @@ public class ValidateNotVisitorTest {
 
     private void assertValid(String query) throws Exception {
         if(logQueryStructure) {
-            System.out.print("EXPECTING VALID: ");
+            System.out.print("*** VALID ");
             printQueryStructure(query);
         }
         ValidateNotVisitor.validate(parseQuery(query));
@@ -73,7 +77,7 @@ public class ValidateNotVisitorTest {
 
     private void assertInvalid(String query) throws Exception {
         if(logQueryStructure) {
-            System.out.print("EXPECTING INVALID: ");
+            System.out.print("*** INVALID ");
             printQueryStructure(query);
         }
         assertThrows(IllegalArgumentException.class,
@@ -82,7 +86,7 @@ public class ValidateNotVisitorTest {
     }
 
     private void printQueryStructure(String query) throws QueryNodeParseException {
-        System.out.println("Query: " + query);
+        System.out.println("Query: " + query + " ***");
         AccumuloSyntaxParser parser = new AccumuloSyntaxParser();
         QueryNode node = parser.parse(query, "");
         PrintingVisitor.printToStdOut(node);
