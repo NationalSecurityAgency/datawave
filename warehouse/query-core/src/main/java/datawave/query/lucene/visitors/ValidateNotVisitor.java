@@ -5,7 +5,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
- * Validates that NOT junctions are unambiguous.
+ * Validates that NOT clauses are unambiguous.
  */
 public class ValidateNotVisitor extends BaseVisitor{
 
@@ -29,7 +29,7 @@ public class ValidateNotVisitor extends BaseVisitor{
                      * Example:         FIELD1:abc AND FIELD2:def NOT FIELD3:123 ->
                      *                  FIELD1:abc AND (FIELD2:def NOT FIELD3:123)
                      */
-                    throw new IllegalArgumentException("NOT junction's terms are ambiguous. Try adding parentheses around its terms.");
+                    throw new IllegalArgumentException("NOT clause's terms are ambiguous. Try adding parentheses around its terms.");
                 }
                 case MODIFIER: {
 
@@ -45,7 +45,7 @@ public class ValidateNotVisitor extends BaseVisitor{
                             switch (grandchildType) {
                                 case OR:
                                 case AND: {
-                                    throw new IllegalArgumentException("NOT junction's terms are ambiguous. Try adding parentheses around its terms.");
+                                    throw new IllegalArgumentException("NOT clause's terms are ambiguous. Try adding parentheses around its terms.");
                                 }
                             }
                         }
@@ -58,7 +58,7 @@ public class ValidateNotVisitor extends BaseVisitor{
                      *                  FIELD1:123 NOT (FIELD2:456 NOT FIELD3:abc)
                      */
                     if(modSeen){
-                        throw new IllegalArgumentException("NOT junction's terms are ambiguous. Try adding parentheses around its terms.");
+                        throw new IllegalArgumentException("NOT clause's terms are ambiguous. Try adding parentheses around its terms.");
                     }
                     modSeen = true;
                     break;
