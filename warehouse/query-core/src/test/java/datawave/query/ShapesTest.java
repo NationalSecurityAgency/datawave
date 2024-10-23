@@ -870,7 +870,26 @@ public abstract class ShapesTest {
     }
 
     @Test
-    public void testSortQueryBeforeGlobalIndex() throws Exception {
+    public void testSortQueryPreIndexWithImpliedCounts() throws Exception {
+        try {
+            // sorting via implied counts should push TYPE to the right of SHAPE
+            withQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
+            withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,pentagon");
+
+            Set<String> expectedUids = new HashSet<>(triangleUids);
+            withExpected(expectedUids);
+
+            disableAllSortOptions();
+            logic.setSortQueryPreIndexWithImpliedCounts(true);
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
+        } finally {
+            disableAllSortOptions();
+        }
+    }
+
+    @Test
+    public void testSortQueryPreIndexWithFieldCounts() throws Exception {
         try {
             // SHAPE cardinality for triangle and pentagon types is 23
             // TYPE cardinality for triangle and pentagon types is 21
@@ -880,11 +899,12 @@ public abstract class ShapesTest {
             Set<String> expectedUids = new HashSet<>(triangleUids);
             withExpected(expectedUids);
 
-            logic.setSortQueryBeforeGlobalIndex(true);
+            disableAllSortOptions();
+            logic.setSortQueryPreIndexWithFieldCounts(true);
             planAndExecuteQuery();
             assertPlannedQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
         } finally {
-            logic.setSortQueryBeforeGlobalIndex(false);
+            disableAllSortOptions();
         }
     }
 
@@ -910,5 +930,12 @@ public abstract class ShapesTest {
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
         assertPlannedQuery("ONLY_HEX == 'hexa' && ((_Eval_ = true) && (SHAPE =~ 'hexag.*'))");
+    }
+
+    private void disableAllSortOptions() {
+        logic.setSortQueryPreIndexWithImpliedCounts(false);
+        logic.setSortQueryPreIndexWithFieldCounts(false);
+        logic.setSortQueryPostIndexWithFieldCounts(false);
+        logic.setSortQueryPostIndexWithTermCounts(false);
     }
 }
