@@ -2770,8 +2770,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        if (config.isSortQueryBeforeGlobalIndex()) {
+        if (config.isSortQueryPreIndexWithFieldCounts()) {
             config.setQueryTree(timedSortQueryBeforeGlobalIndex(config, getMetadataHelper()));
+        } else if (config.isSortQueryPreIndexWithImpliedCounts()) {
+            config.setQueryTree(timedSortQueryBeforeGlobalIndex(config));
         }
 
         // if a simple examination of the query has not forced a full table
@@ -2866,9 +2868,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 Map<String,Long> counts = metadataHelper.getCountsForFieldsInDateRange(fields, datatypes, config.getBeginDate(), config.getEndDate());
                 if (!counts.isEmpty()) {
                     return OrderByCostVisitor.orderByFieldCount(config.getQueryTree(), counts);
+                } else {
+                    // fall back to sorting by implied cardinality
+                    return OrderByCostVisitor.order(config.getQueryTree());
                 }
             }
             return config.getQueryTree();
+        });
+    }
+
+    protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config) throws DatawaveQueryException {
+        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex", () -> {
+            // sort by implied cardinality
+            return OrderByCostVisitor.order(config.getQueryTree());
         });
     }
 

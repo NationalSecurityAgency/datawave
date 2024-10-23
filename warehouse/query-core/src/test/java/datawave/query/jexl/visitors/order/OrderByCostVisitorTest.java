@@ -332,4 +332,19 @@ public class OrderByCostVisitorTest {
         counts.put("F == '6'", 5L); // same counts for E and F
         return counts;
     }
+
+    @Test
+    public void testCase() throws Exception {
+        Map<String,Long> counts = new HashMap<>();
+        counts.put("FIELD_A", 23L);
+        counts.put("FIELD_B", 34L);
+        counts.put("FIELD_C", 45L);
+
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("FIELD_C == 'v' || FIELD_B == 'v' || FIELD_A == 'v'");
+
+        OrderByCostVisitor.orderByFieldCount(script, counts);
+
+        String ordered = JexlStringBuildingVisitor.buildQuery(script);
+        assertEquals("FIELD_A == 'v' || FIELD_B == 'v' || FIELD_C == 'v'", ordered);
+    }
 }
