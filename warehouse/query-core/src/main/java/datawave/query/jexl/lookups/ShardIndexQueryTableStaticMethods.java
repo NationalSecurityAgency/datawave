@@ -343,7 +343,7 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     /**
-     * Build up a task to run against the inverted index tables
+     * Build up a task to run against the inverted index tables NOTE: This assumes that the node contains a pre-normalized value.
      *
      * @param node
      *            the AST node
@@ -367,26 +367,12 @@ public class ShardIndexQueryTableStaticMethods {
 
         Object literal = JexlASTHelper.getLiteralValue(node);
 
-        for (Type<?> type : dataTypes) {
-            if (literal instanceof String) {
-                try {
-                    patterns.add(type.normalizeRegex((String) literal));
-                } catch (Exception e) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Could not apply " + type.getClass().getName() + " to " + literal);
-                    }
-                }
-            } else if (literal instanceof Number) {
-                try {
-                    patterns.add(type.normalizeRegex(literal.toString()));
-                } catch (Exception e) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Could not apply " + type.getClass().getName() + " to " + literal);
-                    }
-                }
-            } else {
-                log.warn("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
-            }
+        if (literal instanceof String) {
+            patterns.add((String) literal);
+        } else if (literal instanceof Number) {
+            patterns.add(literal.toString());
+        } else {
+            log.warn("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
         }
 
         return new RegexIndexLookup(config, scannerFactory, fieldName, patterns, helperRef, execService);
