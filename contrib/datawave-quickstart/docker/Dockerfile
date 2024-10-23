@@ -35,7 +35,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN dnf -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
+RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
     dnf clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
