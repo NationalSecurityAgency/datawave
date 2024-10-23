@@ -33,7 +33,14 @@ public class ValidateNotVisitorTest {
      * and a AND is present without parentheses, an exception is thrown.
      */
     @Test
-    public void testNotWithJunctionWithoutParens() throws Exception {
+    public void testNotBeforeJunctionWithoutParens() throws Exception {
+        assertInvalid("FIELD1:abc NOT FIELD2:def AND FIELD3:123");
+        assertInvalid("FIELD1:abc NOT FIELD2:def OR FIELD3:123");
+        assertInvalid("FIELD1:123 NOT FIELD2:456 NOT FIELD3:abc");
+    }
+
+    @Test
+    public void testNotAfterJunctionWithoutParens() throws Exception {
         assertInvalid("FIELD1:abc OR FIELD2:def NOT FIELD3:123");
         assertInvalid("FIELD1:abc AND FIELD2:def NOT FIELD3:123");
         assertInvalid("FIELD1:123 NOT FIELD2:456 NOT FIELD3:abc");
