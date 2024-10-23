@@ -16,6 +16,7 @@ public class ValidateNotVisitorTest {
      */
     @Test
     public void testNotAbsent() throws Exception {
+        System.out.println("\n---------- testNotAbsent ----------\n");
         assertValid("FIELD1:def");
     }
 
@@ -25,6 +26,7 @@ public class ValidateNotVisitorTest {
      */
     @Test
     public void testNotWithoutJunction() throws Exception {
+        System.out.println("\n---------- testNotWithoutJunction ----------\n");
         assertValid("FIELD2:def NOT FIELD3:123");
     }
 
@@ -34,13 +36,23 @@ public class ValidateNotVisitorTest {
      */
     @Test
     public void testNotBeforeJunctionWithoutParens() throws Exception {
+        System.out.println("\n---------- testNotBeforeJunctionWithoutParens ----------\n");
+        //Ambiguous Cases
         assertInvalid("FIELD1:abc NOT FIELD2:def AND FIELD3:123");
         assertInvalid("FIELD1:abc NOT FIELD2:def OR FIELD3:123");
-        assertInvalid("FIELD1:123 NOT FIELD2:456 NOT FIELD3:abc");
+        assertInvalid("(FIELD1:abc) NOT FIELD2:def AND FIELD3:123");
+        assertInvalid("FIELD1:abc NOT (FIELD2:def) OR FIELD3:123");
+        assertInvalid("FIELD1:abc NOT FIELD2:def OR (FIELD3:123)");
+        //Unambiguous Cases
+        assertValid("(FIELD1:abc NOT FIELD2:def) AND FIELD3:123");
+        assertValid("(FIELD1:abc NOT FIELD2:def) OR FIELD3:123");
+        assertValid("FIELD1:abc NOT (FIELD2:def AND FIELD3:123)");
+        assertValid("FIELD1:abc NOT (FIELD2:def OR FIELD3:123)");
     }
 
     @Test
     public void testNotAfterJunctionWithoutParens() throws Exception {
+        System.out.println("\n---------- testNotAfterJunctionWithoutParens ----------\n");
         assertInvalid("FIELD1:abc OR FIELD2:def NOT FIELD3:123");
         assertInvalid("FIELD1:abc AND FIELD2:def NOT FIELD3:123");
         assertInvalid("FIELD1:123 NOT FIELD2:456 NOT FIELD3:abc");
@@ -53,6 +65,7 @@ public class ValidateNotVisitorTest {
 
     private void assertValid(String query) throws Exception {
         if(logQueryStructure) {
+            System.out.print("EXPECTING VALID: ");
             printQueryStructure(query);
         }
         ValidateNotVisitor.validate(parseQuery(query));
@@ -60,6 +73,7 @@ public class ValidateNotVisitorTest {
 
     private void assertInvalid(String query) throws Exception {
         if(logQueryStructure) {
+            System.out.print("EXPECTING INVALID: ");
             printQueryStructure(query);
         }
         assertThrows(IllegalArgumentException.class,
@@ -72,5 +86,6 @@ public class ValidateNotVisitorTest {
         AccumuloSyntaxParser parser = new AccumuloSyntaxParser();
         QueryNode node = parser.parse(query, "");
         PrintingVisitor.printToStdOut(node);
+        System.out.println();
     }
 }
