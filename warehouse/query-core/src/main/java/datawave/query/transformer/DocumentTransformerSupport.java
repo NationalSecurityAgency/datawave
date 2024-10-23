@@ -73,6 +73,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     private long nextCount = 0;
     private long seekCount = 0;
     private long yieldCount = 0L;
+    private long docSize = 0;
     private long docRanges = 0;
     private long fiRanges = 0;
     private boolean logTimingDetails = false;
@@ -80,7 +81,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     private CardinalityRecord resultCardinalityQueryDate = null;
     protected CardinalityConfiguration cardinalityConfiguration = null;
     private int objectsTransformed = 0;
-    private long logicCreated = System.currentTimeMillis();
+    private final long logicCreated = System.currentTimeMillis();
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> disallowlistedFields = Collections.emptySet();
 
@@ -151,8 +152,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         return additionalValues;
     }
 
-    // When a single Ivarator is used during a query on the teserver, we save time by not sorting the UIDs (not necessary for further comparisons).
-    // To ensure that returned keys appear to be in sorted order on the way back we prpend a one-up number to the colFam.
+    // When a single Ivarator is used during a query on the tserver, we save time by not sorting the UIDs (not necessary for further comparisons).
+    // To ensure that returned keys appear to be in sorted order on the way back we prepend a one-up number to the colFam.
     // In this edge case, the prepended number needs to be removed.
     protected static Key correctKey(Key origKey) {
         Key key = origKey;
@@ -239,6 +240,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             nextCount += currentNextCount;
             seekCount += currentSeekCount;
             yieldCount += currentYieldCount;
+            docSize = document.sizeInBytes();
             Map<String,Long> stageTimers = timingMetadata.getStageTimers();
             if (stageTimers.containsKey(QuerySpan.Stage.DocumentSpecificTree.toString())) {
                 docRanges++;
@@ -309,6 +311,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             metric.setNextCount(nextCount);
             metric.setSeekCount(seekCount);
             metric.setYieldCount(yieldCount);
+            metric.setDocSize(docSize);
             metric.setDocRanges(docRanges);
             metric.setFiRanges(fiRanges);
         }
@@ -320,6 +323,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         nextCount = 0;
         seekCount = 0;
         yieldCount = 0;
+        docSize = 0;
         docRanges = 0;
         fiRanges = 0;
     }
@@ -332,7 +336,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         for (Entry<String,Attribute<? extends Comparable<?>>> e : document.getDictionary().entrySet()) {
             String docField = e.getKey();
             String baseDocField = JexlASTHelper.removeGroupingContext(docField);
-            String reverseMappedField = reverseModel.containsKey(baseDocField) ? reverseModel.get(baseDocField) : "";
+            String reverseMappedField = reverseModel.getOrDefault(baseDocField, "");
             if (baseDocField.equals(field) || reverseMappedField.equals(field)) {
                 Attribute<?> a = e.getValue();
                 if (a instanceof Attributes) {
@@ -359,7 +363,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         String uidField = cardinalityConfiguration.getCardinalityUidField();
         if (org.apache.commons.lang.StringUtils.isNotBlank(uidField)) {
             List<String> documentUidValues = getFieldValues(document, uidField, true);
-            if (documentUidValues.isEmpty() == false) {
+            if (!documentUidValues.isEmpty()) {
                 eventId = documentUidValues.get(0);
             }
         }
@@ -451,7 +455,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         Set<FieldBase<?>> myFields = new HashSet<>();
 
         if (attr instanceof Attributes) {
-            Attributes attributeList = Attributes.class.cast(attr);
+            Attributes attributeList = (Attributes) attr;
 
             for (Attribute<? extends Comparable<?>> embeddedAttr : attributeList.getAttributes())
                 myFields.addAll(buildDocumentFields(documentKey, fieldName, embeddedAttr, topLevelColumnVisibility, markingFunctions));
