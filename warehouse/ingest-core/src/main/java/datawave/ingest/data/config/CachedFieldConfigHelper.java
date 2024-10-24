@@ -1,8 +1,7 @@
 package datawave.ingest.data.config;
 
-import java.util.EnumMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.apache.commons.collections4.map.LRUMap;
 
@@ -10,10 +9,10 @@ import com.google.common.annotations.VisibleForTesting;
 
 public class CachedFieldConfigHelper implements FieldConfigHelper {
     private final FieldConfigHelper underlyingHelper;
-    private final Map<String,ResultEntry> resultCache;
+    private final Map<String,CachedEntry> resultCache;
 
     enum AttributeType {
-        INDEXED_FIELD, REVERSE_INDEXED_FIELD, TOKENIZED_FIELD, REVERSE_TOKENIZED_FIELD, STORED_FIELD, INDEXED_ONLY
+        INDEXED_FIELD, REVERSE_INDEXED_FIELD, TOKENIZED_FIELD, REVERSE_TOKENIZED_FIELD, STORED_FIELD, INDEX_ONLY_FIELD
     }
 
     public CachedFieldConfigHelper(FieldConfigHelper helper, int limit) {
@@ -26,50 +25,96 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
 
     @Override
     public boolean isStoredField(String fieldName) {
-        return getOrEvaluate(AttributeType.STORED_FIELD, fieldName, underlyingHelper::isStoredField);
+        return getFieldResult(AttributeType.STORED_FIELD, fieldName, underlyingHelper::isStoredField);
     }
 
     @Override
     public boolean isIndexedField(String fieldName) {
-        return getOrEvaluate(AttributeType.INDEXED_FIELD, fieldName, underlyingHelper::isIndexedField);
+        return getFieldResult(AttributeType.INDEXED_FIELD, fieldName, underlyingHelper::isIndexedField);
     }
 
     @Override
     public boolean isIndexOnlyField(String fieldName) {
-        return getOrEvaluate(AttributeType.INDEXED_ONLY, fieldName, underlyingHelper::isIndexOnlyField);
+        return getFieldResult(AttributeType.INDEX_ONLY_FIELD, fieldName, underlyingHelper::isIndexOnlyField);
     }
 
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        return getOrEvaluate(AttributeType.REVERSE_INDEXED_FIELD, fieldName, underlyingHelper::isReverseIndexedField);
+        return getFieldResult(AttributeType.REVERSE_INDEXED_FIELD, fieldName, underlyingHelper::isReverseIndexedField);
     }
 
     @Override
     public boolean isTokenizedField(String fieldName) {
-        return getOrEvaluate(AttributeType.TOKENIZED_FIELD, fieldName, underlyingHelper::isTokenizedField);
+        return getFieldResult(AttributeType.TOKENIZED_FIELD, fieldName, underlyingHelper::isTokenizedField);
     }
 
     @Override
     public boolean isReverseTokenizedField(String fieldName) {
-        return getOrEvaluate(AttributeType.REVERSE_TOKENIZED_FIELD, fieldName, underlyingHelper::isReverseTokenizedField);
+        return getFieldResult(AttributeType.REVERSE_TOKENIZED_FIELD, fieldName, underlyingHelper::isReverseTokenizedField);
     }
 
     @VisibleForTesting
-    boolean getOrEvaluate(AttributeType attributeType, String fieldName, Function<String,Boolean> evaluateFn) {
-        return resultCache.computeIfAbsent(fieldName, ResultEntry::new).resolveResult(attributeType, evaluateFn);
+    boolean getFieldResult(AttributeType attributeType, String fieldName, Predicate<String> fn) {
+        return resultCache.computeIfAbsent(fieldName, CachedEntry::new).get(attributeType).getResultOrEvaluate(fn);
     }
 
-    private static class ResultEntry {
+    private static class CachedEntry {
         private final String fieldName;
-        private final EnumMap<AttributeType,Boolean> resultMap;
+        private final MemoizedResult indexed;
+        private final MemoizedResult reverseIndexed;
+        private final MemoizedResult stored;
+        private final MemoizedResult indexedOnly;
+        private final MemoizedResult tokenized;
+        private final MemoizedResult reverseTokenized;
 
-        ResultEntry(String fieldName) {
+        private CachedEntry(String fieldName) {
             this.fieldName = fieldName;
-            this.resultMap = new EnumMap<>(AttributeType.class);
+            this.indexed = new MemoizedResult();
+            this.reverseIndexed = new MemoizedResult();
+            this.stored = new MemoizedResult();
+            this.indexedOnly = new MemoizedResult();
+            this.tokenized = new MemoizedResult();
+            this.reverseTokenized = new MemoizedResult();
         }
 
-        boolean resolveResult(AttributeType attributeType, Function<String,Boolean> evaluateFn) {
-            return resultMap.computeIfAbsent(attributeType, (t) -> evaluateFn.apply(fieldName));
+        private MemoizedResult get(AttributeType attributeType) {
+            MemoizedResult result;
+            switch (attributeType) {
+                case INDEX_ONLY_FIELD:
+                    result = indexedOnly;
+                    break;
+                case INDEXED_FIELD:
+                    result = indexed;
+                    break;
+                case REVERSE_INDEXED_FIELD:
+                    result = reverseIndexed;
+                    break;
+                case TOKENIZED_FIELD:
+                    result = tokenized;
+                    break;
+                case REVERSE_TOKENIZED_FIELD:
+                    result = reverseTokenized;
+                    break;
+                case STORED_FIELD:
+                    result = stored;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Undefined attribute type: " + attributeType);
+            }
+            return result;
+        }
+
+        private class MemoizedResult {
+            private boolean resultEvaluated;
+            private boolean result;
+
+            private boolean getResultOrEvaluate(Predicate<String> evaluateFn) {
+                if (!resultEvaluated) {
+                    result = evaluateFn.test(fieldName);
+                    resultEvaluated = true;
+                }
+                return result;
+            }
         }
     }
 }
