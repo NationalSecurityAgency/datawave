@@ -136,6 +136,17 @@ Enabled via the 'dictionary', or 'full' profile.
 
 You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
 
+### File Provider
+
+Enabled via the 'file-provider', or 'full' profile.
+
+This microservice is in development, and can be found in this repo.
+
+[Datawave File Provider Service](https://github.com/NationalSecurityAgency/datawave-file-provider-service/tree/main) provides file management and access to Datawave and it's services.
+
+You will need to build the docker image for this service on your local machine following the instructions in the file provider service README.
+
+
 ## Usage
 
 Please read through these instructions in their entirety before attempting to build or deploy Datawave.
@@ -327,6 +338,10 @@ Start the default services, and the dictionary service:
 Start the default services, the kafka services, and the dictionary service:
 
 ```docker compose --profile quickstart --profile dictionary --profile kafka up -d```
+
+Start the default services, and the file provider service:
+
+```docker compose --profile quickstart --profile file-provider up -d```
 
 Start all services:
 

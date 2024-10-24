@@ -413,6 +413,25 @@ services:
       authorization:
         condition: service_healthy
 
+  file-provider:
+    profiles:
+      - file-provider
+      - full
+    image: datawave/file-provider-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "8280:8080"
+      - "8643:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+
   # If you want to test cached results, enable the cachedresults profile
   mysql:
     profiles:

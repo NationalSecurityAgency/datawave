@@ -67,6 +67,17 @@
             </modules>
         </profile>
         <profile>
+            <id>submodule-service-file-provider</id>
+            <activation>
+                <file>
+                    <exists>file-provider/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>file-provider</module>
+            </modules>
+        </profile>
+        <profile>
             <id>submodule-service-hazelcast</id>
             <activation>
                 <file>
