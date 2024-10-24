@@ -17,19 +17,30 @@ public class ValidateFieldTermsVisitor extends BaseVisitor {
     @Override
     public Object visit(AndQueryNode node, Object data) {
 
+        boolean explicitDefaultFieldTraversed = false;
         for(QueryNode child : node.getChildren()) {
+
             QueryNodeType type = QueryNodeType.get(child.getClass());
             switch(type) {
                 /*
-                 * Ambiguous Case:  BooleanQueryNode has sibling FieldQueryNode as children, one or more with empty fields.
-                 * Fix:             A GroupQueryNode must wrap the BooleanQueryNode.
+                 * Ambiguous Case:  BooleanQueryNode has sibling FieldQueryNode as children, with unorganized mixed fields.
+                 * Fix:             A GroupQueryNode must wrap the BooleanQueryNode, or the groups must be organized.
                  * Example:         FIELD1:1234 5678 ->
                  *                  FIELD1:(1234 5678)
                  *                  FIELD1:(1234) OR 5678
+                 *
+                 * Example:         abc def FIELD:123 345 ->
+                 *                  abc def (FIELD:123 345)
                  */
                 case FIELD: {
-                    if (Objects.requireNonNull(((FieldQueryNode) child).getField()).equals("")) {
-                        throw new IllegalArgumentException("Field terms are ambiguous. Try adding parentheses around the terms.");
+
+                    //Tracks if we've traversed a non-empty field.
+                    if(Objects.requireNonNull(((FieldQueryNode) child).getField()).equals("")) {
+                        if(explicitDefaultFieldTraversed){
+                            throw new IllegalArgumentException("Field terms are ambiguous. Try adding parentheses around the terms.");
+                        }
+                    }else{
+                        explicitDefaultFieldTraversed = true;
                     }
                 }
             }
@@ -40,19 +51,31 @@ public class ValidateFieldTermsVisitor extends BaseVisitor {
 
     @Override
     public Object visit(OrQueryNode node, Object data) {
+
+        boolean explicitDefaultFieldTraversed = false;
         for(QueryNode child : node.getChildren()) {
+
             QueryNodeType type = QueryNodeType.get(child.getClass());
             switch(type) {
                 /*
-                 * Ambiguous Case:  BooleanQueryNode has sibling FieldQueryNode as children, one or more with empty fields.
-                 * Fix:             A GroupQueryNode must wrap the BooleanQueryNode.
+                 * Ambiguous Case:  BooleanQueryNode has sibling FieldQueryNode as children, with unorganized mixed fields.
+                 * Fix:             A GroupQueryNode must wrap the BooleanQueryNode, or the groups must be organized.
                  * Example:         FIELD1:1234 5678 ->
                  *                  FIELD1:(1234 5678)
                  *                  FIELD1:(1234) OR 5678
+                 *
+                 * Example:         abc def FIELD:123 345 ->
+                 *                  abc def (FIELD:123 345)
                  */
                 case FIELD: {
-                    if (Objects.requireNonNull(((FieldQueryNode) child).getField()).equals("")) {
-                        throw new IllegalArgumentException("Field terms are ambiguous. Try adding parentheses around the terms.");
+
+                    //Tracks if we've traversed a non-empty field.
+                    if(Objects.requireNonNull(((FieldQueryNode) child).getField()).equals("")) {
+                        if(explicitDefaultFieldTraversed){
+                            throw new IllegalArgumentException("Field terms are ambiguous. Try adding parentheses around the terms.");
+                        }
+                    }else{
+                        explicitDefaultFieldTraversed = true;
                     }
                 }
             }
@@ -63,22 +86,33 @@ public class ValidateFieldTermsVisitor extends BaseVisitor {
 
     @Override
     public Object visit(NotBooleanQueryNode node, Object data) {
+
+        boolean explicitDefaultFieldTraversed = false;
         for(QueryNode child : node.getChildren()) {
+
             QueryNodeType type = QueryNodeType.get(child.getClass());
             switch(type) {
                 /*
-                 * Ambiguous Case:  BooleanQueryNode has sibling FieldQueryNode as children, one or more with empty fields.
-                 * Fix:             A GroupQueryNode must wrap the BooleanQueryNode.
+                 * Ambiguous Case:  BooleanQueryNode has sibling FieldQueryNode as children, with unorganized mixed fields.
+                 * Fix:             A GroupQueryNode must wrap the BooleanQueryNode, or the groups must be organized.
                  * Example:         FIELD1:1234 5678 ->
                  *                  FIELD1:(1234 5678)
                  *                  FIELD1:(1234) OR 5678
+                 *
+                 * Example:         abc def FIELD:123 345 ->
+                 *                  abc def (FIELD:123 345)
                  */
                 case FIELD: {
-                    if (Objects.requireNonNull(((FieldQueryNode) child).getField()).equals("")) {
-                        throw new IllegalArgumentException("Field terms are ambiguous. Try adding parentheses around the terms.");
+
+                    //Tracks if we've traversed a non-empty field.
+                    if(Objects.requireNonNull(((FieldQueryNode) child).getField()).equals("")) {
+                        if(explicitDefaultFieldTraversed){
+                            throw new IllegalArgumentException("Field terms are ambiguous. Try adding parentheses around the terms.");
+                        }
+                    }else{
+                        explicitDefaultFieldTraversed = true;
                     }
                 }
-                case GROUP:
             }
         }
         visitChildren(node, data);
