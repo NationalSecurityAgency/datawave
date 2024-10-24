@@ -131,21 +131,8 @@ function setQueryIdFromResponse() {
 }
 
 function prettyPrintJson() {
-    local PY=$( which python )
-    if [ -n "${PY}" ] ; then
-        echo "${1}" | ${PY} -c 'from __future__ import print_function;import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
-        local exitStatus=$?
-        echo
-        if [ "${exitStatus}" != "0" ] ; then
-           printRawResponse "${1}"
-           warn "Python encountered error. Printed response without formatting"
-           echo
-        fi
-    else
-        printRawResponse "${1}"
-        warn "Couldn't find python in your environment. Json response was printed without formatting"
-        echo
-    fi
+    PY_CMD='from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
+    echo "${1}" | ( python3 -c "${PY_CMD}" 2>/dev/null || python2 -c "${PY_CMD}" 2>/dev/null ) || ( warn "Python encountered error. Printed response without formatting" && printRawResponse "${1}" )
 }
 
 function printRawResponse() {
