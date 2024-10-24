@@ -6,9 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,37 +14,29 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class CachingFieldConfigHelperTest {
-    @SuppressWarnings("unchecked")
     @Test
     public void testCachingBehaviorWillCallBaseMethods() {
-        // @formatter:off
-        Stream.of(new Object[][] {
-            new Object[] {
-                (BiConsumer<FieldConfigHelper, String>) FieldConfigHelper::isIndexOnlyField,
-                    (BiConsumer<FieldConfigHelper, String>) (h, f) -> verify(h).isIndexOnlyField(eq(f)),
-                (BiConsumer<FieldConfigHelper, String>) FieldConfigHelper::isIndexedField,
-                    (BiConsumer<FieldConfigHelper, String>) (h, f) -> verify(h).isIndexedField(eq(f)),
-                (BiConsumer<FieldConfigHelper, String>) FieldConfigHelper::isTokenizedField,
-                    (BiConsumer<FieldConfigHelper, String>) (h, f) -> verify(h).isTokenizedField(eq(f)),
-                (BiConsumer<FieldConfigHelper, String>) FieldConfigHelper::isStoredField,
-                    (BiConsumer<FieldConfigHelper, String>) (h, f) -> verify(h).isStoredField(eq(f)),
-                (BiConsumer<FieldConfigHelper, String>) FieldConfigHelper::isReverseIndexedField,
-                    (BiConsumer<FieldConfigHelper, String>) (h, f) -> verify(h).isReverseIndexedField(eq(f)),
-                (BiConsumer<FieldConfigHelper, String>) FieldConfigHelper::isReverseTokenizedField,
-                    (BiConsumer<FieldConfigHelper, String>) (h, f) -> verify(h).isReverseTokenizedField(eq(f)),
-            }
-        }).forEach(arg -> {
-            // param[0] = helper method
-            // param[1] = validation method
-            String fieldName = "testField";
-            BiConsumer<FieldConfigHelper, String> testAction = (BiConsumer<FieldConfigHelper, String>) arg[0];
-            BiConsumer<FieldConfigHelper, String> verifyAction = (BiConsumer<FieldConfigHelper, String>) arg[1];
-            FieldConfigHelper mockHelper = mock(FieldConfigHelper.class);
-            FieldConfigHelper cachedHelper = new CachedFieldConfigHelper(mockHelper, 1);
-            testAction.accept(cachedHelper, fieldName);
-            verifyAction.accept(mockHelper, fieldName);
-        });
-        // @formatter:on
+        String fieldName = "test";
+        FieldConfigHelper mockHelper = mock(FieldConfigHelper.class);
+        FieldConfigHelper cachedHelper = new CachedFieldConfigHelper(mockHelper, 1);
+
+        cachedHelper.isIndexOnlyField(fieldName);
+        verify(mockHelper).isIndexOnlyField(eq(fieldName));
+
+        cachedHelper.isIndexedField(fieldName);
+        verify(mockHelper).isIndexedField(eq(fieldName));
+
+        cachedHelper.isTokenizedField(fieldName);
+        verify(mockHelper).isTokenizedField(eq(fieldName));
+
+        cachedHelper.isStoredField(fieldName);
+        verify(mockHelper).isStoredField(eq(fieldName));
+
+        cachedHelper.isReverseIndexedField(fieldName);
+        verify(mockHelper).isReverseIndexedField(eq(fieldName));
+
+        cachedHelper.isReverseTokenizedField(fieldName);
+        verify(mockHelper).isReverseTokenizedField(eq(fieldName));
     }
 
     @ParameterizedTest
