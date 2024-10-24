@@ -157,7 +157,6 @@ public class QueryFieldsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        System.out.println(desc.getClass().getName());
         Set<String> fields = desc.fields(helper, null);
         ((Set<String>) data).addAll(fields);
         return data;

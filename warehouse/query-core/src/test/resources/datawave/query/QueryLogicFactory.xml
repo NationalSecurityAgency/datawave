@@ -133,6 +133,34 @@
         </property>
     </bean>
 
+ <!--   <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
+        <property name="logicDescription" value="Event query" />
+        <property name="configuredProfiles" >
+            <map>
+                <entry key="copyFieldEventQuery" value-ref="CopyFieldEventQuery" />
+            </map>
+        </property>
+    </bean>-->
+
+    <bean id="FieldExistenceEvaluator" scope="prototype" class="datawave.query.validate.FieldExistenceValidator">
+        <property name="specialFields">
+            <list value-type="java.lang.String">
+                <value>_ANYFIELD_</value>
+                <value>_NOFIELD_</value>
+                <value>EVENT_DATATYPE</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="FieldPresenceEvaluator" scope="prototype" class="datawave.query.validate.FieldPresenceValidator">
+        <property name="fieldMessages">
+            <map key-type="java.lang.String" value-type="java.lang.String">
+                <entry key="_ANYFIELD_" value="Query contains ambiguous _ANYFIELD_ reference"/>
+                <entry key="_NOFIELD_" value="Query contains ambiguous _NOFIELD_ reference"/>
+            </map>
+        </property>
+    </bean>
+
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
         <property name="configuredProfiles" >
@@ -142,10 +170,12 @@
         </property>
         <property name="queryValidators">
             <list value-type="datawave.query.validate.QueryValidator">
-                <ref bean="FieldFieldExistenceQueryValidator"/>
+                <ref bean="FieldExistenceEvaluator"/>
+                <ref bean="FieldPresenceEvaluator"/>
             </list>
         </property>
     </bean>
+
 
     <bean id="CopyFieldEventQuery" scope="prototype"  class="datawave.query.config.LookupUUIDTune">
         <property name="primaryToSecondaryFieldMap">
@@ -394,17 +424,4 @@
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
     </util:list>
 
-    <bean id="FieldExistenceQueryValidatorConfiguration" scope="prototype" class="datawave.query.validate.FieldExistenceValidatorConfiguration">
-        <property name="specialFields">
-            <list value-type="java.lang.String">
-                <value>_ANYFIELD_</value>
-                <value>_NOFIELD_</value>
-                <value>EVENT_DATATYPE</value>
-            </list>
-        </property>
-    </bean>
-
-    <bean id="FieldExistenceQueryValidator" scope="prototype" class="datawave.query.validate.FieldExistenceValidator">
-        <property name="config" ref="FieldExistenceQueryValidatorConfiguration"/>
-    </bean>
 </beans>

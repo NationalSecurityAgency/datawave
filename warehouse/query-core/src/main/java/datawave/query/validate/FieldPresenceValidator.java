@@ -2,26 +2,28 @@ package datawave.query.validate;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-public class FieldExistenceValidator implements QueryValidator {
+public class FieldPresenceValidator implements QueryValidator {
     
     private static final Set<String> supportedSyntaxes = Collections.singleton("JEXL");
     
-    private Set<String> specialFields;
+    private Map<String, String> fieldMessages;
     
-    public Set<String> getSpecialFields() {
-        return specialFields;
+    public Map<String,String> getFieldMessages() {
+        return fieldMessages;
     }
     
-    public void setSpecialFields(Set<String> specialFields) {
-        this.specialFields = specialFields;
+    public void setFieldMessages(Map<String,String> fieldMessages) {
+        this.fieldMessages = fieldMessages;
     }
     
     @Override
@@ -35,12 +37,13 @@ public class FieldExistenceValidator implements QueryValidator {
             throw new IllegalArgumentException("Query syntax " + querySyntax + " is not supported for this evaluator.");
         }
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
-        Set<String> nonExistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(metadataHelper, queryTree, Collections.emptySet(),
-                        specialFields);
-        if (!nonExistentFields.isEmpty()) {
-            return Collections.singletonList("Fields not found in data dictionary: " + String.join(",", nonExistentFields));
-        } else {
-            return Collections.emptyList();
+        Set<String> fields = QueryFieldsVisitor.parseQueryFields(query, metadataHelper);
+        List<String> messages = new ArrayList<>();
+        for (String field : fieldMessages.keySet()) {
+            if (fields.contains(field)) {
+                messages.add(fieldMessages.get(field));
+            }
         }
+        return messages;
     }
 }

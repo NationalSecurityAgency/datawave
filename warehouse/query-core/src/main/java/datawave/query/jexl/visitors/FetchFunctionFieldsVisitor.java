@@ -1,26 +1,27 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class FetchFunctionFieldsVisitor extends BaseVisitor {
     
     private final Set<Pair<String,String>> functions = new HashSet<>();
+    private final MetadataHelper metadataHelper;
     private final HashMultimap<Pair<String,String>,String> fields = HashMultimap.create();
     
-    public static Set<FunctionFields> fetchFields(JexlNode node, Set<Pair<String, String>> functions) {
+    public static Set<FunctionFields> fetchFields(JexlNode node, Set<Pair<String, String>> functions, MetadataHelper metadataHelper) {
         if (node != null) {
-            FetchFunctionFieldsVisitor visitor = new FetchFunctionFieldsVisitor(functions);
+            FetchFunctionFieldsVisitor visitor = new FetchFunctionFieldsVisitor(functions, metadataHelper);
             node.jjtAccept(visitor, functions);
             return visitor.getFunctionFields();
         } else {
@@ -28,8 +29,9 @@ public class FetchFunctionFieldsVisitor extends BaseVisitor {
         }
     }
     
-    private FetchFunctionFieldsVisitor(Set<Pair<String,String>> functions) {
+    private FetchFunctionFieldsVisitor(Set<Pair<String,String>> functions, MetadataHelper metadataHelper) {
         functions.forEach((p) -> this.functions.add(Pair.of(p.getLeft(), p.getRight())));
+        this.metadataHelper = metadataHelper;
     }
     
     @Override
@@ -39,9 +41,11 @@ public class FetchFunctionFieldsVisitor extends BaseVisitor {
         
         Pair<String,String> function = Pair.of(visitor.namespace(), visitor.name());
         if (functions.contains(function)) {
-        
+            JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+            Set<String> fields = desc.fields(metadataHelper, null);
+            this.fields.putAll(function, fields);
         }
-        return super.visit(node, data);
+        return null;
     }
     
     private Set<FunctionFields> getFunctionFields() {

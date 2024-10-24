@@ -588,11 +588,6 @@ public class TestLuceneToJexlQueryParser {
     }
     
     @Test
-    public void testTimeFunction() throws ParseException {
-        System.out.println(parseQuery(""));
-    }
-
-    @Test
     public void testUniqueFunctions() throws ParseException {
         assertEquals("f:unique('field1','field2','field3')", parser.parse("#unique(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique('field1[ALL','DAY]','field2')", parser.parse("#unique(field1[ALL,DAY],field2)").getOriginalQuery());
@@ -655,4 +650,5 @@ public class TestLuceneToJexlQueryParser {
                                         + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))",
                         parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
+    
 }

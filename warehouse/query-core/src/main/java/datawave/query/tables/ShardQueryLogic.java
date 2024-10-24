@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import datawave.query.validate.QueryValidator;
-import datawave.query.validate.QueryValidatorConfiguration;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -1406,12 +1405,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         List<String> messages = new ArrayList<>();
         
         for (QueryValidator validator : validators) {
-            QueryValidatorConfiguration validatorConfig = validator.getConfigBaseCopy();
-            validatorConfig.setQuery(query);
-            validatorConfig.setQuerySyntax(syntax);
-            validatorConfig.setMetadataHelper(metadataHelper);
-            validatorConfig.setQueryConfiguration(this.config);
-            messages.addAll(validator.validate(validatorConfig));
+            messages.addAll(validator.evaluate(query, syntax, this.config, metadataHelper));
         }
         
         return messages;

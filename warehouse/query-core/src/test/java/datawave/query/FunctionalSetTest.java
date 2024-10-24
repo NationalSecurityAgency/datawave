@@ -200,7 +200,7 @@ public abstract class FunctionalSetTest {
         Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
         Assert.assertEquals("Unexpected number of records for query:" + querystr, expected.size(), resultSet.size());
     }
-
+    
     @Test
     public void testMethodAsArgumentToMethod() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
