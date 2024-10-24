@@ -142,8 +142,10 @@ import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
+import datawave.query.jexl.visitors.RegexRewritePattern;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.RewriteNullFunctionsVisitor;
+import datawave.query.jexl.visitors.RewriteRegexVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -303,6 +305,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * performance impact.
      */
     protected boolean showReducedQueryPrune = true;
+
+    /**
+     * Controls optimistic rewriting of regex terms as filter functions, preserving overall query executability
+     */
+    protected boolean rewriteRegexTerms = false;
+    protected Set<String> regexIncludeFields;
+    protected Set<String> regexExcludeFields;
+    protected Set<RegexRewritePattern> regexRewritePatterns;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -778,7 +788,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
 
-        Set<String> indexOnlyFields = loadIndexedFields(config);
+        Set<String> indexOnlyFields = loadIndexOnlyFields(config);
+
+        Set<String> indexedFields = loadIndexedFields(config);
+        config.setIndexedFields(indexedFields);
 
         if (!indexOnlyFields.isEmpty()) {
             // filter:includeRegex and filter:excludeRegex functions cannot be run against index-only fields, clean that up
@@ -807,6 +820,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Enforce unique OR'd terms within AND expressions.
         if (config.getEnforceUniqueDisjunctionsWithinExpression()) {
             config.setQueryTree(timedEnforceUniqueDisjunctionsWithinExpressions(timers, config.getQueryTree()));
+        }
+
+        // rewrite regex nodes, optimistically
+        if (rewriteRegexTerms) {
+            RewriteRegexVisitor.rewrite(config.getQueryTree(), indexedFields, indexOnlyFields, regexIncludeFields, regexExcludeFields, regexRewritePatterns);
         }
 
         if (disableBoundedLookup) {
@@ -1219,9 +1237,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
      */
 
-    protected Set<String> loadIndexedFields(ShardQueryConfiguration config) {
+    protected Set<String> loadIndexOnlyFields(ShardQueryConfiguration config) {
         try {
             return metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
+    }
+
+    protected Set<String> loadIndexedFields(ShardQueryConfiguration config) {
+        try {
+            return metadataHelper.getIndexedFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
@@ -3225,6 +3252,38 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void setMaxTermsToPrint(int maxTermsToPrint) {
         DefaultQueryPlanner.maxTermsToPrint = maxTermsToPrint;
+    }
+
+    public boolean isRewriteRegexTerms() {
+        return rewriteRegexTerms;
+    }
+
+    public void setRewriteRegexTerms(boolean rewriteRegexTerms) {
+        this.rewriteRegexTerms = rewriteRegexTerms;
+    }
+
+    public Set<String> getRegexIncludeFields() {
+        return regexIncludeFields;
+    }
+
+    public void setRegexIncludeFields(Set<String> regexIncludeFields) {
+        this.regexIncludeFields = regexIncludeFields;
+    }
+
+    public Set<String> getRegexExcludeFields() {
+        return regexExcludeFields;
+    }
+
+    public void setRegexExcludeFields(Set<String> regexExcludeFields) {
+        this.regexExcludeFields = regexExcludeFields;
+    }
+
+    public Set<RegexRewritePattern> getRegexRewritePatterns() {
+        return regexRewritePatterns;
+    }
+
+    public void setRegexRewritePatterns(Set<RegexRewritePattern> regexRewritePatterns) {
+        this.regexRewritePatterns = regexRewritePatterns;
     }
 
     /**
