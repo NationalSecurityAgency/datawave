@@ -33,6 +33,7 @@ import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.CachedFieldConfigHelper;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.FieldConfigHelper;
 import datawave.ingest.data.config.MarkingsHelper;
@@ -137,8 +138,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_FAILED_NORMALIZATION_POLICY = ".data.field.normalization.failure.policy";
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
+    public static final String FIELD_CONFIG_CACHE_ENABLED = ".data.category.field.config.cache.enabled";
+    public static final String FIELD_CONFIG_CACHE_KEY_LIMIT = ".data.category.field.config.cache.limit";
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
+
+    private static final boolean DEFAULT_FIELD_CACHE_ENABLED = false;
+    private static final int DEFAULT_FIELD_CACHE_LIMIT = 100;
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
     private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;
@@ -254,10 +260,17 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // Load the field helper, which takes precedence over the individual field configurations
         final String fieldConfigFile = config.get(this.getType().typeName() + FIELD_CONFIG_FILE);
         if (fieldConfigFile != null) {
+            final boolean fieldConfigCacheEnabled = config.getBoolean(this.getType().typeName() + FIELD_CONFIG_CACHE_ENABLED, DEFAULT_FIELD_CACHE_ENABLED);
+            final int fieldConfigCacheLimit = config.getInt(this.getType().typeName() + FIELD_CONFIG_CACHE_KEY_LIMIT, DEFAULT_FIELD_CACHE_LIMIT);
             if (log.isDebugEnabled()) {
                 log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
+                log.debug("Field config cache enabled: " + fieldConfigCacheEnabled);
+                if (fieldConfigCacheEnabled) {
+                    log.debug("Field config cache limit: " + fieldConfigCacheLimit);
+                }
             }
-            this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
+            final FieldConfigHelper baseHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
+            fieldConfigHelper = fieldConfigCacheEnabled ? new CachedFieldConfigHelper(baseHelper, fieldConfigCacheLimit) : baseHelper;
         }
 
         // Process the indexed fields
