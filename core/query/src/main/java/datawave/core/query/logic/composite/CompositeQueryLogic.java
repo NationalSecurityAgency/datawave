@@ -271,12 +271,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                     // duplicate the settings for this query
                     Query settingsCopy = settings.duplicate(settings.getQueryName() + " -> " + logicName);
 
+                    // ensure we use the same query id
+                    settingsCopy.setId(settings.getId());
+
                     // update the query auths and runtime query authorizations for this logic
                     runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(logic, settingsCopy);
 
                     config = logic.initialize(client, settingsCopy, runtimeQueryAuthorizations);
-
-                    logicQueryStringBuilder.append(" && ").append("( queryId = '").append(settingsCopy.getId()).append("' )");
 
                     // only add this query logic to the initialized logic states if it was not simply filtered out
                     if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
@@ -440,7 +441,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                     responseClass = refResponse.getClass();
                 } else {
                     if (!responseClass.equals(refResponse.getClass())) {
-                        throw new RuntimeException("All query logics must use transformers that return the same object type");
+                        throw new RuntimeException("All query logics must use transformers that return the same object type: " + responseClass + " vs "
+                                        + refResponse.getClass());
                     }
                 }
             }
