@@ -1465,6 +1465,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setFiNextSeek(this.getFiNextSeek())
                 .setEventNextSeek(this.getEventNextSeek())
                 .setTfNextSeek(this.getTfNextSeek())
+                .setUseRegexFilter(getCardinality() < getCardinalityThreshold())
                 .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);

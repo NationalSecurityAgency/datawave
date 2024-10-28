@@ -2980,6 +2980,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setSortQueryPostIndexWithTermCounts(sortQueryPostIndexWithTermCounts);
     }
 
+    public int getCardinalityThreshold() {
+        return getConfig().getCardinalityThreshold();
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        getConfig().setCardinalityThreshold(cardinalityThreshold);
+    }
+
     public boolean isUseQueryTreeScanHintRules() {
         return getConfig().isUseQueryTreeScanHintRules();
     }
