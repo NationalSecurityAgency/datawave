@@ -1,7 +1,6 @@
 package datawave.query.attributes;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -9,14 +8,14 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Multimap;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.postprocessing.tf.PhraseIndexes;
+import datawave.util.StringUtils;
 
 /**
  * Represents a set of fields that have been specified within an #EXCERPT_FIELDS function, as well as their corresponding target offsets that should be used to
@@ -51,7 +50,7 @@ public class ExcerptFields implements Serializable {
             return null;
         }
         // Strip whitespaces.
-        string = StringUtils.deleteWhitespace(string);
+        string = PhraseIndexes.whitespacePattern.matcher(string).replaceAll("");
 
         if (string.isEmpty()) {
             return new ExcerptFields();
@@ -202,9 +201,9 @@ public class ExcerptFields implements Serializable {
      */
     public void expandFields(Multimap<String,String> model) {
         SortedMap<String,SortedMap<Integer,String>> expandedMap = new TreeMap<>();
-        for (String field : fieldMap.keySet()) {
-            SortedMap<Integer,String> offset = fieldMap.get(field);
-            field = field.toUpperCase();
+        for (Map.Entry<String,SortedMap<Integer,String>> entry : fieldMap.entrySet()) {
+            String field = entry.getKey().toUpperCase();
+            SortedMap<Integer,String> offset = entry.getValue();
             // Add the expanded fields.
             if (model.containsKey(field)) {
                 for (String expandedField : model.get(field)) {

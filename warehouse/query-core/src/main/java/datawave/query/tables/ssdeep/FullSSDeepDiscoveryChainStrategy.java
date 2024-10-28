@@ -41,6 +41,11 @@ public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSS
 
         String queryString = captureScoredMatchesAndBuildQuery(initialQueryResults, scoredMatches);
 
+        if (scoredMatches.isEmpty()) {
+            log.info("Did not receive scored matches from initial query, returning null latter query");
+            return null;
+        }
+
         Query q = new QueryImpl(); // TODO, need to use a factory? don't hardcode this.
         q.setQuery(queryString);
         q.setId(UUID.randomUUID());

@@ -162,6 +162,28 @@ public class SSDeepIndexQueryTest {
         runSingleQuery(true);
     }
 
+    @Test(expected = SSDeepRuntimeQueryException.class)
+    public void testSingleQueryWithNoValidNgrams() throws Exception {
+        String query = "CHECKSUM_SSDEEP:12288:zzzzzzzzzzzz:zzzzzz";
+
+        final int minScoreThreshold = 0;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
+        List<EventBase> events = response.getEvents();
+        Assert.assertNull(events);
+    }
+
+    @Test
+    public void testSingleQueryWithNoResults() throws Exception {
+        String query = "CHECKSUM_SSDEEP:12288:aabbccddeeff:abcdef";
+
+        final int minScoreThreshold = 0;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
+        List<EventBase> events = response.getEvents();
+        Assert.assertNull(events);
+    }
+
     private static void logSSDeepTestData(String tableName) throws TableNotFoundException {
         Scanner scanner = accumuloClient.createScanner(tableName, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
