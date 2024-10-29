@@ -5,11 +5,18 @@ import java.util.List;
 
 import org.apache.accumulo.core.security.Authorizations;
 
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
+import datawave.query.util.ssdeep.NGramScoreTuple;
+import datawave.util.ssdeep.ChunkSizeEncoding;
+import datawave.util.ssdeep.IntegerEncoding;
+import datawave.util.ssdeep.NGramTuple;
+import datawave.util.ssdeep.SSDeepHash;
+import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;

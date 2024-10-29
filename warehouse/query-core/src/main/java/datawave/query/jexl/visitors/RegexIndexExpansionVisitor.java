@@ -34,6 +34,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -49,7 +50,6 @@ import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
@@ -84,7 +84,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
-        if (config.isExpansionLimitedToModelContents()) {
+        if (config.isLimitTermExpansionToModel()) {
             try {
                 QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
                 this.onlyUseThese = queryModel.getForwardQueryMapping().values();

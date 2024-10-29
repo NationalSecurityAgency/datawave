@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.junit.Test;
 
@@ -175,6 +176,50 @@ public class NegationFilterTest {
         @Override
         public void setContext(K context) {
             // no-op
+        }
+
+        // tests involving this iterator are assumed to be for indexed event fields
+        @Override
+        public boolean isNonEventField() {
+            return false;
+        }
+    }
+
+    static class InterruptedIterator<K> implements Iterator<K> {
+
+        private int count = 0;
+        private final Iterator<K> i;
+
+        public InterruptedIterator(Iterator<K> i) {
+            this.i = i;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return i.hasNext();
+        }
+
+        @Override
+        public K next() {
+            if (count == 0) {
+                count++;
+                return i.next();
+            }
+            throw new NoSuchElementException("Interrupted while calling next");
+        }
+    }
+
+    static class InterruptedIterable<K> implements Iterable<K> {
+
+        private final Iterator<K> i;
+
+        public InterruptedIterable(Iterator<K> i) {
+            this.i = i;
+        }
+
+        @Override
+        public Iterator<K> iterator() {
+            return new InterruptedIterator<>(i);
         }
     }
 }

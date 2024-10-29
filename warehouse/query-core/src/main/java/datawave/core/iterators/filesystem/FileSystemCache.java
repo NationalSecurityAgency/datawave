@@ -3,6 +3,7 @@ package datawave.core.iterators.filesystem;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
@@ -24,10 +25,8 @@ public class FileSystemCache {
 
     public FileSystemCache(String hdfsSiteConfigs) throws MalformedURLException {
         conf = new Configuration();
-        if (hdfsSiteConfigs != null) {
-            for (String url : org.apache.commons.lang.StringUtils.split(hdfsSiteConfigs, ',')) {
-                conf.addResource(new URL(url));
-            }
+        for (String url : org.apache.commons.lang.StringUtils.split(hdfsSiteConfigs, ',')) {
+            conf.addResource(new URL(url));
         }
     }
 
@@ -43,8 +42,8 @@ public class FileSystemCache {
         }
         try {
             return new URI(scheme, authority, "/", null, null);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to create URI with only " + scheme + " and " + authority);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Failed to create URI with only " + scheme + " and " + authority, e);
         }
     }
 

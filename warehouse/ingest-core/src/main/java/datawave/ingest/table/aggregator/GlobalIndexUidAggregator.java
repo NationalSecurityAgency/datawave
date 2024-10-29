@@ -200,7 +200,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
 
             } catch (InvalidProtocolBufferException e) {
                 if (key.isDeleted()) {
-                    log.warn("Value passed to aggregator for a delete key was not of type Uid.List");
+                    log.trace("Value passed to aggregator for a delete key was not of type Uid.List");
                 } else {
                     log.error("Value passed to aggregator was not of type Uid.List", e);
                 }

@@ -33,12 +33,13 @@ import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.extjs.ExtJsResponse;
+import datawave.core.query.dashboard.DashboardSummary;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.security.util.WSAuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.runner.QueryExecutorBean;
 
 @Path("/Query/Metrics/dashboard")
@@ -153,7 +154,15 @@ public class DashboardBean {
     }
 
     private AccumuloClient createClient() throws Exception {
+        Principal p = ctx.getCallerPrincipal();
+        String userDn = null;
+        Collection<String> proxyServers = null;
+        if (p instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) p;
+            userDn = dp.getUserDN().subjectDN();
+            proxyServers = dp.getProxyServers();
+        }
         Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        return connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+        return connectionFactory.getClient(userDn, proxyServers, AccumuloConnectionFactory.Priority.LOW, trackingMap);
     }
 }

@@ -20,10 +20,12 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -38,7 +40,6 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 
 /**
  * See {@link GenericCarFields#index} for which fields are indexed in the data set used by this test.
@@ -84,7 +85,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+        this.logic.setQueryPlanner(new FederatedQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         // init must set auths

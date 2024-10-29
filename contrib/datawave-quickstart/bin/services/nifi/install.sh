@@ -13,11 +13,11 @@ nifiIsInstalled || verifyChecksum "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}"
 
 nifiIsInstalled && info "NiFi is already installed" && exit 1
 
-[ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ] && fatal "NiFi tarball not found"
+[ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ] && fatal "NiFi zip file not found"
 
 mkdir "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" || fatal "Failed to create NiFi base directory"
 
-tar xf "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" -C "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" --strip-components=1 || fatal "Failed to extract NiFi tarball"
+unzip "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" -d "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_BASEDIR}" || fatal "Failed to extract NiFi tarball"
 $( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/nifi/${DW_NIFI_BASEDIR}" "${DW_NIFI_SYMLINK}" ) || fatal "Failed to create NiFi symlink"
 
 nifiIsInstalled || fatal "NiFi was not installed"

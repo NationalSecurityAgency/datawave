@@ -1,5 +1,7 @@
 package datawave.helpers;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,6 +15,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -138,7 +141,16 @@ public class PrintUtility {
             final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
             return (String.valueOf(ehllp.getCardinality()));
         } catch (final Exception e) {
-            logger.trace("Deserialization as ExtendedHyperLogLogPlus failed", e);
+            logger.trace("Deserialization as ExtendedHyperLogLogPlus failed, trying other methods", e);
+            lastError = e.getMessage();
+        }
+
+        try {
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(value.get());
+            DataInputStream inputStream = new DataInputStream(byteStream);
+            return String.valueOf(WritableUtils.readVLong(inputStream));
+        } catch (final Exception e) {
+            logger.trace("Deserialization as long value failed", e);
             lastError = e.getMessage();
         }
 

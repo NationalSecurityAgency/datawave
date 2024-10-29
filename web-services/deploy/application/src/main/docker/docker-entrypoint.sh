@@ -15,7 +15,7 @@ wait_and_shutdown(){
       TIMEOUT_MINUTES=75
     fi
 
-    echo "Sending wait and shutdown command to the web service. Will wait up to $TIMEOUT_MINUTES for queries to complete."
+    echo "Sending wait and shutdown command to the web service. Will wait up to $TIMEOUT_MINUTES minutes for queries to complete."
     curl --fail -s -o /tmp/curl_shutdown.log http://localhost:8080/DataWave/Common/Health/shutdown?timeoutMinutes=$TIMEOUT_MINUTES
     CURL_STATUS=$?
     if [ $CURL_STATUS -ne 0 ]; then
@@ -28,6 +28,12 @@ wait_and_shutdown(){
     kill $CMD_PID
   fi
 }
+
+
+echo "Capturing ENV Properties"
+printenv > env.properties
+echo "Setting Runtime Config"
+$WILDFLY_HOME/bin/jboss-cli.sh --file=./runtime-config.cli --properties=env.properties
 
 if [[ "$@" != *"bin/standalone.sh"* ]]; then
   exec "$@"
@@ -62,9 +68,6 @@ else
   trap 'kill -PROF $CMD_PID'  PROF
   trap 'kill -WINCH $CMD_PID'  WINCH
   trap 'kill -USR2 $CMD_PID'  USR2
-
-  printenv > env.properties
-  $WILDFLY_HOME/bin/jboss-cli.sh --file=./runtime-config.cli --properties=env.properties
 
   eval "$@" "&"
   CMD_PID=${!}

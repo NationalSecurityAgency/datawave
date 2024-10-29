@@ -102,7 +102,6 @@ import datawave.marking.MarkingFunctions;
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-
     private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
 
     public static final String ERROR_PROP_PREFIX = "error.";

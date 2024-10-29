@@ -56,5 +56,9 @@ mvn -Pdocker,dist -DskipMicroservices clean install -T 1C
 git submodule deinit --all
 ```
 
+### DataWave Microservices
+
+For more information about deploying the datawave quickstart and microservices, check out the [Docker Readme](docker/README.md#usage)
+
 [li]: http://img.shields.io/badge/license-ASL-blue.svg
 [ll]: https://www.apache.org/licenses/LICENSE-2.0

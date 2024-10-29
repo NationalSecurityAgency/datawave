@@ -61,4 +61,9 @@ public class EmptyTreeIterable implements NestedIterator<Key> {
     public void setContext(Key context) {
         // no-op
     }
+
+    @Override
+    public boolean isNonEventField() {
+        return false;
+    }
 }

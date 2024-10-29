@@ -1,6 +1,5 @@
 package datawave.query;
 
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -36,8 +35,11 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
@@ -46,9 +48,6 @@ import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -135,9 +134,9 @@ public abstract class UniqueTest {
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -153,10 +152,6 @@ public abstract class UniqueTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
         logic.setFullTableScanEnabled(true);
-        // setup the hadoop configuration
-        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
-        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
-
         logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
@@ -187,10 +182,7 @@ public abstract class UniqueTest {
         TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
         List<Object> eventList = new ArrayList<>();
         while (iter.hasNext()) {
-            Object o = iter.next();
-            if (o != null) {
-                eventList.add(o);
-            }
+            eventList.add(iter.next());
         }
 
         BaseQueryResponse response = transformer.createResponse(eventList);
@@ -203,9 +195,6 @@ public abstract class UniqueTest {
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
 
-        // copy expected set to avoid modifying parameter passed in
-        expected = new HashSet<>(expected);
-
         for (EventBase event : eventQueryResponse.getEvents()) {
             boolean found = false;
             for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
@@ -217,9 +206,9 @@ public abstract class UniqueTest {
                     break;
                 }
             }
-            Assert.assertTrue("Failed to find " + event.getMetadata().getInternalId() + " in expected results", found);
+            Assert.assertTrue(found);
         }
-        Assert.assertTrue("Failed to find all expected results.  Missing " + expected, expected.isEmpty());
+        Assert.assertTrue(expected.isEmpty());
     }
 
     @Test
@@ -237,14 +226,12 @@ public abstract class UniqueTest {
         extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
-        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
-        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -284,14 +271,12 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','$BIRTH_DATE')";
-        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID =~ '^[CS].*' && f:unique('death_date','$birth_date')";
-        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -313,14 +298,12 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID:/^[CS].*/ AND #UNIQUE(DEATH_DATE,$BIRTH_DATE)";
-        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID:/^[CS].*/ AND #UNIQUE(death_date,birth_date)";
-        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -372,62 +355,4 @@ public abstract class UniqueTest {
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(BOTH_NULL)";
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
-
-    @Test
-    public void testMostRecentUniqueness() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-
-        String queryString = "UUID =~ '^[CS].*'";
-
-        Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-        extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-        expected.clear();
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-        extraParameters.put("unique.fields", "death_date,$magic");
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-        expected.clear();
-        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
-        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-        extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-        expected.clear();
-        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
-        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-        extraParameters.put("unique.fields", "death_date,birth_date");
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-    }
-
-    @Test
-    public void testHannahHypothesis() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-
-        Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
-        extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
-        String queryString = "UUID =~ '^[CS].*'";
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-        extraParameters.clear();
-        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
-        queryString = "UUID =~ '^[CS].*' && f:unique(death_date,magic)";
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-        this.getClass().getMethod("testHannahHypothesis").getName().replace("Hypothesis", "Theory");
-    }
-
 }
