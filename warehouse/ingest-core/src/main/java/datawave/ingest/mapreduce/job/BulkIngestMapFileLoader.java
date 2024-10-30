@@ -1004,7 +1004,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         private LoadPlan getLoadPlan() throws IOException {
             FileSystem fs = FileSystem.get(srcHdfs, new Configuration());
-            FileStatus[] loadPlans = fs.globStatus(new Path(tableDir, "loadplan*.json"));
+            FileStatus[] loadPlans = fs.globStatus(new Path(tableDir, "accumulo-bulk-loadplan*.json"));
             var builder = LoadPlan.builder();
             log.debug("Deserializing load plan for " + tableDir);
             for (FileStatus lp : loadPlans) {
@@ -1088,7 +1088,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         private void validateComplete() throws IOException {
             FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
-            // Make sure all rfiles are processed, disregarding any loadplan*.json files
+            // Make sure all rfiles are processed, disregarding any accumulo-bulk-loadplan*.json files
             if (fileSystem.globStatus(new Path(tableDir, "*.rf")).length > 0) {
                 log.fatal("Failed to completely import " + tableDir);
                 throw new IOException("Failed to completely import " + tableDir);

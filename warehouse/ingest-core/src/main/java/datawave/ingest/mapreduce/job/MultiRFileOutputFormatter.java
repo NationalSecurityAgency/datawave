@@ -337,7 +337,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             var builder = LoadPlan.builder();
             entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
             var table = entry.getKey();
-            var path = new Path(String.format("%s/%s", workDir, table), getUniqueFile(context, "loadplan", ".json"));
+            var path = new Path(String.format("%s/%s", workDir, table), getUniqueFile(context, "accumulo-bulk-loadplan", ".json"));
             var loadPlan = builder.build();
             //@formatter:off
             futures.add(CompletableFuture.runAsync(() -> {
