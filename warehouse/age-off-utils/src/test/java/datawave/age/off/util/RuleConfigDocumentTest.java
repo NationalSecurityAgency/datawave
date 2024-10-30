@@ -75,7 +75,6 @@ public class RuleConfigDocumentTest {
         // @formatter:off
         String expected = "<rule mode=\"merge\">\n" +
                 "  <filterClass>myclass</filterClass>\n" +
-                "  <ismerge>true</ismerge>\n" +
                 "</rule>\n";
         // @formatter:on
         assertEquals(actual, expected, actual);
@@ -127,7 +126,6 @@ public class RuleConfigDocumentTest {
         // @formatter:off
         String expected = "<rule label=\"tag\" mode=\"merge\">\n" +
                 "  <filterClass>myclass</filterClass>\n" +
-                "  <ismerge>true</ismerge>\n" +
                 "  <ttl units=\"h\">2468</ttl>\n" +
                 "  <matchPattern>\n" +
                 "1234\n" +

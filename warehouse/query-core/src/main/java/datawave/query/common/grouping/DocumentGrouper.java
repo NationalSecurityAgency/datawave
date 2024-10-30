@@ -11,9 +11,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.accumulo.core.data.Key;
 import org.javatuples.Pair;
@@ -26,17 +29,15 @@ import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 
 /**
- * <P>
  * This class provides the primary functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
  * client-side).
- * </P>
+ * <H2>Grouping</H2>
  * <P>
- * <strong>Grouping</strong>
- * </P>
  * Grouping fields across documents will result in groupings of distinct value groupings for each specified field to group, as well as the total number of times
  * each particular grouping combination was seen. Fields to group by can be specified by the following options:
  * <ul>
@@ -56,12 +57,11 @@ import datawave.query.attributes.TypeAttribute;
  * Values of fields with the same context and instance are considered direct one-to-one grouping matches, and will be placed within the same groupings. Direct
  * matches cannot be determined for values of fields that do not have a context, and as such they will be combined with each possible grouping, effectively a
  * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them.
+ * <H2>Aggregation</H2>
  * <P>
- * <strong>Aggregation</strong>
- * </P>
  * Once all valid groupings have been identified and counted, aggregation can be performed on the values of any specified fields for each grouping. The
  * aggregation fields can differ from the group-by fields. The following aggregation operations are supported:
- *
+ * <P>
  * <strong>SUM</strong>: Sum up all the values for specified fields across groupings. This operation is limited to fields with numerical values. Fields may be
  * specified via:
  * <ul>
@@ -94,6 +94,26 @@ import datawave.query.attributes.TypeAttribute;
  * <li>The JEXL function {@code f:average()}.</li>
  * <li>The query parameter {@code average.fields}.</li>
  * </ul>
+ * <H2>Model Mapping Notes</H2>
+ * <P>
+ * It is possible to supply a mapping model mappings derived from the query model. If supplied, the field names of entries will be mapped to their respective
+ * root model mapping (if one exists) before they are grouped or aggregated. It is important to note that it is possible for multiple fields in a document to be
+ * mapped to the same root model mapping. In this case, if multiple fields with the same value in a document are mapped to the same root model mapping, they
+ * will be considered equivalent datum points, and only one instance of the field and value will be used when grouping and aggregating in order to prevent
+ * duplicate counts. As an example, given a document with the following three entries ({@code field -> value}):
+ * <ul>
+ * <li>{@code AGE -> 23}</li>
+ * <li>{@code ETA -> 23}</li>
+ * <li>{@code ETA -> 10}</li>
+ * </ul>
+ * And the following model mapping:
+ * <ul>
+ * <li>{@code AGE -> AG}</li>
+ * <li>{@code ETA -> AG}</li>
+ * </ul>
+ * Then, after applying model mapping we would have two instances of {@code AG -> 23} and one instance of {@code AG -> 10}. Only one instance of the
+ * {@code AG -> 23} field-value pairing will be counted towards grouping and aggregation along with {@code AG -> 10}, and the remaining duplicate of
+ * {@code AG -> 23} will be disregarded.
  */
 public class DocumentGrouper {
 
@@ -131,8 +151,8 @@ public class DocumentGrouper {
 
     private final Groups groups;
     private final Groups currentGroups = new Groups();
-    private final FieldIndex groupFieldsIndex = new FieldIndex(false);
-    private final FieldIndex aggregateFieldsIndex = new FieldIndex(true);
+    private final FieldIndex groupFieldsIndex = new FieldIndex(false); // Do not allow null attributes when indexing fields to group by.
+    private final FieldIndex aggregateFieldsIndex = new FieldIndex(true); // Allow null attributes when indexing fields to aggregate.
     private final Multimap<Pair<String,String>,Grouping> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
     private final int maxGroupSize;
 
@@ -645,7 +665,7 @@ public class DocumentGrouper {
     private static class FieldIndex {
 
         // Map of field names to their entries.
-        private final Multimap<String,Field> fields = ArrayListMultimap.create();
+        private final ArrayListMultimap<String,Field> fields = ArrayListMultimap.create();
         // The set of fields with possible direct matches.
         private final Set<String> fieldsWithPossibleDirectMatch = new HashSet<>();
         // The set of fields with no direct matches.
@@ -654,6 +674,9 @@ public class DocumentGrouper {
         private final Map<String,Multimap<Pair<String,String>,Field>> fieldToFieldsByGroupingContextAndInstance = new HashMap<>();
         // Whether to accept entries that have null attributes for indexing.
         private final boolean allowNullAttributes;
+        // Map of fields to values that have already been indexed. This is used to prevent duplicates being counted when multiple fields in a record with the
+        // same value are mapped to the same model mapping when model mapping is supplied.
+        private final Multimap<String,Object> alreadyIndexed = HashMultimap.create();
 
         private FieldIndex(boolean allowNullAttributes) {
             this.allowNullAttributes = allowNullAttributes;
@@ -668,48 +691,133 @@ public class DocumentGrouper {
         public void index(Field field) {
             // Check if we can index this field.
             if (field.getAttribute() != null || allowNullAttributes) {
-                fields.put(field.getBase(), field);
-                // If the field has a grouping context and instance, it's possible that it may have a direct match. Index the field and its grouping
-                // context-instance pair.
-                if (field.hasGroupingContext() && field.hasInstance()) {
-                    fieldsWithPossibleDirectMatch.add(field.getBase());
-                    Multimap<Pair<String,String>,Field> groupingContextAndInstanceToField = fieldToFieldsByGroupingContextAndInstance.get(field.getBase());
-                    if (groupingContextAndInstanceToField == null) {
-                        groupingContextAndInstanceToField = HashMultimap.create();
-                        fieldToFieldsByGroupingContextAndInstance.put(field.getBase(), groupingContextAndInstanceToField);
-                    }
-                    groupingContextAndInstanceToField.put(Pair.with(field.getGroupingContext(), field.getInstance()), field);
-                } else {
-                    // Otherwise, the field will have no direct matches.
-                    fieldsWithoutDirectMatch.add(field.getBase());
-                }
+                // Indexed all values for the field that have not yet been indexed.
+                // @formatter:off
+                expandAttributes(field).stream()
+                                .filter(this::isUnindexed)
+                                .forEach(this::indexField);
+                // @formatter:on
             }
         }
 
-        public Multimap<String,Field> getFields() {
-            return fields;
+        /**
+         * Returns a set of fields expanded from the attributes of the given field. It is possible for a {@link Field} to have an attribute that is an
+         * {@link Attributes}. In this case, the set will consist of copies of the given field, where the attribute of each copy is extracted from the original
+         * {@link Attributes}. Otherwise, the set will consist solely of the given field.
+         */
+        private Set<Field> expandAttributes(Field field) {
+            Attribute<?> attribute = field.getAttribute();
+            if (attribute instanceof Attributes) {
+                // If the attribute is collection of attributes, return a set of fields for each attribute contained within.
+                Set<Field> fields = new HashSet<>();
+                for (Attribute<?> subAttribute : ((Attributes) attribute).getAttributes()) {
+                    fields.add(new Field(field.getBase(), field.getGroupingContext(), field.getInstance(), subAttribute));
+                }
+                return fields;
+            } else {
+                // Otherwise return the original field.
+                return Collections.singleton(field);
+            }
         }
 
-        public Collection<Field> getFields(String field) {
+        /**
+         * Return whether the given field has been indexed. A field is considered indexed if we have already seen a field with the given field's base name,
+         * grouping context, instance, and value.
+         */
+        private boolean isUnindexed(Field field) {
+            // Create the index id.
+            String id = getIndexId(field);
+            Attribute<?> attribute = field.getAttribute();
+            // Determine if we have already seen the given index id with the field's attribute (null or otherwise).
+            if (attribute != null) {
+                return !alreadyIndexed.containsEntry(id, attribute.getData());
+            } else {
+                return !alreadyIndexed.containsEntry(id, null);
+            }
+        }
+
+        /**
+         * Index the given field.
+         */
+        private void indexField(Field field) {
+            fields.put(field.getBase(), field);
+            // If the field has a grouping context and instance, it's possible that it may have a direct match. Index the field and its grouping
+            // context-instance pair.
+            if (field.hasGroupingContext() && field.hasInstance()) {
+                fieldsWithPossibleDirectMatch.add(field.getBase());
+                Multimap<Pair<String,String>,Field> groupingContextAndInstanceToField = fieldToFieldsByGroupingContextAndInstance.get(field.getBase());
+                if (groupingContextAndInstanceToField == null) {
+                    groupingContextAndInstanceToField = HashMultimap.create();
+                    fieldToFieldsByGroupingContextAndInstance.put(field.getBase(), groupingContextAndInstanceToField);
+                }
+                groupingContextAndInstanceToField.put(Pair.with(field.getGroupingContext(), field.getInstance()), field);
+            } else {
+                // Otherwise, the field will have no direct matches.
+                fieldsWithoutDirectMatch.add(field.getBase());
+            }
+
+            // Mark the field as indexed.
+            markIndexed(field);
+        }
+
+        /**
+         * Mark the given field as indexed.
+         */
+        private void markIndexed(Field field) {
+            String id = getIndexId(field);
+            Attribute<?> attribute = field.getAttribute();
+            if (attribute != null) {
+                alreadyIndexed.put(id, attribute.getData());
+            } else {
+                alreadyIndexed.put(id, null);
+            }
+        }
+
+        /**
+         * Return the index id for the given field, which will consist of the field's base name, grouping context (if present), and instance (if present).
+         */
+        private String getIndexId(Field field) {
+            return Stream.of(field.getBase(), field.getGroupingContext(), field.getInstance()).filter(Objects::nonNull).collect(Collectors.joining(""));
+        }
+
+        /**
+         * Return a list of all {@link Field} instances indexed with the given base field name.
+         */
+        public List<Field> getFields(String field) {
             return fields.get(field);
         }
 
+        /**
+         * Return the set of fields with possible direct matches.
+         */
         public Set<String> getFieldsWithPossibleDirectMatch() {
             return fieldsWithPossibleDirectMatch;
         }
 
+        /**
+         * Return whether any fields with a possible direct match are present.
+         */
         public boolean hasFieldsWithPossibleDirectMatch() {
             return !fieldsWithPossibleDirectMatch.isEmpty();
         }
 
+        /**
+         * Return whether any fields without a direct match are present.
+         */
         public boolean hasFieldsWithoutDirectMatch() {
             return !fieldsWithoutDirectMatch.isEmpty();
         }
 
+        /**
+         * Return the set of fields without a direct match.
+         */
         public Set<String> getFieldsWithoutDirectMatch() {
             return fieldsWithoutDirectMatch;
         }
 
+        /**
+         * Return true if no fields have been indexed in this {@link FieldIndex}, or false otherwise.
+         */
         public boolean isEmpty() {
             return fields.isEmpty();
         }

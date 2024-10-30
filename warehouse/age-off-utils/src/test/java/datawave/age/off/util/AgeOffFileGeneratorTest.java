@@ -5,19 +5,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.xerces.dom.DocumentImpl;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -33,12 +39,12 @@ public class AgeOffFileGeneratorTest {
 
     // @formatter:off
     private static final String EXPECTED_FILE_CONTENTS =
+        "<?xml version=\"1.0\"?>\n" +
         "<ageoffConfiguration>\n" +
         "     <parent>" + PARENT_FILE_NAME + "</parent>\n" +
         "     <rules>\n" +
         "          <rule label=\"labeledPatternsFormat\" mode=\"merge\">\n" +
         "               <filterClass>datawave.iterators.filter.ColumnVisibilityLabeledFilter</filterClass>\n" +
-        "               <ismerge>true</ismerge>\n" +
         "               <matchPattern>\n" +
         "                    dryFood bakingPowder=365d\n" +
         "                    dryFood driedBeans=548d\n" +
@@ -66,12 +72,12 @@ public class AgeOffFileGeneratorTest {
         "</ageoffConfiguration>\n";
 
     private static final String OTHER_EXPECTED_FILE_CONTENTS =
+            "<?xml version=\"1.0\"?>\n" +
             "<ageoffConfiguration>\n" +
             "     <parent>test-root-field.xml</parent>\n" +
             "     <rules>\n" +
             "          <rule mode=\"merge\">\n" +
             "            <filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
-            "            <ismerge>true</ismerge>\n" +
             "            <isindextable>true</isindextable>\n" +
             "          </rule>\n" +
             "          <rule>\n" +
@@ -196,8 +202,23 @@ public class AgeOffFileGeneratorTest {
             "</ageoffConfiguration>\n";
     // @formatter:on
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
-    public void createFileWithMultipleRules() throws IOException {
+    public void generateFileContentsWithMultipleRules() throws IOException {
+        AgeOffFileConfiguration.Builder builder = createBuilderForMultipleRules();
+        assertEquals(EXPECTED_FILE_CONTENTS, generateFileContentsInMemory(builder));
+    }
+
+    @Test
+    public void writeMultipleRulesToLocalFile() throws IOException {
+        File temporaryFile = writeToFile(createBuilderForMultipleRules());
+        String actualResult = Files.readAllLines(temporaryFile.toPath()).stream().collect(Collectors.joining("\n")) + "\n";
+        assertEquals(EXPECTED_FILE_CONTENTS, actualResult);
+    }
+
+    private AgeOffFileConfiguration.Builder createBuilderForMultipleRules() {
         AgeOffRuleConfiguration.Builder colVisFilterRule = defineColVisFilterRule();
         AgeOffRuleConfiguration.Builder testFilterRule = defineTestFilterRule();
         AgeOffRuleConfiguration.Builder dataTypeRule = defineDataTypeRule();
@@ -208,7 +229,7 @@ public class AgeOffFileGeneratorTest {
         builder.addNextRule(dataTypeRule);
         builder.addNextRule(testFilterRule);
         builder.withIndentation("     ");
-        assertEquals(EXPECTED_FILE_CONTENTS, generateFile(builder));
+        return builder;
     }
 
     @Test
@@ -222,7 +243,7 @@ public class AgeOffFileGeneratorTest {
         builder.addNextRule(fieldRule);
         builder.addNextRule(defineColQualifierRule());
         builder.withIndentation("     ");
-        assertEquals(OTHER_EXPECTED_FILE_CONTENTS, generateFile(builder));
+        assertEquals(OTHER_EXPECTED_FILE_CONTENTS, generateFileContentsInMemory(builder));
     }
 
     @Test
@@ -351,11 +372,20 @@ public class AgeOffFileGeneratorTest {
         return builder;
     }
 
-    private String generateFile(AgeOffFileConfiguration.Builder builder) throws IOException {
-        StringWriter out = new StringWriter();
+    private String generateFileContentsInMemory(AgeOffFileConfiguration.Builder builder) throws IOException {
+        StringWriter writer = new StringWriter();
         AgeOffFileGenerator generator = new AgeOffFileGenerator(builder.build());
-        generator.format(out);
-        return out.toString();
+        generator.format(writer);
+        return writer.toString();
+    }
+
+    private File writeToFile(AgeOffFileConfiguration.Builder builder) throws IOException {
+        File temporaryFile = temporaryFolder.newFile();
+        Writer writer = Files.newBufferedWriter(temporaryFile.toPath());
+        AgeOffFileGenerator generator = new AgeOffFileGenerator(builder.build());
+        generator.format(writer);
+        writer.close();
+        return temporaryFile;
     }
 
     private class TestProvider implements AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider {

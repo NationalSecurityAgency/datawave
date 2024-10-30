@@ -149,7 +149,7 @@ public class NGramGenerator implements Serializable {
      */
     public void generateNgrams(int chunkSize, String chunk, Set<NGramTuple> output) {
         final int ngramCount = chunk.length() - ngramSize;
-        for (int i = 0; i < ngramCount; i++) {
+        for (int i = 0; i <= ngramCount; i++) {
             final String ngram = chunk.substring(i, i + ngramSize);
             output.add(new NGramTuple(chunkSize, ngram));
         }

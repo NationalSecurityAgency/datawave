@@ -11,6 +11,9 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -18,8 +21,6 @@ import datawave.query.model.edge.EdgeQueryModel;
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 public class DefaultEdgeEventQueryLogicTest {
 
@@ -29,7 +30,8 @@ public class DefaultEdgeEventQueryLogicTest {
 
     @Before
     public void setUp() throws Exception {
-        logic.setEdgeQueryModel(EdgeQueryModel.loadModel("/DATAWAVE_EDGE.xml"));
+        logic.setEdgeModelFieldsFactory(new DefaultEdgeModelFieldsFactory());
+        logic.setEdgeQueryModel(EdgeQueryModel.loadModel("/DATAWAVE_EDGE.xml", logic.getEdgeFields()));
 
         // Create the results of the DatawaveMetadata table scan for edge data
         metadata = new LinkedList<>();

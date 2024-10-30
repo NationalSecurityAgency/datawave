@@ -9,7 +9,7 @@ import org.apache.hadoop.io.Text;
 
 import com.google.common.collect.HashMultimap;
 
-import datawave.edge.model.EdgeModelAware;
+import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeKey;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.util.StringUtils;
@@ -32,11 +32,16 @@ import datawave.util.StringUtils;
  * The enforce rules boolean that gets passed around is to check to make sure that the same sets of identifiers are not being ANDed together. Eg can't and
  * SOURCE and SOURCE because an edge only has one SOURCE
  */
-public class QueryContext implements EdgeModelAware, EdgeContext {
+public class QueryContext implements EdgeContext {
 
+    private final EdgeModelFields fields;
     private RowContext rowContext;
     private ColumnContext columnContext;
     private Set<QueryContext> otherContexts;
+
+    public QueryContext(EdgeModelFields fields) {
+        this.fields = fields;
+    }
 
     private boolean hasCompleteColumnFamilies = false;
 
@@ -49,12 +54,13 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             buildColumnContexts(identityContexts, enforceRules);
             return;
         }
-        String type = identityContexts.get(0).getIdentity();
+        EdgeModelFields.FieldKey type = identityContexts.get(0).getIdentity();
 
-        if (type.equals(EDGE_SOURCE) || type.equals(EDGE_SINK)) {
+        if (type.equals(EdgeModelFields.FieldKey.EDGE_SOURCE) || type.equals(EdgeModelFields.FieldKey.EDGE_SINK)) {
             buildRowContexts(identityContexts, enforceRules);
-        } else if (type.equals(EDGE_TYPE) || type.equals(EDGE_RELATIONSHIP) || type.equals(EDGE_ATTRIBUTE1) || type.equals(EDGE_ATTRIBUTE2)
-                        || type.equals(EDGE_ATTRIBUTE3) || type.equals(FUNCTION)) {
+        } else if (type.equals(EdgeModelFields.FieldKey.EDGE_TYPE) || type.equals(EdgeModelFields.FieldKey.EDGE_RELATIONSHIP)
+                        || type.equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE1) || type.equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE2)
+                        || type.equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE3) || type.equals(EdgeModelFields.FieldKey.FUNCTION)) {
             buildColumnContexts(identityContexts, enforceRules);
         } else {
             throw new RuntimeException("Invalid identifier: " + type);
@@ -211,7 +217,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             }
             // If any parts of this queryContext needs to be moved out into the other context list do so here
             if (overlappingColumn || overlappingSink) {
-                QueryContext tempContext = new QueryContext();
+                QueryContext tempContext = new QueryContext(fields);
                 // if this query context does not have selector list then if there is an over lap in either the row
                 // or column context push them both out into the list of other contexts
                 if (!this.hasSourceList() || overlappingSink) {
@@ -287,7 +293,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
      * get away with excluding source and sink if the
      */
     public void buildStrings(StringBuilder normalizedQuery, StringBuilder normalizedStatsQuery, boolean includeStats, boolean includeSource,
-                    boolean includeSink, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms, boolean updateAllowlist) {
+                    boolean includeSink, HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues, boolean includeColumnFamilyTerms,
+                    boolean updateAllowlist, EdgeModelFields fields) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
 
@@ -307,10 +314,10 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
 
                 if (i > 0) {
                     if (tempQueryString.length() > 7) {
-                        tempQueryString.append(OR);
+                        tempQueryString.append(EdgeModelFields.OR);
                     }
                     if (includeStats && tempQueryStatsString.length() > 7) {
-                        tempQueryStatsString.append(OR);
+                        tempQueryStatsString.append(EdgeModelFields.OR);
                     }
                 }
                 if (this.otherContexts.size() > 1) {
@@ -335,10 +342,10 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 i++;
             }
             if (trimmedQuery.length() > 7 && tempQueryString.length() > 7) {
-                trimmedQuery.append(AND);
+                trimmedQuery.append(EdgeModelFields.AND);
             }
             if (includeStats && trimmedStatsQuery.length() > 7 && tempQueryStatsString.length() > 7) {
-                trimmedStatsQuery.append(AND);
+                trimmedStatsQuery.append(EdgeModelFields.AND);
             }
             if (tempQueryString.length() > 7) {
                 trimmedQuery.append("(" + tempQueryString + ")");
@@ -353,8 +360,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
     }
 
-    private NormalizedQuery toString(boolean includeStats, boolean includeSource, boolean includeSink, HashMultimap<String,String> preFilterValues,
-                    boolean includeColumnFamilyTerms, boolean updateAllowlist) {
+    private NormalizedQuery toString(boolean includeStats, boolean includeSource, boolean includeSink,
+                    HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues, boolean includeColumnFamilyTerms, boolean updateAllowlist) {
 
         NormalizedQuery rowString = null, colString = null;
 
@@ -378,13 +385,13 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         if (colString != null) {
             if (colString.getNormalizedQuery() != null && colString.getNormalizedQuery().length() > 7) {
                 if (normalizedQuery.length() > 7) {
-                    normalizedQuery.append(AND);
+                    normalizedQuery.append(EdgeModelFields.AND);
                 }
                 normalizedQuery.append(colString.getNormalizedQuery());
             }
             if (includeStats && colString.getNormalizedStatsQuery() != null && colString.getNormalizedStatsQuery().length() > 7) {
                 if (normalizedStatsQuery.length() > 7) {
-                    normalizedStatsQuery.append(AND);
+                    normalizedStatsQuery.append(EdgeModelFields.AND);
                 }
                 normalizedStatsQuery.append(colString.getNormalizedStatsQuery());
             }
@@ -423,22 +430,22 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         return otherContexts;
     }
 
-    private void updateAllowList(IdentityContext expression, HashMultimap<String,String> preFilterValues) {
+    private void updateAllowList(IdentityContext expression, HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues) {
         /*
          * A allowlist is a list of things that you allow, therefore, there is no reason to check for things that you do not allow. This means there is no
          * reason to check for NOT_EQUALS or NOT_EQUALS_REGEX, because they won't be allowed by default.
          */
 
-        if (expression.getOperation().equals(EQUALS)) {
+        if (expression.getOperation().equals(EdgeModelFields.EQUALS)) {
             preFilterValues.put(expression.getIdentity(), expression.getLiteral());
-        } else if (expression.getOperation().equals(EQUALS_REGEX)) {
+        } else if (expression.getOperation().equals(EdgeModelFields.EQUALS_REGEX)) {
             preFilterValues.put(expression.getIdentity(), EdgeQueryLogic.PRE_FILTER_DISABLE_KEYWORD);
         }
 
     }
 
     private int populateQuery(List<IdentityContext> terms, StringBuilder trimmedQuery, StringBuilder trimmedStatsQuery, String operator, boolean includeStats,
-                    HashMultimap<String,String> preFilterValues, boolean addToPrefilter) {
+                    HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues, boolean addToPrefilter) {
         int numTermsAdded = 0;
         boolean createStats = includeStats;
         boolean expandStats = false;
@@ -452,13 +459,14 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         for (int i = 0; i < terms.size(); i++) {
             IdentityContext iContext = terms.get(i);
 
-            if (includeStats == false || iContext.getIdentity().equals(EDGE_SINK)) {
+            if (includeStats == false || iContext.getIdentity().equals(EdgeModelFields.FieldKey.EDGE_SINK)) {
                 createStats = false;
             } else {
                 createStats = true;
             }
 
-            if (iContext.getIdentity().equals(EDGE_RELATIONSHIP) || iContext.getIdentity().equals(EDGE_ATTRIBUTE1)) {
+            if (iContext.getIdentity().equals(EdgeModelFields.FieldKey.EDGE_RELATIONSHIP)
+                            || iContext.getIdentity().equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE1)) {
                 expandStats = true;
             } else {
                 expandStats = false;
@@ -471,7 +479,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 }
             }
 
-            if (!iContext.getIdentity().equals(FUNCTION)) {
+            if (!iContext.getIdentity().equals(EdgeModelFields.FieldKey.FUNCTION)) {
                 trimmedQuery.append(iContext.getIdentity() + " " + iContext.getOperation() + " " + "'" + iContext.getEscapedLiteral() + "'");
                 if (createStats) {
                     if (expandStats) {
@@ -500,7 +508,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
 
         if (createStats && tempStatsStringBuilder.length() > 7) {
             if (trimmedStatsQuery.length() > 7) {
-                trimmedStatsQuery.append(AND);
+                trimmedStatsQuery.append(EdgeModelFields.AND);
             }
             trimmedStatsQuery.append(tempStatsStringBuilder);
         }
@@ -510,8 +518,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     /*
      * Used for creating the stats query. Splits up EDGE_RELATIONSHIP=A-B into (EDGE_RELATIONSHIP=A)
      */
-    private static StringBuilder splitCompoundValue(String name, String operator, String value, HashMultimap<String,String> preFilterValues,
-                    boolean updateAllowlist) {
+    private static StringBuilder splitCompoundValue(EdgeModelFields.FieldKey name, String operator, String value,
+                    HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues, boolean updateAllowlist) {
         StringBuilder sb = new StringBuilder();
 
         String[] parts = value.split("-");
@@ -533,7 +541,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
 
     }
 
-    public class ColumnContext implements EdgeModelAware {
+    public class ColumnContext {
+
         // Each list (except exclusions and funtions) is expected to have identity contexts all with the same opperation
         private List<IdentityContext> edgeTypes;
         private List<IdentityContext> edgeRelationships;
@@ -595,24 +604,24 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 return;
             }
 
-            String type = identityContexts.get(0).getIdentity();
+            EdgeModelFields.FieldKey type = identityContexts.get(0).getIdentity();
 
-            if (type.equals(EDGE_TYPE)) {
+            if (type.equals(EdgeModelFields.FieldKey.EDGE_TYPE)) {
                 verifyNotSet(edgeTypes, enforceRules);
                 addEdgeTypes(identityContexts);
-            } else if (type.equals(EDGE_RELATIONSHIP)) {
+            } else if (type.equals(EdgeModelFields.FieldKey.EDGE_RELATIONSHIP)) {
                 verifyNotSet(edgeRelationships, enforceRules);
                 addEdgeRelationships(identityContexts);
-            } else if (type.equals(EDGE_ATTRIBUTE1)) {
+            } else if (type.equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE1)) {
                 verifyNotSet(edgeAttribute1Values, enforceRules);
                 addEdgeAttribute1Values(identityContexts);
-            } else if (type.equals(EDGE_ATTRIBUTE2)) {
+            } else if (type.equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE2)) {
                 verifyNotSet(edgeAttribute2Values, enforceRules);
                 addAttribute2Values(identityContexts);
-            } else if (type.equals(EDGE_ATTRIBUTE3)) {
+            } else if (type.equals(EdgeModelFields.FieldKey.EDGE_ATTRIBUTE3)) {
                 verifyNotSet(edgeAttribute3Values, enforceRules);
                 addAttribute3Values(identityContexts);
-            } else if (type.equals(FUNCTION)) {
+            } else if (type.equals(EdgeModelFields.FieldKey.FUNCTION)) {
                 verifyNotSet(functions, enforceRules);
                 functions = identityContexts;
             } else {
@@ -630,13 +639,13 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             completeColumnFamilies = true;
             if (edgeTypes == null) {
                 completeColumnFamilies = false;
-            } else if (edgeTypes.get(0).getOperation() != EQUALS) {
+            } else if (edgeTypes.get(0).getOperation() != EdgeModelFields.EQUALS) {
                 completeColumnFamilies = false;
             }
 
             if (edgeRelationships == null) {
                 completeColumnFamilies = false;
-            } else if (edgeRelationships.get(0).getOperation() != EQUALS) {
+            } else if (edgeRelationships.get(0).getOperation() != EdgeModelFields.EQUALS) {
                 completeColumnFamilies = false;
             }
 
@@ -677,7 +686,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             return columnFamilies;
         }
 
-        public NormalizedQuery toString(boolean includeStats, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms,
+        public NormalizedQuery toString(boolean includeStats, HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues, boolean includeColumnFamilyTerms,
                         boolean updateAllowlist) {
             StringBuilder trimmedQuery = new StringBuilder();
             StringBuilder trimmedStatsQuery = new StringBuilder();
@@ -685,61 +694,63 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
 
             if (includeColumnFamilyTerms && getEdgeTypes() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeTypes(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateAllowlist));
+                numTermsAdded += populateQuery(getEdgeTypes(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, preFilterValues,
+                                (updateAllowlist));
             }
 
             if (includeColumnFamilyTerms && getEdgeRelationships() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeRelationships(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateAllowlist));
+                numTermsAdded += populateQuery(getEdgeRelationships(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, preFilterValues,
+                                (updateAllowlist));
             }
 
             if (getEdgeAttribute1Values() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, preFilterValues,
                                 (updateAllowlist));
             }
 
             if (getEdgeAttribute2Values() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, preFilterValues,
                                 (updateAllowlist));
             }
 
             if (getEdgeAttribute3Values() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, preFilterValues,
                                 (updateAllowlist));
             }
 
             if (getExclusions() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // there could be sinks in this list of exclusions which would not get added do AND'ing in method
-                numTermsAdded += populateQuery(getExclusions(), trimmedQuery, trimmedStatsQuery, AND, includeStats, preFilterValues, false);
+                numTermsAdded += populateQuery(getExclusions(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.AND, includeStats, preFilterValues, false);
             }
 
             if (getFunctions() != null) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getFunctions(), trimmedQuery, trimmedStatsQuery, AND, includeStats, preFilterValues, false);
+                numTermsAdded += populateQuery(getFunctions(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.AND, includeStats, preFilterValues, false);
             }
 
             NormalizedQuery ret = new NormalizedQuery();
@@ -841,7 +852,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
     }
 
-    public class RowContext implements EdgeModelAware {
+    public class RowContext {
 
         private List<IdentityContext> sources;
         private List<IdentityContext> sinks;
@@ -851,12 +862,12 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
 
         public void packageIdentities(List<IdentityContext> identityContexts, boolean enforceRules) {
-            String type = identityContexts.get(0).getIdentity();
+            EdgeModelFields.FieldKey type = identityContexts.get(0).getIdentity();
 
-            if (type.equals(EDGE_SOURCE)) {
+            if (type.equals(EdgeModelFields.FieldKey.EDGE_SOURCE)) {
                 verifyNotSet(sources, enforceRules);
                 addSources(identityContexts);
-            } else if (type.equals(EDGE_SINK)) {
+            } else if (type.equals(EdgeModelFields.FieldKey.EDGE_SINK)) {
                 verifyNotSet(sinks, enforceRules);
                 addSinks(identityContexts);
             } else {
@@ -869,15 +880,15 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             StringBuilder trimmedStatsQuery = new StringBuilder();
 
             if (includingSources) {
-                populateQuery(getSources(), trimmedQuery, trimmedStatsQuery, OR, includeStats, null, false);
+                populateQuery(getSources(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, null, false);
             }
 
             if (getSinks() != null && (includingSources || includingSinks)) {
                 if (trimmedQuery.length() > 7) {
-                    trimmedQuery.append(AND);
+                    trimmedQuery.append(EdgeModelFields.AND);
                 }
                 // never add target sources to stats query no need to append
-                populateQuery(getSinks(), trimmedQuery, trimmedStatsQuery, OR, includeStats, null, false);
+                populateQuery(getSinks(), trimmedQuery, trimmedStatsQuery, EdgeModelFields.OR, includeStats, null, false);
             }
 
             NormalizedQuery ret = new NormalizedQuery();

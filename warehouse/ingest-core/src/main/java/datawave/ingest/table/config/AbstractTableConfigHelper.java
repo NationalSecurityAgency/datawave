@@ -26,6 +26,7 @@ import datawave.iterators.PropogatingIterator;
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 
     public static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
+    protected Configuration config;
 
     protected AbstractTableConfigHelper() {}
 

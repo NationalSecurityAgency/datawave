@@ -12,6 +12,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import datawave.core.query.configuration.ResultContext;
 import datawave.query.tables.SessionOptions;
 
 /**
@@ -19,6 +20,7 @@ import datawave.query.tables.SessionOptions;
  */
 public class ScannerChunk {
 
+    protected ResultContext context;
     protected SessionOptions options;
     protected ConcurrentLinkedQueue<Range> ranges;
     protected Range lastRange;
@@ -28,13 +30,20 @@ public class ScannerChunk {
 
     /*
      * Constructor used for testing
+     *
+     * @param options
+     *
+     * @param ranges
+     *
+     * @param context
      */
-    public ScannerChunk(SessionOptions options, Collection<Range> ranges) {
-        this(options, ranges, "localhost");
+    public ScannerChunk(SessionOptions options, Collection<Range> ranges, ResultContext context) {
+        this(options, ranges, context, "localhost");
     }
 
-    public ScannerChunk(SessionOptions options, Collection<Range> ranges, String server) {
+    public ScannerChunk(SessionOptions options, Collection<Range> ranges, ResultContext context, String server) {
         Preconditions.checkNotNull(ranges);
+        this.context = context;
         this.options = options;
         this.ranges = new ConcurrentLinkedQueue<>();
         this.lastKnownLocation = server;
@@ -55,7 +64,8 @@ public class ScannerChunk {
      */
     public ScannerChunk(ScannerChunk chunk) {
         Preconditions.checkNotNull(chunk);
-        options = chunk.options;
+        this.options = chunk.options;
+        this.context = chunk.context;
         this.ranges = new ConcurrentLinkedQueue<>();
         setRanges(chunk.ranges);
         this.lastKnownLocation = chunk.lastKnownLocation;
@@ -85,6 +95,10 @@ public class ScannerChunk {
     public int hashCode() {
         return hashCode;
 
+    }
+
+    public ResultContext getContext() {
+        return context;
     }
 
     public Range getLastRange() {

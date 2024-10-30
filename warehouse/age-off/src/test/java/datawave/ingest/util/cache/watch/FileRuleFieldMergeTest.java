@@ -24,7 +24,6 @@ public class FileRuleFieldMergeTest {
     static final String ROOT_FILTER_CONFIGURATION_FILE = "/filter/test-root-field.xml";
     private static final String CHILD_FILTER_CONFIGURATION_FILE = "/filter/test-customized-field.xml";
 
-    private FileRuleWatcher watcher;
     private TestFieldFilter parentFilter;
     // this one inherits defaults from parentFilter
     private TestFieldFilter childFilter;
@@ -34,9 +33,8 @@ public class FileRuleFieldMergeTest {
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
         FileSystem fs = childPath.getFileSystem(new Configuration());
-        watcher = new FileRuleWatcher(fs, childPath, 1);
-        parentFilter = (TestFieldFilter) loadRulesFromFile(watcher, fs, rootPath);
-        childFilter = (TestFieldFilter) loadRulesFromFile(watcher, fs, childPath);
+        parentFilter = (TestFieldFilter) loadRulesFromFile(fs, rootPath);
+        childFilter = (TestFieldFilter) loadRulesFromFile(fs, childPath);
     }
 
     @Test
@@ -62,8 +60,9 @@ public class FileRuleFieldMergeTest {
         return Boolean.valueOf(filter.options.getOption("isindextable", "false"));
     }
 
-    private static FilterRule loadRulesFromFile(FileRuleWatcher watcher, FileSystem fs, Path filePath) throws IOException {
-        Collection<FilterRule> rules = watcher.loadContents(fs.open(filePath));
+    private static FilterRule loadRulesFromFile(FileSystem fs, Path filePath) throws IOException {
+        FileRuleCacheValue cacheValue = new FileRuleCacheValue(fs, filePath, 1);
+        Collection<FilterRule> rules = cacheValue.loadFilterRules(null);
         // should only have the single rule
         assertThat(rules.size(), is(1));
         for (FilterRule rule : rules) {

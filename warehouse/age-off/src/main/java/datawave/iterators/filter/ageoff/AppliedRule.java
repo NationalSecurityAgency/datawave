@@ -112,7 +112,9 @@ public abstract class AppliedRule implements FilterRule {
             newFilter.deepCopyInit(currentOptions, this);
             // for some reason this needs to come after deep copy init
             newFilter.ageOffPeriod = new AgeOffPeriod(period.getCutOffMilliseconds());
-            log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
+            if (log.isTraceEnabled()) {
+                log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
+            }
             return newFilter;
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
@@ -137,7 +139,9 @@ public abstract class AppliedRule implements FilterRule {
             newFilter.deepCopyInit(newOptions, this);
             // for some reason this needs to come after deep copy init
             newFilter.ageOffPeriod = new AgeOffPeriod(scanStart, currentOptions.ttl, currentOptions.ttlUnits);
-            log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
+            if (log.isTraceEnabled()) {
+                log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
+            }
             return newFilter;
         } catch (InstantiationException | IllegalAccessException e) {
             log.error(e);

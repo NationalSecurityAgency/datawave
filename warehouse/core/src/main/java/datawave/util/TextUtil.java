@@ -107,4 +107,13 @@ public class TextUtil {
             throw new IllegalArgumentException(e);
         }
     }
+
+    public static byte[] getBytes(Text text) {
+        byte[] bytes = text.getBytes();
+        if (bytes.length != text.getLength()) {
+            bytes = new byte[text.getLength()];
+            System.arraycopy(text.getBytes(), 0, bytes, 0, bytes.length);
+        }
+        return bytes;
+    }
 }

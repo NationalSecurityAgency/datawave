@@ -2,81 +2,86 @@ package datawave.query.predicate;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.ASTIdentifier;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.hadoop.io.Text;
 
-import com.google.common.collect.Sets;
-
+import datawave.query.data.parsers.EventKey;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.KeyProjection;
-import datawave.query.predicate.Projection;
 
 /**
- * This filter will filter event data keys by only those fields that are required in the specified query.
+ * Inclusive filter that ensures only event keys which match the set of fields to retain are kept for evaluation.
+ * <p>
+ * The fields to retain are built from query fields and user-specified <code>return.fields</code>
+ * <p>
+ * This filter only operates on event keys.
  */
 public class EventDataQueryFieldFilter implements EventDataQueryFilter {
-    private Set<String> nonEventFields;
 
-    private KeyProjection keyProjection;
+    private Key document = null;
+    // the number of times next is called before issuing a seek
+    private int maxNextCount = -1;
+    // track the number of times next is called on the same field
+    private int nextCount;
+    // track the current field
+    private String currentField = null;
 
+    // the set of fields to retain
+    private TreeSet<String> fields;
+    private final EventKey parser;
+
+    /**
+     * Default constructor
+     */
+    public EventDataQueryFieldFilter() {
+        this.parser = new EventKey();
+    }
+
+    /**
+     * Copy constructor used by the {@link #clone()} method
+     *
+     * @param other
+     *            an instance of the {@link EventDataQueryFieldFilter}
+     */
     public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
-        this.nonEventFields = other.nonEventFields;
         if (other.document != null) {
-            document = new Key(other.document);
+            this.document = new Key(other.document);
         }
-        this.keyProjection = other.getProjection();
+        this.maxNextCount = other.maxNextCount;
+        this.fields = other.fields;
+        this.parser = other.parser;
+        // do not copy nextCount or currentField because that is internal state
+        this.nextCount = 0;
+        this.currentField = null;
     }
 
     /**
-     * Initialize filter with an empty projection
+     * Builder-style method used to set the fields to retain
      *
-     * @param projections
-     *            the projection
-     * @param projectionType
-     *            the projection type
+     * @param fields
+     *            the fields to retain
+     * @return the filter
      */
-    public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
-        this.keyProjection = new KeyProjection(projections, projectionType);
+    public EventDataQueryFieldFilter withFields(Set<String> fields) {
+        this.fields = new TreeSet<>(fields);
+        return this;
     }
 
     /**
-     * Initiate from a KeyProjection
+     * Builder-style method used to set the maximum next count
      *
-     * @param projection
-     *            the projection
+     * @param maxNextCount
+     *            the max next count
+     * @return the filter
      */
-    public EventDataQueryFieldFilter(KeyProjection projection) {
-        this.keyProjection = projection;
+    public EventDataQueryFieldFilter withMaxNextCount(int maxNextCount) {
+        this.maxNextCount = maxNextCount;
+        return this;
     }
-
-    /**
-     * Initialize the query field filter with all of the fields required to evaluation this query
-     *
-     * @param script
-     *            a script
-     * @param nonEventFields
-     *            a set of non-event fields
-     */
-    @Deprecated
-    public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
-        this.nonEventFields = nonEventFields;
-
-        Set<String> queryFields = Sets.newHashSet();
-        for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(script)) {
-            queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
-        }
-
-        this.keyProjection = new KeyProjection(queryFields, Projection.ProjectionType.INCLUDES);
-
-    }
-
-    protected Key document = null;
 
     @Override
     public void startNewDocument(Key document) {
@@ -93,18 +98,52 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         return true;
     }
 
-    public KeyProjection getProjection() {
-        return keyProjection;
+    @Override
+    public boolean apply(@Nullable Map.Entry<Key,String> entry) {
+        if (entry == null) {
+            return false;
+        }
+        return apply(entry.getKey(), true);
     }
 
     @Override
-    public boolean apply(@Nullable Map.Entry<Key,String> input) {
-        return keyProjection.apply(input);
+    public boolean peek(@Nullable Map.Entry<Key,String> entry) {
+        if (entry == null) {
+            return false;
+        }
+        // equivalent to apply in the event column case, simple redirect
+        return apply(entry.getKey(), false);
     }
 
-    @Override
-    public boolean peek(@Nullable Map.Entry<Key,String> input) {
-        return keyProjection.peek(input);
+    /**
+     * The field filter applies if the key's field is in the set of fields to retain
+     *
+     * @param key
+     *            the key
+     * @param update
+     *            flag that indicates if the {@link #nextCount} should be incremented
+     * @return true if the key should be retained
+     */
+    private boolean apply(Key key, boolean update) {
+        parser.parse(key);
+        String field = parser.getField();
+        field = JexlASTHelper.deconstructIdentifier(field);
+
+        if (fields.contains(field)) {
+            nextCount = 0; // reset count
+            return true;
+        } else if (update) {
+            if (currentField != null && currentField.equals(field)) {
+                // only increment the count for consecutive misses within the same field
+                nextCount++;
+            } else {
+                // new field means new count
+                currentField = field;
+                nextCount = 0;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -120,19 +159,38 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-        // not yet implemented
-        return null;
+        if (current == null || maxNextCount == -1 || nextCount < maxNextCount) {
+            return null;
+        }
+
+        parser.parse(current);
+        String higher = fields.higher(parser.getField());
+
+        Text columnQualifier;
+        if (higher == null) {
+            // generate a rollover range
+            Text columnFamily = new Text(current.getColumnFamilyData().toString() + '\u0000');
+            Key start = new Key(current.getRow(), columnFamily);
+            return new Range(start, false, endKey, endKeyInclusive);
+        } else {
+            // seek to next available field
+            columnQualifier = new Text(higher + '\u0000');
+            Key start = new Key(current.getRow(), current.getColumnFamily(), columnQualifier);
+            return new Range(start, false, endKey, endKeyInclusive);
+        }
     }
 
     @Override
     public int getMaxNextCount() {
-        // not yet implemented
-        return -1;
+        // while technically implemented, do not return the max next count here. This method is only used
+        // by the ChainableEventDataQueryFilter which does NOT guarantee that the filter will exclusively
+        // be applied to event keys.
+        throw new UnsupportedOperationException("EventDataQueryFieldFilter should not be chained with other filters");
     }
 
     @Override
     public Key transform(Key toLimit) {
-        // not yet implemented
+        // not required because the EventDataQueryFieldFilter only operates on event keys
         return null;
     }
 
@@ -140,29 +198,4 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     public EventDataQueryFilter clone() {
         return new EventDataQueryFieldFilter(this);
     }
-
-    /**
-     * Configure the delegate {@link Projection} with the fields to exclude
-     *
-     * @param excludes
-     *            the set of fields to exclude
-     * @deprecated This method is deprecated and should no longer be used.
-     */
-    @Deprecated
-    public void setExcludes(Set<String> excludes) {
-        this.keyProjection.setExcludes(excludes);
-    }
-
-    /**
-     * Set the delegate {@link Projection} with the fields to include
-     *
-     * @param includedFields
-     *            the sorted set of fields to include
-     * @deprecated This method is deprecated and should no longer be used.
-     */
-    @Deprecated
-    public void setIncludes(Set<String> includedFields) {
-        this.keyProjection.setIncludes(includedFields);
-    }
-
 }

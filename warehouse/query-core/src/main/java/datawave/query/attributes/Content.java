@@ -25,14 +25,20 @@ public class Content extends Attribute<Content> implements Serializable {
     private static final Type<?> normalizer = new LcNoDiacriticsType();
 
     private String content;
+    private Attribute<?> source;
 
     protected Content() {
         super(null, true);
     }
 
     public Content(String content, Key docKey, boolean toKeep) {
+        this(content, docKey, toKeep, null);
+    }
+
+    public Content(String content, Key docKey, boolean toKeep, Attribute<?> source) {
         super(docKey, toKeep);
         this.content = content;
+        this.source = source;
     }
 
     @Override
@@ -43,6 +49,10 @@ public class Content extends Attribute<Content> implements Serializable {
 
     public String getContent() {
         return this.content;
+    }
+
+    public Attribute<?> getSource() {
+        return source;
     }
 
     @Override
@@ -60,6 +70,11 @@ public class Content extends Attribute<Content> implements Serializable {
         writeMetadata(out, reducedResponse);
         WritableUtils.writeString(out, content);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
+        out.writeBoolean(source != null);
+        if (source != null) {
+            WritableUtils.writeString(out, source.getClass().getCanonicalName());
+            source.write(out, reducedResponse);
+        }
     }
 
     @Override
@@ -67,6 +82,19 @@ public class Content extends Attribute<Content> implements Serializable {
         readMetadata(in);
         content = WritableUtils.readString(in);
         toKeep = WritableUtils.readVInt(in) != 0;
+        boolean hasSource = in.readBoolean();
+        if (hasSource) {
+            String clazz = WritableUtils.readString(in);
+            Class sourceClass;
+            try {
+                sourceClass = Class.forName(clazz);
+                source = (Attribute<?>) sourceClass.newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("could not parse source", e);
+            }
+
+            source.readFields(in);
+        }
     }
 
     @Override
@@ -117,6 +145,11 @@ public class Content extends Attribute<Content> implements Serializable {
         super.writeMetadata(kryo, output, reducedResponse);
         output.writeString(this.content);
         output.writeBoolean(this.toKeep);
+        output.writeBoolean(this.source != null);
+        if (source != null) {
+            output.writeString(this.source.getClass().getCanonicalName());
+            source.write(kryo, output, reducedResponse);
+        }
     }
 
     @Override
@@ -124,6 +157,19 @@ public class Content extends Attribute<Content> implements Serializable {
         super.readMetadata(kryo, input);
         this.content = input.readString();
         this.toKeep = input.readBoolean();
+        boolean hasSource = input.readBoolean();
+        if (hasSource) {
+            String clazz = input.readString();
+            Class sourceClass;
+            try {
+                sourceClass = Class.forName(clazz);
+                source = (Attribute<?>) sourceClass.newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("could not parse source", e);
+            }
+
+            source.read(kryo, input);
+        }
     }
 
     /*
@@ -133,7 +179,7 @@ public class Content extends Attribute<Content> implements Serializable {
      */
     @Override
     public Content copy() {
-        return new Content(this.getContent(), this.getMetadata(), this.isToKeep());
+        return new Content(this.getContent(), this.getMetadata(), this.isToKeep(), this.getSource());
     }
 
 }

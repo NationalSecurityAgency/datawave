@@ -40,6 +40,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.function.RangeProvider;
 import datawave.query.iterator.NestedQueryIterator;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -136,6 +137,15 @@ public class AncestorQueryIterator extends QueryIterator {
         }
         // return a new filter each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;
+    }
+
+    /**
+     * In the Ancestor case replace the {@link QueryOptions#eventFilter} with an evaluation filter
+     *
+     * @return an evaluation filter
+     */
+    public EventDataQueryFilter getEventFilter() {
+        return getEvaluationFilter();
     }
 
     @Override

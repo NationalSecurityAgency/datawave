@@ -58,7 +58,6 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
             localityGroupsConf = conf.get(shardDictionaryTableName + LOCALITY_GROUPS,
                             ShardedDataTypeHandler.SHARD_DINDX_FLABEL_LOCALITY_NAME + ':' + ShardedDataTypeHandler.SHARD_DINDX_FLABEL + ','
                                             + ShardedDataTypeHandler.SHARD_DINDX_RLABEL_LOCALITY_NAME + ':' + ShardedDataTypeHandler.SHARD_DINDX_RLABEL);
-
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);
