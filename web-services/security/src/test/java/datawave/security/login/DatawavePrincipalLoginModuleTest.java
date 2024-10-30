@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +32,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.CredentialException;
 import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -271,7 +273,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test(expected = CredentialException.class)
+    @Test(expected = FailedLoginException.class)
     public void testProxiedEntitiesLoginNoRole() throws Exception {
         // Call Chain is U -> S1 -> S2. S2 will have no role. This test case tests
         // the case of no role for the terminal service. This should fail with
@@ -305,7 +307,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test(expected = CredentialException.class)
+    @Test(expected = FailedLoginException.class)
     public void testDirectRolesFailServer() throws Exception {
         /**
          * Chain is User -> S1 -> S2. S2 is terminal server. Verified that s2 does not have the appropriate authorized role for terminal server (directRole).
@@ -541,6 +543,36 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     }
 
     @Test
+    public void testAuthorizationExceptionOnLookup() throws Exception {
+        // Ensure that an AuthorizationException from the DatawaveUserService results
+        // in a LoginException being thrown from DatawavePrincipalLOginModule.login()
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andThrow(new AuthorizationException());
+
+        replayAll();
+
+        try {
+            datawaveLoginModule.login();
+            fail("Login should not have succeeded");
+        } catch (Exception e) {
+            // this type of check is used because there are many subclasses of LoginException
+            // Using a @Test(expected = LoginException.class) would succeed if any of these were caught
+            assertTrue(e.getClass().equals(LoginException.class));
+        }
+
+        verifyAll();
+    }
+
+    @Test
     public void testProxiedEntitiesLogin() throws Exception {
         // Proxied entities has the original user DN, plus it came through a server and
         // the request is being made by a second server. Make sure that the resulting
@@ -612,7 +644,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test(expected = FailedLoginException.class)
+    @Test(expected = CredentialException.class)
     public void testInvalidLoginCertIssuerDenied() throws Exception {
         MockDatawaveCertVerifier.issuerSupported = false;
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
@@ -631,7 +663,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         }
     }
 
-    @Test(expected = FailedLoginException.class)
+    @Test(expected = CredentialException.class)
     public void testInvalidLoginCertVerificationFailed() throws Exception {
         MockDatawaveCertVerifier.verify = false;
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
@@ -650,7 +682,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         }
     }
 
-    @Test(expected = FailedLoginException.class)
+    @Test
     public void testInvalidLoginAuthorizationLookupFailed() throws Exception {
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
         callbackHandler.name = datawaveCredential.getUserName();
@@ -664,6 +696,11 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
         try {
             datawaveLoginModule.login();
+            fail("Login should not have succeeded");
+        } catch (LoginException e) {
+            // this type of check is used because there are many subclasses of LoginException
+            // Using a @Test(expected = LoginException.class) would succeed if any of these were caught
+            assertTrue(e.getClass().equals(LoginException.class));
         } finally {
             verifyAll();
         }

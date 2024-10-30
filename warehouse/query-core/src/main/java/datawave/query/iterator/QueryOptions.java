@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -34,23 +33,18 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlArithmetic;
-import org.apache.hadoop.fs.FileSystem;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import org.springframework.beans.FatalBeanException;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -89,9 +83,11 @@ import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.ConfiguredPredicate;
+import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
@@ -111,8 +107,6 @@ import datawave.util.UniversalSet;
  */
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
-
-    protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
 
     public static final Charset UTF8 = StandardCharsets.UTF_8;
 
@@ -273,6 +267,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TF_FIELD_SEEK = "tf.field.seek";
     public static final String TF_NEXT_SEEK = "tf.next.seek";
 
+    public static final String SEEKING_EVENT_AGGREGATION = "seeking.event.aggregation";
+
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
@@ -321,7 +317,10 @@ public class QueryOptions implements OptionDescriber {
     protected FieldIndexAggregator fiAggregator;
     protected Equality equality;
 
+    // filter for any key type (fi, event, tf)
     protected EventDataQueryFilter evaluationFilter;
+    // filter specifically for event keys. required when performing a seeking aggregation
+    protected EventDataQueryFilter eventFilter;
 
     protected int maxEvaluationPipelines = 25;
     protected int maxPipelineCachedResults = 25;
@@ -335,7 +334,7 @@ public class QueryOptions implements OptionDescriber {
     protected List<String> documentPermutationClasses = new ArrayList<>();
     protected List<DocumentPermutation> documentPermutations = null;
 
-    protected long startTime = 0l;
+    protected long startTime = 0L;
     protected long endTime = System.currentTimeMillis();
     protected TimeFilter timeFilter = null;
 
@@ -437,6 +436,8 @@ public class QueryOptions implements OptionDescriber {
     private int eventNextSeek = -1;
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
+
+    private boolean seekingEventAggregation = false;
 
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
@@ -551,6 +552,8 @@ public class QueryOptions implements OptionDescriber {
         this.eventNextSeek = other.eventNextSeek;
         this.tfFieldSeek = other.tfFieldSeek;
         this.tfNextSeek = other.tfNextSeek;
+
+        this.seekingEventAggregation = other.seekingEventAggregation;
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
@@ -783,6 +786,76 @@ public class QueryOptions implements OptionDescriber {
 
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
         this.evaluationFilter = evaluationFilter;
+    }
+
+    /**
+     * Return or build a field filter IFF this query is projecting results
+     *
+     * @return a field filter, or null if results are not projected
+     */
+    public EventDataQueryFilter getEventFilter() {
+
+        if (!useAllowListedFields || allowListedFields instanceof UniversalSet || !isSeekingEventAggregation()) {
+            return null;
+        }
+
+        if (eventFilter == null) {
+
+            Set<String> fields = getEventFieldsToRetain();
+            if (fields.contains(Constants.ANY_FIELD)) {
+                return null;
+            }
+
+            //  @formatter:off
+            eventFilter = new EventDataQueryFieldFilter()
+                            .withFields(fields)
+                            .withMaxNextCount(getEventNextSeek());
+            //  @formatter:on
+        }
+
+        return eventFilter == null ? null : eventFilter.clone();
+    }
+
+    /**
+     * Get the event fields to retain
+     *
+     * @return the set of event fields
+     */
+    private Set<String> getEventFieldsToRetain() {
+        Set<String> fields = getQueryFields();
+
+        if (!allowListedFields.isEmpty()) {
+            fields.addAll(allowListedFields);
+        }
+
+        if (groupFields != null) {
+            fields.addAll(groupFields.getGroupByFields());
+        }
+
+        if (!indexOnlyFields.isEmpty()) {
+            // index only fields are not present in the event column
+            fields.removeAll(indexOnlyFields);
+        }
+
+        // add composite components
+        if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
+            Collection<Multimap<String,String>> entries = compositeMetadata.getCompositeFieldMapByType().values();
+            for (Multimap<String,String> entry : entries) {
+                fields.addAll(entry.values());
+            }
+        }
+
+        return fields;
+    }
+
+    private Set<String> getQueryFields() {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            return JexlASTHelper.getIdentifierNames(script);
+        } catch (ParseException e) {
+            // ignore
+            throw new FatalBeanException("Could not parse query");
+        }
     }
 
     public TimeFilter getTimeFilter() {
@@ -1466,6 +1539,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(TF_NEXT_SEEK)) {
             this.tfNextSeek = Integer.parseInt(options.get(TF_NEXT_SEEK));
+        }
+
+        if (options.containsKey(SEEKING_EVENT_AGGREGATION)) {
+            this.seekingEventAggregation = Boolean.parseBoolean(options.get(SEEKING_EVENT_AGGREGATION));
         }
 
         if (options.containsKey(DOC_AGGREGATION_THRESHOLD_MS)) {
@@ -2258,5 +2335,9 @@ public class QueryOptions implements OptionDescriber {
             equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         }
         return equality;
+    }
+
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
     }
 }

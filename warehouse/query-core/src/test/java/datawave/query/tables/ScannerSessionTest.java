@@ -1,6 +1,12 @@
 package datawave.query.tables;
 
+import static java.lang.Thread.sleep;
+
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +16,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -35,6 +45,9 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
 
 /**
  * This test spins up a mini accumulo to accurately test the effect of underlying Scanner/Batch scanners against the ScannerSession. InMemoryAccumulo makes some
@@ -79,7 +92,7 @@ public class ScannerSessionTest {
         client.tableOperations().addSplits("testTable", splits);
 
         // give the table a chance to be split
-        Thread.sleep(10000);
+        sleep(10000);
 
         // force writing all the data or fail
         try {
@@ -159,6 +172,48 @@ public class ScannerSessionTest {
         ss.setResourceClass(StubbedRuntimeExceptionResource.class);
 
         validate(ss);
+    }
+
+    @Test
+    public void testScannerSessionThreadCleanupWaitingOnClient() {
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations());
+        // set maxResults to 1 so that the ScannerSession will block adding results to the queue not allowing the scanner to close
+        ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 1, null);
+
+        List<Range> ranges = Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
+                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false),
+                        new Range(new Text(String.valueOf(98)), true, new Text(String.valueOf(99)), false));
+
+        ss.setRanges(ranges);
+
+        // this should kick off scanner in another thread and put one result on the resultQueue, forcing it to loop attempting
+        // to offer further results
+        ss.hasNext();
+
+        long startWait = System.currentTimeMillis();
+        AtomicBoolean forceClose = new AtomicBoolean(false);
+        Executors.newScheduledThreadPool(1).schedule(() -> {
+            // this should cause a shutdown
+            ss.close();
+        }, 5, TimeUnit.SECONDS);
+
+        Executors.newScheduledThreadPool(1).schedule(() -> {
+            forceClose.set(true);
+        }, 10, TimeUnit.SECONDS);
+
+        // this should block until the internal thread finishes
+        Duration d = Duration.of(12, ChronoUnit.SECONDS);
+        try {
+            ss.awaitTerminated(d);
+        } catch (TimeoutException e) {
+            // no-op
+        }
+        long endWait = System.currentTimeMillis();
+        // didn't end before the close
+        Assert.assertTrue(endWait - startWait >= 5000);
+        // ended before the force kill
+        Assert.assertFalse(forceClose.get());
     }
 
     private void validate(ScannerSession ss) throws TableNotFoundException {

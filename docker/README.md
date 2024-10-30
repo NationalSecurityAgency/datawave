@@ -11,6 +11,7 @@ out the [prereqs](#prereqs) at a minimum):
 git submodule update --init --recursive
 
 # build docker images for datawave and all of the microservices
+# optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
 mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 # bootstrap the services, and bring them up using docker compose
@@ -207,7 +208,7 @@ export DW_BIND_HOST=0.0.0.0
 
 This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
 
-What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md).
+What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../contrib/datawave-quickstart/README.md).
 
 ```
 # Add the quickstart env.sh to your .bashrc

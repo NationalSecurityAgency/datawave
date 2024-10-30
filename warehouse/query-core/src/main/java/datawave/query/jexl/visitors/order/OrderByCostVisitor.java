@@ -10,30 +10,34 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.DefaultNodeCostComparator;
-import datawave.query.jexl.nodes.FieldOrTermNodeCostComparator;
-import datawave.query.jexl.nodes.NodeCostComparator;
+import datawave.query.jexl.nodes.DefaultJexlNodeComparator;
+import datawave.query.jexl.nodes.FieldCostComparator;
+import datawave.query.jexl.nodes.JexlNodeComparator;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.TermCostComparator;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
- * Orders query nodes by cost.
+ * Orders query nodes by cost using one or more {@link JexlNodeComparator}s.
  * <p>
- * Cost is calculated based on field counts, term counts, or a default cost based on the node id {@link org.apache.commons.jexl3.parser.ParserTreeConstants}.
+ * The {@link DefaultJexlNodeComparator} orders a query based on the implied cost via the node id, see {@link ParserTreeConstants}. In general an EQ node is
+ * faster to resolve than an ER node, or a Marker node.
  * <p>
- * In general an EQ node is faster to resolve than an ER node.
+ * The {@link FieldCostComparator} orders a query cased on the field cardinality. This cardinality can be gathered from the metadata table across the entire
+ * date range of the query, or the cardinality can be gathered from the global index and applied on a per-shard basis.
  * <p>
- * In general an ER node is faster to resolve than a function node.
+ * The {@link TermCostComparator} orders a query based on the term cardinality. This is gathered from the global index and applied on a per-shard basis.
  */
 public class OrderByCostVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(OrderByCostVisitor.class);
 
-    private NodeCostComparator costComparator;
+    private JexlNodeComparator comparator;
     private final boolean isFieldMap;
     private final Map<String,Long> countMap;
 
@@ -50,8 +54,7 @@ public class OrderByCostVisitor extends BaseVisitor {
             script = order(script);
             return JexlStringBuildingVisitor.buildQueryWithoutParse(script);
         } catch (ParseException e) {
-            log.error("Could not order query by cost: " + query);
-            e.printStackTrace();
+            log.error("Could not order query by cost: " + query, e);
         }
         return null;
     }
@@ -182,7 +185,7 @@ public class OrderByCostVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (!instance.isAnyType()) {
             JexlNode[] children = JexlNodes.getChildren(node);
-            Arrays.sort(children, getCostComparator());
+            Arrays.sort(children, getComparator());
             JexlNodes.setChildren(node, children);
 
             node.childrenAccept(this, data);
@@ -190,15 +193,19 @@ public class OrderByCostVisitor extends BaseVisitor {
         return data;
     }
 
-    private NodeCostComparator getCostComparator() {
-        if (costComparator == null) {
+    private JexlNodeComparator getComparator() {
+        if (comparator == null) {
             if (countMap != null) {
-                costComparator = new FieldOrTermNodeCostComparator(countMap, isFieldMap);
+                if (isFieldMap) {
+                    comparator = new FieldCostComparator(countMap);
+                } else {
+                    comparator = new TermCostComparator(countMap);
+                }
             } else {
-                costComparator = new DefaultNodeCostComparator();
+                comparator = new DefaultJexlNodeComparator();
             }
         }
-        return costComparator;
+        return comparator;
     }
 
 }

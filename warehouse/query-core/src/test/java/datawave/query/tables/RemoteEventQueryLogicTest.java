@@ -122,6 +122,11 @@ public class RemoteEventQueryLogicTest {
         }
 
         @Override
+        public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
+            // noop
+        }
+
+        @Override
         public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) {
             return nextResponses.poll();
         }

@@ -29,7 +29,7 @@ public class MultiTableRangePartitionerTest {
 
     @Before
     public void before() throws IOException {
-        mockJob = new Job();
+        mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         TableSplitsCache.getCurrentCache(configuration).clear();

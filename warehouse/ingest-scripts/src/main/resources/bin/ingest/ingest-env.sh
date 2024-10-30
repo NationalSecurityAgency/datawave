@@ -328,3 +328,14 @@ flagBasename() {
   BASENAME=${f%%.flag*}
   echo $BASENAME
 }
+
+# Source script containing lock file acquisition logic
+. ../util/file_locker.sh
+
+# Call the function to acquire the lock on a lock file with the program name
+# for CRON mutual exclusiveness.
+# This function should be called in this way: `acquire_lock_file $(basename "$0")`
+function acquire_lock_file() {
+  lock $1
+  return $?
+}
