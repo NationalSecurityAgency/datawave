@@ -11,6 +11,10 @@ on:
         description: "Access token for maven pulls"
         required: true
 
+env:
+  JAVA_VERSION: '11'
+  JAVA_DISTRIBUTION: 'zulu'
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
 
 jobs:
   build-and-push-datawave-images:
@@ -24,15 +28,14 @@ jobs:
         password: ${{ secrets.ACCESS_TOKEN }}
     - name: Checkout Code
       uses: actions/checkout@v4
-    - name: Set up JDK 11
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
-        distribution: "zulu"
-        java-version: 11
+        distribution: ${{ env.JAVA_DISTRIBUTION }}
+        java-version: ${{ env.JAVA_VERSION }}
         cache: 'maven'
     - name: Build And Push Docker Image (Maven)
       env:
-        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
