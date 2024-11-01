@@ -44,7 +44,6 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.iterator.SourceManagerTest;
 
 public class DiscoveryIteratorTest {
-    static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
 
     @Test
     public void testHappyPath() throws Throwable {
