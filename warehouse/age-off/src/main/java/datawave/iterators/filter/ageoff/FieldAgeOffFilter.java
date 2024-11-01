@@ -19,7 +19,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static java.lang.System.arraycopy;
+import static datawave.iterators.filter.ageoff.FieldAgeOffFilter.MatchPatternEvaluationType.AFTER_FIELD;
+import static datawave.iterators.filter.ageoff.FieldAgeOffFilter.MatchPatternEvaluationType.BEFORE_FIELD;
 
 /**
  * Field age off filter. Traverses through indexed tables and non-indexed tables. Example follows. Note that any field TTL will follow the same units specified
@@ -45,9 +46,18 @@ public class FieldAgeOffFilter extends AppliedRule {
         EVENT
     }
 
+    /**
+     * Evaluation type/location for match pattern
+     */
+    protected enum MatchPatternEvaluationType {
+        BEFORE_FIELD, AFTER_FIELD;
+    }
+
     public static final String OPTION_PREFIX = "field.";
     public static final String OPTION_MATCH_PATTERN = "matchPattern";
-    public static final String OPTION_CACHE_ENABLED = "cacheEnabled";
+    public static final String OPTION_MATCH_PATTERN_EVALUATE = "matchPattern.evalType";
+
+    public static final String DEFAULT_MATCH_PATTERN_EVALUATE = BEFORE_FIELD.name();
 
     public static final byte[] CV_DELIMITERS = "&|()".getBytes();
 
@@ -99,10 +109,8 @@ public class FieldAgeOffFilter extends AppliedRule {
      */
     protected boolean isIndextable;
 
+    protected MatchPatternEvaluationType patternEvaluate;
     protected TokenTtlTrie patternTrie = null;
-    protected byte[] prevCvBytes;
-    protected int prevCvLength;
-    protected boolean prevCvCheck;
     protected boolean checkPatterns = false;
 
     /**
@@ -139,31 +147,12 @@ public class FieldAgeOffFilter extends AppliedRule {
 
         ruleApplied = false;
         ByteSequence cvSeq = k.getColumnVisibilityData();
-        boolean cvCheck = false;
-        boolean cvEval = true;
 
-        // Determine if the colviz needs to be evaluated
-        if (prevCvBytes == null || cvSeq.length() > prevCvBytes.length) {
-            prevCvBytes = new byte[cvSeq.length()];
-            prevCvLength = 0;
-        } else if (Arrays.equals(prevCvBytes, 0, prevCvLength, cvSeq.getBackingArray(), cvSeq.offset(), cvSeq.length())) {
-            cvCheck = prevCvCheck;
-            cvEval = false;
-        }
-
-        // Evaluate the colviz against the match patterns and determine
+        // BEFORE_FIELD: Evaluate the colviz against the match patterns and determine
         // if the colviz is something we want to check against fields
-        if (cvEval) {
-            cvCheck = patternTrie.scan(cvSeq.getBackingArray()) != null;
-            arraycopy(cvSeq.getBackingArray(), cvSeq.offset(), prevCvBytes, 0, cvSeq.length());
-            prevCvLength = cvSeq.length();
-            prevCvCheck = cvCheck;
-        }
-
-        // Exit if we know the colviz is one that is not applicable
-        if (!cvCheck) {
+        if (patternEvaluate == BEFORE_FIELD && (patternTrie.scan(cvSeq.getBackingArray()) == null)) {
             if (log.isTraceEnabled()) {
-                log.trace("Accepted (reject age-off) pattern does not match: " + k.getColumnVisibility().toString());
+                log.trace("Accepted (reject age-off) pattern does not match: " + k.getColumnVisibility());
             }
             return true;
         }
@@ -210,7 +199,6 @@ public class FieldAgeOffFilter extends AppliedRule {
                 if (nullIndex > 0) {
                     int start = nullIndex + 1;
                     int length = cq.length - start;
-                    // field = new ArrayByteSequence(cq, start, length);
                     transientKey.setArray(cq, start, length);
                 }
 
@@ -253,6 +241,14 @@ public class FieldAgeOffFilter extends AppliedRule {
 
         Long dataTypeCutoff = fieldTimes.get(transientKey);
         if (dataTypeCutoff != null) {
+            // AFTER_FIELD: Evaluate the colviz against the match patterns and determine
+            // if the colviz is something we want to check against fields
+            if (patternEvaluate == AFTER_FIELD && (patternTrie.scan(cvSeq.getBackingArray()) == null)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Rule not applied - match pattern: " + k.getColumnVisibility());
+                }
+                return true;
+            }
             ruleApplied = true;
             boolean accepted = k.getTimestamp() > dataTypeCutoff;
             if (log.isTraceEnabled()) {
@@ -366,6 +362,9 @@ public class FieldAgeOffFilter extends AppliedRule {
         }
 
         String matchPatternOption = options.getOption(OPTION_MATCH_PATTERN);
+        String matchPatternEvaluateType = options.getOption(OPTION_MATCH_PATTERN_EVALUATE, DEFAULT_MATCH_PATTERN_EVALUATE);
+
+        patternEvaluate = Enum.valueOf(MatchPatternEvaluationType.class, matchPatternEvaluateType);
 
         TokenTtlTrie.Builder patternTrieBuilder = new TokenTtlTrie.Builder();
         if (matchPatternOption != null) {
@@ -376,8 +375,6 @@ public class FieldAgeOffFilter extends AppliedRule {
             patternTrie = patternTrieBuilder.build();
             checkPatterns = true;
         }
-
-        this.prevCvBytes = new byte[] {};
     }
 
     @Override
