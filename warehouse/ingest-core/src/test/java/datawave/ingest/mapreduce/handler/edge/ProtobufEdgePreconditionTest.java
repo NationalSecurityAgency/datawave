@@ -500,7 +500,37 @@ public class ProtobufEdgePreconditionTest {
         expectedKeys.add("spruce%00;canine");
         expectedKeys.add("canine");
         expectedKeys.add("spruce");
-        ;
+
+        RawRecordContainer myEvent = getEvent(conf);
+
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+    }
+
+    @Test
+    public void testAwareERFieldComparison() {
+        // PERSON =~ METAL
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("PERSON", new NormalizedFieldAndValue("PERSON", "leader", "PROFESSION", "0"));
+        fields.put("METAL", new NormalizedFieldAndValue("METAL", "iron", "TOOL", "0"));
+        fields.put("IMPLEMENT", new NormalizedFieldAndValue("IMPLEMENT", "words", "TOOL", "0"));
+
+        fields.put("PERSON", new NormalizedFieldAndValue("PERSON", "artist", "PROFESSION", "1"));
+        fields.put("METAL", new NormalizedFieldAndValue("METAL", "lead", "TOOL", "1"));
+        fields.put("IMPLEMENT", new NormalizedFieldAndValue("IMPLEMENT", "paint", "TOOL", "1"));
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("paint%00;leader");
+        expectedKeys.add("leader%00;paint");
+        expectedKeys.add("paint");
+        expectedKeys.add("leader");
 
         RawRecordContainer myEvent = getEvent(conf);
 

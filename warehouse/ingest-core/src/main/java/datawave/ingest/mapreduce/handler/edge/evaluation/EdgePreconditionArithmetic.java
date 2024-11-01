@@ -106,11 +106,31 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
 
+        } else if (!(left instanceof Collection) && (right instanceof Collection)) {
+            throw new IllegalArgumentException("Please ensure regular expression preconditions are of the form 'FIELD =~ regex' and not reversed.");
+
+        } else if ((left instanceof Collection) && (right instanceof Collection)) {
+
+            Iterator iter = ((Collection) left).iterator();
+            while (iter.hasNext()) {
+                Object lefttuple = iter.next();
+                Iterator iter2 = ((Collection) right).iterator();
+                while (iter2.hasNext()) {
+                    Object righttuple = iter2.next();
+                    Object newLeft = EventFieldValueTuple.getValue(lefttuple);
+                    Object newRight = EventFieldValueTuple.getValue(righttuple);
+                    if (super.contains(newRight, newLeft) || newLeft.toString().contains(newRight.toString())) {
+                        addMatchingGroup(righttuple);
+                        addMatchingGroup(lefttuple);
+                        matches = true;
+                    }
+                }
+            }
         } else {
             Object newLeft = EventFieldValueTuple.getValue(left);
             Object newRight = EventFieldValueTuple.getValue(right);
 
-            if (super.contains(newRight, newLeft)) {
+            if (super.contains(newLeft, newRight)) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
@@ -443,11 +463,35 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
 
+        } else if (!(left instanceof Collection) && (right instanceof Collection)) {
+
+            throw new IllegalArgumentException("Please ensure regular expression preconditions are of the form 'FIELD =~ regex' and not reversed.");
+
+        } else if ((left instanceof Collection) && (right instanceof Collection)) {
+
+            Iterator iter = ((Collection) left).iterator();
+            while (iter.hasNext()) {
+                Object lefttuple = iter.next();
+                Iterator iter2 = ((Collection) right).iterator();
+                while (iter2.hasNext()) {
+                    Object righttuple = iter2.next();
+                    Object newLeft = EventFieldValueTuple.getValue(lefttuple);
+                    Object newRight = EventFieldValueTuple.getValue(righttuple);
+                    if (!super.contains(newRight, newLeft) && !newLeft.toString().contains(newRight.toString())) {
+                        addMatchingGroup(righttuple);
+                        addMatchingGroup(lefttuple);
+                        matches = true;
+                    } else {
+                        addExcludedGroup(righttuple);
+                        addExcludedGroup(lefttuple);
+                    }
+                }
+            }
         } else {
             Object newLeft = EventFieldValueTuple.getValue(left);
             Object newRight = EventFieldValueTuple.getValue(right);
 
-            if (!super.contains(newRight, newLeft)) {
+            if (!super.contains(newRight, newLeft) && !newLeft.toString().contains(newRight.toString())) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
