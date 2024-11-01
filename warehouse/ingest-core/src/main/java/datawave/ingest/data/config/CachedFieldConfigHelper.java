@@ -1,13 +1,14 @@
 package datawave.ingest.data.config;
 
+import com.google.common.annotations.VisibleForTesting;
+
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import org.apache.commons.collections4.map.LRUMap;
-
-import com.google.common.annotations.VisibleForTesting;
-
 public class CachedFieldConfigHelper implements FieldConfigHelper {
+    private final static float DEFAULT_LRU_LF = 0.75f;
+
     private final FieldConfigHelper underlyingHelper;
     private final Map<String,CachedEntry> resultCache;
 
@@ -20,7 +21,7 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
             throw new IllegalArgumentException("Limit must be a positive integer");
         }
         this.underlyingHelper = helper;
-        this.resultCache = new LRUMap<>(limit);
+        this.resultCache = lruCache(limit);
     }
 
     @Override
@@ -56,6 +57,16 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
     @VisibleForTesting
     boolean getFieldResult(AttributeType attributeType, String fieldName, Predicate<String> fn) {
         return resultCache.computeIfAbsent(fieldName, CachedEntry::new).get(attributeType).getResultOrEvaluate(fn);
+    }
+
+    static <K,V> Map<K,V> lruCache(final int maxSize) {
+        // Testing showed slightly better or same performance of LRU implementation below
+        // when compared to Apache Commons LRUMap
+        return new LinkedHashMap<>((int) (maxSize / DEFAULT_LRU_LF) + 1, DEFAULT_LRU_LF, true) {
+            protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
+                return size() > maxSize;
+            }
+        };
     }
 
     private static class CachedEntry {
