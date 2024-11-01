@@ -27,11 +27,12 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -51,7 +52,7 @@ public class SharedCacheCoordinator implements Serializable {
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
 
-    private static final Logger log = Logger.getLogger(SharedCacheCoordinator.class);
+    private static final Logger log = LoggerFactory.getLogger(SharedCacheCoordinator.class);
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;

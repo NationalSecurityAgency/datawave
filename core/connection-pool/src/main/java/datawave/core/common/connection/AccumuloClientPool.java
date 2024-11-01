@@ -10,11 +10,12 @@ import java.util.Map;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AccumuloClientPool extends GenericObjectPool<AccumuloClient> {
 
-    private static final Logger log = Logger.getLogger(AccumuloClientPool.class);
+    private static final Logger log = LoggerFactory.getLogger(AccumuloClientPool.class);
     private final Map<Long,Map<String,String>> threadToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
     private final Map<AccumuloClient,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
     private AccumuloClientPoolFactory factory;
