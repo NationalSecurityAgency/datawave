@@ -13,7 +13,7 @@
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
-            <version>3.6</version>
+            <version>${version.commons-net}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
