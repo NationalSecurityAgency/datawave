@@ -90,25 +90,32 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     }
 
     @Override
-    public Boolean contains(Object container, Object value) {
-
-        if (value == null && container == null) {
-            // if both are null L == R
-            return true;
-        }
-        if (value == null || container == null) {
-            // we know both aren't null, therefore L != R
-            return false;
-        }
-        final String arg = value.toString();
+    public Boolean contains(Object left, Object right) {
         boolean matches = false;
-        if (container instanceof java.util.regex.Pattern) {
-            matches = ((java.util.regex.Pattern) container).matcher(arg).matches();
-            if (matches) {
-                addMatchingGroup(value);
+
+        if (left instanceof Collection && !(right instanceof Collection)) {
+            Object newRight = EventFieldValueTuple.getValue(right);
+
+            Iterator iter = ((Collection) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = EventFieldValueTuple.getValue(tuple);
+                if (super.contains(newRight, newLeft)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
             }
+
         } else {
-            matches = arg.matches(container.toString());
+            Object newLeft = EventFieldValueTuple.getValue(left);
+            Object newRight = EventFieldValueTuple.getValue(right);
+
+            if (super.contains(newRight, newLeft)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+
+            }
         }
         return matches;
     }
@@ -417,4 +424,40 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
 
         return matches;
     }
+
+    public Object notContains(Object left, Object right) {
+        boolean matches = false;
+
+        if (left instanceof Collection && !(right instanceof Collection)) {
+            Object newRight = EventFieldValueTuple.getValue(right);
+
+            Iterator iter = ((Collection) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = EventFieldValueTuple.getValue(tuple);
+                if (!super.contains(newRight, newLeft)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                } else {
+                    addExcludedGroup(tuple);
+                }
+            }
+
+        } else {
+            Object newLeft = EventFieldValueTuple.getValue(left);
+            Object newRight = EventFieldValueTuple.getValue(right);
+
+            if (!super.contains(newRight, newLeft)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+            } else {
+                addExcludedGroup(newLeft);
+                addExcludedGroup(newRight);
+
+            }
+        }
+        return matches;
+    }
+
 }

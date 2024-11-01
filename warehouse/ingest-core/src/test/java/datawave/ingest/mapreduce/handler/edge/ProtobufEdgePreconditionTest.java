@@ -86,7 +86,7 @@ public class ProtobufEdgePreconditionTest {
 
     @Test
     public void testUnawarePreconSameGroup() {
-        // FELINE == 'tabby'
+        // FELINE =~ 'tabb.*'
 
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
@@ -141,7 +141,7 @@ public class ProtobufEdgePreconditionTest {
 
     @Test
     public void testUnawarePreconSameGroupEarlyActivityDate() {
-        // FELINE == 'tabby'
+        // FELINE =~ 'tabb.*'
 
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
@@ -411,6 +411,34 @@ public class ProtobufEdgePreconditionTest {
         expectedKeys.add("parmesan%00;chianti");
         expectedKeys.add("chianti");
         expectedKeys.add("chianti%00;parmesan");
+
+        RawRecordContainer myEvent = getEvent(conf);
+
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+    }
+
+    @Test
+    public void testAwareNR() {
+        // BREAD !~ 'ry.*'
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("BREAD", new NormalizedFieldAndValue("BREAD", "rye", "FOOD", "0"));
+        fields.put("BREAD", new NormalizedFieldAndValue("BREAD", "bagel", "FOOD", "1"));
+        fields.put("SANDWICH", new NormalizedFieldAndValue("SANDWICH", "reuben", "FOOD", "0"));
+        fields.put("SANDWICH", new NormalizedFieldAndValue("SANDWICH", "lox", "FOOD", "1"));
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("bagel");
+        expectedKeys.add("bagel%00;lox");
+        expectedKeys.add("lox");
+        expectedKeys.add("lox%00;bagel");
 
         RawRecordContainer myEvent = getEvent(conf);
 
