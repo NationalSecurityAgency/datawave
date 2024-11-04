@@ -69,6 +69,15 @@ public class ParentQueryIterator extends QueryIterator {
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
 
+    /**
+     * In the Parent case replace the {@link QueryOptions#eventFilter} with an evaluation filter
+     *
+     * @return an evaluation filter
+     */
+    public EventDataQueryFilter getEventFilter() {
+        return getEvaluationFilter();
+    }
+
     @Override
     public Iterator<Entry<Key,Document>> mapDocument(SortedKeyValueIterator<Key,Value> deepSourceCopy, Iterator<Entry<Key,Document>> documents,
                     CompositeMetadata compositeMetadata) {

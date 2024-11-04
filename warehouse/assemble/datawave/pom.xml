@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>7.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>jar</packaging>
@@ -301,7 +301,7 @@
                                             <artifactId>datawave-ingest-scripts</artifactId>
                                         </artifactItem>
                                     </artifactItems>
-                                    <excludes>META-INF/**,bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/system/install.sh</excludes>
+                                    <excludes>META-INF/**,bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/system/install.sh,bin/util/file_locker.sh</excludes>
                                     <outputDirectory>${project.build.directory}/archive</outputDirectory>
                                 </configuration>
                             </execution>
@@ -335,7 +335,7 @@
                                             <artifactId>datawave-ingest-scripts</artifactId>
                                         </artifactItem>
                                     </artifactItems>
-                                    <includes>bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/ingest/tables-env.sh,bin/system/install.sh</includes>
+                                    <includes>bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/ingest/tables-env.sh,bin/system/install.sh,bin/util/file_locker.sh</includes>
                                     <outputDirectory>${project.build.directory}/archive-tmp</outputDirectory>
                                 </configuration>
                             </execution>

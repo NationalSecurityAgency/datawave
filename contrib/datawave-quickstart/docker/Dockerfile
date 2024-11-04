@@ -6,6 +6,13 @@ ARG DATAWAVE_JAVA_HOME
 ARG DATAWAVE_BUILD_PROFILE
 ARG DATAWAVE_SKIP_INGEST=false
 ARG DATAWAVE_SKIP_TESTS=false
+ARG DATAWAVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/datawave"
+
+ARG ACCUMULO_URL
+ARG HADOOP_URL
+ARG MAVEN_URL
+ARG WILDFLY_URL
+ARG ZOOKEEPER_URL
 
 USER root
 
@@ -28,7 +35,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN dnf -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
+RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
     dnf clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -51,9 +58,15 @@ RUN rm -f .dockerignore .maven-dockerignore && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
+    echo "export DW_ACCUMULO_DIST_URI=\"$ACCUMULO_URL\"" >> ~/.bashrc && \
+    echo "export DW_HADOOP_DIST_URI=\"$HADOOP_URL\"" >> ~/.bashrc && \
+    echo "export DW_MAVEN_DIST_URI=\"$MAVEN_URL\"" >> ~/.bashrc && \
+    echo "export DW_WILDFLY_DIST_URI=\"$WILDFLY_URL\"" >> ~/.bashrc && \
+    echo "export DW_ZOOKEEPER_DIST_URI=\"$ZOOKEEPER_URL\"" >> ~/.bashrc && \
     echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
     echo "export DW_DATAWAVE_INGEST_TEST_SKIP=\"$DATAWAVE_SKIP_INGEST\"" >> ~/.bashrc && \
-    echo "export DW_WGET_OPTS=\"-q\"" >> ~/.bashrc && \
+    echo "export DW_MAVEN_REPOSITORY=\"$DATAWAVE_MAVEN_REPO\"" >> ~/.bashrc && \
+    echo "export DW_WGET_OPTS=\"-q --no-check-certificate\"" >> ~/.bashrc && \
     echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc

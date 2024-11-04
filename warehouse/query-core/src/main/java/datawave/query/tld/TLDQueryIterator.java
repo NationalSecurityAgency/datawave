@@ -31,6 +31,7 @@ import datawave.query.function.TLDEquality;
 import datawave.query.function.TLDRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -133,6 +134,15 @@ public class TLDQueryIterator extends QueryIterator {
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
+    }
+
+    /**
+     * In the TLD case replace the {@link QueryOptions#eventFilter} with an evaluation filter
+     *
+     * @return an evaluation filter
+     */
+    public EventDataQueryFilter getEventFilter() {
+        return getEvaluationFilter();
     }
 
     @Override

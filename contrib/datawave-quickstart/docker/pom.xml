@@ -4,25 +4,30 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>7.10.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <artifactId>quickstart</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <properties>
-        <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
-        <dist.accumulo>accumulo-2.1.3-bin.tar.gz</dist.accumulo>
-        <dist.hadoop>hadoop-3.3.6.tar.gz</dist.hadoop>
-        <dist.maven>apache-maven-3.8.8-bin.tar.gz</dist.maven>
-        <dist.wildfly>wildfly-17.0.1.Final.tar.gz</dist.wildfly>
-        <dist.zookeeper>apache-zookeeper-3.7.2-bin.tar.gz</dist.zookeeper>
+        <dist.accumulo>accumulo-${version.accumulo.tar.gz}-bin.tar.gz</dist.accumulo>
+        <dist.hadoop>hadoop-${version.hadoop.tar.gz}.tar.gz</dist.hadoop>
+        <dist.maven>apache-maven-${version.maven.tar.gz}-bin.tar.gz</dist.maven>
+        <dist.wildfly>wildfly-${version.wildfly.tar.gz}.Final.tar.gz</dist.wildfly>
+        <dist.zookeeper>apache-zookeeper-${version.zookeeper.tar.gz}-bin.tar.gz</dist.zookeeper>
         <skipIngest>false</skipIngest>
-        <url.accumulo>https://dlcdn.apache.org/accumulo/2.1.3/${dist.accumulo}</url.accumulo>
-        <url.hadoop>https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/${dist.hadoop}</url.hadoop>
-        <url.maven>https://dlcdn.apache.org/maven/maven-3/3.8.8/binaries/${dist.maven}</url.maven>
-        <url.wildfly>https://download.jboss.org/wildfly/17.0.1.Final/${dist.wildfly}</url.wildfly>
-        <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-3.7.2/${dist.zookeeper}</url.zookeeper>
+        <url.accumulo>https://dlcdn.apache.org/accumulo/${version.accumulo.tar.gz}/${dist.accumulo}</url.accumulo>
+        <url.hadoop>https://dlcdn.apache.org/hadoop/common/hadoop-${version.hadoop.tar.gz}/${dist.hadoop}</url.hadoop>
+        <url.maven>https://dlcdn.apache.org/maven/maven-3/${version.maven.tar.gz}/binaries/${dist.maven}</url.maven>
+        <url.wildfly>https://download.jboss.org/wildfly/${version.wildfly.tar.gz}.Final/${dist.wildfly}</url.wildfly>
+        <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-${version.zookeeper.tar.gz}/${dist.zookeeper}</url.zookeeper>
+        <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
+        <version.accumulo.tar.gz>2.1.3</version.accumulo.tar.gz>
+        <version.hadoop.tar.gz>3.3.6</version.hadoop.tar.gz>
+        <version.maven.tar.gz>3.8.8</version.maven.tar.gz>
+        <version.wildfly.tar.gz>17.0.1</version.wildfly.tar.gz>
+        <version.zookeeper.tar.gz>3.7.2</version.zookeeper.tar.gz>
     </properties>
     <dependencies>
         <dependency>
@@ -32,72 +37,28 @@
             <type>pom</type>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>assemble-datawave</artifactId>
+            <version>${project.version}</version>
+            <classifier>dist</classifier>
+            <type>tar.gz</type>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-deploy-application</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-deploy-application</artifactId>
+            <version>${project.version}</version>
+            <classifier>${build.env}</classifier>
+            <type>tar.gz</type>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
-            <!-- the download plugin is beneficial because it caches the downloaded tarballs in the m2 repo -->
-            <plugin>
-                <groupId>com.googlecode.maven-download-plugin</groupId>
-                <artifactId>download-maven-plugin</artifactId>
-                <version>1.6.8</version>
-                <executions>
-                    <execution>
-                        <id>download-zookeeper</id>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>${url.zookeeper}</url>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>download-accumulo</id>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>${url.accumulo}</url>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>download-hadoop</id>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>${url.hadoop}</url>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>download-maven</id>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>${url.maven}</url>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>download-wildfly</id>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>${url.wildfly}</url>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
                 <version>3.2.0</version>
@@ -114,6 +75,8 @@
                             <includes>
                                 <include>**/apache-zookeeper-*-bin.tar.gz</include>
                                 <include>**/accumulo-*-bin.tar.gz</include>
+                                <include>**/zookeeper-*.tar.gz</include>
+                                <include>**/accumulo-*.tar.gz</include>
                             </includes>
                         </fileset>
                         <fileset>
@@ -134,101 +97,58 @@
                             <directory>../bin/services/maven</directory>
                             <includes>
                                 <include>**/apache-maven-*-bin.tar.gz</include>
+                                <include>**/maven-*.tar.gz</include>
                             </includes>
                         </fileset>
                     </filesets>
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
+                <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-accumulo-tarballs</id>
+                        <id>copy-datawave-warehouse</id>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>copy</goal>
                         </goals>
                         <phase>process-resources</phase>
                         <configuration>
-                            <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.outputDirectory}</directory>
-                                    <includes>
-                                        <include>${dist.zookeeper}</include>
-                                        <include>${dist.accumulo}</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-datawave-tarballs</id>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <phase>process-resources</phase>
-                        <configuration>
+                            <artifact>gov.nsa.datawave:assemble-datawave:${project.version}:tar.gz:dist</artifact>
                             <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/../../../warehouse/assemble/datawave/target/</directory>
-                                    <includes>
-                                        <include>datawave-${build.env}-${project.version}-dist.tar.gz</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>${project.basedir}/../../../web-services/deploy/application/target/</directory>
-                                    <includes>
-                                        <include>datawave-ws-deploy-application-${project.version}-${build.env}.tar.gz</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>${project.build.outputDirectory}</directory>
-                                    <includes>
-                                        <include>${dist.wildfly}</include>
-                                    </includes>
-                                </resource>
-                            </resources>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>copy-hadoop-tarballs</id>
+                        <id>copy-datawave-webservice</id>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>copy</goal>
                         </goals>
                         <phase>process-resources</phase>
                         <configuration>
-                            <outputDirectory>${project.basedir}/../bin/services/hadoop</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.outputDirectory}</directory>
-                                    <includes>
-                                        <include>${dist.hadoop}</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-maven-tarballs</id>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <phase>process-resources</phase>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/../bin/services/maven</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.outputDirectory}</directory>
-                                    <includes>
-                                        <include>${dist.maven}</include>
-                                    </includes>
-                                </resource>
-                            </resources>
+                            <artifact>gov.nsa.datawave.webservices:datawave-ws-deploy-application:${project.version}:tar.gz:${build.env}</artifact>
+                            <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+            <?SORTPOM IGNORE?>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>rename-datawave-warehouse</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                <move file="${project.basedir}/../bin/services/datawave/assemble-datawave-${project.version}-dist.tar.gz" tofile="${project.basedir}/../bin/services/datawave/datawave-${build.env}-${project.version}-dist.tar.gz" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <?SORTPOM RESUME?>
         </plugins>
     </build>
     <profiles>
@@ -256,7 +176,6 @@
                                         </buildOptions>
                                         <cleanup>none</cleanup>
                                         <contextDir>${project.basedir}/../../../</contextDir>
-                                        <cleanup>none</cleanup>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <tags>
                                             <tag>latest</tag>
@@ -268,6 +187,11 @@
                                             <DATAWAVE_BUILD_PROFILE>${build.env}</DATAWAVE_BUILD_PROFILE>
                                             <DATAWAVE_SKIP_INGEST>${skipIngest}</DATAWAVE_SKIP_INGEST>
                                             <DATAWAVE_SKIP_TESTS>true</DATAWAVE_SKIP_TESTS>
+                                            <ACCUMULO_URL>${url.accumulo}</ACCUMULO_URL>
+                                            <HADOOP_URL>${url.hadoop}</HADOOP_URL>
+                                            <MAVEN_URL>${url.maven}</MAVEN_URL>
+                                            <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>
+                                            <ZOOKEEPER_URL>${url.zookeeper}</ZOOKEEPER_URL>
                                         </args>
                                     </build>
                                 </image>
@@ -319,6 +243,258 @@
                         <configuration>
                             <skipPoms>false</skipPoms>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>quickstart-default</id>
+            <activation>
+                <property>
+                    <name>!quickstart-maven</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- the download plugin is beneficial because it caches the downloaded tarballs in the m2 repo -->
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.8</version>
+                        <executions>
+                            <execution>
+                                <id>download-zookeeper</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${url.zookeeper}</url>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-accumulo</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${url.accumulo}</url>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-hadoop</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${url.hadoop}</url>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-maven</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${url.maven}</url>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-wildfly</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${url.wildfly}</url>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-accumulo-tarballs</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.outputDirectory}</directory>
+                                            <includes>
+                                                <include>${dist.zookeeper}</include>
+                                                <include>${dist.accumulo}</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-hadoop-tarballs</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/../bin/services/hadoop</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.outputDirectory}</directory>
+                                            <includes>
+                                                <include>${dist.hadoop}</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-maven-tarballs</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/../bin/services/maven</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.outputDirectory}</directory>
+                                            <includes>
+                                                <include>${dist.maven}</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-wildfly-tarball</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.outputDirectory}</directory>
+                                            <includes>
+                                                <include>${dist.wildfly}</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>quickstart-maven</id>
+            <activation>
+                <property>
+                    <name>quickstart-maven</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>gov.nsa.datawave.quickstart</groupId>
+                    <artifactId>accumulo</artifactId>
+                    <version>${version.accumulo.tar.gz}</version>
+                    <type>tar.gz</type>
+                </dependency>
+                <dependency>
+                    <groupId>gov.nsa.datawave.quickstart</groupId>
+                    <artifactId>hadoop</artifactId>
+                    <version>${version.hadoop.tar.gz}</version>
+                    <type>tar.gz</type>
+                </dependency>
+                <dependency>
+                    <groupId>gov.nsa.datawave.quickstart</groupId>
+                    <artifactId>maven</artifactId>
+                    <version>${version.maven.tar.gz}</version>
+                    <type>tar.gz</type>
+                </dependency>
+                <dependency>
+                    <groupId>gov.nsa.datawave.quickstart</groupId>
+                    <artifactId>wildfly</artifactId>
+                    <version>${version.wildfly.tar.gz}</version>
+                    <type>tar.gz</type>
+                </dependency>
+                <dependency>
+                    <groupId>gov.nsa.datawave.quickstart</groupId>
+                    <artifactId>zookeeper</artifactId>
+                    <version>${version.zookeeper.tar.gz}</version>
+                    <type>tar.gz</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-accumulo-tarball</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <artifact>gov.nsa.datawave.quickstart:accumulo:${version.accumulo.tar.gz}:tar.gz</artifact>
+                                    <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-hadoop-tarball</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <artifact>gov.nsa.datawave.quickstart:hadoop:${version.hadoop.tar.gz}:tar.gz</artifact>
+                                    <outputDirectory>${project.basedir}/../bin/services/hadoop</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-maven-tarball</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <artifact>gov.nsa.datawave.quickstart:maven:${version.maven.tar.gz}:tar.gz</artifact>
+                                    <outputDirectory>${project.basedir}/../bin/services/maven</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-wildfly-tarball</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <artifact>gov.nsa.datawave.quickstart:wildfly:${version.wildfly.tar.gz}:tar.gz</artifact>
+                                    <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-zookeeper-tarball</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <artifact>gov.nsa.datawave.quickstart:zookeeper:${version.zookeeper.tar.gz}:tar.gz</artifact>
+                                    <outputDirectory>${project.basedir}/../bin/services/accumulo</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
