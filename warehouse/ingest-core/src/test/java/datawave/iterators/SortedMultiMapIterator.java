@@ -27,24 +27,18 @@ public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>
     private TreeMultimap<Key,Value> map;
     private Range range;
 
-    private AtomicBoolean interruptFlag;
+
     private int interruptCheckCount = 0;
 
     public SortedMultiMapIterator deepCopy(IteratorEnvironment env) {
-        return new SortedMultiMapIterator(map, interruptFlag);
+        return new SortedMultiMapIterator(map);
     }
 
-    private SortedMultiMapIterator(TreeMultimap<Key,Value> map, AtomicBoolean interruptFlag) {
+    public SortedMultiMapIterator(TreeMultimap<Key,Value> map) {
         this.map = map;
         iter = null;
         this.range = new Range();
         entry = null;
-
-        this.interruptFlag = interruptFlag;
-    }
-
-    public SortedMultiMapIterator(TreeMultimap<Key,Value> map) {
-        this(map, null);
     }
 
     @Override
@@ -68,7 +62,7 @@ public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>
         if (entry == null)
             throw new IllegalStateException();
 
-        if (interruptFlag != null && interruptCheckCount++ % 100 == 0 && interruptFlag.get())
+        if (interruptCheckCount++ % 100 == 0 )
             throw new IterationInterruptedException();
 
         if (iter.hasNext()) {
@@ -83,9 +77,6 @@ public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-
-        if (interruptFlag != null && interruptFlag.get())
-            throw new IterationInterruptedException();
 
         this.range = range;
 
