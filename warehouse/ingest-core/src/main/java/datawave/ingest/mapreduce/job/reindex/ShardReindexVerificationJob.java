@@ -89,9 +89,14 @@ public class ShardReindexVerificationJob implements Tool {
             log.info("Selecting source2 for split files");
             SplittableRFileRangeInputFormat.setSplitFiles(j, config.get("source2.files"));
         } else {
-            // TODO
             // use the source1 accumulo
-            throw new UnsupportedOperationException("need at least one source of files for now");
+            if (accumuloClient == null) {
+                accumuloClient = AccumuloUtil.setupAccumuloClient(j.getConfiguration(), jobConfig.accumuloClientPropertiesPath, jobConfig.instance,
+                                jobConfig.zookeepers, jobConfig.username, getPassword());
+            }
+
+            ShardReindexJob.buildSplittableRanges(accumuloClient, jobConfig.splitThreads, jobConfig.indexBlocksPerSplit, ShardReindexMapper.BatchMode.NONE,
+                            config, jobConfig.source1Table, jobConfig.startKey, jobConfig.endKey);
         }
     }
 
@@ -269,6 +274,9 @@ public class ShardReindexVerificationJob implements Tool {
         // define data splits
         @Parameter(names = "--indexBlocksPerSplit", description = "rfile index block count to use for each split, -1 to disable indexBlockSplitting")
         private int indexBlocksPerSplit = -1;
+
+        @Parameter(names = "--splitThreads", description = "number of threads to use to calculate splits when paired with indexBlocksPerSplit != -1")
+        private int splitThreads = 1;
 
         // define accumulo config, requried if either source is type ACCUMULO
         @Parameter(names = "--instance", description = "accumulo instance name")

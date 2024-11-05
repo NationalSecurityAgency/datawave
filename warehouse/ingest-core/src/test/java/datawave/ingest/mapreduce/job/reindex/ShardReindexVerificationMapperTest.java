@@ -13,6 +13,7 @@ import java.util.List;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -143,39 +144,114 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void setupTest_accumuloSourceNeedsAccumuloHelperConfig() {
-        throw new NotImplementedException("todo");
+        replayAll();
+
+        config.set("source1", "ACCUMULO");
+        config.set("source1.table", "myTable");
+        config.set("source2", "ACCUMULO");
+        config.set("source2.table", "myOtherTable");
+        mapper.setup(context);
+
+        verifyAll();
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void setupTest_accumuloSourceNeedsTable() {
-        throw new NotImplementedException("todo");
+        replayAll();
+
+        config.set("source1", "ACCUMULO");
+        config.set("source2", "ACCUMULO");
+        mapper.setup(context);
+
+        verifyAll();
     }
 
-    @Test
-    public void setupTest_accumuloSourceUserMustExist() {
-        throw new NotImplementedException("todo");
+    @Test(expected = AccumuloSecurityException.class)
+    public void setupTest_accumuloSourceUserMustExist() throws Throwable {
+        replayAll();
+
+        config.set("source1", "ACCUMULO");
+        config.set("source1.table", "myTable");
+        config.set("source2", "ACCUMULO");
+        config.set("source2.table", "myOtherTable");
+
+        AccumuloHelper.setUsername(config, "applePie");
+        AccumuloHelper.setPassword(config, "password".getBytes());
+        AccumuloHelper.setZooKeepers(config, "zoo");
+        AccumuloHelper.setInstanceName(config, "myInstance");
+        // force in this client so no client is created
+        mapper.setAccumuloClient(accumuloClient);
+
+        // since this is thrown as a runtime exception caused by an AccumuloSecurityException unwrap this to verify
+        try {
+            mapper.setup(context);
+        } catch (RuntimeException e) {
+            throw e.getCause();
+        }
+
+        verifyAll();
     }
 
-    @Test
-    public void setupTest_accumuloSourceTableMustExist() {
-        throw new NotImplementedException("todo");
+    @Test(expected = TableNotFoundException.class)
+    public void setupTest_accumuloSourceTableMustExist() throws Throwable {
+        replayAll();
+
+        config.set("source1", "ACCUMULO");
+        config.set("source1.table", "accumuloSourceTable1");
+        config.set("source2", "ACCUMULO");
+        config.set("source2.table", "accumuloSourceTable2");
+
+        AccumuloHelper.setUsername(config, "root");
+        AccumuloHelper.setPassword(config, "password".getBytes());
+        AccumuloHelper.setZooKeepers(config, "zoo");
+        AccumuloHelper.setInstanceName(config, "myInstance");
+
+        accumuloClient.tableOperations().create("accumuloSourceTable1");
+
+        // force in so no client will be created inside the mapper
+        mapper.setAccumuloClient(accumuloClient);
+
+        // accumulo exception is wrapped up in a runtime exception, unwrap and verify
+        try {
+            mapper.setup(context);
+        } catch (RuntimeException e) {
+            throw e.getCause();
+        }
+
+        verifyAll();
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void setupTest_fileSourceMustHavePaths() {
-        throw new NotImplementedException("todo");
+        replayAll();
+
+        config.set("source1", "FILE");
+
+        config.set("source2", "FILE");
+        config.set("source2.files", "/some/path");
+        mapper.setup(context);
+
+        verifyAll();
     }
 
-    @Test
-    public void setupTest_fileSourceNoPaths() {
-        throw new NotImplementedException("todo");
-    }
+    @Test(expected = IOException.class)
+    public void setupTest_fileSourceNoPaths() throws Throwable {
+        replayAll();
 
-    @Test
-    public void setupTest_fileSourceMissingFileTest() {
-        throw new NotImplementedException("todo");
+        config.set("source1", "FILE");
+        config.set("source1.files", "/some/path/no-rifles");
+        config.set("source2", "FILE");
+        config.set("source2.files", "/some/other/path/no-rfiles");
+
+        try {
+            mapper.setup(context);
+        } catch (RuntimeException e) {
+            throw e.getCause();
+        }
+
+        verifyAll();
     }
 
     @Test

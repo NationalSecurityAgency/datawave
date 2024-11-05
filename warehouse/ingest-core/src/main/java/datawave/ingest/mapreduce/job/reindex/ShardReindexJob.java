@@ -239,8 +239,9 @@ public class ShardReindexJob implements Tool {
                 // build ranges
                 Collection<Range> ranges = null;
                 if (jobConfig.reprocessEvents) {
-                    ranges = buildSplittableRanges(accumuloClient, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit, jobConfig.batchMode, configuration,
-                                    jobConfig.table, jobConfig.startDate, jobConfig.endDate);
+                    ranges = buildSplittableRanges(accumuloClient, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit,
+                                    ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode), configuration, jobConfig.table, jobConfig.startDate,
+                                    jobConfig.endDate);
                 } else {
                     ranges = buildFiRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
                 }
@@ -358,8 +359,8 @@ public class ShardReindexJob implements Tool {
         };
     }
 
-    public static Collection<Range> buildSplittableRanges(AccumuloClient accumuloClient, int maxRangeThreads, final int blocksPerSplit, String batchMode,
-                    Configuration config, String table, String startDay, String endDay) throws ParseException, IOException {
+    public static Collection<Range> buildSplittableRanges(AccumuloClient accumuloClient, int maxRangeThreads, final int blocksPerSplit,
+                    ShardReindexMapper.BatchMode batchMode, Configuration config, String table, String startDay, String endDay) {
         List<Range> allRanges = new ArrayList<>();
         ExecutorService threadPool = null;
         List<Future<List<Range>>> splitTasks = null;
@@ -371,12 +372,12 @@ public class ShardReindexJob implements Tool {
         log.info("building ranges startDate: " + startDay + " endDate: " + endDay);
 
         Function<Key,Key> eventShiftFunction = Function.identity();
-        if (!batchMode.equals("NONE")) {
+        if (!ShardReindexMapper.BatchMode.NONE.equals(batchMode)) {
             eventShiftFunction = new EventKeyAdjustment();
         }
 
         // check that these aren't the same
-        if (startDay.equals(endDay)) {
+        if (startDay != null && startDay.equals(endDay)) {
             throw new IllegalArgumentException("endDay must be after startDay");
         }
 
