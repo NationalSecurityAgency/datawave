@@ -368,12 +368,21 @@
     </util:list>
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
+        <property name="regexRewriteOptions" ref="RegexRewriteOptions" />
         <property name="transformRules" ref="transformRuleList" />
         <property name="visitorManager" ref="TimedVisitorManager"/>
-        <property name="rewriteRegexTerms" value="true"/>
-        <property name="regexIncludeFields" ref="RegexIncludes"/>
-        <property name="regexExcludeFields" ref="RegexExcludes"/>
-        <property name="regexRewritePatterns" ref="RewritePatterns"/>
+    </bean>
+
+    <bean id="RegexRewriteOptions" scope="prototype" class="datawave.query.planner.RegexRewriteOptions">
+        <property name="preExpansionEnabled" value="true"/>
+        <property name="preExpansionIncludeFields" ref="RegexIncludes"/>
+        <property name="preExpansionExcludeFields" ref="RegexExcludes" />
+        <property name="preExpansionPatterns" ref="RewritePatterns"/>
+
+        <property name="postExpansionEnabled" value="true"/>
+        <property name="postExpansionIncludeFields" ref="RegexIncludes"/>
+        <property name="postExpansionExcludeFields" ref="RegexExcludes" />
+        <property name="postExpansionPatterns" ref="RewritePatterns"/>
     </bean>
 
     <util:set id="RegexIncludes" value-type="java.lang.String">

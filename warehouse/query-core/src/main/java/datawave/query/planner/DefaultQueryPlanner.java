@@ -309,10 +309,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * Controls optimistic rewriting of regex terms as filter functions, preserving overall query executability
      */
-    protected boolean rewriteRegexTerms = false;
-    protected Set<String> regexIncludeFields;
-    protected Set<String> regexExcludeFields;
-    protected Set<RegexRewritePattern> regexRewritePatterns;
+    private RegexRewriteOptions regexRewriteOptions;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -349,6 +346,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
         setPushdownThreshold(other.getPushdownThreshold());
+        setRegexRewriteOptions(other.getRegexRewriteOptions());
         setVisitorManager(other.getVisitorManager());
         setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
     }
@@ -823,8 +821,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // rewrite regex nodes, optimistically
-        if (rewriteRegexTerms) {
-            RewriteRegexVisitor.rewrite(config.getQueryTree(), indexedFields, indexOnlyFields, regexIncludeFields, regexExcludeFields, regexRewritePatterns);
+        if (regexRewriteOptions != null && regexRewriteOptions.isPreExpansionEnabled()) {
+            //  @formatter:off
+            RewriteRegexVisitor.rewrite(config.getQueryTree(), indexedFields, indexOnlyFields,
+                    regexRewriteOptions.getPreExpansionIncludeFields(),
+                    regexRewriteOptions.getPreExpansionExcludeFields(),
+                    regexRewriteOptions.getPreExpansionPatterns());
+            //  @formatter:on
         }
 
         if (disableBoundedLookup) {
@@ -984,6 +987,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // Check if there are functions that can be pushed into exceeded value ranges.
                 if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
+                }
+
+                // rewrite regex nodes, optimistically
+                if (regexRewriteOptions != null && regexRewriteOptions.isPostExpansionEnabled()) {
+                    //  @formatter:off
+                    RewriteRegexVisitor.rewrite(config.getQueryTree(), indexedFields, indexOnlyFields,
+                            regexRewriteOptions.getPostExpansionIncludeFields(),
+                            regexRewriteOptions.getPostExpansionExcludeFields(),
+                            regexRewriteOptions.getPostExpansionPatterns());
+                    //  @formatter:on
                 }
 
                 if (executableExpansion) {
@@ -3254,38 +3267,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         DefaultQueryPlanner.maxTermsToPrint = maxTermsToPrint;
     }
 
-    public boolean isRewriteRegexTerms() {
-        return rewriteRegexTerms;
-    }
-
-    public void setRewriteRegexTerms(boolean rewriteRegexTerms) {
-        this.rewriteRegexTerms = rewriteRegexTerms;
-    }
-
-    public Set<String> getRegexIncludeFields() {
-        return regexIncludeFields;
-    }
-
-    public void setRegexIncludeFields(Set<String> regexIncludeFields) {
-        this.regexIncludeFields = regexIncludeFields;
-    }
-
-    public Set<String> getRegexExcludeFields() {
-        return regexExcludeFields;
-    }
-
-    public void setRegexExcludeFields(Set<String> regexExcludeFields) {
-        this.regexExcludeFields = regexExcludeFields;
-    }
-
-    public Set<RegexRewritePattern> getRegexRewritePatterns() {
-        return regexRewritePatterns;
-    }
-
-    public void setRegexRewritePatterns(Set<RegexRewritePattern> regexRewritePatterns) {
-        this.regexRewritePatterns = regexRewritePatterns;
-    }
-
     /**
      * Given a date, truncate it to year, month, date and increment the day by one to determine the following day.
      *
@@ -3303,5 +3284,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (null != builderThread) {
             builderThread.shutdown();
         }
+    }
+
+    public RegexRewriteOptions getRegexRewriteOptions() {
+        return regexRewriteOptions;
+    }
+
+    public void setRegexRewriteOptions(RegexRewriteOptions regexRewriteOptions) {
+        this.regexRewriteOptions = regexRewriteOptions;
     }
 }
