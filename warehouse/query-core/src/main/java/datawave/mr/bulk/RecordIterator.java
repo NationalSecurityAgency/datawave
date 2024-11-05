@@ -602,7 +602,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         if (null != rfileReferences) {
 
             for (Closeable fs : rfileReferences) {
-                IOUtils.cleanup(null, fs);
+                IOUtils.cleanupWithLogger(null, fs);
             }
         }
         if (null != fileIterators) {
