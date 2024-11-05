@@ -255,6 +255,26 @@ public class SessionOptions implements ScannerBase {
         this.executionHints = Map.copyOf(requireNonNull(hints, "hints is null"));
     }
 
+    public void applyExecutionHints(Map<String,String> scanHints) {
+        setExecutionHints(scanHints);
+    }
+
+    public void applyExecutionHints(String tableName, Map<String,Map<String,String>> tableScanHints) {
+        if (tableScanHints.containsKey(tableName)) {
+            setExecutionHints(tableScanHints.get(tableName));
+        }
+    }
+
+    public void applyConsistencyLevel(ConsistencyLevel consistencyLevel) {
+        setConsistencyLevel(consistencyLevel);
+    }
+
+    public void applyConsistencyLevel(String tableName, Map<String,ConsistencyLevel> consistencyLevels) {
+        if (consistencyLevels.containsKey(tableName)) {
+            setConsistencyLevel(consistencyLevels.get(tableName));
+        }
+    }
+
     @Override
     public ConsistencyLevel getConsistencyLevel() {
         return consistencyLevel;
@@ -284,7 +304,7 @@ public class SessionOptions implements ScannerBase {
         this.queryConfig = queryConfig;
     }
 
-    private class IterInfo {
+    protected class IterInfo {
         private final String name;
         private final String iteratorClass;
         private final int priority;
@@ -293,6 +313,18 @@ public class SessionOptions implements ScannerBase {
             this.name = iterator.getName();
             this.iteratorClass = iterator.getIteratorClass();
             this.priority = iterator.getPriority();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getIteratorClass() {
+            return iteratorClass;
+        }
+
+        public int getPriority() {
+            return priority;
         }
 
         @Override
@@ -312,4 +344,5 @@ public class SessionOptions implements ScannerBase {
             return Objects.hash(name, iteratorClass, priority);
         }
     }
+
 }
