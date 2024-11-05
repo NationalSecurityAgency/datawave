@@ -128,6 +128,12 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <!--   query sorting options     -->
+        <property name="sortQueryPreIndexWithImpliedCounts" value="true" />
+        <property name="sortQueryPreIndexWithFieldCounts" value="true" />
+        <property name="sortQueryPostIndexWithTermCounts" value="true" />
+        <property name="sortQueryPostIndexWithFieldCounts" value="true" />
+        <property name="eventFieldSeek" value="3" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

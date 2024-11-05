@@ -206,6 +206,50 @@ services:
       configuration:
         condition: service_started
 
+  query-rabbitmq:
+    profiles:
+      - queryrabbit
+      # To enable an additional rabbit cluster, enable the "queryrabbit" profile
+      # Set an environment variable: USE_DEDICATED_INSTANCE=true. This will force the query and executor service to use a separate "query-rabbitmq" rabbit cluster.
+    image: docker.io/rabbitmq:3.12.4
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-query-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=15672,5672
+      - RABBITMQ_ERLANG_COOKIE="someothercookie"
+    ports:
+      - "15673:15672"
+    networks:
+      - demo
+    depends_on:
+      consul:
+        condition: service_started
+
+  # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
+  query-kafka:
+    profiles:
+      - querykafka
+    # To enable an additional rabbit cluster, enable the "querykafka" profile
+    # Set an environment variable: USE_DEDICATED_INSTANCE=true. This will force the query and executor service to use a separate "query-kafka" kafka cluster.
+    image: docker.io/bitnami/kafka:3.2
+    ports:
+      - "9095:9095"
+    networks:
+      - demo
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,CONTROLLER://:9093,EXTERNAL://:9095
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://query-kafka:9092,EXTERNAL://${DW_HOSTNAME}:9095
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@query-kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false
+      - KAFKA_CFG_DELETE_TOPICS_ENABLE=true
+
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
     image: datawave/authorization-service
@@ -369,6 +413,25 @@ services:
       authorization:
         condition: service_healthy
 
+  file-provider:
+    profiles:
+      - file-provider
+      - full
+    image: datawave/file-provider-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "8280:8080"
+      - "8643:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+
   # If you want to test cached results, enable the cachedresults profile
   mysql:
     profiles:
@@ -402,6 +465,7 @@ services:
       - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
       - QUERY_CACHE=${QUERY_CACHE:-cache}
+      - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -482,6 +546,7 @@ services:
       - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
       - QUERY_CACHE=${QUERY_CACHE:-cache}
+      - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -530,6 +595,7 @@ services:
       - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
       - QUERY_CACHE=${QUERY_CACHE:-cache}
+      - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh

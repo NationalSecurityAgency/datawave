@@ -1,15 +1,16 @@
 package datawave.query.jexl.lookups;
 
-import java.io.IOException;
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.SortedMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -17,15 +18,15 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.core.iterators.BoundedRangeExpansionIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
@@ -50,7 +51,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private final LiteralRange<?> literalRange;
 
     protected Future<Boolean> timedScanFuture;
-    protected long lookupStartTimeMillis = Long.MAX_VALUE;
+    protected AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
     protected CountDownLatch lookupStartedLatch;
     protected CountDownLatch lookupStoppedLatch;
 
@@ -125,25 +126,25 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             log.debug("Range: " + range);
             bs = null;
             try {
-                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+                // the 'newScanner' method in the ScannerFactory has no knowledge about the 'expansion' hint, so determine hint here
+                String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
 
                 bs.setRanges(Collections.singleton(range));
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
 
-                // set up the GlobalIndexRangeSamplingIterator
-
-                IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 50, "WholeRowIterator", WholeRowIterator.class);
-                bs.addScanIterator(cfg);
-
-                cfg = new IteratorSetting(config.getBaseIteratorPriority() + 48, "DateFilter", ColumnQualifierRangeIterator.class);
-                // search from 20YYddMM to 20ZZddMM\uffff to ensure we encompass all of the current day
-                String end = endDay + Constants.MAX_UNICODE_STRING;
-                cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(startDay, end)));
-
-                bs.addScanIterator(cfg);
+                IteratorSetting setting = new IteratorSetting(config.getBaseIteratorPriority() + 20, "BoundedRangeExpansionIterator",
+                                BoundedRangeExpansionIterator.class);
+                setting.addOption(BoundedRangeExpansionIterator.START_DATE, startDay);
+                setting.addOption(BoundedRangeExpansionIterator.END_DATE, endDay);
+                if (!config.getDatatypeFilter().isEmpty()) {
+                    setting.addOption(BoundedRangeExpansionIterator.DATATYPES_OPT, Joiner.on(',').join(config.getDatatypeFilter()));
+                }
+                bs.addScanIterator(setting);
 
                 // If this is a composite field, with multiple terms, we need to setup our query to filter based on each component of the composite range
-                if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null) {
+                if (!config.getCompositeToFieldMap().get(literalRange.getFieldName()).isEmpty()) {
 
                     String compositeSeparator = null;
                     if (config.getCompositeFieldSeparators() != null)
@@ -168,8 +169,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 }
 
                 if (null != fairnessIterator) {
-                    cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
-                    bs.addScanIterator(cfg);
+                    IteratorSetting timeoutSetting = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
+                    bs.addScanIterator(timeoutSetting);
                 }
 
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
@@ -179,10 +180,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
 
-            } catch (IOException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
-                log.debug(qe);
-                throw new IllegalRangeArgumentException(qe);
             }
         }
     }
@@ -211,7 +208,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
         return () -> {
             try {
-                lookupStartTimeMillis = System.currentTimeMillis();
+                lookupStartTimeMillis.set(System.currentTimeMillis());
                 lookupStartedLatch.countDown();
 
                 Text holder = new Text();
@@ -229,6 +226,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                         Key k = entry.getKey();
 
+                        log.info("tk: " + k.toStringNoTime());
                         if (log.isTraceEnabled()) {
                             log.trace("Forward Index entry: " + entry.getKey());
                         }
@@ -236,61 +234,22 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                         k.getRow(holder);
                         String uniqueTerm = holder.toString();
 
-                        SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
+                        k.getColumnFamily(holder);
+                        String field = holder.toString();
 
-                        String field = null;
+                        // safety check...
+                        Preconditions.checkState(field.equals(literalRange.getFieldName()),
+                                        "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
 
-                        boolean foundDataType = false;
+                        // obtaining the size of a map can be expensive,
+                        // instead
+                        // track the count of each unique item added.
+                        indexLookupMap.put(field, uniqueTerm);
 
-                        for (Key topKey : keymap.keySet()) {
-                            if (null == field) {
-                                topKey.getColumnFamily(holder);
-                                field = holder.toString();
-                            }
-                            // Get the column qualifier from the key. It
-                            // contains the datatype and normalizer class
-
-                            if (null != topKey.getColumnQualifier()) {
-                                if (null != config.getDatatypeFilter() && !config.getDatatypeFilter().isEmpty()) {
-
-                                    String colq = topKey.getColumnQualifier().toString();
-                                    int idx = colq.indexOf(Constants.NULL);
-
-                                    if (idx != -1) {
-                                        String type = colq.substring(idx + 1);
-
-                                        // If types are specified and this type
-                                        // is not in the list, skip it.
-                                        if (config.getDatatypeFilter().contains(type)) {
-                                            if (log.isTraceEnabled()) {
-                                                log.trace(config.getDatatypeFilter() + " contains " + type);
-                                            }
-
-                                            foundDataType = true;
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    foundDataType = true;
-                                }
-                            }
-                        }
-                        if (foundDataType) {
-
-                            // obtaining the size of a map can be expensive,
-                            // instead
-                            // track the count of each unique item added.
-                            indexLookupMap.put(field, uniqueTerm);
-
-                            // safety check...
-                            Preconditions.checkState(field.equals(literalRange.getFieldName()),
-                                            "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
-
-                            // If this range expands into to many values, we can
-                            // stop
-                            if (indexLookupMap.get(field).isThresholdExceeded()) {
-                                return true;
-                            }
+                        // If this range expands into to many values, we can
+                        // stop
+                        if (indexLookupMap.get(field).isThresholdExceeded()) {
+                            return true;
                         }
                     }
                 } catch (Exception e) {

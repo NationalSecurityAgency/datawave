@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-build-parent</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>7.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-microservice-service-build-parent</artifactId>
     <packaging>pom</packaging>
@@ -64,6 +64,17 @@
             </activation>
             <modules>
                 <module>dictionary</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>submodule-service-file-provider</id>
+            <activation>
+                <file>
+                    <exists>file-provider/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>file-provider</module>
             </modules>
         </profile>
         <profile>
