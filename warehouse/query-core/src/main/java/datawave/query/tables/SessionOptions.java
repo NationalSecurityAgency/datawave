@@ -3,6 +3,7 @@ package datawave.query.tables;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,14 +34,14 @@ import datawave.util.TextUtil;
  */
 public class SessionOptions implements ScannerBase {
 
-    protected List<IterInfo> scanIterators = new ArrayList<>();
-    protected Map<String,Map<String,String>> scanIteratorOptions = new HashMap<>();
+    protected List<IterInfo> scanIterators = Collections.emptyList();
+    protected Map<String,Map<String,String>> scanIteratorOptions = Collections.emptyMap();
     protected SortedSet<Column> fetchedColumns = new TreeSet<>();
     protected long retryTimeout = Long.MAX_VALUE;
     protected long batchTimeout = Long.MAX_VALUE;
     protected SamplerConfiguration samplerConfig = null;
     protected String classLoaderContext = null;
-    protected Map<String,String> executionHints = new HashMap<>();
+    protected Map<String,String> executionHints = Collections.emptyMap();
     protected ConsistencyLevel consistencyLevel = ConsistencyLevel.IMMEDIATE;
     protected ShardQueryConfiguration queryConfig;
 
@@ -56,24 +57,19 @@ public class SessionOptions implements ScannerBase {
         synchronized (dst) {
             synchronized (src) {
                 dst.scanIterators = new ArrayList<>(src.scanIterators);
+                dst.scanIteratorOptions = new HashMap<>();
                 if (!src.scanIteratorOptions.isEmpty()) {
-                    dst.scanIteratorOptions = new HashMap<>();
                     src.scanIteratorOptions.entrySet().forEach(e -> dst.scanIteratorOptions.put(e.getKey(), new HashMap<>(e.getValue())));
                 }
                 dst.fetchedColumns = new TreeSet<>(src.fetchedColumns);
                 dst.retryTimeout = src.retryTimeout;
                 dst.batchTimeout = src.batchTimeout;
-                if (src.samplerConfig != null) {
-                    dst.samplerConfig = new SamplerConfiguration(dst.samplerConfig.getSamplerClassName());
-                    dst.samplerConfig.setOptions(src.samplerConfig.getOptions());
-                }
+                dst.samplerConfig = src.samplerConfig;
                 dst.classLoaderContext = src.classLoaderContext;
                 // executionHints is an immutable map, no copying required.
                 dst.executionHints = src.executionHints;
                 dst.consistencyLevel = src.consistencyLevel;
-                if (src.queryConfig != null) {
-                    dst.queryConfig = new ShardQueryConfiguration(src.queryConfig);
-                }
+                dst.queryConfig = src.queryConfig;
             }
         }
     }
@@ -81,6 +77,10 @@ public class SessionOptions implements ScannerBase {
     @Override
     public synchronized void addScanIterator(IteratorSetting iterator) {
         requireNonNull(iterator, "iterator setting is null");
+        if (scanIterators.isEmpty()) {
+            scanIterators = new ArrayList<>();
+        }
+
         // Verify an iterator has not already been added with the same name or priority.
         for (IterInfo info : scanIterators) {
             if (info.name.equals(iterator.getName())) {
@@ -92,6 +92,10 @@ public class SessionOptions implements ScannerBase {
         }
 
         scanIterators.add(new IterInfo(iterator));
+
+        if (scanIteratorOptions.isEmpty()) {
+            scanIteratorOptions = new HashMap<>();
+        }
         scanIteratorOptions.computeIfAbsent(iterator.getName(), name -> new HashMap<>()).putAll(iterator.getOptions());
     }
 
@@ -111,8 +115,8 @@ public class SessionOptions implements ScannerBase {
 
     @Override
     public synchronized void clearScanIterators() {
-        scanIterators.clear();
-        scanIteratorOptions.clear();
+        scanIterators = Collections.emptyList();
+        scanIteratorOptions = Collections.emptyMap();
     }
 
     /**
@@ -173,7 +177,7 @@ public class SessionOptions implements ScannerBase {
 
     @Override
     public Iterator<Map.Entry<Key,Value>> iterator() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -205,7 +209,7 @@ public class SessionOptions implements ScannerBase {
 
     @Override
     public synchronized void setSamplerConfiguration(SamplerConfiguration samplerConfig) {
-        this.samplerConfig = requireNonNull(samplerConfig, "samplerConfig is null");
+        this.samplerConfig = requireNonNull(samplerConfig, "sampler config cannot be null");
     }
 
     @Override
@@ -237,7 +241,7 @@ public class SessionOptions implements ScannerBase {
 
     @Override
     public void setClassLoaderContext(String classLoaderContext) {
-        this.classLoaderContext = requireNonNull(classLoaderContext, "class loader context is null");
+        this.classLoaderContext = requireNonNull(classLoaderContext, "class loader context cannot be null");
     }
 
     @Override
@@ -252,7 +256,7 @@ public class SessionOptions implements ScannerBase {
 
     @Override
     public void setExecutionHints(Map<String,String> hints) {
-        this.executionHints = Map.copyOf(requireNonNull(hints, "hints is null"));
+        this.executionHints = Map.copyOf(requireNonNull(hints, "hints cannot be null"));
     }
 
     public void applyExecutionHints(Map<String,String> scanHints) {
@@ -282,7 +286,7 @@ public class SessionOptions implements ScannerBase {
 
     @Override
     public void setConsistencyLevel(ConsistencyLevel level) {
-        this.consistencyLevel = requireNonNull(level, "consistency level is null");
+        this.consistencyLevel = requireNonNull(level, "consistency level cannot be null");
     }
 
     /**
