@@ -2998,6 +2998,26 @@ public class QueryExecutorBean implements QueryExecutor {
     }
 
     /**
+     * @param queryLogicName
+     *            the logic name
+     * @param queryParameters
+     *            the query parameters
+     * @return the generic response
+     */
+    @POST
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff"})
+    @Path("/{logicName}/validate")
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    @Timed(name = "dw.query.validateQuery", absolute = true)
+    public GenericResponse<String> validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+                    MultivaluedMap<String,String> queryParameters) {
+        GenericResponse<String> response = new GenericResponse<>();
+        response.setMessages(Collections.singletonList("Query validator coming soon."));
+        throw new DatawaveWebApplicationException(new UnsupportedOperationException("Query validator not implemented"), response, 501);
+    }
+
+    /**
      * <strong>Administrator credentials required.</strong> Returns list of queries for some other user
      *
      * @param userId
