@@ -265,8 +265,7 @@ public class AccumuloSetup extends ExternalResource {
     private RawLocalFileSystem createSequenceFile(Configuration conf, Path path, TestFileLoader loader) throws IOException {
         RawLocalFileSystem rfs = new RawLocalFileSystem();
         rfs.setConf(conf);
-        Path qualifiedPath = rfs.makeQualified(path);
-        try (Writer seqWriter = SequenceFile.createWriter(conf, Writer.file(qualifiedPath), Writer.keyClass(Text.class),
+        try (Writer seqWriter = SequenceFile.createWriter(conf, Writer.file(path), Writer.keyClass(Text.class),
                         Writer.valueClass(RawRecordContainerImpl.class))) {
             loader.loadTestData(seqWriter);
             return rfs;

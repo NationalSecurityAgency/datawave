@@ -595,8 +595,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 if (generateMapFileRowKeys && !shardMapFileRowKeys.isEmpty()) {
                     log.info("Writing mapFileRowKeys");
                     Path shardMapFilePath = new Path(workDir, getUniqueFile(context, "mapFileRowKeys", ".lst"));
-                    Path qualifiedShardMapFilePath = fs.makeQualified(shardMapFilePath);
-                    try (Writer output = SequenceFile.createWriter(conf, Writer.file(qualifiedShardMapFilePath), Writer.keyClass(Text.class),
+                    try (Writer output = SequenceFile.createWriter(conf, Writer.file(shardMapFilePath), Writer.keyClass(Text.class),
                                     Writer.valueClass(Text.class))) {
                         for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
                             Path path = shardMapFiles.get(entry.getKey());
