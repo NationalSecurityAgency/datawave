@@ -48,7 +48,7 @@ public class DocumentKeysFunction {
 
         ContentFunctionsDescriptor descriptor = new ContentFunctionsDescriptor();
         ContentJexlArgumentDescriptor argsDescriptor;
-        Set<String>[] fieldsAndTerms;
+        ContentFunctionsDescriptor.FieldTerms fieldsAndTerms;
         JexlNode parent;
         String field;
 
@@ -67,12 +67,12 @@ public class DocumentKeysFunction {
                 // content, tf, and indexed fields are not actually needed to extract fields from the function node
                 fieldsAndTerms = argsDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null);
 
-                if (fieldsAndTerms[0].size() != 1) {
+                if (fieldsAndTerms.totalFields() != 1) {
                     throw new IllegalStateException("content function had more than one field");
                 }
 
-                field = JexlASTHelper.deconstructIdentifier(fieldsAndTerms[0].iterator().next());
-                ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms[1]);
+                field = JexlASTHelper.deconstructIdentifier(fieldsAndTerms.getFields().iterator().next());
+                ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms.getTerms());
                 contentFunctions.put(contentFunction.getField(), contentFunction);
 
                 if (isFunctionNegated(f)) {
