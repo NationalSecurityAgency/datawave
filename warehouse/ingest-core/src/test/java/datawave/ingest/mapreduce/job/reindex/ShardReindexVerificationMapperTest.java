@@ -3,45 +3,42 @@ package datawave.ingest.mapreduce.job.reindex;
 import static datawave.ingest.mapreduce.job.reindex.ShardedDataGenerator.createIngestFiles;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.hadoop.shaded.com.google.common.io.Files;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-
-import com.google.common.collect.Multimap;
+import org.junit.rules.TemporaryFolder;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.StandaloneStatusReporter;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class ShardReindexVerificationMapperTest extends EasyMockSupport {
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+
     private ShardReindexVerificationMapper mapper;
     private Mapper.Context context;
     private Configuration config;
@@ -303,6 +300,113 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         config.set("source2", "FILE");
         config.set("source2.files", sourceDir1.getAbsolutePath() + "/shard/magic.rf");
+        mapper.setup(context);
+
+        mapper.map(new Range(), "", context);
+
+        // should be no diff as the inputs are identical
+
+        verifyAll();
+    }
+
+    @Test
+    public void mapTest_compareToSelfExpectDiff() throws IOException, ClassNotFoundException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        Counter mockCounter = createMock(Counter.class);
+
+        expect(context.getConfiguration()).andReturn(config).anyTimes();
+
+        context.progress();
+        expectLastCall().anyTimes();
+
+        // ignore all the counters
+        expect(context.getCounter("progress", "source1")).andReturn(mockCounter).anyTimes();
+        expect(context.getCounter("progress", "source2")).andReturn(mockCounter).anyTimes();
+        mockCounter.increment(1);
+        expectLastCall().anyTimes();
+
+        sourceDir1 = createIngestFiles(dataOptions);
+
+        // use totally different options to ensure results are different
+        List<String> otherOptions = new ArrayList<>();
+        otherOptions.add("alpha");
+        otherOptions.add("delta");
+        otherOptions.add("beta");
+        otherOptions.add("omega");
+        otherOptions.add("alpha beta delta omega");
+        otherOptions.add("alpha beta");
+        otherOptions.add("delta omega");
+        sourceDir2 = createIngestFiles(otherOptions);
+
+        Counter c = new Counters.Counter();
+        expect(context.getCounter(isA(String.class), isA(String.class))).andAnswer(() -> c).anyTimes();
+        context.write(isA(Key.class), isA(Value.class));
+        expectLastCall().anyTimes();
+
+        replayAll();
+
+        config.set("source1", "FILE");
+        config.set("source1.files", sourceDir1.getAbsolutePath() + "/shard/magic.rf");
+
+        config.set("source2", "FILE");
+        config.set("source2.files", sourceDir2.getAbsolutePath() + "/shard/magic.rf");
+        mapper.setup(context);
+
+        mapper.map(new Range(), "", context);
+
+        verifyAll();
+
+        // should be a non-zero diff since all values are different
+        assertTrue(c.getValue() > 0);
+    }
+
+    @Test
+    public void mapTest_compareToSelfAccumulo() throws IOException, ClassNotFoundException, InterruptedException, TableNotFoundException, AccumuloException,
+                    AccumuloSecurityException, TableExistsException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        Counter mockCounter = createMock(Counter.class);
+
+        expect(context.getConfiguration()).andReturn(config).anyTimes();
+
+        context.progress();
+        expectLastCall().anyTimes();
+
+        // ignore all the counters
+        expect(context.getCounter("progress", "source1")).andReturn(mockCounter).anyTimes();
+        expect(context.getCounter("progress", "source2")).andReturn(mockCounter).anyTimes();
+        mockCounter.increment(1);
+        expectLastCall().anyTimes();
+
+        sourceDir1 = createIngestFiles(dataOptions, 10000);
+        // create a copy of this data for the other table
+        sourceDir2 = folder.newFolder("source2");
+
+        // copy the rfile generated to the second directory for bulk importing
+        File shardDir = new File(sourceDir1, "shard");
+        FileUtils.copyDirectory(shardDir, sourceDir2);
+
+        accumuloClient.tableOperations().create("myTable1");
+        File tmp1 = folder.newFolder("tmp1");
+        accumuloClient.tableOperations().importDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
+        accumuloClient.tableOperations().create("myTable2");
+        File tmp2 = folder.newFolder("tmp2");
+        accumuloClient.tableOperations().importDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
+
+        replayAll();
+
+        config.set("source1", "ACCUMULO");
+        config.set("source1.table", "myTable1");
+
+        config.set("source2", "ACCUMULO");
+        config.set("source2.table", "myTable2");
+
+        // set accumulo client info
+        AccumuloHelper.setUsername(config, "root");
+        AccumuloHelper.setPassword(config, "password".getBytes());
+        AccumuloHelper.setZooKeepers(config, "zoo");
+        AccumuloHelper.setInstanceName(config, "myInstance");
+
+        mapper.setAccumuloClient(accumuloClient);
         mapper.setup(context);
 
         mapper.map(new Range(), "", context);
