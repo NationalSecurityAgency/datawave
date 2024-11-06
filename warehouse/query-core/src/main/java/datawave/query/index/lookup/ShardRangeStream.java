@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.collections4.iterators.PeekingIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Function;
