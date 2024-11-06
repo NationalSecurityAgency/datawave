@@ -27,7 +27,6 @@ public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>
     private TreeMultimap<Key,Value> map;
     private Range range;
 
-
     private int interruptCheckCount = 0;
 
     public SortedMultiMapIterator deepCopy(IteratorEnvironment env) {
@@ -62,8 +61,8 @@ public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>
         if (entry == null)
             throw new IllegalStateException();
 
-        if (interruptCheckCount++ % 100 == 0 )
-            throw new IterationInterruptedException();
+        // if (interruptCheckCount++ % 100 == 0)
+        // throw new IterationInterruptedException();
 
         if (iter.hasNext()) {
             entry = iter.next();
