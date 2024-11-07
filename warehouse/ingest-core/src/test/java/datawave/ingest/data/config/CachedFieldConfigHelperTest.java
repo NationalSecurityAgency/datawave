@@ -1,7 +1,9 @@
 package datawave.ingest.data.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -62,7 +64,7 @@ public class CachedFieldConfigHelperTest {
         AtomicLong storedCounter = new AtomicLong();
         AtomicLong indexCounter = new AtomicLong();
         FieldConfigHelper innerHelper = mock(FieldConfigHelper.class);
-        CachedFieldConfigHelper helper = new CachedFieldConfigHelper(innerHelper, 2);
+        CachedFieldConfigHelper helper = new CachedFieldConfigHelper(innerHelper, 2, true);
 
         when(innerHelper.isStoredField(any())).then((a) -> {
             storedCounter.incrementAndGet();
@@ -82,12 +84,15 @@ public class CachedFieldConfigHelperTest {
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field1", innerHelper::isStoredField);
         assertEquals(1, storedCounter.get(), "field1 should compute result (new field)");
+        assertFalse(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field1", innerHelper::isStoredField);
         assertEquals(1, storedCounter.get(), "field1 repeated (existing field)");
+        assertFalse(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
         assertEquals(2, storedCounter.get(), "field2 should compute result (new field)");
+        assertTrue(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
         assertEquals(2, storedCounter.get(), "field2 repeated (existing)");
