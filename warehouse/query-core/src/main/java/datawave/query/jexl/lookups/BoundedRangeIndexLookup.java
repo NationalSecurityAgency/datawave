@@ -140,7 +140,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
 
                 IteratorSetting setting = new IteratorSetting(config.getBaseIteratorPriority() + 20, "BoundedRangeExpansionIterator",
-                                BoundedRangeExpansionIterator.class);
+                        BoundedRangeExpansionIterator.class);
                 setting.addOption(BoundedRangeExpansionIterator.START_DATE, startDay);
                 setting.addOption(BoundedRangeExpansionIterator.END_DATE, endDay);
                 if (!config.getDatatypeFilter().isEmpty()) {
@@ -159,7 +159,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                         IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeSeekingIterator.class);
 
                         compositeIterator.addOption(CompositeSeekingIterator.COMPONENT_FIELDS,
-                                        StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
+                                StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
 
                         for (String fieldName : config.getCompositeToFieldMap().get(literalRange.getFieldName())) {
                             DiscreteIndexType<?> type = config.getFieldToDiscreteIndexTypes().get(fieldName);
@@ -181,7 +181,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
             } catch (TableNotFoundException e) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e,
-                                MessageFormat.format("Table: {0}", config.getIndexTableName()));
+                        MessageFormat.format("Table: {0}", config.getIndexTableName()));
                 log.error("", qe);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -208,7 +208,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         return indexLookupMap;
     }
 
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key, Value>> iter) {
         lookupStartedLatch = new CountDownLatch(1);
         lookupStoppedLatch = new CountDownLatch(1);
 
@@ -225,7 +225,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                     while (iter.hasNext()) {
 
-                        Entry<Key,Value> entry = iter.next();
+                        Entry<Key, Value> entry = iter.next();
                         if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                             throw new Exception("Timeout exceeded for bounded range lookup");
                         }
@@ -244,7 +244,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                         // safety check...
                         Preconditions.checkState(field.equals(literalRange.getFieldName()),
-                                        "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
+                                "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
 
                         // obtaining the size of a map can be expensive,
                         // instead
