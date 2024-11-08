@@ -30,8 +30,8 @@ import org.springframework.util.StringUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
-import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.BoundedRangeExpansionIterator;
+import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
