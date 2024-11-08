@@ -1,37 +1,8 @@
 package datawave.query.jexl.lookups;
 
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
-
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.WholeRowIterator;
-import org.apache.hadoop.io.Text;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-
 import datawave.core.iterators.BoundedRangeExpansionIterator;
-import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
@@ -46,6 +17,28 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
+
+import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
 
 /**
  * An asynchronous index lookup which looks up concrete values for the specified bounded range.
@@ -140,7 +133,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
 
                 IteratorSetting setting = new IteratorSetting(config.getBaseIteratorPriority() + 20, "BoundedRangeExpansionIterator",
-                        BoundedRangeExpansionIterator.class);
+                                BoundedRangeExpansionIterator.class);
                 setting.addOption(BoundedRangeExpansionIterator.START_DATE, startDay);
                 setting.addOption(BoundedRangeExpansionIterator.END_DATE, endDay);
                 if (!config.getDatatypeFilter().isEmpty()) {
@@ -159,7 +152,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                         IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeSeekingIterator.class);
 
                         compositeIterator.addOption(CompositeSeekingIterator.COMPONENT_FIELDS,
-                                StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
+                                        StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
 
                         for (String fieldName : config.getCompositeToFieldMap().get(literalRange.getFieldName())) {
                             DiscreteIndexType<?> type = config.getFieldToDiscreteIndexTypes().get(fieldName);
@@ -181,7 +174,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
             } catch (TableNotFoundException e) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e,
-                        MessageFormat.format("Table: {0}", config.getIndexTableName()));
+                                MessageFormat.format("Table: {0}", config.getIndexTableName()));
                 log.error("", qe);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -208,7 +201,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         return indexLookupMap;
     }
 
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key, Value>> iter) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
         lookupStartedLatch = new CountDownLatch(1);
         lookupStoppedLatch = new CountDownLatch(1);
 
@@ -225,7 +218,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                     while (iter.hasNext()) {
 
-                        Entry<Key, Value> entry = iter.next();
+                        Entry<Key,Value> entry = iter.next();
                         if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                             throw new Exception("Timeout exceeded for bounded range lookup");
                         }
@@ -244,7 +237,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                         // safety check...
                         Preconditions.checkState(field.equals(literalRange.getFieldName()),
-                                "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
+                                        "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
 
                         // obtaining the size of a map can be expensive,
                         // instead
