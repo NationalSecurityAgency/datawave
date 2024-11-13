@@ -1,0 +1,14 @@
+{
+  "CN": "Test A. User",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "O": "Example Corp",
+      "OU": "Example Developers"
+    }
+  ]
+}

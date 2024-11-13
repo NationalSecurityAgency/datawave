@@ -16,21 +16,21 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 public class AtomKeyValueParserTest {
-    
+
     public AtomKeyValueParser kv;
-    
+
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-    
+
     @Before
     public void before() {
         kv = new AtomKeyValueParser();
     }
-    
+
     @Test
     public void testGettersAndSetters() {
         kv.setValue("valueForTests");
-        
+
         Assert.assertNull(kv.getCollectionName());
         Assert.assertNull(kv.getId());
         Assert.assertNull(kv.getUpdated());
@@ -38,48 +38,48 @@ public class AtomKeyValueParserTest {
         Assert.assertNull(kv.getUuid());
         Assert.assertEquals("valueForTests", kv.getValue());
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testIDEncodeDecode() throws IOException {
         String id = "idForTests";
         String encodedID = kv.encodeId(id);
         String decodedID = kv.decodeId(encodedID);
-        
+
         Assert.assertNotEquals(id, encodedID);
         Assert.assertNotEquals(decodedID, encodedID);
         Assert.assertEquals(id, decodedID);
     }
-    
+
     @Test
     public void testToEntry() {
         Abdera abdera = new Abdera();
         String host = "hostForTests";
         String port = "portForTests";
-        
+
         IRI iri = new IRI("https://hostForTests:portForTests/DataWave/Atom/null/null");
-        
+
         Entry entry = kv.toEntry(abdera, host, port);
         Assert.assertEquals(iri, entry.getId());
         Assert.assertEquals("(null) null with null @ null null", entry.getTitle());
         Assert.assertNull(entry.getUpdated());
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testGoodParse() throws IOException {
         Key key = new Key(new Text("row1\0row2and3"), new Text("fi\0color"), new Text("red\0truck\0t-uid001"));
         byte[] vals = new byte[4];
         Value value = new Value(vals);
-        
+
         AtomKeyValueParser resultKV = kv.parse(key, value);
-        
+
         Assert.assertEquals("row1", resultKV.getCollectionName());
         Assert.assertNotEquals(resultKV.getId(), kv.decodeId(resultKV.getId()));
         Assert.assertEquals("color", resultKV.getUuid());
         Assert.assertEquals("fi", resultKV.getValue());
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testMissingRowParts() {
@@ -94,7 +94,7 @@ public class AtomKeyValueParserTest {
             // Empty on purpose
         }
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testTooManyRowParts() {
@@ -107,7 +107,7 @@ public class AtomKeyValueParserTest {
             // Empty on purpose
         }
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testDelimiterAtEnd() {
@@ -122,7 +122,7 @@ public class AtomKeyValueParserTest {
             // Empty on purpose
         }
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testMissingColQual() {
@@ -137,7 +137,7 @@ public class AtomKeyValueParserTest {
             // Empty catch because of ExpectedException
         }
     }
-    
+
     @SuppressWarnings("static-access")
     @Test
     public void testBadDelimColQual() {

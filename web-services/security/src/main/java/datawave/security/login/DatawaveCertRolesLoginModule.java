@@ -14,7 +14,6 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
-import datawave.security.auth.DatawaveCredential;
 import org.jboss.logging.Logger;
 import org.jboss.security.PicketBoxLogger;
 import org.jboss.security.PicketBoxMessages;
@@ -22,31 +21,33 @@ import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.callback.ObjectCallback;
 import org.jboss.security.auth.spi.CertRolesLoginModule;
 
+import datawave.security.auth.DatawaveCredential;
+
 /**
  * A specialized version of {@link CertRolesLoginModule} that fails the login if there are no roles for a given user. Even if the user has a valid certificate,
  * if they don't appear in the roles file, we'll fail the login.
  */
 public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
-    
+
     private static final String TRUSTED_HEADER_OPT = "trustedHeaderLogin";
-    
+
     private ThreadLocal<Boolean> createSimplePrincipal = new ThreadLocal<>();
     private boolean trustedHeaderLogin;
-    
+
     public DatawaveCertRolesLoginModule() {
         log = Logger.getLogger(getClass());
     }
-    
+
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String,?> sharedState, Map<String,?> options) {
         addValidOptions(new String[] {TRUSTED_HEADER_OPT});
         super.initialize(subject, callbackHandler, sharedState, options);
-        
+
         String option = (String) options.get(TRUSTED_HEADER_OPT);
         if (option != null)
             trustedHeaderLogin = Boolean.valueOf(option);
     }
-    
+
     @Override
     public boolean login() throws LoginException {
         // This login module should do nothing if we're using the trusted header login (since a cert won't be supplied)
@@ -56,9 +57,9 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
             log.trace("trustedHeaderLogin is true - returning false for login success");
             return false;
         }
-        
+
         boolean success = super.login();
-        
+
         int roleCount = 0;
         Group[] roleSets = getRoleSets();
         if (roleSets != null) {
@@ -68,17 +69,17 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
                 }
             }
         }
-        
+
         // Fail the login if there are no roles. This way we can try
         // another module potentially.
         if (roleCount == 0) {
             loginOk = false;
             success = false;
         }
-        
+
         return success;
     }
-    
+
     @Override
     protected Group[] getRoleSets() throws LoginException {
         // Set a thread local to indicate that we should create a SimplePrincipal when asked to create an identity. This is needed
@@ -92,7 +93,7 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
             createSimplePrincipal.remove();
         }
     }
-    
+
     @Override
     protected Principal createIdentity(String username) throws Exception {
         // Create a simple principal if our thread-local indicates we are supposed to,
@@ -103,7 +104,7 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
             return super.createIdentity(DatawaveUsersRolesLoginModule.normalizeUsername(username));
         }
     }
-    
+
     // Copied from org.jboss.security.auth.spi.BaseCertLoginModule to handle the addition of DatawaveCredential
     @Override
     protected Object[] getAliasAndCert() throws LoginException {
@@ -155,7 +156,7 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
             le.initCause(uce);
             throw le;
         }
-        
+
         info[0] = alias;
         info[1] = cert;
         PicketBoxLogger.LOGGER.traceEndGetAliasAndCert();

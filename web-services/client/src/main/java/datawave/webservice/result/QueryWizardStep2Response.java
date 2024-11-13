@@ -9,16 +9,16 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.lang.StringUtils;
+
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
-
-import org.apache.commons.lang.StringUtils;
 
 @XmlRootElement(name = "QueryWizardStep2")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryWizardStep2Response extends BaseResponse implements HtmlProvider {
-    
+
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Query Wizard Step 2", EMPTY = "";
     private static final String HEADER = "<img src=\"/DataWave/doc/images/dwquery_logo.png\" width=\"429px\" height=\"38px\"\n"
@@ -26,46 +26,46 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
     private QueryLogicDescription theQLD = null;
     private String authString = "";
     private String visibilityString = "";
-    
+
     @XmlElement(name = "QueryLogic")
     private List<QueryLogicDescription> queryLogicList = null;
-    
+
     public void setTheQueryLogicDescription(QueryLogicDescription queryLogicDescription) {
         this.theQLD = queryLogicDescription;
     }
-    
+
     public void setAuthString(String authString) {
         this.authString = authString;
         if (!authString.isEmpty() && authString != null) {
             visibilityString = authString.replaceAll(",", "|");
         }
     }
-    
+
     @Override
     public String getTitle() {
         return TITLE;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getPageHeader()
      */
     @Override
     public String getPageHeader() {
         return HEADER;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getHeadContent()
      */
     @Override
     public String getHeadContent() {
         return EMPTY;
     }
-    
+
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
@@ -81,7 +81,7 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
         builder.append("<table>");
         builder.append("<tr><td align=\"left\" width=\"10%\">Query Name:</td><td width=\"90%\"> <input type=\"text\" name=\"queryName\" placeholder=\"Enter value\" align=\"left\" size=\"150\" /></td><tr>");
         builder.append("<tr><td align=\"left\">Query:</td><td><textarea rows=\"4\" cols=\"150\" placeholder=\"DataWave Query (no enclosing quotes needed)\" name=\"query\" ></textarea></td><tr>");
-        
+
         if (theQLD != null) {
             for (String param : theQLD.getRequiredParams()) {
                 if (param.equals("auths")) // This is taken care of below.
@@ -91,32 +91,32 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
                     builder.append("<td><input type=\"text\" name=\"" + param + "\" placeholder=\"Enter value\" align=\"left\" align=\"left\" /></td></tr>\n");
                 }
             }
-            
+
             // Show some examples if these were not set dynamically like should have been
             if (authString.isEmpty() || authString == null) {
                 authString = "BAR,FOO,PRIVATE,PUBLIC";
                 visibilityString = authString.replaceAll(",", "|");
             }
-            
+
             /* QueryParametersImpl.java line 125-130 require these next four input params */
-            builder.append("<tr><td align=\"left\" >auths:</td><td><input type=\"text\" name=\"auths\" placeholder=\"" + authString + "\" value=\""
-                            + authString + "\"  size=\"150\" /></td></tr>\n");
+            builder.append("<tr><td align=\"left\" >auths:</td><td><input type=\"text\" name=\"auths\" placeholder=\"" + authString + "\" value=\"" + authString
+                            + "\"  size=\"150\" /></td></tr>\n");
             builder.append("<tr><td align=\"left\">Visibility:</td><td><input type=\"text\" name=\"columnVisibility\" placeholder=\"" + visibilityString
                             + "\" value=\"" + visibilityString + "\" align=\"left\"  size=\"150\"/></td></tr>\n");
             builder.append("</table>\n");
             builder.append("<input type=\"hidden\" name=\"param\" value=\"stats=false\" />");
             builder.append("<input type=\"hidden\" name=\"expirationDate\" value=\"20990101\" />");
-            
+
             builder.append("<br/><br/>\n");
-            
+
             builder.append("<H2>" + theQLD.getName() + " Supported parameters</H2>");
             builder.append("<table>");
-            
+
             for (String optional : theQLD.getSupportedParams()) {
                 if (optional.equals("query.syntax")) {
                     builder.append("<tr><td>Query Syntax: </td>");
                     builder.append("<td><select form=\"queryform\" name=\"query.syntax\" align=\"left\">");
-                    
+
                     for (String syntax : theQLD.getQuerySyntax()) {
                         builder.append("<option value=\"").append(syntax).append("\">").append(syntax).append("</option>");
                     }
@@ -126,24 +126,24 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
                     builder.append("<td><input type=\"text\" name=\"" + optional + "\" value=\"\" align=\"left\" width=\"50\"/></td></tr>\n");
                 }
             }
-            
+
             builder.append("</table>\n");
             builder.append("<br/><br/>\n");
         }
-        
+
         builder.append("<input type=\"submit\" value=\"Submit\"  align=\"center\">");
         builder.append("</FORM>");
-        
+
         /*
          * if (theQLD != null) { // There aren't any example queries so this doesn't look good in the UI builder.append("Example Queries: ");
          * builder.append("<br/><br/><table><tr><th>Example</th></tr>");
-         * 
+         *
          * for (String example : theQLD.getExampleQueries()) { builder.append("<tr><td>" + example + "</td></tr>"); }
-         * 
+         *
          * } builder.append("</table>");
          */
-        
+
         return builder.toString();
     }
-    
+
 }

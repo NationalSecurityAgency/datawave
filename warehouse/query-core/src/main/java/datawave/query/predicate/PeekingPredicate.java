@@ -1,9 +1,10 @@
 package datawave.query.predicate;
 
-import com.google.common.base.Predicate;
+import javax.annotation.Nullable;
+
 import org.apache.accumulo.core.data.Key;
 
-import javax.annotation.Nullable;
+import com.google.common.base.Predicate;
 
 public interface PeekingPredicate<T> extends Predicate<T> {
     /**
@@ -14,7 +15,8 @@ public interface PeekingPredicate<T> extends Predicate<T> {
      * @see datawave.query.predicate.TLDEventDataFilter#keep(Key)
      *
      * @param input
-     * @return
+     *            an input
+     * @return the potential result of applying the input
      */
     boolean peek(@Nullable T input);
 }

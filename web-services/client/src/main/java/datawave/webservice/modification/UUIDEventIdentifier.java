@@ -15,30 +15,30 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class UUIDEventIdentifier implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "uuid", required = true)
     private String uuid = null;
     @XmlElement(name = "uuidType", required = false)
     private String uuidType = "UUID";
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
-    
+
     public void setUuidType(String uuidType) {
         this.uuidType = uuidType;
     }
-    
+
     public String getUuidType() {
         return uuidType;
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);

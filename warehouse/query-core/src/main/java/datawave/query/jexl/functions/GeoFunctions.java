@@ -1,67 +1,70 @@
 package datawave.query.jexl.functions;
 
-import datawave.data.normalizer.GeoNormalizer;
-import datawave.data.normalizer.GeoNormalizer.GeoPoint;
-import datawave.data.normalizer.Normalizer;
-import datawave.query.attributes.ValueTuple;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
-import datawave.query.collections.FunctionalSet;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import datawave.data.normalizer.GeoNormalizer;
+import datawave.data.normalizer.GeoNormalizer.GeoPoint;
+import datawave.data.normalizer.Normalizer;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 
 /**
  * Provides functions for doing geo spacial queries, such as bounding boxes and circles of interest.
- * 
+ *
  * Function names are all lower case and separated by underscores to play nice with case insensitive queries.
- * 
+ *
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GeoFunctionsDescriptor. This is kept as a separate class to reduce accumulo dependencies on
  * other jars.
- * 
- * 
- * 
+ *
+ *
+ *
  */
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GeoFunctionsDescriptor")
 public class GeoFunctions {
     private static final Logger log = Logger.getLogger(GeoFunctions.class);
-    
+
     public static final String GEO_FUNCTION_NAMESPACE = "geo";
-    
+
     private static final LoadingCache<String,GeoPoint> unnormalizedPoints = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(10 * 1024)
                     .build(new CacheLoader<String,GeoPoint>() {
-                        
+
                         @Override
                         public GeoPoint load(String key) throws Exception {
                             GeoNormalizer gn = new GeoNormalizer();
                             return GeoPoint.decodeZRef(gn.normalize(key));
                         }
-                        
+
                     });
-    
+
     private static final LoadingCache<String,GeoPoint> normalizedPoints = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(10 * 1024)
                     .build(new CacheLoader<String,GeoPoint>() {
-                        
+
                         @Override
                         public GeoPoint load(String key) throws Exception {
                             return GeoPoint.decodeZRef(key);
                         }
-                        
+
                     });
-    
+
     /**
      * Tests if a LAT_LON value is within a bounding box defined by a lower left LAT_LON and an upper right LAT_LON. NOTE: Incoming value to test should already
      * be normalized.
-     * 
+     *
      * @param field
+     *            the field
      * @param lowerLeft
+     *            the lower left bound
      * @param upperRight
-     * @return
+     *            the upper right bound
+     * @return if we're in the box
      */
     public static boolean within_bounding_box(Object field, String lowerLeft, String upperRight) {
         if (field != null) {
@@ -83,7 +86,7 @@ public class GeoFunctions {
             return false;
         }
     }
-    
+
     public static boolean evaluate(GeoPoint point, GeoPoint boundMin, GeoPoint boundMax) {
         // if the minLon is greater than maxLon, we have crossed the antimeridian and must split the bounds for evaluation
         // @formatter:off
@@ -95,13 +98,13 @@ public class GeoFunctions {
                          point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= boundMax.getLongitude())));
         // @formatter:on
     }
-    
+
     public static boolean within_bounding_box(Object lonField, Object latField, String minLon, String minLat, String maxLon, String maxLat) {
         return GeoFunctions.within_bounding_box(lonField, latField, Normalizer.NUMBER_NORMALIZER.denormalize(minLon).doubleValue(),
                         Normalizer.NUMBER_NORMALIZER.denormalize(minLat).doubleValue(), Normalizer.NUMBER_NORMALIZER.denormalize(maxLon).doubleValue(),
                         Normalizer.NUMBER_NORMALIZER.denormalize(maxLat).doubleValue());
     }
-    
+
     public static boolean within_bounding_box(Object lonField, Object latField, double minLon, double minLat, double maxLon, double maxLat) {
         if (lonField != null && latField != null) {
             Set<Double> lonValues;
@@ -114,7 +117,7 @@ public class GeoFunctions {
                     log.trace("Error parsing lat[" + latField + " or lon[" + lonField + "]", e);
                 return false;
             }
-            
+
             // @formatter:off
             boolean lonMatch = lonValues.stream().anyMatch(lon ->
                 (minLon > maxLon &&
@@ -122,23 +125,26 @@ public class GeoFunctions {
                 (minLon <= maxLon &&
                         lon >= minLon && lon <= maxLon));
             // @formatter:on
-            
+
             boolean latMatch = latValues.stream().anyMatch(lat -> lat >= minLat && lat <= maxLat);
-            
+
             return lonMatch && latMatch;
         } else {
             return false;
         }
     }
-    
+
     /**
      * Tests a given point is within the circle defined by a center LAT_LON is decimal degrees and a radius, also in decimal degrees. NOTE: Incoming value to
      * test should already be normalized.
-     * 
+     *
      * @param field
+     *            the field
      * @param center
+     *            the center of the circle
      * @param radius
-     * @return
+     *            radius of the circle
+     * @return if we're within the circle
      */
     public static boolean within_circle(Object field, String center, double radius) {
         if (field != null) {
@@ -164,7 +170,7 @@ public class GeoFunctions {
             return false;
         }
     }
-    
+
     private static Set<Double> getDoublesFromFieldValue(Object fieldValue) {
         if (fieldValue instanceof Number) {
             Set<Double> numbers = new HashSet<>();
@@ -186,7 +192,7 @@ public class GeoFunctions {
         }
         throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a double");
     }
-    
+
     private static Set<GeoPoint> getGeoPointsFromFieldValue(Object fieldValue) throws ExecutionException {
         if (fieldValue instanceof GeoPoint) {
             Set<GeoPoint> geoPoints = new HashSet<>();

@@ -1,54 +1,54 @@
 package datawave.query.discovery;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.marking.MarkingFunctions;
-
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.VLongWritable;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.VLongWritable;
+
+import datawave.marking.MarkingFunctions;
 
 public class TermInfoAggregation implements Function<Collection<TermInfo>,DiscoveredThing> {
-    
+
     private static final Logger log = Logger.getLogger(TermInfoAggregation.class);
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     private final boolean separateCountsByColumnVisibility;
     private boolean showReferenceCountInsteadOfTermCount = false;
     private boolean reverseIndex = false;
-    
+
     public TermInfoAggregation() {
         this.separateCountsByColumnVisibility = false;
-        
+
     }
-    
+
     public TermInfoAggregation(boolean separateCountsByColumnVisibility) {
         this.separateCountsByColumnVisibility = separateCountsByColumnVisibility;
     }
-    
+
     public TermInfoAggregation(boolean separateCountsByColVis, boolean showReferenceCount) {
         this.separateCountsByColumnVisibility = separateCountsByColVis;
         this.showReferenceCountInsteadOfTermCount = showReferenceCount;
     }
-    
+
     public TermInfoAggregation(boolean separateCountsByColVis, boolean showReferenceCount, boolean reverseIndex) {
         this.separateCountsByColumnVisibility = separateCountsByColVis;
         this.showReferenceCountInsteadOfTermCount = showReferenceCount;
         this.reverseIndex = reverseIndex;
     }
-    
+
     /*
      * TermInfos for any given data type should have the following in common: - term - date - data type
-     * 
+     *
      * Therefore, we need to aggregate: - count - columnVisibilities/markings
      */
     public DiscoveredThing apply(Collection<TermInfo> from) {
@@ -70,13 +70,13 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
             for (TermInfo ti : from) {
                 termCount = ti.count;
                 referenceCount = ti.getListSize();
-                
+
                 chosenCount = showReferenceCountInsteadOfTermCount ? referenceCount : termCount;
-                
+
                 try {
                     markingFunctions.translateFromColumnVisibility(ti.vis); // just to test parsing
                     columnVisibilities.add(ti.vis);
-                    
+
                     // Keep track of counts for individual vis
                     if (separateCountsByColumnVisibility) {
                         Long cnt = 0L;
@@ -90,7 +90,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                         }
                         counts.put(vis, cnt);
                     }
-                    
+
                 } catch (Exception e1) {
                     if (log.isTraceEnabled())
                         log.trace(e1);
@@ -107,19 +107,19 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
             } else {
                 ColumnVisibility columnVisibility = null;
                 try {
-                    
+
                     columnVisibility = markingFunctions.combine(columnVisibilities);
-                    
+
                 } catch (Exception e) {
                     log.warn("Invalid columnvisibility after combining!", e);
                     return null;
                 }
-                
+
                 MapWritable countsByVis = new MapWritable();
                 for (Entry<String,Long> entry : counts.entrySet()) {
                     countsByVis.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
                 }
-                
+
                 return new DiscoveredThing(term, field, type, date, new String(columnVisibility.flatten()), count, countsByVis);
             }
         }

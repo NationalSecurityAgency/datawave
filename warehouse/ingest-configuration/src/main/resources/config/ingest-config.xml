@@ -28,6 +28,11 @@
   <value>${EVENT_DISCARD_INTERVAL}</value>
 </property>
 
+    <property>
+        <name>event.discard.future.interval</name>
+        <value>${EVENT_DISCARD_FUTURE_INTERVAL}</value>
+    </property>
+
 <property>
   <name>snowflake.zookeepers</name>
   <value>${SNOWFLAKE_ZOOKEEPERS}</value>

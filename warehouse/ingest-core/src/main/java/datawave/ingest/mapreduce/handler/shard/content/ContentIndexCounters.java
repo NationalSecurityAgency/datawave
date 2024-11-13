@@ -11,11 +11,11 @@ import org.apache.hadoop.mapreduce.StatusReporter;
  * A convenience wrapper around Hadoop MapReduce counters. Holds a set of "expected" counter names for static access. When a counter increment is submitted,
  * it's stored into a map with the counter name as the key. When a counter increment causes its value to exceed the {@link #bufferSize} parameter, the counter
  * is flushed to Hadoop.
- * 
+ *
  * The user *must* call {@link #flush(StatusReporter)} to ensure that all counters are written to the context.
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class ContentIndexCounters {
     public static final String MISSING_ZONE_COUNTER = "Tokens missing a zone", MISSING_ZONE_SYNONYM_COUNTER = "Tokens (including synonyms) missing a zone",
@@ -31,23 +31,23 @@ public class ContentIndexCounters {
                     CONTENT_RECORDS_CREATED = "Content Records Created", TRUNCATION_COUNTER = "Truncated Tokens",
                     LENGTH_WARNING_COUNTER = "Term Length Warnings", CONTENT_RECORDS_LIVE = "Content Records Live Ingest",
                     CONTENT_RECORDS_BULK = "Content Records Bulk Ingest";
-    
+
     public static final String COUNTER_GROUP_NAME = "Content Index Counters";
     public static final String TOKENIZER_TIME_GROUP_NAME = "Tokenizer Time Counters";
     public static final String TERM_TYPE_GROUP_NAME = "Term Type Counters";
     public static final String SYNONYM_TYPE_GROUP_NAME = "Synonym Type Counters";
     public static final String TERM_SIZE_GROUP_NAME = "Term Size Counters";
-    
+
     private int bufferSize = 100;
     private final Map<String,Map<String,AtomicInteger>> counts;
-    
+
     public ContentIndexCounters() {
         counts = new HashMap<>();
-        
+
         HashMap<String,AtomicInteger> group = new HashMap<>();
-        
+
         counts.put(COUNTER_GROUP_NAME, group);
-        
+
         // Load the map up with the expected counters
         group.put(MISSING_ZONE_COUNTER, new AtomicInteger(0));
         group.put(MISSING_ZONE_SYNONYM_COUNTER, new AtomicInteger(0));
@@ -64,10 +64,10 @@ public class ContentIndexCounters {
         group.put(TRUNCATION_COUNTER, new AtomicInteger(0));
         group.put(LENGTH_WARNING_COUNTER, new AtomicInteger(0));
     }
-    
+
     /**
      * Increments the counter denoted by counterName by one. The counter's value will only be written to the context if it exceeds bufferSize
-     * 
+     *
      * @param counterName
      *            The name of the counter to increment
      * @param reporter
@@ -76,10 +76,10 @@ public class ContentIndexCounters {
     public void increment(String counterName, StatusReporter reporter) {
         this.increment(COUNTER_GROUP_NAME, counterName, reporter);
     }
-    
+
     /**
      * Increments the counter denoted by counterName by one. The counter's value will only be written to the context if it exceeds bufferSize
-     * 
+     *
      * @param groupName
      *            The name of the counter's group
      * @param counterName
@@ -93,23 +93,23 @@ public class ContentIndexCounters {
             group = new HashMap<>();
             counts.put(groupName, group);
         }
-        
+
         if (group.containsKey(counterName)) {
             AtomicInteger val = group.get(counterName);
-            
+
             if (val.get() > bufferSize && reporter != null) {
                 reporter.getCounter(groupName, counterName).increment(val.getAndSet(0));
             }
-            
+
             val.incrementAndGet();
         } else {
             group.put(counterName, new AtomicInteger(1));
         }
     }
-    
+
     /**
      * Increments the counter denoted by counterName by the given value. The counter's value will only be written to the context if it exceeds bufferSize
-     * 
+     *
      * @param counterName
      *            The name of the counter to increment
      * @param value
@@ -120,10 +120,10 @@ public class ContentIndexCounters {
     public void incrementValue(String counterName, int value, StatusReporter reporter) {
         this.incrementValue(COUNTER_GROUP_NAME, counterName, value, reporter);
     }
-    
+
     /**
      * Increments the counter denoted by counterName by the given value. The counter's value will only be written to the context if it exceeds bufferSize
-     * 
+     *
      * @param groupName
      *            The name of the counter's group
      * @param counterName
@@ -139,42 +139,44 @@ public class ContentIndexCounters {
             group = new HashMap<>();
             counts.put(groupName, group);
         }
-        
+
         if (group.containsKey(counterName)) {
             AtomicInteger val = group.get(counterName);
-            
+
             if (val.get() > bufferSize && reporter != null) {
                 reporter.getCounter(groupName, counterName).increment(val.getAndSet(0));
             }
-            
+
             val.addAndGet(value);
         } else {
             group.put(counterName, new AtomicInteger(1));
         }
     }
-    
+
     /**
      * Returns the value a counter should be written to the context.
-     * 
+     *
      * @return The specified size to wait befor writing a counter
      */
     public int getBufferSize() {
         return bufferSize;
     }
-    
+
     /**
      * Sets the value which determines at what value a counter should be written to the context.
-     * 
+     *
      * @param bufferSize
+     *            the buffer size to set
      */
     public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
     }
-    
+
     /**
      * Flushes all counter values to the context and sets the values to zero.
-     * 
+     *
      * @param reporter
+     *            the reporter holding the entries
      */
     public void flush(StatusReporter reporter) {
         if (reporter != null) {

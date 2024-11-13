@@ -1,7 +1,11 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -12,41 +16,39 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class TabletLocationNamePartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationNamePartitioner partitioner = null;
-    
+
     @Before
     public void setUp() {
         conf = new Configuration();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         partitioner = new TabletLocationNamePartitioner();
         partitioner.setConf(conf);
     }
-    
+
     @After
     public void tearDown() {
         conf.clear();
         conf = null;
         partitioner = null;
     }
-    
+
     @Test
     public void testSequentialLocationScheme() throws Exception {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         // setup the location partition sheme
         URL file = getClass().getResource("/datawave/ingest/mapreduce/partition/_shards.lst");
         shardedTableMapFiles.put("shard", new Path(file.toURI().toString()));
-        
-        ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
-        
+
         // now read in a list of shards and display the distribution
         file = getClass().getResource("/datawave/ingest/mapreduce/partition/shards.list");
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, file.getPath().substring(0, file.getPath().lastIndexOf('/')));
+        conf.set(TableSplitsCache.SPLITS_CACHE_FILE, "shards_n_locs.list");
         BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
         String line = reader.readLine();
         int[] partitions = new int[912];
@@ -75,6 +77,6 @@ public class TabletLocationNamePartitionerTest {
         if (errored) {
             Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
         }
-        
+
     }
 }

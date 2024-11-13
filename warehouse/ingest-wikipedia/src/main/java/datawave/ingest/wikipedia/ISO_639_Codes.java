@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 
 /**
- * 
+ *
  */
 public class ISO_639_Codes {
     public static final Multimap<String,String> ISO_639_1 = ImmutableMultimap.<String,String> builder().put("aa", "AFAR").put("ab", "ABKHAZIAN")
@@ -24,8 +24,8 @@ public class ISO_639_Codes {
                     .put("ja", "JAPANESE").put("jv", "JAVANESE").put("ka", "GEORGIAN").put("kg", "KONGO").putAll("ki", "KIKUYU", "GIKUYU")
                     .putAll("kj", "KUANYAMA", "KWANYAMA").put("kk", "KAZAKH").putAll("kl", "KALAALLISUT", "GREENLANDIC").put("km", "CENTRAL KHMER")
                     .put("kn", "KANNADA").put("ko", "KOREAN").put("kr", "KANURI").put("ks", "KASHMIRI").put("ku", "KURDISH").put("kv", "KOMI")
-                    .put("kw", "CORNISH").putAll("ky", "KIRGHIZ", "KYRGYZ").put("la", "LATIN").putAll("lb", "LUXEMBOURGISH", "LETZEBURGESCH")
-                    .put("lg", "GANDA").putAll("li", "LIMBURGAN", "LIMBURGER", "LIMBURGISH").put("ln", "LINGALA").put("lo", "LAO").put("lt", "LITHUANIAN")
+                    .put("kw", "CORNISH").putAll("ky", "KIRGHIZ", "KYRGYZ").put("la", "LATIN").putAll("lb", "LUXEMBOURGISH", "LETZEBURGESCH").put("lg", "GANDA")
+                    .putAll("li", "LIMBURGAN", "LIMBURGER", "LIMBURGISH").put("ln", "LINGALA").put("lo", "LAO").put("lt", "LITHUANIAN")
                     .put("lu", "LUBA-KATANGA").put("lv", "LATVIAN").put("mg", "MALAGASY").put("mh", "MARSHALLESE").put("mi", "MAORI").put("mk", "MACEDONIAN")
                     .put("ml", "MALAYALAM").put("mn", "MONGOLIAN").put("mo", "MOLDAVIAN").put("mr", "MARATHI").put("ms", "MALAY").put("mt", "MALTESE")
                     .put("my", "BURMESE").put("na", "NAURU").putAll("nb", "BOKMÅL, NORWEGIAN", "NORWEGIAN BOKMÅL")
@@ -37,10 +37,9 @@ public class ISO_639_Codes {
                     .put("rw", "KINYARWANDA").put("sa", "SANSKRIT").put("sc", "SARDINIAN").put("sd", "SINDHI").put("se", "NORTHERN SAMI").put("sg", "SANGO")
                     .putAll("si", "SINHALA", "SINHALESE").put("sk", "SLOVAK").put("sl", "SLOVENIAN").put("sm", "SAMOAN").put("sn", "SHONA").put("so", "SOMALI")
                     .put("sq", "ALBANIAN").put("sr", "SERBIAN").put("ss", "SWATI").putAll("st", "SOTHO, SOUTHERN").put("su", "SUNDANESE").put("sv", "SWEDISH")
-                    .put("sw", "SWAHILI").put("ta", "TAMIL").put("te", "TELUGU").put("tg", "TAJIK").put("th", "THAI").put("ti", "TIGRINYA")
-                    .put("tk", "TURKMEN").put("tl", "TAGALOG").put("tn", "TSWANA").put("to", "TONGA (TONGA ISLANDS)").put("tr", "TURKISH").put("ts", "TSONGA")
-                    .put("tt", "TATAR").put("tw", "TWI").put("ty", "TAHITIAN").putAll("ug", "UIGHUR", "UYGHUR").put("uk", "UKRAINIAN").put("ur", "URDU")
-                    .put("uz", "UZBEK").put("ve", "VENDA").put("vi", "VIETNAMESE").put("vo", "VOLAPÜK").put("wa", "WALLOON").put("wo", "WOLOF")
-                    .put("xh", "XHOSA").put("yi", "YIDDISH").put("yo", "YORUBA").putAll("za", "ZHUANG", "CHUANG").put("zh", "CHINESE").put("zu", "ZULU")
-                    .build();
+                    .put("sw", "SWAHILI").put("ta", "TAMIL").put("te", "TELUGU").put("tg", "TAJIK").put("th", "THAI").put("ti", "TIGRINYA").put("tk", "TURKMEN")
+                    .put("tl", "TAGALOG").put("tn", "TSWANA").put("to", "TONGA (TONGA ISLANDS)").put("tr", "TURKISH").put("ts", "TSONGA").put("tt", "TATAR")
+                    .put("tw", "TWI").put("ty", "TAHITIAN").putAll("ug", "UIGHUR", "UYGHUR").put("uk", "UKRAINIAN").put("ur", "URDU").put("uz", "UZBEK")
+                    .put("ve", "VENDA").put("vi", "VIETNAMESE").put("vo", "VOLAPÜK").put("wa", "WALLOON").put("wo", "WOLOF").put("xh", "XHOSA")
+                    .put("yi", "YIDDISH").put("yo", "YORUBA").putAll("za", "ZHUANG", "CHUANG").put("zh", "CHINESE").put("zu", "ZULU").build();
 }

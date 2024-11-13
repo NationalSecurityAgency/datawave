@@ -17,40 +17,40 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
     private boolean exceededKeyThreshold = false;
     private int keyThreshold = -1;
     private int valueThreshold = -1;
-    
+
     public IndexLookupMap(int keyThreshold, int valueThreshold) {
         this.keyThreshold = keyThreshold;
         this.valueThreshold = valueThreshold;
     }
-    
+
     public boolean isKeyThresholdExceeded() {
         return this.exceededKeyThreshold;
     }
-    
+
     public int size() {
         checkExceededAndThrow("size");
         return index.size();
     }
-    
+
     public boolean isEmpty() {
         return !exceededKeyThreshold && index.isEmpty();
     }
-    
+
     public boolean containsKey(Object key) {
         checkExceededAndThrow("containsKey");
         return index.containsKey(key);
     }
-    
+
     public boolean containsValue(Object value) {
         checkExceededAndThrow("containsValue");
         return index.containsValue(value);
     }
-    
+
     public ValueSet get(Object key) {
         checkExceededAndThrow("get");
         return index.get(key);
     }
-    
+
     public boolean put(String key, String value) {
         testExceeded(key);
         if (exceededKeyThreshold) {
@@ -61,18 +61,18 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         }
         return index.get(key).add(value);
     }
-    
+
     public ValueSet put(String key, ValueSet value) {
         testExceeded(key);
         checkExceededAndThrow("put");
         return index.put(key, value);
     }
-    
+
     public ValueSet remove(Object key) {
         checkExceededAndThrow("remove");
         return index.remove(key);
     }
-    
+
     public boolean remove(Object key, Object value) {
         checkExceededAndThrow("remove");
         if (index.containsKey(key)) {
@@ -81,7 +81,7 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
             return false;
         }
     }
-    
+
     public boolean putAll(String key, Collection<String> values) {
         testExceeded(key);
         if (!index.containsKey(key)) {
@@ -89,34 +89,34 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         }
         return index.get(key).addAll(values);
     }
-    
+
     public void putAll(Map<? extends String,? extends ValueSet> m) {
         for (Entry<? extends String,? extends ValueSet> entry : m.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
-    
+
     public void clear() {
         checkExceededAndThrow("clear");
         // cheaper than clear()
         index = new HashMap<>();
     }
-    
+
     public Set<String> keySet() {
         checkExceededAndThrow("keySet");
         return index.keySet();
     }
-    
+
     public Collection<ValueSet> values() {
         checkExceededAndThrow("values");
         return index.values();
     }
-    
+
     public Set<Entry<String,ValueSet>> entrySet() {
         checkExceededAndThrow("entrySet");
         return index.entrySet();
     }
-    
+
     public boolean equals(Object o) {
         if (!(o instanceof IndexLookupMap))
             return false;
@@ -124,11 +124,11 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         return index.equals(other.index) && exceededKeyThreshold == other.exceededKeyThreshold && keyThreshold == other.keyThreshold
                         && keyThreshold == other.valueThreshold;
     }
-    
+
     public int hashCode() {
         return index.hashCode() + Boolean.valueOf(exceededKeyThreshold).hashCode() + keyThreshold + valueThreshold;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -139,25 +139,25 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         }
         return builder.toString();
     }
-    
+
     private void testExceeded(String key) {
-        
+
         if (keyThreshold > 0 && !exceededKeyThreshold && !index.containsKey(key) && (size() + 1 > keyThreshold)) {
             markExceeded();
         }
     }
-    
+
     private void markExceeded() {
         clear();
         exceededKeyThreshold = true;
     }
-    
+
     private void checkExceededAndThrow(String method) {
         if (exceededKeyThreshold) {
             throw new ExceededThresholdException("Cannot perform " + method + " operation once the map has exceeded its key threshold");
         }
     }
-    
+
     public void retainFields(Collection<String> fieldNamesToRetain) {
         Map<String,ValueSet> replacementIndex = new HashMap<>();
         for (Entry<String,ValueSet> fieldNameToTerms : index.entrySet()) {
@@ -168,7 +168,7 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         }
         index = replacementIndex;
     }
-    
+
     public void removeFields(Collection<String> fieldNamesToRemove) {
         Map<String,ValueSet> replacementIndex = new HashMap<>();
         for (Entry<String,ValueSet> fieldNameToTerms : index.entrySet()) {
@@ -179,19 +179,19 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         }
         index = replacementIndex;
     }
-    
+
     /**
-     * 
+     *
      */
     public void setKeyThresholdExceeded() {
         exceededKeyThreshold = true;
-        
+
     }
-    
+
     public void setPatterns(Set<String> patterns) {
         this.patterns = patterns;
     }
-    
+
     public Set<String> getPatterns() {
         return this.patterns;
     }

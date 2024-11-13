@@ -118,4 +118,8 @@ function generateTestDatawaveUserServiceConfig() {
    echo "\\n        \"expirationTime\": -1 \\"                                      >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        } \\"                                                           >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        ]]></value>"                                                    >> ${BUILD_PROPERTIES_FILE}
+
+
+   # add the server dn as a trusted entity
+   echo "trusted.proxied.entities=$DW_DATAWAVE_SERVER_DN" >> ${BUILD_PROPERTIES_FILE}
 }

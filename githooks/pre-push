@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Format files
+mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat

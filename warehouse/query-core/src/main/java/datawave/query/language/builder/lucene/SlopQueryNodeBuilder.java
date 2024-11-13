@@ -1,5 +1,12 @@
 package datawave.query.language.builder.lucene;
 
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
+import org.apache.lucene.search.Query;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,17 +23,9 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import datawave.query.language.tree.AdjNode;
 import datawave.query.language.tree.SelectorNode;
 import datawave.query.language.tree.WithinNode;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
-import org.apache.lucene.search.Query;
 
 /**
  * This builder basically reads the {@link Query} object set on the {@link SlopQueryNode} child using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} and
@@ -34,15 +33,15 @@ import org.apache.lucene.search.Query;
  */
 @Deprecated
 public class SlopQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         datawave.query.language.tree.QueryNode returnNode = null;
-        
+
         SlopQueryNode phraseSlopNode = (SlopQueryNode) queryNode;
-        
-        datawave.query.language.tree.QueryNode node = (datawave.query.language.tree.QueryNode) phraseSlopNode.getChild().getTag(
-                        QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
+        datawave.query.language.tree.QueryNode node = (datawave.query.language.tree.QueryNode) phraseSlopNode.getChild()
+                        .getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
+
         if (node instanceof AdjNode) {
             datawave.query.language.tree.QueryNode[] nodeArray = new datawave.query.language.tree.QueryNode[node.getChildren().size()];
             returnNode = new WithinNode(phraseSlopNode.getValue(), node.getChildren().toArray(nodeArray));
@@ -53,8 +52,8 @@ public class SlopQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new UnsupportedOperationException(node.getClass().getName() + " found as a child of a SlopQueryNode -- not implemented");
         }
-        
+
         return returnNode;
     }
-    
+
 }

@@ -1,12 +1,5 @@
 package datawave.webservice.operations.user;
 
-import datawave.annotation.Required;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.webservice.operations.remote.RemoteLookupService;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.response.LookupResponse;
-
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -28,6 +21,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 
+import datawave.annotation.Required;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.webservice.operations.remote.RemoteLookupService;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.response.LookupResponse;
+
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})
 @DeclareRoles({"InternalUser", "Administrator"})
@@ -37,29 +37,29 @@ import javax.ws.rs.core.UriInfo;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
 public class LookupBean {
-    
+
     @Inject
     private RemoteLookupService remoteLookupService;
-    
+
     @Path("/Lookup/{table}/{row}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET
     public LookupResponse lookupGet(@Required("table") @PathParam("table") String table, @Required("row") @PathParam("row") String row, @Context UriInfo ui)
                     throws QueryException {
-        
+
         return lookup(table, row, ui.getQueryParameters(true));
     }
-    
+
     @Path("/Lookup/{table}/{row}")
     @Consumes("application/x-www-form-urlencoded")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
     public LookupResponse lookupPost(@Required("table") @PathParam("table") String table, @Required("row") @PathParam("row") String row,
                     MultivaluedMap<String,String> formParameters) throws QueryException {
-        
+
         return lookup(table, row, formParameters);
     }
-    
+
     @PermitAll
     public LookupResponse lookup(String table, String row, MultivaluedMap<String,String> queryParameters) throws QueryException {
         return remoteLookupService.lookup(table, row, queryParameters);

@@ -1,10 +1,5 @@
 package datawave.webservice.query.cache;
 
-import datawave.webservice.results.cached.CachedResultsBean;
-import datawave.webservice.results.cached.CachedRunningQuery;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -14,6 +9,12 @@ import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
+
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+
+import datawave.webservice.results.cached.CachedResultsBean;
+import datawave.webservice.results.cached.CachedRunningQuery;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -26,13 +27,13 @@ import javax.inject.Inject;
 // by default all methods are non-blocking
 @MBean
 public class CachedResultsQueryCacheBean {
-    
+
     @Inject
     private CachedResultsBean bean;
-    
+
     @Inject
     private CachedResultsQueryCache cachedRunningQueryCache;
-    
+
     @PermitAll
     @JmxManaged
     public String listRunningQueries() {
@@ -43,7 +44,7 @@ public class CachedResultsQueryCacheBean {
         }
         return buf.toString();
     }
-    
+
     @JmxManaged
     public String cancelLoad(String queryId) throws Exception {
         try {
@@ -53,5 +54,5 @@ public class CachedResultsQueryCacheBean {
             return "Error cancelling query: " + e.getMessage();
         }
     }
-    
+
 }

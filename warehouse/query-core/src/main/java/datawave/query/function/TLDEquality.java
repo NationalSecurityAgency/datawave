@@ -1,16 +1,15 @@
 package datawave.query.function;
 
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
 /**
  * A key equality implementation that compares to the root pointers of two doc Ids together.
- * 
+ * <p>
  * For example, two IDs `h1.h2.h3.a.b.c.d` and `h1.h2.h3.e.f` would be considered equal by this check.
  */
 public class TLDEquality implements Equality {
-    
+
     /**
      * Determines if two keys are equal by checking for a common root pointer.
      *
@@ -22,8 +21,20 @@ public class TLDEquality implements Equality {
      */
     @Override
     public boolean partOf(Key key, Key other) {
-        ByteSequence docCF = TLD.estimateRootPointerFromId(key.getColumnFamilyData());
-        ByteSequence otherCF = TLD.estimateRootPointerFromId(other.getColumnFamilyData());
-        return otherCF.equals(docCF);
+        ByteSequence keyCf = key.getColumnFamilyData();
+        ByteSequence otherCf = other.getColumnFamilyData();
+
+        int dotCount = 0;
+        int len = Math.min(keyCf.length(), otherCf.length());
+        for (int i = 0; i < len; i++) {
+            byte a = keyCf.byteAt(i);
+            byte b = otherCf.byteAt(i);
+            if (a != b) {
+                return false;
+            } else if (a == '.' && ++dotCount == 3) {
+                return true;
+            }
+        }
+        return len != 0;
     }
 }

@@ -14,18 +14,18 @@ import org.apache.log4j.Logger;
 
 /**
  * The iterator skips entries in the global index for entries not in the specified set of data types
- * 
+ *
  */
 public class GlobalIndexDataTypeFilter extends Filter {
-    
+
     protected static final Logger log = Logger.getLogger(GlobalIndexDataTypeFilter.class);
     public static final String DATA_TYPE = "data.type.";
     private Set<String> dataTypes = new HashSet<>();
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        
+
         int i = 1;
         while (options.containsKey(DATA_TYPE + i)) {
             dataTypes.add(options.get(DATA_TYPE + i));
@@ -35,7 +35,7 @@ public class GlobalIndexDataTypeFilter extends Filter {
             log.debug("Set the data type filter to " + dataTypes);
         }
     }
-    
+
     @Override
     public boolean accept(Key k, Value v) {
         if (dataTypes.isEmpty()) {
@@ -46,5 +46,5 @@ public class GlobalIndexDataTypeFilter extends Filter {
         dataType = dataType.substring(dataType.indexOf('\0') + 1);
         return dataTypes.contains(dataType);
     }
-    
+
 }

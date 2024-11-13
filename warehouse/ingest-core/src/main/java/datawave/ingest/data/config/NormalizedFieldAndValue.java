@@ -4,20 +4,17 @@ package datawave.ingest.data.config;
  * Class to hold the normalized field name and value.  One can set a field specific
  * visibility if desired.  If the visibility is not set, then the event visibility
  * will be used.
- * 
- * 
- *
  */
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
-import datawave.ingest.config.IngestConfiguration;
-import datawave.ingest.config.IngestConfigurationFactory;
-
-import datawave.ingest.config.MimeDecoder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
+
+import datawave.ingest.config.IngestConfiguration;
+import datawave.ingest.config.IngestConfigurationFactory;
+import datawave.ingest.config.MimeDecoder;
 
 public class NormalizedFieldAndValue extends BaseNormalizedContent implements GroupedNormalizedContentInterface {
     private boolean grouped = false;
@@ -25,37 +22,37 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     private String subGroup = null;
     private String eventFieldName = null;
     private static MimeDecoder mimeDecoder = null;
-    
+
     // cached defaultEventFieldName. This must be reset to null if anything changes that would affect its contents.
     private transient String defaultEventFieldName = null;
-    
+
     public NormalizedFieldAndValue() {
         super();
     }
-    
+
     public NormalizedFieldAndValue(String field, byte[] value) {
         this(field, value, false);
     }
-    
+
     public NormalizedFieldAndValue(String field, byte[] value, boolean expectBinary) {
         super(field, decode(value, expectBinary));
     }
-    
+
     public NormalizedFieldAndValue(String field, String value) {
         super(field, value);
     }
-    
+
     public NormalizedFieldAndValue(String field, String value, Map<String,String> markings) {
         super(field, value, markings);
     }
-    
+
     public NormalizedFieldAndValue(String field, String value, String group, String subGroup) {
         super(field, value);
         setGrouped(true);
         setGroup(group);
         setSubGroup(subGroup);
     }
-    
+
     public NormalizedFieldAndValue(NormalizedContentInterface n) {
         super(n);
         if (n instanceof GroupedNormalizedContentInterface) {
@@ -69,13 +66,15 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
             }
         }
     }
-    
+
     /**
      * This method will convert bytes into a string value. If not expected to be binary, then it will attempt to decode as UTF8. If that fails or is expected to
      * be binary, then it will decode one byte per character.
-     * 
+     *
      * @param bytes
+     *            the bytes to convert
      * @param expectBinary
+     *            flag indicating whether to expect binary
      * @return the value
      */
     public static String decode(byte[] bytes, boolean expectBinary) {
@@ -103,43 +102,43 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         }
         return value;
     }
-    
+
     public boolean isGrouped() {
         return this.grouped;
     }
-    
+
     public void setGrouped(boolean grouped) {
         hashCode = null;
         defaultEventFieldName = null;
         this.grouped = grouped;
     }
-    
+
     public String getSubGroup() {
         if (grouped) {
             return subGroup;
         }
         return null;
     }
-    
+
     public void setSubGroup(String group) {
         hashCode = null;
         defaultEventFieldName = null;
         this.subGroup = group;
     }
-    
+
     public String getGroup() {
         if (grouped) {
             return group;
         }
         return null;
     }
-    
+
     public void setGroup(String group) {
         hashCode = null;
         defaultEventFieldName = null;
         this.group = group;
     }
-    
+
     public void setIndexedFieldName(String name) {
         hashCode = null;
         defaultEventFieldName = null;
@@ -149,18 +148,18 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         }
         this._fieldName = name;
     }
-    
+
     @Override
     public void setFieldName(String name) {
         defaultEventFieldName = null;
         super.setFieldName(name);
     }
-    
+
     public void setEventFieldName(String name) {
         hashCode = null;
         this.eventFieldName = name;
     }
-    
+
     public String getEventFieldName() {
         if (eventFieldName == null) {
             return getDefaultEventFieldName();
@@ -168,7 +167,7 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
             return eventFieldName;
         }
     }
-    
+
     protected String getDefaultEventFieldName() {
         if (defaultEventFieldName == null) {
             if (isGrouped()) {
@@ -189,7 +188,7 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         }
         return defaultEventFieldName;
     }
-    
+
     public int hashCode() {
         if (hashCode == null) {
             hashCode = super.hashCode();
@@ -203,7 +202,7 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         }
         return hashCode;
     }
-    
+
     public boolean equals(Object o) {
         boolean equal = super.equals(o);
         if (equal) {
@@ -224,7 +223,7 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         }
         return false;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder(super.toString());
         sb.append(", eventFieldName=").append(this.eventFieldName);
@@ -233,5 +232,5 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         sb.append(", group=").append(this.group);
         return sb.toString();
     }
-    
+
 }

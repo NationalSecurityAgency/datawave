@@ -11,19 +11,19 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 /**
- * 
+ *
  * A Java Iterator that iterates over the Values for a given Key from a source SortedKeyValueIterator.
  */
 public class ValueCombiner implements Iterator<Value> {
     Key topKey;
     SortedKeyValueIterator<Key,Value> source;
     boolean hasNext;
-    
+
     private static final Logger log = Logger.getLogger(ValueCombiner.class);
-    
+
     /**
      * Constructs an iterator over Values whose Keys are versions of the current topKey of the source SortedKeyValueIterator.
-     * 
+     *
      * @param source
      *            The {@code SortedKeyValueIterator<Key,Value>} from which to read data.
      */
@@ -32,30 +32,30 @@ public class ValueCombiner implements Iterator<Value> {
         topKey = new Key(source.getTopKey());
         hasNext = _hasNext();
     }
-    
+
     private boolean _hasNext() {
         if (log.isTraceEnabled()) {
             log.trace("source hastop ? " + source.hasTop() + " " + topKey);
             if (source.hasTop())
                 log.trace(source.getTopKey());
-            
+
         }
         return source.hasTop() && topKey.equals(source.getTopKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS);
     }
-    
+
     /**
-     * @return <tt>true</tt> if there is another Value
-     * 
+     * @return <code>true</code> if there is another Value
+     *
      * @see java.util.Iterator#hasNext()
      */
     @Override
     public boolean hasNext() {
         return hasNext;
     }
-    
+
     /**
      * @return the next Value
-     * 
+     *
      * @see java.util.Iterator#next()
      */
     @Override
@@ -71,10 +71,10 @@ public class ValueCombiner implements Iterator<Value> {
         }
         return topValue;
     }
-    
+
     /**
      * unsupported
-     * 
+     *
      * @see java.util.Iterator#remove()
      */
     @Override

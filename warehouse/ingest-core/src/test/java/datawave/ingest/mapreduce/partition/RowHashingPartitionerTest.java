@@ -1,16 +1,17 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
+import java.lang.reflect.InvocationTargetException;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.apache.accumulo.core.data.Key;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class RowHashingPartitionerTest {
-    
+
     /*
      * Asserts that keys in the same shard (share the same row) will be going to the same reducer.
      */
@@ -27,7 +28,7 @@ public class RowHashingPartitionerTest {
             }
         }
     }
-    
+
     /*
      * Asserts that keys in the same shard with the same column family will be going to the same reducer.
      */
@@ -39,7 +40,7 @@ public class RowHashingPartitionerTest {
         sdp.setConf(conf);
         assertColumnFamilyPartitioning(sdp);
     }
-    
+
     private void assertColumnFamilyPartitioning(RowHashingPartitioner sdp) {
         final int nRed = 31;
         Text tbl = new Text("table");
@@ -51,33 +52,33 @@ public class RowHashingPartitionerTest {
             }
         }
     }
-    
+
     @Test
-    public void testConfigureByTable() throws IllegalAccessException, InstantiationException {
+    public void testConfigureByTable() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         String tableName = "tableX";
         conf.setInt(tableName + "." + RowHashingPartitioner.COLUMN_FAMILIES, 6);
-        
-        RowHashingPartitioner partitioner = RowHashingPartitioner.class.newInstance();
+
+        RowHashingPartitioner partitioner = RowHashingPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(tableName);
-        
+
         assertColumnFamilyPartitioning(partitioner);
     }
-    
+
     @Test
     public void testMultipleColFamiliesPerRow() throws IllegalAccessException, InstantiationException {
         Configuration conf = new Configuration();
         String tableName = "tableX";
         conf.set(tableName + "." + RowHashingPartitioner.COLUMN_FAMILIES, "CITY,STATE");
-        
+
         RowHashingPartitioner partitioner = RowHashingPartitioner.class.newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(tableName);
-        
+
         final int nRed = 31;
         Text tbl = new Text("table");
-        
+
         for (int i = 0; i < 10; ++i) {
             String shard = "20110101_" + i;
             int expectedReducerCity = partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", "fluff")), null, nRed);
@@ -90,5 +91,5 @@ public class RowHashingPartitionerTest {
             }
         }
     }
-    
+
 }

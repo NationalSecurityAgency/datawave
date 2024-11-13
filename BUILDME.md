@@ -1,5 +1,28 @@
 # Building Datawave
 
+## Generating a Github Repository access token
+
+In order to download datawave artifacts from the github package repository, you will need to set credentials in 
+your maven `settings.xml` file.
+
+You should first create a classic personal access token on github [here](https://github.com/settings/tokens). Be 
+sure to give the token at least the following permissions:
+ * `read:packages`
+
+Save the token value, and create a server entry for the github package repo in your maven `settings.xml` file, like so:
+```xml
+   <servers>
+      <server>
+         <id>github-datawave</id>
+         <username>PUT_YOUR_GITHUB_USERNAME_HERE</username>
+         <password>PUT_YOUR_PERSONAL_ACCESS_TOKEN_HERE</password>
+      </server>
+   </servers>
+```
+The id of the server matters, and should match what is used in the datawave parent pom.
+
+## Building Datawave
+
 To perform a full (non-release) 'dev' build  without unit tests:
 
 ```bash
@@ -41,47 +64,38 @@ mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 Datawave web services utilize several microservices at runtime (currently authorization and auditing, although that
 list will expand soon). Datawave depends on api modules for some of these services, and the dependencies are set in
-the parent pom (see `version.microservice.*` properties) to released versions. If you wish to build the microservices
+the parent pom (see `version.datawave.*` properties) to released versions. If you wish to build the microservices
 for some reason, you can simply add `-Dservices` to your maven build command.
 
 ### Releasing Microservices
 
 Each subdirectory under the `services` folder is treated as a separate project. Therefore if you wish to build a
 release for any of the services (or their APIs), change directory to the appropriate service and build and deploy
-the release with `mvn -Ddist clean deploy`. Note that due to licensing restrictions, we are currently unable to deploy
-to maven's central repository (though we hope to have that changed soon), so we are temporarily deploying to a branch
-in github. Therefore, to execute the deployment, you will need to set credentials in your maven `settings.xml` file.
-You should first create a personal access token on github [here](https://github.com/settings/tokens). Be sure to give
-the token at least the following permissions:
- * `repo:status`
- * `repo_deployment`
- * `public_repo`
- * `notifications`
- * `user:email`
-Save the token value, and add it to a `github` profile in your maven `settings.xml` file, like so:
+the release with `mvn -Ddist clean deploy`. We are currently deploying our artifacts to the github package repo.
+Therefore, to execute the deployment, you will need to set credentials in your maven `settings.xml` file.
+You should first create a classic personal access token on github [here](https://github.com/settings/tokens). Be 
+sure to give the token at least the following permissions:
+ * `write:packages`
+ * `delete:packages`
+
+Save the token value, and create a server entry for the github package repo in your maven `settings.xml` file, like so:
 ```xml
-<activeProfiles>
-    <activeProfile>github</activeProfile>
-</activeProfiles>
-<profiles>
-    <profile>
-        <id>github</id>
-        <properties>
-            <github.global.userName>PUT_YOUR_GITHUB_USERNAME_HERE</github.global.userName>
-            <github.global.oauth2Token>PUT_YOUR_PERSONAL_ACCESS_TOKEN_HERE</github.global.oauth2Token>
-        </properties>
-    </profile>
-</profiles>
+<servers>
+      <server>
+         <id>github-datawave</id>
+         <username>PUT_YOUR_GITHUB_USERNAME_HERE</username>
+         <password>PUT_YOUR_PERSONAL_ACCESS_TOKEN_HERE</password>
+      </server>
+   </servers>
 ```
-The name of the profile doesn't actually matter. The important fact is that the specific maven properties
-are defined.
+The id of the server matters, and should match what is used in the datawave parent pom.
 
 Releases for individual services are generally tagged using the pattern `svc_<directory_name>_<version>`. For example,
 the authorization service API version 1.0 is tagged with `svc_authorization-api_1.0`.
 
 Note that simply building a new API or service release won't ensure that it is used anywhere. You will need to update
 build properties in either the datawave parent pom or within other service poms (for cross-service dependencies) to
-ensure that the new version is used. Look for properties starting with `version.microservice.` to see what to update.
+ensure that the new version is used. Look for properties starting with `version.datawave.` to see what to update.
 If you are updating an API module, you should be careful. In general, the associated service will need to be updated as
 well to support the API changes. The service should _add_ a new version of the API and continue to support the old
 version until it can be ensured that there are no more consumers of the old API.

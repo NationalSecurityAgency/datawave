@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.websocket.messages.QueryResponseMessage;
 
@@ -22,26 +23,26 @@ import datawave.webservice.websocket.messages.QueryResponseMessage;
  */
 public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<QueryResponseMessage> {
     private ObjectMapper mapper;
-    
+
     @Override
     public void encode(QueryResponseMessage object, Writer writer) throws EncodeException, IOException {
         try (JsonGenerator jsonGenerator = mapper.getFactory().createGenerator(writer)) {
             jsonGenerator.writeObject(object);
         }
     }
-    
+
     @Override
     public void init(EndpointConfig config) {
         mapper = new ObjectMapper();
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        mapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(),
-                        new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
+        mapper.setAnnotationIntrospector(
+                        AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         // Don't close the output stream
         mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         // Don't include NULL properties.
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Override
     public void destroy() {}
 }

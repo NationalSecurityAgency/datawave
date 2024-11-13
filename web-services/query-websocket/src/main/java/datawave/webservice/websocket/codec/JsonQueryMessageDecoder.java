@@ -11,10 +11,11 @@ import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
 import datawave.webservice.websocket.messages.CancelMessage;
 import datawave.webservice.websocket.messages.CreateQueryMessage;
 import datawave.webservice.websocket.messages.QueryMessage;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 /**
  * Decodes incoming JSON text into a {@link QueryMessage}. Based on the message content, the returned object will be one of the known types of query messages.
@@ -36,7 +37,7 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
         else
             return new CreateQueryMessage(map);
     }
-    
+
     private void addValueToMap(String key, JsonParser parser, MultivaluedMap<String,String> map) {
         boolean done = true; // By default we expect only a single value, but we could see an array.
         do {
@@ -67,7 +68,7 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
             }
         } while (!done);
     }
-    
+
     @Override
     public boolean willDecode(String s) {
         // See if it's valid JSON. If so, then we indicate we can read it.
@@ -78,10 +79,10 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
             return false;
         }
     }
-    
+
     @Override
     public void init(EndpointConfig config) {}
-    
+
     @Override
     public void destroy() {}
 }
