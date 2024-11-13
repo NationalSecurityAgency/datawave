@@ -1163,9 +1163,9 @@ public class DocumentGrouperTest {
             if (attributes.isEmpty()) {
                 throw new IllegalArgumentException("No attributes set for document entry");
             } else if (attributes.size() == 1) {
-                document.put(fieldName, this.attributes.get(0), true, false);
+                document.put(fieldName, this.attributes.get(0), true);
             } else {
-                document.put(fieldName, new Attributes(this.attributes, true), true, false);
+                document.put(fieldName, new Attributes(this.attributes, true), true);
             }
         }
     }
