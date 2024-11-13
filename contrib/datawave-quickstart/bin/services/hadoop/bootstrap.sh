@@ -2,12 +2,13 @@
 
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+DW_HADOOP_VERSION="3.3.6"
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_HADOOP_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common/hadoop-${DW_HADOOP_VERSION}/hadoop-${DW_HADOOP_VERSION}.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-de3eaca2e0517e4b569a88b63c89fae19cb8ac6c01ff990f1ff8f0cc0f3128c8e8a23db01577ca562a0e0bb1b4a3889f8c74384e609cd55e537aada3dcaa9f8a}"
-DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
+DW_HADOOP_DIST="$( { downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "hadoop" "${DW_HADOOP_VERSION}" "${DW_HADOOP_SERVICE_DIR}"; } && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
@@ -223,8 +224,8 @@ function hadoopPidList() {
 }
 
 function hadoopDisplayBinaryInfo() {
-  echo "Source: ${DW_HADOOP_DIST_URI}"
-  local tarballName="$(basename "$DW_HADOOP_DIST_URI")"
+  echo "Source: ${DW_HADOOP_DIST}"
+  local tarballName="$(basename "$DW_HADOOP_DIST")"
   if [[ -f "${DW_HADOOP_SERVICE_DIR}/${tarballName}" ]]; then
      echo " Local: ${DW_HADOOP_SERVICE_DIR}/${tarballName}"
   else

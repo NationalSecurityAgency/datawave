@@ -120,11 +120,7 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
     @Override
     public void aggregate(Attribute<?> value) {
         BigDecimal number;
-        try {
-            number = new BigDecimal(value.getData().toString());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to calculate an average with non-numerical value '" + value.getData() + "'", e);
-        }
+        number = new BigDecimal(value.getData().toString());
         if (numerator == null) {
             numerator = number;
             divisor = BigDecimal.ONE;

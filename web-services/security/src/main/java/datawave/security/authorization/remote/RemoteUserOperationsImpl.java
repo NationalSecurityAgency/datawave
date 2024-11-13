@@ -51,7 +51,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     }
 
     @Override
-    @Cacheable(value = "getRemoteUser", key = "{#principal}", cacheManager = "remoteOperationsCacheManager")
+    @Cacheable(value = "getRemoteUser", key = "{#currentUser}", cacheManager = "remoteOperationsCacheManager")
     public ProxiedUserDetails getRemoteUser(ProxiedUserDetails currentUser) throws AuthorizationException {
         log.info("Cache fault: Retrieving user for " + currentUser.getPrimaryUser().getDn());
         return UserOperations.super.getRemoteUser(currentUser);

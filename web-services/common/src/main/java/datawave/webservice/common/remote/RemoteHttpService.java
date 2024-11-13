@@ -177,6 +177,11 @@ public abstract class RemoteHttpService {
                 defaultHeaders.add(new BasicHeader("X-SSL-clientcert-issuer", DnUtils.normalizeDN(certs[0].getIssuerX500Principal().getName())));
             }
 
+            List<Class<? extends IOException>> nonRetriableClasses = getNonRetriableClasses();
+            List<Class<? extends IOException>> unavailableRetryClasses = getUnavailableRetryClasses();
+            DefaultHttpRequestRetryHandler datawaveRetryHandler = new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(),
+                            retryCounter(), nonRetriableClasses, unavailableRetryClasses);
+
             // @formatter:off
             client = HttpClients.custom()
                     .setSSLContext(ctx)
@@ -184,7 +189,7 @@ public abstract class RemoteHttpService {
                     .setDefaultHeaders(defaultHeaders)
                     .setMaxConnTotal(maxConnections())
                     .setMaxConnPerRoute(maxConnections())
-                    .setRetryHandler(new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
+                    .setRetryHandler(datawaveRetryHandler)
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();
             // @formatter:on
@@ -570,29 +575,60 @@ public abstract class RemoteHttpService {
         this.config = config;
     }
 
+    /**
+     * Classes that are instances of IOException that will cause DatawaveRetryHandler to retry with delay. Subclasses of RemoteHttpService should override this
+     * method if necessary
+     */
+    protected List<Class<? extends IOException>> getUnavailableRetryClasses() {
+        return Arrays.asList(ConnectException.class);
+    }
+
+    /**
+     * Classes that are instances of IOException that should not cause a retry. Subclasses of RemoteHttpService should override this method if necessary. The
+     * default list of classes in DefaultHttpRequestRetryHandler is: InterruptedIOException.class, UnknownHostException.class, ConnectException.class,
+     * SSLException.class));
+     */
+    protected List<Class<? extends IOException>> getNonRetriableClasses() {
+        return Arrays.asList(UnknownHostException.class, SSLException.class);
+    }
+
     private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
+        private static final Logger log = LoggerFactory.getLogger(DatawaveRetryHandler.class);
         private final int unavailableRetryCount;
         private final int unavailableRetryDelay;
         private final Counter retryCounter;
+        private List<Class<? extends IOException>> unavailableRetryClasses;
 
-        public DatawaveRetryHandler(int retryCount, int unavailableRetryCount, int unavailableRetryDelay, Counter retryCounter) {
-            super(retryCount, false, Arrays.asList(UnknownHostException.class, SSLException.class));
+        public DatawaveRetryHandler(int retryCount, int unavailableRetryCount, int unavailableRetryDelay, Counter retryCounter,
+                        List<Class<? extends IOException>> nonRetriableClasses, List<Class<? extends IOException>> unavailableRetryClasses) {
+            super(retryCount, false, nonRetriableClasses);
             this.unavailableRetryCount = unavailableRetryCount;
             this.unavailableRetryDelay = unavailableRetryDelay;
             this.retryCounter = retryCounter;
+            this.unavailableRetryClasses = unavailableRetryClasses;
         }
 
         @Override
         public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
             boolean shouldRetry = super.retryRequest(exception, executionCount, context);
-            if (exception instanceof ConnectException) {
+            // if any class e is the same as exception or any class e is a superclass of exception then retryWithDelay
+            boolean retryWithDelay = unavailableRetryClasses.stream().anyMatch(e -> e.isAssignableFrom(exception.getClass()));
+            if (retryWithDelay) {
                 shouldRetry = (executionCount <= unavailableRetryCount);
                 if (shouldRetry) {
                     try {
+                        if (log.isTraceEnabled()) {
+                            log.trace("retrying call after exception {}, executionCount {}, sleeping for {}ms", exception.getClass().getName(), executionCount,
+                                            unavailableRetryDelay);
+                        }
                         Thread.sleep(unavailableRetryDelay);
                     } catch (InterruptedException e) {
                         // Ignore -- we'll just end up retrying a little too fast
                     }
+                }
+            } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("retrying call after exception {}, executionCount {}", exception.getClass().getName(), executionCount);
                 }
             }
             if (shouldRetry) {
@@ -603,6 +639,7 @@ public abstract class RemoteHttpService {
     }
 
     private static class DatawaveUnavailableRetryStrategy extends DefaultServiceUnavailableRetryStrategy {
+        private static final Logger log = LoggerFactory.getLogger(DatawaveUnavailableRetryStrategy.class);
         private final int maxRetries;
         private final Counter retryCounter;
 
@@ -615,10 +652,13 @@ public abstract class RemoteHttpService {
         @Override
         public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
             // Note that a 404 can happen during service startup, so we want to retry.
-            boolean shouldRetry = executionCount <= maxRetries && (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE
-                            || response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND);
+            int statusCode = response.getStatusLine().getStatusCode();
+            boolean shouldRetry = executionCount <= maxRetries && (statusCode == HttpStatus.SC_SERVICE_UNAVAILABLE || statusCode == HttpStatus.SC_NOT_FOUND);
             if (shouldRetry) {
                 retryCounter.inc();
+                if (log.isTraceEnabled()) {
+                    log.trace("retrying call after statusCode {}, executionCount {}", statusCode, executionCount);
+                }
             }
             return shouldRetry;
         }
@@ -627,5 +667,4 @@ public abstract class RemoteHttpService {
     protected interface IOFunction<T> {
         T apply(HttpEntity entity) throws IOException;
     }
-
 }

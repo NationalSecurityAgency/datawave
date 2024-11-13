@@ -16,7 +16,6 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
@@ -250,8 +249,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         StringBuilder logicQueryStringBuilder = new StringBuilder();
         if (!getInitializedLogics().isEmpty()) {
             logicQueryStringBuilder.append(getConfig().getQueryString());
-        } else {
-            logicQueryStringBuilder.append("CompositeQueryLogic: ");
         }
 
         Map<String,Exception> exceptions = new HashMap<>();
@@ -266,11 +263,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 if (logicQueryStringBuilder.length() > 0) {
                     logicQueryStringBuilder.append(" || ");
                 }
-                logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )").append(" && ");
+
+                logicQueryStringBuilder.append("( ");
+                logicQueryStringBuilder.append("( logic = '").append(logicName).append("' )");
 
                 try {
                     // duplicate the settings for this query
                     Query settingsCopy = settings.duplicate(settings.getQueryName() + " -> " + logicName);
+
+                    // ensure we use the same query id
+                    settingsCopy.setId(settings.getId());
 
                     // update the query auths and runtime query authorizations for this logic
                     runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(logic, settingsCopy);
@@ -280,9 +282,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                     // only add this query logic to the initialized logic states if it was not simply filtered out
                     if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
                         log.info("Dropping " + logic.getLogicName() + " as it was filtered out");
-                        logicQueryStringBuilder.append("( filtered = true )");
+                        logicQueryStringBuilder.append(" && ").append("( filtered = true )");
                     } else {
-                        logicQueryStringBuilder.append(config.getQueryString());
+                        logicQueryStringBuilder.append(" && ").append(config.getQueryString());
                         QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
                         holder.setSettings(settingsCopy);
                         holder.setMaxResults(logic.getResultLimit(settingsCopy));
@@ -298,7 +300,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
                     log.error("Failed to initialize " + logic.getClass().getName(), e);
-                    logicQueryStringBuilder.append("( failure = '").append(e.getMessage()).append("' )");
+                    logicQueryStringBuilder.append(" && ").append("( failure = '").append(e.getMessage()).append("' )");
                     failedQueryLogics.put(logicName, logic);
                 } finally {
                     queryLogics.remove(next.getKey());
@@ -427,22 +429,25 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      */
     @Override
     public synchronized QueryLogicTransformer getTransformer(Query settings) {
-        ResultsPage emptyList = new ResultsPage();
-        Class<? extends BaseResponse> responseClass = null;
-        List<QueryLogicTransformer> delegates = new ArrayList<>();
-        for (QueryLogic logic : getQueryLogics().values()) {
-            QueryLogicTransformer t = logic.getTransformer(settings);
-            delegates.add(t);
-            BaseResponse refResponse = t.createResponse(emptyList);
-            if (null == responseClass) {
-                responseClass = refResponse.getClass();
-            } else {
-                if (!responseClass.equals(refResponse.getClass())) {
-                    throw new RuntimeException("All query logics must use transformers that return the same object type");
+        if (this.transformer == null) {
+            ResultsPage emptyList = new ResultsPage();
+            Class<? extends BaseResponse> responseClass = null;
+            List<QueryLogicTransformer> delegates = new ArrayList<>();
+            for (QueryLogic logic : getQueryLogics().values()) {
+                QueryLogicTransformer t = logic.getTransformer(settings);
+                delegates.add(t);
+                BaseResponse refResponse = t.createResponse(emptyList);
+                if (null == responseClass) {
+                    responseClass = refResponse.getClass();
+                } else {
+                    if (!responseClass.equals(refResponse.getClass())) {
+                        throw new RuntimeException("All query logics must use transformers that return the same object type: " + responseClass + " vs "
+                                        + refResponse.getClass());
+                    }
                 }
             }
+            this.transformer = new CompositeQueryLogicTransformer(delegates);
         }
-        this.transformer = new CompositeQueryLogicTransformer(delegates);
         return this.transformer;
     }
 
@@ -457,8 +462,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             return Iterables.getOnlyElement(queryLogics.values()).getTransformIterator(settings);
         } else {
             // The objects put into the pageQueue have already been transformed.
-            // We will iterate over the pagequeue with the No-Op transformer
-            return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
+            // CompositeQueryLogicTransformer will iterate over the pageQueue with no change to the objects
+            return new TransformIterator(results.iterator(), getTransformer(settings));
         }
     }
 

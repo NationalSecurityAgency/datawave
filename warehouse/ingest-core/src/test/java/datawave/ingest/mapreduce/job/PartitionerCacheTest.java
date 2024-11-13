@@ -30,7 +30,7 @@ public class PartitionerCacheTest {
     public void testValidateWillFilterOutTablesWithoutConfigurations() throws Exception {
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table1", DelegatingPartitionerTest.AlwaysReturnOne.class.getName());
         cache = new PartitionerCache(conf);
-        List<String> result = cache.validatePartitioners(new String[] {"table1", "table2"}, new Job(conf));
+        List<String> result = cache.validatePartitioners(new String[] {"table1", "table2"}, Job.getInstance(conf));
         Assert.assertTrue(result.contains("table1"));
         Assert.assertFalse("table2 partitioner class name is missing from the conf, yet it was not filtered out", result.contains("table2"));
     }
@@ -40,14 +40,14 @@ public class PartitionerCacheTest {
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table1", DelegatingPartitionerTest.AlwaysReturnOne.class.getName());
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table2", DelegatingPartitionerTest.AlwaysReturnTwo.class.getName());
         cache = new PartitionerCache(conf);
-        List<String> result = cache.validatePartitioners(new String[] {"table1", "table2"}, new Job(conf));
+        List<String> result = cache.validatePartitioners(new String[] {"table1", "table2"}, Job.getInstance(conf));
         Assert.assertTrue(result.contains("table1"));
         Assert.assertTrue(result.contains("table2"));
     }
 
     @Test
     public void testValidateNoOverrides() throws Exception {
-        List<String> result = new PartitionerCache(conf).validatePartitioners(new String[] {"table1", "table2"}, new Job(conf));
+        List<String> result = new PartitionerCache(conf).validatePartitioners(new String[] {"table1", "table2"}, Job.getInstance(conf));
         Assert.assertEquals("None of the tables were configured, so the overrides list should be empty", result.size(), 0);
     }
 
@@ -56,7 +56,7 @@ public class PartitionerCacheTest {
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table1", DelegatingPartitionerTest.AlwaysReturnOne.class.getName());
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table2", PartitionerThatMustNotBeCreated.class.getName());
         cache = new PartitionerCache(conf);
-        List<String> result = new PartitionerCache(conf).validatePartitioners(new String[] {"table1", "table2"}, new Job(conf));
+        List<String> result = new PartitionerCache(conf).validatePartitioners(new String[] {"table1", "table2"}, Job.getInstance(conf));
         Assert.assertTrue(result.contains("table1"));
         Assert.assertFalse("table2's partitioner cannot be created, so it should be removed from the list", result.contains("table2"));
     }

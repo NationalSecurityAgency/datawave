@@ -22,7 +22,6 @@ public class FileRuleDataTypeMergeTest {
     private static final String ROOT_FILTER_CONFIGURATION_FILE = "/filter/test-root-data-type.xml";
     private static final String CHILD_FILTER_CONFIGURATION_FILE = "/filter/test-customized-data-type.xml";
 
-    private FileRuleWatcher watcher;
     private TestDataTypeFilter parentFilter;
     // this one inherits defaults from parentFilter
     private TestDataTypeFilter childFilter;
@@ -32,9 +31,8 @@ public class FileRuleDataTypeMergeTest {
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
         FileSystem fs = childPath.getFileSystem(new Configuration());
-        watcher = new FileRuleWatcher(fs, childPath, 1);
-        parentFilter = (TestDataTypeFilter) loadRulesFromFile(watcher, fs, rootPath);
-        childFilter = (TestDataTypeFilter) loadRulesFromFile(watcher, fs, childPath);
+        parentFilter = (TestDataTypeFilter) loadRulesFromFile(fs, rootPath);
+        childFilter = (TestDataTypeFilter) loadRulesFromFile(fs, childPath);
     }
 
     @Test
@@ -66,8 +64,9 @@ public class FileRuleDataTypeMergeTest {
         assertThat(childFilter.options.getOption("zip.ttl"), is("123"));
     }
 
-    private static FilterRule loadRulesFromFile(FileRuleWatcher watcher, FileSystem fs, Path filePath) throws IOException {
-        Collection<FilterRule> rules = watcher.loadContents(fs.open(filePath));
+    private static FilterRule loadRulesFromFile(FileSystem fs, Path filePath) throws IOException {
+        FileRuleCacheValue ruleValue = new FileRuleCacheValue(fs, filePath, 1);
+        Collection<FilterRule> rules = ruleValue.loadFilterRules(null);
         // should only have the single rule
         assertThat(rules.size(), is(1));
         for (FilterRule rule : rules) {
