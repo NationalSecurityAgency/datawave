@@ -111,11 +111,6 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
         // Write out the number of Attributes we're going to store
@@ -126,7 +121,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             WritableUtils.writeString(out, attr.getClass().getName());
 
             // Defer to the concrete instance to write() itself
-            attr.write(out, reducedResponse);
+            attr.write(out);
         }
     }
 
@@ -284,11 +279,6 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(this.trackSizes);
         // Write out the number of Attributes we're going to store
@@ -299,7 +289,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             output.writeString(attr.getClass().getName());
 
             // Defer to the concrete instance to write() itself
-            attr.write(kryo, output, reducedResponse);
+            attr.write(kryo, output);
         }
     }
 

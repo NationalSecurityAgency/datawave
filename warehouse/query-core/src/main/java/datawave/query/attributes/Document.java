@@ -546,11 +546,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
         WritableUtils.writeVLong(out, _bytes);
@@ -782,11 +777,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(trackSizes);
         output.writeLong(this._bytes, true);
@@ -801,7 +791,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
             Attribute<?> attribute = entry.getValue();
             output.writeString(attribute.getClass().getName());
-            attribute.write(kryo, output, reducedResponse);
+            attribute.write(kryo, output);
         }
 
         output.writeLong(this.shardTimestamp);
