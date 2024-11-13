@@ -1,12 +1,12 @@
 package datawave.security.authorization.remote;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -14,12 +14,11 @@ import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
+import javax.net.ssl.SSLException;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
 
@@ -101,6 +100,16 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
     @Inject
     @Metric(name = "dw.remoteDatawaveUserService.failures", absolute = true)
     private Counter failureCounter;
+
+    @Override
+    protected List<Class<? extends IOException>> getUnavailableRetryClasses() {
+        return Arrays.asList(ConnectException.class, UnknownHostException.class);
+    }
+
+    @Override
+    protected List<Class<? extends IOException>> getNonRetriableClasses() {
+        return Arrays.asList(SSLException.class);
+    }
 
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.lookup", absolute = true)

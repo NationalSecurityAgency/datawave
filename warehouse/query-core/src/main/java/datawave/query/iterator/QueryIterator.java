@@ -759,22 +759,25 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (log.isTraceEnabled()) {
                 log.trace("isFieldIndexSatisfyingQuery");
             }
-            docMapper = new Function<Entry<Key,Document>,Entry<DocumentData,Document>>() {
+            docMapper = new Function<>() {
                 @Nullable
                 @Override
                 public Entry<DocumentData,Document> apply(@Nullable Entry<Key,Document> input) {
-
                     Entry<DocumentData,Document> entry = null;
                     if (input != null) {
-                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST, true),
+                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.emptyList(), true),
                                         input.getValue());
                     }
                     return entry;
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(), this.includeHierarchyFields,
-                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:off
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEventEvaluationFilter(), this.includeHierarchyFields,
+                            this.includeHierarchyFields)
+                            .withRangeProvider(getRangeProvider())
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:on
         }
 
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -787,7 +790,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // which do not fall within the expected time range
         Iterator<Entry<Key,Document>> documents = null;
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
-                        this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(), isTrackSizes());
+                        this.includeRecordId, this.disableIndexOnlyDocuments(), getEventEvaluationFilter(), isTrackSizes());
         if (gatherTimingDetails()) {
             documents = Iterators.transform(sourceIterator, new EvaluationTrackingFunction<>(QuerySpan.Stage.Aggregation, trackingSpan, a));
         } else {
@@ -1094,15 +1097,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
+            //  @formatter:off
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider())
-                                            .withAggregationThreshold(getDocAggregationThresholdMs());
+                            getEventEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields)
+                            .withRangeProvider(getRangeProvider())
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
+            //  @formatter:on
 
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
                             new GetDocument(docMapper,
                                             new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata,
                                                             this.isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(),
-                                                            getEvaluationFilter(), isTrackSizes())));
+                                                            getEventEvaluationFilter(), isTrackSizes())));
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
 
             // Inject the document permutations if required
@@ -1422,6 +1428,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setTypeMetadata(this.getTypeMetadata())
                 .setFieldsToAggregate(this.getNonEventFields())
                 .setAttrFilter(this.getEvaluationFilter())
+                .setFiAttrFilter(this.getFiEvaluationFilter())
+                .setEventAttrFilter(this.getEventEvaluationFilter())    //  needed document range TF optimization
                 .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter())
                 .setFiAggregator(this.getFiAggregator())
                 .setHdfsFileSystem(this.getFileSystemCache())
@@ -1596,7 +1604,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
+            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getFiEvaluationFilter(), getEventNextSeek());
         }
         return fiAggregator;
     }

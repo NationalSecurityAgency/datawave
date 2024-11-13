@@ -162,6 +162,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
+    protected EventDataQueryFilter fiAttrFilter;
+    protected EventDataQueryFilter eventAttrFilter;
     protected Set<String> fieldsToAggregate = Collections.emptySet();
     protected Set<String> termFrequencyFields = Collections.emptySet();
     protected boolean allowTermFrequencyLookup = true;
@@ -458,7 +460,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTypeMetadata(typeMetadata);
             builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
-            builder.setAttrFilter(attrFilter);
+            // this code path is only executed in the context of a document range. This optimization scans
+            // the TF directly instead of the FI.
+            builder.setAttrFilter(eventAttrFilter);
             builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, tfNextSeek));
             builder.setNode(rootNode);
@@ -1563,6 +1567,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setAttrFilter(EventDataQueryFilter attrFilter) {
         this.attrFilter = attrFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setFiAttrFilter(EventDataQueryFilter fiAttrFilter) {
+        this.fiAttrFilter = fiAttrFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setEventAttrFilter(EventDataQueryFilter eventAttrFilter) {
+        this.eventAttrFilter = eventAttrFilter;
         return this;
     }
 

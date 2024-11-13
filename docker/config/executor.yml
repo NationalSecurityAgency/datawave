@@ -26,7 +26,7 @@ datawave:
       zookeepers: '${accumulo.zookeepers}'
       tableNames:
         - '${warehouse.tables.metadata.name}'
-      poolName: 'default'
+      poolName: '${datawave.connection.factory.defaultPool}'
       reloadInterval: 360000
       evictionReaperIntervalInSeconds: 360
       numLocks: 3
@@ -34,9 +34,8 @@ datawave:
       reload-crontab: '* * * * * ?'
   connection:
     factory:
-      defaultPool: "default"
       pools:
-        "default":
+        "WAREHOUSE":
           zookeepers: '${accumulo.zookeepers}'
           instance: '${accumulo.instanceName}'
           username: '${accumulo.username}'
@@ -45,6 +44,15 @@ datawave:
           normalPriorityPoolSize: 40
           highPriorityPoolSize: 40
           adminPriorityPoolSize: 40
+        "UUID":
+          zookeepers: '${accumulo.zookeepers}'
+          instance: '${accumulo.instanceName}'
+          username: '${accumulo.username}'
+          password: '${accumulo.password}'
+          lowPriorityPoolSize: 20
+          normalPriorityPoolSize: 20
+          highPriorityPoolSize: 20
+          adminPriorityPoolSize: 20
   query:
     executor:
       pool: "${executor.poolName}"

@@ -200,20 +200,19 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
      *
      * @param identifier
      *            the field to be aggregated
-     * @param filter
+     * @param filterChain
      *            a {@link ChainableEventDataQueryFilter}
      * @param maxNextCount
      *            the maximum number of next calls before a seek is issued
      * @return a {@link TermFrequencyAggregator} loaded with the provided filter
      */
     @Override
-    protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
-
-        filter.addFilter(new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, attrFilter));
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filterChain, int maxNextCount) {
 
         Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
+        filterChain.addFilter(new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, toAggregate));
 
-        return new TLDTermFrequencyAggregator(toAggregate, filter, tfNextSeek);
+        return new TLDTermFrequencyAggregator(toAggregate, filterChain, tfNextSeek);
     }
 
     /**
