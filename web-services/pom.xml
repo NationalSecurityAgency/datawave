@@ -233,7 +233,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>junit</groupId>
