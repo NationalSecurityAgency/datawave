@@ -33,6 +33,7 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.SessionOptions;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
@@ -119,7 +120,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         function.apply(chunk);
 
         verifyAll();
@@ -169,7 +170,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         ScannerChunk updatedChunk = function.apply(chunk);
 
         verifyAll();
@@ -222,7 +223,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         try {
             function.apply(chunk);
         } catch (Exception e) {
@@ -233,7 +234,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         config.setMaxIvaratorTerms(1);
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         function.apply(chunk);
     }
 
@@ -277,7 +278,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         function.apply(chunk);
     }
 
@@ -325,7 +326,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         ScannerChunk updatedChunk = function.apply(chunk);
 
         verifyAll();
@@ -383,7 +384,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         replayAll();
 
-        function = new VisitorFunction(config, helper, metric);
+        function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
         ScannerChunk updatedChunk = function.apply(chunk);
 
         verifyAll();
@@ -400,7 +401,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     public void testPruneIvaratorConfigs() throws Exception {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         MetadataHelper helper = new MockMetadataHelper();
-        VisitorFunction function = new VisitorFunction(config, helper, metric);
+        VisitorFunction function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
 
         // this query does NOT require an Ivarator
         String query = "FOO == 'bar'";
@@ -427,7 +428,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     public void testIvaratorConfigNotPruned() throws Exception {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         MetadataHelper helper = new MockMetadataHelper();
-        VisitorFunction function = new VisitorFunction(config, helper, metric);
+        VisitorFunction function = new VisitorFunction(config, helper, new ShardQueryLogic()); // temp holding logic
 
         // this query DOES require an Ivarator
         String query = "((_Value_ = true) && (FOO == 'bar'))";
@@ -449,7 +450,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     public void testPruneEmptyIteratorOptions() throws Exception {
         ShardQueryConfiguration cfg = new ShardQueryConfiguration();
         MetadataHelper hlpr = new MockMetadataHelper();
-        VisitorFunction function = new VisitorFunction(cfg, hlpr, metric);
+        VisitorFunction function = new VisitorFunction(cfg, hlpr, new ShardQueryLogic()); // temp holding logic
 
         IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
         settings.addOption(QueryOptions.QUERY, "FOO == 'bar'");

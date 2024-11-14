@@ -245,9 +245,10 @@ public class LongRunningQueryTest {
         logic.setQueryExecutionForPageTimeout(1);
         GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
-
+        QueryMetricFactoryImpl m = new QueryMetricFactoryImpl(); // This might need to change, added for testing
+        m.createMetric();
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
-                        new QueryMetricFactoryImpl());
+                        m);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();

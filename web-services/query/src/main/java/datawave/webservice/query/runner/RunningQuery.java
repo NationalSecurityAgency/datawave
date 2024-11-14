@@ -28,6 +28,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.microservice.query.Query;
@@ -118,7 +119,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
-            logic.setQueryMetric(getMetric());
         }
         this.getMetric().setLifecycle(QueryMetric.Lifecycle.DEFINED);
         this.logic = logic;
@@ -145,6 +145,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         // set the metric information
         this.getMetric().populate(this.settings);
         this.getMetric().setQueryType(this.getClass().getSimpleName());
+        if (this.logic instanceof WritesQuerySubplanMetrics) {
+            if (((WritesQuerySubplanMetrics) this.logic).getQueryMetric() != null
+                            && !((WritesQuerySubplanMetrics) this.logic).getQueryMetric().getSubPlans().isEmpty()) {
+                this.getMetric().setSubPlans(((WritesQuerySubplanMetrics) this.logic).getQueryMetric().getSubPlans()); // Is this step even necessary?
+            }
+            ((WritesQuerySubplanMetrics) this.logic).setQueryMetric(this.getMetric());
+        }
         if (this.queryMetrics != null) {
             try {
                 this.queryMetrics.updateMetric(this.getMetric());

@@ -36,7 +36,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
-import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.core.query.logic.QueryLogic;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
@@ -61,9 +61,9 @@ public class PushdownScheduler extends Scheduler {
      */
     protected final ShardQueryConfiguration config;
     /**
-     * Query Metric reference.
+     * The query logic.
      */
-    protected final BaseQueryMetric metric;
+    protected QueryLogic<?> logic;
     /**
      * Scanner factory reference.
      */
@@ -88,15 +88,15 @@ public class PushdownScheduler extends Scheduler {
 
     protected MetadataHelper metadataHelper;
 
-    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory, BaseQueryMetric metric) {
-        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()), metric);
+    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory, QueryLogic<?> logic) {
+        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()), logic);
     }
 
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, BaseQueryMetric metric) {
+    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, QueryLogic<?> logic) {
         this.config = config;
         this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
-        this.metric = metric;
+        this.logic = logic;
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getClient());
     }
@@ -178,7 +178,7 @@ public class PushdownScheduler extends Scheduler {
                 session.setSpeculativeScanning(true);
             }
 
-            session.addVisitor(new VisitorFunction(config, metadataHelper, metric));
+            session.addVisitor(new VisitorFunction(config, metadataHelper, logic));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

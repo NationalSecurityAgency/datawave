@@ -54,10 +54,12 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
@@ -171,7 +173,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  *
  * @see datawave.query.enrich
  */
-public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
+public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic, WritesQuerySubplanMetrics {
 
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
@@ -198,6 +200,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
     private QueryParser parser = null;
+    private BaseQueryMetric metric;
     private QueryLogicTransformer transformerInstance = null;
 
     private CardinalityConfiguration cardinalityConfiguration = null;
@@ -225,6 +228,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         // Set ShardQueryConfiguration variables
         this.config = ShardQueryConfiguration.create(other);
+        if (other.getQueryMetric() != null) { // should this be here?
+            this.setQueryMetric(other.getQueryMetric());
+        }
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
         this.setQueryPlanner(other.getQueryPlanner().clone());
@@ -1254,7 +1260,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
         } else {
-            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this.getQueryMetric());
+            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this);
         }
     }
 
@@ -1264,6 +1270,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setEventQueryDataDecoratorTransformer(EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer) {
         this.eventQueryDataDecoratorTransformer = eventQueryDataDecoratorTransformer;
+    }
+
+    @Override
+    public void setQueryMetric(BaseQueryMetric metric) {
+        this.metric = metric;
+    }
+
+    @Override
+    public BaseQueryMetric getQueryMetric() {
+        return metric;
     }
 
     @Override

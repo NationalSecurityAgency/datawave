@@ -30,7 +30,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
-import org.geotools.data.Join;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -40,8 +39,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.microservice.query.Query;
-import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -85,7 +85,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     private int shardRangeCount = 0;
     private int documentRangeCount = 0;
     private ShardQueryConfiguration config;
-    private BaseQueryMetric metric;
+    private QueryLogic<?> logic;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
@@ -99,9 +99,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
-    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper, BaseQueryMetric metric) throws MalformedURLException {
+    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryLogic<?> logic) throws MalformedURLException {
         this.config = config;
-        this.metric = metric;
+        this.logic = logic;
 
         if (VisitorFunction.fileSystemCache == null && this.config.getHdfsSiteConfigURLs() != null) {
             VisitorFunction.fileSystemCache = new FileSystemCache(this.config.getHdfsSiteConfigURLs());
@@ -376,11 +376,13 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     for (Range range : newSettings.getRanges()) {
                         updateRangeCounts(range);
                     }
-                    if (metric != null) {
-                        RangeCounts ranges = new RangeCounts();
-                        ranges.setDocumentRangeCount(documentRangeCount);
-                        ranges.setShardRangeCount(shardRangeCount);
-                        metric.addSubPlan(newQuery, ranges);
+                    if (logic instanceof WritesQuerySubplanMetrics) {
+                        if (((WritesQuerySubplanMetrics) logic).getQueryMetric() != null) {
+                            RangeCounts ranges = new RangeCounts();
+                            ranges.setDocumentRangeCount(documentRangeCount);
+                            ranges.setShardRangeCount(shardRangeCount);
+                            ((WritesQuerySubplanMetrics) logic).getQueryMetric().addSubPlan(newQuery, ranges);
+                        }
                     }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
