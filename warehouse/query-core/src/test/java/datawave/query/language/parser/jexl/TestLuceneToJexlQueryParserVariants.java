@@ -40,59 +40,84 @@ public class TestLuceneToJexlQueryParserVariants {
 
     @Test
     public void testVariantStopword() throws ParseException {
-        String expected = "(" + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'STOP', 'foo@bar.com', 'baz') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', '@bar.com', 'baz') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'foo', 'baz') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'foo@bar.com', 'baz')" + ")";
+        // @formatter:off
+        String expected = "("
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'STOP', 'foo@bar.com', 'baz') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', '@bar.com', 'baz') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'foo', 'baz') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'foo@bar.com', 'baz')"
+                + ")";
+        // @formatter:on
         assertEquals(expected, parseQuery("TOKFIELD:\"email STOP foo@bar.com baz\""));
     }
 
     @Test
     public void testVariantSlopStopword() throws ParseException {
         // the split file `wi-fi` increases the slop
-        String expected = "(" + "content:within(TOKFIELD, 6, termOffsetMap, 'email', 'STOP', 'foo@bar.com', 'wi-fi') || "
-                        + "content:within(TOKFIELD, 7, termOffsetMap, 'email', '@bar.com', 'wi', 'fi') || "
-                        + "content:within(TOKFIELD, 7, termOffsetMap, 'email', 'foo', 'wi', 'fi') || "
-                        + "content:within(TOKFIELD, 7, termOffsetMap, 'email', 'foo@bar.com', 'wi', 'fi')" + ")";
+        // @formatter:off
+        String expected = "("
+                + "content:within(TOKFIELD, 6, termOffsetMap, 'email', 'STOP', 'foo@bar.com', 'wi-fi') || "
+                + "content:within(TOKFIELD, 7, termOffsetMap, 'email', '@bar.com', 'wi', 'fi') || "
+                + "content:within(TOKFIELD, 7, termOffsetMap, 'email', 'foo', 'wi', 'fi') || "
+                + "content:within(TOKFIELD, 7, termOffsetMap, 'email', 'foo@bar.com', 'wi', 'fi')"
+                + ")";
+        // @formatter:off
+
         assertEquals(expected, parseQuery("TOKFIELD:\"email STOP foo@bar.com wi-fi\"~6"));
     }
 
     @Test
     public void testVariantsEnd() throws ParseException {
-        String expected = "(" + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'to', 'address', 'foo@bar.com') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'to', 'address', '@bar.com') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'to', 'address', 'foo'))";
+        // @formatter:off
+        String expected = "("
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'to', 'address', 'foo@bar.com') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'to', 'address', '@bar.com') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'to', 'address', 'foo')"
+                + ")";
+        // @formatter:on
         assertEquals(expected, parseQuery("TOKFIELD:\"email to address foo@bar.com\""));
     }
 
     @Test
     public void testVariantsBegin() throws ParseException {
-        String expected = "(" + "content:phrase(TOKFIELD, termOffsetMap, 'foo@bar.com', 'email', 'from', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, '@bar.com', 'email', 'from', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'foo', 'email', 'from', 'address'))";
+        // @formatter:off
+        String expected = "("
+                + "content:phrase(TOKFIELD, termOffsetMap, 'foo@bar.com', 'email', 'from', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, '@bar.com', 'email', 'from', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'foo', 'email', 'from', 'address')"
+                + ")";
+        // @formatter:on
 
         assertEquals(expected, parseQuery("TOKFIELD:\"foo@bar.com email from address\""));
     }
 
     @Test
     public void testVariantsMiddle() throws ParseException {
-        String expected = "(" + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'from', 'foo@bar.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'from', '@bar.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'from', 'foo', 'address'))";
+        // @formatter:off
+        String expected = "("
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'from', 'foo@bar.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'from', '@bar.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'email', 'from', 'foo', 'address')"
+                + ")";
+        // @formatter:on
         assertEquals(expected, parseQuery("TOKFIELD:\"email from foo@bar.com address\""));
     }
 
     @Test
     public void testVariantsMultiple() throws ParseException {
-        String expected = "(" + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', 'bar@foo.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', '@foo.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', 'bar', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', 'bar@foo.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', '@foo.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar@foo.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', '@foo.com', 'address') || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', 'bar', 'address')" + ")";
+        // @formatter:off
+        String expected = "("
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', 'bar@foo.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', '@foo.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', 'bar', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', 'bar@foo.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', '@foo.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar@foo.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', '@foo.com', 'address') || "
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', 'bar', 'address')"
+                + ")";
+        // @formatter:on
         assertEquals(expected, parseQuery("TOKFIELD:\"from foo@bar.com to bar@foo.com address\""));
     }
 

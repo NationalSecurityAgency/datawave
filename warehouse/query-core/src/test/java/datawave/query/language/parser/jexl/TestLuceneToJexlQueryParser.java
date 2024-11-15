@@ -642,9 +642,18 @@ public class TestLuceneToJexlQueryParser {
         TokenSearch searchUtil = TokenSearch.Factory.newInstance();
         Analyzer analyzer = new StandardAnalyzer(searchUtil);
         parser.setAnalyzer(analyzer);
-        String expected = "(" + "TOKFIELD == '/home/datawave/README.md' || " + "TOKFIELD == 'datawave' || " + "TOKFIELD == 'datawave/readme.md' || "
-                        + "TOKFIELD == 'home' || " + "TOKFIELD == 'home/datawave/readme.md' || " + "TOKFIELD == 'md' || " + "TOKFIELD == 'readme' || "
-                        + "TOKFIELD == 'readme.md'" + ")";
+        // @formatter:off
+        String expected = "("
+                + "TOKFIELD == '/home/datawave/README.md' || "
+                + "TOKFIELD == 'datawave' || "
+                + "TOKFIELD == 'datawave/readme.md' || "
+                + "TOKFIELD == 'home' || "
+                + "TOKFIELD == 'home/datawave/readme.md' || "
+                + "TOKFIELD == 'md' || "
+                + "TOKFIELD == 'readme' || "
+                + "TOKFIELD == 'readme.md'"
+                + ")";
+        // @formatter:on
         Assert.assertEquals(expected, parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
 }

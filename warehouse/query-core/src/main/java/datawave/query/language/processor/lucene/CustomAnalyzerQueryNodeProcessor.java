@@ -272,10 +272,10 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
 
         node.setTag(NODE_PROCESSED, Boolean.TRUE); // mark this node as processed, so we don't process it again.
 
-        try (TokenStream source = this.analyzer.tokenStream(field, new StringReader(text)); CachingTokenFilter buffer = new CachingTokenFilter(source)) {
+        try (TokenStream buffer = this.analyzer.tokenStream(field, new StringReader(text))) {
 
             // prepare the source for reading.
-            source.reset();
+            buffer.reset();
 
             if (!buffer.hasAttribute(CharTermAttribute.class)) {
                 return node; // tokenizer can't produce terms, return unmodified query node.
@@ -285,15 +285,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             final PositionIncrementAttribute posIncrAtt = buffer.hasAttribute(PositionIncrementAttribute.class)
                             ? buffer.getAttribute(PositionIncrementAttribute.class)
                             : null;
-
-            // take a pass over all the available tokens and retain them in the caching filter.
-            // count the number of tokens and possible alternate readings of tokens.
-            if (countAndBufferTokens(buffer) == 0) {
-                return node; // no terms found, return unmodified query node.
-            }
-
-            // prepare the buffer for reading.
-            buffer.reset();
 
             // the variant builder will maintain multiple versions of the tokenized query as we find tokens
             // that have multiple variants in the same position - e.g., stems, roots or lemmas.
@@ -341,15 +332,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         } catch (IOException e) {
             throw new QueryNodeException(e);
         }
-    }
-
-    /** Count the number of tokens in the stream, the caching token filter will also buffer them */
-    private static int countAndBufferTokens(CachingTokenFilter buffer) throws IOException {
-        int numTokens = 0;
-        while (buffer.incrementToken()) {
-            numTokens++;
-        }
-        return numTokens;
     }
 
     /**
