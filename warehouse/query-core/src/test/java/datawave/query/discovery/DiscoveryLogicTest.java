@@ -27,7 +27,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.log4j.Logger;
 import org.assertj.core.api.Assertions;
-import org.javatuples.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -134,6 +133,7 @@ public class DiscoveryLogicTest {
         writeEntries("VEHICLE", "ranger", "stock", "BAR", "20130103", 6, 1, 2);
         writeEntries("NON_INDEXED_FIELD", "coffee", "csv", "FOO", "20130101", 1, 1, 1);
         writeEntries("NON_INDEXED_FIELD", "espresso", "csv", "FOO", "20130102", 1, 5, 5);
+
         writeForwardModel("ANIMAL", "ROOSTER");
         writeForwardModel("ANIMAL", "BIRD");
         writeReverseModel("occupation", "job");
