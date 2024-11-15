@@ -352,14 +352,17 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return numTokens;
     }
 
-    /** Create a new query node for the specified field and tokenize text, optionally wrapping it in a SlopQueryNode
-     *  if we've determined that slop is needed (either due to tokens being removed or there being slop on the original
-     *  query we need to account for.
-     * @param field the field for the query node
-     * @param tokenizedText the text for the query node
-     * @param slopNeeded whether slop is needed.
-     * @return a new QuotedFieldQueryNode or possibly a SlopQueryNode containing the new clause. Both of these nodes will
-     *   be marked as 'PROCESSED'.
+    /**
+     * Create a new query node for the specified field and tokenize text, optionally wrapping it in a SlopQueryNode if we've determined that slop is needed
+     * (either due to tokens being removed or there being slop on the original query we need to account for.
+     *
+     * @param field
+     *            the field for the query node
+     * @param tokenizedText
+     *            the text for the query node
+     * @param slopNeeded
+     *            whether slop is needed.
+     * @return a new QuotedFieldQueryNode or possibly a SlopQueryNode containing the new clause. Both of these nodes will be marked as 'PROCESSED'.
      */
     public QueryNode createNewQueryNode(String field, String tokenizedText, int slopNeeded) {
         QueryNode newQueryNode = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
@@ -371,14 +374,16 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return newQueryNode;
     }
 
-    /** Calculate the amount of slop we need to add to a new query node for tokenized text.
-     *  This is based on the based on the number of positions observed in the tokenized text and
-     *  the difference between the slop in the original query minus the original token
-     *  count.
-
-     * @param node the original query node from which the tokenized text originated.
-     * @param text the text of the original query.
-     * @param positionsObserved the number of positions observed in the tokenized text.
+    /**
+     * Calculate the amount of slop we need to add to a new query node for tokenized text. This is based on the based on the number of positions observed in the
+     * tokenized text and the difference between the slop in the original query minus the original token count.
+     *
+     * @param node
+     *            the original query node from which the tokenized text originated.
+     * @param text
+     *            the text of the original query.
+     * @param positionsObserved
+     *            the number of positions observed in the tokenized text.
      * @return the amount of slop we need to add to our new query clauses.
      */
     private int calculateSlopNeeded(QueryNode node, String text, int positionsObserved) {
@@ -393,17 +398,18 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             if (delta > 0) {
                 slopNeeded += delta;
             }
-        }
-        else {
+        } else {
             slopNeeded = 0;
         }
         return slopNeeded;
     }
 
     /**
-     * If the original query node was nested in a SlopQueryNode, that fact has been stored in the ORIGINAL_SLOP tag,
-     * and we'll need to re-create that slop node. Otherwise, return the original node unchanged.
-     * @param node the node to process.
+     * If the original query node was nested in a SlopQueryNode, that fact has been stored in the ORIGINAL_SLOP tag, and we'll need to re-create that slop node.
+     * Otherwise, return the original node unchanged.
+     *
+     * @param node
+     *            the node to process.
      * @return the node wrapped in a SlopQueryNode, if the input node originally had slop.
      */
     private static QueryNode possiblyWrapOriginalQueryNode(QueryNode node) {
@@ -413,9 +419,12 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return originalQueryNode;
     }
 
-    /** If a query node was something that has text, get the text. If the query node was already unescaped, convert it
-     *  to it's escaped version. This way it can be compared to other nodes with escapes in place.
-     * @param node the node to extract text from
+    /**
+     * If a query node was something that has text, get the text. If the query node was already unescaped, convert it to it's escaped version. This way it can
+     * be compared to other nodes with escapes in place.
+     *
+     * @param node
+     *            the node to extract text from
      * @return the escaped version of the text from the node, null if the node had no text.
      */
     private static String getEscapedBaseQueryText(QueryNode node) {
@@ -448,9 +457,9 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return result.toString();
     }
 
-    /** Maintains one or more buffers for tokenized queries. During standard operation, works like a StringBuilder.
-     *  If the tokenizer encounters a variant (e.g., zero position offset, same start and end as the previous token)
-     *  appendVariant will start building a second buffer containing that variant.
+    /**
+     * Maintains one or more buffers for tokenized queries. During standard operation, works like a StringBuilder. If the tokenizer encounters a variant (e.g.,
+     * zero position offset, same start and end as the previous token) appendVariant will start building a second buffer containing that variant.
      */
     public static class VariantBuilder {
         List<List<String>> variants = new ArrayList<>();
