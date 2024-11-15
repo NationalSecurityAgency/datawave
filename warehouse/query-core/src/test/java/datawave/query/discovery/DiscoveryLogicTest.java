@@ -391,13 +391,13 @@ public class DiscoveryLogicTest {
 
     @Test
     public void testIgnoreNonIndexedField() throws Exception {
-        givenQuery("coffee OR espresso OR onyx");
+        givenQuery("coffee OR espresso OR rooster");
         givenStartDate("20130101");
         givenEndDate("20130104");
 
-        expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130103", "FOO", 1L, new MapWritable()));
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "20130101", "BAR", 30L, new MapWritable()));
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "20130102", "BAR", 30L, new MapWritable()));
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "20130103", "BAR", 30L, new MapWritable()));
 
         assertQueryResults();
     }
