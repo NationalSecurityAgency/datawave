@@ -21,9 +21,24 @@ import datawave.ingest.protobuf.Uid.List.Builder;
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
  * list of UIDs for events will be maintained in the global index for low cardinality terms.
+ * <p>
+ * Although this combiner allows the max UIDs kept to be configured, anyone using this feature should consider the impact of using it once data has been loaded
+ * into the system. Decreasing the max size will likely cause UID lists to be purged as they exceed the new max UID count. Increasing the max UID could is also
+ * unlikely to work as one would expect since any lists that already had their UIDs purged and the ignore flag set won't start collecting UIDs even if the
+ * previous count is less than the new max UID count. In practice, the main intent for this feature is to configure a new cluster with a different max UID count
+ * (without having to re-compile the code). With the caveats mentioned, it could be used on a system with data loaded, for example if a new data type becomes
+ * available and one wished to increase the max UID count while data for other data types is relatively stable or the side effects of the change don't matter.
+ * <p>
+ * When this class is used with {@link datawave.iterators.PropogatingIterator}, one must be aware that this class is not actually used as a combiner but rather
+ * is only used for its {@link #reset()} and {@link #aggregate()} methods. PropogatingIterator allows combiner options to be passed, which means when this class
+ * is used with PropogatingIterator one could change the max UID count. However, if that option is used it should be noted that the base
+ * {@link org.apache.accumulo.core.iterators.Combiner} option validation is used and therefore the option "all" must also be set to "true" or the "columns" must
+ * be set in order to pass option validation. While set, the "all" or "columns" option will have no effect when used with PropogatingIterator since only the
+ * {@link #reset()} and {@link #aggregate()} methods are invoked.
  */
 public class GlobalIndexUidAggregator extends PropogatingCombiner {
     private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
+    private static final String MAX_UIDS_OPT = "maxuids";
     private static final String TIMESTAMPS_IGNORED = "timestampsIgnored";
 
     /**
@@ -123,7 +138,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      * can store up to a certain number of UIDs and after that, the lists are no longer tracked (the ignore flag will be set) and only counts are tracked.
      * REMOVEDUIDs are tracked to handle minor and partial major compactions where this reduce method won't necessarily see all possible values for a given key
      * (e.g., the UIDs that are being removed might be in a different RFile that isn't involved in the current compaction).
-     *
+     * <p>
      * Aggregation operates in one of two modes depending on whether or not timestamps are ignored. By default, timestamps are ignored since DataWave uses date
      * to the day as the timestamp in the global term index. When timestamps are ignored, we cannot infer anything about the order of values under aggregation.
      * Therefore, a decision must be made about how to handle removed UIDs vs added UIDs. In that case, removed UIDs take priority. This means that adding a
@@ -324,11 +339,24 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     }
 
     @Override
+    public IteratorOptions describeOptions() {
+        IteratorOptions io = super.describeOptions();
+        io.addNamedOption(MAX_UIDS_OPT, "The maximum number of UIDs to keep in the list. Default is " + MAX + ".");
+        return io;
+    }
+
+    @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = super.validateOptions(options);
         if (valid) {
             if (options.containsKey(TIMESTAMPS_IGNORED)) {
                 timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
+            }
+            if (options.containsKey(MAX_UIDS_OPT)) {
+                maxUids = Integer.parseInt(options.get(MAX_UIDS_OPT));
+                if (maxUids <= 0) {
+                    throw new IllegalArgumentException("Max UIDs must be greater than 0.");
+                }
             }
         }
         return valid;
@@ -349,9 +377,16 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         if (options.containsKey(TIMESTAMPS_IGNORED)) {
             timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
         }
+        if (options.containsKey(MAX_UIDS_OPT)) {
+            maxUids = Integer.parseInt(options.get(MAX_UIDS_OPT));
+        }
     }
 
     public static void setTimestampsIgnoredOpt(IteratorSetting is, boolean timestampsIgnored) {
         is.addOption(TIMESTAMPS_IGNORED, Boolean.toString(timestampsIgnored));
+    }
+
+    public static void setMaxUidsOpt(IteratorSetting is, int maxUids) {
+        is.addOption(MAX_UIDS_OPT, Integer.toString(maxUids));
     }
 }

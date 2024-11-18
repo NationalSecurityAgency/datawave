@@ -22,16 +22,17 @@ import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 
 import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 /**
  * Purpose: Handle arbitrary propogating aggregations.
- *
+ * <p>
  * Design: Though very similar to the DeletingIterator, due to private methods and members, we cannot directly extend the DeletingIterator. As a result, the
  * class extends SKVI. This class {@code USES --> PropogatingAggregator}. Note that propAgg can be null
- *
+ * <p>
  * Initially the TotalAggregatingIterator, this class was a direct copy. At some point it was identified that there was an artifact where deletes would not be
  * propogated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propogated until a full major compaction.
  */
@@ -41,7 +42,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
 
     public static final String ATTRIBUTE_DESCRIPTION = "Aggregators apply aggregating functions to values with identical keys. You can specify the column family. DEFAULT matches the default locality group";
 
-    public static final String UNNAMED_OPTION_DESCRIPTION = "<Column Family>  <Combiner>";
+    public static final String UNNAMED_OPTION_DESCRIPTION = "<Column Family> <Combiner> <optional: combOpt1=comVal1;combOpt2=combVal2...>";
 
     public static final String AGGREGATOR_DEFAULT = "DEFAULT";
 
@@ -82,12 +83,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     protected Map<ByteSequence,PropogatingCombiner> aggMap;
 
     /**
-     * variable to determine if we should propogate deletes
-     */
-    private boolean shouldPropogate;
-
-    /**
-     * Combiner options so that we can effectively deep copy
+     * Combiner options so that we can effectively deepCopy
      */
     protected Map<String,String> options = Maps.newHashMap();
 
@@ -127,10 +123,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * Aggregates the same partial key.
      *
      * @return a partial key
-     * @throws IOException
-     *             for issues with read/write
      */
-    private boolean aggregateRowColumn() throws IOException {
+    private boolean aggregateRowColumn() {
         // this function assumes that first value is not delete
 
         workKey.set(iterator.getTopKey());
@@ -195,12 +189,9 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     }
 
     /**
-     * Find Top method, will attempt to aggregate, iff an aggregator is specified
-     *
-     * @throws IOException
-     *             for issues with read/write
+     * Find Top method, will attempt to aggregate, if an aggregator is specified
      */
-    private void findTop() throws IOException {
+    private void findTop() {
         // check if aggregation is needed
         while (iterator.hasTop() && !aggregateRowColumn())
             ;
@@ -214,10 +205,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      *            an iterator
      * @param Aggregators
      *            mapping of aggregators
-     * @throws IOException
-     *             for issues with read/write
      */
-    public PropogatingIterator(SortedKeyValueIterator<Key,Value> iterator, ColumnToClassMapping<Combiner> Aggregators) throws IOException {
+    public PropogatingIterator(SortedKeyValueIterator<Key,Value> iterator, ColumnToClassMapping<Combiner> Aggregators) {
         this.iterator = iterator;
         findTop();
     }
@@ -305,7 +294,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     @Override
     public IteratorOptions describeOptions() {
 
-        return new IteratorOptions(ATTRIBUTE_NAME, ATTRIBUTE_DESCRIPTION, defaultMapOptions, Collections.singletonList("<ColumnFamily> <Combiner>"));
+        return new IteratorOptions(ATTRIBUTE_NAME, ATTRIBUTE_DESCRIPTION, defaultMapOptions, Collections.singletonList(UNNAMED_OPTION_DESCRIPTION));
     }
 
     @Override
@@ -317,24 +306,36 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         // Don't propagate for either scan or full major compaction. In either case, the aggregated result has combined
         // all existing values for a key so we don't need to propagate temporary state that is only used to combine
         // partial results with new info.
-        shouldPropogate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction()) && !(env.getIteratorScope() == IteratorScope.scan);
+        boolean shouldPropogate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction())
+                        && !(env.getIteratorScope() == IteratorScope.scan);
 
-        PropogatingCombiner propAgg = null;
-
-        for (Entry<String,String> familyOption : options.entrySet()) {
-            Object agg = createAggregator(familyOption.getValue());
+        options.forEach((name, value) -> {
+            value = value.trim();
+            int sepIdx = value.indexOf(' ');
+            String aggClass = (sepIdx < 0) ? value : value.substring(0, sepIdx);
+            Object agg = createAggregator(aggClass);
             if (agg instanceof PropogatingCombiner) {
-                propAgg = PropogatingCombiner.class.cast(agg);
+                PropogatingCombiner propAgg = (PropogatingCombiner) agg;
+                if (sepIdx > 0) {
+                    String encodedOpts = value.substring(sepIdx + 1);
+                    //@formatter:off
+                    Map<String,String> aggOpts = Splitter
+                            .on(';')
+                            .trimResults()
+                            .withKeyValueSeparator('=')
+                            .split(encodedOpts);
+                    //@formatter:on
+                    propAgg.validateOptions(aggOpts);
+                }
                 propAgg.setPropogate(shouldPropogate);
-                if (familyOption.getKey().equals(AGGREGATOR_DEFAULT) || familyOption.getKey().equals(AGGREGATOR_DEFAULT_OPT)) {
-                    if (log.isTraceEnabled())
-                        log.debug("Default aggregator is " + propAgg.getClass());
+                if (name.equals(AGGREGATOR_DEFAULT) || name.equals(AGGREGATOR_DEFAULT_OPT)) {
+                    log.trace("Default aggregator is {}");
                     defaultAgg = propAgg;
                 } else {
-                    aggMap.put(new ArrayByteSequence(familyOption.getKey().getBytes()), propAgg);
+                    aggMap.put(new ArrayByteSequence(name.getBytes()), propAgg);
                 }
             }
-        }
+        });
         return true;
     }
 
