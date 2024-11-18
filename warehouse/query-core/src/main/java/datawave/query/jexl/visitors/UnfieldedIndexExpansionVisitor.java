@@ -96,7 +96,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
         if (script.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
-            log.warn("Empty script", qe);
+            log.warn(String.valueOf(qe));
             throw new EmptyUnfieldedTermExpansionException(qe);
         }
         return script;

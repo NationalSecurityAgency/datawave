@@ -283,7 +283,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setDate(storedQueryMetric.getCreateDate().getTime());
         // get security markings from metric, otherwise default to PUBLIC
         Map<String,String> markings = updatedQueryMetric.getMarkings();
-        if (markings == null || markings.isEmpty()) {
+        if (markingFunctions == null || markings == null || markings.isEmpty()) {
             event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
         } else {
             try {

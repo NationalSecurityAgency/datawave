@@ -124,7 +124,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 range = new Range(startKey, true, endKey, literalRange.isUpperInclusive());
             } catch (IllegalArgumentException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
-                log.debug(String.valueOf(qe));
+                log.debug("", qe);
                 throw new IllegalRangeArgumentException(qe);
             }
 
@@ -182,7 +182,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             } catch (TableNotFoundException e) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e,
                                 MessageFormat.format("Table: {0}", config.getIndexTableName()));
-                log.error(String.valueOf(qe));
+                log.error("", qe);
                 throw new DatawaveFatalQueryException(qe);
             }
             // Note: scanners should never be closed here in a 'finally' block. The lookup()

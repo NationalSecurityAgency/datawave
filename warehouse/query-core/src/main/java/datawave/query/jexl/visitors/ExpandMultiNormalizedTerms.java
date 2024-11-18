@@ -463,7 +463,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e,
                                     MessageFormat.format("Node: {0}, Datatypes: {1}", PrintingVisitor.formattedQueryString(node), dataTypes));
-                    log.error(String.valueOf(qe));
+                    log.error("", qe);
                     throw new DatawaveFatalQueryException(qe);
                 }
             }

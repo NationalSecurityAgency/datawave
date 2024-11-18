@@ -88,7 +88,7 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
 
             return !GeoFeatureVisitor.getGeoFeatures(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery)).isEmpty();
         } catch (Exception e) {
-            log.trace(String.valueOf(new Exception("Unable to parse the geo features")));
+            log.trace("", (new Exception("Unable to parse the geo features")));
         }
         return false;
     }

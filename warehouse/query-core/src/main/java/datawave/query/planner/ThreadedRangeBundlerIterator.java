@@ -362,7 +362,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             try {
                 rangeIterable.close();
             } catch (IOException e) {
-                log.error(String.valueOf(e));
+                log.error("", e);
             }
         }
 

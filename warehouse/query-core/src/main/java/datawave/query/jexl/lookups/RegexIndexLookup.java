@@ -130,7 +130,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 if (config.getDisallowedRegexPatterns().contains(pattern)) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
                                     MessageFormat.format("Pattern: {0}", pattern));
-                    log.debug(String.valueOf(qe));
+                    log.debug("", qe);
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
 
@@ -141,7 +141,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     log.debug("Ignoring pattern that was not capable of being looked up in the index: " + pattern, e);
                     continue;
                 } catch (TableNotFoundException e) {
-                    log.error(String.valueOf(e));
+                    log.error("", e);
                     throw new DatawaveFatalQueryException(e);
                 } catch (ExecutionException e) {
                     throw new DatawaveFatalQueryException(e);

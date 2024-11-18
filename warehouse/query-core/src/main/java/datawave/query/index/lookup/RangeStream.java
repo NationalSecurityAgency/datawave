@@ -544,7 +544,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.unindexed(node);
                 }
             } catch (TableNotFoundException e) {
-                log.error(String.valueOf(e));
+                log.error("", e);
                 throw new RuntimeException(e);
             }
             log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
@@ -617,7 +617,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.initialized(scannerSession, entryParser, node);
 
         } catch (Exception e) {
-            log.error(String.valueOf(e));
+            log.error("", e);
             throw new RuntimeException(e);
         }
     }
@@ -673,7 +673,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 return ScannerStream.unknownField(node);
             }
         } catch (TableNotFoundException e) {
-            log.error(String.valueOf(e));
+            log.error("", e);
             throw new RuntimeException(e);
         }
 
