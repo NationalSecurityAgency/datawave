@@ -136,7 +136,7 @@ public class ScannerFactory {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Created ScannerFactory {} is wrapped? {}", System.identityHashCode(this), (client instanceof WrappedConnector));
+            log.debug("Created ScannerFactory {}, wrapped={}", System.identityHashCode(this), (client instanceof WrappedConnector));
         }
     }
 
@@ -359,7 +359,7 @@ public class ScannerFactory {
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open.get(), "Factory has been locked. No New scanners can be created");
 
-        log.debug("Creating limited scanner whose max threads is is {} and max capacity is {}", scanQueue.getCapacity(), maxQueue);
+        log.debug("Creating limited scanner whose max threads is {} and max capacity is {}", scanQueue.getCapacity(), maxQueue);
 
         ScanSessionStats stats = null;
         if (accrueStats) {
