@@ -27,22 +27,21 @@ runTest () {
         echo -n "Running test (Attempt ${ATTEMPT}/${ATTEMPTS}): $1 - "
         echo
 
-        SECONDS=0
         attempt_start_time=$(date +%s%N)
         QUERY_RESPONSE="$(timeout ${QUERY_TIMEOUT} ${SCRIPT_DIR}/$1)"
-        end_time=$(date +%s%N)
+        attempt_end_time=$(date +%s%N)
         EXIT_CODE=$?
 
         if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
             if [ ! -z "$3" ] ; then
                 if [[ "$QUERY_RESPONSE" == *"Returned $3 pages"* ]] ; then
                     TEST_STATUS="${LABEL_PASS} -> Returned $2 events and $3 pages" && TESTS_PASSED="${TESTS_PASSED} $1"
-                    printTestStatus $attempt_start_time $end_time "$TEST_STATUS"
+                    printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
                     printLine
                     return 0
                 elif [[ "$QUERY_RESPONSE" == *"Returned $3 files"* ]] ; then
                     TEST_STATUS="${LABEL_PASS} -> Returned $2 events and $3 files" && TESTS_PASSED="${TESTS_PASSED} $1"
-                    printTestStatus $attempt_start_time $end_time "$TEST_STATUS"
+                    printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
                     printLine
                     return 0
                 else
@@ -54,7 +53,7 @@ runTest () {
                     if [ $ATTEMPT == $ATTEMPTS ] ; then
                         TEST_STATUS="${LABEL_FAIL} -> Failed to succeed after ${ATTEMPT} attempts"
                         TEST_FAILURES="${TEST_FAILURES},${1}: ${TEST_STATUS}"
-                        printTestStatus $test_start_time $(date +%s%N) "$TEST_STATUS"
+                        printTestStatus "$test_start_time" "$(date +%s%N)" "$TEST_STATUS"
                         printLine
                         return 1
                     else
@@ -63,17 +62,17 @@ runTest () {
                 fi
             else
                 TEST_STATUS="${LABEL_PASS} -> Returned $2 events" && TESTS_PASSED="${TESTS_PASSED} $1"
-                printTestStatus $attempt_start_time $end_time "$TEST_STATUS"
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
                 printLine
                 return 0
             fi
         else
             if [ $EXIT_CODE == 124 ] ; then
                 TEST_STATUS="${LABEL_FAIL} -> Query timed out after ${QUERY_TIMEOUT}"
-                printTestStatus $attempt_start_time $end_time "$TEST_STATUS"
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
             else
                 TEST_STATUS="${LABEL_FAIL} -> Unexpected number of events returned"
-                printTestStatus $attempt_start_time $end_time "$TEST_STATUS"
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
                 echo "Query Response:"
                 echo "$QUERY_RESPONSE"
                 echo "----------------"
@@ -82,7 +81,7 @@ runTest () {
             if [ $ATTEMPT == $ATTEMPTS ] ; then
                 TEST_STATUS="${LABEL_FAIL} -> Failed to succeed after ${ATTEMPT} attempts"
                 TEST_FAILURES="${TEST_FAILURES},${1}: ${TEST_STATUS}"
-                printTestStatus $test_start_time $(date +%s%N) "$TEST_STATUS"
+                printTestStatus "$test_start_time" "$(date +%s%N)" "$TEST_STATUS"
                 printLine
                 return 1
             else
