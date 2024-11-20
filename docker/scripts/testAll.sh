@@ -190,5 +190,11 @@ runTest query.sh 12 2
 #runTest mapReduceQuery.sh 12 2
 #runTest oozieQuery.sh 0 0
 
-$SCRIPT_DIR/cleanup.sh
+# Gives option to skip the cleanup stage
+if [ "${1}" == "-noCleanup" ] ; then
+    printTestSummary
+    exit 0
+fi
+
 printTestSummary
+$SCRIPT_DIR/cleanup.sh
