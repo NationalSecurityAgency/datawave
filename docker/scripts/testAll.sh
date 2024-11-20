@@ -45,7 +45,7 @@ runTest () {
                     printLine
                     return 0
                 else
-                    TEST_STATUS="${LABEL_FAIL} -> Unexpected number of pages/files returned"
+                    TEST_STATUS="${LABEL_FAIL} -> Unexpected number of pages/files returned: Expected $2 events and $3 files."
                     echo "Query Response:"
                     echo "$QUERY_RESPONSE"
                     echo "----------------"
@@ -71,7 +71,7 @@ runTest () {
                 TEST_STATUS="${LABEL_FAIL} -> Query timed out after ${QUERY_TIMEOUT}"
                 printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
             else
-                TEST_STATUS="${LABEL_FAIL} -> Unexpected number of events returned"
+                TEST_STATUS="${LABEL_FAIL} -> Unexpected number of events returned: Expected $2 events."
                 printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
                 echo "Query Response:"
                 echo "$QUERY_RESPONSE"
