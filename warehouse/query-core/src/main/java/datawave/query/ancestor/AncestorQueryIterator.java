@@ -149,6 +149,22 @@ public class AncestorQueryIterator extends QueryIterator {
     }
 
     @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null) {
+            fiEvaluationFilter = getEvaluationFilter();
+        }
+        return fiEvaluationFilter.clone();
+    }
+
+    @Override
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (eventEvaluationFilter == null) {
+            eventEvaluationFilter = getEvaluationFilter();
+        }
+        return eventEvaluationFilter.clone();
+    }
+
+    @Override
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
         return new JexlEvaluation(query, getArithmetic()) {
             private Key currentKey = null;
