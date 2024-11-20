@@ -128,6 +128,9 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <!--   reduce type metadata     -->
+        <property name="reduceTypeMetadata" value="false" />
+        <property name="reduceTypeMetadataPerShard" value="false" />
         <!--   query sorting options     -->
         <property name="sortQueryPreIndexWithImpliedCounts" value="true" />
         <property name="sortQueryPreIndexWithFieldCounts" value="true" />
