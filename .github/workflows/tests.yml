@@ -50,10 +50,10 @@ jobs:
           git config --global user.email "datawave@github.com"
           git config --global push.autoSetupRemote true
           git config --global pull.rebase true
+          git pull origin ${{ steps.extract_branch.outputs.branch }} --rebase --autostash
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
-          git pull --rebase --autostash
           git commit -am "Formatting job fix"
-          git push
+          git push origin ${{ steps.extract_branch.outputs.branch }}
         else
           echo "Nothing to do"
         fi
