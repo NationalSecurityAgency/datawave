@@ -52,7 +52,7 @@ jobs:
           git config --global push.autoSetupRemote true
           git pull origin ${{ steps.extract_branch.outputs.branch }}
           git commit -am "Formatting job fix"
-          git push
+          git push origin ${{ steps.extract_branch.outputs.branch }}
         else
           echo "Nothing to do"
         fi
