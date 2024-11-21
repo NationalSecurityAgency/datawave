@@ -49,6 +49,7 @@ jobs:
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
+          git config --global push.autoSetupRemote true
           git commit -am "Formatting job fix"
           git push
         else
