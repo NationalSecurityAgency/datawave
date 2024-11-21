@@ -353,7 +353,7 @@ public class ShardQueryLogicQueryValidationTest {
 
         expectRuleResult(QueryRuleResult.of("Check For Invalid Quote", "Invalid quote ` used in phrase \"FOO:`abc`\". Use ' instead."));
         expectRuleResult(QueryRuleResult.of("Check for Unfielded Terms That Could Be Quoted",
-                        "Ambiguous unfielded terms AND'd with fielded term detected: BAR:abc AND def AND ghi Recommended: BAR:\"abc def ghi\""));
+                        "Ambiguous unfielded terms AND'd with fielded term detected: BAR:abc AND def AND ghi. Recommended: BAR:\"abc def ghi\""));
         expectRuleResult(QueryRuleResult.of("Check Presence of Field or Pattern", "Detected presence of _ANYFIELD_"));
         assertResult();
     }
