@@ -46,7 +46,6 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      */
     private final Groups groups;
 
-
     /**
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
@@ -59,7 +58,6 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     private final YieldCallback<Key> yieldCallback;
 
     private final Iterator<Map.Entry<Key,Document>> previousIterators;
-
 
     Map.Entry<Key,Document> next;
 
@@ -100,7 +98,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         Document document = null;
         next = null;
 
-            if (!groups.isEmpty()) {
+        if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
                 documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
             }
@@ -124,7 +122,6 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         return false;
 
     }
-
 
     @Override
     public Map.Entry<Key,Document> next() {
