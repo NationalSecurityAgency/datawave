@@ -75,10 +75,10 @@ public class QueryExpirationBeanTest {
         setInternalState(expirationConfiguration, "idleTimeout", expireTime);
         setInternalState(expirationConfiguration, "callTimeout", expireTime);
 
-        setInternalState(bean, QueryExpirationProperties.class, expirationConfiguration);
-        setInternalState(bean, QueryCache.class, queryCache);
-        setInternalState(bean, CreatedQueryLogicCacheBean.class, qlCache);
-        setInternalState(bean, AccumuloConnectionFactory.class, connFactory);
+        bean.conf = expirationConfiguration;
+        bean.cache = queryCache;
+        bean.qlCache = qlCache;
+        bean.connectionFactory = connFactory;
 
         return bean;
     }
