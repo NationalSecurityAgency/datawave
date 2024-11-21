@@ -50,7 +50,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
           git config --global push.autoSetupRemote true
-          git pull
+          git pull origin ${{ steps.extract_branch.outputs.branch }}
           git commit -am "Formatting job fix"
           git push
         else
