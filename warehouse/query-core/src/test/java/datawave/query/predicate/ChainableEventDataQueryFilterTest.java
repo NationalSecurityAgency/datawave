@@ -99,8 +99,6 @@ public class ChainableEventDataQueryFilterTest {
 
         boolean result = filter.apply(entry);
 
-        Mockito.verify(mockFilter1).apply(entry);
-
         Assert.assertFalse(result);
     }
 

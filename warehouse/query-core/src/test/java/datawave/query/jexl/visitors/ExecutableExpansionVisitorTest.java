@@ -847,7 +847,7 @@ public abstract class ExecutableExpansionVisitorTest {
             Set<String> nonEventFields = new HashSet<>();
             nonEventFields.add("QUOTE");
             Mockito.doReturn(dataTypes).when(config).getDatatypeFilter();
-            Mockito.doReturn(dataTypes).when(helper).getNonEventFields(dataTypes);
+            Mockito.doReturn(nonEventFields).when(helper).getNonEventFields(dataTypes);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
 
