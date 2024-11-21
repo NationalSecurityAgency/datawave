@@ -18,9 +18,9 @@ import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.mockito.Mockito;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.google.common.collect.Maps;
 

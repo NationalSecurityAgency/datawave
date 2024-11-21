@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.google.common.cache.Cache;
 
@@ -16,7 +17,6 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.query.runner.RunningQuery;
-import org.mockito.Mockito;
 
 public class QueryExpirationBeanTest {
 
@@ -48,7 +48,7 @@ public class QueryExpirationBeanTest {
         Assert.assertFalse("Query Cache still contains query", queryCache.containsKey(qid));
         Assert.assertFalse("Query Logic Cache still contains query logic", qlCache.snapshot().containsKey(qid));
 
-        Cache<String, RunningQuery> queryCacheBuild = queryCache.buildCache();
+        Cache<String,RunningQuery> queryCacheBuild = queryCache.buildCache();
         for (int i = 0; i < 5; i++) {
             RunningQuery runningQuery = createRunningQuery();
             String key = runningQuery.getSettings().getId().toString();

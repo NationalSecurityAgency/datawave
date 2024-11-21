@@ -33,7 +33,6 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
-import org.mockito.Mockito;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -45,6 +44,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -530,7 +530,6 @@ public abstract class ExecutableExpansionVisitorTest {
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             Object data = queryTree.jjtGetChild(0).childrenAccept(visitor, null);
 
-
             Assert.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
         }
     }
@@ -556,7 +555,6 @@ public abstract class ExecutableExpansionVisitorTest {
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
             rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
-
 
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
             Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
@@ -584,8 +582,6 @@ public abstract class ExecutableExpansionVisitorTest {
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
             rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
-
-
 
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
             String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
@@ -618,7 +614,6 @@ public abstract class ExecutableExpansionVisitorTest {
             Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
@@ -667,7 +662,6 @@ public abstract class ExecutableExpansionVisitorTest {
             Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree),
@@ -721,7 +715,6 @@ public abstract class ExecutableExpansionVisitorTest {
             Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
 
             String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
             String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
@@ -809,7 +802,6 @@ public abstract class ExecutableExpansionVisitorTest {
             Mockito.doReturn(nonEventFields).when(helper).getNonEventFields(dataTypes);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
