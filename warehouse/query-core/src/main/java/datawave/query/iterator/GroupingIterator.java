@@ -108,15 +108,19 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         if (document != null) {
             Key key;
             if (keys.size() > 0) {
+
+
                 // use the last (most recent) key so a new iterator will know where to start
                 key = keys.get(keys.size() - 1);
-            } else {
+            }   else {
+
                 key = document.getMetadata();
             }
-            next = Maps.immutableEntry(key, document);
+                next = Maps.immutableEntry(key, document);
             log.trace("hasNext {}", next);
             groups.clear();
             return true;
+
         }
 
         return false;
