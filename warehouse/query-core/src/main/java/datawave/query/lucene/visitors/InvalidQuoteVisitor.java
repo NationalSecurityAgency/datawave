@@ -10,11 +10,11 @@ import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
- * A visitor that will check a query for any quoted phrases that have the quote character {@value #INVALID_QUOTE} instead of {@code '}
+ * A visitor that will check a query for any quoted phrases that have the quote character {@value #INVALID_QUOTE} instead of {@code '}.
  */
 public class InvalidQuoteVisitor extends BaseVisitor {
 
-    public static final Character INVALID_QUOTE = '`';
+    public static final char INVALID_QUOTE = '`';
 
     /**
      * Returns a list of copies of any phrases in the query that uses the quote character {@value #INVALID_QUOTE} at either end instead of {@code '}. This also
