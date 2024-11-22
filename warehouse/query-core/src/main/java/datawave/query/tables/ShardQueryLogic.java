@@ -785,7 +785,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         if (StringUtils.isNotBlank(typeList)) {
             HashSet<String> typeFilter = new HashSet<>();
-            typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
+            HashSet<String> excludeSet = new HashSet<>();
+
+            for (String dataType : Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP))) {
+                if (dataType.charAt(0) == '!') {
+                    excludeSet.add(StringUtils.substring(dataType, 1));
+                } else {
+                    typeFilter.add(dataType);
+                }
+            }
+
+            if (!excludeSet.isEmpty()) {
+                if (typeFilter.isEmpty()) {
+                    MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(),
+                                    config.isRawTypes());
+
+                    try {
+                        typeFilter.addAll(metadataHelper.getDatatypes(null));
+                    } catch (TableNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                typeFilter.removeAll(excludeSet);
+            }
 
             if (log.isDebugEnabled()) {
                 log.debug("Type Filter: " + typeFilter);
@@ -1560,6 +1583,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setTfNextSeek(int tfNextSeek) {
         getConfig().setTfNextSeek(tfNextSeek);
+    }
+
+    public boolean isSeekingEventAggregation() {
+        return getConfig().isSeekingEventAggregation();
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        getConfig().setSeekingEventAggregation(seekingEventAggregation);
     }
 
     public String getdisallowlistedFieldsString() {
@@ -2432,6 +2463,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxIndexScanTimeMillis(maxTime);
     }
 
+    public long getMaxAnyFieldScanTimeMillis() {
+        return getConfig().getMaxAnyFieldScanTimeMillis();
+    }
+
+    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
+        getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
+    }
+
     public Function getQueryMacroFunction() {
         return queryMacroFunction;
     }
@@ -2893,38 +2932,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
 
-    public boolean getUseFieldCounts() {
-        return getConfig().getUseFieldCounts();
-    }
-
-    public void setUseFieldCounts(boolean useFieldCounts) {
-        getConfig().setUseFieldCounts(useFieldCounts);
-    }
-
-    public boolean getUseTermCounts() {
-        return getConfig().getUseTermCounts();
-    }
-
-    public void setUseTermCounts(boolean useTermCounts) {
-        getConfig().setUseTermCounts(useTermCounts);
-    }
-
-    public boolean getSortQueryBeforeGlobalIndex() {
-        return getConfig().isSortQueryBeforeGlobalIndex();
-    }
-
-    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
-        getConfig().setSortQueryBeforeGlobalIndex(sortQueryBeforeGlobalIndex);
-    }
-
-    public boolean getSortQueryByCounts() {
-        return getConfig().isSortQueryByCounts();
-    }
-
-    public void setSortQueryByCounts(boolean sortQueryByCounts) {
-        getConfig().setSortQueryByCounts(sortQueryByCounts);
-    }
-
     public boolean isRebuildDatatypeFilter() {
         return getConfig().isRebuildDatatypeFilter();
     }
@@ -2939,6 +2946,38 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
         getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
+    }
+
+    public boolean isSortQueryPreIndexWithImpliedCounts() {
+        return getConfig().isSortQueryPreIndexWithImpliedCounts();
+    }
+
+    public void setSortQueryPreIndexWithImpliedCounts(boolean sortQueryPreIndexWithImpliedCounts) {
+        getConfig().setSortQueryPreIndexWithImpliedCounts(sortQueryPreIndexWithImpliedCounts);
+    }
+
+    public boolean isSortQueryPreIndexWithFieldCounts() {
+        return getConfig().isSortQueryPreIndexWithFieldCounts();
+    }
+
+    public void setSortQueryPreIndexWithFieldCounts(boolean sortQueryPreIndexWithFieldCounts) {
+        getConfig().setSortQueryPreIndexWithImpliedCounts(sortQueryPreIndexWithFieldCounts);
+    }
+
+    public boolean isSortQueryPostIndexWithFieldCounts() {
+        return getConfig().isSortQueryPostIndexWithFieldCounts();
+    }
+
+    public void setSortQueryPostIndexWithFieldCounts(boolean sortQueryPostIndexWithFieldCounts) {
+        getConfig().setSortQueryPostIndexWithFieldCounts(sortQueryPostIndexWithFieldCounts);
+    }
+
+    public boolean isSortQueryPostIndexWithTermCounts() {
+        return getConfig().isSortQueryPostIndexWithTermCounts();
+    }
+
+    public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
+        getConfig().setSortQueryPostIndexWithTermCounts(sortQueryPostIndexWithTermCounts);
     }
 
     public boolean isUseQueryTreeScanHintRules() {

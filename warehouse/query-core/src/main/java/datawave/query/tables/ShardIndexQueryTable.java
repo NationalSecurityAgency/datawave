@@ -99,7 +99,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     public ShardIndexQueryTable(ShardIndexQueryTable other) {
         super(other);
         this.config = ShardIndexQueryConfiguration.create(other);
-        this.previouslyExpandedFieldCache = new ExpandedFieldCache();
+        this.previouslyExpandedFieldCache = other.previouslyExpandedFieldCache;
     }
 
     @Override
@@ -190,6 +190,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         config = new ShardIndexQueryConfiguration(this, settings);
         getConfig().setClient(client);
         this.scannerFactory = new ScannerFactory(getConfig());
+
+        if (this.previouslyExpandedFieldCache == null) {
+            this.previouslyExpandedFieldCache = new ExpandedFieldCache();
+        }
 
         MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
 

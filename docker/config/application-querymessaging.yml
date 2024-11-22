@@ -7,5 +7,21 @@ datawave:
       backend: ${messaging.backend}
       rabbitmq:
         maxMessageSizeBytes: ${messaging.maxMessageSizeBytes}
+        # enable the following configuration if you want to use an independent, dedicated rabbitmq cluster for query (i.e. not the default spring one)
+        useDedicatedInstance: ${USE_DEDICATED_INSTANCE:false}
+        instanceSettings:
+          host: ${QUERY_RABBIT_HOST:query-rabbitmq}
+          port: ${QUERY_RABBIT_PORT:5672}
+          publisherConfirmType: SIMPLE
+          # Note - spring doesn't like it when you enable publisherConfirms for the SIMPLE confirm type...
+          publisherConfirms: false
+          publisherReturns: true
       kafka:
         partitions: 2
+        # enable the following configuration if you want to use an independent, dedicated kafka cluster for query (i.e. not the default spring one)
+        useDedicatedInstance: ${USE_DEDICATED_INSTANCE:false}
+        instanceSettings:
+          bootstrapServers: ${QUERY_KAFKA_HOST:query-kafka}:${QUERY_KAFKA_PORT:9092}
+          autoOffsetReset: earliest
+          enableAutoCommit: false
+          allowAutoCreateTopics: false

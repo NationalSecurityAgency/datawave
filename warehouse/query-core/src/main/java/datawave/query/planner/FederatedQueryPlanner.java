@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -34,6 +35,7 @@ import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.index.lookup.UidIntersector;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.model.FieldIndexHole;
@@ -67,6 +69,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
+    protected ExpandedFieldCache previouslyExpandedFieldCache;
 
     /**
      * Return a new {@link FederatedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
@@ -94,6 +97,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     public FederatedQueryPlanner(FederatedQueryPlanner other) {
         this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
         this.plannedScript = other.plannedScript;
+        this.previouslyExpandedFieldCache = other.previouslyExpandedFieldCache;
     }
 
     /**
@@ -285,6 +289,10 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         this.plannedScript = null;
         this.plans.clear();
 
+        if (previouslyExpandedFieldCache == null) {
+            this.previouslyExpandedFieldCache = new ExpandedFieldCache();
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);
         }
@@ -320,6 +328,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         FederatedQueryIterable results = new FederatedQueryIterable();
         int totalProcessed = 1;
         ShardQueryConfiguration firstConfigCopy = null;
+        UUID queryId = originalConfig.getQuery().getId();
         for (Pair<Date,Date> dateRange : dateRanges) {
             // Format the start and end date of the current sub-query to execute.
             String subStartDate = dateFormat.format(dateRange.getLeft());
@@ -334,10 +343,14 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             configCopy.setBeginDate(dateRange.getLeft());
             configCopy.setEndDate(dateRange.getRight());
 
+            // we want to make sure the same query id for tracking purposes and execution
+            configCopy.getQuery().setId(queryId);
+
             // Create a copy of the original default query planner, and process the query with the new date range.
             DefaultQueryPlanner subPlan = this.queryPlanner.clone();
 
             try {
+
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
             } catch (Exception e) {
@@ -567,7 +580,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             try {
                 configCopy.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
                 configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
-                queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
+                queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree, previouslyExpandedFieldCache);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);

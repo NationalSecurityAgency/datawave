@@ -349,9 +349,11 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         goodResults.addAll(Sets.newHashSet("BIRD.PET.0:parakeet", "CANINE.PET.0:beagle"));
 
         // disable just for this test to prove group 0 can be returned
-        logic.setSortQueryBeforeGlobalIndex(false);
+        logic.setSortQueryPreIndexWithFieldCounts(false);
+        logic.setSortQueryPreIndexWithImpliedCounts(false);
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
-        logic.setSortQueryBeforeGlobalIndex(true);
+        logic.setSortQueryPreIndexWithFieldCounts(true);
+        logic.setSortQueryPreIndexWithImpliedCounts(true);
     }
 
     @Test
