@@ -283,7 +283,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected String scanId;
     protected String query;
-    protected ASTJexlScript script;
+    private ASTJexlScript script;
     protected String queryId;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
