@@ -31,6 +31,37 @@ import org.apache.hadoop.fs.Path;
  * Collection of utilities to locate, read, and split rfiles
  */
 public class RFileUtil {
+    private Configuration config;
+
+    public RFileUtil(Configuration config) {
+        this.config = config;
+    }
+
+    public Scanner getRFileScanner(String... paths) {
+        return getRFileScanner(config, paths);
+    }
+
+    public RFile.Reader getRFileReader(Path rfile) throws IOException {
+        return getRFileReader(config, rfile);
+    }
+
+    public List<Range> getRangeSplits(String paths, Key start, Key end, int indexBlocksPerSplit) throws IOException {
+        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit);
+    }
+
+    public List<Range> getRangeSplits(String paths, Key start, Key end, int indexBlocksPerSplit, Function<Key,Key> rangeAdjuster) throws IOException {
+        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit, rangeAdjuster);
+    }
+
+    public List<Range> getRangeSplits(String[] paths, Key start, Key end, int indexBlocksPerSplit, Function<Key,Key> rangeAdjuster) throws IOException {
+        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit, rangeAdjuster);
+    }
+
+    public List<Range> getRangeSplits(Collection<String> paths, Key start, Key end, int indexBlocksPerSplit, Function<Key,Key> rangeAdjuster)
+                    throws IOException {
+        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit, rangeAdjuster);
+    }
+
     public static Scanner getRFileScanner(Configuration config, String... paths) {
         RFileSource[] sources = new RFileSource[paths.length];
         try {

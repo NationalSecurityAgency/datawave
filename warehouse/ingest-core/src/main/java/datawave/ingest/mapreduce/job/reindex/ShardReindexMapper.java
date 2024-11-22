@@ -114,6 +114,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private ContextWriter<BulkIngestKey,Value> contextWriter;
 
     /**
+     * Override the context writer generated in setup(context)
+     *
+     * @param contextWriter
+     */
+    public void setContextWriter(ContextWriter<BulkIngestKey,Value> contextWriter) {
+        this.contextWriter = contextWriter;
+    }
+
+    /**
      * Setup the mapper and check for all required and inconsistent settings
      *
      * @param context
@@ -381,9 +390,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         } catch (IOException | InterruptedException e) {
             contextWriter.rollback();
             throw e;
-        } finally {
-            contextWriter.commit(context);
         }
+
         context.progress();
     }
 

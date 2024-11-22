@@ -23,6 +23,42 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 public class AccumuloUtil {
     private static final String DEFAULT_METADATA_TABLE = "accumulo.metadata";
 
+    private AccumuloClient accumuloClient;
+
+    public AccumuloUtil() {}
+
+    public void setAccumuloClient(AccumuloClient accumuloClient) {
+        this.accumuloClient = accumuloClient;
+    }
+
+    public void setup(Configuration config, String clientPropertiesPath, String instanceName, String zookeepers, String username, String password) {
+        accumuloClient = setupAccumuloClient(config, clientPropertiesPath, instanceName, zookeepers, username, password);
+    }
+
+    public List<Map.Entry<String,List<String>>> getFilesFromMetadataBySplit(String tableName, String startRow, String endRow) throws AccumuloException {
+        if (accumuloClient == null) {
+            throw new IllegalStateException("Must call setup() before use");
+        }
+
+        return getFilesFromMetadataBySplit(accumuloClient, tableName, startRow, endRow);
+    }
+
+    public List<Map.Entry<String,List<String>>> getFilesFromMetadataBySplit(String accumuloMetadataTable, String tableName, String startRow, String endRow)
+                    throws AccumuloException {
+        if (accumuloClient == null) {
+            throw new IllegalStateException("Must call setup() before use");
+        }
+
+        return getFilesFromMetadataBySplit(accumuloClient, accumuloMetadataTable, tableName, startRow, endRow);
+    }
+
+    public void close() {
+        if (accumuloClient != null) {
+            accumuloClient.close();
+            accumuloClient = null;
+        }
+    }
+
     public static AccumuloClient setupAccumuloClient(Configuration config, String clientPropertiesPath, String instanceName, String zookeepers, String username,
                     String password) {
         AccumuloHelper.setInstanceName(config, instanceName);

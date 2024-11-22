@@ -226,10 +226,13 @@ public class ShardReindexJob implements Tool {
                 throw new IllegalArgumentException("endDate cannot be null when inputFiles are not specified");
             }
 
+            AccumuloUtil accumuloUtil = new AccumuloUtil();
+            accumuloUtil.setAccumuloClient(accumuloClient);
+
             if (jobConfig.accumuloMetadata) {
                 // fetch the file list by scanning the accumulo.metadata table
-                List<Map.Entry<String,List<String>>> filesForRanges = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, jobConfig.table,
-                                jobConfig.startDate, jobConfig.endDate);
+                List<Map.Entry<String,List<String>>> filesForRanges = accumuloUtil.getFilesFromMetadataBySplit(jobConfig.table, jobConfig.startDate,
+                                jobConfig.endDate);
                 List<String> allFiles = new ArrayList<>();
                 for (Map.Entry<String,List<String>> split : filesForRanges) {
                     allFiles.addAll(split.getValue());
@@ -239,9 +242,9 @@ public class ShardReindexJob implements Tool {
                 // build ranges
                 Collection<Range> ranges = null;
                 if (jobConfig.reprocessEvents) {
-                    ranges = buildSplittableRanges(accumuloClient, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit,
-                                    ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode), configuration, jobConfig.table, jobConfig.startDate,
-                                    jobConfig.endDate);
+                    RFileUtil rFileUtil = new RFileUtil(configuration);
+                    ranges = buildSplittableRanges(accumuloUtil, rFileUtil, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit,
+                                    ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode), jobConfig.table, jobConfig.startDate, jobConfig.endDate);
                 } else {
                     ranges = buildFiRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
                 }
@@ -351,16 +354,16 @@ public class ShardReindexJob implements Tool {
         }
     }
 
-    private static Callable<List<Range>> getSplitCallable(Configuration config, String split, List<String> files, int blocksPerSplit,
+    private static Callable<List<Range>> getSplitCallable(RFileUtil rFileUtil, String split, List<String> files, int blocksPerSplit,
                     Function<Key,Key> eventShiftFunction) {
         return () -> {
             log.info("found " + files.size() + " rfiles for " + split);
-            return RFileUtil.getRangeSplits(config, files, new Key(split), new Key(split + '\uFFFF'), blocksPerSplit, eventShiftFunction);
+            return rFileUtil.getRangeSplits(files, new Key(split), new Key(split, "" + '\uFFFF', "" + '\uFFFF'), blocksPerSplit, eventShiftFunction);
         };
     }
 
-    public static Collection<Range> buildSplittableRanges(AccumuloClient accumuloClient, int maxRangeThreads, final int blocksPerSplit,
-                    ShardReindexMapper.BatchMode batchMode, Configuration config, String table, String startDay, String endDay) {
+    public static Collection<Range> buildSplittableRanges(AccumuloUtil accumuloUtil, RFileUtil rFileUtil, int maxRangeThreads, final int blocksPerSplit,
+                    ShardReindexMapper.BatchMode batchMode, String table, String startDay, String endDay) {
         List<Range> allRanges = new ArrayList<>();
         ExecutorService threadPool = null;
         List<Future<List<Range>>> splitTasks = null;
@@ -383,13 +386,13 @@ public class ShardReindexJob implements Tool {
 
         List<Map.Entry<String,List<String>>> filesBySplit;
         try {
-            filesBySplit = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, table, startDay, endDay);
+            filesBySplit = accumuloUtil.getFilesFromMetadataBySplit(table, startDay, endDay);
         } catch (AccumuloException e) {
             throw new RuntimeException("Failed to lookup rfiles in metadata table", e);
         }
 
         for (Map.Entry<String,List<String>> fileSplit : filesBySplit) {
-            Callable<List<Range>> splitCallable = getSplitCallable(config, fileSplit.getKey(), fileSplit.getValue(), blocksPerSplit, eventShiftFunction);
+            Callable<List<Range>> splitCallable = getSplitCallable(rFileUtil, fileSplit.getKey(), fileSplit.getValue(), blocksPerSplit, eventShiftFunction);
             if (threadPool != null) {
                 splitTasks.add(threadPool.submit(splitCallable));
             } else {

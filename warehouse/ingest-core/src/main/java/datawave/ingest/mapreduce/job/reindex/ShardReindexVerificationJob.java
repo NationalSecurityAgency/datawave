@@ -26,6 +26,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
+import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.util.SplittableRFileRangeInputFormat;
 
 public class ShardReindexVerificationJob implements Tool {
@@ -95,8 +96,13 @@ public class ShardReindexVerificationJob implements Tool {
                                 jobConfig.zookeepers, jobConfig.username, getPassword());
             }
 
-            ShardReindexJob.buildSplittableRanges(accumuloClient, jobConfig.splitThreads, jobConfig.indexBlocksPerSplit, ShardReindexMapper.BatchMode.NONE,
-                            config, jobConfig.source1Table, jobConfig.startKey, jobConfig.endKey);
+            AccumuloUtil accumuloUtil = new AccumuloUtil();
+            accumuloUtil.setAccumuloClient(accumuloClient);
+
+            RFileUtil rFileUtil = new RFileUtil(config);
+
+            ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, jobConfig.splitThreads, jobConfig.indexBlocksPerSplit,
+                            ShardReindexMapper.BatchMode.NONE, jobConfig.source1Table, jobConfig.startKey, jobConfig.endKey);
         }
     }
 
