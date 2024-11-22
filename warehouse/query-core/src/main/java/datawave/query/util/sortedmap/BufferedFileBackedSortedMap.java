@@ -543,17 +543,6 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
     public V get(Object o) {
         V value = null;
         for (SortedMap<K,V> map : map.getMaps()) {
-            FileSortedMap<K,V> filemap = (FileSortedMap<K,V>) map;
-            boolean persist = false;
-            if (filemap.isPersisted()) {
-                try {
-                    filemap.load();
-                    persist = true;
-                } catch (Exception e) {
-                    throw new IllegalStateException("Unable to remove item from underlying files", e);
-                }
-            }
-
             V testValue = map.get(o);
             if (testValue != null) {
                 if (value != null) {
@@ -562,14 +551,6 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
                     }
                 } else {
                     value = testValue;
-                }
-            }
-
-            if (persist) {
-                try {
-                    filemap.persist();
-                } catch (Exception e) {
-                    throw new IllegalStateException("Unable to remove item from underlying files", e);
                 }
             }
         }

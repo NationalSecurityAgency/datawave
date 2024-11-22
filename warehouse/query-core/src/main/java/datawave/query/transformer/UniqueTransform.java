@@ -18,7 +18,6 @@ import java.util.TreeSet;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -41,12 +40,11 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
 import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
-import datawave.query.util.sortedmap.FileKeyValueSortedMap;
+import datawave.query.util.sortedmap.FileKeyDocumentSortedMap;
 import datawave.query.util.sortedmap.FileSortedMap;
 import datawave.query.util.sortedmap.HdfsBackedSortedMap;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.query.util.sortedset.HdfsBackedSortedSet;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
@@ -531,6 +529,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withMapFactory(new FileByteDocumentSortedMap.Factory())
                         .build();
 
+                // noinspection unchecked
                 transform.returnSet = (HdfsBackedSortedMap<Key,Document>) HdfsBackedSortedMap.builder()
                         .withBufferPersistThreshold(bufferPersistThreshold)
                         .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
@@ -538,7 +537,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withMaxOpenFiles(maxOpenFiles)
                         .withNumRetries(numRetries)
                         .withPersistOptions(persistOptions)
-                        .withMapFactory(new FileKeyValueSortedMap.Factory())
+                        .withMapFactory(new FileKeyDocumentSortedMap.Factory())
                         .build();
                 // @formatter:on
             }

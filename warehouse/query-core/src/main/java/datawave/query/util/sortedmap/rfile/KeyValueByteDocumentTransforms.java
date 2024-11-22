@@ -61,4 +61,18 @@ public class KeyValueByteDocumentTransforms {
         }
         return new UnmodifiableMapEntry(byteToKey(byteKey.getKey()), documentToValue(byteKey.getValue()));
     }
+
+    public static Map.Entry<Key,Document> keyValueToKeyDocument(Map.Entry<Key,Value> keyValue) {
+        if (keyValue == null) {
+            return null;
+        }
+        return new UnmodifiableMapEntry(keyValue.getKey(), valueToDocument(keyValue.getValue()));
+    }
+
+    public static Map.Entry<Key,Value> KeyDocumentToKeyValue(Map.Entry<Key,Document> byteKey) {
+        if (byteKey == null) {
+            return null;
+        }
+        return new UnmodifiableMapEntry(byteKey.getKey(), documentToValue(byteKey.getValue()));
+    }
 }
