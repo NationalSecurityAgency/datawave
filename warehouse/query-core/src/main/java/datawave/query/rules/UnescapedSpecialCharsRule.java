@@ -82,7 +82,7 @@ public class UnescapedSpecialCharsRule extends ShardQueryRule {
      * Sets the characters that should not trigger a notice if they are present and unescaped in a pattern. Note that the following reserved regex characters
      * will always be considered exceptions: {@code '.', '+', '*', '?', '^', '$', '(', ')', '[', ']', '{', '}', '|', '\\'}.
      *
-     * @param literalSpecialCharExceptions
+     * @param patternExceptions
      *            the characters
      */
     public void setPatternExceptions(Set<Character> patternExceptions) {
@@ -124,7 +124,7 @@ public class UnescapedSpecialCharsRule extends ShardQueryRule {
     /**
      * Sets whether whitespace must be escaped in regex patterns.
      *
-     * @param escapedWhitespaceRequiredForLiterals
+     * @param escapedWhitespaceRequiredForPatterns
      *            true if whitespace characters must be escaped in regex patterns, or false otherwise.
      */
     public void setEscapedWhitespaceRequiredForPatterns(boolean escapedWhitespaceRequiredForPatterns) {

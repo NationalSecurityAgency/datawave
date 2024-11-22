@@ -83,11 +83,11 @@ public class UnescapedSpecialCharactersVisitor extends ShortCircuitBaseVisitor {
      *            if true, whitespace characters must be escaped in regex patterns or they will be flagged
      * @return the visitor
      */
-    public static UnescapedSpecialCharactersVisitor check(JexlNode node, Set<Character> literalExceptions, boolean escapedWhitespaceRequiredForLiterals,
+    public static UnescapedSpecialCharactersVisitor check(JexlNode queryTree, Set<Character> literalExceptions, boolean escapedWhitespaceRequiredForLiterals,
                     Set<Character> patternExceptions, boolean escapedWhitespaceRequiredForPatterns) {
         UnescapedSpecialCharactersVisitor visitor = new UnescapedSpecialCharactersVisitor(literalExceptions, escapedWhitespaceRequiredForLiterals,
                         patternExceptions, escapedWhitespaceRequiredForPatterns);
-        node.jjtAccept(visitor, null);
+        queryTree.jjtAccept(visitor, null);
         return visitor;
     }
 

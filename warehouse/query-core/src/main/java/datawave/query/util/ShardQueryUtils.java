@@ -97,8 +97,8 @@ public class ShardQueryUtils {
      *            the query script
      * @param config
      *            the query configuration
-     * @param metadataHelper
-     *            the metadata helper
+     * @param allFields
+     *            the set of all fields that exist
      * @param queryModel
      *            the query model
      * @return the updated query

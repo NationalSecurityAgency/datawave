@@ -72,10 +72,10 @@ public class FieldPatternPresenceRule extends ShardQueryRule {
     }
 
     /**
-     * Sets the map of fields to messages that should be returned if the field keys are seen in a query
+     * Sets the map of patterns to messages that should be returned if the field keys are seen in a query
      *
-     * @param fieldMessages
-     *            the field messages
+     * @param patternMessages
+     *            the pattern messages
      */
     public void setPatternMessages(Map<String,String> patternMessages) {
         if (patternMessages == null) {

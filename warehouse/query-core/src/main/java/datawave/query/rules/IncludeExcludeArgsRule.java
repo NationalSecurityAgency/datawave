@@ -10,7 +10,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor;
 
 /**
- * A {@link QueryRule} implementation that validates the arguments of any {@code #INCLUDE} or {@link #EXCLUDE} functions found within a LUCENE query.
+ * A {@link QueryRule} implementation that validates the arguments of any {@code #INCLUDE} or {@code #EXCLUDE} functions found within a LUCENE query.
  */
 public class IncludeExcludeArgsRule extends ShardQueryRule {
 
