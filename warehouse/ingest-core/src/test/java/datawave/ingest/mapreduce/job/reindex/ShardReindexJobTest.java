@@ -4,6 +4,9 @@ import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_END;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
@@ -22,6 +25,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -53,10 +57,10 @@ public class ShardReindexJobTest extends EasyMockSupport {
         Iterator<Range> rangeIterator = ranges.iterator();
         for (Range expectedRange : expected) {
             assertTrue(rangeIterator.hasNext());
-            Assert.assertEquals(expectedRange, rangeIterator.next());
+            assertEquals(expectedRange, rangeIterator.next());
         }
 
-        Assert.assertFalse(rangeIterator.hasNext());
+        assertFalse(rangeIterator.hasNext());
     }
 
     @Test
@@ -200,5 +204,71 @@ public class ShardReindexJobTest extends EasyMockSupport {
         verifyAll();
 
         assertTrue(ranges.size() == 1);
+    }
+
+    @Test
+    public void applyExclusions_noExclusionsTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241122" + "\u0000"), false);
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), Collections.emptyList());
+
+        assertTrue(ranges.size() == 1);
+        assertTrue(ranges.get(0) == orig);
+    }
+
+    @Test
+    public void applyExclusions_singleRangeSplitTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241122" + "\u0000"), false);
+        Range exclude = new Range(new Key("20241122", "a" + '\u0000'), true, new Key("20241122", "a" + '\u0001'), false);
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), Collections.singletonList(exclude));
+
+        assertTrue(ranges.size() == 2);
+
+        // verify the exclusion was totally removed
+        for (Range range: ranges) {
+            assertNull(range.clip(exclude, true));
+        }
+
+        verifyExclude(orig, ranges.get(0), ranges.get(1), exclude);
+
+        // verify the begin and end remain the same
+        assertTrue(orig.getStartKey().equals(ranges.get(0).getStartKey()));
+        assertEquals(orig.isStartKeyInclusive(), ranges.get(0).isStartKeyInclusive());
+        assertTrue(orig.getEndKey().equals(ranges.get(1).getEndKey()));
+        assertEquals(orig.isEndKeyInclusive(), ranges.get(1).isEndKeyInclusive());
+    }
+
+    @Test
+    public void applyExclusions_doubleRangeSplitTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241122" + "\u0000"), false);
+        Range exclude1 = new Range(new Key("20241122", "a" + '\u0000'), true, new Key("20241122", "a" + '\u0001'), false);
+        Range exclude2 = new Range(new Key("20241122", "c" + '\u0000'), true, new Key("20241122", "c" + '\u0001'), false);
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude1, exclude2));
+
+        assertTrue( ranges.size() == 3);
+
+        // verify the exclusion was totally removed
+        for (Range range: ranges) {
+            for (Range exclude : List.of(exclude1, exclude2)) {
+                assertNull(range.clip(exclude, true));
+            }
+        }
+
+        verifyExclude(orig, ranges.get(0), ranges.get(1), exclude1);
+        verifyExclude(orig, ranges.get(1), ranges.get(2), exclude2);
+
+        // verify the begin and end remain the same
+        assertTrue(orig.getStartKey().equals(ranges.get(0).getStartKey()));
+        assertEquals(orig.isStartKeyInclusive(), ranges.get(0).isStartKeyInclusive());
+        assertTrue(orig.getEndKey().equals(ranges.get(2).getEndKey()));
+        assertEquals(orig.isEndKeyInclusive(), ranges.get(2).isEndKeyInclusive());
+    }
+
+    private void verifyExclude(Range orig, Range new1, Range new2, Range exclude) {
+        // verify the hole
+        assertFalse(new1.isEndKeyInclusive());
+        assertTrue(new1.getEndKey().equals(exclude.getStartKey()));
+
+        assertTrue(new2.isStartKeyInclusive());
+        assertTrue(new2.getStartKey().equals(exclude.getEndKey()));
     }
 }
