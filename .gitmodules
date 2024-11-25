@@ -10,6 +10,3 @@
 [submodule "microservices/starters/query"]
 	path = microservices/starters/query
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query.git
-[submodule "microservices/starters/cached-results"]
-	path = microservices/starters/cached-results
-	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cached-results.git
