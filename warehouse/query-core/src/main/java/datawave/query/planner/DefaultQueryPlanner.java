@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -28,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
@@ -80,6 +82,7 @@ import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
@@ -157,6 +160,15 @@ import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.async.AbstractQueryPlannerCallable;
+import datawave.query.planner.async.FetchCompositeMetadata;
+import datawave.query.planner.async.FetchContentExpansionFields;
+import datawave.query.planner.async.FetchIndexOnlyFields;
+import datawave.query.planner.async.FetchIndexedFields;
+import datawave.query.planner.async.FetchNonEventFields;
+import datawave.query.planner.async.FetchTermFrequencyFields;
+import datawave.query.planner.async.FetchTypeMetadata;
+import datawave.query.planner.async.SerializeIvaratorCacheDirs;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
@@ -270,9 +282,45 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected String rangeStreamClass = RangeStream.class.getCanonicalName();
 
-    protected ExecutorService builderThread = null;
+    protected ExecutorService executor = null;
+
+    protected AbstractQueryPlannerCallable<CompositeMetadata> compositeMetadataCallable;
+    protected AbstractQueryPlannerCallable<TypeMetadata> typeMetadataCallable;
+    protected AbstractQueryPlannerCallable<String> contentExpansionFieldsCallable;
+    protected AbstractQueryPlannerCallable<String> ivaratorCacheDirCallable;
+    protected AbstractQueryPlannerCallable<Set<String>> indexedFieldsCallable;
+    protected AbstractQueryPlannerCallable<Set<String>> indexOnlyFieldsCallable;
+    protected AbstractQueryPlannerCallable<Set<String>> nonEventFieldsCallable;
+    protected AbstractQueryPlannerCallable<Set<String>> termFrequencyFieldsCallable;
+
+    protected Future<CompositeMetadata> compositeMetadataFuture;
+    protected Future<TypeMetadata> typeMetadataFuture;
+    protected Future<String> contentExpansionFieldsFuture;
+    protected Future<String> ivaratorCacheDirFuture;
+    protected Future<Set<String>> indexedFieldsFuture;
+    protected Future<Set<String>> indexOnlyFieldsFuture;
+    protected Future<Set<String>> nonEventFieldsFuture;
+    protected Future<Set<String>> termFrequencyFieldsFuture;
+
+    protected CompositeMetadata compositeMetadata;
+    protected TypeMetadata typeMetadata;
+    protected String contentExpansionFields;
+    protected String serializedIvaratorDirs;
+    protected Set<String> indexedFields;
+    protected Set<String> indexOnlyFields;
+    protected Set<String> nonEventFields;
+    protected Set<String> termFrequencyFields;
 
     protected Future<IteratorSetting> settingFuture = null;
+
+    private boolean logConcurrentStageExecution = false;
+    private int concurrentTimeoutMillis = 10_000; // 10 second default
+
+    // tracks time spent in various stages that may not be covered in the other query stopwatches
+    protected QueryStopwatch stageStopWatch = new QueryStopwatch();
+
+    // tracks time saved via concurrent task execution
+    protected QueryStopwatch futureStopWatch = new QueryStopwatch();
 
     protected long maxRangeWaitMillis = 125;
 
@@ -392,9 +440,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new ClassCastException("Config object must be an instance of ShardQueryConfiguration");
         }
 
-        builderThread = Executors.newSingleThreadExecutor();
-
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+
+        startConcurrentExecution(config);
 
         // lets mark the query as started (used by ivarators at a minimum)
         try {
@@ -406,6 +454,47 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
     }
 
+    /**
+     * This method starts a number of long-running tasks that can be done in parallel.
+     *
+     * @param config
+     *            the config
+     */
+    protected void startConcurrentExecution(ShardQueryConfiguration config) {
+        // iterator setting future + seven futures below make 8, add two for growth/extension
+        executor = Executors.newFixedThreadPool(10);
+
+        compositeMetadata = null;
+        typeMetadata = null;
+        contentExpansionFields = null;
+        serializedIvaratorDirs = null;
+        indexedFields = null;
+        indexOnlyFields = null;
+        nonEventFields = null;
+        termFrequencyFields = null;
+
+        // expensive operations are executed in parallel
+        compositeMetadataCallable = new FetchCompositeMetadata(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        typeMetadataCallable = new FetchTypeMetadata(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        contentExpansionFieldsCallable = new FetchContentExpansionFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        ivaratorCacheDirCallable = new SerializeIvaratorCacheDirs(futureStopWatch, this, config);
+        indexedFieldsCallable = new FetchIndexedFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        indexOnlyFieldsCallable = new FetchIndexOnlyFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        nonEventFieldsCallable = new FetchNonEventFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+        termFrequencyFieldsCallable = new FetchTermFrequencyFields(futureStopWatch, metadataHelper, config.getDatatypeFilter());
+
+        // field sets tend to be needed first, so submit those before others
+        indexOnlyFieldsFuture = executor.submit(indexOnlyFieldsCallable);
+        indexedFieldsFuture = executor.submit(indexedFieldsCallable);
+        nonEventFieldsFuture = executor.submit(nonEventFieldsCallable);
+        termFrequencyFieldsFuture = executor.submit(termFrequencyFieldsCallable);
+
+        compositeMetadataFuture = executor.submit(compositeMetadataCallable);
+        typeMetadataFuture = executor.submit(typeMetadataCallable);
+        contentExpansionFieldsFuture = executor.submit(contentExpansionFieldsCallable);
+        ivaratorCacheDirFuture = executor.submit(ivaratorCacheDirCallable);
+    }
+
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         settingFuture = null;
@@ -413,7 +502,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         IteratorSetting cfg = null;
 
         if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
         }
 
         try {
@@ -468,7 +557,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, settings, "", false, false);
+                cfg = getQueryIterator(metadataHelper, config, "", false, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -479,6 +568,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         this.plannedScript = newQueryString;
         config.setQueryString(this.plannedScript);
+
+        if (logConcurrentStageExecution) {
+            logTimeSavedViaConcurrentExecution();
+        }
 
         if (!config.isGeneratePlanOnly()) {
             // add the geo query comparator to sort by geo range granularity if this is a geo query
@@ -542,8 +635,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
+
         // Set the start and end dates
-        configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
+        configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), false);
     }
 
     /**
@@ -573,8 +667,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.warn("Config object must be an instance of ShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
                                 + genericConfig);
             }
-            if (null != builderThread) {
-                builderThread.shutdown();
+            if (null != executor) {
+                executor.shutdown();
             }
             return;
         }
@@ -588,8 +682,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error("Failed to close query " + settings.getId(), e);
         }
 
-        if (null != builderThread) {
-            builderThread.shutdown();
+        if (null != executor) {
+            executor.shutdown();
         }
     }
 
@@ -778,7 +872,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
 
-        Set<String> indexOnlyFields = loadIndexedFields(config);
+        Set<String> indexOnlyFields = getIndexOnlyFields();
 
         if (!indexOnlyFields.isEmpty()) {
             // filter:includeRegex and filter:excludeRegex functions cannot be run against index-only fields, clean that up
@@ -835,7 +929,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // check the query for any fields that are term frequencies
         // if any exist, populate the shard query config with these fields
-        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config, metadataHelper);
+        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config);
 
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
@@ -908,14 +1002,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
         if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
-            try {
-                indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
-                indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
-                nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
-            } catch (TableNotFoundException te) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
-                throw new DatawaveFatalQueryException(qe);
-            }
+            indexedFields = getIndexedFields();
+            indexOnlyFields = getIndexOnlyFields();
+            nonEventFields = getNonEventFields();
         }
 
         // apply the node transform rules
@@ -1164,20 +1253,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
     }
 
-    protected void timedCheckForTokenizedFields(QueryStopwatch timers, String stage, ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+    protected void timedCheckForTokenizedFields(QueryStopwatch timers, String stage, ShardQueryConfiguration config) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
 
         // Figure out if the query contained any term frequency terms so we know
         // if we may use the term frequencies instead of the fields index in some cases
         Set<String> queryTfFields = Collections.emptySet();
-        Set<String> termFrequencyFields;
-        try {
-            termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
-        } catch (TableNotFoundException e) {
-            stopwatch.stop();
-            QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
-            throw new DatawaveFatalQueryException(qe);
-        }
+        Set<String> termFrequencyFields = getTermFrequencyFields();
+
         if (!termFrequencyFields.isEmpty()) {
             queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, config.getQueryTree());
 
@@ -1212,37 +1295,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
         }
         return queryModelProvider.getQueryModel();
-    }
-
-    /*
-
-
-     */
-
-    protected Set<String> loadIndexedFields(ShardQueryConfiguration config) {
-        try {
-            return metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
-            throw new DatawaveFatalQueryException(qe);
-        }
-    }
-
-    /**
-     * Loads expansion fields filtered by datatype. If an error occurs that error is rethrown as a {@link DatawaveFatalQueryException}
-     *
-     * @param config
-     *            a configuration
-     * @return list of expansion fields
-     */
-    protected Set<String> loadExpansionFields(ShardQueryConfiguration config) {
-        try {
-            return metadataHelper.getExpansionFields(config.getDatatypeFilter());
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            log.info(qe);
-            throw new DatawaveFatalQueryException(qe);
-        }
     }
 
     /*
@@ -1399,7 +1451,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript timedExpandAnyFieldRegexNodes(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, ScannerFactory scannerFactory, String query) throws DatawaveQueryException {
         try {
-            config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
+            config.setIndexedFields(getIndexedFields());
             config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
 
             //  @formatter:off
@@ -2195,10 +2247,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // no-op
     }
 
-    protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
-                    final String queryString, final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
+                    boolean isPreload) {
 
-        return builderThread.submit(() -> {
+        return executor.submit(() -> {
+
             // VersioningIterator is typically set at 20 on the table
             IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
 
@@ -2225,7 +2278,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 addOption(cfg, QueryOptions.ZOOKEEPER_CONFIG, config.getZookeeperConfig(), false);
             }
             if (config.getIvaratorCacheDirConfigs() != null && !config.getIvaratorCacheDirConfigs().isEmpty()) {
-                addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(getShuffledIvaratoCacheDirConfigs(config)), false);
+                addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, getSerializedIvaratorDirs(), false);
             }
             addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
             addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
@@ -2254,27 +2307,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             loadFields(cfg, config, isPreload);
             configureSeekingOptions(cfg, config);
 
-            try {
-                CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
-                if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
-                    addOption(cfg, QueryOptions.COMPOSITE_METADATA, java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)),
-                                    false);
-                }
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
-                throw new DatawaveQueryException(qe);
+            CompositeMetadata compositeMetadata = getCompositeMetadata();
+            compositeMetadata = compositeMetadata.filter(config.getQueryFieldsDatatypes().keySet());
+            if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
+                addOption(cfg, QueryOptions.COMPOSITE_METADATA, java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)),
+                                false);
             }
 
             String datatypeFilter = config.getDatatypeFilterAsString();
-
             addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
 
-            try {
-                addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())), false);
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.CONTENT_FIELDS_RETRIEVAL_ERROR, e);
-                throw new DatawaveQueryException(qe);
-            }
+            addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
 
             if (config.isDebugMultithreadedSources()) {
                 addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
@@ -2307,8 +2350,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private void loadFields(IteratorSetting cfg, ShardQueryConfiguration config, boolean isPreload) throws DatawaveQueryException {
         try {
             Set<String> compositeFields = metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()).keySet();
-            Set<String> indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
-            Set<String> indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+            Set<String> indexedFields = getIndexedFields();
+            Set<String> indexOnlyFields = getIndexOnlyFields();
 
             // only reduce the query fields if planning has occurred
             if (!isPreload && config.getReduceQueryFields()) {
@@ -2368,7 +2411,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the shard config
      * @return a list of ivarator cache dirs
      */
-    private List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
+    public List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
         List<IvaratorCacheDirConfig> shuffledIvaratorCacheDirs = new ArrayList<>();
 
         // group the ivarator cache dirs by their priority
@@ -2392,8 +2435,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the {@link MetadataHelper}
      * @param config
      *            the {@link ShardQueryConfiguration}
-     * @param settings
-     *            the {@link Query}
      * @param queryString
      *            the raw query string
      * @param isFullTable
@@ -2404,10 +2445,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @throws DatawaveQueryException
      *             if something goes wrong
      */
-    protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
+                    boolean isPreload) throws DatawaveQueryException {
         if (null == settingFuture)
-            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
+            settingFuture = loadQueryIterator(metadataHelper, config, isFullTable, isPreload);
         if (settingFuture.isDone())
             try {
                 return settingFuture.get();
@@ -2418,12 +2459,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return null;
     }
 
-    public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
+    public void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
                     throws DatawaveQueryException {
         configureTypeMappings(config, cfg, metadataHelper, compressMappings, false);
     }
 
-    public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings,
+    public void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings,
                     boolean isPreload) throws DatawaveQueryException {
         try {
             addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(compressMappings), false);
@@ -2436,7 +2477,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
 
-            TypeMetadata typeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter());
+            TypeMetadata typeMetadata = getTypeMetadata();
 
             if (config.getReduceTypeMetadata() && !isPreload) {
                 Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
@@ -2453,12 +2494,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
                 }
             }
+
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
             addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
 
-        } catch (TableNotFoundException | IOException e) {
+        } catch (IOException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.TYPE_MAPPING_CONFIG_ERROR, e);
             throw new DatawaveQueryException(qe);
         }
@@ -2484,10 +2526,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the config
      * @param cfg
      *            the iterator configuration
-     * @throws DatawaveQueryException
-     *             for issues with running the query
      */
-    protected void setCommonIteratorOptions(ShardQueryConfiguration config, IteratorSetting cfg) throws DatawaveQueryException {
+    protected void setCommonIteratorOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
         // Applying filtering options, including classnames, whether applied to
         // post-processing or field index
         if (config.getUseFilters()) {
@@ -2881,14 +2921,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private TypeMetadata getTypeMetadata() {
-        try {
-            return metadataHelper.getTypeMetadata();
-        } catch (TableNotFoundException e) {
-            throw new DatawaveFatalQueryException("Could not get TypeMetadata");
-        }
-    }
-
     /**
      * Initializes the range stream, whether it is configured to be a different class than the Default Range stream or not.
      *
@@ -3063,7 +3095,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,Type<?>> fieldToDatatypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, config.getDatatypeFilter(), queryTree, false);
 
         try {
-            return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getReverseIndexedFields(null),
+            return configureIndexedAndNormalizedFields(fieldToDatatypeMap, getIndexedFields(), metadataHelper.getReverseIndexedFields(null),
                             metadataHelper.getAllNormalized(), config, queryTree);
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
@@ -3241,8 +3273,211 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     @Override
     public void finalize() {
-        if (null != builderThread) {
-            builderThread.shutdown();
+        if (null != executor) {
+            executor.shutdown();
         }
+    }
+
+    protected CompositeMetadata getCompositeMetadata() {
+        if (compositeMetadata == null && compositeMetadataCallable != null) {
+            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(compositeMetadataCallable.stageName());
+            try {
+                while (compositeMetadata == null) {
+                    compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("Failed to fetch CompositeMetadata", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch CompositeMetadata", e);
+            } finally {
+                stopwatch.stop();
+            }
+        }
+        return compositeMetadata;
+    }
+
+    protected TypeMetadata getTypeMetadata() {
+        if (typeMetadata == null && typeMetadataCallable != null) {
+            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
+            try {
+                while (typeMetadata == null) {
+                    typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("Failed to fetch TypeMetadata", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch TypeMetadata", e);
+            } finally {
+                stopwatch.stop();
+            }
+        }
+        return typeMetadata;
+    }
+
+    protected String getContentExpansionFields() {
+        if (contentExpansionFields == null && contentExpansionFieldsCallable != null) {
+            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(contentExpansionFieldsCallable.stageName());
+            try {
+                while (contentExpansionFields == null) {
+                    contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("Failed to fetch Content Expansion fields", e);
+                throw new DatawaveAsyncOperationException("Failed to fetch Content Expansion fields", e);
+            } finally {
+                stopwatch.stop();
+            }
+        }
+        return contentExpansionFields;
+    }
+
+    protected String getSerializedIvaratorDirs() {
+        if (serializedIvaratorDirs == null && ivaratorCacheDirCallable != null) {
+            TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(ivaratorCacheDirCallable.stageName());
+            try {
+                while (serializedIvaratorDirs == null) {
+                    serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("Failed to serialize ivarator cache dirs", e);
+                throw new DatawaveAsyncOperationException("Failed to serialize ivarator cache dirs", e);
+            } finally {
+                stopwatch.stop();
+            }
+        }
+        return serializedIvaratorDirs;
+    }
+
+    protected Set<String> getIndexedFields() {
+        if (indexedFields == null && indexedFieldsCallable != null) {
+            indexedFields = getFieldSet(indexedFieldsCallable.stageName(), indexedFieldsFuture);
+        }
+
+        return Objects.requireNonNullElse(indexedFields, Collections.emptySet());
+    }
+
+    protected Set<String> getIndexOnlyFields() {
+        if (indexOnlyFields == null && indexOnlyFieldsCallable != null) {
+            indexOnlyFields = getFieldSet(indexOnlyFieldsCallable.stageName(), indexOnlyFieldsFuture);
+        }
+
+        return Objects.requireNonNullElse(indexOnlyFields, Collections.emptySet());
+    }
+
+    protected Set<String> getNonEventFields() {
+        if (nonEventFields == null && nonEventFieldsCallable != null) {
+            nonEventFields = getFieldSet(nonEventFieldsCallable.stageName(), nonEventFieldsFuture);
+        }
+
+        return Objects.requireNonNullElse(nonEventFields, Collections.emptySet());
+    }
+
+    protected Set<String> getTermFrequencyFields() {
+        if (termFrequencyFields == null && termFrequencyFieldsCallable != null) {
+            termFrequencyFields = getFieldSet(termFrequencyFieldsCallable.stageName(), termFrequencyFieldsFuture);
+        }
+
+        return Objects.requireNonNullElse(termFrequencyFields, Collections.emptySet());
+    }
+
+    /**
+     * Common code to fetch a field set or throw an exception
+     *
+     * @param stageName
+     *            the stage name associated with the callable
+     * @param future
+     *            the future
+     * @return the field set
+     */
+    protected Set<String> getFieldSet(String stageName, Future<Set<String>> future) {
+        TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(stageName);
+        try {
+            Set<String> fields = null;
+            while (fields == null) {
+                fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            }
+            return fields;
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.error("Stage[" + stageName + "] failed", e);
+            throw new DatawaveAsyncOperationException("Stage[" + stageName + "] failed", e);
+        } finally {
+            stopwatch.stop();
+        }
+    }
+
+    /**
+     * Log the execution time for each stage and use the time spent waiting on each future to calculate the time saved via concurrent execution.
+     * <p>
+     * If a particular stage spent a lot of time waiting on the result, consider refactoring query planning to avoid busy waiting.
+     */
+    protected void logTimeSavedViaConcurrentExecution() {
+        // timers share stage names, so we can compare the time spent executing the task with
+        // the time spent waiting on the future to calculate time saved
+
+        long totalExecution = 0L;
+        long totalGetFuture = 0L;
+        long totalTimeSaved = 0L;
+
+        log.info("Execution\tGetFuture\tTimeSaved\t\tStage");
+        for (String stageName : getStageNames()) {
+            TraceStopwatch future = futureStopWatch.get(stageName);
+            TraceStopwatch stage = stageStopWatch.get(stageName);
+
+            if (future == null) {
+                continue;
+            }
+
+            long execution = future.elapsed(TimeUnit.NANOSECONDS);
+            long get;
+            if (stage == null) {
+                get = 0; // handles the case where a task was submitted but the result was never used
+            } else {
+                get = stage.elapsed(TimeUnit.NANOSECONDS);
+            }
+
+            long saved = execution - get;
+
+            totalExecution += execution;
+            totalGetFuture += get;
+            totalTimeSaved += saved;
+
+            log.info(execution + "\t\t" + get + "\t\t" + saved + "\t\t" + stageName);
+        }
+
+        log.info("Total concurrent execution time: " + TimeUnit.NANOSECONDS.toMillis(totalExecution) + " ms");
+        log.info("Total get future time: " + TimeUnit.NANOSECONDS.toMillis(totalGetFuture) + " ms");
+        log.info("Total time saved: " + TimeUnit.NANOSECONDS.toMillis(totalTimeSaved) + " ms");
+    }
+
+    /**
+     * Collect the stage names for all {@link AbstractQueryPlannerCallable}s.
+     *
+     * @return a list of stage names
+     */
+    protected List<String> getStageNames() {
+        List<String> names = new ArrayList<>();
+        names.add(compositeMetadataCallable.stageName());
+        names.add(typeMetadataCallable.stageName());
+        names.add(contentExpansionFieldsCallable.stageName());
+        names.add(ivaratorCacheDirCallable.stageName());
+        names.add(indexedFieldsCallable.stageName());
+        names.add(indexOnlyFieldsCallable.stageName());
+        names.add(nonEventFieldsCallable.stageName());
+        names.add(termFrequencyFieldsCallable.stageName());
+        return names;
+    }
+
+    public void setLogConcurrentStageExecution(boolean logConcurrentStageExecution) {
+        this.logConcurrentStageExecution = logConcurrentStageExecution;
+    }
+
+    public boolean getLogConcurrentStageExecution() {
+        return logConcurrentStageExecution;
+    }
+
+    public int getConcurrentTimeoutMillis() {
+        return concurrentTimeoutMillis;
+    }
+
+    public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
+        this.concurrentTimeoutMillis = concurrentTimeoutMillis;
     }
 }

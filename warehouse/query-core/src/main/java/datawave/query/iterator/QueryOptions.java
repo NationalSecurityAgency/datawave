@@ -319,6 +319,8 @@ public class QueryOptions implements OptionDescriber {
 
     // filter for any key type (fi, event, tf)
     protected EventDataQueryFilter evaluationFilter;
+    protected EventDataQueryFilter fiEvaluationFilter;
+    protected EventDataQueryFilter eventEvaluationFilter;
     // filter specifically for event keys. required when performing a seeking aggregation
     protected EventDataQueryFilter eventFilter;
 
@@ -503,6 +505,8 @@ public class QueryOptions implements OptionDescriber {
         this.getDocumentKey = other.getDocumentKey;
         this.equality = other.equality;
         this.evaluationFilter = other.evaluationFilter;
+        this.fiEvaluationFilter = other.fiEvaluationFilter;
+        this.eventEvaluationFilter = other.eventEvaluationFilter;
 
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
@@ -775,7 +779,7 @@ public class QueryOptions implements OptionDescriber {
      */
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
+            this.fiAggregator = new IdentityAggregator(getNonEventFields(), getFiEvaluationFilter(), getEventNextSeek());
         }
         return fiAggregator;
     }
@@ -784,8 +788,24 @@ public class QueryOptions implements OptionDescriber {
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
 
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
+    }
+
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
+    }
+
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
         this.evaluationFilter = evaluationFilter;
+    }
+
+    public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
+        this.fiEvaluationFilter = fiEvaluationFilter;
+    }
+
+    public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
+        this.eventEvaluationFilter = eventEvaluationFilter;
     }
 
     /**
@@ -1482,6 +1502,8 @@ public class QueryOptions implements OptionDescriber {
         }
 
         this.evaluationFilter = null;
+        this.fiEvaluationFilter = null;
+        this.eventEvaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = false;
 

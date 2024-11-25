@@ -3,13 +3,13 @@ package datawave.query.discovery;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
-
-import com.google.common.base.Objects;
 
 import datawave.core.query.configuration.ResultContext;
 
@@ -86,6 +86,7 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
 
     @Override
     public int compareTo(DiscoveredThing o) {
+
         CompareToBuilder cmp = new CompareToBuilder();
         if (o == null) {
             return 1;
@@ -96,28 +97,34 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
             cmp.append(getDate(), o.getDate());
             cmp.append(getColumnVisibility(), o.getColumnVisibility());
             cmp.append(getCount(), o.getCount());
+            cmp.append(getCountsByColumnVisibility(), o.getCountsByColumnVisibility());
             return cmp.toComparison();
         }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof DiscoveredThing))
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-        DiscoveredThing other = (DiscoveredThing) o;
-        return Objects.equal(getTerm(), other.getTerm()) && Objects.equal(getField(), other.getField()) && Objects.equal(getType(), other.getType())
-                        && Objects.equal(getDate(), other.getDate()) && Objects.equal(getColumnVisibility(), other.getColumnVisibility())
-                        && Objects.equal(getCount(), other.getCount());
+        }
+        DiscoveredThing that = (DiscoveredThing) o;
+        return Objects.equals(term, that.term) && Objects.equals(field, that.field) && Objects.equals(type, that.type) && Objects.equals(date, that.date)
+                        && Objects.equals(columnVisibility, that.columnVisibility) && Objects.equals(count, that.count)
+                        && Objects.equals(countsByColumnVisibility, that.countsByColumnVisibility);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getTerm(), getField(), getType(), getDate(), getColumnVisibility(), getCount());
+        return Objects.hash(term, field, type, date, columnVisibility, count, countsByColumnVisibility);
     }
 
     @Override
     public String toString() {
-        return "DiscoveredThing [term=" + term + ", field=" + field + ", type=" + type + ", date=" + date + ", columnVisibility=" + columnVisibility
-                        + ", count=" + count + "]";
+        return new StringJoiner(", ", DiscoveredThing.class.getSimpleName() + "[", "]").add("term='" + term + "'").add("field='" + field + "'")
+                        .add("type='" + type + "'").add("date='" + date + "'").add("columnVisibility='" + columnVisibility + "'").add("count=" + count)
+                        .add("countsByColumnVisibility=" + countsByColumnVisibility).toString();
     }
 }
