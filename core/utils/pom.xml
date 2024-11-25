@@ -13,46 +13,60 @@
     <modules />
     <profiles>
         <profile>
-            <id>submodule-accumulo-utils</id>
+            <id>accumulo-utils</id>
             <activation>
-                <file>
-                    <exists>accumulo-utils/pom.xml</exists>
-                </file>
+                <property>
+                    <name>accumulo-utils</name>
+                </property>
             </activation>
             <modules>
                 <module>accumulo-utils</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-common-utils</id>
+            <id>common-utils</id>
             <activation>
-                <file>
-                    <exists>common-utils/pom.xml</exists>
-                </file>
+                <property>
+                    <name>common-utils</name>
+                </property>
             </activation>
             <modules>
                 <module>common-utils</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-metadata-utils</id>
+            <id>metadata-utils</id>
             <activation>
-                <file>
-                    <exists>metadata-utils/pom.xml</exists>
-                </file>
+                <property>
+                    <name>metadata-utils</name>
+                </property>
             </activation>
             <modules>
                 <module>metadata-utils</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-type-utils</id>
+            <id>type-utils</id>
             <activation>
-                <file>
-                    <exists>type-utils/pom.xml</exists>
-                </file>
+                <property>
+                    <name>type-utils</name>
+                </property>
             </activation>
             <modules>
+                <module>type-utils</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>utils</id>
+            <activation>
+                <property>
+                    <name>utils</name>
+                </property>
+            </activation>
+            <modules>
+                <module>accumulo-utils</module>
+                <module>common-utils</module>
+                <module>metadata-utils</module>
                 <module>type-utils</module>
             </modules>
         </profile>

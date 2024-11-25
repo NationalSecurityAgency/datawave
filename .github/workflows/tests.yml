@@ -74,7 +74,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify -Dutils -Dservices -Dstarters"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }

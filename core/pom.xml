@@ -87,35 +87,48 @@
     </build>
     <profiles>
         <profile>
-            <id>submodule-base-rest-responses</id>
+            <id>base-rest-responses</id>
             <activation>
-                <file>
-                    <exists>base-rest-responses/pom.xml</exists>
-                </file>
+                <property>
+                    <name>base-rest-responses</name>
+                </property>
             </activation>
             <modules>
                 <module>base-rest-responses</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-in-memory-accumulo</id>
+            <id>in-memory-accumulo</id>
             <activation>
-                <file>
-                    <exists>in-memory-accumulo/pom.xml</exists>
-                </file>
+                <property>
+                    <name>in-memory-accumulo</name>
+                </property>
             </activation>
             <modules>
                 <module>in-memory-accumulo</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-metrics-reporter</id>
+            <id>metrics-reporter</id>
             <activation>
-                <file>
-                    <exists>metrics-reporter/pom.xml</exists>
-                </file>
+                <property>
+                    <name>metrics-reporter</name>
+                </property>
             </activation>
             <modules>
+                <module>metrics-reporter</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>utils</id>
+            <activation>
+                <property>
+                    <name>utils</name>
+                </property>
+            </activation>
+            <modules>
+                <module>base-rest-responses</module>
+                <module>in-memory-accumulo</module>
                 <module>metrics-reporter</module>
             </modules>
         </profile>
