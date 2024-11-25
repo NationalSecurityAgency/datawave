@@ -12,134 +12,156 @@
     <modules />
     <profiles>
         <profile>
-            <id>submodule-service-accumulo</id>
+            <id>service-accumulo</id>
             <activation>
-                <file>
-                    <exists>accumulo/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-accumulo</name>
+                </property>
             </activation>
             <modules>
                 <module>accumulo</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-audit</id>
+            <id>service-audit</id>
             <activation>
-                <file>
-                    <exists>audit/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-audit</name>
+                </property>
             </activation>
             <modules>
                 <module>audit</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-authorization</id>
+            <id>service-authorization</id>
             <activation>
-                <file>
-                    <exists>authorization/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-authorization</name>
+                </property>
             </activation>
             <modules>
                 <module>authorization</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-config</id>
+            <id>service-config</id>
             <activation>
-                <file>
-                    <exists>config/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-config</name>
+                </property>
             </activation>
             <modules>
                 <module>config</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-dictionary</id>
+            <id>service-dictionary</id>
             <activation>
-                <file>
-                    <exists>dictionary/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-dictionary</name>
+                </property>
             </activation>
             <modules>
                 <module>dictionary</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-file-provider</id>
+            <id>service-file-provider</id>
             <activation>
-                <file>
-                    <exists>file-provider/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-file-provider</name>
+                </property>
             </activation>
             <modules>
                 <module>file-provider</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-hazelcast</id>
+            <id>service-hazelcast</id>
             <activation>
-                <file>
-                    <exists>hazelcast/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-hazelcast</name>
+                </property>
             </activation>
             <modules>
                 <module>hazelcast</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-mapreduce-query</id>
+            <id>service-mapreduce-query</id>
             <activation>
-                <file>
-                    <exists>mapreduce-query/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-mapreduce-query</name>
+                </property>
             </activation>
             <modules>
                 <module>mapreduce-query</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-modification</id>
+            <id>service-modification</id>
             <activation>
-                <file>
-                    <exists>modification/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-modification</name>
+                </property>
             </activation>
             <modules>
                 <module>modification</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-query</id>
+            <id>service-query</id>
             <activation>
-                <file>
-                    <exists>query/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-query</name>
+                </property>
             </activation>
             <modules>
                 <module>query</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-query-executor</id>
+            <id>service-query-executor</id>
             <activation>
-                <file>
-                    <exists>query-executor/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-query-executor</name>
+                </property>
             </activation>
             <modules>
                 <module>query-executor</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-service-query-metric</id>
+            <id>service-query-metric</id>
             <activation>
-                <file>
-                    <exists>query-metric/pom.xml</exists>
-                </file>
+                <property>
+                    <name>service-query-metric</name>
+                </property>
             </activation>
             <modules>
+                <module>query-metric</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>services</id>
+            <activation>
+                <property>
+                    <name>services</name>
+                </property>
+            </activation>
+            <modules>
+                <module>accumulo</module>
+                <module>audit</module>
+                <module>authorization</module>
+                <module>config</module>
+                <module>dictionary</module>
+                <module>file-provider</module>
+                <module>hazelcast</module>
+                <module>mapreduce-query</module>
+                <module>modification</module>
+                <module>query</module>
+                <module>query-executor</module>
                 <module>query-metric</module>
             </modules>
         </profile>

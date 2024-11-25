@@ -37,7 +37,7 @@
             <id>services</id>
             <activation>
                 <property>
-                    <name>!skipServices</name>
+                    <name>!onlyServiceApis</name>
                 </property>
             </activation>
             <modules>
