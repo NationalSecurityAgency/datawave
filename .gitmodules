@@ -1,6 +1,3 @@
-[submodule "microservices/starters/cache"]
-	path = microservices/starters/cache
-	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cache.git
 [submodule "microservices/starters/datawave"]
 	path = microservices/starters/datawave
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter.git
