@@ -1,9 +1,6 @@
 [submodule "microservices/services/authorization"]
 	path = microservices/services/authorization
 	url = git@github.com:NationalSecurityAgency/datawave-authorization-service.git
-[submodule "core/utils/metadata-utils"]
-	path = core/utils/metadata-utils
-	url = git@github.com:NationalSecurityAgency/datawave-metadata-utils.git
 [submodule "microservices/services/accumulo"]
 	path = microservices/services/accumulo
 	url = git@github.com:NationalSecurityAgency/datawave-accumulo-service.git
