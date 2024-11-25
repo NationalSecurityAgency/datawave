@@ -22,9 +22,6 @@
 [submodule "microservices/starters/audit"]
 	path = microservices/starters/audit
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-audit.git
-[submodule "microservices/services/config"]
-	path = microservices/services/config
-	url = git@github.com:NationalSecurityAgency/datawave-config-service.git
 [submodule "microservices/starters/query"]
 	path = microservices/starters/query
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query.git
