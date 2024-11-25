@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:NationalSecurityAgency/datawave-hazelcast-service.git
+	branch = main
+	commit = 8abc2ef7e91c90bee920b129f67d540c61217f0a
+	parent = 419742545d8b5329b6fff10df1626e4398a15905
+	method = merge
+	cmdver = 0.4.9
