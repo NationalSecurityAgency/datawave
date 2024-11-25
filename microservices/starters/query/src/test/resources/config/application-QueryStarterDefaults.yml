@@ -1,0 +1,584 @@
+# This serves as a set of sensible defaults to use for query microservice test configuration.  The
+# goal here is to avoid creating multiple copies of this file across the various query microservices.
+#
+# If configured correctly, your microservice will automatically include this profile and it's properties
+# as a test resource.  Use the properties contained herein by activating the QueryStarterDefaults profile.
+# If you want to override some of the values present here, create an additional profile and add your
+# overrides there.  Make sure your override profile is listed after the QueryStarterDefaults profile.
+
+warehouse:
+  accumulo:
+    zookeepers: 'localhost:2181'
+    instanceName: 'my-instance-01'
+    username: 'root'
+    password: 'password'
+  statsd:
+    host: localhost
+    port: 8125
+  tables:
+    shard:
+      name: 'shard'
+    index:
+      name: 'shardIndex'
+    reverseIndex:
+      name: 'shardReverseIndex'
+    dateIndex:
+      name: 'dateIndex'
+    metadata:
+      name: 'DatawaveMetadata'
+    model:
+      name: 'DatawaveMetadata'
+    edge:
+      name: 'protobufedge'
+  errorTables:
+    shard:
+      name: "error_s"
+    index:
+      name: "error_i"
+    reverseIndex:
+      name: "error_r"
+    dateIndex:
+      name: ""
+    metadata:
+      name: "error_m"
+    model:
+      name: "error_m"
+  metricTables:
+    shard:
+      name: "queryMetrics_s"
+    index:
+      name: "queryMetrics_i"
+    reverseIndex:
+      name: "queryMetrics_r"
+    dateIndex:
+      name: "queryMetrics_di"
+    metadata:
+      name: "queryMetrics_m"
+    model:
+      name: "queryMetrics_m"
+  defaults:
+    queryThreads: 100
+    indexLookupThreads: 100
+    dateIndexThreads: 20
+    fullTableScanEnabled: false
+    baseIteratorPriority: 100
+    maxIndexScanTimeMillis: 31536000000
+    eventPerDayThreshold: 40000
+    shardsPerDayThreshold: 20
+    initialMaxTermThreshold: 2000
+    finalMaxTermThreshold: 2000
+    maxDepthThreshold: 2000
+    maxUnfieldedExpansionThreshold: 50
+    maxValueExpansionThreshold: 50
+    maxOrExpansionThreshold: 500
+    maxOrRangeThreshold: 10
+    maxRangesPerRangeIvarator: 5
+    maxOrRangeIvarators: 10
+    maxOrExpansionFstThreshold: 750
+    maxFieldIndexRangeSplit: 16
+    maxIvaratorSources: 20
+    maxEvaluationPipelines: 16
+    maxPipelineCachedResults: 16
+    hdfsSiteConfigURLs: 'file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml'
+    ivaratorFstHdfsBaseURIs: 'hdfs:///IvaratorCache'
+    ivaratorCacheBufferSize: 10000
+    ivaratorMaxOpenFiles: 100
+    ivaratorCacheScanPersistThreshold: 100000
+    ivaratorCacheScanTimeoutMinutes: 60
+    modelName: 'DATAWAVE'
+    edgeModelName: 'DATAWAVE_EDGE'
+
+datawave:
+  authorization:
+    federation:
+      # Each entry in the following map will be registered as a FederatedAuthorizationService bean, named after the key
+      services:
+        FederatedAuthorizationService:
+          federatedAuthorizationUri: "https://authorization:8443/authorization/v2"
+
+  metadata:
+    all-metadata-auths:
+      - PRIVATE,PUBLIC
+    type-substitutions:
+      "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
+
+  query:
+    federation:
+      # Each entry in the following map will be registered as a FederatedQueryService (RemoteQueryService) bean, named after the key
+      services:
+        FederatedQueryService:
+          queryServiceUri: 'https://query:8443/query/v1'
+          queryMetricServiceUri: 'https://querymetric:8443/querymetric/v1/id'
+
+    parser:
+      skipTokenizeUnfieldedFields:
+        - "DOMETA"
+      tokenizedFields:
+        - "CONTENT"
+    logic:
+      factory:
+        enabled: true
+        # Uncomment the following line to override the query logic beans to load
+        # xmlBeansPath: "classpath:TestQueryLogicFactory.xml"
+
+        # If desired, you may populate this map to redefine the name for each query logic.
+        # This can also be used to limit the available query logics.
+        queryLogicsByName:
+          "EventQuery": "EventQuery"
+          "ErrorEventQuery": "ErrorEventQuery"
+          "DiscoveryQuery": "DiscoveryQuery"
+          "ErrorDiscoveryQuery": "ErrorDiscoveryQuery"
+          "LuceneUUIDEventQuery": "LuceneUUIDEventQuery"
+          "ContentQuery": "ContentQuery"
+          "EdgeQuery": "EdgeQuery"
+          "CountQuery": "CountQuery"
+          "ErrorCountQuery": "ErrorCountQuery"
+          "FieldIndexCountQuery": "FieldIndexCountQuery"
+          "ErrorFieldIndexCountQuery": "ErrorFieldIndexCountQuery"
+          "TermFrequencyQuery": "TermFrequencyQuery"
+          "IndexStatsQuery": "IndexStatsQuery"
+          "QueryMetricsQuery": "QueryMetricsQuery"
+          "InternalQueryMetricsQuery": "InternalQueryMetricsQuery"
+          "FacetedQuery": "FacetedQuery"
+          "HitHighlights": "HitHighlights"
+          "EdgeEventQuery": "EdgeEventQuery"
+          "FederatedEventQuery": "FederatedEventQuery"
+
+        # The max page size that a user can request.  0 turns off this feature
+        maxPageSize: 10000
+
+        # The number of bytes at which a page will be returned, event if the pagesize has not been reached.  0 turns off this feature
+        pageByteTrigger: 0
+      logics:
+        BaseEventQuery:
+          checkpointable: true
+          accumuloPassword: ${warehouse.accumulo.password}
+          tableName: ${warehouse.tables.shard.name}
+          dateIndexTableName: ${warehouse.tables.dateIndex.name}
+          defaultDateTypeName: "EVENT"
+          metadataTableName: ${warehouse.tables.metadata.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          maxResults: -1
+          queryThreads: ${warehouse.defaults.queryThreads}
+          indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
+          dateIndexThreads: ${warehouse.defaults.dateIndexThreads}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          includeDataTypeAsField: false
+          disableIndexOnlyDocuments: false
+          indexOnlyFilterFunctionsEnabled: false
+          includeHierarchyFields: false
+          hierarchyFieldOptions:
+            "FOO": "BAR"
+          baseIteratorPriority: ${warehouse.defaults.baseIteratorPriority}
+          maxIndexScanTimeMillis: ${warehouse.defaults.maxIndexScanTimeMillis}
+          collapseUids: false
+          collapseUidsThreshold: -1
+          useEnrichers: true
+          contentFieldNames:
+            - 'CONTENT'
+          realmSuffixExclusionPatterns:
+            - '<.*>$'
+          minimumSelectivity: .2
+          enricherClassNames:
+            - 'datawave.query.enrich.DatawaveTermFrequencyEnricher'
+          useFilters: false
+          filterClassNames:
+            - 'foo.bar'
+          filterOptions:
+            'bar': "foo"
+          auditType: "NONE"
+          logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+          eventPerDayThreshold: ${warehouse.defaults.eventPerDayThreshold}
+          shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
+          initialMaxTermThreshold: ${warehouse.defaults.initialMaxTermThreshold}
+          finalMaxTermThreshold: ${warehouse.defaults.finalMaxTermThreshold}
+          maxDepthThreshold: ${warehouse.defaults.maxDepthThreshold}
+          maxUnfieldedExpansionThreshold: ${warehouse.defaults.maxUnfieldedExpansionThreshold}
+          maxValueExpansionThreshold: ${warehouse.defaults.maxValueExpansionThreshold}
+          maxOrExpansionThreshold: ${warehouse.defaults.maxOrExpansionThreshold}
+          maxOrRangeThreshold: ${warehouse.defaults.maxOrRangeThreshold}
+          maxOrExpansionFstThreshold: ${warehouse.defaults.maxOrExpansionFstThreshold}
+          maxFieldIndexRangeSplit: ${warehouse.defaults.maxFieldIndexRangeSplit}
+          maxIvaratorSources: ${warehouse.defaults.maxIvaratorSources}
+          maxEvaluationPipelines: ${warehouse.defaults.maxEvaluationPipelines}
+          maxPipelineCachedResults: ${warehouse.defaults.maxPipelineCachedResults}
+          hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
+          zookeeperConfig: ${warehouse.accumulo.zookeepers}
+          ivaratorCacheDirConfigs:
+            - basePathURI: "hdfs:///IvaratorCache"
+          ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
+          ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
+          ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
+          ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}
+          ivaratorCacheScanTimeoutMinutes: ${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
+          eventQueryDataDecoratorTransformer:
+            requestedDecorators:
+              - "CSV"
+              - "WIKIPEDIA"
+            dataDecorators:
+              "CSV":
+                "EVENT_ID": "https://localhost:8443/DataWave/Query/lookupUUID/EVENT_ID?uuid=@field_value@&amp;parameters=data.decorators:CSV"
+                "UUID": "https://localhost:8443/DataWave/Query/lookupUUID/UUID?uuid=@field_value@&amp;parameters=data.decorators:CSV"
+                "PARENT_UUID": "https://localhost:8443/DataWave/Query/lookupUUID/PARENT_UUID?uuid=@field_value@&amp;parameters=data.decorators:CSV"
+              "WIKIPEDIA":
+                "PAGE_ID": "https://localhost:8443/DataWave/Query/lookupUUID/PAGE_ID?uuid=@field_value@&amp;parameters=data.decorators:WIKIPEDIA"
+                "PAGE_TITLE": "https://localhost:8443/DataWave/Query/lookupUUID/PAGE_TITLE?uuid=@field_value@&amp;parameters=data.decorators:WIKIPEDIA"
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.modelName}
+          querySyntaxParsers:
+            JEXL: ""
+            LUCENE: "LuceneToJexlQueryParser"
+            LUCENE-UUID: "LuceneToJexlUUIDQueryParser"
+            TOKENIZED-LUCENE: "TokenizedLuceneToJexlQueryParser"
+          sendTimingToStatsd: false
+          collectQueryMetrics: true
+          logTimingDetails: false
+          statsdHost: ${warehouse.statsd.host}
+          statsdPort: ${warehouse.statsd.port}
+          evaluationOnlyFields: ""
+          maxConcurrentTasks: 10
+          requiredRoles:
+            - "AuthorizedUser"
+
+        EventQuery:
+          checkpointable: true
+          logicDescription: "Query the sharded event/document schema, leveraging the global index tables as needed"
+
+        ErrorEventQuery:
+          checkpointable: true
+          logicDescription: "Retrieve events/documents that encountered one or more errors during ingest"
+          tableName: ${warehouse.errorTables.shard.name}
+          metadataTableName: ${warehouse.errorTables.metadata.name}
+          dateIndexTableName: ""
+          indexTableName: ${warehouse.errorTables.index.name}
+          reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
+          includeHierarchyFields: false
+
+        DiscoveryQuery:
+          checkpointable: true
+          tableName: ${warehouse.tables.shard.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          metadataTableName: ${warehouse.tables.metadata.name}
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.modelName}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          allowLeadingWildcard: true
+          auditType: "NONE"
+          maxResults: -1
+          maxWork: -1
+          logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
+
+        ErrorDiscoveryQuery:
+          checkpointable: true
+          tableName: ${warehouse.errorTables.shard.name}
+          indexTableName: ${warehouse.errorTables.index.name}
+          reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
+          maxResults: -1
+          maxWork: -1
+          metadataTableName: ${warehouse.errorTables.metadata.name}
+          modelTableName: ${warehouse.errorTables.model.name}
+          modelName: ${warehouse.defaults.modelName}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          allowLeadingWildcard: true
+          auditType: "NONE"
+          logicDescription: "Discovery query that returns information from the ingest errors index about the supplied term(s)"
+
+        LuceneUUIDEventQuery:
+          checkpointable: true
+          logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
+          auditType: "NONE"
+          eventQuery:
+            auditType: "NONE"
+            logicDescription: "Lucene query for event/document UUIDs"
+            mandatoryQuerySyntax:
+              - "LUCENE-UUID"
+            connPoolName: "UUID"
+          errorEventQuery:
+            auditType: "NONE"
+            logicDescription: "Lucene query for event/document UUIDs for events that encountered errors at ingest time"
+            mandatoryQuerySyntax:
+              - "LUCENE-UUID"
+            connPoolName: "UUID"
+            tableName: ${warehouse.errorTables.shard.name}
+            dateIndexTableName: ${warehouse.errorTables.dateIndex.name}
+            metadataTableName: ${warehouse.errorTables.metadata.name}
+            indexTableName: ${warehouse.errorTables.index.name}
+            reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
+
+        ContentQuery:
+          checkpointable: true
+          tableName: ${warehouse.tables.shard.name}
+          maxResults: -1
+          maxWork: -1
+          auditType: "NONE"
+          logicDescription: "Query that returns a document given the document identifier"
+
+        EdgeQuery:
+          checkpointable: true
+          tableName: ${warehouse.tables.edge.name}
+          metadataTableName: ${warehouse.tables.metadata.name}
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.edgeModelName}
+          maxResults: 25000
+          maxWork: -1
+          queryThreads: 16
+          auditType: "NONE"
+          logicDescription: "Retrieve graph edges matching the search term(s)"
+          maxConcurrentTasks: 10
+          querySyntaxParsers:
+            "JEXL": ""
+            "LIST": ""
+            "LIMITED_JEXL": ""
+            "LUCENE": ""
+
+        CountQuery:
+          checkpointable: true
+          logicDescription: "Retrieve event/document counts based on your search criteria"
+
+        ErrorCountQuery:
+          checkpointable: true
+          logicDescription: "Retrieve counts of errored events based on your search criteria"
+          tableName: ${warehouse.errorTables.shard.name}
+          metadataTableName: ${warehouse.errorTables.metadata.name}
+          indexTableName: ${warehouse.errorTables.index.name}
+          reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
+
+        FieldIndexCountQuery:
+          checkpointable: false
+          tableName: ${warehouse.tables.shard.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          metadataTableName: ${warehouse.tables.metadata.name}
+          maxResults: -1
+          maxWork: -1
+          queryThreads: ${warehouse.defaults.queryThreads}
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: "DATAWAVE"
+          maxUniqueValues: 20000
+          auditType: "NONE"
+          logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
+          maxConcurrentTasks: 10
+
+        ErrorFieldIndexCountQuery:
+          checkpointable: false
+          tableName: ${warehouse.errorTables.shard.name}
+          indexTableName: ${warehouse.errorTables.index.name}
+          reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
+          metadataTableName: ${warehouse.errorTables.metadata.name}
+          maxResults: -1
+          maxWork: -1
+          queryThreads: ${warehouse.defaults.queryThreads}
+          modelTableName: ${warehouse.errorTables.model.name}
+          modelName: "DATAWAVE"
+          maxUniqueValues: 20000
+          auditType: "NONE"
+          logicDescription: "FieldIndex count query (experimental)"
+          maxConcurrentTasks: 10
+
+        TermFrequencyQuery:
+          tableName: ${warehouse.tables.shard.name}
+          maxResults: -1
+          maxWork: -14
+          auditType: "NONE"
+          logicDescription: "Query that returns data from the term frequency query table"
+
+        IndexStatsQuery:
+          auditType: "NONE"
+
+        QueryMetricsQuery:
+          checkpointable: true
+          logicDescription: "Retrieve query metrics based on the given search term(s)"
+          includeHierarchyFields: false
+          modelTableName: ${warehouse.metricTables.model.name}
+          modelName: "NONE"
+          tableName: ${warehouse.metricTables.shard.name}
+          dateIndexTableName: ${warehouse.metricTables.dateIndex.name}
+          metadataTableName: ${warehouse.metricTables.metadata.name}
+          indexTableName: ${warehouse.metricTables.index.name}
+          reverseIndexTableName: ${warehouse.metricTables.reverseIndex.name}
+          auditType: "NONE"
+          collectQueryMetrics: true
+
+        InternalQueryMetricsQuery:
+          collectQueryMetrics: false
+          requiredRoles:
+            - "AuthorizedServer"
+
+        FacetedQuery:
+          checkpointable: true
+          auditType: "NONE"
+          logicDescription: "Faceted search over indexed fields, returning aggregate counts for field values"
+          facetedSearchType: "FIELD_VALUE_FACETS"
+          facetTableName: "datawave.facets"
+          facetMetadataTableName: "datawave.facetMetadata"
+          facetHashTableName: "datawave.facetHashes"
+          maximumFacetGrouping: 200
+          minimumFacet: 1
+          streaming: true
+          querySyntaxParsers:
+            JEXL: ""
+            LUCENE: "LuceneToJexlQueryParser"
+            LUCENE-UUID: "LuceneToJexlUUIDQueryParser"
+
+        HitHighlights:
+          checkpointable: true
+          accumuloPassword: ${warehouse.accumulo.password}
+          tableName: ${warehouse.tables.shard.name}
+          dateIndexTableName: ${warehouse.tables.dateIndex.name}
+          defaultDateTypeName: "EVENT"
+          metadataTableName: ${warehouse.tables.metadata.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          queryThreads: ${warehouse.defaults.indexLookupThreads}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          minimumSelectivity: .2
+          includeDataTypeAsField: false
+          includeGroupingContext: false
+          useEnrichers: false
+          auditType: "NONE"
+          logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
+          eventPerDayThreshold: 40000
+          shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
+          initialMaxTermThreshold: ${warehouse.defaults.initialMaxTermThreshold}
+          finalMaxTermThreshold: ${warehouse.defaults.finalMaxTermThreshold}
+          maxDepthThreshold: ${warehouse.defaults.maxDepthThreshold}
+          maxUnfieldedExpansionThreshold: ${warehouse.defaults.maxUnfieldedExpansionThreshold}
+          maxValueExpansionThreshold: ${warehouse.defaults.maxValueExpansionThreshold}
+          maxOrExpansionThreshold: ${warehouse.defaults.maxOrExpansionThreshold}
+          maxOrRangeThreshold: ${warehouse.defaults.maxOrRangeThreshold}
+          maxRangesPerRangeIvarator: ${warehouse.defaults.maxRangesPerRangeIvarator}
+          maxOrRangeIvarators: ${warehouse.defaults.maxOrRangeIvarators}
+          maxOrExpansionFstThreshold: ${warehouse.defaults.maxOrExpansionFstThreshold}
+          maxFieldIndexRangeSplit: ${warehouse.defaults.maxFieldIndexRangeSplit}
+          maxEvaluationPipelines: ${warehouse.defaults.maxEvaluationPipelines}
+          maxPipelineCachedResults: ${warehouse.defaults.maxPipelineCachedResults}
+          hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
+          zookeeperConfig: ${warehouse.accumulo.zookeepers}
+          ivaratorCacheDirConfigs:
+            - basePathURI: "hdfs:///IvaratorCache"
+          ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
+          ivaratorCacheBufferSize: 10000
+          ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
+          ivaratorCacheScanPersistThreshold: 100000
+          ivaratorCacheScanTimeoutMinutes: ${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
+          maxConcurrentTasks: 10
+          querySyntaxParsers:
+            JEXL: ""
+            LUCENE: "LuceneToJexlQueryParser"
+            LUCENE-UUID: "LuceneToJexlUUIDQueryParser"
+
+        EdgeEventQuery:
+          checkpointable: true
+          logicDescription: "Use results of an EdgeQuery to obtain events/documents that created the given edge"
+          edgeModelName: "DATAWAVE_EDGE"
+          modelTableName: ${warehouse.tables.model.name}
+
+    uuidTypes: &defaultUuidTypes
+      'EVENT_ID':
+        fieldName: 'EVENT_ID'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
+        allowedWildcardAfter: 28
+      'UUID':
+        fieldName: 'UUID'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
+      'PARENT_UUID':
+        fieldName: 'PARENT_UUID'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
+      'PAGE_ID':
+        fieldName: 'PAGE_ID'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
+      'PAGE_TITLE':
+        fieldName: 'PAGE_TITLE'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
+
+    lookup:
+      columnVisibility: ""
+      beginDate: "20100101 000000.000"
+      types: *defaultUuidTypes
+
+    translateid:
+      columnVisibility: ""
+      beginDate: "20100101 000000.000"
+      types: *defaultUuidTypes
+
+    edge:
+      # Uncomment the following line to override the edge beans to load
+      # xmlBeansPath: "classpath:EdgeBeans.xml"
+      model:
+        baseFieldMap:
+          EDGE_SOURCE: 'SOURCE'
+          EDGE_SINK: 'SINK'
+          EDGE_TYPE: 'TYPE'
+          EDGE_RELATIONSHIP: 'RELATION'
+          EDGE_ATTRIBUTE1: 'ATTRIBUTE1'
+          EDGE_ATTRIBUTE2: 'ATTRIBUTE2'
+          EDGE_ATTRIBUTE3: 'ATTRIBUTE3'
+          DATE: 'DATE'
+          STATS_EDGE: 'STATS_TYPE'
+        keyUtilFieldMap:
+          ENRICHMENT_TYPE: 'ENRICHMENT_TYPE'
+          FACT_TYPE: 'FACT_TYPE'
+          GROUPED_FIELDS: 'GROUPED_FIELDS'
+        transformFieldMap:
+          COUNT: 'COUNT'
+          COUNTS: 'COUNTS'
+          LOAD_DATE: 'LOADDATE'
+          ACTIVITY_DATE: 'ACTIVITY_DATE'
+        fieldMappings:
+          - fieldName: "SOURCE"
+            modelFieldName: "VERTEXA"
+            direction: "REVERSE"
+          - fieldName: "SOURCE"
+            modelFieldName: "VERTEXA"
+            direction: "FORWARD"
+          - fieldName: "SINK"
+            modelFieldName: "VERTEXB"
+            direction: "REVERSE"
+          - fieldName: "SINK"
+            modelFieldName: "VERTEXB"
+            direction: "FORWARD"
+          - fieldName: "RELATION"
+            modelFieldName: "RELATION"
+            direction: "REVERSE"
+          - fieldName: "RELATION"
+            modelFieldName: "RELATION"
+            direction: "FORWARD"
+          - fieldName: "TYPE"
+            modelFieldName: "TYPE"
+            direction: "REVERSE"
+          - fieldName: "TYPE"
+            modelFieldName: "TYPE"
+            direction: "FORWARD"
+          - fieldName: "ATTRIBUTE1"
+            modelFieldName: "ATTR1"
+            direction: "REVERSE"
+          - fieldName: "ATTRIBUTE1"
+            modelFieldName: "ATTR1"
+            direction: "FORWARD"
+          - fieldName: "ATTRIBUTE2"
+            modelFieldName: "ATTR2"
+            direction: "REVERSE"
+          - fieldName: "ATTRIBUTE2"
+            modelFieldName: "ATTR2"
+            direction: "FORWARD"
+          - fieldName: "ATTRIBUTE3"
+            modelFieldName: "ATTR3"
+            direction: "REVERSE"
+          - fieldName: "ATTRIBUTE3"
+            modelFieldName: "ATTR3"
+            direction: "FORWARD"
+    messaging:
+      claimCheck:
+        enabled: false
+
+audit-client:
+  discovery:
+    enabled: false
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
