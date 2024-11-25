@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-audit.git
+	branch = main
+	commit = ef18c9e6521c36a8fa64cb40a266cf6e532b0e64
+	parent = f153b52fea7b230cb5f6cf45c760c8498937a294
+	method = merge
+	cmdver = 0.4.9

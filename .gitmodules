@@ -10,9 +10,6 @@
 [submodule "microservices/starters/query-metric"]
 	path = microservices/starters/query-metric
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query-metric.git
-[submodule "microservices/starters/audit"]
-	path = microservices/starters/audit
-	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-audit.git
 [submodule "microservices/starters/query"]
 	path = microservices/starters/query
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query.git
