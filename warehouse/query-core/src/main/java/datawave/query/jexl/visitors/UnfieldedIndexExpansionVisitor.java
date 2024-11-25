@@ -220,6 +220,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         try {
             // Using the datatype filter when expanding this term isn't really
             // necessary
+            // the static method code is doing too much work. Can't reliably introduce caching due to complexity.
             return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);

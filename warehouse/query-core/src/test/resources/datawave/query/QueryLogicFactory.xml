@@ -371,6 +371,8 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
         <property name="visitorManager" ref="TimedVisitorManager"/>
+        <property name="expansionCacheConfigs" ref="ExpansionCacheConfig"/>
+        <property name="expansionCacheFactory" ref="ExpansionCacheFactory"/>
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
@@ -385,6 +387,27 @@
         <property name="validateJunctions" value="true"/>
         <property name="validateReferenceExpressions" value="true"/>
         <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
+    
+    <bean id="ExpansionCacheConfig" scope="prototype" class="datawave.query.planner.ExpansionCacheConfigs">
+        <property name="cacheFieldNameLookup" value="true"/>
+        <property name="cacheBoundedRangeLookup" value="true"/>
+        <property name="cacheRegexLookup" value="true"/>
+    </bean>
+
+    <!-- note explicit singleton scope -->
+    <bean id="ExpansionCacheFactory" scope="singleton" class="datawave.query.planner.ExpansionCacheFactory">
+        <property name="boundedRangeCacheSize" value="100"/>
+        <property name="boundedRangeExpireAfterAccessMinutes" value="60"/>
+        <property name="boundedRangeExpireAfterWriteMinutes" value="60"/>
+
+        <property name="regexCacheSize" value="100"/>
+        <property name="regexExpireAfterAccessMinutes" value="60"/>
+        <property name="regexExpireAfterWriteMinutes" value="60"/>
+
+        <property name="fieldNameCacheSize" value="100"/>
+        <property name="fieldNameExpireAfterAccessMinutes" value="60"/>
+        <property name="fieldNameExpireAfterWriteMinutes" value="60"/>
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

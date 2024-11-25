@@ -19,12 +19,17 @@ import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.ExceededIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.cache.BoundedRangeLookupCache;
+import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.lookups.cache.LookupCache.LookupCacheKey;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.util.time.DateHelper;
 
 /**
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
@@ -61,9 +66,36 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
      */
     public static <T extends JexlNode> T expandBoundedRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
                     throws TableNotFoundException {
+        return expandBoundedRanges(config, scannerFactory, helper, script, null);
+    }
+
+    /**
+     * Traverses the query tree and attempts to expand bounded ranges into discrete values from the global index
+     *
+     * @param config
+     *            the {@link ShardQueryConfiguration}
+     * @param scannerFactory
+     *            the {@link ScannerFactory}
+     * @param helper
+     *            the {@link MetadataHelper}
+     * @param script
+     *            the JexlScript
+     * @param lookupCache
+     *            optionally a {@link LookupCache}
+     * @return the script with bounded ranges possibly expanded
+     * @param <T>
+     *            the Jexl node type
+     * @throws TableNotFoundException
+     *             if the metadata helper fails an operation
+     */
+    public static <T extends JexlNode> T expandBoundedRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script,
+                    LookupCache lookupCache) throws TableNotFoundException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
             BoundedRangeIndexExpansionVisitor visitor = new BoundedRangeIndexExpansionVisitor(config, scannerFactory, helper);
+            if (lookupCache != null) {
+                visitor.setLookupCache(lookupCache);
+            }
             return visitor.expand(script);
         } else {
             return script;
@@ -83,7 +115,12 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
             LiteralRange<?> range = rangeFinder.getRange(node);
             if (range != null) {
                 try {
-                    return buildIndexLookup(node, true, false, () -> createLookup(range));
+                    if (lookupCache != null && !lookupCache.get(getKey(node))) {
+                        // lookup for this term previously failed, do not look it up again
+                        return buildIndexLookup(node, true, false, ExceededIndexLookup::new);
+                    } else {
+                        return buildIndexLookup(node, true, false, () -> createLookup(range));
+                    }
                 } catch (IllegalRangeArgumentException e) {
                     log.error("Cannot expand [" + JexlStringBuildingVisitor.buildQuery(node)
                                     + "] because it creates an invalid Accumulo Range. This is likely due to bad user input or failed normalization. This range will be ignored.",
@@ -102,9 +139,27 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
+
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
 
-        futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
-                        expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
+        if (lookupCache != null && fieldsToTerms != null) {
+            String field = JexlASTHelper.getIdentifier(currentNode);
+            if (fieldsToTerms.get(field).isThresholdExceeded() || fieldsToTerms.get(field).isEmpty()) {
+                LookupCacheKey key = getKey(currentNode);
+                lookupCache.put(key, false);
+            }
+        }
+
+        if (!(futureJexlNode instanceof ExceededJexlNode)) {
+            futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode,
+                            fieldsToTerms, expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
+        }
+    }
+
+    private LookupCacheKey getKey(JexlNode node) {
+        String range = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        String startDate = DateHelper.format(config.getBeginDate());
+        String endDate = DateHelper.format(config.getEndDate());
+        return new BoundedRangeLookupCache.BoundedRangeCacheKey(range, startDate, endDate, config.getDatatypeFilter());
     }
 }

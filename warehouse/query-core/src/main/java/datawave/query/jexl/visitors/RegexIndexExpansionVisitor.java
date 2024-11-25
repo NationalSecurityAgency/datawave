@@ -41,15 +41,20 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.ExceededIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.lookups.cache.LookupCache.LookupCacheKey;
+import datawave.query.jexl.lookups.cache.RegexLookupCache.RegexCacheKey;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.util.time.DateHelper;
 
 /**
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
@@ -118,7 +123,36 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      */
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
                     Map<String,IndexLookup> lookupMap, T script) throws TableNotFoundException {
+        return expandRegex(config, scannerFactory, helper, lookupMap, script, null);
+    }
+
+    /**
+     * Traverses the query tree and attempts to expand regex terms into discrete values from the global index
+     *
+     * @param config
+     *            the query config
+     * @param scannerFactory
+     *            the scanner factory
+     * @param helper
+     *            the metadata helper
+     * @param lookupMap
+     *            the lookup map
+     * @param script
+     *            the query tree
+     * @param lookupCache
+     *            optionally a lookup cache
+     * @return the query
+     * @param <T>
+     *            the node type
+     * @throws TableNotFoundException
+     *             if the metadata helper fail an operation
+     */
+    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    Map<String,IndexLookup> lookupMap, T script, LookupCache lookupCache) throws TableNotFoundException {
         RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap);
+        if (lookupCache != null) {
+            visitor.setLookupCache(lookupCache);
+        }
         return ensureTreeNotEmpty(visitor.expand(script));
     }
 
@@ -270,6 +304,11 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             }
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
+        }
+
+        if (lookupCache != null && !lookupCache.get(getKey(node))) {
+            // if a previous lookup for this term failed, do not look it up again
+            return buildIndexLookup(node, false, false, ExceededIndexLookup::new);
         }
 
         return buildIndexLookup(node, false, false, () -> createLookup(node));
@@ -684,6 +723,13 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
+
+        if (futureJexlNode instanceof ExceededJexlNode) {
+            // this regex previously failed to expand against the global index, so it was not allowed
+            // to run again. Rebuild the node as a value exceeded marker.
+            return;
+        }
+
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
 
@@ -724,6 +770,21 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             }
         }
 
+        if (lookupCache != null) {
+            String field = JexlASTHelper.getIdentifier(currentNode);
+            if (fieldsToTerms.get(field).isThresholdExceeded() || fieldsToTerms.get(field).isEmpty()) {
+                LookupCacheKey key = getKey(currentNode);
+                lookupCache.put(key, false);
+            }
+        }
+
         futureJexlNode.setRebuiltNode(newNode);
+    }
+
+    private RegexCacheKey getKey(JexlNode node) {
+        String nodeKey = JexlStringBuildingVisitor.buildQuery(node);
+        String startDate = DateHelper.format(config.getBeginDate());
+        String endDate = DateHelper.format(config.getEndDate());
+        return new RegexCacheKey(nodeKey, false, startDate, endDate, config.getDatatypeFilter());
     }
 }

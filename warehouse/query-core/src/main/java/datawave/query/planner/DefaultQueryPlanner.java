@@ -103,6 +103,9 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.cache.BoundedRangeLookupCache;
+import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.lookups.cache.RegexLookupCache;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -352,6 +355,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
 
+    protected ExpansionCacheConfigs expansionCacheConfigs = null;
+    protected ExpansionCacheFactory expansionCacheFactory = null;
+
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
 
@@ -389,6 +395,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
         setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
+        setExpansionCacheConfigs(other.getExpansionCacheConfigs());
+        setExpansionCacheFactory(other.getExpansionCacheFactory());
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -1646,7 +1654,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     MetadataHelper metadataHelper, ScannerFactory scannerFactory, Map<String,IndexLookup> indexLookupMap) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, stage, () -> {
             try {
-                return RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, script);
+                LookupCache lookupCache = getRegexLookupCache();
+                return RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, script, lookupCache);
             } catch (TableNotFoundException e) {
                 throw new DatawaveQueryException("Failed to Expand Ranges", e);
             }
@@ -1658,7 +1667,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(script);
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         try {
-            config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
+            LookupCache lookupCache = getBoundedRangeLookupCache();
+            config.setQueryTree(
+                            BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree(), lookupCache));
         } catch (TableNotFoundException e) {
             throw new DatawaveQueryException("Failed to Expand Ranges", e);
         }
@@ -1719,7 +1730,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree(), ASTNRNode.class, ASTERNode.class, BOUNDED_RANGE, ASTFunctionNode.class,
                         EXCEEDED_VALUE);
         if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-            config.setQueryTree(RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, helper, indexLookupMap, config.getQueryTree()));
+            LookupCache lookupCache = getRegexLookupCache();
+            config.setQueryTree(RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, helper, indexLookupMap, config.getQueryTree(), lookupCache));
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after expanding regex again:");
             }
@@ -1729,7 +1741,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (nodeCount.isPresent(BOUNDED_RANGE)) {
 
             try {
-                config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
+                LookupCache lookupCache = getBoundedRangeLookupCache();
+                config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree(),
+                                lookupCache));
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
@@ -2233,6 +2247,28 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         PushDownVisitor pushDownPlanner = new PushDownVisitor(config, scannerFactory, metadataHelper, rules);
 
         return pushDownPlanner.applyRules(queryTree);
+    }
+
+    private BoundedRangeLookupCache getBoundedRangeLookupCache() {
+        if (expansionCacheConfigs != null && expansionCacheConfigs.isCacheBoundedRangeLookup()) {
+            if (expansionCacheFactory == null) {
+                log.info("LookupCache requested for BoundedRange but no cache factory was configured");
+            } else {
+                return expansionCacheFactory.getRangeLookupCache();
+            }
+        }
+        return null;
+    }
+
+    private RegexLookupCache getRegexLookupCache() {
+        if (expansionCacheConfigs != null && expansionCacheConfigs.isCacheRegexLookup()) {
+            if (expansionCacheFactory == null) {
+                log.info("LookupCache requested for Regex but no cache factory was configured");
+            } else {
+                return expansionCacheFactory.getRegexLookupCache();
+            }
+        }
+        return null;
     }
 
     /**
@@ -3479,5 +3515,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
+    }
+
+    public ExpansionCacheConfigs getExpansionCacheConfigs() {
+        return expansionCacheConfigs;
+    }
+
+    public void setExpansionCacheConfigs(ExpansionCacheConfigs expansionCacheConfigs) {
+        this.expansionCacheConfigs = expansionCacheConfigs;
+    }
+
+    public ExpansionCacheFactory getExpansionCacheFactory() {
+        return expansionCacheFactory;
+    }
+
+    public void setExpansionCacheFactory(ExpansionCacheFactory expansionCacheFactory) {
+        this.expansionCacheFactory = expansionCacheFactory;
     }
 }

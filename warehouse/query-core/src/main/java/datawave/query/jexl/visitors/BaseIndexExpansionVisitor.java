@@ -20,7 +20,11 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.ExceededIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -49,6 +53,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
 
+    protected LookupCache lookupCache = null;
+
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
                     throws TableNotFoundException {
         this(config, scannerFactory, helper, null, threadName);
@@ -71,6 +77,10 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
         this.lookupMap = (lookupMap != null) ? lookupMap : new HashMap<>();
         this.futureJexlNodes = new ArrayList<>();
+    }
+
+    protected void setLookupCache(LookupCache lookupCache) {
+        this.lookupCache = lookupCache;
     }
 
     protected void setupExecutor() {
@@ -114,6 +124,9 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
             return rebuiltScript;
         } finally {
+            if (lookupCache != null) {
+                lookupCache.logStats();
+            }
             shutdownExecutor();
         }
     }
@@ -158,7 +171,13 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             ((AsyncIndexLookup) lookup).submit();
         }
 
-        FutureJexlNode futureNode = new FutureJexlNode(node, lookup, ignoreComposites, keepOriginalNode);
+        FutureJexlNode futureNode;
+        if (lookup instanceof ExceededIndexLookup) {
+            futureNode = new ExceededJexlNode(node);
+        } else {
+            futureNode = new FutureJexlNode(node, lookup, ignoreComposites, keepOriginalNode);
+        }
+
         futureNode.jjtSetParent(node.jjtGetParent());
         futureJexlNodes.add(futureNode);
 
@@ -232,6 +251,20 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
         public void setRebuiltNode(JexlNode rebuiltNode) {
             this.rebuiltNode = rebuiltNode;
+        }
+    }
+
+    /**
+     * Placeholder for a term that previously failed expansion and is likely to fail expansion again.
+     */
+    protected static class ExceededJexlNode extends FutureJexlNode {
+
+        public ExceededJexlNode(JexlNode node) {
+            super(node, new ExceededIndexLookup(), false, false);
+
+            JexlNode copy = RebuildingVisitor.copy(node);
+            JexlNode exceeded = QueryPropertyMarker.create(copy, MarkerType.EXCEEDED_VALUE);
+            setRebuiltNode(exceeded);
         }
     }
 
