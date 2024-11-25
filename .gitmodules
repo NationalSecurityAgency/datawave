@@ -34,9 +34,6 @@
 [submodule "microservices/services/config"]
 	path = microservices/services/config
 	url = git@github.com:NationalSecurityAgency/datawave-config-service.git
-[submodule "microservices/microservice-parent"]
-	path = microservices/microservice-parent
-	url = git@github.com:NationalSecurityAgency/datawave-parent.git
 [submodule "microservices/microservice-service-parent"]
 	path = microservices/microservice-service-parent
 	url = git@github.com:NationalSecurityAgency/datawave-service-parent.git
