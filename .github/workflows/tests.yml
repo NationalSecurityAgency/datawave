@@ -46,11 +46,12 @@ jobs:
     - name: Commit Changes
       run: |
         if [ "$diffs_found" = true ]; then
-          git checkout -b ${{ steps.extract_branch.outputs.branch }}
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
-          git commit -am "Formatting job fix"
-          git push
+          git pull origin ${{ steps.extract_branch.outputs.branch }} --rebase --autostash
+          git checkout -b ${{ steps.extract_branch.outputs.branch }}
+          git commit -am "GitHub Actions: Fix Formatting"
+          git push origin ${{ steps.extract_branch.outputs.branch }}
         else
           echo "Nothing to do"
         fi
