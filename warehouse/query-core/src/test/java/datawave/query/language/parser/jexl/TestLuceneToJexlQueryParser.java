@@ -642,12 +642,18 @@ public class TestLuceneToJexlQueryParser {
         TokenSearch searchUtil = TokenSearch.Factory.newInstance();
         Analyzer analyzer = new StandardAnalyzer(searchUtil);
         parser.setAnalyzer(analyzer);
-        // this isn't the most realistic test, but it does verify that we don't lose the rest of the token stream
-        // when the first token emitted is the same as the input token.
-        Assert.assertEquals(
-                        "(TOKFIELD == '/home/datawave/README.md' || "
-                                        + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
-                                        + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))",
-                        parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
+        // @formatter:off
+        String expected = "("
+                + "TOKFIELD == '/home/datawave/README.md' || "
+                + "TOKFIELD == 'datawave' || "
+                + "TOKFIELD == 'datawave/readme.md' || "
+                + "TOKFIELD == 'home' || "
+                + "TOKFIELD == 'home/datawave/readme.md' || "
+                + "TOKFIELD == 'md' || "
+                + "TOKFIELD == 'readme' || "
+                + "TOKFIELD == 'readme.md'"
+                + ")";
+        // @formatter:on
+        Assert.assertEquals(expected, parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
 }
