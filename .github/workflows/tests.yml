@@ -168,6 +168,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
@@ -237,6 +238,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
