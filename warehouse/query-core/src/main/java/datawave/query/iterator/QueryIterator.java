@@ -288,12 +288,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     // this method will prune any ivarator cache directories that do not have a valid configuration.
     private void pruneIvaratorCacheDirs() throws InterruptedIOException {
         List<IvaratorCacheDirConfig> configsToRemove = new ArrayList<>();
-        for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+        for (IvaratorCacheDirConfig config : getIvaratorCacheDirConfigs()) {
             if (!hasValidBasePath(config)) {
                 configsToRemove.add(config);
             }
         }
-        ivaratorCacheDirConfigs.removeAll(configsToRemove);
+        getIvaratorCacheDirConfigs().removeAll(configsToRemove);
     }
 
     private boolean hasValidBasePath(IvaratorCacheDirConfig config) throws InterruptedIOException {
@@ -1442,12 +1442,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
                 .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())
                 .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout())
-                .setMaxRangeSplit(this.getMaxIndexRangeSplit())
+                .setMaxRangeSplit(this.getMaxFieldIndexRangeSplit())
                 .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles())
                 .setIvaratorNumRetries(this.getIvaratorNumRetries())
                 .setIvaratorPersistOptions(this.getIvaratorPersistOptions())
                 .setUnsortedIvaratorSource(this.sourceForDeepCopies)
-                .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources, this.ivaratorCacheScanTimeout))
+                .setIvaratorSourcePool(createIvaratorSourcePool(getMaxIvaratorSources(), getIvaratorCacheScanTimeout()))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
                 .setUnindexedFields(nonIndexedFields)
@@ -1570,7 +1570,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
-                    uniqueTransform = new UniqueTransform(getUniqueFields(), getResultTimeout());
+                    uniqueTransform = new UniqueTransform(getUniqueFields(), getIvaratorCacheScanTimeout());
                 }
             }
         }

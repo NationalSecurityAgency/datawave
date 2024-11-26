@@ -1,6 +1,7 @@
 package datawave.query.config;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.util.sortedset.FileSortedSet;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +20,7 @@ public class IvaratorConfig {
     private int ivaratorPersistVerifyCount = 100;
     private int maxIvaratorSources = 33;
     private long maxIvaratorSourceWait = 1000L * 60 * 30;
-    private long maxIvaratorResults = -1;
+
 
     public IvaratorConfig(){};
 
@@ -39,8 +40,6 @@ public class IvaratorConfig {
         this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
         this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
-        this.setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
-        this.setMaxIvaratorResults(other.getMaxIvaratorResults());
     }
 
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
@@ -138,13 +137,4 @@ public class IvaratorConfig {
     public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
         this.maxIvaratorSourceWait = maxIvaratorSourceWait;
     }
-
-    public long getMaxIvaratorResults() {
-        return maxIvaratorResults;
-    }
-
-    public void setMaxIvaratorResults(long maxIvaratorResults) {
-        this.maxIvaratorResults = maxIvaratorResults;
-    }
-
 }
