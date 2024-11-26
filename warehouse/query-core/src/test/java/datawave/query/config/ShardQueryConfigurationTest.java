@@ -596,6 +596,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("noExpansionIfCurrent", Collections.emptySet());
+        updatedValues.put("noExpansionIfCurrent", Collections.singleton("EVENT"));
+
+        defaultValues.put("shardsAndDaysHintAllowed", true);
+        updatedValues.put("shardsAndDaysHintAllowed", false);
     }
 
     private Query createQuery(String query) {

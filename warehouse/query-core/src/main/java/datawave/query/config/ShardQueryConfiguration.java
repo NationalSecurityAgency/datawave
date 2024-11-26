@@ -516,6 +516,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private double fieldIndexHoleMinThreshold = 1.0d;
 
     /**
+     * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
+     * SHARDS_AND_DAYS hint.
+     */
+    private Set<String> noExpansionIfCurrent = Collections.emptySet();
+
+    /**
+     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
+     * present in {@link #noExpansionIfCurrent}, and the query's end date is the current date.
+     */
+    private boolean shardsAndDaysHintAllowed = true;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -753,6 +765,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setNoExpansionIfCurrent(other.getNoExpansionIfCurrent() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrent()));
+        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
     /**
@@ -2791,12 +2805,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-        if (!super.equals(o))
+        }
+        if (!super.equals(o)) {
             return false;
+        }
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
@@ -2995,7 +3012,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithImpliedCounts() == isSortQueryPreIndexWithImpliedCounts() &&
                 isSortQueryPreIndexWithFieldCounts() == isSortQueryPreIndexWithFieldCounts() &&
                 isSortQueryPostIndexWithTermCounts() == isSortQueryPostIndexWithTermCounts() &&
-                isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts();
+                isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts() &&
+                Objects.equals(getNoExpansionIfCurrent(), that.getNoExpansionIfCurrent()) &&
+                isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
         // @formatter:on
     }
 
@@ -3199,7 +3218,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithImpliedCounts(),
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
-                isSortQueryPostIndexWithFieldCounts()
+                isSortQueryPostIndexWithFieldCounts(),
+                getNoExpansionIfCurrent(),
+                isShardsAndDaysHintAllowed()
         );
         // @formatter:on
     }
@@ -3233,5 +3254,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public Set<String> getNoExpansionIfCurrent() {
+        return noExpansionIfCurrent;
+    }
+
+    public void setNoExpansionIfCurrent(Set<String> noExpansionIfCurrent) {
+        this.noExpansionIfCurrent = noExpansionIfCurrent;
+    }
+
+    public boolean isShardsAndDaysHintAllowed() {
+        return shardsAndDaysHintAllowed;
+    }
+
+    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
+        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 }

@@ -2990,4 +2990,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
     }
+
+    public Set<String> getNoExpansionIfCurrent() {
+        return getConfig().getNoExpansionIfCurrent();
+    }
+
+    public void setNoExpansionIfCurrent(Set<String> noExpansionIfCurrent) {
+        getConfig().setNoExpansionIfCurrent(noExpansionIfCurrent);
+    }
 }
