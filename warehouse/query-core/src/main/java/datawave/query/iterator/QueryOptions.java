@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import datawave.query.config.IvaratorConfig;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -65,6 +64,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.config.IvaratorConfig;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -365,7 +365,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected IvaratorConfig ivaratorConfig = new IvaratorConfig();
     private FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
-    
+
     protected long maxIvaratorResults = -1;
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
@@ -508,7 +508,6 @@ public class QueryOptions implements OptionDescriber {
         setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         setMaxIvaratorSources(other.getMaxIvaratorSources());
         setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
-
 
         this.yieldThresholdMs = other.yieldThresholdMs;
 
@@ -1005,7 +1004,8 @@ public class QueryOptions implements OptionDescriber {
 
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
-                        .forIvaratorDirs(ivaratorConfig.getIvaratorCacheDirConfigs().stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
+                        .forIvaratorDirs(ivaratorConfig.getIvaratorCacheDirConfigs().stream().map(IvaratorCacheDirConfig::getBasePathURI)
+                                        .collect(Collectors.joining(",")))
                         .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
 
@@ -1024,6 +1024,7 @@ public class QueryOptions implements OptionDescriber {
     public void setZookeeperConfig(String zookeeperConfig) {
         this.zookeeperConfig = zookeeperConfig;
     }
+
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
         return ivaratorConfig.getIvaratorCacheDirConfigs();
     }
@@ -1107,7 +1108,6 @@ public class QueryOptions implements OptionDescriber {
     public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
         ivaratorConfig.setMaxIvaratorSourceWait(maxIvaratorSourceWait);
     }
-
 
     public long getMaxIvaratorResults() {
         return maxIvaratorResults;

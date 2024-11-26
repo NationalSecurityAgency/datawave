@@ -1,10 +1,10 @@
 package datawave.query.config;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.util.sortedset.FileSortedSet;
-
 import java.util.Collections;
 import java.util.List;
+
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.util.sortedset.FileSortedSet;
 
 public class IvaratorConfig {
 
@@ -21,10 +21,9 @@ public class IvaratorConfig {
     private int maxIvaratorSources = 33;
     private long maxIvaratorSourceWait = 1000L * 60 * 30;
 
+    public IvaratorConfig() {};
 
-    public IvaratorConfig(){};
-
-    public IvaratorConfig(IvaratorConfig other){
+    public IvaratorConfig(IvaratorConfig other) {
         copyFrom(other);
     }
 
