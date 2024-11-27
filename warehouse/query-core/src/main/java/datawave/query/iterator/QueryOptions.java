@@ -1094,7 +1094,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getMaxIvaratorSources() {
-        return ivaratorConfig.getMaxIvaratorSources();
+        return (int)ivaratorConfig.getMaxIvaratorSources();
     }
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {

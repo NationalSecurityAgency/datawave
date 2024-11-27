@@ -18,10 +18,10 @@ public class IvaratorConfig {
     private int ivaratorNumRetries = 2;
     private boolean ivaratorPersistVerify = true;
     private int ivaratorPersistVerifyCount = 100;
-    private int maxIvaratorSources = 33;
+    private long maxIvaratorSources = 33;
     private long maxIvaratorSourceWait = 1000L * 60 * 30;
 
-    public IvaratorConfig() {};
+    public IvaratorConfig() {}
 
     public IvaratorConfig(IvaratorConfig other) {
         copyFrom(other);
@@ -121,11 +121,11 @@ public class IvaratorConfig {
         this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
     }
 
-    public int getMaxIvaratorSources() {
+    public long getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
 
-    public void setMaxIvaratorSources(int maxIvaratorSources) {
+    public void setMaxIvaratorSources(long maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
     }
 
