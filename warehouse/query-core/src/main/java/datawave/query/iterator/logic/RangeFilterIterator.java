@@ -28,6 +28,12 @@ import datawave.query.jexl.DelayedNonEventIndexContext;
 /**
  * Allows a range term to be run as a context iterator
  * <p>
+ * A {@link NestedIterator} requires outside context to determine its truth state. The prototypical example is a negation. It's very difficult to find all the
+ * documents that 'not blue'. However, it's very easy to determine which 'monster trucks' are 'not blue'.
+ * <p>
+ * The same concept can be applied to range terms. Consider the extreme example of a two-term query A and B when A matches a single document and B matches every
+ * document in the shard. We do not want to run the B term as an ivarator, in this case it makes sense to run it as a filter for the A term.
+ * <p>
  * Field Index key structure
  * <p>
  * <code>row fi\x00FIELD : value\x00datatype\x00uid</code>

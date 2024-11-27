@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Set;
-
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -18,13 +16,19 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 
+import datawave.query.index.lookup.RangeStream;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
 import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.util.count.CountMap;
 
 /**
- * Finds the maximum cardinality of a query in the context of the field index
+ * Finds the maximum cardinality of a query in the context of the field index.
+ * <p>
+ * Cardinality in this context is defined as the maximum possible number of documents that can be returned for a given shard.
+ * <p>
+ * The {@link RangeStream} can persist the counts per term from the global index in the form of a {@link CountMap}. This map is used to determine the overall
+ * cardinality of a particular query in the context of a particular shard.
  */
 public class CardinalityVisitor extends ShortCircuitBaseVisitor {
 
@@ -65,6 +69,7 @@ public class CardinalityVisitor extends ShortCircuitBaseVisitor {
             } else {
                 if (childCount == Long.MAX_VALUE) {
                     count = Long.MAX_VALUE;
+                    break;
                 } else {
                     count += childCount;
                 }
@@ -79,8 +84,6 @@ public class CardinalityVisitor extends ShortCircuitBaseVisitor {
         Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isAnyTypeOf(MarkerType.EXCEEDED_TERM, MarkerType.EXCEEDED_VALUE, MarkerType.EXCEEDED_OR, MarkerType.BOUNDED_RANGE)) {
             return Long.MAX_VALUE;
-        } else if (instance.isAnyTypeOf(Set.of(MarkerType.DELAYED, MarkerType.EVALUATION_ONLY))) {
-            return 0L;
         } else if (instance.isAnyType()) {
             return 0L;
         }
