@@ -277,6 +277,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
 
+    public static final String IVARATOR_CONFIG = "ivarator.config";
+
     protected Map<String,String> options;
 
     protected String scanId;
@@ -364,9 +366,8 @@ public class QueryOptions implements OptionDescriber {
     protected String zookeeperConfig = null;
 
     protected IvaratorConfig ivaratorConfig = new IvaratorConfig();
-    private FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
-    protected long maxIvaratorResults = -1;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
 
@@ -498,16 +499,11 @@ public class QueryOptions implements OptionDescriber {
         this.fiEvaluationFilter = other.fiEvaluationFilter;
         this.eventEvaluationFilter = other.eventEvaluationFilter;
 
-        setIvaratorCacheDirConfigs((other.getIvaratorCacheDirConfigs() == null) ? null : new ArrayList<>(other.getIvaratorCacheDirConfigs()));
+        this.ivaratorConfig = new IvaratorConfig(other.ivaratorConfig);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
-        setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
-        setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
-        setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
-        setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
-        setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
-        setMaxIvaratorSources(other.getMaxIvaratorSources());
-        setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
+
 
         this.yieldThresholdMs = other.yieldThresholdMs;
 
@@ -1110,11 +1106,19 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public long getMaxIvaratorResults() {
-        return maxIvaratorResults;
+        return ivaratorConfig.getMaxIvaratorResults();
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
-        this.maxIvaratorResults = maxIvaratorResults;
+        ivaratorConfig.setMaxIvaratorResults(maxIvaratorResults);
+    }
+
+    public void setIvaratorConfig(IvaratorConfig ivaratorConfig){
+        this.ivaratorConfig.copyFrom(ivaratorConfig);
+    }
+
+    public IvaratorConfig getIvaratorConfig(){
+        return this.ivaratorConfig;
     }
 
     public boolean isCompressResults() {
@@ -1352,6 +1356,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
+        options.put(IVARATOR_CONFIG, "Json of commonly used ivarator configuration variables");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1890,6 +1895,15 @@ public class QueryOptions implements OptionDescriber {
         }
         if (options.containsKey(METADATA_TABLE_NAME)) {
             this.metadataTableName = options.get(METADATA_TABLE_NAME);
+        }
+
+        if (options.containsKey(IVARATOR_CONFIG)) {
+            try {
+                this.ivaratorConfig = IvaratorConfig.fromJson(options.get(IVARATOR_CONFIG));
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
     }
