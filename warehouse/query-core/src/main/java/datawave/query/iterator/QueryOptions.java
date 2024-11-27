@@ -1503,12 +1503,13 @@ public class QueryOptions implements OptionDescriber {
             this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
         }
 
-        //
+        // parse out cardinality threshold
         if (options.containsKey(CARDINALITY_THRESHOLD)) {
             String option = options.get(CARDINALITY_THRESHOLD);
             this.cardinalityThreshold = Long.parseLong(option);
         }
 
+        // cardinality requires term counts and a threshold
         if (termCounts != null && !termCounts.isEmpty() && cardinalityThreshold > 0) {
             cardinality = CardinalityVisitor.cardinality(getScript(), termCounts);
         }
