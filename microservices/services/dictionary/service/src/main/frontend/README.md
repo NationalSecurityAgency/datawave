@@ -17,14 +17,10 @@ This section provides the installation details and outlines the steps to run Dat
     cd datawave
     ```
 
-2. Make sure you are on the integration branch for Datawave, and on the main branch for each of the microservice submodules, as the Dictionary service depends on the Configuration and Authorization microservices. Then run the following to build the project. Ensure that the cache is disabled in the maven command:
+2. Make sure you are on the integration branch for Datawave, as the Dictionary service depends on the Configuration and Authorization microservices. Then run the following to build the project. Ensure that the cache is disabled in the maven command:
 
     ```
-    # First checkout the main branch for each submodule:
-
-    git submodule foreach 'git checkout main || :'
-
-    # Then build the datawave project and produce images for each microservice:
+    # Build the datawave project and produce images for each microservice:
 
     mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -Dmaven.build.cache.enabled=false
 

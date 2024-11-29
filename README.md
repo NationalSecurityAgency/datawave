@@ -74,15 +74,16 @@ git subrepo pull <dir>
 ```
 ### Building
 
-It is recommended to build the project using multiple threads.
+It is recommended to build the project using multiple threads.  This will not build the starters, utilities, and services.
 ```
 mvn -Pdocker,dist clean install -T 1C
 ```
 
- If you don't want to build the starters, util modules, and services then try this
+If you want to build the starters, util modules, and services as well then try this
 ```
 mvn -Pdocker,dist -Dstarters -Dservices -Dutils clean install -T 1C
 ```
+If you want to build the service apis but not the services themselveds then add -DonlyServiceApis
 
 NOTE: The util modules, starters, and services are actually tagged and deployed separately.
   Hence the snapshot versions within those sub repos are not connected together.
