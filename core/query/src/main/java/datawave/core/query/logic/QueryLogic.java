@@ -494,17 +494,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            the query settings (query, begin date, end date, etc.)
      * @param auths
      *            the authorizations that have been calculated for this query based on the caller and server.
-     * @param expandFields
-     * @param expandValues
      * @return a list of messages detailing any issues found for the query
      */
-    default Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+    default Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
         throw new UnsupportedOperationException("Query validation not implemented");
     }
 
     /**
-     * Return a transformer that will convert the result of {@link QueryLogic#validateQuery(AccumuloClient, Query, Set, boolean, boolean)} to a
-     * {@link QueryValidationResponse}.
+     * Return a transformer that will convert the result of {@link QueryLogic#validateQuery(AccumuloClient, Query, Set)} to a {@link QueryValidationResponse}.
      *
      * @return the transformer
      */

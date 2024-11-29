@@ -80,8 +80,6 @@ public class ShardQueryLogicQueryValidationTest {
     private String query;
     private Date startDate;
     private Date endDate;
-    private boolean expandFields;
-    private boolean expandValues;
 
     private final List<QueryRuleResult> expectedRuleResults = new ArrayList<>();
     private Class<? extends Throwable> expectedExceptionType;
@@ -120,8 +118,6 @@ public class ShardQueryLogicQueryValidationTest {
         this.deserializer = new KryoDocumentDeserializer();
         this.startDate = dateFormat.parse("20091231");
         this.endDate = dateFormat.parse("20150101");
-        this.expandFields = true;
-        this.expandValues = false;
     }
 
     @After
@@ -366,14 +362,6 @@ public class ShardQueryLogicQueryValidationTest {
         this.queryParameters.put(parameter, value);
     }
 
-    private void givenExpandFields(boolean expandFields) {
-        this.expandFields = expandFields;
-    }
-
-    private void givenExpandValues(boolean expandValues) {
-        this.expandValues = expandValues;
-    }
-
     private void expectRuleResult(QueryRuleResult ruleResult) {
         this.expectedRuleResults.add(ruleResult);
     }
@@ -386,7 +374,7 @@ public class ShardQueryLogicQueryValidationTest {
     private void assertResult() throws Exception {
         AccumuloClient client = createClient();
         Query settings = createSettings();
-        QueryValidationResult actualResult = (QueryValidationResult) logic.validateQuery(client, settings, authSet, expandFields, expandValues);
+        QueryValidationResult actualResult = (QueryValidationResult) logic.validateQuery(client, settings, authSet);
 
         Assertions.assertThat(actualResult.getRuleResults()).isEqualTo(expectedRuleResults);
         if (expectedExceptionType == null) {
