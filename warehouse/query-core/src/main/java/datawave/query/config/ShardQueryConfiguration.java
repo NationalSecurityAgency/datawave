@@ -1571,7 +1571,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public int getMaxIvaratorSources() {
-        return (int)ivaratorConfig.getMaxIvaratorSources();
+        return (int) ivaratorConfig.getMaxIvaratorSources();
     }
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {

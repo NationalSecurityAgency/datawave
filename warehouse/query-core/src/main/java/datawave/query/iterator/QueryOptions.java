@@ -504,7 +504,6 @@ public class QueryOptions implements OptionDescriber {
 
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
 
-
         this.yieldThresholdMs = other.yieldThresholdMs;
 
         this.compressResults = other.compressResults;
@@ -1090,7 +1089,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getMaxIvaratorSources() {
-        return (int)ivaratorConfig.getMaxIvaratorSources();
+        return (int) ivaratorConfig.getMaxIvaratorSources();
     }
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
@@ -1113,11 +1112,11 @@ public class QueryOptions implements OptionDescriber {
         ivaratorConfig.setMaxIvaratorResults(maxIvaratorResults);
     }
 
-    public void setIvaratorConfig(IvaratorConfig ivaratorConfig){
+    public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
         this.ivaratorConfig.copyFrom(ivaratorConfig);
     }
 
-    public IvaratorConfig getIvaratorConfig(){
+    public IvaratorConfig getIvaratorConfig() {
         return this.ivaratorConfig;
     }
 
@@ -1900,8 +1899,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(IVARATOR_CONFIG)) {
             try {
                 this.ivaratorConfig = IvaratorConfig.fromJson(options.get(IVARATOR_CONFIG));
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
