@@ -131,6 +131,8 @@ public class DiscoveryLogicTest {
         writeEntries("VEHICLE", "ranger", "stock", "BAR", "20130102", 5, 5, 5);
         writeEntries("VEHICLE", "ranger", "stock", "FOO", "20130103", 20, 15, 2);
         writeEntries("VEHICLE", "ranger", "stock", "BAR", "20130103", 6, 1, 2);
+        writeEntries("NON_INDEXED_FIELD", "coffee", "csv", "FOO", "20130101", 1, 1, 1);
+        writeEntries("NON_INDEXED_FIELD", "espresso", "csv", "FOO", "20130102", 1, 5, 5);
 
         writeForwardModel("ANIMAL", "ROOSTER");
         writeForwardModel("ANIMAL", "BIRD");
@@ -146,7 +148,9 @@ public class DiscoveryLogicTest {
         try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
             Mutation mutation = new Mutation(field);
             mutation.put("t", datatype + "\u0000" + LcNoDiacriticsType.class.getName(), columnVisibility, BLANK_VALUE);
-            mutation.put("i", datatype + "\u0000" + dateStr, columnVisibility, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+            if (!field.equals("NON_INDEXED_FIELD")) {
+                mutation.put("i", datatype + "\u0000" + dateStr, columnVisibility, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+            }
             mutation.put("ri", datatype + "\u0000" + dateStr, columnVisibility, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
             writer.addMutation(mutation);
         }
@@ -381,6 +385,19 @@ public class DiscoveryLogicTest {
         expect(new DiscoveredThing("ruddy duck", "BIRD", "stock", "20130101", "FOO", 300L, new MapWritable()));
         expect(new DiscoveredThing("ruddy duck", "BIRD", "stock", "20130102", "FOO", 300L, new MapWritable()));
         expect(new DiscoveredThing("ruddy duck", "BIRD", "stock", "20130103", "FOO", 300L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testIgnoreNonIndexedField() throws Exception {
+        givenQuery("coffee OR espresso OR rooster");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "20130101", "BAR", 30L, new MapWritable()));
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "20130102", "BAR", 30L, new MapWritable()));
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "20130103", "BAR", 30L, new MapWritable()));
 
         assertQueryResults();
     }
