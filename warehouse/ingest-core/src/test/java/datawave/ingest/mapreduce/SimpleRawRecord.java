@@ -20,6 +20,7 @@ import datawave.data.hash.UIDBuilder;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
+import datawave.util.CompositeTimestamp;
 
 /**
  * A POJO implementation of the {@link datawave.ingest.data.RawRecordContainer}.
@@ -31,7 +32,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private Map<String,String> securityMarkings = new TreeMap<>();
     private UID id = uidBuilder.newId();
     private Type dataType;
-    private long date = Long.MIN_VALUE;
+    private long timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
     private Collection<String> errors = new ArrayList<>();
     private Collection<String> altIds = Collections.emptyList();
     private String rawFileName = "";
@@ -89,13 +90,13 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     }
 
     @Override
-    public long getDate() {
-        return date;
+    public long getTimestamp() {
+        return timestamp;
     }
 
     @Override
-    public void setDate(long date) {
-        this.date = date;
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -247,7 +248,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
 
         id.write(dataOutput);
         dataOutput.writeUTF(dataType.typeName());
-        dataOutput.writeLong(date);
+        dataOutput.writeLong(timestamp);
 
         TestWritableUtil.writeCollection(errors, dataOutput);
         TestWritableUtil.writeCollection(altIds, dataOutput);
@@ -274,7 +275,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         id.readFields(dataInput);
 
         dataType = TypeRegistry.getType(dataInput.readUTF());
-        date = dataInput.readLong();
+        timestamp = dataInput.readLong();
 
         errors = TestWritableUtil.readCollection(dataInput);
         altIds = TestWritableUtil.readCollection(dataInput);
