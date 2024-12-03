@@ -610,7 +610,7 @@
                                         </dependency>
                                         <dependency>
                                             <groupId>org.apache.hadoop.thirdparty</groupId>
-                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                                            <artifactId>hadoop-shaded-protobuf_3_21</artifactId>
                                         </dependency>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop.thirdparty</groupId>
@@ -618,7 +618,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop.thirdparty</groupId>
-                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                                            <artifactId>hadoop-shaded-protobuf_3_21</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>com.fasterxml.woodstox</groupId>
