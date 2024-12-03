@@ -11,9 +11,9 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -30,7 +30,7 @@ import datawave.query.util.MetadataHelper;
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
  */
 public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(BoundedRangeIndexExpansionVisitor.class);
 
     private final JexlASTHelper.RangeFinder rangeFinder;
 
@@ -104,7 +104,39 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
 
+        if (log.isDebugEnabled()) {
+            logResult(currentNode, fieldsToTerms);
+        }
+
         futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
                         expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
+    }
+
+    /**
+     * Log the result of index expansion for the provided term.
+     *
+     * @param node
+     *            the term
+     * @param lookupMap
+     *            the result of the lookup
+     */
+    protected void logResult(JexlNode node, IndexLookupMap lookupMap) {
+        String field = JexlASTHelper.getIdentifier(node);
+
+        if (lookupMap == null) {
+            log.debug("Lookup map was null for term [{}]", JexlStringBuildingVisitor.buildQuery(node));
+            return;
+        }
+
+        if (lookupMap.containsKey(field)) {
+            String term = JexlStringBuildingVisitor.buildQuery(node);
+            if (lookupMap.get(field).isEmpty()) {
+                log.debug("range expansion for term [{}] failed (no data)", term);
+            } else if (lookupMap.get(field).isThresholdExceeded()) {
+                log.debug("range expansion for term [{}] failed (threshold)", term);
+            } else {
+                log.debug("range expansion for term [{}] success ({} values)", term, lookupMap.get(field).size());
+            }
+        }
     }
 }
