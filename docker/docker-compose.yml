@@ -9,7 +9,7 @@ services:
       - quickstart
     # To run the wildfly webservice, change `--accumulo` to `--web`
     command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: datawave/quickstart-compose:7.0.1-SNAPSHOT
+    image: datawave/quickstart-compose
     environment:
       - DW_CONTAINER_HOST=quickstart
       - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
@@ -47,7 +47,7 @@ services:
       test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
 
   consul:
-    image: consul:1.15.4
+    image: docker.io/hashicorp/consul:1.15.4
     hostname: localhost
     environment:
       - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
@@ -65,7 +65,7 @@ services:
       - demo
 
   rabbitmq:
-    image: rabbitmq:3.12.4-alpine
+    image: docker.io/rabbitmq:3.12.4
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
       - ./logs:/logs
@@ -82,7 +82,9 @@ services:
 
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
-    image: bitnami/kafka:3.2.3
+    profiles:
+      - kafka
+    image: docker.io/bitnami/kafka:3.2
     ports:
       - "9094:9094"
     networks:
@@ -102,9 +104,8 @@ services:
 
   kafdrop:
     profiles:
-      - management
-      - full
-    image: obsidiandynamics/kafdrop
+      - kafka
+    image: docker.io/obsidiandynamics/kafdrop
     ports:
       - "8999:9000"
     networks:
@@ -122,7 +123,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: datawave/config-service:4.0.1-SNAPSHOT
+    image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -146,7 +147,7 @@ services:
         condition: service_started
 
   cache:
-    image: datawave/hazelcast-service:4.0.1-SNAPSHOT
+    image: datawave/hazelcast-service
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -172,9 +173,86 @@ services:
       configuration:
         condition: service_started
 
+  query-cache:
+    profiles:
+      - querycache
+      # To enable an additional Hazelcast cluster, enable the "querycache" profile
+      # Set an environment variable: QUERY_CACHE=query-cache. This will force the query and executor service to use a separate "query-cache" Hazelcast cluster.
+    image: datawave/hazelcast-service
+    scale: 1
+    command:
+      - --spring.application.name=query-cache
+      - --hazelcast.client.cluster-members
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "5701-5703"
+      - "8080"
+      - "8844:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/query-cache/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_started
+
+  query-rabbitmq:
+    profiles:
+      - queryrabbit
+      # To enable an additional rabbit cluster, enable the "queryrabbit" profile
+      # Set an environment variable: USE_DEDICATED_INSTANCE=true. This will force the query and executor service to use a separate "query-rabbitmq" rabbit cluster.
+    image: docker.io/rabbitmq:3.12.4
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-query-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=15672,5672
+      - RABBITMQ_ERLANG_COOKIE="someothercookie"
+    ports:
+      - "15673:15672"
+    networks:
+      - demo
+    depends_on:
+      consul:
+        condition: service_started
+
+  # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
+  query-kafka:
+    profiles:
+      - querykafka
+    # To enable an additional rabbit cluster, enable the "querykafka" profile
+    # Set an environment variable: USE_DEDICATED_INSTANCE=true. This will force the query and executor service to use a separate "query-kafka" kafka cluster.
+    image: docker.io/bitnami/kafka:3.2
+    ports:
+      - "9095:9095"
+    networks:
+      - demo
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,CONTROLLER://:9093,EXTERNAL://:9095
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://query-kafka:9092,EXTERNAL://${DW_HOSTNAME}:9095
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@query-kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false
+      - KAFKA_CFG_DELETE_TOPICS_ENABLE=true
+
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: datawave/authorization-service:4.0.1-SNAPSHOT
+    image: datawave/authorization-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose,federation
@@ -203,7 +281,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: datawave/accumulo-service:4.0.1-SNAPSHOT
+    image: datawave/accumulo-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -236,7 +314,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: datawave/audit-service:4.0.1-SNAPSHOT
+    image: datawave/audit-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -270,7 +348,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
-    image: datawave/query-metric-service:4.0.2-SNAPSHOT
+    image: datawave/query-metric-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -307,7 +385,7 @@ services:
     profiles:
       - dictionary
       - full
-    image: datawave/dictionary-service:4.0.1-SNAPSHOT
+    image: datawave/dictionary-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -335,11 +413,30 @@ services:
       authorization:
         condition: service_healthy
 
+  file-provider:
+    profiles:
+      - file-provider
+      - full
+    image: datawave/file-provider-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "8580:8080"
+      - "8943:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+
   # If you want to test cached results, enable the cachedresults profile
   mysql:
     profiles:
       - cachedresults
-    image: mysql:8.0.32
+    image: docker.io/mysql:8.0.32
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=true
       - MYSQL_DATABASE=cachedresults
@@ -355,7 +452,7 @@ services:
   # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
   query:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/query-service:1.0.1-SNAPSHOT
+    image: datawave/query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults,federation
@@ -365,8 +462,10 @@ services:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
-      - "BACKEND=${BACKEND:-kafka}"
+      - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
+      - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -390,8 +489,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -399,7 +496,7 @@ services:
     profiles:
       - full
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/mapreduce-query-service:1.0.1-SNAPSHOT
+    image: datawave/mapreduce-query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query,mrquery,federation
@@ -430,14 +527,12 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
   executor-pool1:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
-    image: datawave/query-executor-service:1.0.1-SNAPSHOT
+    image: datawave/query-executor-service
     command:
       - --spring.application.name=executor-pool1
       - --spring.cloud.config.name=executor
@@ -448,8 +543,10 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
+      - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -479,14 +576,12 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
 
   executor-pool2:
     profiles:
       - pool2
       - full
-    image: datawave/query-executor-service:1.0.1-SNAPSHOT
+    image: datawave/query-executor-service
     command:
       - --spring.application.name=executor-pool2
       - --spring.cloud.config.name=executor
@@ -497,8 +592,10 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
+      - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -533,7 +630,7 @@ services:
     profiles:
       - modification
       - full
-    image: datawave/modification-service:1.0.1-SNAPSHOT
+    image: datawave/modification-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query
@@ -584,7 +681,7 @@ services:
     profiles:
       - management
       - full
-    image: hazelcast/management-center:5.1.2
+    image: docker.io/hazelcast/management-center:5.1.2
     environment:
       - |-
         JAVA_OPTS=

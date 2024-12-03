@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
@@ -41,7 +42,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
         return Math.max(0L, config.getMaxIndexScanTimeMillis() - (System.currentTimeMillis() - startTimeMillis));
     }
 
-    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, CountDownLatch stoppedLatch, long startTimeMillis, long timeout) {
+    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, CountDownLatch stoppedLatch, AtomicLong startTimeMillis, long timeout) {
         // this ensures that we don't wait for the future response until the task has started
         if (startedLatch != null) {
             try {
@@ -68,7 +69,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             // timeout exception and except ( a max lookup specified ) 3) we receive a value under timeout and we break
             while (!execService.isShutdown() && !execService.isTerminated()) {
                 try {
-                    future.get((swallowTimeout) ? maxLookup : getRemainingTimeMillis(startTimeMillis), TimeUnit.MILLISECONDS);
+                    future.get((swallowTimeout) ? maxLookup : getRemainingTimeMillis(startTimeMillis.get()), TimeUnit.MILLISECONDS);
                 } catch (TimeoutException e) {
                     if (swallowTimeout) {
                         continue;

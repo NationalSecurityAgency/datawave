@@ -453,12 +453,12 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList()
@@ -503,14 +503,14 @@ public abstract class CompositeFunctionsTest {
         //  @formatter:off
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Collections.emptyList(),
                 Collections.emptyList(),
@@ -780,6 +780,22 @@ public abstract class CompositeFunctionsTest {
             }
 
         }
+    }
+
+    @Test
+    public void testMultiFieldInclude() throws Exception {
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
     }
 
     @Test

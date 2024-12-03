@@ -1,6 +1,7 @@
 package datawave.query.tables;
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
@@ -45,5 +46,25 @@ public class SessionOptions extends ScannerOptions {
             settings.add(setting);
         }
         return settings;
+    }
+
+    public void applyExecutionHints(Map<String,String> scanHints) {
+        setExecutionHints(scanHints);
+    }
+
+    public void applyExecutionHints(String tableName, Map<String,Map<String,String>> tableScanHints) {
+        if (tableScanHints.containsKey(tableName)) {
+            setExecutionHints(tableScanHints.get(tableName));
+        }
+    }
+
+    public void applyConsistencyLevel(ConsistencyLevel consistencyLevel) {
+        setConsistencyLevel(consistencyLevel);
+    }
+
+    public void applyConsistencyLevel(String tableName, Map<String,ConsistencyLevel> consistencyLevels) {
+        if (consistencyLevels.containsKey(tableName)) {
+            setConsistencyLevel(consistencyLevels.get(tableName));
+        }
     }
 }

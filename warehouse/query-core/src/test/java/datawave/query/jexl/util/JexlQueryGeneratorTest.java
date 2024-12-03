@@ -10,6 +10,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -19,6 +20,12 @@ import datawave.query.jexl.visitors.validate.ASTValidator;
 
 class JexlQueryGeneratorTest {
 
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(JexlQueryGeneratorTest.class);
+
+    private final int maxIterations = 1_000;
+    private final int size = 1;
+    private final int minSize = 2;
+    private final int maxSize = 15;
     private final ASTValidator validator = new ASTValidator();
 
     @BeforeEach
@@ -31,7 +38,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableAllOptions();
-        generateFixedSize(generator, 1, 1);
+        generateQueries(generator);
     }
 
     @Test
@@ -39,7 +46,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableNegations();
-        generateFixedSize(generator, 10, 1);
+        generateQueries(generator);
     }
 
     @Test
@@ -47,7 +54,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableRegexes();
-        generateFixedSize(generator, 10, 1);
+        generateQueries(generator);
     }
 
     @Test
@@ -55,7 +62,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableFilterFunctions();
-        generateFixedSize(generator, 10, 1);
+        testFunctions(generator);
     }
 
     @Test
@@ -63,7 +70,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableContentFunctions();
-        generateFixedSize(generator, 10, 1);
+        testFunctions(generator);
     }
 
     @Test
@@ -71,7 +78,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableGroupingFunctions();
-        generateFixedSize(generator, 10, 1);
+        testFunctions(generator);
     }
 
     @Test
@@ -79,7 +86,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("FIELD");
         Set<String> values = Collections.singleton("value");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableAllOptions();
-        generateFixedSize(generator, 10, 5);
+        generateFixedSize(generator, maxIterations, maxSize);
     }
 
     @Test
@@ -87,7 +94,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Sets.newHashSet("F1", "F2", "F3");
         Set<String> values = Sets.newHashSet("v", "bar", "foo");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableAllOptions();
-        generateFixedSize(generator, 15, 20);
+        generateFixedSize(generator, 100, 100);
     }
 
     @Test
@@ -95,7 +102,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Sets.newHashSet("F1", "F2", "F3", "$11", "$22");
         Set<String> values = Sets.newHashSet("v", "bar", "foo");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).enableAllOptions();
-        generateVariableSize(generator, 1500, 1, 15);
+        generateVariableSize(generator, 1500, minSize, maxSize);
     }
 
     @Test
@@ -103,7 +110,7 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("F");
         Set<String> values = Sets.newHashSet("1", "2", "3", "4");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).disableIntersections();
-        generateVariableSize(generator, 10, 3, 7);
+        generateVariableSize(generator, maxIterations, minSize, maxSize);
     }
 
     @Test
@@ -111,7 +118,26 @@ class JexlQueryGeneratorTest {
         Set<String> fields = Collections.singleton("F");
         Set<String> values = Sets.newHashSet("1", "2", "3", "4");
         QueryGenerator generator = new JexlQueryGenerator(fields, values).disableUnions();
-        generateVariableSize(generator, 10, 3, 7);
+        generateQueries(generator);
+    }
+
+    private void testFunctions(QueryGenerator generator) {
+        generateFixedSize(generator, maxIterations, size);
+        generateVariableSize(generator, maxIterations, minSize, maxSize);
+
+        generator.enableNoFieldedFunctions();
+        generateFixedSize(generator, maxIterations, size);
+        generateVariableSize(generator, maxIterations, minSize, maxSize);
+
+        generator.disableNoFieldedFunctions();
+        generator.enableMultiFieldedFunctions();
+        generateFixedSize(generator, maxIterations, size);
+        generateVariableSize(generator, maxIterations, minSize, maxSize);
+    }
+
+    private void generateQueries(QueryGenerator generator) {
+        generateFixedSize(generator, maxIterations, size);
+        generateVariableSize(generator, maxIterations, minSize, maxSize);
     }
 
     private void generateFixedSize(QueryGenerator generator, int maxIterations, int size) {
@@ -132,6 +158,7 @@ class JexlQueryGeneratorTest {
         try {
             assertTrue(validator.isValid(JexlASTHelper.parseAndFlattenJexlQuery(query)));
         } catch (InvalidQueryTreeException | ParseException e) {
+            log.info("Failed to parse query: {}", query);
             throw new RuntimeException(e);
         }
     }

@@ -15,6 +15,9 @@ public abstract class AbstractQueryGenerator implements QueryGenerator {
     protected boolean filterFunctionsEnabled = false;
     protected boolean contentFunctionsEnabled = false;
     protected boolean groupingFunctionsEnabled = false;
+    protected boolean noFieldedFunctionsEnabled = false;
+    protected boolean multiFieldedFunctionsEnabled = false;
+    protected boolean nullLiteralsEnabled = false;
 
     protected final Random random = new Random();
     protected final StringBuilder sb = new StringBuilder();
@@ -23,7 +26,7 @@ public abstract class AbstractQueryGenerator implements QueryGenerator {
     protected final List<String> values;
 
     enum NodeType {
-        EQ, NE, ER, FILTER_FUNCTION, CONTENT_FUNCTION, GROUPING_FUNCTION
+        EQ, NE, ER, FILTER_FUNCTION, CONTENT_FUNCTION, GROUPING_FUNCTION, EQ_NULL, NE_NULL
     }
 
     public AbstractQueryGenerator(Set<String> fields, Set<String> values) {
@@ -102,17 +105,105 @@ public abstract class AbstractQueryGenerator implements QueryGenerator {
         return this;
     }
 
+    public QueryGenerator disableNoFieldedFunctions() {
+        noFieldedFunctionsEnabled = false;
+        return this;
+    }
+
+    public QueryGenerator enableNoFieldedFunctions() {
+        noFieldedFunctionsEnabled = true;
+        return this;
+    }
+
     public QueryGenerator disableGroupingFunctions() {
         groupingFunctionsEnabled = false;
         return this;
     }
 
+    public QueryGenerator enableMultiFieldedFunctions() {
+        multiFieldedFunctionsEnabled = true;
+        return this;
+    }
+
+    public QueryGenerator disableMultiFieldedFunctions() {
+        multiFieldedFunctionsEnabled = false;
+        return this;
+    }
+
+    public QueryGenerator enableNullLiterals() {
+        nullLiteralsEnabled = true;
+        return this;
+    }
+
+    public QueryGenerator disableNullLiterals() {
+        nullLiteralsEnabled = false;
+        return this;
+    }
+
     public QueryGenerator enableAllOptions() {
-        return enableNegations().enableRegexes().enableFilterFunctions().enableContentFunctions().enableGroupingFunctions();
+        //  @formatter:off
+        return enableNegations()
+                        .enableRegexes()
+                        .enableFilterFunctions()
+                        .enableContentFunctions()
+                        .enableGroupingFunctions()
+                        .enableNoFieldedFunctions()
+                        .enableMultiFieldedFunctions()
+                        .enableNullLiterals();
+        //  @formatter:on
     }
 
     public QueryGenerator disableAllOptions() {
-        return disableNegations().disableRegexes().disableFilterFunctions().disableContentFunctions().disableGroupingFunctions();
+        //  @formatter:off
+        return disableNegations()
+                        .disableRegexes()
+                        .disableFilterFunctions()
+                        .disableContentFunctions()
+                        .disableGroupingFunctions()
+                        .disableNoFieldedFunctions()
+                        .disableMultiFieldedFunctions()
+                        .disableNullLiterals();
+        //  @formatter:on
+    }
+
+    public boolean isIntersectionsEnabled() {
+        return intersectionsEnabled;
+    }
+
+    public boolean isUnionsEnabled() {
+        return unionsEnabled;
+    }
+
+    public boolean isNegationsEnabled() {
+        return negationsEnabled;
+    }
+
+    public boolean isRegexesEnabled() {
+        return regexEnabled;
+    }
+
+    public boolean isFilterFunctionsEnabled() {
+        return filterFunctionsEnabled;
+    }
+
+    public boolean isContentFunctionsEnabled() {
+        return contentFunctionsEnabled;
+    }
+
+    public boolean isGroupingFunctionsEnabled() {
+        return groupingFunctionsEnabled;
+    }
+
+    public boolean isNoFieldedFunctionsEnabled() {
+        return noFieldedFunctionsEnabled;
+    }
+
+    public boolean isMultiFieldedFunctionsEnabled() {
+        return multiFieldedFunctionsEnabled;
+    }
+
+    public boolean isNullLiteralsEnabled() {
+        return nullLiteralsEnabled;
     }
 
     protected abstract void buildNode();

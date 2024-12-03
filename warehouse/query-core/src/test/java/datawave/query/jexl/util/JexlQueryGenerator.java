@@ -15,6 +15,8 @@ import com.google.common.base.Preconditions;
  * <li>content functions</li>
  * <li>grouping functions</li>
  * </ul>
+ *
+ * Optionally limit functions to those without fields, with single fields, and/or multi fields
  */
 public class JexlQueryGenerator extends AbstractQueryGenerator {
 
@@ -173,6 +175,12 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
             case GROUPING_FUNCTION:
                 buildGroupingFunction();
                 break;
+            case EQ_NULL:
+                buildNullEquality();
+                break;
+            case NE_NULL:
+                buildNullNotEquals();
+                break;
             default:
                 throw new IllegalStateException("Error building leaf of type: " + type);
         }
@@ -181,7 +189,7 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
     private NodeType getNextNodeType() {
         NodeType type = null;
         while (type == null) {
-            int index = random.nextInt(6);
+            int index = random.nextInt(8);
             switch (index) {
                 case 0:
                     type = NodeType.EQ;
@@ -200,6 +208,12 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
                     break;
                 case 5:
                     type = NodeType.GROUPING_FUNCTION;
+                    break;
+                case 6:
+                    type = NodeType.EQ_NULL;
+                    break;
+                case 7:
+                    type = NodeType.NE_NULL;
                     break;
                 default:
                     throw new IllegalStateException("Could not get next node type for index: " + index);
@@ -222,6 +236,14 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
             }
 
             if (!groupingFunctionsEnabled && type != null && type.equals(NodeType.GROUPING_FUNCTION)) {
+                type = null;
+            }
+
+            if (!nullLiteralsEnabled && type != null && type.equals(NodeType.EQ_NULL)) {
+                type = null;
+            }
+
+            if (!nullLiteralsEnabled && type != null && type.equals(NodeType.NE_NULL)) {
                 type = null;
             }
         }
@@ -273,7 +295,12 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
         String value = getValue();
         sb.append("filter:");
 
-        int index = random.nextInt(14);
+        int bound = 8;
+        if (multiFieldedFunctionsEnabled) {
+            bound += 6;
+        }
+
+        int index = random.nextInt(bound);
         String fields;
         switch (index) {
             case 0:
@@ -281,59 +308,62 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
                 sb.append("includeRegex(").append(field).append(",'").append(value).append(".*')");
                 break;
             case 1:
-                // include regex, multi-fielded
-                fields = "(" + getField() + " || " + getField() + ")";
-                sb.append("includeRegex(").append(fields).append(",'").append(value).append(".*')");
-                break;
-            case 2:
                 // exclude regex, fielded
                 sb.append("excludeRegex(").append(field).append(",'").append(value).append(".*')");
                 break;
-            case 3:
-                // exclude regex, multi-fielded
-                fields = "(" + getField() + " || " + getField() + ")";
-                sb.append("excludeRegex(").append(fields).append(",'").append(value).append(".*')");
-                break;
-            case 4:
+            case 2:
                 // isNull, single field
                 // the RewriteNullFunctionsVisitor should remove these functions, but test them anyway
                 sb.append("isNull(").append(field).append(")");
                 break;
-            case 5:
-                // isNull, multi-field
-                // the RewriteNullFunctionsVisitor should remove these functions, but test them anyway
-                sb.append("isNull(").append(field).append(")");
-                break;
-            case 6:
+            case 3:
                 // isNotNull, single field
                 sb.append("isNotNull(").append(field).append(")");
                 break;
-            case 7:
-                // isNotNull, multi-field
-                sb.append("isNotNull(").append(field).append(")");
-                break;
-            case 8:
+            case 4:
                 sb.append("betweenDates(").append(field).append(", '2024-01-01', '2024-01-05')");
                 break;
-            case 9:
+            case 5:
                 sb.append("betweenLoadDates(").append(field).append(", '20240101', '20240105', 'yyyyMMdd')");
                 break;
-            case 10:
-                sb.append("matchesAtLeastCountOf(1,").append(field).append(",").append(getField()).append(")");
+            case 6:
+                sb.append("matchesAtLeastCountOf(1,").append(field).append(",").append(getValue()).append(")");
                 break;
-            case 11:
-                // filter:timeFunction(DEATH_DATE,BIRTH_DATE,'-','>',2522880000000L)
-                sb.append("timeFunction(").append(field).append(",").append(getField()).append(",'-','>',2522880000000L)");
-                break;
-            case 12:
-                // compare function is actually two fields. A user could compare the values of the same field
-                sb.append("compare(").append(field).append(", '>', 'ANY', ").append(getField()).append(")");
-                break;
-            case 13:
+            case 7:
                 // occurrence
                 sb.append("occurrence(").append(getField()).append(", '>', 1)");
                 break;
+            case 8:
+                // compare function is actually two fields. A user could compare the values of the same field
+                sb.append("compare(").append(field).append(", '>', 'ANY', ").append(getField()).append(")");
+                break;
+            case 9:
+                // filter:timeFunction(DEATH_DATE,BIRTH_DATE,'-','>',2522880000000L)
+                sb.append("timeFunction(").append(field).append(",").append(getField()).append(",'-','>',2522880000000L)");
+                break;
+            case 10:
+                // include regex, multi-fielded
+                fields = "(" + getField() + " || " + getField() + ")";
+                sb.append("includeRegex(").append(fields).append(",'").append(value).append(".*')");
+                break;
+            case 11:
+                // exclude regex, multi-fielded
+                fields = "(" + getField() + " || " + getField() + ")";
+                sb.append("excludeRegex(").append(fields).append(",'").append(value).append(".*')");
+                break;
+            case 12:
+                // isNull, multi-field
+                // the RewriteNullFunctionsVisitor should remove these functions, but test them anyway
+                fields = getField() + " || " + getField();
+                sb.append("isNull(").append(fields).append(")");
+                break;
+            case 13:
+                // isNotNull, multi-field
+                fields = getField() + " || " + getField();
+                sb.append("isNotNull(").append(fields).append(")");
+                break;
             default:
+                throw new IllegalStateException("should never get here. bound: " + bound + ", query: " + sb.toString());
         }
     }
 
@@ -341,56 +371,66 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
         incrementCounts();
         sb.append("content:");
 
-        int index = random.nextInt(12);
+        int minimum = 4;
+        if (noFieldedFunctionsEnabled) {
+            minimum = 0;
+        }
+
+        int bound = 4;
+        if (multiFieldedFunctionsEnabled) {
+            bound += 4;
+        }
+
+        int index = minimum + random.nextInt(bound);
         String fields;
         switch (index) {
             case 0:
+                // phrase, no field
+                sb.append("phrase(termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
+                break;
+            case 1:
                 // adjacent, no field
                 sb.append("adjacent(termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
                 break;
-            case 1:
+            case 2:
+                // within, no field
+                sb.append("within(2, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
+                break;
+            case 3:
+                // scored phrase, no field
+                sb.append("scoredPhrase(-1.5, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
+                break;
+            case 4:
                 // adjacent, fielded
                 sb.append("adjacent(").append(getField()).append(", termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
                 break;
-            case 2:
+            case 5:
+                // phrase, fielded
+                sb.append("phrase(").append(getField()).append(", termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
+                break;
+            case 6:
+                // within, fielded
+                sb.append("within(").append(getField()).append(", 2, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
+                break;
+            case 7:
+                // scored phrase, fielded
+                sb.append("scoredPhrase(").append(getField()).append(", -1.5, termOffsetMap, '").append(getValue()).append("', '").append(getValue())
+                                .append("')");
+                break;
+            case 8:
                 // adjacent, multi-fielded
                 fields = "(" + getField() + " || " + getField() + ")";
                 sb.append("adjacent(").append(fields).append(", termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
                 break;
-            case 3:
-                // phrase, no field
-                sb.append("phrase(termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
-                break;
-            case 4:
-                // phrase, fielded
-                sb.append("phrase(").append(getField()).append(", termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
-                break;
-            case 5:
+            case 9:
                 // phrase, multi-fielded
                 fields = "(" + getField() + " || " + getField() + ")";
                 sb.append("phrase(").append(fields).append(", termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
                 break;
-            case 6:
-                // within, no field
-                sb.append("within(2, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
-                break;
-            case 7:
-                // within, fielded
-                sb.append("within(").append(getField()).append(", 2, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
-                break;
-            case 8:
+            case 10:
                 // within, multi-fielded
                 fields = "(" + getField() + " || " + getField() + ")";
                 sb.append("within(").append(fields).append(", 2, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
-                break;
-            case 9:
-                // scored phrase, no field
-                sb.append("scoredPhrase(-1.5, termOffsetMap, '").append(getValue()).append("', '").append(getValue()).append("')");
-                break;
-            case 10:
-                // scored phrase, fielded
-                sb.append("scoredPhrase(").append(getField()).append(", -1.5, termOffsetMap, '").append(getValue()).append("', '").append(getValue())
-                                .append("')");
                 break;
             case 11:
                 // scored phrase, multi-fielded
@@ -406,7 +446,12 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
         incrementCounts();
         sb.append("f:");
 
-        int index = random.nextInt(6);
+        int bound = 5;
+        if (multiFieldedFunctionsEnabled) {
+            bound += 1;
+        }
+
+        int index = random.nextInt(bound);
         switch (index) {
             case 0:
                 // sum
@@ -417,9 +462,21 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
                 sb.append("count(").append(getField()).append(")");
                 break;
             case 2:
+                // average
+                sb.append("average(").append(getField()).append(")");
+                break;
+            case 3:
+                // min
+                sb.append("min(").append(getField()).append(")");
+                break;
+            case 4:
+                // max
+                sb.append("max(").append(getField()).append(")");
+                break;
+            case 5:
                 // count, multi field
                 sb.append("count(");
-                int extraFields = random.nextInt(3);
+                int extraFields = 1 + random.nextInt(3);
                 for (int i = 0; i < extraFields; i++) {
                     sb.append(getField());
                     if (i < extraFields - 1) {
@@ -428,21 +485,21 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
                 }
                 sb.append(")");
                 break;
-            case 3:
-                // average
-                sb.append("average(").append(getField()).append(")");
-                break;
-            case 4:
-                // min
-                sb.append("min(").append(getField()).append(")");
-                break;
-            case 5:
-                // max
-                sb.append("max(").append(getField()).append(")");
-                break;
             default:
                 throw new IllegalStateException("unknown index: " + index);
         }
+    }
+
+    private void buildNullEquality() {
+        incrementCounts();
+        String field = getField();
+        sb.append(field).append(" == null");
+    }
+
+    private void buildNullNotEquals() {
+        incrementCounts();
+        String field = getField();
+        sb.append("!(").append(field).append(" == null)");
     }
 
     private void incrementCounts() {

@@ -1,8 +1,8 @@
-FROM azul/zulu-openjdk-centos:11.0.18-11.62.17
+FROM rockylinux/rockylinux:8
 
-
-RUN yum -y install deltarpm centos-release-sc && \
-    chmod -R 777 /usr/lib/jvm/zulu11/bin/* && \
+RUN dnf -y install dnf-plugins-core epel-release java-11-openjdk-devel && \
+    dnf config-manager --set-enabled powertools && \
+    chmod -R 777 /usr/lib/jvm/java-11/bin/* && \
     groupadd -r jboss -g 1000 && \
     useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss User" jboss && \
     groupadd -r hadoop && \
@@ -11,13 +11,12 @@ RUN yum -y install deltarpm centos-release-sc && \
     chmod -R ug+rX,o-rx /opt/datawave /opt/jboss
 
 ENV JAVA_VERSION=11 \
-    JAVA_BUILD=11.0.18 \
-    JAVA_HOME=/usr/lib/jvm/zulu11
+    JAVA_HOME=/usr/lib/jvm/java-11
+
 LABEL version="11"
 
-RUN yum update -y && \
-    yum install -y which less bind-utils net-tools lsof nethogs dstat strace htop iperf iperf3 socat iftop xmlstarlet saxon augeas bsdtar unzip && \
-    yum -y erase deltarpm 
+RUN dnf update -y && \
+    dnf install -y which less bind-utils net-tools lsof nethogs dstat strace htop iperf iperf3 socat iftop xmlstarlet augeas bsdtar unzip
 
 ENV WILDFLY_VERSION 17.0.1.Final \
     JBOSS_HOME /opt/jboss/wildfly \
@@ -38,7 +37,6 @@ ENV WILDFLY_HOME=/opt/jboss/wildfly \
     PRESERVE_LOG_DIR=true
 
 WORKDIR $WILDFLY_HOME
-
 
 COPY overlay $WILDFLY_HOME/
 COPY mysql $WILDFLY_HOME/mysql

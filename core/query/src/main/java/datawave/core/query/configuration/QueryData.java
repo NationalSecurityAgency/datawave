@@ -95,35 +95,6 @@ public class QueryData implements ResultContext, Externalizable {
         this.finished = other.finished;
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
-    public QueryData(String tableName, String query, Collection<Range> ranges, List<IteratorSetting> settings) {
-        setTableName(tableName);
-        setQuery(query);
-        setRanges(ranges);
-        setSettings(settings);
-    }
-
-    /**
-     * Weak copy constructor that updates the ranges
-     *
-     * @param other
-     *            another QueryData
-     * @param ranges
-     *            a collection of updated ranges
-     * @deprecated
-     */
-    @Deprecated(since = "6.5.0", forRemoval = true)
-    public QueryData(QueryData other, Collection<Range> ranges) {
-        this(other);
-        setRanges(ranges);
-    }
-
-    @Deprecated(since = "6.5.0", forRemoval = true)
-    public QueryData(String tableName, String queryString, List<Range> ranges, List<IteratorSetting> settings, Collection<String> columnFamilies) {
-        this(tableName, queryString, ranges, settings);
-        this.columnFamilies.addAll(columnFamilies);
-    }
-
     // builder style methods
 
     public QueryData withTableName(String tableName) {
