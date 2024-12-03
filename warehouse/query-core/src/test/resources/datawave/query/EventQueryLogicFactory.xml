@@ -136,6 +136,7 @@
         <property name="eventFieldSeek" value="3" />
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
+        <property name="seekingEventAggregation" value="true"/>
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">
