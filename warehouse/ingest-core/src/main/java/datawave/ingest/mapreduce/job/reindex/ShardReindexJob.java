@@ -257,7 +257,8 @@ public class ShardReindexJob implements Tool {
                     }
 
                     ranges = buildSplittableRanges(accumuloUtil, rFileUtil, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit,
-                                    ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode), jobConfig.table, jobConfig.startDate, jobConfig.endDate, jobConfig.excludeFI, jobConfig.excludeTF, jobConfig.excludeD, includeDataTypes, excludeDataTypes);
+                                    ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode), jobConfig.table, jobConfig.startDate, jobConfig.endDate,
+                                    jobConfig.excludeFI, jobConfig.excludeTF, jobConfig.excludeD, includeDataTypes, excludeDataTypes);
                 } else {
                     ranges = buildFiRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
                 }
@@ -312,12 +313,14 @@ public class ShardReindexJob implements Tool {
         j.setMapOutputValueClass(Value.class);
         j.setMapperClass(ShardReindexMapper.class);
 
-        // setup the combiner
-        j.getConfiguration().setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
         // see IngestJob
         if (jobConfig.useCombiner) {
+            // setup the combiner context writer
+            j.getConfiguration().setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
             j.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, DedupeContextWriter.class, ChainedContextWriter.class);
             j.getConfiguration().setClass(DedupeContextWriter.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ContextWriter.class);
+            // set the combiner
+            j.setCombinerClass(BulkIngestKeyDedupeCombiner.class);
         } else {
             j.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
         }
@@ -377,7 +380,8 @@ public class ShardReindexJob implements Tool {
                 throw new IllegalStateException("cannot apply inclusions and exclusions to split ranges");
             }
 
-            List<Range> ranges = rFileUtil.getRangeSplits(files, new Key(split), new Key(split, "" + '\uFFFF', "" + '\uFFFF'), blocksPerSplit, eventShiftFunction);
+            List<Range> ranges = rFileUtil.getRangeSplits(files, new Key(split), new Key(split, "" + '\uFFFF', "" + '\uFFFF'), blocksPerSplit,
+                            eventShiftFunction);
 
             if (!inclusions.isEmpty()) {
                 ranges = applyInclusions(ranges, inclusions);
@@ -391,8 +395,10 @@ public class ShardReindexJob implements Tool {
 
     /**
      *
-     * @param ranges ranges to apply exclusions to
-     * @param exclusions non-overlapping disjoint ranges to exclude from ranges
+     * @param ranges
+     *            ranges to apply exclusions to
+     * @param exclusions
+     *            non-overlapping disjoint ranges to exclude from ranges
      * @return ranges with the intersection of exclusions removed
      */
     public static List<Range> applyExclusions(List<Range> ranges, List<Range> exclusions) {
@@ -405,14 +411,17 @@ public class ShardReindexJob implements Tool {
                 if (clipped == null) {
                     // no intersection with the exclusion, keep the whole range
                     workingRanges.add(orig);
+                } else if (clipped.equals(orig)) {
+                    // entire range is excluded continue without adding it
+                    continue;
                 } else {
                     // partial intersection with the range, will be one of three cases. In all cases, flip the clipped inclusion flag
                     if (clipped.getStartKey().equals(orig.getStartKey()) && clipped.isStartKeyInclusive() == orig.isStartKeyInclusive()) {
-                        // the start of the range, create a new range using the clip as the end
-                        workingRanges.add(new Range(orig.getStartKey(), orig.isStartKeyInclusive(), clipped.getEndKey(), !clipped.isEndKeyInclusive()));
+                        // the beginning of the range has to be removed
+                        workingRanges.add(new Range(clipped.getEndKey(), !clipped.isEndKeyInclusive(), orig.getEndKey(), orig.isEndKeyInclusive()));
                     } else if (clipped.getEndKey().equals(orig.getEndKey()) && clipped.isEndKeyInclusive() == orig.isEndKeyInclusive()) {
-                        // the end of the range, create a new range using the clip as the start
-                        workingRanges.add(new Range(clipped.getStartKey(), !clipped.isStartKeyInclusive(), orig.getEndKey(), orig.isEndKeyInclusive()));
+                        // the end of the range has to be removed
+                        workingRanges.add(new Range(orig.getStartKey(), orig.isStartKeyInclusive(), clipped.getStartKey(), !clipped.isStartKeyInclusive()));
                     } else {
                         // the middle of the range, use clipped on both sides, making adjustments for inclusion flag?
                         Range startRange = new Range(orig.getStartKey(), orig.isStartKeyInclusive(), clipped.getStartKey(), !clipped.isStartKeyInclusive());
@@ -431,15 +440,18 @@ public class ShardReindexJob implements Tool {
 
     /**
      *
-     * @param ranges ranges to apply inclusions to
-     * @param inclusions non-overlapping disjoint ranges
+     * @param ranges
+     *            ranges to apply inclusions to
+     * @param inclusions
+     *            non-overlapping disjoint ranges
      * @return the intersection of the ranges with the inclusions
      */
-    private static List<Range> applyInclusions(List<Range> ranges, List<Range> inclusions) {
+    public static List<Range> applyInclusions(List<Range> ranges, List<Range> inclusions) {
         List<Range> restricted = new ArrayList<>();
         for (Range orig : ranges) {
             for (Range inclusion : inclusions) {
-                // clipping provides the overlap of the two ranges against the original range. Since inclusions are non-overlapping always clip the original to find the overlap
+                // clipping provides the overlap of the two ranges against the original range. Since inclusions are non-overlapping always clip the original to
+                // find the overlap
                 Range clipped = orig.clip(inclusion, true);
                 if (clipped != null) {
                     restricted.add(clipped);
@@ -451,12 +463,14 @@ public class ShardReindexJob implements Tool {
     }
 
     public static Collection<Range> buildSplittableRanges(AccumuloUtil accumuloUtil, RFileUtil rFileUtil, int maxRangeThreads, final int blocksPerSplit,
-                                                          ShardReindexMapper.BatchMode batchMode, String table, String startDay, String endDay) {
-        return buildSplittableRanges(accumuloUtil, rFileUtil, maxRangeThreads, blocksPerSplit, batchMode, table, startDay, endDay, false, false, false, Collections.emptyList(), Collections.emptyList());
+                    ShardReindexMapper.BatchMode batchMode, String table, String startDay, String endDay) {
+        return buildSplittableRanges(accumuloUtil, rFileUtil, maxRangeThreads, blocksPerSplit, batchMode, table, startDay, endDay, false, false, false,
+                        Collections.emptyList(), Collections.emptyList());
     }
 
     public static Collection<Range> buildSplittableRanges(AccumuloUtil accumuloUtil, RFileUtil rFileUtil, int maxRangeThreads, final int blocksPerSplit,
-                    ShardReindexMapper.BatchMode batchMode, String table, String startDay, String endDay, boolean excludeFi, boolean excludeTf, boolean excludeD, List<String> includeDataTypes, List<String> excludeDataTypes) {
+                    ShardReindexMapper.BatchMode batchMode, String table, String startDay, String endDay, boolean excludeFi, boolean excludeTf,
+                    boolean excludeD, List<String> includeDataTypes, List<String> excludeDataTypes) {
         List<Range> allRanges = new ArrayList<>();
         ExecutorService threadPool = null;
         List<Future<List<Range>>> splitTasks = null;
@@ -493,7 +507,8 @@ public class ShardReindexJob implements Tool {
 
             setupIncludesAndExcludeRanges(row, includeRanges, excludeRanges, excludeFi, excludeTf, excludeD, includeDataTypes, excludeDataTypes);
 
-            Callable<List<Range>> splitCallable = getSplitCallable(rFileUtil, row, fileSplit.getValue(), blocksPerSplit, eventShiftFunction, includeRanges, excludeRanges);
+            Callable<List<Range>> splitCallable = getSplitCallable(rFileUtil, row, fileSplit.getValue(), blocksPerSplit, eventShiftFunction, includeRanges,
+                            excludeRanges);
             if (threadPool != null) {
                 splitTasks.add(threadPool.submit(splitCallable));
             } else {
@@ -519,10 +534,15 @@ public class ShardReindexJob implements Tool {
         return allRanges;
     }
 
-    private static void setupIncludesAndExcludeRanges(String row, List<Range> includeRanges, List<Range> excludeRanges, boolean excludeFI, boolean excludeTF, boolean excludeD, List<String> includeDataTypes, List<String> excludeDataTypes) {
+    private static void setupIncludesAndExcludeRanges(String row, List<Range> includeRanges, List<Range> excludeRanges, boolean excludeFI, boolean excludeTF,
+                    boolean excludeD, List<String> includeDataTypes, List<String> excludeDataTypes) {
         Range fiRange = new Range(new Key(row, "fi" + '\u0000'), true, new Key(row, "fi" + '\u0001'), false);
-        Range tfRange = new Range(new Key(row, "tf"), true, new Key(row, "tf" + '\u0001'), false);
-        Range dRange = new Range(new Key(row, "d"), true, new Key(row, "d" + '\u0001'), false);
+        Range tfRange = new Range(new Key(row, "tf"), true, new Key(row, "tf" + '\u0000'), false);
+        Range dRange = new Range(new Key(row, "d"), true, new Key(row, "d" + '\u0000'), false);
+
+        if (!includeDataTypes.isEmpty() && !excludeDataTypes.isEmpty()) {
+            throw new IllegalArgumentException("cannot use datatype includes and excludes");
+        }
 
         if (includeDataTypes.size() > 0) {
             // using includeRanges
@@ -789,10 +809,12 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--excludeD", description = "exclude d column from ranges generated when --reprocessEvents is set and --accumuloMetadata is not set")
         private boolean excludeD = false;
 
-        @Parameter(names = "--includeDataTypes", description = "exclude all event data from ranges that doesn't match these comma deliminated data types when --reprocessEvents is set and --accumuloMetadata is not set. May not be combined with --excludeDataTypes")
+        @Parameter(names = "--includeDataTypes",
+                        description = "exclude all event data from ranges that doesn't match these comma deliminated data types when --reprocessEvents is set and --accumuloMetadata is not set. May not be combined with --excludeDataTypes")
         private String includeDataTypes;
 
-        @Parameter(names = "--excludeDataTypes", description = "exclude event data from ranges that matches these comma delimited data types when --reprocessEvents is set and --accumuloMetadata is not set. May not be combined with --includeDataTypes")
+        @Parameter(names = "--excludeDataTypes",
+                        description = "exclude event data from ranges that matches these comma delimited data types when --reprocessEvents is set and --accumuloMetadata is not set. May not be combined with --includeDataTypes")
         private String excludeDataTypes;
 
         @Parameter(names = {"-h", "--help"}, description = "display help", help = true)

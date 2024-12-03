@@ -9,6 +9,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -40,8 +41,14 @@ import datawave.ingest.mapreduce.job.util.RFileUtil;
 
 public class ShardReindexJobTest extends EasyMockSupport {
 
+    private AccumuloUtil accumuloUtil;
+    private RFileUtil rFileUtil;
+
     @Before
-    public void setup() {}
+    public void setup() {
+        accumuloUtil = createMock(AccumuloUtil.class);
+        rFileUtil = createMock(RFileUtil.class);
+    }
 
     private Collection<Range> buildRanges(String row, int shards) {
         List<Range> ranges = new ArrayList<>();
@@ -183,18 +190,19 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertTrue(ranges.size() == 0);
     }
 
-    @Test
-    public void buildSplittableRanges_singleSplitTest() throws Throwable {
-        AccumuloUtil accumuloUtil = createMock(AccumuloUtil.class);
-        RFileUtil rFileUtil = createMock(RFileUtil.class);
-
+    private void expectSplittableRangeSetup(Range result) throws AccumuloException, IOException {
         List<Map.Entry<String,List<String>>> results = new ArrayList<>();
         results.add(new AbstractMap.SimpleImmutableEntry<>("20241121", Collections.singletonList("/some/path/to/an/rfile")));
-        Range splitRange = new Range();
 
         expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122")).andReturn(results);
         expect(rFileUtil.getRangeSplits(Collections.singletonList("/some/path/to/an/rfile"), new Key("20241121"),
-                        new Key("20241121", "" + '\uFFFF', "" + '\uFFFF'), -1, Function.identity())).andReturn(Collections.singletonList(splitRange));
+                        new Key("20241121", "" + '\uFFFF', "" + '\uFFFF'), -1, Function.identity())).andReturn(Collections.singletonList(result));
+    }
+
+    @Test
+    public void buildSplittableRanges_singleSplitTest() throws Throwable {
+        Range splitRange = new Range();
+        expectSplittableRangeSetup(splitRange);
 
         replayAll();
 
@@ -206,6 +214,165 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertTrue(ranges.size() == 1);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void buildSplitRanges_sameStartEndTest() {
+        replayAll();
+
+        ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable", "20241121", "20241121");
+
+        verifyAll();
+    }
+
+    @Test
+    public void buildSplitRanges_excludeFiTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121"), true, new Key("20241121", "fi" + '\u0000'), false);
+        Range expected2 = new Range(new Key("20241121", "fi" + '\u0001'), true, new Key("20241121" + '\u0000'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", true, false, false, Collections.emptyList(), Collections.emptyList());
+
+        verifyAll();
+
+        assertEquals(2, ranges.size());
+        Iterator<Range> itr = ranges.iterator();
+        assertEquals(expected1, itr.next());
+        assertEquals(expected2, itr.next());
+    }
+
+    @Test
+    public void buildSplitRanges_excludeTfTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121"), true, new Key("20241121", "tf"), false);
+        Range expected2 = new Range(new Key("20241121", "tf" + '\u0000'), true, new Key("20241121" + '\u0000'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", false, true, false, Collections.emptyList(), Collections.emptyList());
+
+        verifyAll();
+
+        assertEquals(2, ranges.size());
+        Iterator<Range> itr = ranges.iterator();
+        assertEquals(expected1, itr.next());
+        assertEquals(expected2, itr.next());
+    }
+
+    @Test
+    public void buildSplitRanges_excludeDTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121"), true, new Key("20241121", "d"), false);
+        Range expected2 = new Range(new Key("20241121", "d" + '\u0000'), true, new Key("20241121" + '\u0000'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", false, false, true, Collections.emptyList(), Collections.emptyList());
+
+        verifyAll();
+
+        assertEquals(2, ranges.size());
+        Iterator<Range> itr = ranges.iterator();
+        assertEquals(expected1, itr.next());
+        assertEquals(expected2, itr.next());
+    }
+
+    @Test
+    public void buildSplitRanges_excludeDataTypesTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121"), true, new Key("20241121", "sample" + '\u0000'), false);
+        Range expected2 = new Range(new Key("20241121", "sample" + '\u0001'), true, new Key("20241121" + '\u0000'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", false, false, false, Collections.emptyList(), Collections.singletonList("sample"));
+
+        verifyAll();
+
+        assertEquals(2, ranges.size());
+        Iterator<Range> itr = ranges.iterator();
+        assertEquals(expected1, itr.next());
+        assertEquals(expected2, itr.next());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void buildSplitRanges_mixedDataTypesTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121"), true, new Key("20241121", "sample" + '\u0000'), false);
+        Range expected2 = new Range(new Key("20241121", "sample" + '\u0001'), true, new Key("20241121" + '\u0000'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", false, false, false, Collections.singletonList("sample2"), Collections.singletonList("sample"));
+
+        verifyAll();
+    }
+
+    @Test
+    public void buildSplitRanges_includeDataTypesTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121", "sample" + '\u0000'), true, new Key("20241121", "sample" + '\u0001'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", true, true, true, Collections.singletonList("sample"), Collections.emptyList());
+
+        verifyAll();
+
+        // dataType only
+        assertEquals(1, ranges.size());
+        Iterator<Range> itr = ranges.iterator();
+        assertEquals(expected1, itr.next());
+    }
+
+    @Test
+    public void buildSplitRanges_includeDataTypesWithoutExcludesTest() throws AccumuloException, IOException {
+        Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
+        Range expected1 = new Range(new Key("20241121", "d"), true, new Key("20241121", "d" + '\u0000'), false);
+        Range expected2 = new Range(new Key("20241121", "fi" + '\u0000'), true, new Key("20241121", "fi" + '\u0001'), false);
+        Range expected3 = new Range(new Key("20241121", "sample" + '\u0000'), true, new Key("20241121", "sample" + '\u0001'), false);
+        Range expected4 = new Range(new Key("20241121", "tf"), true, new Key("20241121", "tf" + '\u0000'), false);
+
+        expectSplittableRangeSetup(splitRange);
+
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                        "20241121", "20241122", false, false, false, Collections.singletonList("sample"), Collections.emptyList());
+
+        verifyAll();
+
+        // sort so the order is predictable
+        List<Range> sorted = new ArrayList<>(ranges);
+        Collections.sort(sorted);
+
+        // fi, tf, d, dataType only
+        assertEquals(4, sorted.size());
+        Iterator<Range> itr = sorted.iterator();
+        assertEquals(expected1, itr.next());
+        assertEquals(expected2, itr.next());
+        assertEquals(expected3, itr.next());
+        assertEquals(expected4, itr.next());
+    }
+
     @Test
     public void applyExclusions_noExclusionsTest() {
         Range orig = new Range(new Key("20241122"), true, new Key("20241122" + "\u0000"), false);
@@ -215,6 +382,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertTrue(ranges.get(0) == orig);
     }
 
+    // exclude out of the center of a range
     @Test
     public void applyExclusions_singleRangeSplitTest() {
         Range orig = new Range(new Key("20241122"), true, new Key("20241122" + "\u0000"), false);
@@ -224,7 +392,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertTrue(ranges.size() == 2);
 
         // verify the exclusion was totally removed
-        for (Range range: ranges) {
+        for (Range range : ranges) {
             assertNull(range.clip(exclude, true));
         }
 
@@ -237,6 +405,105 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertEquals(orig.isEndKeyInclusive(), ranges.get(1).isEndKeyInclusive());
     }
 
+    // exclude an entire range
+    @Test
+    public void applyExclusions_wholeRangeTest() {
+        Range orig = new Range(new Key("20241122", "ab"), true, new Key("20241122", "az"), false);
+        Range exclude = new Range(new Key("20241122", "a"), true, new Key("20241122", "a" + '\uFFFF'), false);
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), Collections.singletonList(exclude));
+
+        assertTrue(ranges.isEmpty());
+    }
+
+    // exclude one range, no impact to the other
+    @Test
+    public void applyExclusions_wholeRangeMixedTest() {
+        Range orig1 = new Range(new Key("20241122", "ab"), true, new Key("20241122", "az"), false);
+        Range orig2 = new Range(new Key("20241122", "1"), true, new Key("20241122", "2"), false);
+        Range exclude = new Range(new Key("20241122", "a"), true, new Key("20241122", "a" + '\uFFFF'), false);
+        List<Range> ranges = ShardReindexJob.applyExclusions(List.of(orig1, orig2), Collections.singletonList(exclude));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(1, ranges.size());
+        assertEquals(orig2, ranges.get(0));
+    }
+
+    // test trim leading edge
+    @Test
+    public void applyExclusions_trimLeadingEdgeTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241123"), false);
+        Range exclude1 = new Range(new Key("20241122"), true, new Key("20241122", "a" + '\uFFFF'), false);
+        Range expected = new Range(new Key("20241122", "a" + '\uFFFF'), true, new Key("20241123"), false);
+
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude1));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(1, ranges.size());
+        assertEquals(expected, ranges.get(0));
+    }
+
+    // test trim leading edge without inclusion, actually creates a split
+    @Test
+    public void applyExclusions_trimLeadingInclusiveHoleTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241123"), false);
+        Range exclude1 = new Range(new Key("20241122"), false, new Key("20241122", "a" + '\uFFFF'), false);
+        Range expected = new Range(new Key("20241122", "a" + '\uFFFF'), true, new Key("20241123"), false);
+        Range expectedHole = new Range(new Key("20241122"), true, new Key("20241122"), true);
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude1));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(2, ranges.size());
+        assertEquals(expectedHole, ranges.get(0));
+        assertEquals(expected, ranges.get(1));
+    }
+
+    // test trim trailing edge
+    @Test
+    public void applyExclusions_trimTrailingEdgeTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241123"), false);
+        Range exclude2 = new Range(new Key("20241122", "z"), true, new Key("20241123"), true);
+        Range expected = new Range(new Key("20241122"), true, new Key("20241122", "z"), false);
+
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude2));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(1, ranges.size());
+        assertEquals(expected, ranges.get(0));
+    }
+
+    // test trim trailing edge
+    @Test
+    public void applyExclusions_trimTrailingEdgeInclusiveHoleTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241123"), true);
+        Range exclude2 = new Range(new Key("20241122", "z"), true, new Key("20241123"), false);
+
+        Range expected = new Range(new Key("20241122"), true, new Key("20241122", "z"), false);
+        Range expectedHole = new Range(new Key("20241123"), true, new Key("20241123"), true);
+
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude2));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(2, ranges.size());
+        assertEquals(expected, ranges.get(0));
+        assertEquals(expectedHole, ranges.get(1));
+    }
+
+    // trim both sides of a range
+    @Test
+    public void applyExclusions_trimEdgesTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241123"), false);
+        Range exclude1 = new Range(new Key("20241122"), true, new Key("20241122", "a" + '\uFFFF'), false);
+        Range exclude2 = new Range(new Key("20241122", "z"), true, new Key("20241123"), true);
+        Range expected = new Range(new Key("20241122", "a" + '\uFFFF'), true, new Key("20241122", "z"), false);
+
+        List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude1, exclude2));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(1, ranges.size());
+        assertEquals(expected, ranges.get(0));
+    }
+
+    // slice the range multiple times
     @Test
     public void applyExclusions_doubleRangeSplitTest() {
         Range orig = new Range(new Key("20241122"), true, new Key("20241122" + "\u0000"), false);
@@ -244,10 +511,10 @@ public class ShardReindexJobTest extends EasyMockSupport {
         Range exclude2 = new Range(new Key("20241122", "c" + '\u0000'), true, new Key("20241122", "c" + '\u0001'), false);
         List<Range> ranges = ShardReindexJob.applyExclusions(Collections.singletonList(orig), List.of(exclude1, exclude2));
 
-        assertTrue( ranges.size() == 3);
+        assertTrue(ranges.size() == 3);
 
         // verify the exclusion was totally removed
-        for (Range range: ranges) {
+        for (Range range : ranges) {
             for (Range exclude : List.of(exclude1, exclude2)) {
                 assertNull(range.clip(exclude, true));
             }
@@ -261,6 +528,36 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertEquals(orig.isStartKeyInclusive(), ranges.get(0).isStartKeyInclusive());
         assertTrue(orig.getEndKey().equals(ranges.get(2).getEndKey()));
         assertEquals(orig.isEndKeyInclusive(), ranges.get(2).isEndKeyInclusive());
+    }
+
+    @Test
+    public void applyInclusions_missTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241122" + '\u0000'), false);
+        Range include = new Range(new Key("20241123"), true, new Key("20241123"), false);
+        List<Range> ranges = ShardReindexJob.applyInclusions(Collections.singletonList(orig), Collections.singletonList(include));
+
+        assertTrue(ranges.isEmpty());
+    }
+
+    @Test
+    public void applyInclusions_multiMissBoundaryTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241122" + '\u0000'), false);
+        Range include1 = new Range(new Key("20241122" + "\u0000"), true, new Key("20241123"), false);
+        Range include2 = new Range(new Key("20241121"), true, new Key("20241122"), false);
+        List<Range> ranges = ShardReindexJob.applyInclusions(Collections.singletonList(orig), List.of(include1, include2));
+
+        assertTrue(ranges.isEmpty());
+    }
+
+    @Test
+    public void applyInclusions_partialTest() {
+        Range orig = new Range(new Key("20241122"), true, new Key("20241122" + '\u0000'), false);
+        Range include1 = new Range(new Key("20241122", "a"), true, new Key("20241123"), false);
+        Range expected = new Range(new Key("20241122", "a"), true, new Key("20241122" + '\u0000'), false);
+        List<Range> ranges = ShardReindexJob.applyInclusions(Collections.singletonList(orig), List.of(include1));
+
+        assertFalse(ranges.isEmpty());
+        assertEquals(expected, ranges.get(0));
     }
 
     private void verifyExclude(Range orig, Range new1, Range new2, Range exclude) {
