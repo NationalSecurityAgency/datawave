@@ -56,6 +56,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         this.allTypes = helper.getAllDatatypes();
+        this.stage = "field";
     }
 
     /**
@@ -225,35 +226,6 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
-        }
-    }
-
-    /**
-     * Log the result of index expansion for the provided term.
-     *
-     * @param node
-     *            the term
-     * @param lookupMap
-     *            the result of the lookup
-     */
-    @Override
-    protected void logResult(JexlNode node, IndexLookupMap lookupMap) {
-        String field = JexlASTHelper.getIdentifier(node);
-
-        if (lookupMap == null) {
-            log.debug("Lookup map was null for term [{}]", JexlStringBuildingVisitor.buildQuery(node));
-            return;
-        }
-
-        if (lookupMap.containsKey(field)) {
-            String term = JexlStringBuildingVisitor.buildQuery(node);
-            if (lookupMap.get(field).isEmpty()) {
-                log.debug("field expansion for term [{}] failed (no data)", term);
-            } else if (lookupMap.get(field).isThresholdExceeded()) {
-                log.debug("field expansion for term [{}] failed (threshold)", term);
-            } else {
-                log.debug("field expansion for term [{}] success ({} values)", term, lookupMap.get(field).size());
-            }
         }
     }
 }

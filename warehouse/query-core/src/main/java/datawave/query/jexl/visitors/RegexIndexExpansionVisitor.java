@@ -95,6 +95,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         } else {
             this.onlyUseThese = null;
         }
+        this.stage = "regex";
     }
 
     /**
@@ -718,33 +719,5 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
 
         futureJexlNode.setRebuiltNode(newNode);
-    }
-
-    /**
-     * Log the result of index expansion for the provided term.
-     *
-     * @param node
-     *            the term
-     * @param lookupMap
-     *            the result of the lookup
-     */
-    protected void logResult(JexlNode node, IndexLookupMap lookupMap) {
-        String field = JexlASTHelper.getIdentifier(node);
-
-        if (lookupMap == null) {
-            log.debug("Lookup map was null for term [{}]", JexlStringBuildingVisitor.buildQuery(node));
-            return;
-        }
-
-        if (lookupMap.containsKey(field)) {
-            String term = JexlStringBuildingVisitor.buildQuery(node);
-            if (lookupMap.get(field).isEmpty()) {
-                log.debug("regex expansion for term [{}] failed (no data)", term);
-            } else if (lookupMap.get(field).isThresholdExceeded()) {
-                log.debug("regex expansion for term [{}] failed (threshold)", term);
-            } else {
-                log.debug("regex expansion for term [{}] success ({} values)", term, lookupMap.get(field).size());
-            }
-        }
     }
 }

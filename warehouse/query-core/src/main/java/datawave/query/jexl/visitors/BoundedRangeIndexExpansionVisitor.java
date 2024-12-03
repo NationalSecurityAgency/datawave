@@ -40,6 +40,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         super(config, scannerFactory, helper, "BoundedRangeIndexExpansion");
 
         rangeFinder = JexlASTHelper.findRange().indexedOnly(this.config.getDatatypeFilter(), this.helper).notDelayed();
+        this.stage = "range";
     }
 
     /**
@@ -110,33 +111,5 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
 
         futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
                         expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
-    }
-
-    /**
-     * Log the result of index expansion for the provided term.
-     *
-     * @param node
-     *            the term
-     * @param lookupMap
-     *            the result of the lookup
-     */
-    protected void logResult(JexlNode node, IndexLookupMap lookupMap) {
-        String field = JexlASTHelper.getIdentifier(node);
-
-        if (lookupMap == null) {
-            log.debug("Lookup map was null for term [{}]", JexlStringBuildingVisitor.buildQuery(node));
-            return;
-        }
-
-        if (lookupMap.containsKey(field)) {
-            String term = JexlStringBuildingVisitor.buildQuery(node);
-            if (lookupMap.get(field).isEmpty()) {
-                log.debug("range expansion for term [{}] failed (no data)", term);
-            } else if (lookupMap.get(field).isThresholdExceeded()) {
-                log.debug("range expansion for term [{}] failed (threshold)", term);
-            } else {
-                log.debug("range expansion for term [{}] success ({} values)", term, lookupMap.get(field).size());
-            }
-        }
     }
 }
