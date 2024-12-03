@@ -169,4 +169,29 @@ public class IvaratorConfig implements Serializable {
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         this.maxIvaratorResults = maxIvaratorResults;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        IvaratorConfig other = (IvaratorConfig) obj;
+        return getIvaratorCacheBufferSize() == other.getIvaratorCacheBufferSize() &&
+                getIvaratorCacheScanPersistThreshold() == other.getIvaratorCacheScanPersistThreshold() &&
+                getIvaratorCacheScanTimeout() == other.getIvaratorCacheScanTimeout() &&
+                getMaxFieldIndexRangeSplit() == other.getMaxFieldIndexRangeSplit() &&
+                getIvaratorMaxOpenFiles() == other.getIvaratorMaxOpenFiles() &&
+                getIvaratorNumRetries() == other.getIvaratorNumRetries() &&
+                isIvaratorPersistVerify() == other.isIvaratorPersistVerify() &&
+                getIvaratorPersistVerifyCount() == other.getIvaratorPersistVerifyCount() &&
+                getMaxIvaratorSources() == other.getMaxIvaratorSources() &&
+                getMaxIvaratorSourceWait() == other.getMaxIvaratorSourceWait() &&
+                getMaxIvaratorResults() == other.getMaxIvaratorResults() &&
+                (getIvaratorCacheDirConfigs() == null ? other.getIvaratorCacheDirConfigs() == null : getIvaratorCacheDirConfigs().equals(other.getIvaratorCacheDirConfigs())) &&
+                (getIvaratorFstHdfsBaseURIs() == null ? other.getIvaratorFstHdfsBaseURIs() == null : getIvaratorFstHdfsBaseURIs().equals(other.getIvaratorFstHdfsBaseURIs()));
+    }
+
 }
