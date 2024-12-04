@@ -1113,7 +1113,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
-        this.ivaratorConfig.copyFrom(ivaratorConfig);
+        this.ivaratorConfig = ivaratorConfig;
     }
 
     public IvaratorConfig getIvaratorConfig() {

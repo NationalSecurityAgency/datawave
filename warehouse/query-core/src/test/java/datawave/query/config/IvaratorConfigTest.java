@@ -1,7 +1,7 @@
 package datawave.query.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Assert;
+import datawave.query.iterator.QueryOptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,5 +57,34 @@ class IvaratorConfigTest {
         Assertions.assertEquals(conf2, conf3);
 
     }
+
+    @Test
+    public void testWithinShardQueryConfiguration(){
+        IvaratorConfig ivaratorConfig = new IvaratorConfig();
+
+        ShardQueryConfiguration queryConfig = new ShardQueryConfiguration();
+        queryConfig.setIvaratorConfig(ivaratorConfig);
+        queryConfig.setIvaratorMaxOpenFiles(123);
+
+        Assertions.assertEquals(123, ivaratorConfig.getIvaratorMaxOpenFiles());
+
+        ivaratorConfig.setIvaratorMaxOpenFiles(456);
+        Assertions.assertEquals(456, queryConfig.getIvaratorMaxOpenFiles());
+    }
+
+    @Test
+    public void testWithinQueryOptions(){
+        IvaratorConfig ivaratorConfig = new IvaratorConfig();
+
+        QueryOptions ops = new QueryOptions();
+        ops.setIvaratorConfig(ivaratorConfig);
+        ops.setIvaratorMaxOpenFiles(123);
+
+        Assertions.assertEquals(123, ivaratorConfig.getIvaratorMaxOpenFiles());
+
+        ivaratorConfig.setIvaratorMaxOpenFiles(456);
+        Assertions.assertEquals(456, ops.getIvaratorMaxOpenFiles());
+    }
+
 
 }

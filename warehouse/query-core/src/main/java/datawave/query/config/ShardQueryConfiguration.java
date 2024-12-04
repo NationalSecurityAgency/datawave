@@ -2789,6 +2789,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
 
+    public void setIvaratorConfig(IvaratorConfig ivaratorConfig){
+        this.ivaratorConfig = ivaratorConfig;
+    }
+
+    public IvaratorConfig getIvaratorConfig(){
+        return this.ivaratorConfig;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
