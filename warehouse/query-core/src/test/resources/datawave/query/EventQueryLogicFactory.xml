@@ -134,6 +134,7 @@
         <property name="sortQueryPostIndexWithTermCounts" value="true" />
         <property name="sortQueryPostIndexWithFieldCounts" value="true" />
         <property name="eventFieldSeek" value="3" />
+        <property name="seekingEventAggregation" value="true"/>
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">
