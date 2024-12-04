@@ -22,8 +22,8 @@ import datawave.data.hash.UID;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.config.MarkingsHelper;
-import datawave.util.TypeRegistryTestSetup;
 import datawave.util.CompositeTimestamp;
+import datawave.util.TypeRegistryTestSetup;
 
 public class RawRecordContainerImplTest {
 
