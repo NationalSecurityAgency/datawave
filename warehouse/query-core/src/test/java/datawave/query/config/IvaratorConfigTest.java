@@ -1,9 +1,11 @@
 package datawave.query.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import datawave.query.iterator.QueryOptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import datawave.query.iterator.QueryOptions;
 
 class IvaratorConfigTest {
 
@@ -59,7 +61,7 @@ class IvaratorConfigTest {
     }
 
     @Test
-    public void testWithinShardQueryConfiguration(){
+    public void testWithinShardQueryConfiguration() {
         IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
         ShardQueryConfiguration queryConfig = new ShardQueryConfiguration();
@@ -73,7 +75,7 @@ class IvaratorConfigTest {
     }
 
     @Test
-    public void testWithinQueryOptions(){
+    public void testWithinQueryOptions() {
         IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
         QueryOptions ops = new QueryOptions();
@@ -85,6 +87,5 @@ class IvaratorConfigTest {
         ivaratorConfig.setIvaratorMaxOpenFiles(456);
         Assertions.assertEquals(456, ops.getIvaratorMaxOpenFiles());
     }
-
 
 }
