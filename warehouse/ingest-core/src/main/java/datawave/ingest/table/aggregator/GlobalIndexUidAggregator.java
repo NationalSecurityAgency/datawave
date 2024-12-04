@@ -346,9 +346,6 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = super.validateOptions(options);
         if (valid) {
-            if (options.containsKey(TIMESTAMPS_IGNORED)) {
-                timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
-            }
             if (options.containsKey(MAX_UIDS_OPT)) {
                 maxUids = Integer.parseInt(options.get(MAX_UIDS_OPT));
                 if (maxUids <= 0) {
@@ -370,16 +367,9 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        if (options.containsKey(TIMESTAMPS_IGNORED)) {
-            timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
-        }
         if (options.containsKey(MAX_UIDS_OPT)) {
             maxUids = Integer.parseInt(options.get(MAX_UIDS_OPT));
         }
-    }
-
-    public static void setTimestampsIgnoredOpt(IteratorSetting is, boolean timestampsIgnored) {
-        is.addOption(TIMESTAMPS_IGNORED, Boolean.toString(timestampsIgnored));
     }
 
     public static void setMaxUidsOpt(IteratorSetting is, int maxUids) {
