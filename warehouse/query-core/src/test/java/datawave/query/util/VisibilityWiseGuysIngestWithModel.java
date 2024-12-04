@@ -805,8 +805,8 @@ public class VisibilityWiseGuysIngestWithModel {
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
 
             mutation = new Mutation("NAM");
-            mutation.put("DATAWAVE", "NAME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
-            mutation.put("DATAWAVE", "NOME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            // Tests pattern mapping.
+            mutation.put("DATAWAVE", "NAME|NOME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("AG");
