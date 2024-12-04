@@ -772,7 +772,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         if (lookupCache != null) {
             String field = JexlASTHelper.getIdentifier(currentNode);
-            if (fieldsToTerms.get(field).isThresholdExceeded() || fieldsToTerms.get(field).isEmpty()) {
+            if (fieldsToTerms.containsKey(field) && (fieldsToTerms.get(field).isThresholdExceeded() || fieldsToTerms.get(field).isEmpty())) {
                 LookupCacheKey key = getKey(currentNode);
                 lookupCache.put(key, false);
             }
