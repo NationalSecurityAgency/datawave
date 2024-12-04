@@ -29,6 +29,9 @@ import datawave.ingest.mapreduce.job.util.AccumuloUtil;
 import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.util.SplittableRFileRangeInputFormat;
 
+/**
+ * Verify the equivalence of two inputs. Primarily used for verifying ShardReindexJob correctness
+ */
 public class ShardReindexVerificationJob implements Tool {
     private static final Logger log = Logger.getLogger(ShardReindexVerificationJob.class);
 

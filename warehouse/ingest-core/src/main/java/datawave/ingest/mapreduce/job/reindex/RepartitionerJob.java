@@ -49,6 +49,9 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.util.StringUtils;
 
+/**
+ * Can be run against rfiles for a table that need to be repartitioned. Will optionally apply the configured combiners to map and reduce tasks
+ */
 public class RepartitionerJob implements Tool {
     private static final Logger log = Logger.getLogger(RepartitionerJob.class);
 

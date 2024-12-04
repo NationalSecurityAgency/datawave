@@ -3,6 +3,8 @@ package datawave.ingest.mapreduce.job.reindex;
 import static datawave.ingest.mapreduce.job.SplitsFile.SPLIT_WORK_DIR;
 import static datawave.ingest.mapreduce.job.TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES;
 import static datawave.ingest.mapreduce.job.TableConfigurationUtil.TABLES_CONFIGS_TO_CACHE;
+import static datawave.ingest.mapreduce.job.reindex.ReindexedShardPartitioner.MAX_PARTITIONS;
+import static datawave.ingest.mapreduce.job.reindex.ReindexedShardPartitioner.MIN_KEYS;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,9 +75,8 @@ import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.util.StringUtils;
 
 /**
- * Job will read from the FI of a shard table generating index and reverse index entries based on a pluggable framework
- *
- * May use a variety of input formats RFileInputFormat - RFileInputFormat doesn't know how to seek, so will pass over all key values
+ * Job will read from the sharded data [accumulo online/offline][rfiles] and apply configured ingest rules. Each Key/Value pair will be reprocessed by ingest
+ * using the applied resource configuration. Generating bulk loadable rfiles by table in the output directory
  *
  */
 public class ShardReindexJob implements Tool {
@@ -332,6 +333,20 @@ public class ShardReindexJob implements Tool {
             j.getConfiguration().setInt("shardReverse" + TABLES_CONFIGS_TO_CACHE, 10000);
             j.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, SpillingSortedContextWriter.class, ContextWriter.class);
         } else {
+            // there are some special considerations for partitioning beyond what would normally be done for an ingest job
+            // partitioning the shard table for ideal splits, may cause severely lopsided reducers since the shard table is the source of the input
+            // this may create hotspots in the reducers copying data from all the map tasks. To prevent this case, for each shard configure the
+            // partitioner to hash across N reducers, this value should be configured based on the range of input shards, reducers, and volume of data
+            if (jobConfig.minKeysPerShard != -1 || jobConfig.maxReducersPerShard != -1) {
+                j.getConfiguration().set("partitioner.category.shardedTables", ReindexedShardPartitioner.class.getCanonicalName());
+                if (jobConfig.minKeysPerShard != -1) {
+                    j.getConfiguration().setInt("shardedTables." + MIN_KEYS, jobConfig.minKeysPerShard);
+                }
+                if (jobConfig.maxReducersPerShard != -1) {
+                    j.getConfiguration().setInt("shardedTables." + MAX_PARTITIONS, jobConfig.maxReducersPerShard);
+                }
+            }
+
             j.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
         }
 
@@ -816,6 +831,14 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--excludeDataTypes",
                         description = "exclude event data from ranges that matches these comma delimited data types when --reprocessEvents is set and --accumuloMetadata is not set. May not be combined with --includeDataTypes")
         private String excludeDataTypes;
+
+        @Parameter(names = "--maxReducersPerShard",
+                        description = "when set modify the partitioner of sharded data to spread a shard over multiple reducers. Setting this property will override the standard shard partitioner")
+        private int maxReducersPerShard = -1;
+
+        @Parameter(names = "--minKeysPerShard",
+                        description = "when using more than 1 reducers per shard, only use an additional reducer if the number of keys emitted to a reducer for a shard is more than this value, -1 to round robin. Setting this property will override the standard shard partitioner")
+        private int minKeysPerShard = -1;
 
         @Parameter(names = {"-h", "--help"}, description = "display help", help = true)
         private boolean help;
