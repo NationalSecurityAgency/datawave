@@ -77,10 +77,21 @@ public class EventMapperTest {
 
         SimpleDataTypeHelper.registerFields(fields);
 
-        record = IngestTestSetup.createBasicRecord(eventTime, type);
+        record = new SimpleRawRecord();
+        record.setRawFileTimestamp(eventTime);
+        record.setDataType(type);
+        record.setTimestamp(eventTime);
+        record.setRawFileName("/some/filename");
+        record.setRawData("some data".getBytes());
+        record.generateId(null);
 
         errorRecord = IngestTestSetup.createBasicRecord(eventTime, type);
         errorRecord.setRawFileTimestamp(0);
+        errorRecord.setDataType(type);
+        errorRecord.setTimestamp(eventTime);
+        errorRecord.setRawFileName("/some/filename");
+        errorRecord.setRawData("some data".getBytes());
+        errorRecord.generateId(null);
         errorRecord.setRawFileName("");
         errorRecord.addError("EVENT_DATE_MISSING");
         errorRecord.setFatalError(true);
