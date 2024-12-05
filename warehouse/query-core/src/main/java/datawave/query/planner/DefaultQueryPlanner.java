@@ -2509,13 +2509,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         fieldsToRetain.addAll(ReduceFields.getQueryFields(config.getQueryTree()));
                         fieldsToRetain.addAll(config.getProjectFields());
                         fieldsToRetain.addAll(config.getCompositeToFieldMap().keySet());
-                        // might need to include GroupBy, Unique, and/or Excerpt fields
+                        // GroupBy fields already added to projection at this point in planning
+                        // Unique and Excerpt fields do not affect returned fields
                     } else {
                         // sum all fields, remove exclude fields
                         fieldsToRetain.addAll(typeMetadata.keySet()); // metadata fetch filtered by datatype
                         // might need to add composite fields here
                         fieldsToRetain.removeAll(config.getDisallowlistedFields());
-                        // might need to include GroupBy, Unique, and/or Excerpt fields
+                        // GroupBy fields already added to projection at this point in planning
+                        // Unique and Excerpt fields do not affect returned fields
                     }
 
                     typeMetadata = typeMetadata.reduce(fieldsToRetain);
