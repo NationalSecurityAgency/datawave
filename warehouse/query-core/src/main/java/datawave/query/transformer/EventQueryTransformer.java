@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -29,7 +31,7 @@ import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
-public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Key,Value>,EventBase> implements CacheableLogic {
+public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Key,Value>,EventBase> implements CacheableLogic, WritesQueryMetrics {
 
     public EventQueryTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(tableName, settings, markingFunctions, responseObjectFactory);
@@ -149,5 +151,50 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         event.setSizeInBytes(entry.getValue().getSize() * 6);
 
         return event;
+    }
+
+    @Override
+    public void writeQueryMetrics(BaseQueryMetric metric) {
+
+    }
+
+    @Override
+    public boolean hasMetrics() {
+        return false;
+    }
+
+    @Override
+    public long getSourceCount() {
+        return 0;
+    }
+
+    @Override
+    public long getNextCount() {
+        return 0;
+    }
+
+    @Override
+    public long getSeekCount() {
+        return 0;
+    }
+
+    @Override
+    public long getYieldCount() {
+        return 0;
+    }
+
+    @Override
+    public long getDocRanges() {
+        return 0;
+    }
+
+    @Override
+    public long getFiRanges() {
+        return 0;
+    }
+
+    @Override
+    public void resetMetrics() {
+
     }
 }
