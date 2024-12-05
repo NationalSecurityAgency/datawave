@@ -21,8 +21,12 @@ public class SummarySize implements Serializable {
 
     private static final long serialVersionUID = 6769159729743311079L;
 
-    private static final int DEFAULT_SIZE = 150;
     private static final Logger log = LoggerFactory.getLogger(SummarySize.class);
+
+    public static final String SIZE_PARAMETER = "SIZE";
+    public static final String VIEWS_PARAMETER = "VIEWS";
+
+    private static final int DEFAULT_SIZE = 150;
 
     private int summarySize;
     private ArrayList<String> contentNamesList;
@@ -39,8 +43,8 @@ public class SummarySize implements Serializable {
      * <ul>
      * <li>Given null, null will be returned.</li>
      * <li>Given an empty or blank string, an empty {@link SummarySize} will be returned.</li>
-     * <li>Given {@code SIZE:50/ONLY/NAMES:CONTENT1,CONTENT2}, an {@link SummarySize} will be returned with a size of 50 (size is number of characters), only using the
-     * specified content names, and list of content names of (CONTENT1, CONTENT2).
+     * <li>Given {@code SIZE:50/ONLY/NAMES:CONTENT1,CONTENT2}, an {@link SummarySize} will be returned with a size of 50 (size is number of characters), only
+     * using the specified content names, and list of content names of (CONTENT1, CONTENT2).
      * <li>Given malformed input, will return an {@link SummarySize} with a size of 150.</li>
      * </ul>
      *
@@ -58,7 +62,7 @@ public class SummarySize implements Serializable {
 
         SummarySize summarySize = new SummarySize();
 
-        if (string.isEmpty()) {
+        if (string.isBlank()) {
             summarySize.summarySize = DEFAULT_SIZE;
             return summarySize;
         }
@@ -66,15 +70,13 @@ public class SummarySize implements Serializable {
         try {
             String[] parameterParts = string.split(Constants.FORWARD_SLASH);
 
-            for(String parameterPart : parameterParts) {
+            for (String parameterPart : parameterParts) {
                 String[] parts = parameterPart.split(Constants.COLON);
-                if(parts[0].equalsIgnoreCase("SIZE")){
+                if (parts[0].equalsIgnoreCase(SIZE_PARAMETER)) {
                     summarySize.summarySize = Integer.parseInt(parts[1]);
-                }
-                else if(parts[0].equalsIgnoreCase("ONLY")){
+                } else if (parts[0].equalsIgnoreCase("ONLY")) {
                     summarySize.only = true;
-                }
-                else if (parts[0].equalsIgnoreCase("NAMES")) {
+                } else if (parts[0].equalsIgnoreCase(VIEWS_PARAMETER)) {
                     String[] names = parts[1].split(Constants.COMMA);
                     for (String name : names) {
                         summarySize.contentNamesList.add(name.toUpperCase());
@@ -166,12 +168,12 @@ public class SummarySize implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("SIZE:").append(summarySize);
-        if(only) {
+        sb.append(SIZE_PARAMETER).append(":").append(summarySize);
+        if (only) {
             sb.append("/").append("ONLY");
         }
-        if(!contentNamesList.isEmpty()) {
-            sb.append("/NAMES:");
+        if (!contentNamesList.isEmpty()) {
+            sb.append("/").append(VIEWS_PARAMETER).append(":");
             for (String contentName : contentNamesList) {
                 sb.append(contentName).append(Constants.COMMA);
             }

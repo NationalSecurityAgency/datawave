@@ -215,11 +215,27 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(NAMES:CONTENT/SIZE:50/ONLY)";
+        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(VIEWS:CONTENT/SIZE:50/ONLY)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(
                         Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testWithNoArg() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("return.fields", "CONTENT_SUMMARY");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #SUMMARY_SIZE()";
+
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = new HashSet<>(Set.of(
+                        "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
     }
@@ -231,7 +247,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50/NAMES:CONTENT)";
+        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50/VIEWS:CONTENT)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(
@@ -294,7 +310,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50/ONLY/NAMES:CANTFINDME,ORME)";
+        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50/ONLY/VIEWS:CANTFINDME,ORME)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:NO CONTENT FOUND TO SUMMARIZE"));
