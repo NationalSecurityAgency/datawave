@@ -793,6 +793,10 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public EventDataQueryFilter getEventEvaluationFilter() {
+        if (evaluationFilter == null) {
+            // allows standard event queries to perform a seeking aggregation with field filtering
+            evaluationFilter = getEventFilter();
+        }
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
 
