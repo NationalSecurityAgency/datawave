@@ -9,9 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.core.query.logic.WritesQueryMetrics;
-import datawave.microservice.querymetric.BaseQueryMetric;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -20,9 +17,12 @@ import com.esotericsoftware.kryo.io.Input;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.microservice.query.Query;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;

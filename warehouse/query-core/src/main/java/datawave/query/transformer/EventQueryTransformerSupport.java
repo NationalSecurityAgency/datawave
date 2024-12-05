@@ -9,15 +9,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.core.query.exception.EmptyObjectException;
-import datawave.core.query.logic.WritesQueryMetrics;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
-import datawave.query.function.LogTiming;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -28,11 +19,20 @@ import com.esotericsoftware.kryo.Kryo;
 import com.google.common.collect.Lists;
 
 import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
+import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.function.LogTiming;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.EventFields;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -239,7 +239,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
 
     protected void extractMetrics(Document document, Key documentKey) {
 
-        Map<String, Attribute<? extends Comparable<?>>> dictionary = document.getDictionary();
+        Map<String,Attribute<? extends Comparable<?>>> dictionary = document.getDictionary();
         Attribute<? extends Comparable<?>> timingMetadataAttribute = dictionary.get(LogTiming.TIMING_METADATA);
         if (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata) {
             TimingMetadata timingMetadata = (TimingMetadata) timingMetadataAttribute;
@@ -262,9 +262,9 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
             if (logTimingDetails || log.isTraceEnabled()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("retrieved document from host:").append(host).append(" at key:").append(documentKey.toStringNoTime()).append(" stageTimers:")
-                        .append(stageTimers);
+                                .append(stageTimers);
                 sb.append(" sourceCount:").append(currentSourceCount).append(" nextCount:").append(currentNextCount).append(" seekCount:")
-                        .append(currentSeekCount).append(" yieldCount:").append(currentYieldCount);
+                                .append(currentSeekCount).append(" yieldCount:").append(currentYieldCount);
                 if (log.isTraceEnabled()) {
                     log.trace(sb.toString());
                 } else {
