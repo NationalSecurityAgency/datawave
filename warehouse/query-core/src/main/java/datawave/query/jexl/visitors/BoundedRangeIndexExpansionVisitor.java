@@ -11,9 +11,9 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -35,7 +35,7 @@ import datawave.util.time.DateHelper;
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
  */
 public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(BoundedRangeIndexExpansionVisitor.class);
 
     private final JexlASTHelper.RangeFinder rangeFinder;
 
@@ -45,6 +45,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         super(config, scannerFactory, helper, "BoundedRangeIndexExpansion");
 
         rangeFinder = JexlASTHelper.findRange().indexedOnly(this.config.getDatatypeFilter(), this.helper).notDelayed();
+        this.stage = "range";
     }
 
     /**
@@ -141,6 +142,10 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         JexlNode currentNode = futureJexlNode.getOrigNode();
 
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
+
+        if (log.isDebugEnabled()) {
+            logResult(currentNode, fieldsToTerms);
+        }
 
         if (lookupCache != null && fieldsToTerms != null) {
             String field = JexlASTHelper.getIdentifier(currentNode);
