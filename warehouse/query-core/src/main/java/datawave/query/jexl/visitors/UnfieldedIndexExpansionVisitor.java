@@ -27,6 +27,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.EmptyIndexLookup;
 import datawave.query.jexl.lookups.FieldExpansionIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -239,15 +240,20 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         Preconditions.checkNotNull(term);
         Preconditions.checkNotNull(expansionFields);
 
-        if (config.getLimitAnyFieldLookups()) {
-            return new FieldExpansionIndexLookup(config, scannerFactory, term, expansionFields, executor);
-        } else {
-            try {
-                Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
-                return new FieldExpansionIndexLookup(config, scannerFactory, term, fields, executor);
-            } catch (TableNotFoundException e) {
-                throw new RuntimeException(e);
+        try {
+            //  note: if the system has configured 'exp' fields in the metadata table this method call will verify
+            //  all fields are also indexed. In the event that no expansion fields are configured this will fall back
+            //  to the full set of indexed fields for the provided datatypes
+            Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
+
+            if (fields.isEmpty()) {
+                // if no fields match then do not attempt expansion
+                return new EmptyIndexLookup(config);
             }
+
+            return new FieldExpansionIndexLookup(config, scannerFactory, term, fields, executor);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }
