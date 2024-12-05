@@ -148,6 +148,16 @@ public class CardinalityVisitorTest {
         test(Long.MAX_VALUE, "A == '11' || !(A == null)");
     }
 
+    @Test
+    public void testLongOverflow() {
+        CountMap counts = new CountMap();
+        counts.put("A == 'max-1'", Long.MAX_VALUE - 1);
+        counts.put("B == 'max-1'", Long.MAX_VALUE - 1);
+
+        test(Long.MAX_VALUE, "A == 'max-1' || B == 'max-1'", counts);
+        test(Long.MAX_VALUE - 1, "A == 'max-1' && B == 'max-1'", counts);
+    }
+
     private void test(long expected, String query) {
         test(expected, query, getCounts());
     }

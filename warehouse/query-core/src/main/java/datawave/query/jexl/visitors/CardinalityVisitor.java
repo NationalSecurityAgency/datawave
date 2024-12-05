@@ -64,15 +64,17 @@ public class CardinalityVisitor extends ShortCircuitBaseVisitor {
             JexlNode child = node.jjtGetChild(i);
             long childCount = (long) child.jjtAccept(this, data);
 
-            if (count == 0L) {
-                count = childCount;
-            } else {
-                if (childCount == Long.MAX_VALUE) {
-                    count = Long.MAX_VALUE;
-                    break;
-                } else {
-                    count += childCount;
-                }
+            if (childCount == Long.MAX_VALUE) {
+                count = Long.MAX_VALUE;
+                break;
+            }
+
+            count += childCount;
+
+            if (count < 0) {
+                // check for long overflow
+                count = Long.MAX_VALUE;
+                break;
             }
         }
         return count;
