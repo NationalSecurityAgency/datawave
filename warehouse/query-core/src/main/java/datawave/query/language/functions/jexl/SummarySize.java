@@ -21,19 +21,13 @@ public class SummarySize extends JexlQueryFunction {
 
     @Override
     public void validate() throws IllegalArgumentException {
-        if (this.parameterList.isEmpty()) {
+        String parameters = this.parameterList.isEmpty() ? "" : String.join(",", parameterList);
+        try {
+            datawave.query.attributes.SummarySize.from(parameters);
+        } catch (Exception e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
-                            MessageFormat.format("{0} requires at least one argument", this.name));
+                            MessageFormat.format("Unable to parse summary options from arguments for function {0}", this.name));
             throw new IllegalArgumentException(qe);
-        } else {
-            String parameters = String.join(",", parameterList);
-            try {
-                datawave.query.attributes.SummarySize.from(parameters);
-            } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
-                                MessageFormat.format("Unable to parse summary options from arguments for function {0}", this.name));
-                throw new IllegalArgumentException(qe);
-            }
         }
     }
 

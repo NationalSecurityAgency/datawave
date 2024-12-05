@@ -261,7 +261,6 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
             case QueryFunctions.GROUPBY_FUNCTION:
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
-            case QueryFunctions.SUMMARY_FUNCTION:
             case QueryFunctions.MATCH_REGEX:
             case QueryFunctions.INCLUDE_TEXT:
             case QueryFunctions.NO_EXPANSION:
@@ -276,6 +275,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }
+                break;
+            case QueryFunctions.SUMMARY_FUNCTION:
                 break;
             default:
                 throw new IllegalArgumentException("Unknown Query function: " + name);
