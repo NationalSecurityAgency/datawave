@@ -9,6 +9,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.function.LogTiming;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -35,7 +44,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
-public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic {
+public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic, WritesQueryMetrics {
 
     protected EventFields eventFields = new EventFields();
 
@@ -57,12 +66,24 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     protected String tableName;
     protected ResponseObjectFactory responseObjectFactory;
 
+    private long sourceCount = 0;
+    private long nextCount = 0;
+    private long seekCount = 0;
+    private long yieldCount = 0L;
+    private long docRanges = 0;
+    private long fiRanges = 0;
+    private boolean logTimingDetails = false;
+
     public EventQueryTransformerSupport(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.settings = settings;
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.tableName = tableName;
         this.responseObjectFactory = responseObjectFactory;
+        String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
+            logTimingDetails = Boolean.parseBoolean(logTimingDetailsStr);
+        }
     }
 
     public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
@@ -214,6 +235,106 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
 
     public void setQm(QueryModel qm) {
         this.qm = qm;
+    }
+
+    protected void extractMetrics(Document document, Key documentKey) {
+
+        Map<String, Attribute<? extends Comparable<?>>> dictionary = document.getDictionary();
+        Attribute<? extends Comparable<?>> timingMetadataAttribute = dictionary.get(LogTiming.TIMING_METADATA);
+        if (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata) {
+            TimingMetadata timingMetadata = (TimingMetadata) timingMetadataAttribute;
+            long currentSourceCount = timingMetadata.getSourceCount();
+            long currentNextCount = timingMetadata.getNextCount();
+            long currentSeekCount = timingMetadata.getSeekCount();
+            long currentYieldCount = timingMetadata.getYieldCount();
+            String host = timingMetadata.getHost();
+            sourceCount += currentSourceCount;
+            nextCount += currentNextCount;
+            seekCount += currentSeekCount;
+            yieldCount += currentYieldCount;
+            Map<String,Long> stageTimers = timingMetadata.getStageTimers();
+            if (stageTimers.containsKey(QuerySpan.Stage.DocumentSpecificTree.toString())) {
+                docRanges++;
+            } else if (stageTimers.containsKey(QuerySpan.Stage.FieldIndexTree.toString())) {
+                fiRanges++;
+            }
+
+            if (logTimingDetails || log.isTraceEnabled()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("retrieved document from host:").append(host).append(" at key:").append(documentKey.toStringNoTime()).append(" stageTimers:")
+                        .append(stageTimers);
+                sb.append(" sourceCount:").append(currentSourceCount).append(" nextCount:").append(currentNextCount).append(" seekCount:")
+                        .append(currentSeekCount).append(" yieldCount:").append(currentYieldCount);
+                if (log.isTraceEnabled()) {
+                    log.trace(sb.toString());
+                } else {
+                    log.info(sb.toString());
+                }
+            }
+            if (dictionary.size() == 1) {
+                // this document contained only timing metadata
+                throw new EmptyObjectException();
+            }
+        }
+    }
+
+    @Override
+    public boolean hasMetrics() {
+        return sourceCount + nextCount + seekCount + yieldCount + docRanges + fiRanges > 0;
+    }
+
+    @Override
+    public long getSourceCount() {
+        return sourceCount;
+    }
+
+    @Override
+    public long getNextCount() {
+        return nextCount;
+    }
+
+    @Override
+    public long getSeekCount() {
+        return seekCount;
+    }
+
+    @Override
+    public long getYieldCount() {
+        return yieldCount;
+    }
+
+    @Override
+    public long getDocRanges() {
+        return docRanges;
+    }
+
+    @Override
+    public long getFiRanges() {
+        return fiRanges;
+    }
+
+    @Override
+    public void writeQueryMetrics(BaseQueryMetric metric) {
+
+        // if any timing details have been returned, add metrics
+        if (hasMetrics()) {
+            metric.setSourceCount(sourceCount);
+            metric.setNextCount(nextCount);
+            metric.setSeekCount(seekCount);
+            metric.setYieldCount(yieldCount);
+            metric.setDocRanges(docRanges);
+            metric.setFiRanges(fiRanges);
+        }
+    }
+
+    @Override
+    public void resetMetrics() {
+        sourceCount = 0;
+        nextCount = 0;
+        seekCount = 0;
+        yieldCount = 0;
+        docRanges = 0;
+        fiRanges = 0;
     }
 
 }

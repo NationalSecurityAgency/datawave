@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import org.apache.accumulo.core.data.Key;
@@ -151,50 +152,5 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         event.setSizeInBytes(entry.getValue().getSize() * 6);
 
         return event;
-    }
-
-    @Override
-    public void writeQueryMetrics(BaseQueryMetric metric) {
-
-    }
-
-    @Override
-    public boolean hasMetrics() {
-        return false;
-    }
-
-    @Override
-    public long getSourceCount() {
-        return 0;
-    }
-
-    @Override
-    public long getNextCount() {
-        return 0;
-    }
-
-    @Override
-    public long getSeekCount() {
-        return 0;
-    }
-
-    @Override
-    public long getYieldCount() {
-        return 0;
-    }
-
-    @Override
-    public long getDocRanges() {
-        return 0;
-    }
-
-    @Override
-    public long getFiRanges() {
-        return 0;
-    }
-
-    @Override
-    public void resetMetrics() {
-
     }
 }
