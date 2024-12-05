@@ -241,9 +241,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         Preconditions.checkNotNull(expansionFields);
 
         try {
-            //  note: if the system has configured 'exp' fields in the metadata table this method call will verify
-            //  all fields are also indexed. In the event that no expansion fields are configured this will fall back
-            //  to the full set of indexed fields for the provided datatypes
+            // note: if the system has configured 'exp' fields in the metadata table this method call will verify
+            // all fields are also indexed. In the event that no expansion fields are configured this will fall back
+            // to the full set of indexed fields for the provided datatypes
             Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
 
             if (fields.isEmpty()) {
