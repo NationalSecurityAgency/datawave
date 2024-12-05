@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -70,104 +71,117 @@ public class IvaratorConfig implements Serializable {
         return ivaratorCacheDirConfigs;
     }
 
-    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+    public IvaratorConfig setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
         this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
+        return this;
     }
 
     public String getIvaratorFstHdfsBaseURIs() {
         return ivaratorFstHdfsBaseURIs;
     }
 
-    public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
+    public IvaratorConfig setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
+        return this;
     }
 
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
 
-    public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
+    public IvaratorConfig setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+        return this;
     }
 
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
 
-    public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
+    public IvaratorConfig setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
         this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+        return this;
     }
 
     public long getIvaratorCacheScanTimeout() {
         return ivaratorCacheScanTimeout;
     }
 
-    public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
+    public IvaratorConfig setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+        return this;
     }
 
     public int getMaxFieldIndexRangeSplit() {
         return maxFieldIndexRangeSplit;
     }
 
-    public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
+    public IvaratorConfig setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
         this.maxFieldIndexRangeSplit = maxFieldIndexRangeSplit;
+        return this;
     }
 
     public int getIvaratorMaxOpenFiles() {
         return ivaratorMaxOpenFiles;
     }
 
-    public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
+    public IvaratorConfig setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        return this;
     }
 
     public int getIvaratorNumRetries() {
         return ivaratorNumRetries;
     }
 
-    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+    public IvaratorConfig setIvaratorNumRetries(int ivaratorNumRetries) {
         this.ivaratorNumRetries = ivaratorNumRetries;
+        return this;
     }
 
     public boolean isIvaratorPersistVerify() {
         return ivaratorPersistVerify;
     }
 
-    public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
+    public IvaratorConfig setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
         this.ivaratorPersistVerify = ivaratorPersistVerify;
+        return this;
     }
 
     public int getIvaratorPersistVerifyCount() {
         return ivaratorPersistVerifyCount;
     }
 
-    public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
+    public IvaratorConfig setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
         this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
+        return this;
     }
 
     public long getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
 
-    public void setMaxIvaratorSources(long maxIvaratorSources) {
+    public IvaratorConfig setMaxIvaratorSources(long maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+        return this;
     }
 
     public long getMaxIvaratorSourceWait() {
         return maxIvaratorSourceWait;
     }
 
-    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+    public IvaratorConfig setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
         this.maxIvaratorSourceWait = maxIvaratorSourceWait;
+        return this;
     }
 
     public long getMaxIvaratorResults() {
         return maxIvaratorResults;
     }
 
-    public void setMaxIvaratorResults(long maxIvaratorResults) {
+    public IvaratorConfig setMaxIvaratorResults(long maxIvaratorResults) {
         this.maxIvaratorResults = maxIvaratorResults;
+        return this;
     }
 
     @Override
@@ -193,5 +207,25 @@ public class IvaratorConfig implements Serializable {
                 (getIvaratorCacheDirConfigs() == null ? other.getIvaratorCacheDirConfigs() == null : getIvaratorCacheDirConfigs().equals(other.getIvaratorCacheDirConfigs())) &&
                 (getIvaratorFstHdfsBaseURIs() == null ? other.getIvaratorFstHdfsBaseURIs() == null : getIvaratorFstHdfsBaseURIs().equals(other.getIvaratorFstHdfsBaseURIs()));
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                getIvaratorCacheDirConfigs(),
+                getIvaratorFstHdfsBaseURIs(),
+                getIvaratorCacheBufferSize(),
+                getIvaratorCacheScanPersistThreshold(),
+                getIvaratorCacheScanTimeout(),
+                getMaxFieldIndexRangeSplit(),
+                getIvaratorMaxOpenFiles(),
+                getIvaratorNumRetries(),
+                isIvaratorPersistVerify(),
+                getIvaratorPersistVerifyCount(),
+                getMaxIvaratorSources(),
+                getMaxIvaratorSourceWait(),
+                getMaxIvaratorResults()
+        );
+    }
+
 
 }

@@ -598,6 +598,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+        defaultValues.put("ivaratorConfig", new IvaratorConfig());
+        updatedValues.put("ivaratorConfig", new IvaratorConfig().setIvaratorCacheBufferSize(123));
     }
 
     private Query createQuery(String query) {
