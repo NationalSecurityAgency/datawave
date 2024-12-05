@@ -20,8 +20,8 @@ import datawave.ingest.mapreduce.partition.DelegatePartitioner;
  * this partitioner is to be used with the ShardReindexJob to prevent hotspots on reducers for sharded data
  */
 public class ReindexedShardPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
-    public static String MAX_PARTITIONS = "reindex.max.partitions";
-    public static String MIN_KEYS = "reindex.max.keys";
+    public static final String MAX_PARTITIONS = "reindex.max.partitions";
+    public static final String MIN_KEYS = "reindex.max.keys";
 
     private Configuration config;
 
