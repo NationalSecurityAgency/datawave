@@ -78,7 +78,17 @@ class FieldsWithNumericValuesVisitorTest {
         expectFields("HAT", "BAT", "HEN", "VEE");
         assertResult();
     }
-
+    
+    /**
+     * Test string literals that are valid numbers.
+     */
+    @Test
+    void testFieldWithStringThatIsNumeric() throws ParseException {
+        givenQuery("FOO == '1' && BAR == '2.0' && HAT == 'def'");
+        expectFields("FOO", "BAR");
+        assertResult();
+    }
+    
     private void givenQuery(String query) {
         this.query = query;
     }

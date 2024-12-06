@@ -3018,22 +3018,27 @@ public class QueryExecutorBean implements QueryExecutor {
 
         QueryValidationResponse response = new QueryValidationResponse();
 
-        Query query = null;
-        AccumuloClient client = null;
-        AccumuloConnectionFactory.Priority priority;
+        Query query;
 
         try {
-            priority = queryData.logic.getConnectionPriority();
+            // Do not persist the query.
+            qp.setPersistenceMode(QueryPersistence.TRANSIENT);
+            Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultivaluedMap(queryParameters));
+            query = persister.create(queryData.userDn, queryData.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
+            
+            AccumuloConnectionFactory.Priority priority = queryData.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             query.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(query.getId().toString(), queryData.userDn, trackingMap);
+            
+            AccumuloClient client;
             try {
                 client = connectionFactory.getClient(queryData.userDn, queryData.proxyServers, queryData.logic.getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(query.getId().toString());
             }
 
-            // the query principal is our local principal unless the query logic has a different user operations
+            // The query principal is our local principal unless the query logic has a different user operations.
             if (qp.getAuths() != null) {
                 queryData.logic.preInitialize(query,
                                 WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
@@ -3042,12 +3047,13 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((queryData.logic.getUserOperations() == null) ? queryData.p
                             : queryData.logic.getUserOperations().getRemoteUser((DatawavePrincipal) queryData.p));
-            // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
-            DatawavePrincipal overallPrincipal = (DatawavePrincipal) userOperationsBean.getRemoteUser((DatawavePrincipal) queryData.p);
+            // The overall principal (the one with combined auths across remote user operations) is our own user operations bean.
+            DatawavePrincipal overallPrincipal = userOperationsBean.getRemoteUser((DatawavePrincipal) queryData.p);
             Set<Authorizations> calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
 
             // Validate the query.
             Object validationResult = queryData.logic.validateQuery(client, query, calculatedAuths);
+            
             // Convert the validation results to a response.
             Transformer<Object,QueryValidationResponse> responseTransformer = queryData.logic.getQueryValidationResponseTransformer();
             response = responseTransformer.transform(validationResult);
@@ -3061,15 +3067,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             } catch (Exception e) {
                 log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
-            }
-
-            // Depersist the query.
-            try {
-                if (null != query) {
-                    persister.remove(query);
-                }
-            } catch (Exception e) {
-                response.addException(new QueryException(DatawaveErrorCode.DEPERSIST_ERROR, e).getBottomQueryException());
             }
         }
 

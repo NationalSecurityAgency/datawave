@@ -14,6 +14,7 @@ import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -22,7 +23,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 
 /**
- * A visitor that fetches all fields found in the query that have a numeric value.
+ * A visitor that fetches all fields found in the query that have a numeric value or a string value that represents a valid number.
  */
 public class FieldsWithNumericValuesVisitor extends ShortCircuitBaseVisitor {
 
@@ -33,6 +34,7 @@ public class FieldsWithNumericValuesVisitor extends ShortCircuitBaseVisitor {
      *            the query
      * @return the set of fields
      */
+    @SuppressWarnings("unchecked")
     public static Set<String> getFields(ASTJexlScript query) {
         if (query == null) {
             return Collections.emptySet();
@@ -79,12 +81,19 @@ public class FieldsWithNumericValuesVisitor extends ShortCircuitBaseVisitor {
         return data;
     }
 
+    @SuppressWarnings("unchecked")
     private void checkSingleField(JexlNode node, Object data) {
         String field = JexlASTHelper.getIdentifier(node);
         if (field != null) {
             Object literal = JexlASTHelper.getLiteralValue(node);
             if (literal instanceof Number) {
+                // Track any fields that have a numeric value.
                 ((Set<String>) data).add(field);
+            } else if (literal instanceof String) {
+                // Track any fields that have a string value that represents a valid number.
+                if (NumberUtils.isCreatable((String) literal)) {
+                    ((Set<String>) data).add(field);
+                }
             }
         }
     }

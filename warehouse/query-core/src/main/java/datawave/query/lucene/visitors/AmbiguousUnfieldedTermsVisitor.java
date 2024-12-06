@@ -10,6 +10,11 @@ import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.OrQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+/**
+ * A {@link BaseVisitor} implementation that will search a query for any sub-phrases that represent a fielded term that is directly followed by unfielded terms
+ * conjoined by the specified junction type. For example, this visitor would identify cases like {@code FOO:"abc" "def"} and {@code FOO:"abc" AND "def"} if the
+ * junction type {@link JUNCTION#AND} is specified, and cases like {@code FOO:"abc" OR "def"} if the junction type {@link JUNCTION#OR} is specified.
+ */
 public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
 
     public enum JUNCTION {

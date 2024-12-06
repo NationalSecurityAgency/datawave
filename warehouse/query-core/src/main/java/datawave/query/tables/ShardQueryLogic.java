@@ -1405,9 +1405,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         }
 
-        // delegate to the super class if no validation rules configured.
+        // Delegate to the super class if no validation rules were configured.
         if (validationRules == null || validationRules.isEmpty()) {
-            super.validateQuery(client, settings, auths);
+            return super.validateQuery(client, settings, auths);
         }
 
         // Set the connector and authorizations for the config object.
