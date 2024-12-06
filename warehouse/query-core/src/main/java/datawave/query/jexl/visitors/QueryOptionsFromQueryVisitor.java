@@ -252,7 +252,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.SUMMARY_FUNCTION: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.SUMMARY_SIZE, JOINER.join(options));
+                    optionsMap.put(QueryParameters.SUMMARY_OPTIONS, JOINER.join(options));
                     return null;
                 }
                 case QueryFunctions.NO_EXPANSION: {

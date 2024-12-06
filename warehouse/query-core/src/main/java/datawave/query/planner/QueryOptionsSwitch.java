@@ -13,7 +13,7 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.SummarySize;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
@@ -68,9 +68,9 @@ public class QueryOptionsSwitch {
                     ExcerptFields excerptFields = ExcerptFields.from(value);
                     config.setExcerptFields(excerptFields);
                     break;
-                case QueryParameters.SUMMARY_SIZE:
-                    SummarySize summarySize = SummarySize.from(value);
-                    config.setSummarySize(summarySize);
+                case QueryParameters.SUMMARY_OPTIONS:
+                    SummaryOptions summaryOptions = SummaryOptions.from(value);
+                    config.setSummaryOptions(summaryOptions);
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
                     config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));

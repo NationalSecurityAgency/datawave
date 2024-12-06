@@ -10,12 +10,12 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Function to specify when summaries should be included for results for any hit documents. This function accepts a string in the format
- * {@code size/[only]/[contentName1, contentName2, ....]}. See {@link datawave.query.attributes.SummarySize} for additional documentation on supported
+ * {@code size/[only]/[contentName1, contentName2, ....]}. See {@link datawave.query.attributes.SummaryOptions} for additional documentation on supported
  * formatting.
  */
-public class SummarySize extends JexlQueryFunction {
+public class SummaryOptions extends JexlQueryFunction {
 
-    public SummarySize() {
+    public SummaryOptions() {
         super(QueryFunctions.SUMMARY_FUNCTION, new ArrayList<>());
     }
 
@@ -23,7 +23,7 @@ public class SummarySize extends JexlQueryFunction {
     public void validate() throws IllegalArgumentException {
         String parameters = this.parameterList.isEmpty() ? "" : String.join(",", parameterList);
         try {
-            datawave.query.attributes.SummarySize.from(parameters);
+            datawave.query.attributes.SummaryOptions.from(parameters);
         } catch (Exception e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
                             MessageFormat.format("Unable to parse summary options from arguments for function {0}", this.name));
@@ -52,6 +52,6 @@ public class SummarySize extends JexlQueryFunction {
 
     @Override
     public QueryFunction duplicate() {
-        return new SummarySize();
+        return new SummaryOptions();
     }
 }

@@ -214,7 +214,7 @@ public class QueryParameters {
     /**
      * Used to specify summaries that should be returned.
      */
-    public static final String SUMMARY_SIZE = "summary.size";
+    public static final String SUMMARY_OPTIONS = "summary.options";
 
     /**
      * Used to specify model or DB fields that should be treated as lenient (can be skipped if normalization fails)

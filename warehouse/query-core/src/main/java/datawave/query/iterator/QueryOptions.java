@@ -61,7 +61,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.SummarySize;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
@@ -263,7 +263,7 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
-    public static final String SUMMARY_SIZE = "summary.size";
+    public static final String SUMMARY_OPTIONS = "summary.options";
 
     public static final String SUMMARY_ITERATOR = "summary.iterator.class";
 
@@ -441,7 +441,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
-    protected SummarySize summarySize;
+    protected SummaryOptions summaryOptions;
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = DColumnSummaryIterator.class;
 
@@ -566,7 +566,7 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = other.excerptFields;
         this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
-        this.summarySize = other.summarySize;
+        this.summaryOptions = other.summaryOptions;
         this.summaryIterator = other.summaryIterator;
 
         this.fiFieldSeek = other.fiFieldSeek;
@@ -1281,12 +1281,12 @@ public class QueryOptions implements OptionDescriber {
         this.excerptIterator = excerptIterator;
     }
 
-    public SummarySize getSummarySize() {
-        return summarySize;
+    public SummaryOptions getSummaryOptions() {
+        return summaryOptions;
     }
 
-    public void setSummarySize(SummarySize summarySize) {
-        this.summarySize = summarySize;
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        this.summaryOptions = summaryOptions;
     }
 
     public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
@@ -1390,7 +1390,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_FIELDS, "excerpt fields");
         options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
-        options.put(SUMMARY_SIZE, "The size of the summary to return with possible options (ONLY) and list of contentNames");
+        options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
         options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.DColumnSummaryIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
@@ -1909,8 +1909,8 @@ public class QueryOptions implements OptionDescriber {
             }
         }
 
-        if (options.containsKey(SUMMARY_SIZE)) {
-            setSummarySize(SummarySize.from(options.get(SUMMARY_SIZE)));
+        if (options.containsKey(SUMMARY_OPTIONS)) {
+            setSummaryOptions(SummaryOptions.from(options.get(SUMMARY_OPTIONS)));
         }
 
         if (options.containsKey(SUMMARY_ITERATOR)) {
