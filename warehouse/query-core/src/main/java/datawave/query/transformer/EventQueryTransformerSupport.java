@@ -65,7 +65,6 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     protected QueryModel qm;
     protected String tableName;
     protected ResponseObjectFactory responseObjectFactory;
-
     private long sourceCount = 0;
     private long nextCount = 0;
     private long seekCount = 0;
