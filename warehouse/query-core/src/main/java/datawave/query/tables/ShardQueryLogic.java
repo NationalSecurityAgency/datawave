@@ -103,7 +103,6 @@ import datawave.query.rules.QueryValidationResult;
 import datawave.query.rules.ShardQueryValidationConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
-import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
@@ -1304,11 +1303,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        if (config.getSequentialScheduler()) {
-            return new SequentialScheduler(config, scannerFactory);
-        } else {
-            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
-        }
+        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -2623,14 +2618,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
         getConfig().setLimitTermExpansionToModel(shouldLimitTermExpansionToModel);
-    }
-
-    public boolean getSequentialScheduler() {
-        return getConfig().getSequentialScheduler();
-    }
-
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        getConfig().setSequentialScheduler(sequentialScheduler);
     }
 
     public boolean getParseTldUids() {

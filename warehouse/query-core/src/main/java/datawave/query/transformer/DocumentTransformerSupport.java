@@ -46,6 +46,7 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.util.CompositeTimestamp;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.result.event.EventBase;
@@ -386,7 +387,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                 log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey + " - computed dataDate from row: " + dataDate);
             }
         } else {
-            dataDate = new Date(timestamp);
+            dataDate = new Date(CompositeTimestamp.getEventDate(timestamp));
         }
 
         resultCardinalityDocumentDate.addEntry(valueMap, eventId, dataType, dataDate);

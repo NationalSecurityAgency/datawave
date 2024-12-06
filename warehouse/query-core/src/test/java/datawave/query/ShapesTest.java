@@ -2,6 +2,8 @@ package datawave.query;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -25,7 +27,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections.iterators.IteratorChain;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -37,13 +38,19 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
@@ -71,7 +78,7 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  */
 public abstract class ShapesTest {
 
-    private static final Logger log = Logger.getLogger(ShapesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ShapesTest.class);
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Collections.singleton(auths);
 
@@ -242,7 +249,7 @@ public abstract class ShapesTest {
             GenericQueryConfiguration config = logic.initialize(clientForTest, settings, authSet);
             logic.setupQuery(config);
         } catch (Exception e) {
-            log.info("exception while planning query: " + e);
+            log.info("exception while planning query", e);
             throw e;
         }
     }
@@ -270,12 +277,12 @@ public abstract class ShapesTest {
 
         Set<String> missing = Sets.difference(expected, found);
         if (!missing.isEmpty()) {
-            log.info("missing uuids: " + missing);
+            log.info("missing uuids: {}", missing);
         }
 
         Set<String> extra = Sets.difference(found, expected);
         if (!extra.isEmpty()) {
-            log.info("extra uuids: " + extra);
+            log.info("extra uuids: {}", extra);
         }
 
         assertEquals(expected, found);
@@ -294,8 +301,8 @@ public abstract class ShapesTest {
             ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ASTJexlScript plannedScript = logic.getConfig().getQueryTree();
             if (!TreeEqualityVisitor.isEqual(expected, plannedScript)) {
-                log.info("expected: " + query);
-                log.info("planned : " + logic.getConfig().getQueryString());
+                log.info("expected: {}", query);
+                log.info("planned : {}", logic.getConfig().getQueryString());
                 fail("Planned query did not match expectation");
             }
         } catch (ParseException e) {
@@ -915,4 +922,138 @@ public abstract class ShapesTest {
         logic.setSortQueryPostIndexWithTermCounts(false);
     }
 
+    @Test
+    public void testAttributeNormalizers() throws Exception {
+        withQuery("SHAPE == 'triangle'");
+        withExpected(new HashSet<>(triangleUids));
+        planAndExecuteQuery();
+
+        assertAttributeNormalizer("EDGES", NumberType.class);
+        assertAttributeNormalizer("ONLY_TRI", LcNoDiacriticsType.class);
+        assertAttributeNormalizer("PROPERTIES", NoOpType.class);
+        assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+        assertAttributeNormalizer("TYPE", LcNoDiacriticsType.class);
+        assertAttributeNormalizer("UUID", NoOpType.class);
+    }
+
+    // use projection to trigger reduction
+    @Test
+    public void testReduceTypeMetadataViaIncludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadata();
+        try {
+            withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
+            logic.setReduceTypeMetadata(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadata(orig);
+        }
+    }
+
+    // use disallow listed fields to trigger reduction
+    @Test
+    public void testReduceTypeMetadataViaExcludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadata();
+        try {
+            withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
+            logic.setReduceTypeMetadata(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadata(orig);
+        }
+    }
+
+    // use projection to trigger reduction per shard
+    @Test
+    public void testReduceTypeMetadataPerShardViaIncludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadataPerShard();
+        try {
+            withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
+            logic.setReduceTypeMetadataPerShard(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadataPerShard(orig);
+        }
+    }
+
+    // use disallow listed fields to trigger reduction
+    @Test
+    public void testReduceTypeMetadataPerShardViaExcludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadataPerShard();
+        try {
+            withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
+            logic.setReduceTypeMetadata(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadata(orig);
+        }
+    }
+
+    private void withIncludeFields(Set<String> includes) {
+        parameters.put(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
+    }
+
+    private void withExcludeFields(Set<String> excludes) {
+        parameters.put(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
+    }
+
+    private void assertAttributeNormalizer(String field, Class<?> expectedNormalizer) {
+        for (Document result : results) {
+            Attribute<?> attrs = result.get(field);
+            if (attrs instanceof TypeAttribute<?>) {
+                TypeAttribute<?> attr = (TypeAttribute<?>) attrs;
+                assertSame(expectedNormalizer, attr.getType().getClass());
+            }
+        }
+    }
+
+    private void assertFieldNotFound(String field) {
+        for (Document result : results) {
+            Attribute<?> attrs = result.get(field);
+            assertNull("Expected null value for field " + field, attrs);
+        }
+    }
 }

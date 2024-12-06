@@ -28,6 +28,7 @@ import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.ConfigurableIteratorEnvironment;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.util.CompositeTimestamp;
 
 public class ConfigurableAgeOffFilterTest {
 
@@ -138,6 +139,9 @@ public class ConfigurableAgeOffFilterTest {
         // copy cofigs to actual filter we are testing
         filter.initialize(wrapper);
 
+        long tomorrow = System.currentTimeMillis() + CompositeTimestamp.MILLIS_PER_DAY;
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(daysAgo(365), tomorrow);
+
         // brand new key should be good
         assertThat(filter.accept(new Key(), VALUE), is(true));
         // first five will hit the ttl short circuit
@@ -155,6 +159,8 @@ public class ConfigurableAgeOffFilterTest {
         assertThat(filter.accept(getKey("foo", daysAgo(8)), VALUE), is(true));
         // this is really old and matches so should not be accepted
         assertThat(filter.accept(getKey("foo", daysAgo(365)), VALUE), is(false));
+        // this is really old and matches, but has a future age off date, so should be accepted
+        assertThat(filter.accept(getKey("foo", compositeTS), VALUE), is(true));
 
     }
 
