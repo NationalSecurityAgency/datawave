@@ -187,7 +187,7 @@ public class ShardQueryLogicQueryValidationTest {
     public void testNoRulesConfigured() {
         logic.setValidationRules(null);
 
-        Assert.assertThrows("Query validation rules not configured.", IllegalStateException.class, this::assertResult);
+        Assert.assertThrows(UnsupportedOperationException.class, this::assertResult);
     }
 
     /**
