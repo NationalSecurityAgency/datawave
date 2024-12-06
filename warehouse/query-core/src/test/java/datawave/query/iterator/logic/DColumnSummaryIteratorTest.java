@@ -1,6 +1,6 @@
 package datawave.query.iterator.logic;
 
-import static datawave.query.iterator.logic.DColumnSummaryIterator.CONTENT_NAMES;
+import static datawave.query.iterator.logic.DColumnSummaryIterator.VIEW_NAMES;
 import static datawave.query.iterator.logic.DColumnSummaryIterator.ONLY_SPECIFIED;
 import static datawave.query.iterator.logic.DColumnSummaryIterator.SUMMARY_SIZE;
 import static org.junit.Assert.assertEquals;
@@ -89,7 +89,7 @@ public class DColumnSummaryIteratorTest extends EasyMockSupport {
      */
     private void givenOptions(String contentNameList, int summarySize, boolean only) {
         if (contentNameList != null) {
-            options.put(CONTENT_NAMES, contentNameList);
+            options.put(VIEW_NAMES, contentNameList);
         }
         options.put(SUMMARY_SIZE, String.valueOf(summarySize));
         options.put(ONLY_SPECIFIED, String.valueOf(only));
@@ -138,7 +138,7 @@ public class DColumnSummaryIteratorTest extends EasyMockSupport {
     @Test
     public void testMatchFoundSpecificContentNotFirstInList() throws IOException {
         givenOptions("CONTENT2", 100, false);
-        iterator.setContentNameList(List.of("CONTENT1", "CONTENT2"));
+        iterator.setViewNameList(List.of("CONTENT1", "CONTENT2"));
         iterator.init(new SortedListKeyValueIterator(source), options, env);
 
         Key startKey = new Key(row, new Text("email" + Constants.NULL + "987.654.321"));
@@ -242,7 +242,7 @@ public class DColumnSummaryIteratorTest extends EasyMockSupport {
     @Test
     public void testNoMatchFoundForContentName() throws IOException {
         givenOptions("THISWONTBEFOUND", 100, true);
-        iterator.setContentNameList(List.of("CONTENT1", "CONTENT2", "return", "of", "the", "mack"));
+        iterator.setViewNameList(List.of("CONTENT1", "CONTENT2", "return", "of", "the", "mack"));
         iterator.init(new SortedListKeyValueIterator(source), options, env);
 
         Key startKey = new Key(row, new Text("email" + Constants.NULL + "987.654.321"));

@@ -65,7 +65,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.SummarySize;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
@@ -1075,12 +1075,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
-        // Get the SUMMARY_SIZE parameter if given
-        String summarySizeParam = settings.findParameter(QueryParameters.SUMMARY_SIZE).getParameterValue().trim();
-        if (StringUtils.isNotBlank(summarySizeParam)) {
-            SummarySize summarySize = SummarySize.from(summarySizeParam);
-            this.setSummarySize(summarySize);
-            config.setSummarySize(summarySize);
+        // Get the SUMMARY parameter if given
+        String summaryParam = settings.findParameter(QueryParameters.SUMMARY_OPTIONS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(summaryParam)) {
+            SummaryOptions summaryOptions = SummaryOptions.from(summaryParam);
+            this.setSummaryOptions(summaryOptions);
+            config.setSummaryOptions(summaryOptions);
         }
 
         // Get the HIT_LIST parameter if given
@@ -1841,12 +1841,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
     }
 
-    public SummarySize getSummarySize() {
-        return getConfig().getSummarySize();
+    public SummaryOptions getSummaryoptions() {
+        return getConfig().getSummaryOptions();
     }
 
-    public void setSummarySize(SummarySize summarySize) {
-        getConfig().setSummarySize(summarySize);
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        getConfig().setSummaryOptions(summaryOptions);
     }
 
     public String getSummaryIterator() {

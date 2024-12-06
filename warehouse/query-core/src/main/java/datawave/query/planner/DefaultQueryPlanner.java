@@ -665,8 +665,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     private void configureSummaries(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.getSummarySize().getSummarySize() != 0) {
-            addOption(cfg, QueryOptions.SUMMARY_SIZE, config.getSummarySize().toString(), true);
+        if (config.getSummaryOptions().getSummarySize() != 0) {
+            addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
             addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
         }
     }

@@ -1633,11 +1633,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected SummaryTransform getSummaryTransform() {
-        if (summaryTransform == null && getSummarySize() != null && getSummarySize().getSummarySize() != 0) {
-            synchronized (getSummarySize()) {
+        if (summaryTransform == null && getSummaryOptions() != null && getSummaryOptions().getSummarySize() != 0) {
+            synchronized (getSummaryOptions()) {
                 if (summaryTransform == null) {
                     try {
-                        summaryTransform = new SummaryTransform(summarySize, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                        summaryTransform = new SummaryTransform(summaryOptions, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
                                         summaryIterator.getDeclaredConstructor().newInstance());
                     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create summary transform", e);

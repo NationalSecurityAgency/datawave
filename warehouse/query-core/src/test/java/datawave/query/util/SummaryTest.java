@@ -215,7 +215,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(VIEWS:CONTENT/SIZE:50/ONLY)";
+        String queryString = "QUOTE:(farther) #SUMMARY(VIEWS:CONTENT/SIZE:50/ONLY)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(
@@ -231,7 +231,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE()";
+        String queryString = "QUOTE:(farther) #SUMMARY()";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of(
@@ -247,7 +247,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50/VIEWS:CONTENT)";
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50/VIEWS:CONTENT)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(
@@ -263,7 +263,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50)";
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(
@@ -279,7 +279,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:90000)";
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:90000)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of(
@@ -295,7 +295,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:-50)";
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:-50)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:CONTENT: Y: : [] 9223372036854775807 false"));
@@ -310,7 +310,7 @@ public abstract class SummaryTest {
         extraParameters.put("return.fields", "CONTENT_SUMMARY");
         extraParameters.put("query.syntax", "LUCENE");
 
-        String queryString = "QUOTE:(farther) #SUMMARY_SIZE(SIZE:50/ONLY/VIEWS:CANTFINDME,ORME)";
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50/ONLY/VIEWS:CANTFINDME,ORME)";
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:NO CONTENT FOUND TO SUMMARIZE"));

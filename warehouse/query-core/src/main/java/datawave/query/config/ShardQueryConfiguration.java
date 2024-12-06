@@ -47,7 +47,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.SummarySize;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
@@ -441,7 +441,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the excerpt iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
-    private SummarySize summarySize = new SummarySize();
+    private SummaryOptions summaryOptions = new SummaryOptions();
 
     // The class for the summary iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = DColumnSummaryIterator.class;
@@ -760,7 +760,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
-        this.setSummarySize(SummarySize.copyOf(other.getSummarySize()));
+        this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
         this.setSummaryIterator(other.getSummaryIterator());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
@@ -2639,13 +2639,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptIterator = excerptIterator;
     }
 
-    public SummarySize getSummarySize() {
-        return summarySize;
+    public SummaryOptions getSummaryOptions() {
+        return summaryOptions;
     }
 
-    public void setSummarySize(SummarySize summarySize) {
-        if (summarySize != null) {
-            this.summarySize = summarySize;
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        if (summaryOptions != null) {
+            this.summaryOptions = summaryOptions;
         }
     }
 
@@ -3047,7 +3047,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
-                Objects.equals(getSummarySize(), that.getSummarySize()) &&
+                Objects.equals(getSummaryOptions(), that.getSummaryOptions()) &&
                 getFiFieldSeek() == that.getFiFieldSeek() &&
                 getFiNextSeek() == that.getFiNextSeek() &&
                 getEventFieldSeek() == that.getEventFieldSeek() &&
@@ -3257,7 +3257,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getLenientFields(),
                 getStrictFields(),
                 getExcerptFields(),
-                getSummarySize(),
+                getSummaryOptions(),
                 getFiFieldSeek(),
                 getFiNextSeek(),
                 getEventFieldSeek(),

@@ -1,12 +1,11 @@
 package datawave.query.transformer;
 
-import static datawave.query.iterator.logic.DColumnSummaryIterator.CONTENT_NAMES;
+import static datawave.query.iterator.logic.DColumnSummaryIterator.VIEW_NAMES;
 import static datawave.query.iterator.logic.DColumnSummaryIterator.ONLY_SPECIFIED;
 import static datawave.query.iterator.logic.DColumnSummaryIterator.SUMMARY_SIZE;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +34,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
-import datawave.query.attributes.SummarySize;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.iterator.logic.DColumnSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 
@@ -50,18 +49,18 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
     private static final String CONTENT_SUMMARY = "CONTENT_SUMMARY";
 
     private final DColumnSummaryIterator summaryIterator;
-    private final SummarySize summarySize;
+    private final SummaryOptions summaryOptions;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
 
-    public SummaryTransform(SummarySize summarySize, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
-        this(summarySize, env, source, new TermFrequencyExcerptIterator());
+    public SummaryTransform(SummaryOptions summaryOptions, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
+        this(summaryOptions, env, source, new TermFrequencyExcerptIterator());
     }
 
-    public SummaryTransform(SummarySize summarySize, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
+    public SummaryTransform(SummaryOptions summaryOptions, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
                     SortedKeyValueIterator<Key,Value> summaryIterator) {
-        ArgumentChecker.notNull(summarySize);
-        this.summarySize = summarySize;
+        ArgumentChecker.notNull(summaryOptions);
+        this.summaryOptions = summaryOptions;
         this.env = env;
         this.source = source;
         this.summaryIterator = (DColumnSummaryIterator) summaryIterator;
@@ -77,7 +76,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
                 ArrayList<DocumentKey> documentKeys = getEventIds(document);
                 if (!documentKeys.isEmpty()) {
                     if (log.isTraceEnabled()) {
-                        log.trace("Fetching summaries {} for document {}", summarySize, document.getMetadata());
+                        log.trace("Fetching summaries {} for document {}", summaryOptions, document.getMetadata());
                     }
                     Set<Summary> summaries = getExcerpts(documentKeys);
                     addExcerptsToDocument(summaries, document);
@@ -157,7 +156,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
             Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
             Range range = new Range(startKey, true, endKey, false);
 
-            Summary summary = getSummary(range, summarySize);
+            Summary summary = getSummary(range, summaryOptions);
             // Only retain non-blank summaries.
             if (!summary.isEmpty()) {
                 summaries.add(summary);
@@ -176,18 +175,18 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      *
      * @param range
      *            the range to use when seeking
-     * @param summarySize
+     * @param summaryOptions
      *            the object with our summary specifications
      * @return the summary
      */
-    private Summary getSummary(Range range, SummarySize summarySize) {
-        // get the options out of the SummarySize object
+    private Summary getSummary(Range range, SummaryOptions summaryOptions) {
+        // get the options out of the SummaryOptions object
         final Map<String,String> summaryIteratorOptions = new HashMap<>();
-        summaryIteratorOptions.put(SUMMARY_SIZE, String.valueOf(summarySize.getSummarySize()));
-        if (!summarySize.isEmpty()) {
-            summaryIteratorOptions.put(CONTENT_NAMES, summarySize.contentNamesListToString());
+        summaryIteratorOptions.put(SUMMARY_SIZE, String.valueOf(summaryOptions.getSummarySize()));
+        if (!summaryOptions.isEmpty()) {
+            summaryIteratorOptions.put(VIEW_NAMES, summaryOptions.viewNamesListToString());
         }
-        summaryIteratorOptions.put(ONLY_SPECIFIED, String.valueOf(summarySize.onlyListedContents()));
+        summaryIteratorOptions.put(ONLY_SPECIFIED, String.valueOf(summaryOptions.onlyListedViews()));
 
         try {
             // set all of our options for the iterator

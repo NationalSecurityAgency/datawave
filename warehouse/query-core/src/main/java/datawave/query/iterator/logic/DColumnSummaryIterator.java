@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.query.Constants;
-import datawave.query.attributes.SummarySize;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.table.parser.ContentKeyValueFactory;
 
 /**
@@ -38,20 +38,20 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
 
     public static final String SUMMARY_SIZE = "summary.size";
 
-    public static final String CONTENT_NAMES = "content.names";
+    public static final String VIEW_NAMES = "view.names";
 
     public static final String ONLY_SPECIFIED = "only.specified";
 
     /**
-     * A list of content names to potentially create a summary for. The closer to the front in the list, the higher the priority to get a summary for that
-     * content
+     * A list of view names to potentially create a summary for. The closer to the front in the list, the higher the priority to get a summary for that
+     * view
      */
-    protected final ArrayList<String> contentSummaryOrder = new ArrayList<>();
+    protected final ArrayList<String> viewSummaryOrder = new ArrayList<>();
 
     /** the size in bytes of the summary to create */
     protected int summarySize;
 
-    /** if we will only look at the content names specified in the query */
+    /** if we will only look at the view names specified in the query */
     protected boolean onlySpecified;
 
     /** the underlying source */
@@ -88,7 +88,7 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.source = source;
 
-        contentSummaryOrder.addAll(List.of("CONTENT", "CONTENT1"));
+        viewSummaryOrder.addAll(List.of("CONTENT", "CONTENT1"));
 
         if (options.containsKey(SUMMARY_SIZE)) {
             this.summarySize = Math.max(1, Math.min(Integer.parseInt(options.get(SUMMARY_SIZE)), 1500));
@@ -96,23 +96,23 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
             this.summarySize = 150;
         }
 
-        // if "ONLY" we will clear the content names list so that we only use the ones passed in
+        // if "ONLY" we will clear the view names list so that we only use the ones passed in
         if (options.containsKey(ONLY_SPECIFIED)) {
             onlySpecified = Boolean.parseBoolean(options.get(ONLY_SPECIFIED));
             if (onlySpecified) {
-                contentSummaryOrder.clear();
+                viewSummaryOrder.clear();
             }
         } else {
             onlySpecified = false;
         }
 
-        // add the content names to the list in the order specified
-        if (options.containsKey(CONTENT_NAMES)) {
-            String[] nameList = SummarySize.contentNamesListFromString(options.get(CONTENT_NAMES));
+        // add the view names to the list in the order specified
+        if (options.containsKey(VIEW_NAMES)) {
+            String[] nameList = SummaryOptions.viewNamesListFromString(options.get(VIEW_NAMES));
             for (int i = nameList.length - 1; i >= 0; i--) {
                 String name = nameList[i];
-                contentSummaryOrder.remove(name);
-                contentSummaryOrder.add(0, name);
+                viewSummaryOrder.remove(name);
+                viewSummaryOrder.add(0, name);
             }
         }
     }
@@ -241,18 +241,18 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
         while (source.hasTop() && dtUid.equals(getDtUidFromDKey(source.getTopKey()))) {
             top = source.getTopKey();
 
-            // get the content name
-            String currentContentName = getContentName(top);
+            // get the view name
+            String currentViewName = getViewName(top);
 
-            for (String name : contentSummaryOrder) {
+            for (String name : viewSummaryOrder) {
                 if (name.endsWith("*")) {
                     name = name.substring(0, name.length() - 1);
-                    if (currentContentName.startsWith(name)) {
-                        foundContent.put(currentContentName, source.getTopValue().get());
+                    if (currentViewName.startsWith(name)) {
+                        foundContent.put(currentViewName, source.getTopValue().get());
                     }
                 } else {
-                    if (currentContentName.equalsIgnoreCase(name)) {
-                        foundContent.put(currentContentName, source.getTopValue().get());
+                    if (currentViewName.equalsIgnoreCase(name)) {
+                        foundContent.put(currentViewName, source.getTopValue().get());
                     }
                 }
             }
@@ -262,7 +262,7 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
         }
 
         // create the summary
-        String summary = createSummary(contentSummaryOrder, foundContent, summarySize);
+        String summary = createSummary(viewSummaryOrder, foundContent, summarySize);
         if (summary != null) {
             tk = new Key(top.getRow(), new Text(dtUid), new Text(summary), top.getColumnVisibility());
             tv = new Value();
@@ -275,23 +275,23 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
     }
 
     /**
-     * this method attempts to create a summary out of the found contents
+     * this method attempts to create a summary out of the found views
      *
-     * @param contentSummaryOrder
-     *            the order to check for contents. the first one found will have a summary made from it
+     * @param viewSummaryOrder
+     *            the order to check for views. the first one found will have a summary made from it
      * @param foundContent
      *            the map of all the content found for the document
      * @param summarySize
      *            the size in bytes of the summary to create
      * @return the created summary
      */
-    private static String createSummary(List<String> contentSummaryOrder, Map<String,byte[]> foundContent, int summarySize) {
-        // check each potential content name we could make summaries for
-        for (String name : contentSummaryOrder) {
+    private static String createSummary(List<String> viewSummaryOrder, Map<String,byte[]> foundContent, int summarySize) {
+        // check each potential view name we could make summaries for
+        for (String name : viewSummaryOrder) {
             if (name.endsWith("*")) {
-                // strip wildcard from content name
+                // strip wildcard from view name
                 name = name.substring(0, name.length() - 1);
-                // if we have content name that matches the list...
+                // if we have a view name that matches the list...
                 Map<String,String> summaries = new HashMap<>();
                 for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
                     if (entry.getKey().startsWith(name)) {
@@ -305,7 +305,7 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
                     }
                 }
                 if (!summaries.isEmpty()) {
-                    // return the content name and summary separated by null
+                    // return the view name and summary separated by null
                     StringBuilder sb = new StringBuilder();
                     for (Map.Entry<String,String> entry : summaries.entrySet()) {
                         sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
@@ -348,13 +348,13 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
     }
 
     /**
-     * Get the content name from the end of the column qualifier of the d key
+     * Get the view name from the end of the column qualifier of the d key
      *
      * @param dKey
      *            the d key
-     * @return the content name
+     * @return the view name
      */
-    private static String getContentName(Key dKey) {
+    private static String getViewName(Key dKey) {
         String cq = dKey.getColumnQualifier().toString();
         int index = cq.lastIndexOf(Constants.NULL);
         return cq.substring(index + 1);
@@ -371,14 +371,14 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
         return getDtUid(dKey.getColumnQualifier().toString());
     }
 
-    public void setContentNameList(List<String> contentNameList) {
-        contentSummaryOrder.clear();
-        contentSummaryOrder.addAll(contentNameList);
+    public void setViewNameList(List<String> viewNameList) {
+        viewSummaryOrder.clear();
+        viewSummaryOrder.addAll(viewNameList);
     }
 
     @Override
     public String toString() {
-        return "DColumnExcerptIterator: " + summarySize + ", " + onlySpecified + ", " + contentSummaryOrder;
+        return "DColumnExcerptIterator: " + summarySize + ", " + onlySpecified + ", " + viewSummaryOrder;
     }
 
 }
