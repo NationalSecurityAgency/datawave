@@ -1398,21 +1398,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     @Override
-    public Object validateQuery(AccumuloClient client, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+    public Object validateQuery(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled()) {
             log.trace("Initializing ShardQueryLogic for query validation: " + System.identityHashCode(this) + '('
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         }
 
-        // todo - maybe unnecessary, we could just return early if no rules configured.
+        // delegate to the super class if no validation rules configured.
         if (validationRules == null || validationRules.isEmpty()) {
-            throw new IllegalStateException("Query validation rules not configured.");
+            super.validateQuery(client, settings, auths);
         }
-
-        // todo - verify if we should allow these to be configured, or always stick to an established default.
-        this.config.setExpandFields(expandFields);
-        this.config.setExpandValues(expandValues);
 
         // Set the connector and authorizations for the config object.
         config.setClient(client);
@@ -1526,8 +1522,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Apply the query model.
         config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
                         this.queryModel));
-
-        // todo - should any other normalization steps be applied?
 
         // Update the configurations with the target syntax JEXL and the jexl query string. Execute any remaining rules that expect to run against a JEXL query.
         validationConfig.setParsedQuery(config.getQueryTree());

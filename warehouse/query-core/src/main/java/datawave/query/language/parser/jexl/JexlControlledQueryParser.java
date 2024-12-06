@@ -10,7 +10,6 @@ import java.util.TreeSet;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.language.parser.ParseException;

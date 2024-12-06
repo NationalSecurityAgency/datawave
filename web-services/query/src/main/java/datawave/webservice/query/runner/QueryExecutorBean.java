@@ -457,7 +457,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the logic name
      * @return QueryData
      */
-    private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+    private QueryData validateQueryParameters(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
 
         // Parameter 'logicName' is required and passed in prior to this call. Add to the queryParameters now.
         if (!queryParameters.containsKey(QueryParameters.QUERY_LOGIC_NAME)) {
@@ -625,7 +625,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQuery(queryLogicName, queryParameters, httpHeaders);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -689,7 +689,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQuery(queryLogicName, queryParameters, httpHeaders);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -852,7 +852,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.planQuery", absolute = true)
     public GenericResponse<String> planQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters) {
-        QueryData qd = validateQuery(queryLogicName, queryParameters, null);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -1002,7 +1002,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQuery(queryLogicName, queryParameters, null);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -3014,68 +3014,15 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.validateQuery", absolute = true)
     public QueryValidationResponse validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters) {
-        QueryData queryData = validateQuery(queryLogicName, queryParameters, null);
+        QueryData queryData = validateQueryParameters(queryLogicName, queryParameters, null);
 
         QueryValidationResponse response = new QueryValidationResponse();
 
         Query query = null;
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
-        RunningQuery runningQuery = null;
 
         try {
-            // by default we will expand the fields but not the values.
-            boolean expandFields = true;
-            boolean expandValues = false;
-            if (queryParameters.containsKey(EXPAND_FIELDS)) {
-                expandFields = Boolean.valueOf(queryParameters.getFirst(EXPAND_FIELDS));
-            }
-            if (queryParameters.containsKey(EXPAND_VALUES)) {
-                expandValues = Boolean.valueOf(queryParameters.getFirst(EXPAND_VALUES));
-            }
-
-            AuditType auditType = queryData.logic.getAuditType();
-            try {
-                // The query should be transient.
-                qp.setPersistenceMode(QueryPersistence.TRANSIENT);
-                Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultivaluedMap(queryParameters));
-                query = persister.create(queryData.userDn, queryData.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
-                auditType = queryData.logic.getAuditType();
-            } finally {
-                queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
-
-                if (!auditType.equals(AuditType.NONE)) {
-                    // audit the query before its executed.
-                    try {
-                        try {
-                            List<String> selectors = queryData.logic.getSelectors(query);
-                            if (selectors != null && !selectors.isEmpty()) {
-                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
-                            }
-                        } catch (Exception e) {
-                            log.error("Error accessing query selector", e);
-                        }
-                        // if the user didn't set an audit id, use the query id
-                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID) && query != null) {
-                            queryParameters.putSingle(AuditParameters.AUDIT_ID, query.getId().toString());
-                        }
-                        auditor.audit(MapUtils.toMultiValueMap(queryParameters));
-                    } catch (IllegalArgumentException e) {
-                        log.error("Error validating audit parameters", e);
-                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
-                        response = new QueryValidationResponse();
-                        response.addException(qe);
-                        throw new BadRequestException(qe, response);
-                    } catch (Exception e) {
-                        log.error("Error auditing query", e);
-                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
-                        response = new QueryValidationResponse();
-                        response.addException(qe);
-                        throw qe;
-                    }
-                }
-            }
-
             priority = queryData.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             query.populateTrackingMap(trackingMap);
@@ -3100,7 +3047,7 @@ public class QueryExecutorBean implements QueryExecutor {
             Set<Authorizations> calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
 
             // Validate the query.
-            Object validationResult = queryData.logic.validateQuery(client, query, calculatedAuths, expandFields, expandValues);
+            Object validationResult = queryData.logic.validateQuery(client, query, calculatedAuths);
             // Convert the validation results to a response.
             Transformer<Object,QueryValidationResponse> responseTransformer = queryData.logic.getQueryValidationResponseTransformer();
             response = responseTransformer.transform(validationResult);
