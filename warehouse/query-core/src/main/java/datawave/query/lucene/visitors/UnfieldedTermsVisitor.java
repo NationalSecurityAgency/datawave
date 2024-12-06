@@ -18,11 +18,13 @@ public class UnfieldedTermsVisitor extends BaseVisitor {
      *            the query
      * @return the list of unfielded terms
      */
+    @SuppressWarnings("unchecked")
     public static List<String> check(QueryNode query) {
         UnfieldedTermsVisitor visitor = new UnfieldedTermsVisitor();
         return (List<String>) visitor.visit(query, new ArrayList<String>());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object visit(FieldQueryNode node, Object data) {
         // Check if the term has a field.

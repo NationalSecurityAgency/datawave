@@ -48,6 +48,7 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
      */
     public static List<QueryNode> check(QueryNode node, JUNCTION junction) {
         AmbiguousUnfieldedTermsVisitor visitor = new AmbiguousUnfieldedTermsVisitor(junction);
+        // noinspection unchecked
         return (List<QueryNode>) visitor.visit(node, new ArrayList<QueryNode>());
     }
 
@@ -71,6 +72,7 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
     public Object visit(GroupQueryNode node, Object data) {
         // If the group node consists entirely of a single fielded term with ambiguously ORed unfielded phrases, add a copy of the group node to the data.
         if (groupConsistsOfUnfieldedTerms(node, false)) {
+            // noinspection unchecked
             ((List<QueryNode>) data).add(copy(node));
             return data;
         } else {
@@ -88,6 +90,7 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
      *            the data
      * @return the updated data
      */
+    @SuppressWarnings("unchecked")
     private Object checkJunction(QueryNode node, Object data) {
         // The list of linked ambiguous phrases.
         List<QueryNode> ambiguousPhrases = null;

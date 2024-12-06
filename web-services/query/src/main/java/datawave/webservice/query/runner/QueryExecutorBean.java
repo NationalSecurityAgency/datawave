@@ -3025,12 +3025,12 @@ public class QueryExecutorBean implements QueryExecutor {
             qp.setPersistenceMode(QueryPersistence.TRANSIENT);
             Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultivaluedMap(queryParameters));
             query = persister.create(queryData.userDn, queryData.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
-            
+
             AccumuloConnectionFactory.Priority priority = queryData.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             query.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(query.getId().toString(), queryData.userDn, trackingMap);
-            
+
             AccumuloClient client;
             try {
                 client = connectionFactory.getClient(queryData.userDn, queryData.proxyServers, queryData.logic.getConnPoolName(), priority, trackingMap);
@@ -3053,7 +3053,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
             // Validate the query.
             Object validationResult = queryData.logic.validateQuery(client, query, calculatedAuths);
-            
+
             // Convert the validation results to a response.
             Transformer<Object,QueryValidationResponse> responseTransformer = queryData.logic.getQueryValidationResponseTransformer();
             response = responseTransformer.transform(validationResult);

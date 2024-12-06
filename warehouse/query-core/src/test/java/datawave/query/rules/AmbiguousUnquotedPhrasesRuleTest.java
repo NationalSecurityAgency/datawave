@@ -94,8 +94,6 @@ class AmbiguousUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
 
     /**
      * Test a query with ambiguous terms that are explicitly ANDed with a preceding fielded term.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testAmbiguousPhrasesAfterExplicitANDWithFieldedTerm() throws Exception {

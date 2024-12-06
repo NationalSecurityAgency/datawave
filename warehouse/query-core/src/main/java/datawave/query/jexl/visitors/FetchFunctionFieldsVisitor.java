@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,7 +13,6 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;
 
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
@@ -40,6 +38,7 @@ public class FetchFunctionFieldsVisitor extends ShortCircuitBaseVisitor {
      * @param functions
      *            the set of {@code <namespace, function>} pairs to filter on
      * @param metadataHelper
+     *            the metadata helper
      * @return the set of fields found within the functions
      */
     public static Set<FunctionFields> fetchFields(JexlNode query, Set<Pair<String,String>> functions, MetadataHelper metadataHelper) {
@@ -97,10 +96,6 @@ public class FetchFunctionFieldsVisitor extends ShortCircuitBaseVisitor {
 
         public static FunctionFields of(String namespace, String function, String... fields) {
             return new FunctionFields(namespace, function, Arrays.asList(fields));
-        }
-
-        private FunctionFields(String namespace, String function) {
-            this(namespace, function, Collections.emptySet());
         }
 
         private FunctionFields(String namespace, String function, Collection<String> fields) {

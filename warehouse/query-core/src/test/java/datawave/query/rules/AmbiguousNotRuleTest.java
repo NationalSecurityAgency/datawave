@@ -74,8 +74,6 @@ class AmbiguousNotRuleTest extends ShardQueryRuleTest {
 
     /**
      * Test a query with a NOT with multiple unwrapped terms preceding the NOT that will be automatically ANDed.
-     *
-     * @throws Exception
      */
     @Test
     void testNOTWithUnwrappedAutomaticallyAndedPreceedingTerms() throws Exception {
@@ -89,8 +87,6 @@ class AmbiguousNotRuleTest extends ShardQueryRuleTest {
 
     /**
      * Test a query with a NOT with multiple wrapped terms preceding the NOT that will be automatically ANDed.
-     *
-     * @throws Exception
      */
     @Test
     void testNOTWithWrappedAutomaticallyAndedPreceedingTerms() throws Exception {

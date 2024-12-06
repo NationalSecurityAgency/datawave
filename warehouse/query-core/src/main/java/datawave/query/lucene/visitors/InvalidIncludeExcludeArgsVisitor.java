@@ -45,6 +45,7 @@ public class InvalidIncludeExcludeArgsVisitor extends BaseVisitor {
         return invalidFunctions;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object visit(FunctionQueryNode node, Object data) {
         String name = node.getFunction();

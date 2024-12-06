@@ -10,7 +10,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 
 /**
- * An visitor that checks a query for any slop phrases whose value is not at least the number of terms present.
+ * A visitor that checks a query for any slop phrases whose value is not at least the number of terms present.
  */
 public class InvalidSlopProximityVisitor extends BaseVisitor {
 
@@ -34,6 +34,7 @@ public class InvalidSlopProximityVisitor extends BaseVisitor {
         String text = phrase.getTextAsString();
         int totalTerms = getTotalTerms(text);
         if (totalTerms > node.getValue()) {
+            // noinspection unchecked
             ((List<InvalidSlop>) data).add(new InvalidSlop((SlopQueryNode) copy(node), totalTerms));
         }
 

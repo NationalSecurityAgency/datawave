@@ -1,17 +1,12 @@
 package datawave.query.rules;
 
-import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
-
 class IncludeExcludeArgsRuleTest extends ShardQueryRuleTest {
-
-    private static final SyntaxParser parser = new AccumuloSyntaxParser();
 
     @BeforeEach
     void setUp() {

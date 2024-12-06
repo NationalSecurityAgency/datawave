@@ -78,7 +78,7 @@ class FieldsWithNumericValuesVisitorTest {
         expectFields("HAT", "BAT", "HEN", "VEE");
         assertResult();
     }
-    
+
     /**
      * Test string literals that are valid numbers.
      */
@@ -88,7 +88,7 @@ class FieldsWithNumericValuesVisitorTest {
         expectFields("FOO", "BAR");
         assertResult();
     }
-    
+
     private void givenQuery(String query) {
         this.query = query;
     }

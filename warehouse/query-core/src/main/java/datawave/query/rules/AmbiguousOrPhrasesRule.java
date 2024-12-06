@@ -1,8 +1,6 @@
 package datawave.query.rules;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
@@ -87,7 +85,7 @@ public class AmbiguousOrPhrasesRule extends ShardQueryRule {
         public Object visit(FieldQueryNode node, Object data) {
             String field = node.getFieldAsString();
             if (field.isEmpty()) {
-                ((StringBuilder) data).append(" OR " + node.getTextAsString());
+                ((StringBuilder) data).append(" OR ").append(node.getTextAsString());
             } else {
                 ((StringBuilder) data).append(field).append(":(").append(node.getTextAsString());
             }

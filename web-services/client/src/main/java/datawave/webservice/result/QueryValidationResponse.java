@@ -1,7 +1,5 @@
 package datawave.webservice.result;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -14,7 +12,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import datawave.webservice.query.exception.ExceptionMessages;
 import datawave.webservice.query.exception.QueryExceptionType;
 
 @XmlRootElement(name = "QueryValidationResponse")

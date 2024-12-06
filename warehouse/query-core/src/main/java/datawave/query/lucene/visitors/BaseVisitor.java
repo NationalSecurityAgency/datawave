@@ -1,7 +1,6 @@
 package datawave.query.lucene.visitors;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AnyQueryNode;
@@ -26,7 +25,6 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNode;
-import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.standard.nodes.AbstractRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.BooleanModifierNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.MultiPhraseQueryNode;
@@ -37,9 +35,6 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.SynonymQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
-import org.apache.lucene.search.WildcardQuery;
-
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
 
 public class BaseVisitor {
 
@@ -96,6 +91,7 @@ public class BaseVisitor {
                 case TOKENIZED_PHRASE:
                     return visit((TokenizedPhraseQueryNode) node, data);
                 case ABSTRACT_RANGE:
+                    // noinspection rawtypes
                     return visit((AbstractRangeQueryNode) node, data);
                 case BOOLEAN_MODIFIER:
                     return visit((BooleanModifierNode) node, data);
@@ -229,6 +225,7 @@ public class BaseVisitor {
         return data;
     }
 
+    @SuppressWarnings("rawtypes")
     public Object visit(AbstractRangeQueryNode node, Object data) {
         visitChildren(node, data);
         return data;

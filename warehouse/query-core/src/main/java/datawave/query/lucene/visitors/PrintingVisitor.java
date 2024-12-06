@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.hadoop.util.Lists;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AnyQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
@@ -98,7 +97,7 @@ public class PrintingVisitor extends BaseVisitor {
 
     private static final String PREFIX = "  ";
 
-    private Output output;
+    private final Output output;
 
     public PrintingVisitor(Output output) {
         this.output = output;
@@ -129,7 +128,7 @@ public class PrintingVisitor extends BaseVisitor {
     @Override
     public Object visit(BoostQueryNode node, Object data) {
         String line = formatProperties(node, "value", node.getValue());
-        return super.visit(node, data);
+        return writeLineAndVisitChildren(node, data, line);
     }
 
     @Override
@@ -140,7 +139,7 @@ public class PrintingVisitor extends BaseVisitor {
     @Override
     public Object visit(FuzzyQueryNode node, Object data) {
         String line = formatProperties(node, "field", node.getFieldAsString(), "text", node.getTextAsString(), "similarity", node.getSimilarity());
-        return super.visit(node, data);
+        return writeLineAndVisitChildren(node, data, line);
     }
 
     @Override
@@ -228,6 +227,7 @@ public class PrintingVisitor extends BaseVisitor {
         return writeNameAndVisitChildren(node, data);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Object visit(AbstractRangeQueryNode node, Object data) {
         String line = formatProperties(node, "lowerInclusive", node.isLowerInclusive(), "upperInclusive", node.isUpperInclusive());

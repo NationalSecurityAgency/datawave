@@ -1,18 +1,10 @@
 package datawave.query.rules;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.easymock.EasyMock;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 
 public class FieldPatternPresenceRuleTest extends ShardQueryRuleTest {

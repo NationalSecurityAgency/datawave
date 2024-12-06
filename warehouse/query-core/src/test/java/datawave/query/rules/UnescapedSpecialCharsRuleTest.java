@@ -1,6 +1,5 @@
 package datawave.query.rules;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -10,8 +9,6 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import datawave.query.jexl.JexlASTHelper;
 
 public class UnescapedSpecialCharsRuleTest extends ShardQueryRuleTest {
 

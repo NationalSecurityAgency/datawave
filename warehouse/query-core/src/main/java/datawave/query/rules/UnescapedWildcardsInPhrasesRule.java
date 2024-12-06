@@ -17,7 +17,6 @@ import datawave.query.lucene.visitors.UnescapedWildcardsInQuotedPhrasesVisitor;
 public class UnescapedWildcardsInPhrasesRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(UnescapedWildcardsInPhrasesRule.class);
-    private static final EscapeQuerySyntax escapeQuerySyntax = new EscapeQuerySyntaxImpl();
 
     public UnescapedWildcardsInPhrasesRule() {}
 

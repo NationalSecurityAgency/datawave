@@ -5,7 +5,6 @@ import static datawave.query.Constants.BACKSLASH_CHAR;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,10 +24,7 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -41,8 +37,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
  */
 public class UnescapedSpecialCharactersVisitor extends ShortCircuitBaseVisitor {
 
-    public static final Set<Character> patternReservedCharacters = Collections
-                    .unmodifiableSet(Set.of('.', '+', '*', '?', '^', '$', '(', ')', '[', ']', '{', '}', '|', '\\'));
+    public static final Set<Character> patternReservedCharacters = Set.of('.', '+', '*', '?', '^', '$', '(', ')', '[', ']', '{', '}', '|', '\\');
 
     private final Set<Character> literalExceptions;
     private final boolean escapedWhitespaceRequiredForLiterals;
@@ -128,15 +123,15 @@ public class UnescapedSpecialCharactersVisitor extends ShortCircuitBaseVisitor {
      *            the map
      * @return the multimap
      */
-    private SetMultimap getMultimap(Map<String,Set<Character>> map) {
+    private SetMultimap<String,Character> getMultimap(Map<String,Set<Character>> map) {
         // @formatter:off
         Map<String, Set<Character>> relevantEntries = map.entrySet().stream()
                         .filter(entry -> !entry.getValue().isEmpty())
-                        .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         // @formatter:on
         // Maintain insertion order.
         SetMultimap<String,Character> multimap = LinkedHashMultimap.create();
-        relevantEntries.entrySet().forEach(entry -> multimap.putAll(entry.getKey(), entry.getValue()));
+        relevantEntries.forEach(multimap::putAll);
         return multimap;
     }
 
@@ -246,7 +241,6 @@ public class UnescapedSpecialCharactersVisitor extends ShortCircuitBaseVisitor {
 
         // Maintain insertion order.
         Set<Character> unescapedChars = new LinkedHashSet<>();
-        int prevIndex = 0;
         char[] chars = str.toCharArray();
         int totalChars = chars.length;
         int lastIndex = totalChars - 1;

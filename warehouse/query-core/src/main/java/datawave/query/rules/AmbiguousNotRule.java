@@ -1,18 +1,14 @@
 package datawave.query.rules;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
-import datawave.query.lucene.visitors.AmbigiousNotVisitor;
+import datawave.query.lucene.visitors.AmbiguousNotVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
 /**
@@ -22,7 +18,6 @@ import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 public class AmbiguousNotRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(AmbiguousNotRule.class);
-    private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
 
     public AmbiguousNotRule() {}
 
@@ -46,7 +41,7 @@ public class AmbiguousNotRule extends ShardQueryRule {
         try {
             // Check the query for any ambiguous usage of NOT.
             QueryNode luceneQuery = (QueryNode) config.getParsedQuery();
-            List<NotBooleanQueryNode> nodes = AmbigiousNotVisitor.check(luceneQuery);
+            List<NotBooleanQueryNode> nodes = AmbiguousNotVisitor.check(luceneQuery);
             // Add a message for each ambiguous NOT.
             nodes.stream().map(this::formatMessage).forEach(result::addMessage);
         } catch (Exception e) {
@@ -83,7 +78,7 @@ public class AmbiguousNotRule extends ShardQueryRule {
         String junction = junctionNode instanceof AndQueryNode ? " AND " : " OR ";
         // @formatter:off
         return junctionNode.getChildren().stream()
-                        .map(child -> LuceneQueryStringBuildingVisitor.build(child))
+                        .map(LuceneQueryStringBuildingVisitor::build)
                         .collect(Collectors.joining(junction));
         // @formatter:on
     }

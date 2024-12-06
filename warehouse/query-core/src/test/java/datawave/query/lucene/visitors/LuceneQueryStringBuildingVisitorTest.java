@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
@@ -32,9 +31,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
-import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
 import org.apache.lucene.queryparser.flexible.standard.config.PointsConfig;
-import org.apache.lucene.queryparser.flexible.standard.nodes.AbstractRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.BooleanModifierNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.MultiPhraseQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.PointQueryNode;
@@ -44,12 +41,9 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.SynonymQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.opengis.filter.Or;
-import org.springframework.security.core.parameters.P;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
@@ -122,8 +116,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link AndQueryNode} with no parent.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testAndQueryNodeWithoutParent() throws QueryNodeParseException {
@@ -140,8 +132,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link AndQueryNode} with a group parent.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testAndQueryNodeWithGroupParent() throws QueryNodeParseException {
@@ -149,7 +139,8 @@ public class LuceneQueryStringBuildingVisitorTest {
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
         AndQueryNode node = new AndQueryNode(clauses);
-        GroupQueryNode groupNode = new GroupQueryNode(node);
+        // Ensure the node has a group parent.
+        new GroupQueryNode(node);
 
         givenQueryNode(node);
 
@@ -160,8 +151,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link AndQueryNode} with a parent that is not a {@link GroupQueryNode}.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testAndQueryNodeWithNonGroupParent() throws QueryNodeParseException {
@@ -169,7 +158,8 @@ public class LuceneQueryStringBuildingVisitorTest {
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
         AndQueryNode node = new AndQueryNode(clauses);
-        OrQueryNode orNode = new OrQueryNode(List.of(node));
+        // Ensure the node has an OR parent.
+        new OrQueryNode(List.of(node));
 
         givenQueryNode(node);
 
@@ -180,8 +170,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link OrQueryNode} with no parent.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testOrQueryNodeWithoutParent() throws QueryNodeParseException {
@@ -198,8 +186,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link OrQueryNode} with a group parent.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testOrQueryNodeWithGroupParent() throws QueryNodeParseException {
@@ -207,7 +193,8 @@ public class LuceneQueryStringBuildingVisitorTest {
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
         OrQueryNode node = new OrQueryNode(clauses);
-        GroupQueryNode groupNode = new GroupQueryNode(node);
+        // Ensure the node has a group node parent.
+        new GroupQueryNode(node);
 
         givenQueryNode(node);
 
@@ -218,8 +205,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link OrQueryNode} with a parent that is not a {@link GroupQueryNode}.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testOrQueryNodeWithNonGroupParent() throws QueryNodeParseException {
@@ -227,7 +212,8 @@ public class LuceneQueryStringBuildingVisitorTest {
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
         OrQueryNode node = new OrQueryNode(clauses);
-        AndQueryNode andNode = new AndQueryNode(List.of(node));
+        // Ensure the node has an AND parent.
+        new AndQueryNode(List.of(node));
 
         givenQueryNode(node);
 
@@ -238,8 +224,6 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     /**
      * Test a {@link GroupQueryNode}.
-     *
-     * @throws QueryNodeParseException
      */
     @Test
     void testGroupQueryNode() throws QueryNodeParseException {

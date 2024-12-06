@@ -59,7 +59,7 @@ public class TimeFunctionRule extends ShardQueryRule {
             // If any time functions were used in the query, check the field types.
             if (!functions.isEmpty()) {
                 TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
-                // A temporary cache to avoid unecessary lookups via TypeMetadata if we see a field more than once.
+                // A temporary cache to avoid unnecessary lookups via TypeMetadata if we see a field more than once.
                 Multimap<String,String> types = HashMultimap.create();
                 for (FetchFunctionFieldsVisitor.FunctionFields functionFields : functions) {
                     // Find any fields that are not a date type. Maintain insertion order.

@@ -8,13 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
-import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
 
 class NumericValueRuleTest extends ShardQueryRuleTest {
 
     private static final Set<String> NUMBER_TYPE = Set.of(NumberType.class.getName());
-    private static Set<String> LC_NO_DIACRITICS_TYPE = Set.of(LcNoDiacriticsType.class.getName());
+    private static final Set<String> LC_NO_DIACRITICS_TYPE = Set.of(LcNoDiacriticsType.class.getName());
 
     @BeforeEach
     void setUp() {

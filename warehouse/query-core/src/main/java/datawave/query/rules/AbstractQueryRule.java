@@ -1,10 +1,7 @@
 package datawave.query.rules;
 
-import java.util.Collections;
 import java.util.Objects;
-import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 public abstract class AbstractQueryRule implements QueryRule {
 

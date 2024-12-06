@@ -1,9 +1,7 @@
 package datawave.query.rules;
 
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
@@ -49,7 +47,7 @@ public class NumericValueRule extends ShardQueryRule {
             Set<String> fields = FieldsWithNumericValuesVisitor.getFields(jexlScript);
             // If fields with numeric values were found, check the field types.
             if (!fields.isEmpty()) {
-                // A temporary cache to avoid unecessary lookups via TypeMetadata if we see a field more than once.
+                // A temporary cache to avoid unnecessary lookups via TypeMetadata if we see a field more than once.
                 Multimap<String,String> types = HashMultimap.create();
                 TypeMetadata typeMetadata = ruleConfig.getTypeMetadata();
                 // Maintain insertion order.

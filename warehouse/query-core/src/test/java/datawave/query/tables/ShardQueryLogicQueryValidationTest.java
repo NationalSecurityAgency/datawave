@@ -187,7 +187,7 @@ public class ShardQueryLogicQueryValidationTest {
     public void testNoRulesConfigured() {
         logic.setValidationRules(null);
 
-        Assert.assertThrows("Query validation rules not configured.", IllegalStateException.class, () -> assertResult());
+        Assert.assertThrows("Query validation rules not configured.", IllegalStateException.class, this::assertResult);
     }
 
     /**
@@ -293,8 +293,6 @@ public class ShardQueryLogicQueryValidationTest {
 
     /**
      * Test a JEXL query that will result in a message from a {@link FieldPatternPresenceRule}.
-     *
-     * @throws Exception
      */
     @Test
     public void testJexlQueryFlaggedByJexlRule() throws Exception {
@@ -312,8 +310,6 @@ public class ShardQueryLogicQueryValidationTest {
 
     /**
      * Test a JEXL query that will not result in a message from a {@link FieldPatternPresenceRule}.
-     *
-     * @throws Exception
      */
     @Test
     public void testJexlQueryNotFlaggedByJexlRule() throws Exception {

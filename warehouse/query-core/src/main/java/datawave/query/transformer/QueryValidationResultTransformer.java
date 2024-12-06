@@ -7,12 +7,11 @@ import org.apache.commons.collections4.Transformer;
 
 import datawave.query.rules.QueryRuleResult;
 import datawave.query.rules.QueryValidationResult;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.QueryValidationResponse;
 
 /**
- * A tranformer that will transform a {@link QueryValidationResult} to a {@link QueryValidationResponse}.
+ * A transformer that will transform a {@link QueryValidationResult} to a {@link QueryValidationResponse}.
  */
 public class QueryValidationResultTransformer implements Transformer<Object,QueryValidationResponse> {
 

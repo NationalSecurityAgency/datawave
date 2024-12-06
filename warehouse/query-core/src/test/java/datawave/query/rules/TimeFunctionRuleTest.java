@@ -13,8 +13,8 @@ import datawave.query.util.TypeMetadata;
 
 class TimeFunctionRuleTest extends ShardQueryRuleTest {
 
-    private static Set<String> DATE_TYPE = Set.of(DateType.class.getName());
-    private static Set<String> LC_NO_DIACRITICS_TYPE = Set.of(LcNoDiacriticsType.class.getName());
+    private static final Set<String> DATE_TYPE = Set.of(DateType.class.getName());
+    private static final Set<String> LC_NO_DIACRITICS_TYPE = Set.of(LcNoDiacriticsType.class.getName());
 
     @BeforeEach
     void setUp() {
@@ -36,6 +36,7 @@ class TimeFunctionRuleTest extends ShardQueryRuleTest {
     /**
      * Test a query with a time function that reference date type fields.
      */
+    @Test
     void testTimeFunctionWithDateTypeField() throws Exception {
         givenQuery("filter:timeFunction(DATE1,DATE2,'-','>',2522880000000L)");
         givenMetadataHelper(new MockMetadataHelper());
@@ -95,7 +96,7 @@ class TimeFunctionRuleTest extends ShardQueryRuleTest {
      * Test a query with multiple time functions.
      */
     @Test
-    void testMutltipleTimeFunctions() throws Exception {
+    void testMultipleTimeFunctions() throws Exception {
         givenQuery("filter:timeFunction(DATE1,DATE2,'-','>',2522880000000L) && filter:timeFunction(NON_DATE1,DATE2,'-','>',2522880000000L) && filter:timeFunction(NON_DATE2,NON_DATE3,'-','>',2522880000000L)");
         givenMetadataHelper(new MockMetadataHelper());
 

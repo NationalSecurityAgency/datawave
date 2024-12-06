@@ -21,11 +21,13 @@ public class UnescapedWildcardsInQuotedPhrasesVisitor extends BaseVisitor {
      *            the query to examine
      * @return the list of node copies
      */
+    @SuppressWarnings("unchecked")
     public static List<QuotedFieldQueryNode> check(QueryNode query) {
         UnescapedWildcardsInQuotedPhrasesVisitor visitor = new UnescapedWildcardsInQuotedPhrasesVisitor();
         return (List<QuotedFieldQueryNode>) visitor.visit(query, new ArrayList<String>());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object visit(QuotedFieldQueryNode node, Object data) {
         String text = node.getTextAsString();
@@ -40,21 +42,15 @@ public class UnescapedWildcardsInQuotedPhrasesVisitor extends BaseVisitor {
             return false;
         }
         char[] chars = text.toCharArray();
-        int totalChars = chars.length;
         // Check whether the first character is a backslash.
         boolean isPrevBackslash = false;
 
         // Examine each character in the string.
-        for (int currIndex = 0; currIndex < totalChars; currIndex++) {
-            char currChar = chars[currIndex];
+        for (char currChar : chars) {
             if (currChar == BACKSLASH_CHAR) {
                 // If the previous character was a blackslash, this is an escaped backslash. Reset the isPrevBacklash to false.
-                if (isPrevBackslash) {
-                    isPrevBackslash = false;
-                } else {
-                    // The current character is a backslash that escapes the next character.
-                    isPrevBackslash = true;
-                }
+                // The current character is a backslash that escapes the next character.
+                isPrevBackslash = !isPrevBackslash;
             } else if (currChar == ASTERISK_CHAR) {
                 // This is an escaped wildcard and can be ignored. Reset isPrevBackslash to false.
                 if (isPrevBackslash) {

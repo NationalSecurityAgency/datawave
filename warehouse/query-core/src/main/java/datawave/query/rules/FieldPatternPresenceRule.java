@@ -62,7 +62,7 @@ public class FieldPatternPresenceRule extends ShardQueryRule {
             this.fieldMessages = fieldMessages.entrySet().stream()
                             .collect(Collectors.toUnmodifiableMap(
                                             entry -> entry.getKey().trim().toUpperCase(),
-                                            entry -> entry.getValue()));
+                                            Map.Entry::getValue));
             // @formatter:on
         }
     }

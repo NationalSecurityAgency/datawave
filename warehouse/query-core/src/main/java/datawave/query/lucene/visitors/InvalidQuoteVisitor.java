@@ -1,9 +1,7 @@
 package datawave.query.lucene.visitors;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
@@ -26,6 +24,7 @@ public class InvalidQuoteVisitor extends BaseVisitor {
      */
     public static List<QueryNode> check(QueryNode query) {
         InvalidQuoteVisitor visitor = new InvalidQuoteVisitor();
+        // noinspection unchecked
         return (List<QueryNode>) visitor.visit(query, new ArrayList<QueryNode>());
     }
 
@@ -34,6 +33,7 @@ public class InvalidQuoteVisitor extends BaseVisitor {
         String text = node.getTextAsString();
         // Check if the string either starts with or ends with the invalid quote character.
         if (containsInvalidQuote(text)) {
+            // noinspection unchecked
             ((List<QueryNode>) data).add(copy(node));
         }
         return data;
@@ -44,6 +44,7 @@ public class InvalidQuoteVisitor extends BaseVisitor {
         // Check if any of the function arguments have invalid quotes.
         for (String arg : node.getParameterList()) {
             if (containsInvalidQuote(arg)) {
+                // noinspection unchecked
                 ((List<QueryNode>) data).add(copy(node));
                 break;
             }

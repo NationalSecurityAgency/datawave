@@ -1,22 +1,14 @@
 package datawave.query.rules;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
-import datawave.query.lucene.visitors.QueryNodeType;
 
 /**
  * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted phrases that are implicitly ANDED with a preceding fielded terms, e.g.
@@ -25,7 +17,6 @@ import datawave.query.lucene.visitors.QueryNodeType;
 public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(AmbiguousUnquotedPhrasesRule.class);
-    private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
 
     public AmbiguousUnquotedPhrasesRule() {}
 
@@ -85,7 +76,7 @@ public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
         public Object visit(FieldQueryNode node, Object data) {
             String field = node.getFieldAsString();
             if (field.isEmpty()) {
-                ((StringBuilder) data).append(" " + node.getTextAsString());
+                ((StringBuilder) data).append(" ").append(node.getTextAsString());
             } else {
                 ((StringBuilder) data).append(field).append(":\"").append(node.getTextAsString());
             }

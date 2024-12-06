@@ -1,8 +1,5 @@
 package datawave.query.rules;
 
-import java.util.StringJoiner;
-
-import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 

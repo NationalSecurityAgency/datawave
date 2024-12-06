@@ -1,7 +1,5 @@
 package datawave.query.lucene.visitors;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -20,7 +18,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
 
-public class AmbigiousNotVisitorTest {
+public class AmbiguousNotVisitorTest {
 
     private static final SyntaxParser parser = new AccumuloSyntaxParser();
 
@@ -140,7 +138,7 @@ public class AmbigiousNotVisitorTest {
 
     private void assertResult() throws QueryNodeParseException {
         QueryNode queryNode = parser.parse(query, "");
-        List<NotBooleanQueryNode> actual = AmbigiousNotVisitor.check(queryNode);
+        List<NotBooleanQueryNode> actual = AmbiguousNotVisitor.check(queryNode);
         // Compare the node lists via their query strings.
         Assertions.assertThat(actual).usingElementComparator(QUERY_STR_COMPARATOR).isEqualTo(expectedNodes);
     }

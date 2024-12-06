@@ -3,7 +3,6 @@ package datawave.query.lucene.visitors;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AnyQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
@@ -88,10 +87,10 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
 
     @Override
     public Object visit(FieldQueryNode node, Object data) {
-        return visitField(node, data, false);
+        return visitField(node, data);
     }
 
-    private Object visitField(FieldQueryNode node, Object data, boolean ignoreField) {
+    private Object visitField(FieldQueryNode node, Object data) {
         String field = node.getFieldAsString();
         StringBuilder sb = (StringBuilder) data;
         boolean isDefaultField = LuceneQueryNodeHelper.isDefaultField(node, node.getField());
@@ -220,7 +219,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
             StringBuilder sb = (StringBuilder) data;
             visit(child, sb);
             sb.append("~");
-            sb.append(getFloatStr(Float.valueOf(node.getValue())));
+            sb.append(getFloatStr((float) node.getValue()));
         }
         return data;
     }
@@ -248,7 +247,6 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
                 sb.append("WITHIN");
                 break;
             default:
-                sb.append("");
         }
         if (node.getDistance() > -1) {
             sb.append(" ").append(node.getDistance());
@@ -281,7 +279,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
             StringBuilder sb = (StringBuilder) data;
             visit(child, sb);
             sb.append("~");
-            sb.append(getFloatStr(Float.valueOf(node.getValue())));
+            sb.append(getFloatStr((float) node.getValue()));
         }
         return data;
     }
@@ -298,11 +296,12 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         return data;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Object visit(AbstractRangeQueryNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
-        FieldValuePairQueryNode lowerBound = node.getLowerBound();
-        FieldValuePairQueryNode upperBound = node.getUpperBound();
+        FieldValuePairQueryNode<?> lowerBound = node.getLowerBound();
+        FieldValuePairQueryNode<?> upperBound = node.getUpperBound();
         if (node.isLowerInclusive()) {
             sb.append("[");
         } else {
@@ -464,7 +463,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     }
 
     private CharSequence escape(CharSequence text, Locale locale, EscapeQuerySyntax.Type type) {
-        return escapedSyntax.escape(text, Locale.getDefault(), type);
+        return escapedSyntax.escape(text, locale, type);
     }
 
     private String getFloatStr(Float floatValue) {

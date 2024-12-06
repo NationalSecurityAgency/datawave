@@ -200,7 +200,7 @@ public class InvalidSlopProximityVisitorTest {
         this.expected.clear();
     }
 
-    private void assertResults() throws QueryNodeParseException {
+    private void assertResults() {
         List<InvalidSlopProximityVisitor.InvalidSlop> actual = InvalidSlopProximityVisitor.check(query);
         List<String> actualStrings = actual.stream().map(Object::toString).collect(Collectors.toList());
         List<String> expectedStrings = expected.stream().map(Object::toString).collect(Collectors.toList());

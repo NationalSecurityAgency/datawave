@@ -1,8 +1,6 @@
 package datawave.query.rules;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
@@ -82,13 +80,13 @@ public class IncludeExcludeArgsRule extends ShardQueryRule {
         return String.format(NO_ARGS_MESSAGE, name, name);
     }
 
-    // Return a formatted messge for an uneven args scenario.
+    // Return a formatted message for an uneven args scenario.
     private String formatUnevenArgsMessage(InvalidIncludeExcludeArgsVisitor.InvalidFunction function) {
         String name = function.getName();
         return String.format(UNEVEN_ARGS_MESSAGE, name, name, name);
     }
 
-    // Return a formatted messge for a no args after a boolean scenario.
+    // Return a formatted message for a no args after a boolean scenario.
     private String formatNoArgsAfterBooleanMessage(InvalidIncludeExcludeArgsVisitor.InvalidFunction function) {
         String name = function.getName();
         String booleanArg = function.getArgs().get(0);

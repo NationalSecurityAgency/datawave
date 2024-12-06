@@ -1,6 +1,5 @@
 package datawave.query.lucene.visitors;
 
-import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.NO_ARGS;
 import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.NO_ARGS_AFTER_BOOLEAN;
 import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.UNEVEN_ARGS;
 import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.UNEVEN_ARGS_AFTER_BOOLEAN;
@@ -12,6 +11,7 @@ import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -141,7 +141,7 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     @ValueSource(strings = {"INCLUDE", "EXCLUDE"})
     void testFunctionWithUnevenArgs(String name) throws QueryNodeParseException {
         givenQuery("#" + name + "(FIELD1,'value',FIELD2)");
-        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("FIELD1", "'value'", "FIELD2"), UNEVEN_ARGS));
+        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("FIELD1", "value", "FIELD2"), UNEVEN_ARGS));
         assertResult();
     }
 
@@ -183,7 +183,7 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     @ValueSource(strings = {"INCLUDE", "EXCLUDE"})
     void testFunctionWithSingleArgsAfterOR(String name) throws QueryNodeParseException {
         givenQuery("#" + name + "(OR,'value')");
-        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("OR", "'value'"), UNEVEN_ARGS_AFTER_BOOLEAN));
+        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("OR", "value"), UNEVEN_ARGS_AFTER_BOOLEAN));
         assertResult();
     }
 
@@ -197,7 +197,7 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     @ValueSource(strings = {"INCLUDE", "EXCLUDE"})
     void testFunctionWithSingleArgsAfterAND(String name) throws QueryNodeParseException {
         givenQuery("#" + name + "(AND,'value')");
-        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("AND", "'value'"), UNEVEN_ARGS_AFTER_BOOLEAN));
+        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("AND", "value"), UNEVEN_ARGS_AFTER_BOOLEAN));
         assertResult();
     }
 
@@ -211,7 +211,7 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     @ValueSource(strings = {"INCLUDE", "EXCLUDE"})
     void testFunctionWithUnevenArgsAfterOR(String name) throws QueryNodeParseException {
         givenQuery("#" + name + "(OR,FIELD1,'value',FIELD2)");
-        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("OR", "FIELD1", "'value'", "FIELD2"), UNEVEN_ARGS_AFTER_BOOLEAN));
+        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("OR", "FIELD1", "value", "FIELD2"), UNEVEN_ARGS_AFTER_BOOLEAN));
         assertResult();
     }
 
@@ -225,7 +225,7 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     @ValueSource(strings = {"INCLUDE", "EXCLUDE"})
     void testFunctionWithUnevenArgsAfterAND(String name) throws QueryNodeParseException {
         givenQuery("#" + name + "(AND,FIELD1,'value',FIELD2)");
-        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("AND", "FIELD1", "'value'", "FIELD2"), UNEVEN_ARGS_AFTER_BOOLEAN));
+        expect(new InvalidIncludeExcludeArgsVisitor.InvalidFunction(name, List.of("AND", "FIELD1", "value", "FIELD2"), UNEVEN_ARGS_AFTER_BOOLEAN));
         assertResult();
     }
 
@@ -240,5 +240,6 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     private void assertResult() throws QueryNodeParseException {
         QueryNode queryNode = parser.parse(query, "");
         List<InvalidIncludeExcludeArgsVisitor.InvalidFunction> actual = InvalidIncludeExcludeArgsVisitor.check(queryNode);
+        Assertions.assertEquals(expected, actual);
     }
 }

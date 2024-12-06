@@ -1,14 +1,9 @@
 package datawave.query.rules;
 
-import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
-
 public class MinimumSlopProximityRuleTest extends ShardQueryRuleTest {
-
-    private static final SyntaxParser parser = new AccumuloSyntaxParser();
 
     @BeforeEach
     void setUp() {

@@ -2,6 +2,9 @@ package org.apache.lucene.queryparser.flexible.core.nodes;
 
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * This class provides methods that are able to access protected members of classes from the apache lucene library.
+ */
 public class LuceneQueryNodeHelper {
 
     /**

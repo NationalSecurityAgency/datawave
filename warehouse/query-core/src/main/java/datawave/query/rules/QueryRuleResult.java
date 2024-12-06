@@ -6,12 +6,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-import datawave.query.Constants;
-
 public class QueryRuleResult {
 
     private final String ruleName;
-    private List<String> messages;
+    private final List<String> messages = new ArrayList<>();
     private Exception exception;
 
     public static QueryRuleResult of(String ruleName, String... messages) {
@@ -30,7 +28,6 @@ public class QueryRuleResult {
 
     public QueryRuleResult(String ruleName) {
         this.ruleName = ruleName;
-        this.messages = new ArrayList<>();
     }
 
     public String getRuleName() {

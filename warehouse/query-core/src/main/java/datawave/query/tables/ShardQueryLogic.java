@@ -31,6 +31,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -83,6 +84,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuilder;
 import datawave.query.language.parser.ParseException;
@@ -1399,6 +1401,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     @Override
     public Object validateQuery(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
+        if (log.isTraceEnabled()) {
+            log.trace("Validating query for settings: ");
+            Map<String,List<String>> map = settings.toMap();
+            for (Entry<String,List<String>> entry : map.entrySet()) {
+                log.trace(entry.getKey() + ": " + entry.getValue());
+            }
+            log.trace("");
+        }
+
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled()) {
             log.trace("Initializing ShardQueryLogic for query validation: " + System.identityHashCode(this) + '('
@@ -1407,6 +1418,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         // Delegate to the super class if no validation rules were configured.
         if (validationRules == null || validationRules.isEmpty()) {
+            log.trace("No validation rules configured");
             return super.validateQuery(client, settings, auths);
         }
 
@@ -1445,6 +1457,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             QueryParser queryParser = getQueryParser(querySyntax);
             // If the query parser is one that parses LUCENE, parse the query to LUCENE.
             if (queryParser instanceof LuceneSyntaxQueryParser) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Using LUCENE parser " + queryParser.getClass() + " for syntax " + querySyntax);
+                }
                 org.apache.lucene.queryparser.flexible.core.nodes.QueryNode luceneQuery;
                 try {
                     luceneQuery = ((LuceneSyntaxQueryParser) queryParser).parseToLuceneQueryNode(settings.getQuery());
@@ -1459,6 +1474,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                     return result;
                 }
 
+                if (log.isTraceEnabled()) {
+                    log.trace("LUCENE Query after parsing:");
+                    List<String> lines = datawave.query.lucene.visitors.PrintingVisitor.printToList(luceneQuery);
+                    for (String line : lines) {
+                        log.trace(line);
+                    }
+                    log.trace("");
+                }
+
                 // Update the validation configuration with the parsed lucene
                 validationConfig.setParsedQuery(luceneQuery);
                 validationConfig.setQueryString(settings.getQuery());
@@ -1470,12 +1494,21 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                     try {
                         // Check if the rule supports validating a query of the query's syntax.
                         if (rule.canValidate(validationConfig)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Rule '" + rule.getName() + "' supports validating the query " + validationConfig.getQueryString());
+                            }
+
                             // Validate the query against the rule's criteria.
                             result.addRuleResult(rule.validate(validationConfig));
                             // Remove the rule from the underlying list so that it is not executed again later.
                             ruleIter.remove();
+                        } else {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Rule '" + rule.getName() + "' does not support validating the query " + validationConfig.getQueryString());
+                            }
                         }
                     } catch (Exception e) {
+                        log.error("Error occurred when validating against rule " + rule.getName(), e);
                         QueryException exception = new QueryException("Error occurred when validating against rule " + rule.getName(), e);
                         result.setException(exception);
                         return result;
@@ -1502,6 +1535,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             return result;
         }
 
+        logQuery(config.getQueryTree(), "Query after parsing to JEXL");
+
         // Normalize the JEXL query on a very basic level, and apply the query model to the query.
         // Extract any query options and add them to the configuration.
         Map<String,String> optionsMap = new HashMap<>();
@@ -1513,39 +1548,69 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
+        logQuery(config.getQueryTree(), "Query after applying options");
+
         // Ensure any nodes with the literal on the left and the identifier on the right are re-ordered.
         config.setQueryTree(InvertNodeVisitor.invertSwappedNodes(config.getQueryTree()));
+
+        logQuery(config.getQueryTree(), "Query after inverting swapped nodes");
+
         // Uppercase all identifiers.
         config.setQueryTree(ShardQueryUtils.upperCaseIdentifiers(metadataHelper, config, config.getQueryTree()));
+
+        logQuery(config.getQueryTree(), "Query after capitalizing identifiers");
+
         // Flatten the tree.
         config.setQueryTree(TreeFlatteningRebuilder.flatten(config.getQueryTree()));
+
+        logQuery(config.getQueryTree(), "Query after flattening");
+
         // Apply the query model.
         config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
                         this.queryModel));
+
+        logQuery(config.getQueryTree(), "Query after applying query model");
 
         // Update the configurations with the target syntax JEXL and the jexl query string. Execute any remaining rules that expect to run against a JEXL query.
         validationConfig.setParsedQuery(config.getQueryTree());
         validationConfig.setQueryString(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
 
-        // Validate the JEXL query against all rules that support JEXL.
-        Iterator<QueryRule> ruleIter = unexecutedRules.iterator();
-        while (ruleIter.hasNext()) {
-            QueryRule rule = ruleIter.next();
+        // Validate the JEXL query against the remaining rules that support JEXL.
+        for (QueryRule rule : unexecutedRules) {
             try {
                 // Check if the rule supports validating a JEXL query.
                 if (rule.canValidate(validationConfig)) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Rule '" + rule.getName() + "' supports validating the query " + validationConfig.getQueryString());
+                    }
+
                     // Validate the query against the rule's criteria.
                     result.addRuleResult(rule.validate(validationConfig));
+                } else {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Rule '" + rule.getName() + "' does not support validating the query " + validationConfig.getQueryString());
+                    }
                 }
             } catch (Exception e) {
+                log.error("Error occurred when validating against rule " + rule.getName(), e);
                 QueryException exception = new QueryException("Error occurred when validating against rule " + rule.getName(), e);
                 result.setException(exception);
                 return result;
             }
-
         }
 
         return result;
+    }
+
+    private static void logQuery(final ASTJexlScript queryTree, String message) {
+        if (log.isTraceEnabled()) {
+            List<String> lines = PrintingVisitor.formattedQueryStringList(queryTree, -1, -1);
+            log.trace(message);
+            for (String line : lines) {
+                log.trace(line);
+            }
+            log.trace("");
+        }
     }
 
     @Override

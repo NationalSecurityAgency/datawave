@@ -69,8 +69,6 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
 
     /**
      * Test a query with both the includeRegex and excludeRegex functions with indexed fields.
-     *
-     * @throws Exception
      */
     @Test
     void testMultipleFunctionWithIndexedField() throws Exception {
@@ -83,8 +81,6 @@ class IncludeExcludeIndexFieldsRuleTest extends ShardQueryRuleTest {
 
     /**
      * Test a query with both the includeRegex and excludeRegex functions without indexed fields.
-     *
-     * @throws Exception
      */
     @Test
     void testMultipleFunctionWithoutIndexedField() throws Exception {
