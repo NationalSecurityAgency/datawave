@@ -197,4 +197,5 @@ if [ "${1}" == "-noCleanup" ] ; then
 fi
 
 printTestSummary
-$SCRIPT_DIR/cleanup.sh
+# The cleanup script will only delete the logs for tests that passed. Failed test logs will remain.
+"$SCRIPT_DIR"/cleanup.sh "${TESTS_PASSED}"
