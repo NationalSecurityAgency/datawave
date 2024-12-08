@@ -265,6 +265,7 @@
         <property name="eventNextSeek" value="-1" />
         <property name="tfFieldSeek" value="-1" />
         <property name="tfNextSeek" value="-1" />
+        <property name="seekingEventAggregation" value="true"/>
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
