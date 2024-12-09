@@ -1,36 +1,48 @@
 package datawave.webservice.query.logic.filtered;
 
+import static org.easymock.EasyMock.anyLong;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.composite.CompositeQueryLogic;
-import datawave.security.authorization.AuthorizationException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.easymock.Capture;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.logic.filtered.DateRangeFilteredQueryLogic;
 import datawave.core.query.logic.filtered.QueryLogicFilterByDate;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.security.authorization.AuthorizationException;
+import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
+import datawave.webservice.result.BaseQueryResponse;
 
 public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
     private DateRangeFilteredQueryLogic logic;
@@ -83,8 +95,10 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
     }
 
     @Test
-    public void integrationTest() throws Exception {
+    public void compositeQueryLogicDateStrippingTest() throws Exception {
         QueryLogic delegate2 = createMock(QueryLogic.class);
+        TransformIterator transformIterator1 = createMock(TransformIterator.class);
+        TransformIterator transformIterator2 = createMock(TransformIterator.class);
 
         CompositeQueryLogic cql = new CompositeQueryLogicWithoutAuthChecks();
 
@@ -121,12 +135,18 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         expect(delegate.initialize(eq(null), capture(logic1Settings), eq(Collections.emptySet()))).andReturn(config1);
         expect(delegate.getResultLimit(capture(logic1SettingsDupe1))).andReturn(100l);
         delegate.setupQuery(config1);
-        expect(delegate.getTransformIterator(capture(logic1SettingsDupe2))).andReturn(null);
+        expect(delegate.getTransformIterator(capture(logic1SettingsDupe2))).andReturn(transformIterator1);
+        // this one has no results
+        expect(transformIterator1.hasNext()).andReturn(false).anyTimes();
+        delegate.setPageProcessingStartTime(anyLong());
 
         expect(delegate2.initialize(eq(null), capture(logic2Settings), eq(Collections.emptySet()))).andReturn(config2);
         expect(delegate2.getResultLimit(capture(logic2SettingsDupe1))).andReturn(100l);
         delegate2.setupQuery(config2);
-        expect(delegate2.getTransformIterator(capture(logic2SettingsDupe2))).andReturn(null);
+        expect(delegate2.getTransformIterator(capture(logic2SettingsDupe2))).andReturn(transformIterator2);
+        // this one has no results
+        expect(transformIterator2.hasNext()).andReturn(false).anyTimes();
+        delegate2.setPageProcessingStartTime(anyLong());
 
         replayAll();
 
@@ -143,6 +163,148 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         assertEquals(logic1SettingsDupe2.getValue(), logic1SettingsDupe1.getValue());
 
         verifyAll();
+    }
+
+    @Test
+    public void compositeQueryLogicDateSpanningTest() throws Exception {
+        CompositeQueryLogicTest.TestQueryLogic tql1 = new CompositeQueryLogicTest.TestQueryLogic();
+        CompositeQueryLogicTest.TestQueryLogic tql2 = new CompositeQueryLogicTest.TestQueryLogic();
+
+        // add data to tql1
+        Key key1 = new Key("20241101_0");
+        tql1.getData().put(key1, new Value());
+
+        // add data to tql2
+        Key key2 = new Key("20241206_1");
+        tql2.getData().put(key2, new Value());
+
+        List<String> expected = new ArrayList<>();
+        expected.add("20241101_0");
+        expected.add("20241206_1");
+
+        CompositeQueryLogic cql = new CompositeQueryLogicWithoutAuthChecks();
+
+        DateRangeFilteredQueryLogic logic1 = new DateRangeFilteredQueryLogic();
+        logic1.setDelegate((QueryLogic) tql1);
+        logic1.setFilter(createFilter(null, "20241204 235959"));
+
+        DateRangeFilteredQueryLogic logic2 = new DateRangeFilteredQueryLogic();
+        logic2.setDelegate((QueryLogic) tql2);
+        logic2.setFilter(createFilter("20241205 000000", null));
+
+        cql.setQueryLogics(Map.of("orig", logic1, "new", logic2));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setId(UUID.randomUUID());
+        settings.setBeginDate(getDate("20230101 010100"));
+        settings.setEndDate(getDate("20241205 235959"));
+        settings.setPagesize(100);
+
+        GenericQueryConfiguration genericQueryConfiguration = cql.initialize(null, settings, null);
+        cql.setupQuery(genericQueryConfiguration);
+        Iterator<CompositeQueryLogicTest.TestQueryResponse> itr = cql.getTransformIterator(settings);
+
+        assertTrue(verify(itr, expected));
+    }
+
+    @Test
+    public void boundaryExclude1Test() throws Exception {
+        CompositeQueryLogicTest.TestQueryLogic tql1 = new CompositeQueryLogicTest.TestQueryLogic();
+        CompositeQueryLogicTest.TestQueryLogic tql2 = new CompositeQueryLogicTest.TestQueryLogic();
+
+        // add data to tql1
+        Key key1 = new Key("20241101_0");
+        tql1.getData().put(key1, new Value());
+
+        // add data to tql2
+        Key key2 = new Key("20241206_1");
+        tql2.getData().put(key2, new Value());
+
+        List<String> expected = new ArrayList<>();
+        expected.add("20241206_1");
+
+        CompositeQueryLogic cql = new CompositeQueryLogicWithoutAuthChecks();
+
+        DateRangeFilteredQueryLogic logic1 = new DateRangeFilteredQueryLogic();
+        logic1.setDelegate((QueryLogic) tql1);
+        logic1.setFilter(createFilter(null, "20241204 235959"));
+
+        DateRangeFilteredQueryLogic logic2 = new DateRangeFilteredQueryLogic();
+        logic2.setDelegate((QueryLogic) tql2);
+        logic2.setFilter(createFilter("20241205 000000", null));
+
+        cql.setQueryLogics(Map.of("orig", logic1, "new", logic2));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setId(UUID.randomUUID());
+        settings.setBeginDate(getDate("20241205 000000"));
+        settings.setEndDate(getDate("20241205 235959"));
+        settings.setPagesize(100);
+
+        GenericQueryConfiguration genericQueryConfiguration = cql.initialize(null, settings, null);
+        cql.setupQuery(genericQueryConfiguration);
+        Iterator<CompositeQueryLogicTest.TestQueryResponse> itr = cql.getTransformIterator(settings);
+
+        assertTrue(verify(itr, expected));
+    }
+
+    @Test
+    public void boundaryExclude2Test() throws Exception {
+        CompositeQueryLogicTest.TestQueryLogic tql1 = new CompositeQueryLogicTest.TestQueryLogic();
+        CompositeQueryLogicTest.TestQueryLogic tql2 = new CompositeQueryLogicTest.TestQueryLogic();
+
+        // add data to tql1
+        Key key1 = new Key("20241101_0");
+        tql1.getData().put(key1, new Value());
+
+        // add data to tql2
+        Key key2 = new Key("20241206_1");
+        tql2.getData().put(key2, new Value());
+
+        List<String> expected = new ArrayList<>();
+        expected.add("20241101_0");
+
+        CompositeQueryLogic cql = new CompositeQueryLogicWithoutAuthChecks();
+
+        DateRangeFilteredQueryLogic logic1 = new DateRangeFilteredQueryLogic();
+        logic1.setDelegate((QueryLogic) tql1);
+        logic1.setFilter(createFilter(null, "20241204 235959"));
+
+        DateRangeFilteredQueryLogic logic2 = new DateRangeFilteredQueryLogic();
+        logic2.setDelegate((QueryLogic) tql2);
+        logic2.setFilter(createFilter("20241205 000000", null));
+
+        cql.setQueryLogics(Map.of("orig", logic1, "new", logic2));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setId(UUID.randomUUID());
+        settings.setBeginDate(getDate("20231205 000000"));
+        settings.setEndDate(getDate("20241204 235959"));
+        settings.setPagesize(100);
+
+        GenericQueryConfiguration genericQueryConfiguration = cql.initialize(null, settings, null);
+        cql.setupQuery(genericQueryConfiguration);
+        Iterator<CompositeQueryLogicTest.TestQueryResponse> itr = cql.getTransformIterator(settings);
+
+        assertTrue(verify(itr, expected));
+    }
+
+    private boolean verify(Iterator<CompositeQueryLogicTest.TestQueryResponse> itr, List<String> expected) {
+        List<String> results = new ArrayList<>();
+        while (itr.hasNext()) {
+            CompositeQueryLogicTest.TestQueryResponse response = itr.next();
+            results.add(response.getKey().split(" ")[0]);
+        }
+
+        if (results.size() != expected.size()) {
+            return false;
+        }
+
+        for (String key : expected) {
+            results.remove(key);
+        }
+
+        return results.isEmpty();
     }
 
     private Date getDate(String val) throws ParseException {
