@@ -5,7 +5,7 @@ VERSION=`protoc --version 2>/dev/null | grep "2.5.0" |  wc -l`
 if [ "$VERSION" -ne 1 ] ; then
    # Nope: bail
    echo "::protoc is not available or incorrect version. Requires libprotoc 2.5.0"
-   exit 0
+#   exit 0
 fi
 
 PROTODIRS="client/src/main/protobuf common-util/src/main/protobuf"

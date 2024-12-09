@@ -78,13 +78,9 @@ public class EdgeCombiner extends Combiner {
             try {
                 EdgeData.EdgeValue protoEdgeValue = EdgeData.EdgeValue.parseFrom(value.get());
 
-                if (protoEdgeValue.hasCount()) {
-                    builder.setCount(protoEdgeValue.getCount() + builder.getCount());
-                }
+                builder.setCount(protoEdgeValue.getCount() + builder.getCount());
 
-                if (protoEdgeValue.hasHourBitmask()) {
-                    builder.combineBitmask(protoEdgeValue.getHourBitmask());
-                }
+                builder.combineBitmask(protoEdgeValue.getHourBitmask());
 
                 useEarliestLoadDate(key, builder, protoEdgeValue);
                 combineSourceAndSink(builder, protoEdgeValue);
@@ -143,7 +139,8 @@ public class EdgeCombiner extends Combiner {
      */
     private void useEarliestLoadDate(Key key, EdgeValueBuilder builder, EdgeData.EdgeValue protoEdgeValue) {
         String loadDate = builder.getLoadDate();
-        if (protoEdgeValue.hasLoadDate()) {
+        protoEdgeValue.getLoadDate();
+        if (!protoEdgeValue.getLoadDate().isEmpty()) {
             if (null == loadDate || loadDate.compareTo(protoEdgeValue.getLoadDate()) > 0) {
                 builder.setLoadDate(protoEdgeValue.getLoadDate());
             }
@@ -182,10 +179,10 @@ public class EdgeCombiner extends Combiner {
     }
 
     private void combineSourceAndSink(EdgeValueBuilder builder, EdgeData.EdgeValue protoEdgeValue) {
-        if (StringUtils.isBlank(builder.getSourceValue()) && protoEdgeValue.hasSourceValue()) {
+        if (StringUtils.isBlank(builder.getSourceValue())) {
             builder.setSourceValue(protoEdgeValue.getSourceValue());
         }
-        if (StringUtils.isBlank(builder.getSinkValue()) && protoEdgeValue.hasSinkValue()) {
+        if (StringUtils.isBlank(builder.getSinkValue())) {
             builder.setSinkValue(protoEdgeValue.getSinkValue());
         }
     }
@@ -197,7 +194,7 @@ public class EdgeCombiner extends Combiner {
         if (protoEdgeValue.hasUuid()) {
             builder.setUuidObj(EdgeValue.convertUuidObject(protoEdgeValue.getUuid()));
             builder.setOnlyUuidString(false);
-        } else if (protoEdgeValue.hasUuidString()) {
+        } else if (!protoEdgeValue.getUuidString().isEmpty()) {
             builder.setOnlyUuidString(true);
             builder.setUuid(protoEdgeValue.getUuidString());
         }
@@ -206,14 +203,12 @@ public class EdgeCombiner extends Combiner {
     private void combineBadActivityDate(EdgeValueBuilder builder, EdgeData.EdgeValue protoEdgeValue) {
         // Only set the bad activity flag if one of the edges to be combined contains the bad activity flag.
         // This should only happen with the new EVENT_ONLY date type edges
-        if (protoEdgeValue.hasBadActivity()) {
-            if (builder.badActivityDateSet()) {
-                // If one of the activity dates is good then the edge will be treated as good
-                // They all must be bad for it to be treated as a bad activity date.
-                builder.setBadActivityDate(builder.isBadActivityDate() && protoEdgeValue.getBadActivity());
-            } else {
-                builder.setBadActivityDate(protoEdgeValue.getBadActivity());
-            }
+        if (builder.badActivityDateSet()) {
+            // If one of the activity dates is good then the edge will be treated as good
+            // They all must be bad for it to be treated as a bad activity date.
+            builder.setBadActivityDate(builder.isBadActivityDate() && protoEdgeValue.getBadActivity());
+        } else {
+            builder.setBadActivityDate(protoEdgeValue.getBadActivity());
         }
     }
 }

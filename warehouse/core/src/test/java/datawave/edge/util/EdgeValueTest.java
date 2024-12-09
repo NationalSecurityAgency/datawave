@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.UUID;
 
 import org.apache.accumulo.core.data.Value;
 import org.junit.After;
@@ -90,7 +91,7 @@ public class EdgeValueTest {
     @Test
     public void testEdgeValueCreatesUuidObjUponRequest() throws InvalidProtocolBufferException {
         String validUuidString = "11111111-1111-1111-1111-111111111111";
-        EdgeValue eValue = createEdgeValueWithUuid(validUuidString);
+        EdgeValue eValue = createEdgeValueWithUuidObject(validUuidString);
 
         Value value = eValue.encode();
         assertNotNull("EdgeValue should convert uuid string to UUID object if UUID object was requested", eValue.getUuidObject());
@@ -109,7 +110,7 @@ public class EdgeValueTest {
 
         EdgeValue outValue = EdgeValue.decode(value);
         assertEquals(validUuidString, outValue.getUuid());
-        assertNotNull(outValue.getUuidObject());
+        assertNotNull(outValue.getUuid());
     }
 
     @Test
@@ -156,7 +157,23 @@ public class EdgeValueTest {
 
     private EdgeValue createEdgeValueWithUuid(String validUuidString) {
         EdgeValueBuilder builder = EdgeValue.newBuilder();
+        builder.setSourceValue("");
+        builder.setSinkValue("");
+        builder.setLoadDate("");
+        builder.setOnlyUuidString(true);
         builder.setUuid(validUuidString);
+        builder.setBadActivityDate(false);
+        return builder.build();
+    }
+
+    private EdgeValue createEdgeValueWithUuidObject(String validUuidString) {
+        EdgeValueBuilder builder = EdgeValue.newBuilder();
+        builder.setSourceValue("");
+        builder.setSinkValue("");
+        builder.setLoadDate("");
+        builder.setOnlyUuidString(false);
+        builder.setUuidObj(UUID.fromString(validUuidString));
+        builder.setBadActivityDate(false);
         return builder.build();
     }
 
