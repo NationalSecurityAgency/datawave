@@ -24,19 +24,26 @@ public class SummaryOptions implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(SummaryOptions.class);
 
-    public static final String SIZE_PARAMETER = "SIZE";
-    public static final String VIEWS_PARAMETER = "VIEWS";
+    private static final String SIZE_PARAMETER = "SIZE";
+    private static final String VIEWS_PARAMETER = "VIEWS";
+    private static final String ONLY_PARAMETER = "ONLY";
 
     private static final int DEFAULT_SIZE = 150;
 
     private int summarySize;
     private ArrayList<String> viewNamesList;
-    private boolean only;
+    /**
+     * When set, we will only use the view names passed in to the function to attempt to make summaries from (clears out default list).
+     * <p>
+     * </p>
+     * When this is set, the user should also pass in a list of view names or else there is no chance of summaries being returned.
+     */
+    private boolean onlyListedViews;
 
     public SummaryOptions() {
         summarySize = 0;
         viewNamesList = new ArrayList<>();
-        only = false;
+        onlyListedViews = false;
     }
 
     /**
@@ -83,8 +90,8 @@ public class SummaryOptions implements Serializable {
                     summaryOptions.summarySize = Integer.parseInt(parts[1]);
                 }
                 // if we have the "only" option...
-                else if (parts[0].equalsIgnoreCase("ONLY")) {
-                    summaryOptions.only = true;
+                else if (parts[0].equalsIgnoreCase(ONLY_PARAMETER)) {
+                    summaryOptions.onlyListedViews = true;
                 }
                 // if we have the "views" option...
                 else if (parts[0].equalsIgnoreCase(VIEWS_PARAMETER)) {
@@ -117,7 +124,7 @@ public class SummaryOptions implements Serializable {
         SummaryOptions summaryOptions = new SummaryOptions();
         summaryOptions.summarySize = other.summarySize;
         summaryOptions.viewNamesList = new ArrayList<>(other.viewNamesList);
-        summaryOptions.only = other.only;
+        summaryOptions.onlyListedViews = other.onlyListedViews;
         return summaryOptions;
     }
 
@@ -126,7 +133,7 @@ public class SummaryOptions implements Serializable {
     }
 
     public boolean onlyListedViews() {
-        return only;
+        return onlyListedViews;
     }
 
     /**
@@ -181,8 +188,8 @@ public class SummaryOptions implements Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(SIZE_PARAMETER).append(":").append(summarySize);
-        if (only) {
-            sb.append("/").append("ONLY");
+        if (onlyListedViews) {
+            sb.append("/").append(ONLY_PARAMETER);
         }
         if (!viewNamesList.isEmpty()) {
             sb.append("/").append(VIEWS_PARAMETER).append(":");
@@ -203,11 +210,12 @@ public class SummaryOptions implements Serializable {
             return false;
         }
         SummaryOptions that = (SummaryOptions) o;
-        return Objects.equals(summarySize, that.summarySize) && Objects.equals(viewNamesList, that.viewNamesList) && Objects.equals(only, that.only);
+        return Objects.equals(summarySize, that.summarySize) && Objects.equals(viewNamesList, that.viewNamesList)
+                        && Objects.equals(onlyListedViews, that.onlyListedViews);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(summarySize, viewNamesList, only);
+        return Objects.hash(summarySize, viewNamesList, onlyListedViews);
     }
 }

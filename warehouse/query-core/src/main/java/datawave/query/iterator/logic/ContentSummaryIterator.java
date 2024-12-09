@@ -31,8 +31,8 @@ import datawave.query.table.parser.ContentKeyValueFactory;
 /**
  * This iterator is intended to scan the d column for a specified document. The result will be a summary for each document scanned.
  */
-public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value> {
-    private static final Logger log = LoggerFactory.getLogger(DColumnSummaryIterator.class);
+public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value> {
+    private static final Logger log = LoggerFactory.getLogger(ContentSummaryIterator.class);
     private static final Collection<ByteSequence> D_COLUMN_FAMILY_BYTE_SEQUENCE = Collections
                     .singleton(new ArrayByteSequence(Constants.D_COLUMN_FAMILY.getBytes()));
 
@@ -43,8 +43,7 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
     public static final String ONLY_SPECIFIED = "only.specified";
 
     /**
-     * A list of view names to potentially create a summary for. The closer to the front in the list, the higher the priority to get a summary for that
-     * view
+     * A list of view names to potentially create a summary for. The closer to the front in the list, the higher the priority to get a summary for that view
      */
     protected final ArrayList<String> viewSummaryOrder = new ArrayList<>();
 
@@ -79,7 +78,7 @@ public class DColumnSummaryIterator implements SortedKeyValueIterator<Key,Value>
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
-        DColumnSummaryIterator it = new DColumnSummaryIterator();
+        ContentSummaryIterator it = new ContentSummaryIterator();
         it.source = source.deepCopy(env);
         return it;
     }

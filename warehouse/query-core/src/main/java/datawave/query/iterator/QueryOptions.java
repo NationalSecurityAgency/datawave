@@ -81,7 +81,7 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.iterator.logic.DColumnSummaryIterator;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
@@ -443,7 +443,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected SummaryOptions summaryOptions;
 
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = DColumnSummaryIterator.class;
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
@@ -1391,7 +1391,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
-        options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.DColumnSummaryIterator");
+        options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
