@@ -88,6 +88,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         cqo.setMarkingFunctions(this.markingFunctions);
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
+
         cqo.setDataType(metadata.getDataType());
         cqo.setEventId(metadata.getInternalId());
         cqo.setRow(metadata.getRow());
