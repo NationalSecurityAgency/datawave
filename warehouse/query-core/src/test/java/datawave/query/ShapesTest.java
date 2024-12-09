@@ -7,6 +7,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -36,12 +38,15 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
@@ -59,6 +64,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
@@ -81,6 +87,13 @@ public abstract class ShapesTest {
     private static final Logger log = LoggerFactory.getLogger(ShapesTest.class);
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Collections.singleton(auths);
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    // temporary stores for when forcing ivarators via absurdly low index expansion thresholds
+    private int maxUnfieldedExpansionThreshold;
+    private int maxValueExpansionThreshold;
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -170,9 +183,22 @@ public abstract class ShapesTest {
     }
 
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
+
+        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        Preconditions.checkNotNull(hadoopConfig);
+        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
+
+        logic.setMaxFieldIndexRangeSplit(1); // keep things simple
+
+        // disable by default to make clear what tests actually require these settings
+        logic.setSortQueryPostIndexWithTermCounts(false);
+        logic.setCardinalityThreshold(0);
     }
 
     @After
@@ -920,6 +946,261 @@ public abstract class ShapesTest {
         logic.setSortQueryPreIndexWithFieldCounts(false);
         logic.setSortQueryPostIndexWithFieldCounts(false);
         logic.setSortQueryPostIndexWithTermCounts(false);
+    }
+
+    @Test
+    public void testLeadingRegexIvarator() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+
+            withQuery("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            withExpected(triangleUids);
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testTrailingRegex_ContextFilter_withMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    // the query is satisfiable from the field index, so the values are aggregated.
+    // enabling hit list arithmetic disables this feature.
+    @Test
+    public void testTrailingRegex_ContextFilter_withMatches_withHitList() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            // disable field index aggregation for event fields
+            logic.setHitList(true);
+
+            withQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+            logic.setHitList(false);
+        }
+    }
+
+    @Test
+    public void testTailingRegex_ContextFilter_noMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            // this does not intersect
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testLeadingRegex_ContextFilter_withMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            withExpected(Sets.newHashSet(ShapesIngest.equilateralUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testLeadingRegex_ContextFilter_withMatches_withHitList() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            logic.setHitList(true);
+
+            withQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            withExpected(Sets.newHashSet(ShapesIngest.equilateralUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+            logic.setHitList(false);
+        }
+    }
+
+    @Test
+    public void testLeadingRegex_ContextFilter_noMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            // this does not intersect
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testBoundedRangeIvarator() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+
+            withQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            withExpected(triangleUids);
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testBoundedRange_ContextFilter_withMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for range filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            withExpected(triangleUids);
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testBoundedRange_ContextFilter_noMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for range filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("SHAPE == 'octagon' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'octagon' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    /**
+     * Helper method to explicitly disable ivarator configs. Ivarator configs are set at the beginning of each test, so this operation is not destructive.
+     * <p>
+     * Used to test context filter iterators.
+     */
+    private void disableIvaratorConfigs() {
+        logic.setHdfsSiteConfigURLs(null);
+        logic.setIvaratorCacheDirConfigs(Collections.emptyList());
+    }
+
+    private void saveIndexExpansionConfigs() {
+        maxUnfieldedExpansionThreshold = logic.getMaxUnfieldedExpansionThreshold();
+        maxValueExpansionThreshold = logic.getMaxValueExpansionThreshold();
+    }
+
+    private void forceIvarators() {
+        logic.setMaxUnfieldedExpansionThreshold(1);
+        logic.setMaxValueExpansionThreshold(1);
+    }
+
+    private void reloadIndexExpansionConfigs() {
+        logic.setMaxUnfieldedExpansionThreshold(maxUnfieldedExpansionThreshold);
+        logic.setMaxValueExpansionThreshold(maxValueExpansionThreshold);
     }
 
     @Test

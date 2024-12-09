@@ -587,6 +587,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryPostIndexWithTermCounts", true);
         defaultValues.put("sortQueryPostIndexWithFieldCounts", false);
         updatedValues.put("sortQueryPostIndexWithFieldCounts", true);
+        defaultValues.put("cardinalityThreshold", 0);
+        updatedValues.put("cardinalityThreshold", 25);
         defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());

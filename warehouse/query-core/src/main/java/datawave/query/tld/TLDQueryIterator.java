@@ -40,7 +40,6 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFi
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
-import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
@@ -54,9 +53,6 @@ import datawave.util.StringUtils;
  */
 public class TLDQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(TLDQueryIterator.class);
-
-    protected int maxFieldHitsBeforeSeek = -1;
-    protected int maxKeysBeforeSeek = -1;
 
     public TLDQueryIterator() {}
 
@@ -110,13 +106,13 @@ public class TLDQueryIterator extends QueryIterator {
 
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (this.evaluationFilter == null && script != null) {
+        if (this.evaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
+            this.evaluationFilter = new TLDEventDataFilter(getScript(), getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
                             useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
@@ -130,7 +126,7 @@ public class TLDQueryIterator extends QueryIterator {
      */
     @Override
     public EventDataQueryFilter getFiEvaluationFilter() {
-        if (fiEvaluationFilter == null && script != null) {
+        if (fiEvaluationFilter == null && getScript() != null) {
             if (QueryIterator.isDocumentSpecificRange(range)) {
                 // this is to deal with a TF optimization where the TF is scanned instead of the FI in the
                 // document specific case.
@@ -146,15 +142,15 @@ public class TLDQueryIterator extends QueryIterator {
 
     @Override
     public EventDataQueryFilter getEventEvaluationFilter() {
-        if (this.eventEvaluationFilter == null && script != null) {
+        if (this.eventEvaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.eventEvaluationFilter = new TLDEventDataFilter(script, getEventFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
-                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
-                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+            this.eventEvaluationFilter = new TLDEventDataFilter(getScript(), getEventFields(), expressionFilters,
+                            useAllowListedFields ? allowListedFields : null, useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(),
+                            getEventNextSeek(), limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
