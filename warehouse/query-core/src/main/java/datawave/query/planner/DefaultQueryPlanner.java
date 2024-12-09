@@ -2682,6 +2682,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
+
+        if (config.getCardinalityThreshold() > 0) { // only add option if it is set
+            addOption(cfg, QueryOptions.CARDINALITY_THRESHOLD, Integer.toString(config.getCardinalityThreshold()), false);
+        }
     }
 
     /**
@@ -2905,6 +2909,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            // TODO -- in practice the second half of this config is always false, so this check is pointless
             if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
@@ -2912,6 +2917,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             stopwatch.stop();
         }
+
+        // only requires a full table scan IFF it's only ivarators at the top level. single ivarators may be delayed.
         if (needsFullTable) {
             if (config.getFullTableScanEnabled()) {
                 ranges = this.getFullScanRange(config, queryTree);
