@@ -1557,7 +1557,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         try {
             getConfig().setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
         } catch (Exception e) {
-            throw new DatawaveFatalQueryException("Illegal d column summary iterator class", e);
+            throw new DatawaveFatalQueryException("Illegal content summary iterator class", e);
         }
     }
 

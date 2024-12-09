@@ -87,7 +87,11 @@ public class SummaryOptions implements Serializable {
                 String[] parts = parameterPart.split(Constants.COLON);
                 // if we have the "size" option...
                 if (parts[0].equalsIgnoreCase(SIZE_PARAMETER)) {
-                    summaryOptions.summarySize = Integer.parseInt(parts[1]);
+                    int size = Integer.parseInt(parts[1]);
+                    if (size == 0) {
+                        return new SummaryOptions();
+                    }
+                    summaryOptions.summarySize = size;
                 }
                 // if we have the "only" option...
                 else if (parts[0].equalsIgnoreCase(ONLY_PARAMETER)) {
@@ -101,6 +105,10 @@ public class SummaryOptions implements Serializable {
                         summaryOptions.viewNamesList.add(name.toUpperCase());
                     }
                 }
+            }
+            // if size was not specified, make it DEFAULT_SIZE
+            if (summaryOptions.summarySize == 0) {
+                summaryOptions.summarySize = DEFAULT_SIZE;
             }
         } catch (Exception e) {
             log.warn("Unable to parse summary size string, returning empty SummaryOptions: {}", string, e);

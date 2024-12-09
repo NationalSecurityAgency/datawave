@@ -36,15 +36,21 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.iterator.logic.ContentSummaryIterator;
-import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 
+/**
+ * This class is used to add summaries to returned documents when specified.
+ * <p>
+ * </p>
+ * An iterator of type "ContentSummaryIterator" is used to do the summary generation using options from a "SummaryOptions"
+ */
 public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform {
 
     private static final Logger log = LoggerFactory.getLogger(SummaryTransform.class);
 
-    public static final String SUMMARY_ERROR_MESSAGE = "UNABLE TO GENERATE SUMMARY";
+    private static final String SUMMARY_ERROR_MESSAGE = "UNABLE TO GENERATE SUMMARY";
+    private static final String SUMMARY_EMPTY_MESSAGE = "NO CONTENT FOUND TO SUMMARIZE";
     private static final Summary ERROR_SUMMARY = new Summary(null, SUMMARY_ERROR_MESSAGE);
-    private static final Summary EMPTY_SUMMARY = new Summary(null, "NO CONTENT FOUND TO SUMMARIZE");
+    private static final Summary EMPTY_SUMMARY = new Summary(null, SUMMARY_EMPTY_MESSAGE);
 
     private static final String CONTENT_SUMMARY = "CONTENT_SUMMARY";
 
@@ -53,10 +59,6 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
 
-    public SummaryTransform(SummaryOptions summaryOptions, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
-        this(summaryOptions, env, source, new TermFrequencyExcerptIterator());
-    }
-
     public SummaryTransform(SummaryOptions summaryOptions, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
                     SortedKeyValueIterator<Key,Value> summaryIterator) {
         ArgumentChecker.notNull(summaryOptions);
@@ -64,6 +66,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
         this.env = env;
         this.source = source;
         this.summaryIterator = (ContentSummaryIterator) summaryIterator;
+
     }
 
     @Nullable
@@ -204,7 +207,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
                 if (summary.isBlank()) {
                     if (log.isErrorEnabled()) {
                         log.error("{} returned top key with blank column qualifier in key: {} when scanning for summary within range {}",
-                                        TermFrequencyExcerptIterator.class.getSimpleName(), summaryIterator.getTopKey(), range);
+                                        ContentSummaryIterator.class.getSimpleName(), summaryIterator.getTopKey(), range);
                     }
                     return ERROR_SUMMARY;
                 }
