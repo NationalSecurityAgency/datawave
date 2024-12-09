@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -40,7 +39,6 @@ import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.SourceTrackingIterator;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -212,13 +210,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
 
-        // Parse & flatten the query
-        try {
-            script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-        } catch (ParseException e) {
-            throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-        }
-
         this.documentOptions = options;
         this.myEnvironment = env;
 
@@ -266,7 +257,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
 
             satisfactionVisitor.setUnindexedFields(unindexedTypes);
             // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
-            this.script.jjtAccept(satisfactionVisitor, null);
+            this.getScript().jjtAccept(satisfactionVisitor, null);
 
             isQueryFullySatisfiedInitialState = satisfactionVisitor.isQueryFullySatisfied();
 
@@ -277,7 +268,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         visitor.setUnindexedFields(unindexedTypes);
 
         // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
-        script.jjtAccept(visitor, null);
+        getScript().jjtAccept(visitor, null);
         NestedIterator<Key> root = visitor.root();
 
         if (null == root) {
