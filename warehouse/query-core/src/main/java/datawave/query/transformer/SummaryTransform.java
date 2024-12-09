@@ -1,8 +1,8 @@
 package datawave.query.transformer;
 
-import static datawave.query.iterator.logic.DColumnSummaryIterator.VIEW_NAMES;
-import static datawave.query.iterator.logic.DColumnSummaryIterator.ONLY_SPECIFIED;
-import static datawave.query.iterator.logic.DColumnSummaryIterator.SUMMARY_SIZE;
+import static datawave.query.iterator.logic.ContentSummaryIterator.ONLY_SPECIFIED;
+import static datawave.query.iterator.logic.ContentSummaryIterator.SUMMARY_SIZE;
+import static datawave.query.iterator.logic.ContentSummaryIterator.VIEW_NAMES;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,20 +35,20 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.SummaryOptions;
-import datawave.query.iterator.logic.DColumnSummaryIterator;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 
 public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform {
 
     private static final Logger log = LoggerFactory.getLogger(SummaryTransform.class);
 
-    public static final String SUMMARY_ERROR_MESSAGE = "SOMETHING WENT WRONG GENERATING YOUR SUMMARY!";
+    public static final String SUMMARY_ERROR_MESSAGE = "UNABLE TO GENERATE SUMMARY";
     private static final Summary ERROR_SUMMARY = new Summary(null, SUMMARY_ERROR_MESSAGE);
     private static final Summary EMPTY_SUMMARY = new Summary(null, "NO CONTENT FOUND TO SUMMARIZE");
 
     private static final String CONTENT_SUMMARY = "CONTENT_SUMMARY";
 
-    private final DColumnSummaryIterator summaryIterator;
+    private final ContentSummaryIterator summaryIterator;
     private final SummaryOptions summaryOptions;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
@@ -63,7 +63,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
         this.summaryOptions = summaryOptions;
         this.env = env;
         this.source = source;
-        this.summaryIterator = (DColumnSummaryIterator) summaryIterator;
+        this.summaryIterator = (ContentSummaryIterator) summaryIterator;
     }
 
     @Nullable
@@ -78,8 +78,8 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
                     if (log.isTraceEnabled()) {
                         log.trace("Fetching summaries {} for document {}", summaryOptions, document.getMetadata());
                     }
-                    Set<Summary> summaries = getExcerpts(documentKeys);
-                    addExcerptsToDocument(summaries, document);
+                    Set<Summary> summaries = getSummaries(documentKeys);
+                    addSummariesToDocument(summaries, document);
                 } else {
                     if (log.isTraceEnabled()) {
                         log.trace("document keys were not added to document {}, skipping", document.getMetadata());
@@ -118,7 +118,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      * @param document
      *            the document
      */
-    private static void addExcerptsToDocument(Set<Summary> summaries, Document document) {
+    private static void addSummariesToDocument(Set<Summary> summaries, Document document) {
         Attributes summaryAttribute = new Attributes(true);
 
         for (Summary summary : summaries) {
@@ -136,9 +136,9 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      *
      * @param documentKeys
      *            the pre-identified document keys
-     * @return the excerpts
+     * @return the summaries
      */
-    private Set<Summary> getExcerpts(final ArrayList<DocumentKey> documentKeys) {
+    private Set<Summary> getSummaries(final ArrayList<DocumentKey> documentKeys) {
         if (documentKeys.isEmpty()) {
             return Collections.emptySet();
         }

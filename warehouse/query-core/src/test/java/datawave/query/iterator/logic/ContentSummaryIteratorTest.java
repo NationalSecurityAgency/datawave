@@ -1,8 +1,8 @@
 package datawave.query.iterator.logic;
 
-import static datawave.query.iterator.logic.DColumnSummaryIterator.VIEW_NAMES;
-import static datawave.query.iterator.logic.DColumnSummaryIterator.ONLY_SPECIFIED;
-import static datawave.query.iterator.logic.DColumnSummaryIterator.SUMMARY_SIZE;
+import static datawave.query.iterator.logic.ContentSummaryIterator.ONLY_SPECIFIED;
+import static datawave.query.iterator.logic.ContentSummaryIterator.SUMMARY_SIZE;
+import static datawave.query.iterator.logic.ContentSummaryIterator.VIEW_NAMES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -40,7 +40,7 @@ import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
 
 @RunWith(EasyMockRunner.class)
-public class DColumnSummaryIteratorTest extends EasyMockSupport {
+public class ContentSummaryIteratorTest extends EasyMockSupport {
 
     private static final Text row = new Text("20220115_1");
     private static final Text colf = new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
@@ -49,7 +49,7 @@ public class DColumnSummaryIteratorTest extends EasyMockSupport {
     private IteratorEnvironment env;
     private static final List<Map.Entry<Key,Value>> source = new ArrayList<>();
     private final Map<String,String> options = new HashMap<>();
-    private final DColumnSummaryIterator iterator = new DColumnSummaryIterator();
+    private final ContentSummaryIterator iterator = new ContentSummaryIterator();
 
     @BeforeClass
     public static void beforeClass() throws IOException {

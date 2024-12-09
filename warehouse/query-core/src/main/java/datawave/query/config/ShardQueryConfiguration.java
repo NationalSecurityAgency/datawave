@@ -53,7 +53,7 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.iterator.logic.DColumnSummaryIterator;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -444,7 +444,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private SummaryOptions summaryOptions = new SummaryOptions();
 
     // The class for the summary iterator
-    private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = DColumnSummaryIterator.class;
+    private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
     /**
      * A bloom filter to avoid duplicate results if needed
