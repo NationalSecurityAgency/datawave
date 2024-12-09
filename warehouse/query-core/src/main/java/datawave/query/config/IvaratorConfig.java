@@ -208,22 +208,10 @@ public class IvaratorConfig implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-                getIvaratorCacheDirConfigs(),
-                getIvaratorFstHdfsBaseURIs(),
-                getIvaratorCacheBufferSize(),
-                getIvaratorCacheScanPersistThreshold(),
-                getIvaratorCacheScanTimeout(),
-                getMaxFieldIndexRangeSplit(),
-                getIvaratorMaxOpenFiles(),
-                getIvaratorNumRetries(),
-                isIvaratorPersistVerify(),
-                getIvaratorPersistVerifyCount(),
-                getMaxIvaratorSources(),
-                getMaxIvaratorSourceWait(),
-                getMaxIvaratorResults()
-        );
+        return Objects.hash(getIvaratorCacheDirConfigs(), getIvaratorFstHdfsBaseURIs(), getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(),
+                        getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(), getIvaratorMaxOpenFiles(), getIvaratorNumRetries(),
+                        isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(), getMaxIvaratorSources(), getMaxIvaratorSourceWait(),
+                        getMaxIvaratorResults());
     }
-
 
 }
