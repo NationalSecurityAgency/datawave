@@ -178,8 +178,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
-        defaultValues.put("sequentialScheduler", false);
-        updatedValues.put("sequentialScheduler", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);

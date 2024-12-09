@@ -122,7 +122,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
-    private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -573,7 +572,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
-        this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -2280,14 +2278,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
-    public boolean getSequentialScheduler() {
-        return sequentialScheduler;
-    }
-
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        this.sequentialScheduler = sequentialScheduler;
-    }
-
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2842,7 +2832,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
-                getSequentialScheduler() == that.getSequentialScheduler() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
                 getLogTimingDetails() == that.getLogTimingDetails() &&
                 getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
@@ -3051,7 +3040,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
-                getSequentialScheduler(),
                 getCollectTimingDetails(),
                 getLogTimingDetails(),
                 getSendTimingToStatsd(),
