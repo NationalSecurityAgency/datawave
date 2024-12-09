@@ -64,6 +64,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -86,6 +87,7 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.CardinalityVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -275,11 +277,13 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
+    public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
     protected Map<String,String> options;
 
     protected String scanId;
     protected String query;
+    private ASTJexlScript script;
     protected String queryId;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
@@ -448,10 +452,13 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
+    private long cardinality = Long.MAX_VALUE;
+    private long cardinalityThreshold = Long.MIN_VALUE;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
+        this.script = other.script;
         this.queryId = other.queryId;
         this.scanId = other.scanId;
         this.disableEvaluation = other.disableEvaluation;
@@ -564,6 +571,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+        this.cardinality = other.cardinality;
     }
 
     public String getQuery() {
@@ -873,13 +881,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     private Set<String> getQueryFields() {
-        try {
-            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            return JexlASTHelper.getIdentifierNames(script);
-        } catch (ParseException e) {
-            // ignore
-            throw new FatalBeanException("Could not parse query");
-        }
+        return JexlASTHelper.getIdentifierNames(getScript());
     }
 
     public TimeFilter getTimeFilter() {
@@ -1503,6 +1505,17 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TERM_COUNTS)) {
             String serializedMap = options.get(TERM_COUNTS);
             this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
+        }
+
+        // parse out cardinality threshold
+        if (options.containsKey(CARDINALITY_THRESHOLD)) {
+            String option = options.get(CARDINALITY_THRESHOLD);
+            this.cardinalityThreshold = Long.parseLong(option);
+        }
+
+        // cardinality requires term counts and a threshold
+        if (termCounts != null && !termCounts.isEmpty() && cardinalityThreshold > 0) {
+            cardinality = CardinalityVisitor.cardinality(getScript(), termCounts);
         }
 
         this.evaluationFilter = null;
@@ -2365,5 +2378,25 @@ public class QueryOptions implements OptionDescriber {
 
     public boolean isSeekingEventAggregation() {
         return seekingEventAggregation;
+    }
+
+    public ASTJexlScript getScript() {
+        if (script == null) {
+            try {
+                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            } catch (ParseException e) {
+                log.error("Failed to parse query", e);
+                throw new DatawaveFatalQueryException("Failed to parse query");
+            }
+        }
+        return script;
+    }
+
+    public long getCardinality() {
+        return cardinality;
+    }
+
+    public long getCardinalityThreshold() {
+        return cardinalityThreshold;
     }
 }
