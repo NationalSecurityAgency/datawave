@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,9 +69,9 @@ public abstract class SummaryTest {
         }
 
         @Override
-        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                        throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParams, Collection<String> goodResults,
+                        boolean shouldReturnSomething) throws Exception {
+            super.runTestQuery(connector, queryString, startDate, endDate, extraParams, goodResults, shouldReturnSomething);
         }
     }
 
@@ -92,9 +93,9 @@ public abstract class SummaryTest {
         }
 
         @Override
-        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                        throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParams, Collection<String> goodResults,
+                        boolean shouldReturnSomething) throws Exception {
+            super.runTestQuery(connector, queryString, startDate, endDate, extraParams, goodResults, shouldReturnSomething);
         }
     }
 
@@ -138,11 +139,11 @@ public abstract class SummaryTest {
         deserializer = new KryoDocumentDeserializer();
     }
 
-    protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                    throws Exception;
+    protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParams, Collection<String> goodResults,
+                    boolean shouldReturnSomething) throws Exception;
 
-    protected void runTestQuery(AccumuloClient connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Collection<String> goodResults) throws Exception {
+    protected void runTestQuery(AccumuloClient connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParams,
+                    Collection<String> goodResults, boolean shouldReturnSomething) throws Exception {
 
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
@@ -150,7 +151,7 @@ public abstract class SummaryTest {
         settings.setPagesize(Integer.MAX_VALUE);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery(queryString);
-        settings.setParameters(extraParms);
+        settings.setParameters(extraParams);
         settings.setId(UUID.randomUUID());
 
         log.debug("query: " + settings.getQuery());
@@ -205,23 +206,11 @@ public abstract class SummaryTest {
         assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
         assertTrue(goodResults + " was not empty", goodResults.isEmpty());
 
-        assertFalse("No docs were returned!", docs.isEmpty());
-    }
-
-    @Test
-    public void testWithOnly() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("return.fields", "CONTENT_SUMMARY");
-        extraParameters.put("query.syntax", "LUCENE");
-
-        String queryString = "QUOTE:(farther) #SUMMARY(VIEWS:CONTENT/SIZE:50/ONLY)";
-
-        // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(
-                        Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
-
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        if (shouldReturnSomething) {
+            assertFalse("No docs were returned!", docs.isEmpty());
+        } else {
+            assertTrue("no docs should be returned!", docs.isEmpty());
+        }
     }
 
     @Test
@@ -237,7 +226,23 @@ public abstract class SummaryTest {
         Set<String> goodResults = new HashSet<>(Set.of(
                         "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
+    }
+
+    @Test
+    public void testWithOnly() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("return.fields", "CONTENT_SUMMARY");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #SUMMARY(VIEWS:CONTENT/SIZE:50/ONLY)";
+
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = new HashSet<>(
+                        Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
 
     @Test
@@ -253,7 +258,7 @@ public abstract class SummaryTest {
         Set<String> goodResults = new HashSet<>(
                         Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
 
     @Test
@@ -269,7 +274,7 @@ public abstract class SummaryTest {
         Set<String> goodResults = new HashSet<>(
                         Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false"));
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
 
     @Test
@@ -285,7 +290,7 @@ public abstract class SummaryTest {
         Set<String> goodResults = new HashSet<>(Set.of(
                         "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
 
     @Test
@@ -300,7 +305,7 @@ public abstract class SummaryTest {
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:CONTENT: Y: : [] 9223372036854775807 false"));
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
 
     @Test
@@ -312,10 +317,66 @@ public abstract class SummaryTest {
 
         String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50/ONLY/VIEWS:CANTFINDME,ORME)";
 
-        // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:NO CONTENT FOUND TO SUMMARIZE"));
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
 
+    @Test
+    public void testSizeZero() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("return.fields", "CONTENT_SUMMARY");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:0)";
+
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = Collections.emptySet();
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, false);
+    }
+
+    @Test
+    public void testNoSizeButOtherOptions() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("return.fields", "CONTENT_SUMMARY");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #SUMMARY(VIEWS:TEST1,TEST2)";
+
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = new HashSet<>(Set.of(
+                        "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
+    }
+
+    @Test
+    public void testBadOptionsFormat() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("return.fields", "CONTENT_SUMMARY");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #SUMMARY(SIZE:notanumber)";
+
+        Set<String> goodResults = Collections.emptySet();
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, false);
+    }
+
+    @Test
+    public void testOnlyWithNoOtherOptions() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("return.fields", "CONTENT_SUMMARY");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #SUMMARY(ONLY)";
+
+        Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:NO CONTENT FOUND TO SUMMARIZE"));
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
+    }
 }

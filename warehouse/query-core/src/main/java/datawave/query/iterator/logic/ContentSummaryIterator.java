@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import datawave.query.Constants;
 import datawave.query.attributes.SummaryOptions;
-import datawave.query.table.parser.ContentKeyValueFactory;
 
 /**
  * This iterator is intended to scan the d column for a specified document. The result will be a summary for each document scanned.
@@ -261,7 +260,7 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
         }
 
         // create the summary
-        String summary = createSummary(viewSummaryOrder, foundContent, summarySize);
+        String summary = new SummaryCreator(viewSummaryOrder, foundContent, summarySize).createSummary();
         if (summary != null) {
             tk = new Key(top.getRow(), new Text(dtUid), new Text(summary), top.getColumnVisibility());
             tv = new Value();
@@ -271,59 +270,6 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
         // If we get here, we have not found content to summarize, so return null
         tk = null;
         tv = null;
-    }
-
-    /**
-     * this method attempts to create a summary out of the found views
-     *
-     * @param viewSummaryOrder
-     *            the order to check for views. the first one found will have a summary made from it
-     * @param foundContent
-     *            the map of all the content found for the document
-     * @param summarySize
-     *            the size in bytes of the summary to create
-     * @return the created summary
-     */
-    private static String createSummary(List<String> viewSummaryOrder, Map<String,byte[]> foundContent, int summarySize) {
-        // check each potential view name we could make summaries for
-        for (String name : viewSummaryOrder) {
-            if (name.endsWith("*")) {
-                // strip wildcard from view name
-                name = name.substring(0, name.length() - 1);
-                // if we have a view name that matches the list...
-                Map<String,String> summaries = new HashMap<>();
-                for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
-                    if (entry.getKey().startsWith(name)) {
-                        // decode and decompress the content
-                        String summary = new String(ContentKeyValueFactory.decodeAndDecompressContent(entry.getValue()));
-                        // if the content is longer than the specified length, truncate it
-                        if (summary.length() > summarySize) {
-                            summary = summary.substring(0, summarySize);
-                        }
-                        summaries.put(entry.getKey(), summary);
-                    }
-                }
-                if (!summaries.isEmpty()) {
-                    // return the view name and summary separated by null
-                    StringBuilder sb = new StringBuilder();
-                    for (Map.Entry<String,String> entry : summaries.entrySet()) {
-                        sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-                    }
-                    return sb.toString().trim();
-                }
-            } else {
-                if (foundContent.containsKey(name)) {
-                    // decode and decompress the content
-                    String summary = new String(ContentKeyValueFactory.decodeAndDecompressContent(foundContent.get(name)));
-                    // if the content is longer than the specified length, truncate it
-                    if (summary.length() > summarySize) {
-                        summary = summary.substring(0, summarySize);
-                    }
-                    return name + ": " + summary;
-                }
-            }
-        }
-        return null;
     }
 
     /**
