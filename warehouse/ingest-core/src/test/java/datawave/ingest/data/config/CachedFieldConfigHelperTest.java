@@ -92,16 +92,19 @@ public class CachedFieldConfigHelperTest {
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
         assertEquals(2, storedCounter.get(), "field2 should compute result (new field)");
-        assertTrue(helper.hasLimitExceeded());
+        assertFalse(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
         assertEquals(2, storedCounter.get(), "field2 repeated (existing)");
+        assertFalse(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.INDEXED_FIELD, "field1", innerHelper::isIndexedField);
         assertEquals(1, indexCounter.get(), "field1 should compute result (new attribute)");
+        assertFalse(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field3", innerHelper::isStoredField);
         assertEquals(3, storedCounter.get(), "field3 exceeded limit (new field)");
+        assertTrue(helper.hasLimitExceeded());
 
         helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field3", innerHelper::isStoredField);
         assertEquals(3, storedCounter.get(), "field3 exceeded limit (existing field)");

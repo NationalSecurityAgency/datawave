@@ -1,26 +1,36 @@
 package datawave.ingest.data.config;
 
-import com.google.common.annotations.VisibleForTesting;
+import static java.lang.Thread.NORM_PRIORITY;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class CachedFieldConfigHelper implements FieldConfigHelper {
     private final static Logger log = LoggerFactory.getLogger(CachedFieldConfigHelper.class);
 
     private final static float DEFAULT_LRU_LF = 0.75f;
-    private final static int EMIT_OVER_LIMIT_THRESHOLD = 100;
+    private final static int DEFAULT_DEBUG_STATE_SECS = 30;
 
     private final FieldConfigHelper underlyingHelper;
-    private final Map<String,CachedEntry> resultCache;
-    private final Function<String,CachedEntry> resultEntryFn;
-
-    private long fieldComputes;
-    private boolean fieldLimitExceeded;
+    private final LruCache<String,CachedEntry> resultCache;
+    private final boolean debugLimitsEnabled;
+    private final int limit;
+    private final Set<String> debugFieldUnique;
+    private final ScheduledExecutorService debugStateExecutor;
+    private final AtomicLong debugFieldComputes;
 
     enum AttributeType {
         INDEXED_FIELD, REVERSE_INDEXED_FIELD, TOKENIZED_FIELD, REVERSE_TOKENIZED_FIELD, STORED_FIELD, INDEX_ONLY_FIELD
@@ -30,20 +40,31 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
         this(helper, limit, false);
     }
 
-    public CachedFieldConfigHelper(FieldConfigHelper helper, int limit, boolean debugLimitExceeded) {
+    public CachedFieldConfigHelper(FieldConfigHelper helper, int limit, boolean debugLimitEnabled) {
         if (limit < 1) {
             throw new IllegalArgumentException("Limit must be a positive integer");
         }
         this.underlyingHelper = helper;
-        this.resultCache = lruCache(limit);
-        this.resultEntryFn = !debugLimitExceeded ? CachedEntry::new : (String f) -> {
-            fieldComputes++;
-            if (fieldComputes >= limit && ((fieldComputes == limit) || (fieldComputes % EMIT_OVER_LIMIT_THRESHOLD) == 0)) {
-                fieldLimitExceeded = true;
-                log.info("Field cache limit exceeded [val: {}, size={}, limit={}]", f, fieldComputes, limit);
-            }
-            return new CachedEntry(f);
-        };
+        this.resultCache = new LruCache<>(limit);
+        this.limit = limit;
+        this.debugLimitsEnabled = debugLimitEnabled;
+        this.debugFieldUnique = new HashSet<>();
+        this.debugFieldComputes = new AtomicLong();
+
+        if (debugLimitEnabled) {
+            this.debugStateExecutor = Executors.newSingleThreadScheduledExecutor(
+            // @formatter:off
+                new ThreadFactoryBuilder()
+                    .setPriority(NORM_PRIORITY)
+                    .setDaemon(true)
+                    .setNameFormat("CachedFieldConfigHelper.DebugState")
+                    .build()
+                // formatter:off
+            );
+            this.debugStateExecutor.scheduleAtFixedRate(this::debugLogState, DEFAULT_DEBUG_STATE_SECS, DEFAULT_DEBUG_STATE_SECS, SECONDS);
+        } else {
+            this.debugStateExecutor = null;
+        }
     }
 
     @Override
@@ -78,22 +99,51 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
 
     @VisibleForTesting
     boolean getFieldResult(AttributeType attributeType, String fieldName, Predicate<String> fn) {
-        return resultCache.computeIfAbsent(fieldName, resultEntryFn).get(attributeType).getResultOrEvaluate(fn);
+        CachedEntry ce = !debugLimitsEnabled ?
+            resultCache.computeIfAbsent(fieldName, CachedEntry::new) :
+            resultCache.computeIfAbsent(fieldName, this::debugCachedEntryCreation);
+        return ce.get(attributeType).getResultOrEvaluate(fn);
     }
 
     @VisibleForTesting
     boolean hasLimitExceeded() {
-        return fieldLimitExceeded;
+        return resultCache.hasLimitExceeded();
     }
 
-    private static <K,V> Map<K,V> lruCache(final int maxSize) {
-        // Testing showed slightly better or same performance of LRU implementation below
-        // when compared to Apache Commons LRUMap
-        return new LinkedHashMap<>((int) (maxSize / DEFAULT_LRU_LF) + 1, DEFAULT_LRU_LF, true) {
-            protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
-                return size() > maxSize;
+    private CachedEntry debugCachedEntryCreation(String fieldName) {
+        debugFieldComputes.incrementAndGet();
+        debugFieldUnique.add(fieldName);
+        return new CachedEntry(fieldName);
+    }
+
+    private void debugLogState() {
+        if (resultCache.hasLimitExceeded()) {
+            log.info("Field cache LRU limit exceeded [limit={}, debug={}, size={}, uniq={}]",
+                limit, debugFieldComputes.get(), debugFieldUnique.size(), debugLimitsEnabled);
+        }
+    }
+
+    private static class LruCache<K,V> extends LinkedHashMap<K,V> {
+        private final int maxSize;
+        private volatile boolean limitExceeded;
+
+        LruCache(int maxSize) {
+            super((int)(maxSize / DEFAULT_LRU_LF) + 1, DEFAULT_LRU_LF, true);
+            this.maxSize = maxSize;
+        }
+
+        boolean hasLimitExceeded() {
+            // thread-safe
+            return limitExceeded;
+        }
+
+        protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
+            boolean localLimitExceeded = size() > maxSize;
+            if (localLimitExceeded) {
+                limitExceeded = true;
             }
-        };
+            return localLimitExceeded;
+        }
     }
 
     private static class CachedEntry {
