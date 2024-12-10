@@ -6,7 +6,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 //  might not need this given the unbounded nature of field name lookups
-public class FieldNameLookupCache extends LookupCache {
+public class FieldNameLookupCache extends LookupFailureCache {
 
     private static final String CACHE_NAME = "Field";
 

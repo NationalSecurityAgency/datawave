@@ -35,7 +35,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -46,8 +45,8 @@ import datawave.query.jexl.lookups.ExceededIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.lookups.cache.LookupCache;
-import datawave.query.jexl.lookups.cache.LookupCache.LookupCacheKey;
+import datawave.query.jexl.lookups.cache.LookupFailureCache;
+import datawave.query.jexl.lookups.cache.LookupFailureCache.LookupCacheKey;
 import datawave.query.jexl.lookups.cache.RegexLookupCache.RegexCacheKey;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
@@ -150,10 +149,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      *             if the metadata helper fail an operation
      */
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Map<String,IndexLookup> lookupMap, T script, LookupCache lookupCache) throws TableNotFoundException {
+                    Map<String,IndexLookup> lookupMap, T script, LookupFailureCache lookupCache) throws TableNotFoundException {
         RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap);
         if (lookupCache != null) {
-            visitor.setLookupCache(lookupCache);
+            visitor.setFailedLookedCache(lookupCache);
         }
         return ensureTreeNotEmpty(visitor.expand(script));
     }
@@ -305,7 +304,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        if (lookupCache != null && !lookupCache.get(getKey(node))) {
+        if (failedLookedCache != null && failedLookedCache.lookupFailed(getKey(node))) {
             // if a previous lookup for this term failed, do not look it up again
             return buildIndexLookup(node, false, false, ExceededIndexLookup::new);
         }
@@ -764,18 +763,14 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             }
         }
 
-        if (lookupCache != null) {
-            String field = JexlASTHelper.getIdentifier(currentNode);
-            if (fieldsToTerms.containsKey(field) && (fieldsToTerms.get(field).isThresholdExceeded() || fieldsToTerms.get(field).isEmpty())) {
-                LookupCacheKey key = getKey(currentNode);
-                lookupCache.put(key, false);
-            }
-        }
+        // record expansion failures if the failed lookup cache is enabled
+        recordResult(currentNode, fieldsToTerms);
 
         futureJexlNode.setRebuiltNode(newNode);
     }
 
-    private RegexCacheKey getKey(JexlNode node) {
+    @Override
+    protected LookupCacheKey getKey(JexlNode node) {
         String nodeKey = JexlStringBuildingVisitor.buildQuery(node);
         String startDate = DateHelper.format(config.getBeginDate());
         String endDate = DateHelper.format(config.getEndDate());

@@ -17,9 +17,9 @@ import com.google.common.base.Preconditions;
  * The reason for this is that a failed expansion is not likely to succeed in the future. There is no reason to repeat work that will ultimately fail,
  * especially if the failure is due to a timeout exception.
  */
-public class LookupCache {
+public class LookupFailureCache {
 
-    private static final Logger log = LoggerFactory.getLogger(LookupCache.class);
+    private static final Logger log = LoggerFactory.getLogger(LookupFailureCache.class);
 
     protected final String name;
     protected final Cache<LookupCacheKey,Boolean> cache;
@@ -36,7 +36,7 @@ public class LookupCache {
      * @param expireAfterAccessMinutes
      *            time to expire entry after access
      */
-    public LookupCache(String name, int size, int expireAfterWriteMinutes, int expireAfterAccessMinutes) {
+    public LookupFailureCache(String name, int size, int expireAfterWriteMinutes, int expireAfterAccessMinutes) {
         this.name = name;
         //  @formatter:off
         cache = Caffeine.newBuilder()
@@ -63,16 +63,15 @@ public class LookupCache {
         cache.cleanUp();
     }
 
-    public boolean get(LookupCacheKey key) {
+    public boolean lookupFailed(LookupCacheKey key) {
         Boolean value = cache.getIfPresent(key);
         // only recording failures, so cache miss returns a true value
-        return Objects.requireNonNullElse(value, true);
+        return Objects.requireNonNullElse(value, false);
     }
 
-    public void put(LookupCacheKey key, Boolean value) {
+    public void recordFailure(LookupCacheKey key) {
         Preconditions.checkNotNull(key);
-        Preconditions.checkNotNull(value);
-        cache.put(key, value);
+        cache.put(key, true);
     }
 
     public void logStats() {

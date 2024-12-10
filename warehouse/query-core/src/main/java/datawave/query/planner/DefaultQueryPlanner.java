@@ -104,7 +104,7 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.cache.BoundedRangeLookupCache;
-import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.lookups.cache.LookupFailureCache;
 import datawave.query.jexl.lookups.cache.RegexLookupCache;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
@@ -1654,7 +1654,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     MetadataHelper metadataHelper, ScannerFactory scannerFactory, Map<String,IndexLookup> indexLookupMap) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, stage, () -> {
             try {
-                LookupCache lookupCache = getRegexLookupCache();
+                LookupFailureCache lookupCache = getRegexFailureCache();
                 return RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, script, lookupCache);
             } catch (TableNotFoundException e) {
                 throw new DatawaveQueryException("Failed to Expand Ranges", e);
@@ -1667,9 +1667,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(script);
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         try {
-            LookupCache lookupCache = getBoundedRangeLookupCache();
+            LookupFailureCache failureCache = getBoundedRangeFailureCache();
             config.setQueryTree(
-                            BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree(), lookupCache));
+                            BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree(), failureCache));
         } catch (TableNotFoundException e) {
             throw new DatawaveQueryException("Failed to Expand Ranges", e);
         }
@@ -1730,7 +1730,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree(), ASTNRNode.class, ASTERNode.class, BOUNDED_RANGE, ASTFunctionNode.class,
                         EXCEEDED_VALUE);
         if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-            LookupCache lookupCache = getRegexLookupCache();
+            LookupFailureCache lookupCache = getRegexFailureCache();
             config.setQueryTree(RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, helper, indexLookupMap, config.getQueryTree(), lookupCache));
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after expanding regex again:");
@@ -1741,7 +1741,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (nodeCount.isPresent(BOUNDED_RANGE)) {
 
             try {
-                LookupCache lookupCache = getBoundedRangeLookupCache();
+                LookupFailureCache lookupCache = getBoundedRangeFailureCache();
                 config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree(),
                                 lookupCache));
             } catch (TableNotFoundException e) {
@@ -2249,7 +2249,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return pushDownPlanner.applyRules(queryTree);
     }
 
-    private BoundedRangeLookupCache getBoundedRangeLookupCache() {
+    private BoundedRangeLookupCache getBoundedRangeFailureCache() {
         if (expansionCacheConfigs != null && expansionCacheConfigs.isCacheBoundedRangeLookup()) {
             if (expansionCacheFactory == null) {
                 log.info("LookupCache requested for BoundedRange but no cache factory was configured");
@@ -2260,7 +2260,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return null;
     }
 
-    private RegexLookupCache getRegexLookupCache() {
+    /**
+     * If the appropriate cache and factory configs are set, return a {@link RegexLookupCache} to record when a regex term fails to expand into discrete values
+     *
+     * @return a {@link RegexLookupCache}
+     */
+    private RegexLookupCache getRegexFailureCache() {
         if (expansionCacheConfigs != null && expansionCacheConfigs.isCacheRegexLookup()) {
             if (expansionCacheFactory == null) {
                 log.info("LookupCache requested for Regex but no cache factory was configured");

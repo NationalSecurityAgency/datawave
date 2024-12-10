@@ -25,11 +25,10 @@ import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.cache.LookupFailureCache.LookupCacheKey;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -204,6 +203,13 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         } else {
             return ref;
         }
+    }
+
+    @Override
+    protected LookupCacheKey getKey(JexlNode node) {
+        // lookup cache is not implemented for this class, so return null
+        // a null key is handled gracefully by the BaseIndexExpansionVisitor
+        return null;
     }
 
     /**

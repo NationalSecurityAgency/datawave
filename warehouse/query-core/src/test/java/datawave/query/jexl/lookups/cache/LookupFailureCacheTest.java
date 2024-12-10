@@ -4,16 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import datawave.query.jexl.lookups.cache.LookupCache.LookupCacheKey;
+import datawave.query.jexl.lookups.cache.LookupFailureCache.LookupCacheKey;
 
 /**
- * Base class for {@link LookupCache} tests. Extending classes must provide their own implementation of cache and key creation
+ * Base class for {@link LookupFailureCache} tests. Extending classes must provide their own implementation of cache and key creation
  */
-public abstract class LookupCacheTest {
+public abstract class LookupFailureCacheTest {
 
     private static final int DEFAULT_CACHE_SIZE = 5;
 
-    protected LookupCache cache;
+    protected LookupFailureCache cache;
 
     @BeforeEach
     public void setup() {
@@ -28,12 +28,8 @@ public abstract class LookupCacheTest {
 
     protected abstract LookupCacheKey getKey(String nodeKey);
 
-    protected void recordSuccess(LookupCacheKey key) {
-        cache.put(key, true);
-    }
-
     protected void recordFailure(LookupCacheKey key) {
-        cache.put(key, false);
+        cache.recordFailure(key);
     }
 
     protected void assertCacheHitsAndMisses(int expectedHits, int expectedMisses) {

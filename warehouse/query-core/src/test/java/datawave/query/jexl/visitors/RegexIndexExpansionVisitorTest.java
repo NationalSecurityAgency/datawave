@@ -28,7 +28,7 @@ import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.lookups.cache.LookupFailureCache;
 import datawave.query.jexl.lookups.cache.RegexLookupCache;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -48,7 +48,7 @@ public class RegexIndexExpansionVisitorTest {
 
     private String startDate;
     private String endDate;
-    private LookupCache lookupCache;
+    private LookupFailureCache lookupCache;
 
     @BeforeClass
     public static void setup() throws Exception {

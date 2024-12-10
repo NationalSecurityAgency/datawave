@@ -8,7 +8,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 /**
  * Cache that records the result of a bounded range lookup
  */
-public class BoundedRangeLookupCache extends LookupCache {
+public class BoundedRangeLookupCache extends LookupFailureCache {
 
     private static final String CACHE_NAME = "Range";
 

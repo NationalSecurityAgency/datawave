@@ -5,7 +5,7 @@ import java.util.Set;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-public class RegexLookupCache extends LookupCache {
+public class RegexLookupCache extends LookupFailureCache {
 
     private static final String CACHE_NAME = "Regex";
 

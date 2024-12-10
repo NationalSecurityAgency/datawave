@@ -10,9 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.lookups.cache.FieldNameLookupCache.FieldNameCacheKey;
-import datawave.query.jexl.lookups.cache.LookupCache.LookupCacheKey;
+import datawave.query.jexl.lookups.cache.LookupFailureCache.LookupCacheKey;
 
-public class FieldNameLookupCacheTest extends LookupCacheTest {
+public class FieldNameLookupCacheTest extends LookupFailureCacheTest {
 
     @BeforeEach
     public void setup() {
@@ -24,11 +24,10 @@ public class FieldNameLookupCacheTest extends LookupCacheTest {
         createCache();
         LookupCacheKey key = getKey("_ANYFIELD_ == 'bar'");
 
-        recordSuccess(key);
         assertCacheHitsAndMisses(0, 0);
 
-        assertTrue(cache.get(key));
-        assertCacheHitsAndMisses(1, 0);
+        assertFalse(cache.lookupFailed(key));
+        assertCacheHitsAndMisses(0, 1);
     }
 
     @Test
@@ -39,7 +38,7 @@ public class FieldNameLookupCacheTest extends LookupCacheTest {
         recordFailure(key);
         assertCacheHitsAndMisses(0, 0);
 
-        assertFalse(cache.get(key));
+        assertTrue(cache.lookupFailed(key));
         assertCacheHitsAndMisses(1, 0);
     }
 
@@ -58,9 +57,9 @@ public class FieldNameLookupCacheTest extends LookupCacheTest {
         // internal operations are async, flush operations before assertions
         cache.cleanup();
 
-        assertTrue(cache.get(keyA));
-        assertTrue(cache.get(keyB));
-        assertFalse(cache.get(keyC));
+        assertFalse(cache.lookupFailed(keyA));
+        assertFalse(cache.lookupFailed(keyB));
+        assertTrue(cache.lookupFailed(keyC));
         assertCacheHitsAndMisses(1, 2);
     }
 
@@ -71,13 +70,16 @@ public class FieldNameLookupCacheTest extends LookupCacheTest {
         LookupCacheKey keyA = getKey("_ANYFIELD_ == 'bar'");
         LookupCacheKey keyB = getKey("_ANYFIELD_ == 'baz'");
 
-        recordSuccess(keyA);
         cache.cleanup();
 
         int max = 15;
         for (int i = 0; i < max; i++) {
-            assertTrue(cache.get(keyA));
-            assertTrue(cache.get(keyB));
+            // key A always fails to expand and thus records a failure
+            // key B always expands
+            cache.recordFailure(keyA);
+
+            assertTrue(cache.lookupFailed(keyA));
+            assertFalse(cache.lookupFailed(keyB));
         }
 
         assertCacheHitsAndMisses(15, 15);

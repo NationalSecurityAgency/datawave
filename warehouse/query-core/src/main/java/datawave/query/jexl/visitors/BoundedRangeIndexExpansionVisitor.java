@@ -24,8 +24,8 @@ import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.lookups.cache.BoundedRangeLookupCache;
-import datawave.query.jexl.lookups.cache.LookupCache;
-import datawave.query.jexl.lookups.cache.LookupCache.LookupCacheKey;
+import datawave.query.jexl.lookups.cache.LookupFailureCache;
+import datawave.query.jexl.lookups.cache.LookupFailureCache.LookupCacheKey;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -82,7 +82,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
      * @param script
      *            the JexlScript
      * @param lookupCache
-     *            optionally a {@link LookupCache}
+     *            optionally a {@link LookupFailureCache}
      * @return the script with bounded ranges possibly expanded
      * @param <T>
      *            the Jexl node type
@@ -90,12 +90,12 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
      *             if the metadata helper fails an operation
      */
     public static <T extends JexlNode> T expandBoundedRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script,
-                    LookupCache lookupCache) throws TableNotFoundException {
+                    LookupFailureCache lookupCache) throws TableNotFoundException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
             BoundedRangeIndexExpansionVisitor visitor = new BoundedRangeIndexExpansionVisitor(config, scannerFactory, helper);
             if (lookupCache != null) {
-                visitor.setLookupCache(lookupCache);
+                visitor.setFailedLookedCache(lookupCache);
             }
             return visitor.expand(script);
         } else {
@@ -116,7 +116,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
             LiteralRange<?> range = rangeFinder.getRange(node);
             if (range != null) {
                 try {
-                    if (lookupCache != null && !lookupCache.get(getKey(node))) {
+                    if (failedLookedCache != null && failedLookedCache.lookupFailed(getKey(node))) {
                         // lookup for this term previously failed, do not look it up again
                         return buildIndexLookup(node, true, false, ExceededIndexLookup::new);
                     } else {
@@ -147,13 +147,8 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
             logResult(currentNode, fieldsToTerms);
         }
 
-        if (lookupCache != null && fieldsToTerms != null) {
-            String field = JexlASTHelper.getIdentifier(currentNode);
-            if (fieldsToTerms.containsKey(field) && (fieldsToTerms.get(field).isThresholdExceeded() || fieldsToTerms.get(field).isEmpty())) {
-                LookupCacheKey key = getKey(currentNode);
-                lookupCache.put(key, false);
-            }
-        }
+        // record expansion failures if the failed lookup cache is enabled
+        recordResult(currentNode, fieldsToTerms);
 
         if (!(futureJexlNode instanceof ExceededJexlNode)) {
             futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode,
@@ -161,7 +156,8 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         }
     }
 
-    private LookupCacheKey getKey(JexlNode node) {
+    @Override
+    protected LookupCacheKey getKey(JexlNode node) {
         String range = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         String startDate = DateHelper.format(config.getBeginDate());
         String endDate = DateHelper.format(config.getEndDate());

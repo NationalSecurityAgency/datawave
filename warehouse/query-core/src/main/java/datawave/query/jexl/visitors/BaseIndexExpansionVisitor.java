@@ -26,7 +26,8 @@ import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.ExceededIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.cache.LookupCache;
+import datawave.query.jexl.lookups.cache.LookupFailureCache;
+import datawave.query.jexl.lookups.cache.LookupFailureCache.LookupCacheKey;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.planner.pushdown.CostEstimator;
@@ -60,7 +61,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected List<FutureJexlNode> futureJexlNodes;
 
     protected String stage = "default";
-    protected LookupCache lookupCache = null;
+    protected LookupFailureCache failedLookedCache = null;
 
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
                     throws TableNotFoundException {
@@ -86,8 +87,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         this.futureJexlNodes = new ArrayList<>();
     }
 
-    protected void setLookupCache(LookupCache lookupCache) {
-        this.lookupCache = lookupCache;
+    protected void setFailedLookedCache(LookupFailureCache failedLookedCache) {
+        this.failedLookedCache = failedLookedCache;
     }
 
     protected void setupExecutor() {
@@ -131,8 +132,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
             return rebuiltScript;
         } finally {
-            if (lookupCache != null) {
-                lookupCache.logStats();
+            if (failedLookedCache != null) {
+                failedLookedCache.logStats();
             }
             shutdownExecutor();
         }
@@ -308,12 +309,43 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     }
 
     /**
+     * Method handles recording any expansion failures for the specified term
+     *
+     * @param node
+     *            the JexlNode
+     * @param lookupMap
+     *            an {@link IndexLookupMap}
+     */
+    protected void recordResult(JexlNode node, IndexLookupMap lookupMap) {
+        if (failedLookedCache != null) {
+            String field = JexlASTHelper.getIdentifier(node);
+            if (lookupMap.containsKey(field) && (lookupMap.get(field).isThresholdExceeded() || lookupMap.get(field).isEmpty())) {
+                LookupCacheKey key = getKey(node);
+                if (key != null) {
+                    failedLookedCache.recordFailure(key);
+                }
+            }
+        }
+    }
+
+    /**
+     * Each extending visitor must implement its own cache key
+     *
+     * @param node
+     *            the JexlNode
+     * @return an implementation of a {@link LookupCacheKey}
+     */
+    protected abstract LookupCacheKey getKey(JexlNode node);
+
+    /**
      * Placeholder for a term that previously failed expansion and is likely to fail expansion again.
      */
-    protected static class ExceededJexlNode extends FutureJexlNode {
+    protected final static class ExceededJexlNode extends FutureJexlNode {
+
+        private static final ExceededIndexLookup exceededLookup = new ExceededIndexLookup();
 
         public ExceededJexlNode(JexlNode node) {
-            super(node, new ExceededIndexLookup(), false, false);
+            super(node, exceededLookup, false, false);
 
             JexlNode copy = RebuildingVisitor.copy(node);
             JexlNode exceeded = QueryPropertyMarker.create(copy, MarkerType.EXCEEDED_VALUE);
