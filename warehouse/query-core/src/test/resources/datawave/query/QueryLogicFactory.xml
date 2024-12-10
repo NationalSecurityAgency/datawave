@@ -286,6 +286,8 @@
         <property name="sortQueryPreIndexWithFieldCounts" value="true" />
         <property name="sortQueryPostIndexWithTermCounts" value="true" />
         <property name="sortQueryPostIndexWithFieldCounts" value="true" />
+        <!-- cardinality threshold enables running ivarators as filter iterators -->
+        <property name="cardinalityThreshold" value="50"/>
     </bean>
 
     <bean id="IvaratorScanHintRule" class="datawave.query.planner.scanhints.IvaratorScanHint"/>

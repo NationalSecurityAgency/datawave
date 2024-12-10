@@ -35,7 +35,6 @@ import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -106,7 +105,6 @@ import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
@@ -181,8 +179,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected IteratorEnvironment myEnvironment;
 
-    protected ASTJexlScript script = null;
-
     protected JexlEvaluation myEvaluationFunction = null;
 
     protected QuerySpan trackingSpan = null;
@@ -215,7 +211,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.seekKeySource = other.seekKeySource;
         this.myEnvironment = other.myEnvironment;
         this.myEvaluationFunction = other.myEvaluationFunction;
-        this.script = TreeFlatteningRebuildingVisitor.flatten(other.script);
         this.documentOptions = other.documentOptions;
         this.fieldIndexSatisfiesQuery = other.fieldIndexSatisfiesQuery;
         this.groupingContextAddedByMe = other.groupingContextAddedByMe;
@@ -223,7 +218,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.typeMetadata = other.typeMetadata;
         this.exceededOrEvaluationCache = other.exceededOrEvaluationCache;
         this.trackingSpan = other.trackingSpan;
-        // Defer to QueryOptions to re-set all of the query options
+        // Defer to QueryOptions to re-set all the query options
         super.deepCopy(other);
     }
 
@@ -248,15 +243,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.typeMetadataWithNonIndexed.addForAllIngestTypes(this.getNonIndexedDataTypeMap());
 
         this.exceededOrEvaluationCache = new HashMap<>();
-
-        // Parse the query
-        try {
-            this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-            this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
-
-        } catch (ParseException e) {
-            throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-        }
+        this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
 
         this.documentOptions = options;
         this.myEnvironment = env;
@@ -636,7 +623,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
         // If we had an event-specific range previously, we need to reset it back
         // to the source we created during init
-        NestedIterator<Key> docIter = getOrSetKeySource(documentRange, script);
+        NestedIterator<Key> docIter = getOrSetKeySource(documentRange, getScript());
 
         initKeySource = docIter;
 
@@ -961,8 +948,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
-                                getNonEventFields());
+                Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor,
+                                getScript(), getNonEventFields());
 
                 IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
                                 .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
@@ -1076,15 +1063,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected ASTJexlScript getScript(NestedQueryIterator<Key> documentSource) {
         if (null == documentSource) {
-            return script;
+            return getScript();
         }
         NestedQuery<Key> query = documentSource.getNestedQuery();
         if (null == query) {
-            return script;
+            return getScript();
         } else {
             ASTJexlScript rangeScript = query.getScript();
             if (null == rangeScript) {
-                return script;
+                return getScript();
             }
             return rangeScript;
         }
@@ -1465,6 +1452,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setFiNextSeek(this.getFiNextSeek())
                 .setEventNextSeek(this.getEventNextSeek())
                 .setTfNextSeek(this.getTfNextSeek())
+                .setUseRegexFilter(getCardinality() < getCardinalityThreshold())
                 .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);
