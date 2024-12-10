@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import org.junit.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.logic.filtered.DateRangeFilteredQueryLogic;
 import datawave.core.query.logic.filtered.QueryLogicFilterByDate;
@@ -42,7 +40,6 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.AuthorizationException;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
-import datawave.webservice.result.BaseQueryResponse;
 
 public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
     private DateRangeFilteredQueryLogic logic;
@@ -53,6 +50,33 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         delegate = createMock(QueryLogic.class);
         logic = new DateRangeFilteredQueryLogic();
         logic.setDelegate(delegate);
+    }
+
+    @Test
+    public void testNoChangeWhenInsideBounds() throws Exception {
+        QueryLogicFilterByDate filter = new QueryLogicFilterByDate();
+        filter.setStartDate(getDate("20241210 000000"));
+        filter.setEndDate(getDate("20241210 235959"));
+
+        logic.setFilter(filter);
+
+        Query settings = new QueryImpl();
+        settings.setBeginDate(getDate("20241210 000001"));
+        settings.setEndDate(getDate("20241210 235958"));
+
+        Capture<QueryImpl> settingsCapture = Capture.newInstance();
+
+        expect(delegate.initialize(eq(null), capture(settingsCapture), eq(null))).andReturn(null);
+
+        replayAll();
+
+        logic.initialize(null, settings, null);
+
+        // verify the dates are unchanged
+        assertEquals(settings.getBeginDate(), settingsCapture.getValue().getBeginDate());
+        assertEquals(settings.getEndDate(), settingsCapture.getValue().getEndDate());
+
+        verifyAll();
     }
 
     @Test
