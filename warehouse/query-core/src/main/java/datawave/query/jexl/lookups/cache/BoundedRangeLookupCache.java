@@ -25,9 +25,18 @@ public class BoundedRangeLookupCache extends LookupCache {
 
         public BoundedRangeCacheKey(String range, String startDate, String endDate, Set<String> types) {
             this.range = range;
-            this.startDate = startDate;
-            this.endDate = endDate;
             this.types = types;
+            if (startDate.length() > 8) {
+                this.startDate = startDate.substring(0, 8);
+            } else {
+                this.startDate = startDate;
+            }
+
+            if (endDate.length() > 8) {
+                this.endDate = endDate.substring(0, 8);
+            } else {
+                this.endDate = endDate;
+            }
         }
 
         @Override
