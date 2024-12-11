@@ -38,8 +38,11 @@ public class DateRangeFilteredQueryLogic extends FilteredQueryLogic {
 
     /**
      * Update the Query so that the begin date is no earlier than the filters begin date, and the end date is no later than the filters end date
-     * @param settings the query settings to adjust
-     * @param filter the filter to use to adjust the query settings
+     *
+     * @param settings
+     *            the query settings to adjust
+     * @param filter
+     *            the filter to use to adjust the query settings
      */
     private void applyFilterDateRange(Query settings, QueryLogicFilterByDate filter) {
         boolean modifiedDates = false;

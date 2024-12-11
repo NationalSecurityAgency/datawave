@@ -13,8 +13,11 @@ import datawave.microservice.query.Query;
 public class QueryLogicFilterByDate extends QueryDateRangePredicate implements FilteredQueryLogic.QueryLogicFilter {
     /**
      * Test the Query settings against the QueryDateRangePredicate
-     * @param settings the settings including a beginDate and endDate
-     * @param auths the query auths (unused for this test)
+     *
+     * @param settings
+     *            the settings including a beginDate and endDate
+     * @param auths
+     *            the query auths (unused for this test)
      * @return true if the query overlaps with the date range specified by the QueryDateRangePredicate, false otherwise
      */
     @Override
