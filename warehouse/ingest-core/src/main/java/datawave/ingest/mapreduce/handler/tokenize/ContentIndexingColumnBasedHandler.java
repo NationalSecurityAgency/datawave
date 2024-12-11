@@ -294,7 +294,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     termPosition = 0;
                     lastFieldName = indexedFieldName;
                 } else {
-                    termPosition = tokenHelper.getInterFieldPositionIncrement();
+                    termPosition += tokenHelper.getInterFieldPositionIncrement();
                 }
 
                 boolean indexField = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
