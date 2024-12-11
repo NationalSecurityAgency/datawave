@@ -146,6 +146,7 @@ public class Cardinality extends Attribute<Cardinality> {
 
     @Override
     public void write(Kryo kryo, Output output) {
+        super.writeMetadata(kryo, output);
         output.writeString(this.content.fieldName);
         output.writeString(this.content.lower);
         output.writeString(this.content.upper);
