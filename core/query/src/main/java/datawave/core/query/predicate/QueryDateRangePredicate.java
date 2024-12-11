@@ -5,6 +5,9 @@ import java.util.function.Predicate;
 
 import datawave.microservice.query.Query;
 
+/**
+ * Determine if a Query overlaps a defined Date range. A null startDate or endDate is automatically accepted (treated as unbounded).
+ */
 public class QueryDateRangePredicate implements Predicate<Query> {
     private Date startDate;
     private Date endDate;
