@@ -31,6 +31,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.rfile.RFile;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -38,6 +39,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.shaded.com.google.common.io.Files;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -1132,6 +1134,76 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
+    public void E_eventOnly_metadata_test() throws IOException, InterruptedException, ParseException {
+        conf.setBoolean(ShardReindexMapper.GENERATE_METADATA, true);
+        enableEventProcessing(true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        Key event = expectEventOnly(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDZ", "ABC", true);
+        context.progress();
+
+        // frequency field
+        Key fKey = new Key("FIELDZ", "f", "samplecsv" + '\u0000' + "20240216", event.getTimestamp());
+        BulkIngestKey fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
+        mockContextWriter.write(eq(fBik), eq(new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1l))), eq(context));
+
+        // event field
+        Key eKey = new Key("FIELDZ", "e", "samplecsv", event.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.eq(new Value()), eq(context));
+
+        mockContextWriter.cleanup(context);
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(event, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void E_multiEventOnly_metadata_test() throws IOException, InterruptedException, ParseException {
+        conf.setBoolean(ShardReindexMapper.GENERATE_METADATA, true);
+        enableEventProcessing(true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        Key event = expectEventOnly(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDZ", "ABC", true);
+        context.progress();
+        Key event2 = expectEventOnly(context, mockContextWriter, "20240218", "1.2.3", "samplecsv", "FIELDZ", "ABC", true);
+        context.progress();
+
+        // frequency field for 20240218
+        Key fKey = new Key("FIELDZ", "f", "samplecsv" + '\u0000' + "20240218", event2.getTimestamp());
+        BulkIngestKey fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
+        mockContextWriter.write(eq(fBik), eq(new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1l))), eq(context));
+
+        // frequency field for 20240216
+        fKey = new Key("FIELDZ", "f", "samplecsv" + '\u0000' + "20240216", event.getTimestamp());
+        fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
+        mockContextWriter.write(eq(fBik), eq(new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1l))), eq(context));
+
+        // event field only with 20240218
+        Key eKey = new Key("FIELDZ", "e", "samplecsv", event2.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.eq(new Value()), eq(context));
+
+        mockContextWriter.cleanup(context);
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(event, new Value(), context);
+        mapper.map(event2, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
     public void createAndVerifyTest() throws IOException, ClassNotFoundException, InterruptedException {
         conf.setBoolean(ShardReindexMapper.ENABLE_REINDEX_COUNTERS, true);
         conf.setBoolean(ShardReindexMapper.DUMP_COUNTERS, true);
@@ -1259,6 +1331,21 @@ public class ShardReindexMapperTest extends EasyMockSupport {
                 contextWriter.write(eq(tfBik), eq(tfValue), eq(context));
                 offset += 1;
             }
+        }
+
+        return event;
+    }
+
+    private Key expectEventOnly(Mapper.Context context, ContextWriter<BulkIngestKey,Value> contextWriter, String date, String uid, String dataType, String field, String value, boolean writeEvent) throws ParseException, IOException, InterruptedException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse(date);
+        long eventTime = getTimestamp(d);
+        String shard = getShard(d, uid);
+
+        Key event = new Key(shard, dataType + '\u0000' + uid, field + '\u0000' + value, "", eventTime);
+
+        if (writeEvent) {
+            contextWriter.write(eq(new BulkIngestKey(new Text("shard"), event)), isA(Value.class), eq(context));
         }
 
         return event;
