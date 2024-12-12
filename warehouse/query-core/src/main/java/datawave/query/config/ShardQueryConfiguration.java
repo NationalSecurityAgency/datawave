@@ -122,7 +122,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
-    private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -504,6 +503,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean sortQueryPostIndexWithTermCounts = false;
 
     /**
+     * If a query's cardinality is under this threshold, ivarators will be run as context required filter iterators.
+     */
+    private int cardinalityThreshold;
+
+    /**
      * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
      * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
      */
@@ -568,7 +572,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
-        this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -752,6 +755,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSortQueryPreIndexWithFieldCounts(other.isSortQueryPreIndexWithFieldCounts());
         this.setSortQueryPostIndexWithTermCounts(other.isSortQueryPostIndexWithTermCounts());
         this.setSortQueryPostIndexWithFieldCounts(other.isSortQueryPostIndexWithFieldCounts());
+        this.setCardinalityThreshold(other.getCardinalityThreshold());
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
@@ -2274,14 +2278,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
-    public boolean getSequentialScheduler() {
-        return sequentialScheduler;
-    }
-
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        this.sequentialScheduler = sequentialScheduler;
-    }
-
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2799,6 +2795,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
 
+    public int getCardinalityThreshold() {
+        return cardinalityThreshold;
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        this.cardinalityThreshold = cardinalityThreshold;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -2828,7 +2832,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
-                getSequentialScheduler() == that.getSequentialScheduler() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
                 getLogTimingDetails() == that.getLogTimingDetails() &&
                 getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
@@ -3003,10 +3006,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
-                isSortQueryPreIndexWithImpliedCounts() == isSortQueryPreIndexWithImpliedCounts() &&
-                isSortQueryPreIndexWithFieldCounts() == isSortQueryPreIndexWithFieldCounts() &&
-                isSortQueryPostIndexWithTermCounts() == isSortQueryPostIndexWithTermCounts() &&
-                isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts();
+                isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
+                isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
+                isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
+                isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
+                getCardinalityThreshold() == that.getCardinalityThreshold();
         // @formatter:on
     }
 
@@ -3036,7 +3040,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
-                getSequentialScheduler(),
                 getCollectTimingDetails(),
                 getLogTimingDetails(),
                 getSendTimingToStatsd(),
@@ -3211,7 +3214,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithImpliedCounts(),
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
-                isSortQueryPostIndexWithFieldCounts()
+                isSortQueryPostIndexWithFieldCounts(),
+                getCardinalityThreshold()
         );
         // @formatter:on
     }

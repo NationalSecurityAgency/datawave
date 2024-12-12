@@ -69,6 +69,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -91,6 +92,7 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.CardinalityVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -282,11 +284,13 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
+    public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
     protected Map<String,String> options;
 
     protected String scanId;
     protected String query;
+    private ASTJexlScript script;
     protected String queryId;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
@@ -326,6 +330,8 @@ public class QueryOptions implements OptionDescriber {
 
     // filter for any key type (fi, event, tf)
     protected EventDataQueryFilter evaluationFilter;
+    protected EventDataQueryFilter fiEvaluationFilter;
+    protected EventDataQueryFilter eventEvaluationFilter;
     // filter specifically for event keys. required when performing a seeking aggregation
     protected EventDataQueryFilter eventFilter;
 
@@ -453,10 +459,13 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
+    private long cardinality = Long.MAX_VALUE;
+    private long cardinalityThreshold = Long.MIN_VALUE;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
+        this.script = other.script;
         this.queryId = other.queryId;
         this.scanId = other.scanId;
         this.disableEvaluation = other.disableEvaluation;
@@ -510,6 +519,8 @@ public class QueryOptions implements OptionDescriber {
         this.getDocumentKey = other.getDocumentKey;
         this.equality = other.equality;
         this.evaluationFilter = other.evaluationFilter;
+        this.fiEvaluationFilter = other.fiEvaluationFilter;
+        this.eventEvaluationFilter = other.eventEvaluationFilter;
 
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
@@ -567,6 +578,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+        this.cardinality = other.cardinality;
     }
 
     public String getQuery() {
@@ -790,7 +802,7 @@ public class QueryOptions implements OptionDescriber {
      */
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
+            this.fiAggregator = new IdentityAggregator(getNonEventFields(), getFiEvaluationFilter(), getEventNextSeek());
         }
         return fiAggregator;
     }
@@ -799,8 +811,28 @@ public class QueryOptions implements OptionDescriber {
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
 
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
+    }
+
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (evaluationFilter == null) {
+            // allows standard event queries to perform a seeking aggregation with field filtering
+            evaluationFilter = getEventFilter();
+        }
+        return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
+    }
+
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
         this.evaluationFilter = evaluationFilter;
+    }
+
+    public void setFiEvaluationFilter(EventDataQueryFilter fiEvaluationFilter) {
+        this.fiEvaluationFilter = fiEvaluationFilter;
+    }
+
+    public void setEventEvaluationFilter(EventDataQueryFilter eventEvaluationFilter) {
+        this.eventEvaluationFilter = eventEvaluationFilter;
     }
 
     /**
@@ -864,13 +896,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     private Set<String> getQueryFields() {
-        try {
-            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            return JexlASTHelper.getIdentifierNames(script);
-        } catch (ParseException e) {
-            // ignore
-            throw new FatalBeanException("Could not parse query");
-        }
+        return JexlASTHelper.getIdentifierNames(getScript());
     }
 
     public TimeFilter getTimeFilter() {
@@ -1497,7 +1523,20 @@ public class QueryOptions implements OptionDescriber {
             this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
         }
 
+        // parse out cardinality threshold
+        if (options.containsKey(CARDINALITY_THRESHOLD)) {
+            String option = options.get(CARDINALITY_THRESHOLD);
+            this.cardinalityThreshold = Long.parseLong(option);
+        }
+
+        // cardinality requires term counts and a threshold
+        if (termCounts != null && !termCounts.isEmpty() && cardinalityThreshold > 0) {
+            cardinality = CardinalityVisitor.cardinality(getScript(), termCounts);
+        }
+
         this.evaluationFilter = null;
+        this.fiEvaluationFilter = null;
+        this.eventEvaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = false;
 
@@ -2651,5 +2690,25 @@ public class QueryOptions implements OptionDescriber {
                 return new DefaultOptions(values);
             }
         }
+    }
+
+    public ASTJexlScript getScript() {
+        if (script == null) {
+            try {
+                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            } catch (ParseException e) {
+                log.error("Failed to parse query", e);
+                throw new DatawaveFatalQueryException("Failed to parse query");
+            }
+        }
+        return script;
+    }
+
+    public long getCardinality() {
+        return cardinality;
+    }
+
+    public long getCardinalityThreshold() {
+        return cardinalityThreshold;
     }
 }
