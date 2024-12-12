@@ -73,6 +73,8 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
                 timedScanFuture = execService.submit(createTimedCallable(scanner));
             } catch (Exception e) {
                 log.error("Error expanding term into discrete fields", e);
+                // close scanner in case of an exception prior to execution of future
+                scannerFactory.close(scanner);
                 throw new RuntimeException(e);
             }
             // Note: scanners should never be closed here in a 'finally' block. The createTimedCallable
