@@ -181,6 +181,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.SUMMARY_FUNCTION:
+                    break;
                 case QueryFunctions.MATCH_REGEX:
                 case BETWEEN:
                 case LENGTH:
