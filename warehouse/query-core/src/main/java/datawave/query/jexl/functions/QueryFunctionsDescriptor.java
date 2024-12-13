@@ -246,6 +246,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.SUMMARY_FUNCTION:
+                    break;
                 case QueryFunctions.RENAME_FUNCTION:
                     for (JexlNode arg : args) {
                         String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
