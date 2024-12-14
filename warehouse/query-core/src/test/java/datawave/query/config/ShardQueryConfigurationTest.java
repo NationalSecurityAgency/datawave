@@ -268,6 +268,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFilters", true);
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
+        defaultValues.put("fieldRuleClassName", null);
+        updatedValues.put("fieldRuleClassName", "proj.datawave.query.planner.rule.someFieldRuleClass");
         defaultValues.put("indexHoles", Lists.newArrayList());
         updatedValues.put("indexHoles", Lists.newArrayList(new IndexHole()));
         defaultValues.put("indexedFields", Sets.newHashSet());
