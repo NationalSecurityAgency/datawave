@@ -352,7 +352,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, this.ingestHelper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, visibility, event.getDate(), this.ingestHelper.getDeleteMode());
+        Key k = createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         contextWriter.write(bKey, DataTypeHandler.NULL_VALUE, context);
     }
