@@ -157,6 +157,7 @@
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
+        <version.weld-spi>2.3.Final</version.weld-spi>
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
         <version.wildfly-common>1.5.1.Final</version.wildfly-common>

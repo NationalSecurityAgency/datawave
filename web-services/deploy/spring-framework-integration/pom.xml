@@ -196,13 +196,7 @@
         <dependency>
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-spi</artifactId>
-            <version>${version.weld-test}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld.module</groupId>
-            <artifactId>weld-web</artifactId>
-            <version>${version.weld-test}</version>
+            <version>${version.weld-spi}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
