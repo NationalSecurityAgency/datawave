@@ -73,6 +73,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>io.astefanutti.metrics.cdi</groupId>
+            <artifactId>metrics-cdi</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-annotation</artifactId>
             <version>${version.dropwizard-metrics}</version>
