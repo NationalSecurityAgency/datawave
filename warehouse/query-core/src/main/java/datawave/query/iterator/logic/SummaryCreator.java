@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import datawave.query.Constants;
 import datawave.query.table.parser.ContentKeyValueFactory;
 
 /**
@@ -54,14 +55,10 @@ public class SummaryCreator {
         // if we have a view name that matches the list...
         Map<String,String> summaries = new HashMap<>();
         for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
-            if (entry.getKey().startsWith(currentViewName)) {
-                // decode and decompress the content
-                String summary = new String(ContentKeyValueFactory.decodeAndDecompressContent(entry.getValue()));
-                // if the content is longer than the specified length, truncate it
-                if (summary.length() > summarySize) {
-                    summary = summary.substring(0, summarySize);
-                }
-                summaries.put(entry.getKey(), summary);
+            // first part is view, second part is if compressed still
+            String[] s = entry.getKey().split(Constants.COLON);
+            if (s[0].startsWith(currentViewName)) {
+                summaries.put(entry.getKey(), getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(s[1])));
             }
         }
         if (!summaries.isEmpty()) {
@@ -77,15 +74,28 @@ public class SummaryCreator {
 
     /** a straight-up match between view names */
     private static String getSimpleSummary(String currentViewName, Map<String,byte[]> foundContent, int summarySize) {
-        if (foundContent.containsKey(currentViewName)) {
-            // decode and decompress the content
-            String summary = new String(ContentKeyValueFactory.decodeAndDecompressContent(foundContent.get(currentViewName)));
-            // if the content is longer than the specified length, truncate it
-            if (summary.length() > summarySize) {
-                summary = summary.substring(0, summarySize);
+        for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
+            // first part is view, second part is if compressed still
+            String[] s = entry.getKey().split(Constants.COLON);
+            if (s[0].equals(currentViewName)) {
+                return currentViewName + ": " + getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(s[1]));
             }
-            return currentViewName + ": " + summary;
         }
         return null;
+    }
+
+    private static String getSummaryForView(byte[] content, int summarySize, boolean needsDecompressing) {
+        String summary;
+        if (needsDecompressing) {
+            // decode and decompress the content
+            summary = new String(ContentKeyValueFactory.decodeAndDecompressContent(content));
+        } else {
+            summary = new String(content);
+        }
+        // if the content is longer than the specified length, truncate it
+        if (summary.length() > summarySize) {
+            summary = summary.substring(0, summarySize);
+        }
+        return summary;
     }
 }

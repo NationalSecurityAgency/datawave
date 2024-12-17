@@ -28,7 +28,7 @@ public class SummaryOptions implements Serializable {
     private static final String VIEWS_PARAMETER = "VIEWS";
     private static final String ONLY_PARAMETER = "ONLY";
 
-    private static final int DEFAULT_SIZE = 150;
+    public static final int DEFAULT_SIZE = 150;
 
     private int summarySize;
     private ArrayList<String> viewNamesList;
@@ -110,7 +110,7 @@ public class SummaryOptions implements Serializable {
             if (summaryOptions.summarySize == 0) {
                 summaryOptions.summarySize = DEFAULT_SIZE;
             }
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             log.warn("Unable to parse summary size string, returning empty SummaryOptions: {}", string, e);
             return new SummaryOptions();
         }

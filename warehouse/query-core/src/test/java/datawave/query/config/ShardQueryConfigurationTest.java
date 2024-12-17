@@ -472,7 +472,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("excerptIterator", TermFrequencyExcerptIterator.class);
         updatedValues.put("excerptIterator", TermFrequencyIndexIterator.class);
         defaultValues.put("summaryOptions", new SummaryOptions());
-        updatedValues.put("summaryOptions", SummaryOptions.from("50"));
+        updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
         defaultValues.put("summaryIterator", ContentSummaryIterator.class);
         updatedValues.put("summaryIterator", ContentSummaryIterator.class);
         defaultValues.put("fiFieldSeek", -1);

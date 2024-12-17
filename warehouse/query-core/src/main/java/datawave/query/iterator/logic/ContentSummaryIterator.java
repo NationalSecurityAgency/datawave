@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.query.Constants;
 import datawave.query.attributes.SummaryOptions;
+import datawave.query.table.parser.ContentKeyValueFactory;
 
 /**
  * This iterator is intended to scan the d column for a specified document. The result will be a summary for each document scanned.
@@ -40,6 +41,11 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
     public static final String VIEW_NAMES = "view.names";
 
     public static final String ONLY_SPECIFIED = "only.specified";
+
+    private static final int MAX_SUMMARY_SIZE = 1500;
+
+    // 100 megabytes
+    private static final int MAX_CONTENT_SIZE = 100 * 1024 * 1024;
 
     /**
      * A list of view names to potentially create a summary for. The closer to the front in the list, the higher the priority to get a summary for that view
@@ -86,12 +92,12 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.source = source;
 
-        viewSummaryOrder.addAll(List.of("CONTENT", "CONTENT1"));
+        viewSummaryOrder.add("CONTENT");
 
         if (options.containsKey(SUMMARY_SIZE)) {
-            this.summarySize = Math.max(1, Math.min(Integer.parseInt(options.get(SUMMARY_SIZE)), 1500));
+            this.summarySize = Math.max(1, Math.min(Integer.parseInt(options.get(SUMMARY_SIZE)), MAX_SUMMARY_SIZE));
         } else {
-            this.summarySize = 150;
+            this.summarySize = SummaryOptions.DEFAULT_SIZE;
         }
 
         // if "ONLY" we will clear the view names list so that we only use the ones passed in
@@ -246,11 +252,11 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
                 if (name.endsWith("*")) {
                     name = name.substring(0, name.length() - 1);
                     if (currentViewName.startsWith(name)) {
-                        foundContent.put(currentViewName, source.getTopValue().get());
+                        addContentToFound(foundContent, currentViewName, source);
                     }
                 } else {
                     if (currentViewName.equalsIgnoreCase(name)) {
-                        foundContent.put(currentViewName, source.getTopValue().get());
+                        addContentToFound(foundContent, currentViewName, source);
                     }
                 }
             }
@@ -272,6 +278,17 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
         tv = null;
     }
 
+    private static void addContentToFound(Map<String,byte[]> foundContent, String currentViewName, SortedKeyValueIterator<Key,Value> source) {
+        // true for compressed, false for uncompressed
+        byte[] content = source.getTopValue().get();
+        if (content.length < MAX_CONTENT_SIZE) {
+            foundContent.put(currentViewName + Constants.COLON + Boolean.TRUE, content);
+        } else {
+            content = ContentKeyValueFactory.decodeAndDecompressContent(content);
+            foundContent.put(currentViewName + Constants.COLON + Boolean.FALSE, content);
+        }
+    }
+
     /**
      * Seek to the dt/uid following the one passed in
      *
@@ -283,7 +300,7 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
      *             for issues with read/write
      */
     private void seekToNextUid(Text row, String dtAndUid) throws IOException {
-        Key startKey = new Key(row, Constants.D_COLUMN_FAMILY, new Text(dtAndUid + '.'));
+        Key startKey = new Key(row, Constants.D_COLUMN_FAMILY, new Text(dtAndUid + Constants.ONE_BYTE));
         this.scanRange = new Range(startKey, false, this.scanRange.getEndKey(), this.scanRange.isEndKeyInclusive());
         if (log.isDebugEnabled()) {
             log.debug("{} seek'ing to next document: {}", this, this.scanRange);
