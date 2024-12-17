@@ -622,6 +622,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         configureExcerpts(config, cfg);
 
+        configureSummaries(config, cfg);
+
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
@@ -652,6 +654,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
+        }
+    }
+
+    private void configureSummaries(ShardQueryConfiguration config, IteratorSetting cfg) {
+        if (config.getSummaryOptions().getSummarySize() != 0) {
+            addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
+            addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
         }
     }
 
@@ -2477,29 +2486,61 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
 
-            TypeMetadata typeMetadata = getTypeMetadata();
-
-            if (config.getReduceTypeMetadata() && !isPreload) {
-                Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
-                typeMetadata = typeMetadata.reduce(fieldsToRetain);
-            }
-
-            String serializedTypeMetadata = typeMetadata.toString();
-
             if (compressMappings) {
                 nonIndexedTypes = QueryOptions.compressOption(nonIndexedTypes, QueryOptions.UTF8);
                 requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
-                if (!config.getReduceTypeMetadataPerShard()) {
-                    // if we're reducing later, don't compress the type metadata
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
-                }
             }
 
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
-            addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
 
+            // now handle TypeMetadata
+            boolean canReduceTypeMetadata = !config.getProjectFields().isEmpty() || !config.getDisallowlistedFields().isEmpty();
+            if (!canReduceTypeMetadata) {
+                config.setReduceTypeMetadata(false);
+                config.setReduceTypeMetadataPerShard(false);
+            }
+
+            if (!isPreload) {
+                // TypeMetadata is serialized at the end of query planning for two reasons
+                // First, the metadata is fetched in an async thread so don't wait on that during a preload
+                // Second, the query model application updates the projection fields, so that needs to happen first
+                TypeMetadata typeMetadata = getTypeMetadata();
+
+                if (canReduceTypeMetadata && (config.getReduceTypeMetadata() || config.getReduceTypeMetadataPerShard())) {
+                    // If per-shard reduction is enabled we still attempt a first-pass reduction here. This reduces
+                    // the amount of future work done by the VisitorFunction and the raw bytes passed around.
+
+                    Set<String> fieldsToRetain = new HashSet<>();
+                    if (!config.getProjectFields().isEmpty()) {
+                        // sum query fields, projection fields, and composite fields
+                        fieldsToRetain.addAll(ReduceFields.getQueryFields(config.getQueryTree()));
+                        fieldsToRetain.addAll(config.getProjectFields());
+                        fieldsToRetain.addAll(config.getCompositeToFieldMap().keySet());
+                        // GroupBy fields already added to projection at this point in planning
+                        // Unique and Excerpt fields do not affect returned fields
+                    } else {
+                        // sum all fields, remove exclude fields
+                        fieldsToRetain.addAll(typeMetadata.keySet()); // metadata fetch filtered by datatype
+                        // might need to add composite fields here
+                        fieldsToRetain.removeAll(config.getDisallowlistedFields());
+                        // GroupBy fields already added to projection at this point in planning
+                        // Unique and Excerpt fields do not affect returned fields
+                    }
+
+                    typeMetadata = typeMetadata.reduce(fieldsToRetain);
+                }
+
+                // only compress if enabled AND not reducing per shard
+                // type metadata will be serialized in the VisitorFunction
+                String serializedTypeMetadata = typeMetadata.toString();
+                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                }
+
+                addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
+            }
         } catch (IOException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.TYPE_MAPPING_CONFIG_ERROR, e);
             throw new DatawaveQueryException(qe);
@@ -2650,6 +2691,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
+
+        if (config.getCardinalityThreshold() > 0) { // only add option if it is set
+            addOption(cfg, QueryOptions.CARDINALITY_THRESHOLD, Integer.toString(config.getCardinalityThreshold()), false);
+        }
     }
 
     /**
@@ -2873,6 +2918,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            // TODO -- in practice the second half of this config is always false, so this check is pointless
             if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
@@ -2880,6 +2926,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             stopwatch.stop();
         }
+
+        // only requires a full table scan IFF it's only ivarators at the top level. single ivarators may be delayed.
         if (needsFullTable) {
             if (config.getFullTableScanEnabled()) {
                 ranges = this.getFullScanRange(config, queryTree);

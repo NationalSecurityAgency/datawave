@@ -1,5 +1,5 @@
 /**
- * Standard file is based on the TextParser.jj from lucene 2.3
+ * Standard file is based on the TextParser.f from lucene 2.3
  */
 
 options {
@@ -127,7 +127,7 @@ PARSER_END(AccumuloSyntaxParser)
   <AND:       "AND" >
 | <OR:        "OR" >
 | <NOT:       "NOT" >
-| <FUNCTION:  "#" (<_TERM_START_CHAR>)+ "(" <_FUNCTION_ARG> ( (<_WHITESPACE>)* "," (<_WHITESPACE>)* <_FUNCTION_ARG> )* (<_WHITESPACE>)* ")" >
+| <FUNCTION:  "#" (<_TERM_START_CHAR>)+ "(" (<_FUNCTION_ARG> ( (<_WHITESPACE>)* "," (<_WHITESPACE>)* <_FUNCTION_ARG> )* (<_WHITESPACE>)*)* ")" >
 | <LPAREN:    "(" >
 | <RPAREN:    ")" >
 | <OP_COLON:  ":" >
