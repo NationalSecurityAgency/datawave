@@ -76,7 +76,9 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
     public FilterResult filter(Key k, Value v) {
 
         // keep it simple for now
-        log.trace("tk: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("tk: {}", k.toStringNoTime());
+        }
 
         parser.parse(k);
 

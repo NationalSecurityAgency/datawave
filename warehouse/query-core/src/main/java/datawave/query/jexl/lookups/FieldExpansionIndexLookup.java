@@ -45,7 +45,7 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
     public FieldExpansionIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String term, Set<String> fields,
                     ExecutorService execService) {
         super(config, scannerFactory, true, execService);
-        this.term = term.toLowerCase();
+        this.term = term;
         this.fields = new HashSet<>();
         if (fields != null) {
             this.fields.addAll(fields);

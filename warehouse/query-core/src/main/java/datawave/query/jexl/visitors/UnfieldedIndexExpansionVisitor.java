@@ -30,7 +30,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.lookups.EmptyIndexLookup;
 import datawave.query.jexl.lookups.FieldExpansionIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;

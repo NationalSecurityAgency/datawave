@@ -5,10 +5,12 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -20,6 +22,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
+import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
@@ -73,7 +77,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                     return getIndexQuery();
                 case QueryFunctions.INCLUDE_TEXT:
                     // Return the appropriate index query.
-                    return getTextIndexQuery();
+                    return getTextIndexQuery(helper);
                 default:
                     // Return the true node if unable to parse arguments.
                     return TRUE_NODE;
@@ -101,24 +105,75 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             }
         }
 
-        private JexlNode getTextIndexQuery() {
-            JexlNode node0 = args.get(0);
-            final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
-            if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
-                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
-            } else {
-                // node0 is an Or node or an And node
-                // copy it
-                JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
-                int i = 0;
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
-                    kid.jjtSetParent(newParent);
-                    newParent.jjtAddChild(kid, i++);
+        /**
+         * The index query for a text function MUST normalize the value as the actual value may differ between the event key and the index key
+         *
+         * @param helper
+         *            a metadata helper
+         * @return a JexlNode
+         */
+        private JexlNode getTextIndexQuery(MetadataHelper helper) {
+            List<JexlNode> children = new LinkedList<>();
+
+            if (args.size() == 2) {
+                // single field value
+                createChildren(children, args.get(0), args.get(1), helper);
+            } else if (args.size() % 2 == 1) {
+                // dealing with {AND/OR, field, value, field value}
+                for (int i = 1; i < args.size(); i += 2) {
+                    createChildren(children, args.get(i), args.get(i + 1), helper);
                 }
-                return newParent;
+            }
+
+            switch (children.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    return children.get(0);
+                default:
+                    // expand into an OR, unless an intersection is specifically requested
+                    String expansion = JexlASTHelper.getIdentifier(args.get(0));
+                    if (expansion.equals("AND")) {
+                        return JexlNodeFactory.createAndNode(children);
+                    } else {
+                        return JexlNodeFactory.createOrNode(children);
+                    }
+            }
+        }
+
+        private void createChildren(List<JexlNode> children, JexlNode fieldName, JexlNode fieldValue, MetadataHelper helper) {
+            String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) fieldName).getName());
+            String literal = JexlNodes.getIdentifierOrLiteralAsString(fieldValue);
+            Set<String> values = getNormalizedValues(field, literal, helper);
+            for (String value : values) {
+                children.add(JexlNodeFactory.buildNode((ASTEQNode) null, field, value));
+            }
+        }
+
+        private Set<String> getNormalizedValues(String field, String value, MetadataHelper helper) {
+            Set<String> values = new HashSet<>();
+            values.add(value); // retain original
+
+            Set<Type<?>> types = getTypesForField(field, helper);
+            for (Type<?> type : types) {
+                try {
+                    values.add(type.normalize(value));
+                } catch (IllegalArgumentException e) {
+                    // failure to normalize is not a problem
+                }
+            }
+            return values;
+        }
+
+        private Set<Type<?>> getTypesForField(String field, MetadataHelper helper) {
+            try {
+                if (field.equals(Constants.ANY_FIELD)) {
+                    return helper.getAllDatatypes();
+                } else {
+                    return helper.getDatatypesForField(field);
+                }
+            } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
         }
 

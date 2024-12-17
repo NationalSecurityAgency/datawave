@@ -432,6 +432,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String anyState = this.dataManager.convertAnyField(statePhrase);
             String anyCont = this.dataManager.convertAnyField(contPhrase);
             anyQuery = anyCity + AND_OP + anyState + AND_OP + anyCont;
+
             runTest(query, anyQuery);
         }
     }

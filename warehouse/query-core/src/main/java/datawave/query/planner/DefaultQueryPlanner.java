@@ -946,6 +946,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         TraceStopwatch stopwatch = null;
 
+        // need to fetch field to datatype map first
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
             config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
@@ -954,7 +957,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!disableExpandIndexFunction) {
             // expand the index queries for the functions
             config.setQueryTree(timedExpandIndexQueriesForFunctions(timers, config.getQueryTree(), config, metadataHelper));
+            System.out.println(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
         }
+
+        // must expand multi-normalized terms after index queries but before index expansion
+        // for example, f:includeText(_ANYFIELD_, 'value')
+        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
+        System.out.println(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
 
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
@@ -986,11 +995,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Regex/Range Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
 
-        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
-
         config.setQueryTree(timedFixUnindexedNumerics(timers, config.getQueryTree(), config));
-
-        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // if we have any index holes, then mark em
         if (!config.getIndexHoles().isEmpty()) {
