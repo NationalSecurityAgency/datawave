@@ -285,6 +285,8 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
             foundContent.put(currentViewName + Constants.COLON + Boolean.TRUE, content);
         } else {
             content = ContentKeyValueFactory.decodeAndDecompressContent(content);
+            // pre-truncate big content to MAX_SUMMARY_SIZE
+            content = new String(content).substring(0, MAX_SUMMARY_SIZE).getBytes();
             foundContent.put(currentViewName + Constants.COLON + Boolean.FALSE, content);
         }
     }
