@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ColumnVisibilityOrFilter;
+import datawave.util.CompositeTimestamp;
 
 /**
  * Field age off filter. Traverses through indexed tables and non-indexed tables. Example follows. Note that any field TTL will follow the same units specified
@@ -83,7 +84,7 @@ public class FieldAgeOffFilter extends AppliedRule {
     private static final Logger log = Logger.getLogger(FieldAgeOffFilter.class);
 
     /**
-     * Determine whether or not the rules are applied
+     * Determine whether the rules are applied
      */
     protected boolean ruleApplied = false;
 
@@ -103,9 +104,9 @@ public class FieldAgeOffFilter extends AppliedRule {
     protected Set<FieldExclusionType> fieldExcludeOptions = null;
 
     /**
-     * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
-     * pair through the rule. A value of {@code true} indicates that he pair should be passed onward through the {@code Iterator} stack, and {@code false}
-     * indicates that the {@code (Key, Value)} pair should not be passed on.
+     * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether to allow the {@code (Key, Value)} pair
+     * through the rule. A value of {@code true} indicates that he pair should be passed onward through the {@code Iterator} stack, and {@code false} indicates
+     * that the {@code (Key, Value)} pair should not be passed on.
      *
      * <p>
      * If the value provided in the parameter {@code k} does not match the REGEX pattern specified in this filter's configuration options, then a value of
@@ -115,17 +116,12 @@ public class FieldAgeOffFilter extends AppliedRule {
      *            {@code Key} object containing the row, column family, and column qualifier.
      * @param v
      *            {@code Value} object containing the value corresponding to the {@code Key: k}
-     * @return {@code boolean} value indicating whether or not to allow the {@code Key, Value} through the {@code Filter}.
+     * @return {@code boolean} value indicating whether to allow the {@code Key, Value} through the {@code Filter}.
      */
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
 
         ruleApplied = false;
-        // if accepted by ColumnVisibilityOrFilter logic, pass the K/V up the iterator stack
-        // otherwise evaluate based on field
-        if (cvOrFilter.hasToken(k, v, this.cvOrFilter.getPatternBytes()) == false) {
-            return true;
-        }
 
         // get the column qualifier, so that we can use it throughout
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
@@ -133,9 +129,7 @@ public class FieldAgeOffFilter extends AppliedRule {
         ByteSequence field = null;
         FieldExclusionType candidateExclusionType = null;
 
-        /**
-         * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
-         */
+        // Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
         if (isIndextable) {
             field = k.getColumnFamilyData();
 
@@ -205,13 +199,15 @@ public class FieldAgeOffFilter extends AppliedRule {
             return true;
         }
 
-        Long dataTypeCutoff = (fieldTimes.containsKey(field)) ? fieldTimes.get(field) : null;
-        if (dataTypeCutoff != null) {
-            ruleApplied = true;
-            return k.getTimestamp() > dataTypeCutoff;
+        Long dataTypeCutoff = fieldTimes.get(field);
+
+        // evaluating field first then the ColumnVisibilityOrFilter based on performance test results
+        if (dataTypeCutoff == null || !cvOrFilter.hasToken(k, v, this.cvOrFilter.getPatternBytes())) {
+            return true;
         }
 
-        return true;
+        ruleApplied = true;
+        return CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > dataTypeCutoff;
     }
 
     /**
@@ -274,7 +270,7 @@ public class FieldAgeOffFilter extends AppliedRule {
                 isIndextable = Boolean.parseBoolean(iterEnv.getConfig().get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
             }
         } else { // legacy
-            isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
+            isIndextable = Boolean.parseBoolean(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
         }
 
         fieldExcludeOptions = new HashSet<>();
