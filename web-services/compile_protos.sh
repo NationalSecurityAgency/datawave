@@ -1,11 +1,11 @@
 #!/bin/bash 
 
 # test to see if we have protoc installed
-VERSION=`protoc --version 2>/dev/null | grep "2.5.0" |  wc -l`
+VERSION=`protoc --version 2>/dev/null | grep "3.16.3" |  wc -l`
 if [ "$VERSION" -ne 1 ] ; then
    # Nope: bail
-   echo "::protoc is not available or incorrect version. Requires libprotoc 2.5.0"
-#   exit 0
+   echo "::protoc is not available or incorrect version. Requires libprotoc 3.16.0"
+   exit 0
 fi
 
 PROTODIRS="client/src/main/protobuf common-util/src/main/protobuf"

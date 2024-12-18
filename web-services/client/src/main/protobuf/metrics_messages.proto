@@ -12,12 +12,12 @@ message PageMetric {
 }
 
 message QueryMetric {
-	string query_type = 1;
-	string user = 2;
-	int64 create_date = 3;
-	string query_id = 4;
-	uint64 setup_time = 5;
-	PageMetric page_times = 6;
+	optional string query_type = 1;
+	optional string user = 2;
+	optional int64 create_date = 3;
+	optional string query_id = 4;
+	optional uint64 setup_time = 5;
+	repeated PageMetric page_times = 6;
 }
 
 message QueryMetricListResponse {

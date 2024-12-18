@@ -1188,6 +1188,13 @@ public final class ResponseMessages {
         /**
          * <code>uint32 numResults = 5;</code>
          *
+         * @return Whether the numResults field is set.
+         */
+        boolean hasNumResults();
+
+        /**
+         * <code>uint32 numResults = 5;</code>
+         *
          * @return The numResults.
          */
         int getNumResults();
@@ -1234,6 +1241,7 @@ public final class ResponseMessages {
                                             datawave.webservice.result.ResponseMessages.QueryImplListResponse.Builder.class);
         }
 
+        private int bitField0_;
         public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
         private long operationTimeMs_;
 
@@ -1382,6 +1390,16 @@ public final class ResponseMessages {
         /**
          * <code>uint32 numResults = 5;</code>
          *
+         * @return Whether the numResults field is set.
+         */
+        @java.lang.Override
+        public boolean hasNumResults() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <code>uint32 numResults = 5;</code>
+         *
          * @return The numResults.
          */
         @java.lang.Override
@@ -1417,7 +1435,7 @@ public final class ResponseMessages {
             for (int i = 0; i < query_.size(); i++) {
                 output.writeMessage(4, query_.get(i));
             }
-            if (numResults_ != 0) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 output.writeUInt32(5, numResults_);
             }
             getUnknownFields().writeTo(output);
@@ -1447,7 +1465,7 @@ public final class ResponseMessages {
             for (int i = 0; i < query_.size(); i++) {
                 size += com.google.protobuf.CodedOutputStream.computeMessageSize(4, query_.get(i));
             }
-            if (numResults_ != 0) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeUInt32Size(5, numResults_);
             }
             size += getUnknownFields().getSerializedSize();
@@ -1473,8 +1491,12 @@ public final class ResponseMessages {
                 return false;
             if (!getQueryList().equals(other.getQueryList()))
                 return false;
-            if (getNumResults() != other.getNumResults())
+            if (hasNumResults() != other.hasNumResults())
                 return false;
+            if (hasNumResults()) {
+                if (getNumResults() != other.getNumResults())
+                    return false;
+            }
             if (!getUnknownFields().equals(other.getUnknownFields()))
                 return false;
             return true;
@@ -1501,8 +1523,10 @@ public final class ResponseMessages {
                 hash = (37 * hash) + QUERY_FIELD_NUMBER;
                 hash = (53 * hash) + getQueryList().hashCode();
             }
-            hash = (37 * hash) + NUMRESULTS_FIELD_NUMBER;
-            hash = (53 * hash) + getNumResults();
+            if (hasNumResults()) {
+                hash = (37 * hash) + NUMRESULTS_FIELD_NUMBER;
+                hash = (53 * hash) + getNumResults();
+            }
             hash = (29 * hash) + getUnknownFields().hashCode();
             memoizedHashCode = hash;
             return hash;
@@ -1640,7 +1664,7 @@ public final class ResponseMessages {
                 }
                 bitField0_ = (bitField0_ & ~0x00000004);
                 numResults_ = 0;
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 return this;
             }
 
@@ -1668,6 +1692,7 @@ public final class ResponseMessages {
                 datawave.webservice.result.ResponseMessages.QueryImplListResponse result = new datawave.webservice.result.ResponseMessages.QueryImplListResponse(
                                 this);
                 int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
                 result.operationTimeMs_ = operationTimeMs_;
                 if (((bitField0_ & 0x00000001) != 0)) {
                     messages_ = messages_.getUnmodifiableView();
@@ -1692,7 +1717,11 @@ public final class ResponseMessages {
                 } else {
                     result.query_ = queryBuilder_.build();
                 }
-                result.numResults_ = numResults_;
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    result.numResults_ = numResults_;
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
             }
@@ -1801,7 +1830,7 @@ public final class ResponseMessages {
                         }
                     }
                 }
-                if (other.getNumResults() != 0) {
+                if (other.hasNumResults()) {
                     setNumResults(other.getNumResults());
                 }
                 this.mergeUnknownFields(other.getUnknownFields());
@@ -1863,7 +1892,7 @@ public final class ResponseMessages {
                             } // case 34
                             case 40: {
                                 numResults_ = input.readUInt32();
-
+                                bitField0_ |= 0x00000008;
                                 break;
                             } // case 40
                             default: {
@@ -2533,6 +2562,16 @@ public final class ResponseMessages {
             /**
              * <code>uint32 numResults = 5;</code>
              *
+             * @return Whether the numResults field is set.
+             */
+            @java.lang.Override
+            public boolean hasNumResults() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
+
+            /**
+             * <code>uint32 numResults = 5;</code>
+             *
              * @return The numResults.
              */
             @java.lang.Override
@@ -2548,7 +2587,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder setNumResults(int value) {
-
+                bitField0_ |= 0x00000008;
                 numResults_ = value;
                 onChanged();
                 return this;
@@ -2560,7 +2599,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearNumResults() {
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 numResults_ = 0;
                 onChanged();
                 return this;
@@ -2635,18 +2674,36 @@ public final class ResponseMessages {
         long getOperationTimeMs();
 
         /**
-         * <code>string messages = 2;</code>
+         * <code>repeated string messages = 2;</code>
          *
-         * @return The messages.
+         * @return A list containing the messages.
          */
-        java.lang.String getMessages();
+        java.util.List<java.lang.String> getMessagesList();
 
         /**
-         * <code>string messages = 2;</code>
+         * <code>repeated string messages = 2;</code>
          *
-         * @return The bytes for messages.
+         * @return The count of messages.
          */
-        com.google.protobuf.ByteString getMessagesBytes();
+        int getMessagesCount();
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        java.lang.String getMessages(int index);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        com.google.protobuf.ByteString getMessagesBytes(int index);
 
         /**
          * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
@@ -2690,6 +2747,13 @@ public final class ResponseMessages {
         /**
          * <code>string result_as_string = 5;</code>
          *
+         * @return Whether the resultAsString field is set.
+         */
+        boolean hasResultAsString();
+
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
          * @return The resultAsString.
          */
         java.lang.String getResultAsString();
@@ -2704,9 +2768,23 @@ public final class ResponseMessages {
         /**
          * <code>bool result_as_boolean = 6;</code>
          *
+         * @return Whether the resultAsBoolean field is set.
+         */
+        boolean hasResultAsBoolean();
+
+        /**
+         * <code>bool result_as_boolean = 6;</code>
+         *
          * @return The resultAsBoolean.
          */
         boolean getResultAsBoolean();
+
+        /**
+         * <code>sint32 result_as_int = 7;</code>
+         *
+         * @return Whether the resultAsInt field is set.
+         */
+        boolean hasResultAsInt();
 
         /**
          * <code>sint32 result_as_int = 7;</code>
@@ -2718,9 +2796,23 @@ public final class ResponseMessages {
         /**
          * <code>sint64 result_as_long = 8;</code>
          *
+         * @return Whether the resultAsLong field is set.
+         */
+        boolean hasResultAsLong();
+
+        /**
+         * <code>sint64 result_as_long = 8;</code>
+         *
          * @return The resultAsLong.
          */
         long getResultAsLong();
+
+        /**
+         * <code>float result_as_float = 9;</code>
+         *
+         * @return Whether the resultAsFloat field is set.
+         */
+        boolean hasResultAsFloat();
 
         /**
          * <code>float result_as_float = 9;</code>
@@ -2732,9 +2824,23 @@ public final class ResponseMessages {
         /**
          * <code>double result_as_double = 10;</code>
          *
+         * @return Whether the resultAsDouble field is set.
+         */
+        boolean hasResultAsDouble();
+
+        /**
+         * <code>double result_as_double = 10;</code>
+         *
          * @return The resultAsDouble.
          */
         double getResultAsDouble();
+
+        /**
+         * <code>bytes result_as_bytes = 11;</code>
+         *
+         * @return Whether the resultAsBytes field is set.
+         */
+        boolean hasResultAsBytes();
 
         /**
          * <code>bytes result_as_bytes = 11;</code>
@@ -2777,7 +2883,7 @@ public final class ResponseMessages {
         }
 
         private GenericResponse() {
-            messages_ = "";
+            messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
             exceptions_ = java.util.Collections.emptyList();
             resultClassName_ = "";
             resultAsString_ = "";
@@ -2806,6 +2912,7 @@ public final class ResponseMessages {
                                             datawave.webservice.result.ResponseMessages.GenericResponse.Builder.class);
         }
 
+        private int bitField0_;
         public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
         private long operationTimeMs_;
 
@@ -2820,41 +2927,46 @@ public final class ResponseMessages {
         }
 
         public static final int MESSAGES_FIELD_NUMBER = 2;
-        private volatile java.lang.Object messages_;
+        private com.google.protobuf.LazyStringList messages_;
 
         /**
-         * <code>string messages = 2;</code>
+         * <code>repeated string messages = 2;</code>
          *
-         * @return The messages.
+         * @return A list containing the messages.
          */
-        @java.lang.Override
-        public java.lang.String getMessages() {
-            java.lang.Object ref = messages_;
-            if (ref instanceof java.lang.String) {
-                return (java.lang.String) ref;
-            } else {
-                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                java.lang.String s = bs.toStringUtf8();
-                messages_ = s;
-                return s;
-            }
+        public com.google.protobuf.ProtocolStringList getMessagesList() {
+            return messages_;
         }
 
         /**
-         * <code>string messages = 2;</code>
+         * <code>repeated string messages = 2;</code>
          *
-         * @return The bytes for messages.
+         * @return The count of messages.
          */
-        @java.lang.Override
-        public com.google.protobuf.ByteString getMessagesBytes() {
-            java.lang.Object ref = messages_;
-            if (ref instanceof java.lang.String) {
-                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                messages_ = b;
-                return b;
-            } else {
-                return (com.google.protobuf.ByteString) ref;
-            }
+        public int getMessagesCount() {
+            return messages_.size();
+        }
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        public java.lang.String getMessages(int index) {
+            return messages_.get(index);
+        }
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        public com.google.protobuf.ByteString getMessagesBytes(int index) {
+            return messages_.getByteString(index);
         }
 
         public static final int EXCEPTIONS_FIELD_NUMBER = 3;
@@ -2944,6 +3056,16 @@ public final class ResponseMessages {
         /**
          * <code>string result_as_string = 5;</code>
          *
+         * @return Whether the resultAsString field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsString() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
          * @return The resultAsString.
          */
         @java.lang.Override
@@ -2982,6 +3104,16 @@ public final class ResponseMessages {
         /**
          * <code>bool result_as_boolean = 6;</code>
          *
+         * @return Whether the resultAsBoolean field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsBoolean() {
+            return ((bitField0_ & 0x00000002) != 0);
+        }
+
+        /**
+         * <code>bool result_as_boolean = 6;</code>
+         *
          * @return The resultAsBoolean.
          */
         @java.lang.Override
@@ -2991,6 +3123,16 @@ public final class ResponseMessages {
 
         public static final int RESULT_AS_INT_FIELD_NUMBER = 7;
         private int resultAsInt_;
+
+        /**
+         * <code>sint32 result_as_int = 7;</code>
+         *
+         * @return Whether the resultAsInt field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsInt() {
+            return ((bitField0_ & 0x00000004) != 0);
+        }
 
         /**
          * <code>sint32 result_as_int = 7;</code>
@@ -3008,6 +3150,16 @@ public final class ResponseMessages {
         /**
          * <code>sint64 result_as_long = 8;</code>
          *
+         * @return Whether the resultAsLong field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsLong() {
+            return ((bitField0_ & 0x00000008) != 0);
+        }
+
+        /**
+         * <code>sint64 result_as_long = 8;</code>
+         *
          * @return The resultAsLong.
          */
         @java.lang.Override
@@ -3017,6 +3169,16 @@ public final class ResponseMessages {
 
         public static final int RESULT_AS_FLOAT_FIELD_NUMBER = 9;
         private float resultAsFloat_;
+
+        /**
+         * <code>float result_as_float = 9;</code>
+         *
+         * @return Whether the resultAsFloat field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsFloat() {
+            return ((bitField0_ & 0x00000010) != 0);
+        }
 
         /**
          * <code>float result_as_float = 9;</code>
@@ -3034,6 +3196,16 @@ public final class ResponseMessages {
         /**
          * <code>double result_as_double = 10;</code>
          *
+         * @return Whether the resultAsDouble field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsDouble() {
+            return ((bitField0_ & 0x00000020) != 0);
+        }
+
+        /**
+         * <code>double result_as_double = 10;</code>
+         *
          * @return The resultAsDouble.
          */
         @java.lang.Override
@@ -3043,6 +3215,16 @@ public final class ResponseMessages {
 
         public static final int RESULT_AS_BYTES_FIELD_NUMBER = 11;
         private com.google.protobuf.ByteString resultAsBytes_;
+
+        /**
+         * <code>bytes result_as_bytes = 11;</code>
+         *
+         * @return Whether the resultAsBytes field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsBytes() {
+            return ((bitField0_ & 0x00000040) != 0);
+        }
 
         /**
          * <code>bytes result_as_bytes = 11;</code>
@@ -3064,7 +3246,7 @@ public final class ResponseMessages {
          */
         @java.lang.Override
         public boolean hasResultAsDescription() {
-            return resultAsDescription_ != null;
+            return ((bitField0_ & 0x00000080) != 0);
         }
 
         /**
@@ -3083,7 +3265,8 @@ public final class ResponseMessages {
          */
         @java.lang.Override
         public datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder() {
-            return getResultAsDescription();
+            return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance()
+                            : resultAsDescription_;
         }
 
         private byte memoizedIsInitialized = -1;
@@ -3105,8 +3288,8 @@ public final class ResponseMessages {
             if (operationTimeMs_ != 0L) {
                 output.writeUInt64(1, operationTimeMs_);
             }
-            if (!getMessagesBytes().isEmpty()) {
-                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_);
+            for (int i = 0; i < messages_.size(); i++) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
             }
             for (int i = 0; i < exceptions_.size(); i++) {
                 output.writeMessage(3, exceptions_.get(i));
@@ -3114,28 +3297,28 @@ public final class ResponseMessages {
             if (!getResultClassNameBytes().isEmpty()) {
                 com.google.protobuf.GeneratedMessageV3.writeString(output, 4, resultClassName_);
             }
-            if (!getResultAsStringBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 com.google.protobuf.GeneratedMessageV3.writeString(output, 5, resultAsString_);
             }
-            if (resultAsBoolean_ != false) {
+            if (((bitField0_ & 0x00000002) != 0)) {
                 output.writeBool(6, resultAsBoolean_);
             }
-            if (resultAsInt_ != 0) {
+            if (((bitField0_ & 0x00000004) != 0)) {
                 output.writeSInt32(7, resultAsInt_);
             }
-            if (resultAsLong_ != 0L) {
+            if (((bitField0_ & 0x00000008) != 0)) {
                 output.writeSInt64(8, resultAsLong_);
             }
-            if (resultAsFloat_ != 0F) {
+            if (((bitField0_ & 0x00000010) != 0)) {
                 output.writeFloat(9, resultAsFloat_);
             }
-            if (resultAsDouble_ != 0D) {
+            if (((bitField0_ & 0x00000020) != 0)) {
                 output.writeDouble(10, resultAsDouble_);
             }
-            if (!resultAsBytes_.isEmpty()) {
+            if (((bitField0_ & 0x00000040) != 0)) {
                 output.writeBytes(11, resultAsBytes_);
             }
-            if (resultAsDescription_ != null) {
+            if (((bitField0_ & 0x00000080) != 0)) {
                 output.writeMessage(12, getResultAsDescription());
             }
             getUnknownFields().writeTo(output);
@@ -3151,8 +3334,13 @@ public final class ResponseMessages {
             if (operationTimeMs_ != 0L) {
                 size += com.google.protobuf.CodedOutputStream.computeUInt64Size(1, operationTimeMs_);
             }
-            if (!getMessagesBytes().isEmpty()) {
-                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, messages_);
+            {
+                int dataSize = 0;
+                for (int i = 0; i < messages_.size(); i++) {
+                    dataSize += computeStringSizeNoTag(messages_.getRaw(i));
+                }
+                size += dataSize;
+                size += 1 * getMessagesList().size();
             }
             for (int i = 0; i < exceptions_.size(); i++) {
                 size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, exceptions_.get(i));
@@ -3160,28 +3348,28 @@ public final class ResponseMessages {
             if (!getResultClassNameBytes().isEmpty()) {
                 size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, resultClassName_);
             }
-            if (!getResultAsStringBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, resultAsString_);
             }
-            if (resultAsBoolean_ != false) {
+            if (((bitField0_ & 0x00000002) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeBoolSize(6, resultAsBoolean_);
             }
-            if (resultAsInt_ != 0) {
+            if (((bitField0_ & 0x00000004) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeSInt32Size(7, resultAsInt_);
             }
-            if (resultAsLong_ != 0L) {
+            if (((bitField0_ & 0x00000008) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeSInt64Size(8, resultAsLong_);
             }
-            if (resultAsFloat_ != 0F) {
+            if (((bitField0_ & 0x00000010) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeFloatSize(9, resultAsFloat_);
             }
-            if (resultAsDouble_ != 0D) {
+            if (((bitField0_ & 0x00000020) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeDoubleSize(10, resultAsDouble_);
             }
-            if (!resultAsBytes_.isEmpty()) {
+            if (((bitField0_ & 0x00000040) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeBytesSize(11, resultAsBytes_);
             }
-            if (resultAsDescription_ != null) {
+            if (((bitField0_ & 0x00000080) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeMessageSize(12, getResultAsDescription());
             }
             size += getUnknownFields().getSerializedSize();
@@ -3201,26 +3389,54 @@ public final class ResponseMessages {
 
             if (getOperationTimeMs() != other.getOperationTimeMs())
                 return false;
-            if (!getMessages().equals(other.getMessages()))
+            if (!getMessagesList().equals(other.getMessagesList()))
                 return false;
             if (!getExceptionsList().equals(other.getExceptionsList()))
                 return false;
             if (!getResultClassName().equals(other.getResultClassName()))
                 return false;
-            if (!getResultAsString().equals(other.getResultAsString()))
+            if (hasResultAsString() != other.hasResultAsString())
                 return false;
-            if (getResultAsBoolean() != other.getResultAsBoolean())
+            if (hasResultAsString()) {
+                if (!getResultAsString().equals(other.getResultAsString()))
+                    return false;
+            }
+            if (hasResultAsBoolean() != other.hasResultAsBoolean())
                 return false;
-            if (getResultAsInt() != other.getResultAsInt())
+            if (hasResultAsBoolean()) {
+                if (getResultAsBoolean() != other.getResultAsBoolean())
+                    return false;
+            }
+            if (hasResultAsInt() != other.hasResultAsInt())
                 return false;
-            if (getResultAsLong() != other.getResultAsLong())
+            if (hasResultAsInt()) {
+                if (getResultAsInt() != other.getResultAsInt())
+                    return false;
+            }
+            if (hasResultAsLong() != other.hasResultAsLong())
                 return false;
-            if (java.lang.Float.floatToIntBits(getResultAsFloat()) != java.lang.Float.floatToIntBits(other.getResultAsFloat()))
+            if (hasResultAsLong()) {
+                if (getResultAsLong() != other.getResultAsLong())
+                    return false;
+            }
+            if (hasResultAsFloat() != other.hasResultAsFloat())
                 return false;
-            if (java.lang.Double.doubleToLongBits(getResultAsDouble()) != java.lang.Double.doubleToLongBits(other.getResultAsDouble()))
+            if (hasResultAsFloat()) {
+                if (java.lang.Float.floatToIntBits(getResultAsFloat()) != java.lang.Float.floatToIntBits(other.getResultAsFloat()))
+                    return false;
+            }
+            if (hasResultAsDouble() != other.hasResultAsDouble())
                 return false;
-            if (!getResultAsBytes().equals(other.getResultAsBytes()))
+            if (hasResultAsDouble()) {
+                if (java.lang.Double.doubleToLongBits(getResultAsDouble()) != java.lang.Double.doubleToLongBits(other.getResultAsDouble()))
+                    return false;
+            }
+            if (hasResultAsBytes() != other.hasResultAsBytes())
                 return false;
+            if (hasResultAsBytes()) {
+                if (!getResultAsBytes().equals(other.getResultAsBytes()))
+                    return false;
+            }
             if (hasResultAsDescription() != other.hasResultAsDescription())
                 return false;
             if (hasResultAsDescription()) {
@@ -3241,28 +3457,44 @@ public final class ResponseMessages {
             hash = (19 * hash) + getDescriptor().hashCode();
             hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
             hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getOperationTimeMs());
-            hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
-            hash = (53 * hash) + getMessages().hashCode();
+            if (getMessagesCount() > 0) {
+                hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
+                hash = (53 * hash) + getMessagesList().hashCode();
+            }
             if (getExceptionsCount() > 0) {
                 hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
                 hash = (53 * hash) + getExceptionsList().hashCode();
             }
             hash = (37 * hash) + RESULT_CLASS_NAME_FIELD_NUMBER;
             hash = (53 * hash) + getResultClassName().hashCode();
-            hash = (37 * hash) + RESULT_AS_STRING_FIELD_NUMBER;
-            hash = (53 * hash) + getResultAsString().hashCode();
-            hash = (37 * hash) + RESULT_AS_BOOLEAN_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getResultAsBoolean());
-            hash = (37 * hash) + RESULT_AS_INT_FIELD_NUMBER;
-            hash = (53 * hash) + getResultAsInt();
-            hash = (37 * hash) + RESULT_AS_LONG_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getResultAsLong());
-            hash = (37 * hash) + RESULT_AS_FLOAT_FIELD_NUMBER;
-            hash = (53 * hash) + java.lang.Float.floatToIntBits(getResultAsFloat());
-            hash = (37 * hash) + RESULT_AS_DOUBLE_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getResultAsDouble()));
-            hash = (37 * hash) + RESULT_AS_BYTES_FIELD_NUMBER;
-            hash = (53 * hash) + getResultAsBytes().hashCode();
+            if (hasResultAsString()) {
+                hash = (37 * hash) + RESULT_AS_STRING_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsString().hashCode();
+            }
+            if (hasResultAsBoolean()) {
+                hash = (37 * hash) + RESULT_AS_BOOLEAN_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getResultAsBoolean());
+            }
+            if (hasResultAsInt()) {
+                hash = (37 * hash) + RESULT_AS_INT_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsInt();
+            }
+            if (hasResultAsLong()) {
+                hash = (37 * hash) + RESULT_AS_LONG_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getResultAsLong());
+            }
+            if (hasResultAsFloat()) {
+                hash = (37 * hash) + RESULT_AS_FLOAT_FIELD_NUMBER;
+                hash = (53 * hash) + java.lang.Float.floatToIntBits(getResultAsFloat());
+            }
+            if (hasResultAsDouble()) {
+                hash = (37 * hash) + RESULT_AS_DOUBLE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getResultAsDouble()));
+            }
+            if (hasResultAsBytes()) {
+                hash = (37 * hash) + RESULT_AS_BYTES_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsBytes().hashCode();
+            }
             if (hasResultAsDescription()) {
                 hash = (37 * hash) + RESULT_AS_DESCRIPTION_FIELD_NUMBER;
                 hash = (53 * hash) + getResultAsDescription().hashCode();
@@ -3373,12 +3605,19 @@ public final class ResponseMessages {
 
             // Construct using datawave.webservice.result.ResponseMessages.GenericResponse.newBuilder()
             private Builder() {
-
+                maybeForceBuilderInitialization();
             }
 
             private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
                 super(parent);
+                maybeForceBuilderInitialization();
+            }
 
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {
+                    getExceptionsFieldBuilder();
+                    getResultAsDescriptionFieldBuilder();
+                }
             }
 
             @java.lang.Override
@@ -3386,37 +3625,37 @@ public final class ResponseMessages {
                 super.clear();
                 operationTimeMs_ = 0L;
 
-                messages_ = "";
-
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
                 if (exceptionsBuilder_ == null) {
                     exceptions_ = java.util.Collections.emptyList();
                 } else {
                     exceptions_ = null;
                     exceptionsBuilder_.clear();
                 }
-                bitField0_ = (bitField0_ & ~0x00000001);
+                bitField0_ = (bitField0_ & ~0x00000002);
                 resultClassName_ = "";
 
                 resultAsString_ = "";
-
+                bitField0_ = (bitField0_ & ~0x00000004);
                 resultAsBoolean_ = false;
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 resultAsInt_ = 0;
-
+                bitField0_ = (bitField0_ & ~0x00000010);
                 resultAsLong_ = 0L;
-
+                bitField0_ = (bitField0_ & ~0x00000020);
                 resultAsFloat_ = 0F;
-
+                bitField0_ = (bitField0_ & ~0x00000040);
                 resultAsDouble_ = 0D;
-
+                bitField0_ = (bitField0_ & ~0x00000080);
                 resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
-
+                bitField0_ = (bitField0_ & ~0x00000100);
                 if (resultAsDescriptionBuilder_ == null) {
                     resultAsDescription_ = null;
                 } else {
-                    resultAsDescription_ = null;
-                    resultAsDescriptionBuilder_ = null;
+                    resultAsDescriptionBuilder_.clear();
                 }
+                bitField0_ = (bitField0_ & ~0x00000200);
                 return this;
             }
 
@@ -3443,30 +3682,60 @@ public final class ResponseMessages {
             public datawave.webservice.result.ResponseMessages.GenericResponse buildPartial() {
                 datawave.webservice.result.ResponseMessages.GenericResponse result = new datawave.webservice.result.ResponseMessages.GenericResponse(this);
                 int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
                 result.operationTimeMs_ = operationTimeMs_;
+                if (((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = messages_.getUnmodifiableView();
+                    bitField0_ = (bitField0_ & ~0x00000001);
+                }
                 result.messages_ = messages_;
                 if (exceptionsBuilder_ == null) {
-                    if (((bitField0_ & 0x00000001) != 0)) {
+                    if (((bitField0_ & 0x00000002) != 0)) {
                         exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
-                        bitField0_ = (bitField0_ & ~0x00000001);
+                        bitField0_ = (bitField0_ & ~0x00000002);
                     }
                     result.exceptions_ = exceptions_;
                 } else {
                     result.exceptions_ = exceptionsBuilder_.build();
                 }
                 result.resultClassName_ = resultClassName_;
-                result.resultAsString_ = resultAsString_;
-                result.resultAsBoolean_ = resultAsBoolean_;
-                result.resultAsInt_ = resultAsInt_;
-                result.resultAsLong_ = resultAsLong_;
-                result.resultAsFloat_ = resultAsFloat_;
-                result.resultAsDouble_ = resultAsDouble_;
-                result.resultAsBytes_ = resultAsBytes_;
-                if (resultAsDescriptionBuilder_ == null) {
-                    result.resultAsDescription_ = resultAsDescription_;
-                } else {
-                    result.resultAsDescription_ = resultAsDescriptionBuilder_.build();
+                if (((from_bitField0_ & 0x00000004) != 0)) {
+                    to_bitField0_ |= 0x00000001;
                 }
+                result.resultAsString_ = resultAsString_;
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    result.resultAsBoolean_ = resultAsBoolean_;
+                    to_bitField0_ |= 0x00000002;
+                }
+                if (((from_bitField0_ & 0x00000010) != 0)) {
+                    result.resultAsInt_ = resultAsInt_;
+                    to_bitField0_ |= 0x00000004;
+                }
+                if (((from_bitField0_ & 0x00000020) != 0)) {
+                    result.resultAsLong_ = resultAsLong_;
+                    to_bitField0_ |= 0x00000008;
+                }
+                if (((from_bitField0_ & 0x00000040) != 0)) {
+                    result.resultAsFloat_ = resultAsFloat_;
+                    to_bitField0_ |= 0x00000010;
+                }
+                if (((from_bitField0_ & 0x00000080) != 0)) {
+                    result.resultAsDouble_ = resultAsDouble_;
+                    to_bitField0_ |= 0x00000020;
+                }
+                if (((from_bitField0_ & 0x00000100) != 0)) {
+                    to_bitField0_ |= 0x00000040;
+                }
+                result.resultAsBytes_ = resultAsBytes_;
+                if (((from_bitField0_ & 0x00000200) != 0)) {
+                    if (resultAsDescriptionBuilder_ == null) {
+                        result.resultAsDescription_ = resultAsDescription_;
+                    } else {
+                        result.resultAsDescription_ = resultAsDescriptionBuilder_.build();
+                    }
+                    to_bitField0_ |= 0x00000080;
+                }
+                result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
             }
@@ -3517,15 +3786,21 @@ public final class ResponseMessages {
                 if (other.getOperationTimeMs() != 0L) {
                     setOperationTimeMs(other.getOperationTimeMs());
                 }
-                if (!other.getMessages().isEmpty()) {
-                    messages_ = other.messages_;
+                if (!other.messages_.isEmpty()) {
+                    if (messages_.isEmpty()) {
+                        messages_ = other.messages_;
+                        bitField0_ = (bitField0_ & ~0x00000001);
+                    } else {
+                        ensureMessagesIsMutable();
+                        messages_.addAll(other.messages_);
+                    }
                     onChanged();
                 }
                 if (exceptionsBuilder_ == null) {
                     if (!other.exceptions_.isEmpty()) {
                         if (exceptions_.isEmpty()) {
                             exceptions_ = other.exceptions_;
-                            bitField0_ = (bitField0_ & ~0x00000001);
+                            bitField0_ = (bitField0_ & ~0x00000002);
                         } else {
                             ensureExceptionsIsMutable();
                             exceptions_.addAll(other.exceptions_);
@@ -3538,7 +3813,7 @@ public final class ResponseMessages {
                             exceptionsBuilder_.dispose();
                             exceptionsBuilder_ = null;
                             exceptions_ = other.exceptions_;
-                            bitField0_ = (bitField0_ & ~0x00000001);
+                            bitField0_ = (bitField0_ & ~0x00000002);
                             exceptionsBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getExceptionsFieldBuilder() : null;
                         } else {
                             exceptionsBuilder_.addAllMessages(other.exceptions_);
@@ -3549,26 +3824,27 @@ public final class ResponseMessages {
                     resultClassName_ = other.resultClassName_;
                     onChanged();
                 }
-                if (!other.getResultAsString().isEmpty()) {
+                if (other.hasResultAsString()) {
+                    bitField0_ |= 0x00000004;
                     resultAsString_ = other.resultAsString_;
                     onChanged();
                 }
-                if (other.getResultAsBoolean() != false) {
+                if (other.hasResultAsBoolean()) {
                     setResultAsBoolean(other.getResultAsBoolean());
                 }
-                if (other.getResultAsInt() != 0) {
+                if (other.hasResultAsInt()) {
                     setResultAsInt(other.getResultAsInt());
                 }
-                if (other.getResultAsLong() != 0L) {
+                if (other.hasResultAsLong()) {
                     setResultAsLong(other.getResultAsLong());
                 }
-                if (other.getResultAsFloat() != 0F) {
+                if (other.hasResultAsFloat()) {
                     setResultAsFloat(other.getResultAsFloat());
                 }
-                if (other.getResultAsDouble() != 0D) {
+                if (other.hasResultAsDouble()) {
                     setResultAsDouble(other.getResultAsDouble());
                 }
-                if (other.getResultAsBytes() != com.google.protobuf.ByteString.EMPTY) {
+                if (other.hasResultAsBytes()) {
                     setResultAsBytes(other.getResultAsBytes());
                 }
                 if (other.hasResultAsDescription()) {
@@ -3604,8 +3880,9 @@ public final class ResponseMessages {
                                 break;
                             } // case 8
                             case 18: {
-                                messages_ = input.readStringRequireUtf8();
-
+                                java.lang.String s = input.readStringRequireUtf8();
+                                ensureMessagesIsMutable();
+                                messages_.add(s);
                                 break;
                             } // case 18
                             case 26: {
@@ -3626,42 +3903,42 @@ public final class ResponseMessages {
                             } // case 34
                             case 42: {
                                 resultAsString_ = input.readStringRequireUtf8();
-
+                                bitField0_ |= 0x00000004;
                                 break;
                             } // case 42
                             case 48: {
                                 resultAsBoolean_ = input.readBool();
-
+                                bitField0_ |= 0x00000008;
                                 break;
                             } // case 48
                             case 56: {
                                 resultAsInt_ = input.readSInt32();
-
+                                bitField0_ |= 0x00000010;
                                 break;
                             } // case 56
                             case 64: {
                                 resultAsLong_ = input.readSInt64();
-
+                                bitField0_ |= 0x00000020;
                                 break;
                             } // case 64
                             case 77: {
                                 resultAsFloat_ = input.readFloat();
-
+                                bitField0_ |= 0x00000040;
                                 break;
                             } // case 77
                             case 81: {
                                 resultAsDouble_ = input.readDouble();
-
+                                bitField0_ |= 0x00000080;
                                 break;
                             } // case 81
                             case 90: {
                                 resultAsBytes_ = input.readBytes();
-
+                                bitField0_ |= 0x00000100;
                                 break;
                             } // case 90
                             case 98: {
                                 input.readMessage(getResultAsDescriptionFieldBuilder().getBuilder(), extensionRegistry);
-
+                                bitField0_ |= 0x00000200;
                                 break;
                             } // case 98
                             default: {
@@ -3720,84 +3997,131 @@ public final class ResponseMessages {
                 return this;
             }
 
-            private java.lang.Object messages_ = "";
+            private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
 
-            /**
-             * <code>string messages = 2;</code>
-             *
-             * @return The messages.
-             */
-            public java.lang.String getMessages() {
-                java.lang.Object ref = messages_;
-                if (!(ref instanceof java.lang.String)) {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    messages_ = s;
-                    return s;
-                } else {
-                    return (java.lang.String) ref;
+            private void ensureMessagesIsMutable() {
+                if (!((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
+                    bitField0_ |= 0x00000001;
                 }
             }
 
             /**
-             * <code>string messages = 2;</code>
+             * <code>repeated string messages = 2;</code>
              *
-             * @return The bytes for messages.
+             * @return A list containing the messages.
              */
-            public com.google.protobuf.ByteString getMessagesBytes() {
-                java.lang.Object ref = messages_;
-                if (ref instanceof String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    messages_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
+            public com.google.protobuf.ProtocolStringList getMessagesList() {
+                return messages_.getUnmodifiableView();
             }
 
             /**
-             * <code>string messages = 2;</code>
+             * <code>repeated string messages = 2;</code>
              *
+             * @return The count of messages.
+             */
+            public int getMessagesCount() {
+                return messages_.size();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the element to return.
+             * @return The messages at the given index.
+             */
+            public java.lang.String getMessages(int index) {
+                return messages_.get(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the value to return.
+             * @return The bytes of the messages at the given index.
+             */
+            public com.google.protobuf.ByteString getMessagesBytes(int index) {
+                return messages_.getByteString(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index to set the value at.
              * @param value
              *            The messages to set.
              * @return This builder for chaining.
              */
-            public Builder setMessages(java.lang.String value) {
+            public Builder setMessages(int index, java.lang.String value) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-
-                messages_ = value;
+                ensureMessagesIsMutable();
+                messages_.set(index, value);
                 onChanged();
                 return this;
             }
 
             /**
-             * <code>string messages = 2;</code>
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessages(java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
+                ensureMessagesIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, messages_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
              *
              * @return This builder for chaining.
              */
             public Builder clearMessages() {
-
-                messages_ = getDefaultInstance().getMessages();
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
                 onChanged();
                 return this;
             }
 
             /**
-             * <code>string messages = 2;</code>
+             * <code>repeated string messages = 2;</code>
              *
              * @param value
-             *            The bytes for messages to set.
+             *            The bytes of the messages to add.
              * @return This builder for chaining.
              */
-            public Builder setMessagesBytes(com.google.protobuf.ByteString value) {
+            public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
                 checkByteStringIsUtf8(value);
-
-                messages_ = value;
+                ensureMessagesIsMutable();
+                messages_.add(value);
                 onChanged();
                 return this;
             }
@@ -3805,9 +4129,9 @@ public final class ResponseMessages {
             private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ = java.util.Collections.emptyList();
 
             private void ensureExceptionsIsMutable() {
-                if (!((bitField0_ & 0x00000001) != 0)) {
+                if (!((bitField0_ & 0x00000002) != 0)) {
                     exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
-                    bitField0_ |= 0x00000001;
+                    bitField0_ |= 0x00000002;
                 }
             }
 
@@ -3959,7 +4283,7 @@ public final class ResponseMessages {
             public Builder clearExceptions() {
                 if (exceptionsBuilder_ == null) {
                     exceptions_ = java.util.Collections.emptyList();
-                    bitField0_ = (bitField0_ & ~0x00000001);
+                    bitField0_ = (bitField0_ & ~0x00000002);
                     onChanged();
                 } else {
                     exceptionsBuilder_.clear();
@@ -4035,7 +4359,7 @@ public final class ResponseMessages {
             private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsFieldBuilder() {
                 if (exceptionsBuilder_ == null) {
                     exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
-                                    exceptions_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
+                                    exceptions_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
                     exceptions_ = null;
                 }
                 return exceptionsBuilder_;
@@ -4128,6 +4452,15 @@ public final class ResponseMessages {
             /**
              * <code>string result_as_string = 5;</code>
              *
+             * @return Whether the resultAsString field is set.
+             */
+            public boolean hasResultAsString() {
+                return ((bitField0_ & 0x00000004) != 0);
+            }
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
              * @return The resultAsString.
              */
             public java.lang.String getResultAsString() {
@@ -4169,7 +4502,7 @@ public final class ResponseMessages {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-
+                bitField0_ |= 0x00000004;
                 resultAsString_ = value;
                 onChanged();
                 return this;
@@ -4181,7 +4514,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsString() {
-
+                bitField0_ = (bitField0_ & ~0x00000004);
                 resultAsString_ = getDefaultInstance().getResultAsString();
                 onChanged();
                 return this;
@@ -4199,13 +4532,23 @@ public final class ResponseMessages {
                     throw new NullPointerException();
                 }
                 checkByteStringIsUtf8(value);
-
+                bitField0_ |= 0x00000004;
                 resultAsString_ = value;
                 onChanged();
                 return this;
             }
 
             private boolean resultAsBoolean_;
+
+            /**
+             * <code>bool result_as_boolean = 6;</code>
+             *
+             * @return Whether the resultAsBoolean field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsBoolean() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
 
             /**
              * <code>bool result_as_boolean = 6;</code>
@@ -4225,7 +4568,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder setResultAsBoolean(boolean value) {
-
+                bitField0_ |= 0x00000008;
                 resultAsBoolean_ = value;
                 onChanged();
                 return this;
@@ -4237,13 +4580,23 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsBoolean() {
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 resultAsBoolean_ = false;
                 onChanged();
                 return this;
             }
 
             private int resultAsInt_;
+
+            /**
+             * <code>sint32 result_as_int = 7;</code>
+             *
+             * @return Whether the resultAsInt field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsInt() {
+                return ((bitField0_ & 0x00000010) != 0);
+            }
 
             /**
              * <code>sint32 result_as_int = 7;</code>
@@ -4263,7 +4616,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder setResultAsInt(int value) {
-
+                bitField0_ |= 0x00000010;
                 resultAsInt_ = value;
                 onChanged();
                 return this;
@@ -4275,13 +4628,23 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsInt() {
-
+                bitField0_ = (bitField0_ & ~0x00000010);
                 resultAsInt_ = 0;
                 onChanged();
                 return this;
             }
 
             private long resultAsLong_;
+
+            /**
+             * <code>sint64 result_as_long = 8;</code>
+             *
+             * @return Whether the resultAsLong field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsLong() {
+                return ((bitField0_ & 0x00000020) != 0);
+            }
 
             /**
              * <code>sint64 result_as_long = 8;</code>
@@ -4301,7 +4664,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder setResultAsLong(long value) {
-
+                bitField0_ |= 0x00000020;
                 resultAsLong_ = value;
                 onChanged();
                 return this;
@@ -4313,13 +4676,23 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsLong() {
-
+                bitField0_ = (bitField0_ & ~0x00000020);
                 resultAsLong_ = 0L;
                 onChanged();
                 return this;
             }
 
             private float resultAsFloat_;
+
+            /**
+             * <code>float result_as_float = 9;</code>
+             *
+             * @return Whether the resultAsFloat field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsFloat() {
+                return ((bitField0_ & 0x00000040) != 0);
+            }
 
             /**
              * <code>float result_as_float = 9;</code>
@@ -4339,7 +4712,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder setResultAsFloat(float value) {
-
+                bitField0_ |= 0x00000040;
                 resultAsFloat_ = value;
                 onChanged();
                 return this;
@@ -4351,13 +4724,23 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsFloat() {
-
+                bitField0_ = (bitField0_ & ~0x00000040);
                 resultAsFloat_ = 0F;
                 onChanged();
                 return this;
             }
 
             private double resultAsDouble_;
+
+            /**
+             * <code>double result_as_double = 10;</code>
+             *
+             * @return Whether the resultAsDouble field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsDouble() {
+                return ((bitField0_ & 0x00000080) != 0);
+            }
 
             /**
              * <code>double result_as_double = 10;</code>
@@ -4377,7 +4760,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder setResultAsDouble(double value) {
-
+                bitField0_ |= 0x00000080;
                 resultAsDouble_ = value;
                 onChanged();
                 return this;
@@ -4389,13 +4772,23 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsDouble() {
-
+                bitField0_ = (bitField0_ & ~0x00000080);
                 resultAsDouble_ = 0D;
                 onChanged();
                 return this;
             }
 
             private com.google.protobuf.ByteString resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
+
+            /**
+             * <code>bytes result_as_bytes = 11;</code>
+             *
+             * @return Whether the resultAsBytes field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsBytes() {
+                return ((bitField0_ & 0x00000100) != 0);
+            }
 
             /**
              * <code>bytes result_as_bytes = 11;</code>
@@ -4418,7 +4811,7 @@ public final class ResponseMessages {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-
+                bitField0_ |= 0x00000100;
                 resultAsBytes_ = value;
                 onChanged();
                 return this;
@@ -4430,7 +4823,7 @@ public final class ResponseMessages {
              * @return This builder for chaining.
              */
             public Builder clearResultAsBytes() {
-
+                bitField0_ = (bitField0_ & ~0x00000100);
                 resultAsBytes_ = getDefaultInstance().getResultAsBytes();
                 onChanged();
                 return this;
@@ -4445,7 +4838,7 @@ public final class ResponseMessages {
              * @return Whether the resultAsDescription field is set.
              */
             public boolean hasResultAsDescription() {
-                return resultAsDescriptionBuilder_ != null || resultAsDescription_ != null;
+                return ((bitField0_ & 0x00000200) != 0);
             }
 
             /**
@@ -4475,7 +4868,7 @@ public final class ResponseMessages {
                 } else {
                     resultAsDescriptionBuilder_.setMessage(value);
                 }
-
+                bitField0_ |= 0x00000200;
                 return this;
             }
 
@@ -4489,7 +4882,7 @@ public final class ResponseMessages {
                 } else {
                     resultAsDescriptionBuilder_.setMessage(builderForValue.build());
                 }
-
+                bitField0_ |= 0x00000200;
                 return this;
             }
 
@@ -4498,7 +4891,9 @@ public final class ResponseMessages {
              */
             public Builder mergeResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
                 if (resultAsDescriptionBuilder_ == null) {
-                    if (resultAsDescription_ != null) {
+                    if (((bitField0_ & 0x00000200) != 0) && resultAsDescription_ != null
+                                    && resultAsDescription_ != datawave.webservice.results.cached.result.CachedresultMessages.Description
+                                                    .getDefaultInstance()) {
                         resultAsDescription_ = datawave.webservice.results.cached.result.CachedresultMessages.Description.newBuilder(resultAsDescription_)
                                         .mergeFrom(value).buildPartial();
                     } else {
@@ -4508,7 +4903,7 @@ public final class ResponseMessages {
                 } else {
                     resultAsDescriptionBuilder_.mergeFrom(value);
                 }
-
+                bitField0_ |= 0x00000200;
                 return this;
             }
 
@@ -4520,10 +4915,9 @@ public final class ResponseMessages {
                     resultAsDescription_ = null;
                     onChanged();
                 } else {
-                    resultAsDescription_ = null;
-                    resultAsDescriptionBuilder_ = null;
+                    resultAsDescriptionBuilder_.clear();
                 }
-
+                bitField0_ = (bitField0_ & ~0x00000200);
                 return this;
             }
 
@@ -4531,7 +4925,7 @@ public final class ResponseMessages {
              * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
              */
             public datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder getResultAsDescriptionBuilder() {
-
+                bitField0_ |= 0x00000200;
                 onChanged();
                 return getResultAsDescriptionFieldBuilder().getBuilder();
             }
@@ -4633,20 +5027,23 @@ public final class ResponseMessages {
         java.lang.String[] descriptorData = {"\n\027response_messages.proto\022\032datawave.webs" + "ervice.result\032\030exception_messages.proto\032"
                         + "\024query_messages.proto\032\033cachedresult_mess" + "ages.proto\"\210\001\n\014VoidResponse\022\031\n\021operation"
                         + "_time_ms\030\001 \001(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexce"
-                        + "ptions\030\003 \003(\01327.datawave.webservice.query" + ".exception.QueryExceptionType\"\332\001\n\025QueryI"
+                        + "ptions\030\003 \003(\01327.datawave.webservice.query" + ".exception.QueryExceptionType\"\356\001\n\025QueryI"
                         + "mplListResponse\022\031\n\021operation_time_ms\030\001 \001"
                         + "(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexceptions\030\003 \003(\013" + "27.datawave.webservice.query.exception.Q"
-                        + "ueryExceptionType\0223\n\005query\030\004 \003(\0132$.dataw" + "ave.webservice.query.QueryImpl\022\022\n\nnumRes"
-                        + "ults\030\005 \001(\r\"\255\003\n\017GenericResponse\022\031\n\021operat"
-                        + "ion_time_ms\030\001 \001(\004\022\020\n\010messages\030\002 \001(\t\022K\n\ne"
-                        + "xceptions\030\003 \003(\01327.datawave.webservice.qu" + "ery.exception.QueryExceptionType\022\031\n\021resu"
-                        + "lt_class_name\030\004 \001(\t\022\030\n\020result_as_string\030"
-                        + "\005 \001(\t\022\031\n\021result_as_boolean\030\006 \001(\010\022\025\n\rresu"
-                        + "lt_as_int\030\007 \001(\021\022\026\n\016result_as_long\030\010 \001(\022\022"
-                        + "\027\n\017result_as_float\030\t \001(\002\022\030\n\020result_as_do"
-                        + "uble\030\n \001(\001\022\027\n\017result_as_bytes\030\013 \001(\014\022U\n\025r"
-                        + "esult_as_description\030\014 \001(\01326.datawave.we" + "bservice.results.cached.result.Descripti"
-                        + "onB\034\n\032datawave.webservice.resultb\006proto3"};
+                        + "ueryExceptionType\0223\n\005query\030\004 \003(\0132$.dataw" + "ave.webservice.query.QueryImpl\022\027\n\nnumRes"
+                        + "ults\030\005 \001(\rH\000\210\001\001B\r\n\013_numResults\"\374\004\n\017Gener"
+                        + "icResponse\022\031\n\021operation_time_ms\030\001 \001(\004\022\020\n"
+                        + "\010messages\030\002 \003(\t\022K\n\nexceptions\030\003 \003(\01327.da" + "tawave.webservice.query.exception.QueryE"
+                        + "xceptionType\022\031\n\021result_class_name\030\004 \001(\t\022"
+                        + "\035\n\020result_as_string\030\005 \001(\tH\000\210\001\001\022\036\n\021result"
+                        + "_as_boolean\030\006 \001(\010H\001\210\001\001\022\032\n\rresult_as_int\030"
+                        + "\007 \001(\021H\002\210\001\001\022\033\n\016result_as_long\030\010 \001(\022H\003\210\001\001\022"
+                        + "\034\n\017result_as_float\030\t \001(\002H\004\210\001\001\022\035\n\020result_"
+                        + "as_double\030\n \001(\001H\005\210\001\001\022\034\n\017result_as_bytes\030"
+                        + "\013 \001(\014H\006\210\001\001\022Z\n\025result_as_description\030\014 \001(" + "\01326.datawave.webservice.results.cached.r"
+                        + "esult.DescriptionH\007\210\001\001B\023\n\021_result_as_str" + "ingB\024\n\022_result_as_booleanB\020\n\016_result_as_"
+                        + "intB\021\n\017_result_as_longB\022\n\020_result_as_flo" + "atB\023\n\021_result_as_doubleB\022\n\020_result_as_by"
+                        + "tesB\030\n\026_result_as_descriptionB\034\n\032datawav" + "e.webservice.resultb\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {datawave.webservice.query.exception.ExceptionMessages.getDescriptor(),
                                 datawave.webservice.query.QueryMessages.getDescriptor(),
@@ -4658,12 +5055,13 @@ public final class ResponseMessages {
         internal_static_datawave_webservice_result_QueryImplListResponse_descriptor = getDescriptor().getMessageTypes().get(1);
         internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_webservice_result_QueryImplListResponse_descriptor,
-                        new java.lang.String[] {"OperationTimeMs", "Messages", "Exceptions", "Query", "NumResults",});
+                        new java.lang.String[] {"OperationTimeMs", "Messages", "Exceptions", "Query", "NumResults", "NumResults",});
         internal_static_datawave_webservice_result_GenericResponse_descriptor = getDescriptor().getMessageTypes().get(2);
         internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_webservice_result_GenericResponse_descriptor,
                         new java.lang.String[] {"OperationTimeMs", "Messages", "Exceptions", "ResultClassName", "ResultAsString", "ResultAsBoolean",
-                                "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription",});
+                                "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription", "ResultAsString",
+                                "ResultAsBoolean", "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription",});
         datawave.webservice.query.exception.ExceptionMessages.getDescriptor();
         datawave.webservice.query.QueryMessages.getDescriptor();
         datawave.webservice.results.cached.result.CachedresultMessages.getDescriptor();

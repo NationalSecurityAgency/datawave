@@ -1114,42 +1114,54 @@ public final class CachedresultMessages {
         com.google.protobuf.ByteString getViewBytes();
 
         /**
-         * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return Whether the attributes field is set.
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
-        boolean hasAttributes();
+        java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList();
 
         /**
-         * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return The attributes.
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
-        datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes();
+        datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index);
 
         /**
-         * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
-        datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder();
+        int getAttributesCount();
 
         /**
-         * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return Whether the visibilities field is set.
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
-        boolean hasVisibilities();
+        java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList();
 
         /**
-         * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return The visibilities.
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
-        datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities();
+        datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index);
 
         /**
-         * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
          */
-        datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder();
+        java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList();
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        int getVisibilitiesCount();
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index);
     }
 
     /**
@@ -1167,6 +1179,8 @@ public final class CachedresultMessages {
 
         private Description() {
             view_ = "";
+            attributes_ = java.util.Collections.emptyList();
+            visibilities_ = java.util.Collections.emptyList();
         }
 
         @java.lang.Override
@@ -1230,65 +1244,89 @@ public final class CachedresultMessages {
         }
 
         public static final int ATTRIBUTES_FIELD_NUMBER = 2;
-        private datawave.webservice.results.cached.result.CachedresultMessages.Attribute attributes_;
+        private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> attributes_;
 
         /**
-         * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return Whether the attributes field is set.
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
         @java.lang.Override
-        public boolean hasAttributes() {
-            return attributes_ != null;
+        public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList() {
+            return attributes_;
         }
 
         /**
-         * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-         *
-         * @return The attributes.
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
         @java.lang.Override
-        public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes() {
-            return attributes_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance() : attributes_;
+        public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList() {
+            return attributes_;
         }
 
         /**
-         * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
          */
         @java.lang.Override
-        public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder() {
-            return getAttributes();
+        public int getAttributesCount() {
+            return attributes_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index) {
+            return attributes_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index) {
+            return attributes_.get(index);
         }
 
         public static final int VISIBILITIES_FIELD_NUMBER = 3;
-        private datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility visibilities_;
+        private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> visibilities_;
 
         /**
-         * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return Whether the visibilities field is set.
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
          */
         @java.lang.Override
-        public boolean hasVisibilities() {
-            return visibilities_ != null;
+        public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList() {
+            return visibilities_;
         }
 
         /**
-         * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-         *
-         * @return The visibilities.
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
          */
         @java.lang.Override
-        public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities() {
-            return visibilities_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance() : visibilities_;
+        public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList() {
+            return visibilities_;
         }
 
         /**
-         * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
          */
         @java.lang.Override
-        public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder() {
-            return getVisibilities();
+        public int getVisibilitiesCount() {
+            return visibilities_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index) {
+            return visibilities_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index) {
+            return visibilities_.get(index);
         }
 
         private byte memoizedIsInitialized = -1;
@@ -1310,11 +1348,11 @@ public final class CachedresultMessages {
             if (!getViewBytes().isEmpty()) {
                 com.google.protobuf.GeneratedMessageV3.writeString(output, 1, view_);
             }
-            if (attributes_ != null) {
-                output.writeMessage(2, getAttributes());
+            for (int i = 0; i < attributes_.size(); i++) {
+                output.writeMessage(2, attributes_.get(i));
             }
-            if (visibilities_ != null) {
-                output.writeMessage(3, getVisibilities());
+            for (int i = 0; i < visibilities_.size(); i++) {
+                output.writeMessage(3, visibilities_.get(i));
             }
             getUnknownFields().writeTo(output);
         }
@@ -1329,11 +1367,11 @@ public final class CachedresultMessages {
             if (!getViewBytes().isEmpty()) {
                 size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, view_);
             }
-            if (attributes_ != null) {
-                size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, getAttributes());
+            for (int i = 0; i < attributes_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, attributes_.get(i));
             }
-            if (visibilities_ != null) {
-                size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, getVisibilities());
+            for (int i = 0; i < visibilities_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, visibilities_.get(i));
             }
             size += getUnknownFields().getSerializedSize();
             memoizedSize = size;
@@ -1352,18 +1390,10 @@ public final class CachedresultMessages {
 
             if (!getView().equals(other.getView()))
                 return false;
-            if (hasAttributes() != other.hasAttributes())
+            if (!getAttributesList().equals(other.getAttributesList()))
                 return false;
-            if (hasAttributes()) {
-                if (!getAttributes().equals(other.getAttributes()))
-                    return false;
-            }
-            if (hasVisibilities() != other.hasVisibilities())
+            if (!getVisibilitiesList().equals(other.getVisibilitiesList()))
                 return false;
-            if (hasVisibilities()) {
-                if (!getVisibilities().equals(other.getVisibilities()))
-                    return false;
-            }
             if (!getUnknownFields().equals(other.getUnknownFields()))
                 return false;
             return true;
@@ -1378,13 +1408,13 @@ public final class CachedresultMessages {
             hash = (19 * hash) + getDescriptor().hashCode();
             hash = (37 * hash) + VIEW_FIELD_NUMBER;
             hash = (53 * hash) + getView().hashCode();
-            if (hasAttributes()) {
+            if (getAttributesCount() > 0) {
                 hash = (37 * hash) + ATTRIBUTES_FIELD_NUMBER;
-                hash = (53 * hash) + getAttributes().hashCode();
+                hash = (53 * hash) + getAttributesList().hashCode();
             }
-            if (hasVisibilities()) {
+            if (getVisibilitiesCount() > 0) {
                 hash = (37 * hash) + VISIBILITIES_FIELD_NUMBER;
-                hash = (53 * hash) + getVisibilities().hashCode();
+                hash = (53 * hash) + getVisibilitiesList().hashCode();
             }
             hash = (29 * hash) + getUnknownFields().hashCode();
             memoizedHashCode = hash;
@@ -1508,17 +1538,19 @@ public final class CachedresultMessages {
                 view_ = "";
 
                 if (attributesBuilder_ == null) {
-                    attributes_ = null;
+                    attributes_ = java.util.Collections.emptyList();
                 } else {
                     attributes_ = null;
-                    attributesBuilder_ = null;
+                    attributesBuilder_.clear();
                 }
+                bitField0_ = (bitField0_ & ~0x00000001);
                 if (visibilitiesBuilder_ == null) {
-                    visibilities_ = null;
+                    visibilities_ = java.util.Collections.emptyList();
                 } else {
                     visibilities_ = null;
-                    visibilitiesBuilder_ = null;
+                    visibilitiesBuilder_.clear();
                 }
+                bitField0_ = (bitField0_ & ~0x00000002);
                 return this;
             }
 
@@ -1545,13 +1577,22 @@ public final class CachedresultMessages {
             public datawave.webservice.results.cached.result.CachedresultMessages.Description buildPartial() {
                 datawave.webservice.results.cached.result.CachedresultMessages.Description result = new datawave.webservice.results.cached.result.CachedresultMessages.Description(
                                 this);
+                int from_bitField0_ = bitField0_;
                 result.view_ = view_;
                 if (attributesBuilder_ == null) {
+                    if (((bitField0_ & 0x00000001) != 0)) {
+                        attributes_ = java.util.Collections.unmodifiableList(attributes_);
+                        bitField0_ = (bitField0_ & ~0x00000001);
+                    }
                     result.attributes_ = attributes_;
                 } else {
                     result.attributes_ = attributesBuilder_.build();
                 }
                 if (visibilitiesBuilder_ == null) {
+                    if (((bitField0_ & 0x00000002) != 0)) {
+                        visibilities_ = java.util.Collections.unmodifiableList(visibilities_);
+                        bitField0_ = (bitField0_ & ~0x00000002);
+                    }
                     result.visibilities_ = visibilities_;
                 } else {
                     result.visibilities_ = visibilitiesBuilder_.build();
@@ -1607,11 +1648,53 @@ public final class CachedresultMessages {
                     view_ = other.view_;
                     onChanged();
                 }
-                if (other.hasAttributes()) {
-                    mergeAttributes(other.getAttributes());
+                if (attributesBuilder_ == null) {
+                    if (!other.attributes_.isEmpty()) {
+                        if (attributes_.isEmpty()) {
+                            attributes_ = other.attributes_;
+                            bitField0_ = (bitField0_ & ~0x00000001);
+                        } else {
+                            ensureAttributesIsMutable();
+                            attributes_.addAll(other.attributes_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.attributes_.isEmpty()) {
+                        if (attributesBuilder_.isEmpty()) {
+                            attributesBuilder_.dispose();
+                            attributesBuilder_ = null;
+                            attributes_ = other.attributes_;
+                            bitField0_ = (bitField0_ & ~0x00000001);
+                            attributesBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getAttributesFieldBuilder() : null;
+                        } else {
+                            attributesBuilder_.addAllMessages(other.attributes_);
+                        }
+                    }
                 }
-                if (other.hasVisibilities()) {
-                    mergeVisibilities(other.getVisibilities());
+                if (visibilitiesBuilder_ == null) {
+                    if (!other.visibilities_.isEmpty()) {
+                        if (visibilities_.isEmpty()) {
+                            visibilities_ = other.visibilities_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                        } else {
+                            ensureVisibilitiesIsMutable();
+                            visibilities_.addAll(other.visibilities_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.visibilities_.isEmpty()) {
+                        if (visibilitiesBuilder_.isEmpty()) {
+                            visibilitiesBuilder_.dispose();
+                            visibilitiesBuilder_ = null;
+                            visibilities_ = other.visibilities_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                            visibilitiesBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getVisibilitiesFieldBuilder() : null;
+                        } else {
+                            visibilitiesBuilder_.addAllMessages(other.visibilities_);
+                        }
+                    }
                 }
                 this.mergeUnknownFields(other.getUnknownFields());
                 onChanged();
@@ -1643,13 +1726,25 @@ public final class CachedresultMessages {
                                 break;
                             } // case 10
                             case 18: {
-                                input.readMessage(getAttributesFieldBuilder().getBuilder(), extensionRegistry);
-
+                                datawave.webservice.results.cached.result.CachedresultMessages.Attribute m = input.readMessage(
+                                                datawave.webservice.results.cached.result.CachedresultMessages.Attribute.parser(), extensionRegistry);
+                                if (attributesBuilder_ == null) {
+                                    ensureAttributesIsMutable();
+                                    attributes_.add(m);
+                                } else {
+                                    attributesBuilder_.addMessage(m);
+                                }
                                 break;
                             } // case 18
                             case 26: {
-                                input.readMessage(getVisibilitiesFieldBuilder().getBuilder(), extensionRegistry);
-
+                                datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility m = input.readMessage(
+                                                datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.parser(), extensionRegistry);
+                                if (visibilitiesBuilder_ == null) {
+                                    ensureVisibilitiesIsMutable();
+                                    visibilities_.add(m);
+                                } else {
+                                    visibilitiesBuilder_.addMessage(m);
+                                }
                                 break;
                             } // case 26
                             default: {
@@ -1667,6 +1762,8 @@ public final class CachedresultMessages {
                 } // finally
                 return this;
             }
+
+            private int bitField0_;
 
             private java.lang.Object view_ = "";
 
@@ -1750,247 +1847,482 @@ public final class CachedresultMessages {
                 return this;
             }
 
-            private datawave.webservice.results.cached.result.CachedresultMessages.Attribute attributes_;
-            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> attributesBuilder_;
+            private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> attributes_ = java.util.Collections.emptyList();
 
-            /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @return Whether the attributes field is set.
-             */
-            public boolean hasAttributes() {
-                return attributesBuilder_ != null || attributes_ != null;
+            private void ensureAttributesIsMutable() {
+                if (!((bitField0_ & 0x00000001) != 0)) {
+                    attributes_ = new java.util.ArrayList<datawave.webservice.results.cached.result.CachedresultMessages.Attribute>(attributes_);
+                    bitField0_ |= 0x00000001;
+                }
             }
 
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> attributesBuilder_;
+
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
-             *
-             * @return The attributes.
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes() {
+            public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute> getAttributesList() {
                 if (attributesBuilder_ == null) {
-                    return attributes_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance() : attributes_;
+                    return java.util.Collections.unmodifiableList(attributes_);
                 } else {
-                    return attributesBuilder_.getMessage();
+                    return attributesBuilder_.getMessageList();
                 }
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            public Builder setAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
+            public int getAttributesCount() {
+                if (attributesBuilder_ == null) {
+                    return attributes_.size();
+                } else {
+                    return attributesBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute getAttributes(int index) {
+                if (attributesBuilder_ == null) {
+                    return attributes_.get(index);
+                } else {
+                    return attributesBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public Builder setAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
                 if (attributesBuilder_ == null) {
                     if (value == null) {
                         throw new NullPointerException();
                     }
-                    attributes_ = value;
+                    ensureAttributesIsMutable();
+                    attributes_.set(index, value);
                     onChanged();
                 } else {
-                    attributesBuilder_.setMessage(value);
+                    attributesBuilder_.setMessage(index, value);
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            public Builder setAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
+            public Builder setAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
                 if (attributesBuilder_ == null) {
-                    attributes_ = builderForValue.build();
+                    ensureAttributesIsMutable();
+                    attributes_.set(index, builderForValue.build());
                     onChanged();
                 } else {
-                    attributesBuilder_.setMessage(builderForValue.build());
+                    attributesBuilder_.setMessage(index, builderForValue.build());
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            public Builder mergeAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
+            public Builder addAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
                 if (attributesBuilder_ == null) {
-                    if (attributes_ != null) {
-                        attributes_ = datawave.webservice.results.cached.result.CachedresultMessages.Attribute.newBuilder(attributes_).mergeFrom(value)
-                                        .buildPartial();
-                    } else {
-                        attributes_ = value;
+                    if (value == null) {
+                        throw new NullPointerException();
                     }
+                    ensureAttributesIsMutable();
+                    attributes_.add(value);
                     onChanged();
                 } else {
-                    attributesBuilder_.mergeFrom(value);
+                    attributesBuilder_.addMessage(value);
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public Builder addAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute value) {
+                if (attributesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureAttributesIsMutable();
+                    attributes_.add(index, value);
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public Builder addAttributes(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public Builder addAttributes(int index, datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder builderForValue) {
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    attributesBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public Builder addAllAttributes(java.lang.Iterable<? extends datawave.webservice.results.cached.result.CachedresultMessages.Attribute> values) {
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, attributes_);
+                    onChanged();
+                } else {
+                    attributesBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
             public Builder clearAttributes() {
                 if (attributesBuilder_ == null) {
-                    attributes_ = null;
+                    attributes_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000001);
                     onChanged();
                 } else {
-                    attributes_ = null;
-                    attributesBuilder_ = null;
+                    attributesBuilder_.clear();
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder getAttributesBuilder() {
-
-                onChanged();
-                return getAttributesFieldBuilder().getBuilder();
+            public Builder removeAttributes(int index) {
+                if (attributesBuilder_ == null) {
+                    ensureAttributesIsMutable();
+                    attributes_.remove(index);
+                    onChanged();
+                } else {
+                    attributesBuilder_.remove(index);
+                }
+                return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder() {
-                if (attributesBuilder_ != null) {
-                    return attributesBuilder_.getMessageOrBuilder();
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder getAttributesBuilder(int index) {
+                return getAttributesFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder getAttributesOrBuilder(int index) {
+                if (attributesBuilder_ == null) {
+                    return attributes_.get(index);
                 } else {
-                    return attributes_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance() : attributes_;
+                    return attributesBuilder_.getMessageOrBuilder(index);
                 }
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
              */
-            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesFieldBuilder() {
+            public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesOrBuilderList() {
+                if (attributesBuilder_ != null) {
+                    return attributesBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(attributes_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder addAttributesBuilder() {
+                return getAttributesFieldBuilder().addBuilder(datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder addAttributesBuilder(int index) {
+                return getAttributesFieldBuilder().addBuilder(index,
+                                datawave.webservice.results.cached.result.CachedresultMessages.Attribute.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.Attribute attributes = 2;</code>
+             */
+            public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder> getAttributesBuilderList() {
+                return getAttributesFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder> getAttributesFieldBuilder() {
                 if (attributesBuilder_ == null) {
-                    attributesBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder>(
-                                    getAttributes(), getParentForChildren(), isClean());
+                    attributesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Attribute,datawave.webservice.results.cached.result.CachedresultMessages.Attribute.Builder,datawave.webservice.results.cached.result.CachedresultMessages.AttributeOrBuilder>(
+                                    attributes_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
                     attributes_ = null;
                 }
                 return attributesBuilder_;
             }
 
-            private datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility visibilities_;
-            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> visibilitiesBuilder_;
+            private java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> visibilities_ = java.util.Collections
+                            .emptyList();
 
-            /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @return Whether the visibilities field is set.
-             */
-            public boolean hasVisibilities() {
-                return visibilitiesBuilder_ != null || visibilities_ != null;
+            private void ensureVisibilitiesIsMutable() {
+                if (!((bitField0_ & 0x00000002) != 0)) {
+                    visibilities_ = new java.util.ArrayList<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility>(visibilities_);
+                    bitField0_ |= 0x00000002;
+                }
             }
 
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> visibilitiesBuilder_;
+
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
-             *
-             * @return The visibilities.
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities() {
+            public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> getVisibilitiesList() {
                 if (visibilitiesBuilder_ == null) {
-                    return visibilities_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance()
-                                    : visibilities_;
+                    return java.util.Collections.unmodifiableList(visibilities_);
                 } else {
-                    return visibilitiesBuilder_.getMessage();
+                    return visibilitiesBuilder_.getMessageList();
                 }
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            public Builder setVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
+            public int getVisibilitiesCount() {
+                if (visibilitiesBuilder_ == null) {
+                    return visibilities_.size();
+                } else {
+                    return visibilitiesBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility getVisibilities(int index) {
+                if (visibilitiesBuilder_ == null) {
+                    return visibilities_.get(index);
+                } else {
+                    return visibilitiesBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public Builder setVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
                 if (visibilitiesBuilder_ == null) {
                     if (value == null) {
                         throw new NullPointerException();
                     }
-                    visibilities_ = value;
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.set(index, value);
                     onChanged();
                 } else {
-                    visibilitiesBuilder_.setMessage(value);
+                    visibilitiesBuilder_.setMessage(index, value);
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            public Builder setVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
+            public Builder setVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
                 if (visibilitiesBuilder_ == null) {
-                    visibilities_ = builderForValue.build();
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.set(index, builderForValue.build());
                     onChanged();
                 } else {
-                    visibilitiesBuilder_.setMessage(builderForValue.build());
+                    visibilitiesBuilder_.setMessage(index, builderForValue.build());
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            public Builder mergeVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
+            public Builder addVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
                 if (visibilitiesBuilder_ == null) {
-                    if (visibilities_ != null) {
-                        visibilities_ = datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.newBuilder(visibilities_)
-                                        .mergeFrom(value).buildPartial();
-                    } else {
-                        visibilities_ = value;
+                    if (value == null) {
+                        throw new NullPointerException();
                     }
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(value);
                     onChanged();
                 } else {
-                    visibilitiesBuilder_.mergeFrom(value);
+                    visibilitiesBuilder_.addMessage(value);
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public Builder addVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility value) {
+                if (visibilitiesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(index, value);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public Builder addVisibilities(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public Builder addVisibilities(int index, datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder builderForValue) {
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public Builder addAllVisibilities(
+                            java.lang.Iterable<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility> values) {
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, visibilities_);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
             public Builder clearVisibilities() {
                 if (visibilitiesBuilder_ == null) {
-                    visibilities_ = null;
+                    visibilities_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000002);
                     onChanged();
                 } else {
-                    visibilities_ = null;
-                    visibilitiesBuilder_ = null;
+                    visibilitiesBuilder_.clear();
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder getVisibilitiesBuilder() {
-
-                onChanged();
-                return getVisibilitiesFieldBuilder().getBuilder();
+            public Builder removeVisibilities(int index) {
+                if (visibilitiesBuilder_ == null) {
+                    ensureVisibilitiesIsMutable();
+                    visibilities_.remove(index);
+                    onChanged();
+                } else {
+                    visibilitiesBuilder_.remove(index);
+                }
+                return this;
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder() {
-                if (visibilitiesBuilder_ != null) {
-                    return visibilitiesBuilder_.getMessageOrBuilder();
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder getVisibilitiesBuilder(int index) {
+                return getVisibilitiesFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder getVisibilitiesOrBuilder(int index) {
+                if (visibilitiesBuilder_ == null) {
+                    return visibilities_.get(index);
                 } else {
-                    return visibilities_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance()
-                                    : visibilities_;
+                    return visibilitiesBuilder_.getMessageOrBuilder(index);
                 }
             }
 
             /**
-             * <code>.datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
              */
-            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesFieldBuilder() {
+            public java.util.List<? extends datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesOrBuilderList() {
+                if (visibilitiesBuilder_ != null) {
+                    return visibilitiesBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(visibilities_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder addVisibilitiesBuilder() {
+                return getVisibilitiesFieldBuilder()
+                                .addBuilder(datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder addVisibilitiesBuilder(int index) {
+                return getVisibilitiesFieldBuilder().addBuilder(index,
+                                datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.results.cached.result.ColumnVisibility visibilities = 3;</code>
+             */
+            public java.util.List<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder> getVisibilitiesBuilderList() {
+                return getVisibilitiesFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder> getVisibilitiesFieldBuilder() {
                 if (visibilitiesBuilder_ == null) {
-                    visibilitiesBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder>(
-                                    getVisibilities(), getParentForChildren(), isClean());
+                    visibilitiesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.Builder,datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder>(
+                                    visibilities_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
                     visibilities_ = null;
                 }
                 return visibilitiesBuilder_;
@@ -2069,8 +2401,8 @@ public final class CachedresultMessages {
         java.lang.String[] descriptorData = {"\n\033cachedresult_messages.proto\022)datawave." + "webservice.results.cached.result\"&\n\020Colu"
                         + "mnVisibility\022\022\n\nvisibility\030\001 \001(\t\"\031\n\tAttr"
                         + "ibute\022\014\n\004name\030\001 \001(\t\"\270\001\n\013Description\022\014\n\004v"
-                        + "iew\030\001 \001(\t\022H\n\nattributes\030\002 \001(\01324.datawave" + ".webservice.results.cached.result.Attrib"
-                        + "ute\022Q\n\014visibilities\030\003 \001(\0132;.datawave.web" + "service.results.cached.result.ColumnVisi"
+                        + "iew\030\001 \001(\t\022H\n\nattributes\030\002 \003(\01324.datawave" + ".webservice.results.cached.result.Attrib"
+                        + "ute\022Q\n\014visibilities\030\003 \003(\0132;.datawave.web" + "service.results.cached.result.ColumnVisi"
                         + "bilityB+\n)datawave.webservice.results.ca" + "ched.resultb\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});

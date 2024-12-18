@@ -11,5 +11,5 @@ message Info {
   repeated uint32 termOffset = 3;
   repeated uint32 prevSkips = 4;
   repeated uint32 score = 5;
-  bool zeroOffsetMatch = 6;
+  optional bool zeroOffsetMatch = 6;
 }

@@ -558,6 +558,13 @@ public final class MetricsMessages {
         /**
          * <code>string query_type = 1;</code>
          *
+         * @return Whether the queryType field is set.
+         */
+        boolean hasQueryType();
+
+        /**
+         * <code>string query_type = 1;</code>
+         *
          * @return The queryType.
          */
         java.lang.String getQueryType();
@@ -568,6 +575,13 @@ public final class MetricsMessages {
          * @return The bytes for queryType.
          */
         com.google.protobuf.ByteString getQueryTypeBytes();
+
+        /**
+         * <code>string user = 2;</code>
+         *
+         * @return Whether the user field is set.
+         */
+        boolean hasUser();
 
         /**
          * <code>string user = 2;</code>
@@ -586,9 +600,23 @@ public final class MetricsMessages {
         /**
          * <code>int64 create_date = 3;</code>
          *
+         * @return Whether the createDate field is set.
+         */
+        boolean hasCreateDate();
+
+        /**
+         * <code>int64 create_date = 3;</code>
+         *
          * @return The createDate.
          */
         long getCreateDate();
+
+        /**
+         * <code>string query_id = 4;</code>
+         *
+         * @return Whether the queryId field is set.
+         */
+        boolean hasQueryId();
 
         /**
          * <code>string query_id = 4;</code>
@@ -607,28 +635,41 @@ public final class MetricsMessages {
         /**
          * <code>uint64 setup_time = 5;</code>
          *
+         * @return Whether the setupTime field is set.
+         */
+        boolean hasSetupTime();
+
+        /**
+         * <code>uint64 setup_time = 5;</code>
+         *
          * @return The setupTime.
          */
         long getSetupTime();
 
         /**
-         * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
-         *
-         * @return Whether the pageTimes field is set.
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
          */
-        boolean hasPageTimes();
+        java.util.List<datawave.webservice.query.metric.MetricsMessages.PageMetric> getPageTimesList();
 
         /**
-         * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
-         *
-         * @return The pageTimes.
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
          */
-        datawave.webservice.query.metric.MetricsMessages.PageMetric getPageTimes();
+        datawave.webservice.query.metric.MetricsMessages.PageMetric getPageTimes(int index);
 
         /**
-         * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
          */
-        datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder getPageTimesOrBuilder();
+        int getPageTimesCount();
+
+        /**
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+         */
+        java.util.List<? extends datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> getPageTimesOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+         */
+        datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder getPageTimesOrBuilder(int index);
     }
 
     /**
@@ -648,6 +689,7 @@ public final class MetricsMessages {
             queryType_ = "";
             user_ = "";
             queryId_ = "";
+            pageTimes_ = java.util.Collections.emptyList();
         }
 
         @java.lang.Override
@@ -672,8 +714,19 @@ public final class MetricsMessages {
                                             datawave.webservice.query.metric.MetricsMessages.QueryMetric.Builder.class);
         }
 
+        private int bitField0_;
         public static final int QUERY_TYPE_FIELD_NUMBER = 1;
         private volatile java.lang.Object queryType_;
+
+        /**
+         * <code>string query_type = 1;</code>
+         *
+         * @return Whether the queryType field is set.
+         */
+        @java.lang.Override
+        public boolean hasQueryType() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
 
         /**
          * <code>string query_type = 1;</code>
@@ -716,6 +769,16 @@ public final class MetricsMessages {
         /**
          * <code>string user = 2;</code>
          *
+         * @return Whether the user field is set.
+         */
+        @java.lang.Override
+        public boolean hasUser() {
+            return ((bitField0_ & 0x00000002) != 0);
+        }
+
+        /**
+         * <code>string user = 2;</code>
+         *
          * @return The user.
          */
         @java.lang.Override
@@ -754,6 +817,16 @@ public final class MetricsMessages {
         /**
          * <code>int64 create_date = 3;</code>
          *
+         * @return Whether the createDate field is set.
+         */
+        @java.lang.Override
+        public boolean hasCreateDate() {
+            return ((bitField0_ & 0x00000004) != 0);
+        }
+
+        /**
+         * <code>int64 create_date = 3;</code>
+         *
          * @return The createDate.
          */
         @java.lang.Override
@@ -763,6 +836,16 @@ public final class MetricsMessages {
 
         public static final int QUERY_ID_FIELD_NUMBER = 4;
         private volatile java.lang.Object queryId_;
+
+        /**
+         * <code>string query_id = 4;</code>
+         *
+         * @return Whether the queryId field is set.
+         */
+        @java.lang.Override
+        public boolean hasQueryId() {
+            return ((bitField0_ & 0x00000008) != 0);
+        }
 
         /**
          * <code>string query_id = 4;</code>
@@ -805,6 +888,16 @@ public final class MetricsMessages {
         /**
          * <code>uint64 setup_time = 5;</code>
          *
+         * @return Whether the setupTime field is set.
+         */
+        @java.lang.Override
+        public boolean hasSetupTime() {
+            return ((bitField0_ & 0x00000010) != 0);
+        }
+
+        /**
+         * <code>uint64 setup_time = 5;</code>
+         *
          * @return The setupTime.
          */
         @java.lang.Override
@@ -813,34 +906,46 @@ public final class MetricsMessages {
         }
 
         public static final int PAGE_TIMES_FIELD_NUMBER = 6;
-        private datawave.webservice.query.metric.MetricsMessages.PageMetric pageTimes_;
+        private java.util.List<datawave.webservice.query.metric.MetricsMessages.PageMetric> pageTimes_;
 
         /**
-         * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
-         *
-         * @return Whether the pageTimes field is set.
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
          */
         @java.lang.Override
-        public boolean hasPageTimes() {
-            return pageTimes_ != null;
+        public java.util.List<datawave.webservice.query.metric.MetricsMessages.PageMetric> getPageTimesList() {
+            return pageTimes_;
         }
 
         /**
-         * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
-         *
-         * @return The pageTimes.
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
          */
         @java.lang.Override
-        public datawave.webservice.query.metric.MetricsMessages.PageMetric getPageTimes() {
-            return pageTimes_ == null ? datawave.webservice.query.metric.MetricsMessages.PageMetric.getDefaultInstance() : pageTimes_;
+        public java.util.List<? extends datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> getPageTimesOrBuilderList() {
+            return pageTimes_;
         }
 
         /**
-         * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
          */
         @java.lang.Override
-        public datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder getPageTimesOrBuilder() {
-            return getPageTimes();
+        public int getPageTimesCount() {
+            return pageTimes_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.metric.MetricsMessages.PageMetric getPageTimes(int index) {
+            return pageTimes_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder getPageTimesOrBuilder(int index) {
+            return pageTimes_.get(index);
         }
 
         private byte memoizedIsInitialized = -1;
@@ -859,23 +964,23 @@ public final class MetricsMessages {
 
         @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            if (!getQueryTypeBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 com.google.protobuf.GeneratedMessageV3.writeString(output, 1, queryType_);
             }
-            if (!getUserBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000002) != 0)) {
                 com.google.protobuf.GeneratedMessageV3.writeString(output, 2, user_);
             }
-            if (createDate_ != 0L) {
+            if (((bitField0_ & 0x00000004) != 0)) {
                 output.writeInt64(3, createDate_);
             }
-            if (!getQueryIdBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000008) != 0)) {
                 com.google.protobuf.GeneratedMessageV3.writeString(output, 4, queryId_);
             }
-            if (setupTime_ != 0L) {
+            if (((bitField0_ & 0x00000010) != 0)) {
                 output.writeUInt64(5, setupTime_);
             }
-            if (pageTimes_ != null) {
-                output.writeMessage(6, getPageTimes());
+            for (int i = 0; i < pageTimes_.size(); i++) {
+                output.writeMessage(6, pageTimes_.get(i));
             }
             getUnknownFields().writeTo(output);
         }
@@ -887,23 +992,23 @@ public final class MetricsMessages {
                 return size;
 
             size = 0;
-            if (!getQueryTypeBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, queryType_);
             }
-            if (!getUserBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000002) != 0)) {
                 size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, user_);
             }
-            if (createDate_ != 0L) {
+            if (((bitField0_ & 0x00000004) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeInt64Size(3, createDate_);
             }
-            if (!getQueryIdBytes().isEmpty()) {
+            if (((bitField0_ & 0x00000008) != 0)) {
                 size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, queryId_);
             }
-            if (setupTime_ != 0L) {
+            if (((bitField0_ & 0x00000010) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeUInt64Size(5, setupTime_);
             }
-            if (pageTimes_ != null) {
-                size += com.google.protobuf.CodedOutputStream.computeMessageSize(6, getPageTimes());
+            for (int i = 0; i < pageTimes_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(6, pageTimes_.get(i));
             }
             size += getUnknownFields().getSerializedSize();
             memoizedSize = size;
@@ -920,22 +1025,38 @@ public final class MetricsMessages {
             }
             datawave.webservice.query.metric.MetricsMessages.QueryMetric other = (datawave.webservice.query.metric.MetricsMessages.QueryMetric) obj;
 
-            if (!getQueryType().equals(other.getQueryType()))
+            if (hasQueryType() != other.hasQueryType())
                 return false;
-            if (!getUser().equals(other.getUser()))
-                return false;
-            if (getCreateDate() != other.getCreateDate())
-                return false;
-            if (!getQueryId().equals(other.getQueryId()))
-                return false;
-            if (getSetupTime() != other.getSetupTime())
-                return false;
-            if (hasPageTimes() != other.hasPageTimes())
-                return false;
-            if (hasPageTimes()) {
-                if (!getPageTimes().equals(other.getPageTimes()))
+            if (hasQueryType()) {
+                if (!getQueryType().equals(other.getQueryType()))
                     return false;
             }
+            if (hasUser() != other.hasUser())
+                return false;
+            if (hasUser()) {
+                if (!getUser().equals(other.getUser()))
+                    return false;
+            }
+            if (hasCreateDate() != other.hasCreateDate())
+                return false;
+            if (hasCreateDate()) {
+                if (getCreateDate() != other.getCreateDate())
+                    return false;
+            }
+            if (hasQueryId() != other.hasQueryId())
+                return false;
+            if (hasQueryId()) {
+                if (!getQueryId().equals(other.getQueryId()))
+                    return false;
+            }
+            if (hasSetupTime() != other.hasSetupTime())
+                return false;
+            if (hasSetupTime()) {
+                if (getSetupTime() != other.getSetupTime())
+                    return false;
+            }
+            if (!getPageTimesList().equals(other.getPageTimesList()))
+                return false;
             if (!getUnknownFields().equals(other.getUnknownFields()))
                 return false;
             return true;
@@ -948,19 +1069,29 @@ public final class MetricsMessages {
             }
             int hash = 41;
             hash = (19 * hash) + getDescriptor().hashCode();
-            hash = (37 * hash) + QUERY_TYPE_FIELD_NUMBER;
-            hash = (53 * hash) + getQueryType().hashCode();
-            hash = (37 * hash) + USER_FIELD_NUMBER;
-            hash = (53 * hash) + getUser().hashCode();
-            hash = (37 * hash) + CREATE_DATE_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getCreateDate());
-            hash = (37 * hash) + QUERY_ID_FIELD_NUMBER;
-            hash = (53 * hash) + getQueryId().hashCode();
-            hash = (37 * hash) + SETUP_TIME_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getSetupTime());
-            if (hasPageTimes()) {
+            if (hasQueryType()) {
+                hash = (37 * hash) + QUERY_TYPE_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryType().hashCode();
+            }
+            if (hasUser()) {
+                hash = (37 * hash) + USER_FIELD_NUMBER;
+                hash = (53 * hash) + getUser().hashCode();
+            }
+            if (hasCreateDate()) {
+                hash = (37 * hash) + CREATE_DATE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getCreateDate());
+            }
+            if (hasQueryId()) {
+                hash = (37 * hash) + QUERY_ID_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryId().hashCode();
+            }
+            if (hasSetupTime()) {
+                hash = (37 * hash) + SETUP_TIME_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getSetupTime());
+            }
+            if (getPageTimesCount() > 0) {
                 hash = (37 * hash) + PAGE_TIMES_FIELD_NUMBER;
-                hash = (53 * hash) + getPageTimes().hashCode();
+                hash = (53 * hash) + getPageTimesList().hashCode();
             }
             hash = (29 * hash) + getUnknownFields().hashCode();
             memoizedHashCode = hash;
@@ -1080,21 +1211,22 @@ public final class MetricsMessages {
             public Builder clear() {
                 super.clear();
                 queryType_ = "";
-
+                bitField0_ = (bitField0_ & ~0x00000001);
                 user_ = "";
-
+                bitField0_ = (bitField0_ & ~0x00000002);
                 createDate_ = 0L;
-
+                bitField0_ = (bitField0_ & ~0x00000004);
                 queryId_ = "";
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 setupTime_ = 0L;
-
+                bitField0_ = (bitField0_ & ~0x00000010);
                 if (pageTimesBuilder_ == null) {
-                    pageTimes_ = null;
+                    pageTimes_ = java.util.Collections.emptyList();
                 } else {
                     pageTimes_ = null;
-                    pageTimesBuilder_ = null;
+                    pageTimesBuilder_.clear();
                 }
+                bitField0_ = (bitField0_ & ~0x00000020);
                 return this;
             }
 
@@ -1120,16 +1252,38 @@ public final class MetricsMessages {
             @java.lang.Override
             public datawave.webservice.query.metric.MetricsMessages.QueryMetric buildPartial() {
                 datawave.webservice.query.metric.MetricsMessages.QueryMetric result = new datawave.webservice.query.metric.MetricsMessages.QueryMetric(this);
+                int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
+                if (((from_bitField0_ & 0x00000001) != 0)) {
+                    to_bitField0_ |= 0x00000001;
+                }
                 result.queryType_ = queryType_;
+                if (((from_bitField0_ & 0x00000002) != 0)) {
+                    to_bitField0_ |= 0x00000002;
+                }
                 result.user_ = user_;
-                result.createDate_ = createDate_;
+                if (((from_bitField0_ & 0x00000004) != 0)) {
+                    result.createDate_ = createDate_;
+                    to_bitField0_ |= 0x00000004;
+                }
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    to_bitField0_ |= 0x00000008;
+                }
                 result.queryId_ = queryId_;
-                result.setupTime_ = setupTime_;
+                if (((from_bitField0_ & 0x00000010) != 0)) {
+                    result.setupTime_ = setupTime_;
+                    to_bitField0_ |= 0x00000010;
+                }
                 if (pageTimesBuilder_ == null) {
+                    if (((bitField0_ & 0x00000020) != 0)) {
+                        pageTimes_ = java.util.Collections.unmodifiableList(pageTimes_);
+                        bitField0_ = (bitField0_ & ~0x00000020);
+                    }
                     result.pageTimes_ = pageTimes_;
                 } else {
                     result.pageTimes_ = pageTimesBuilder_.build();
                 }
+                result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
             }
@@ -1177,26 +1331,50 @@ public final class MetricsMessages {
             public Builder mergeFrom(datawave.webservice.query.metric.MetricsMessages.QueryMetric other) {
                 if (other == datawave.webservice.query.metric.MetricsMessages.QueryMetric.getDefaultInstance())
                     return this;
-                if (!other.getQueryType().isEmpty()) {
+                if (other.hasQueryType()) {
+                    bitField0_ |= 0x00000001;
                     queryType_ = other.queryType_;
                     onChanged();
                 }
-                if (!other.getUser().isEmpty()) {
+                if (other.hasUser()) {
+                    bitField0_ |= 0x00000002;
                     user_ = other.user_;
                     onChanged();
                 }
-                if (other.getCreateDate() != 0L) {
+                if (other.hasCreateDate()) {
                     setCreateDate(other.getCreateDate());
                 }
-                if (!other.getQueryId().isEmpty()) {
+                if (other.hasQueryId()) {
+                    bitField0_ |= 0x00000008;
                     queryId_ = other.queryId_;
                     onChanged();
                 }
-                if (other.getSetupTime() != 0L) {
+                if (other.hasSetupTime()) {
                     setSetupTime(other.getSetupTime());
                 }
-                if (other.hasPageTimes()) {
-                    mergePageTimes(other.getPageTimes());
+                if (pageTimesBuilder_ == null) {
+                    if (!other.pageTimes_.isEmpty()) {
+                        if (pageTimes_.isEmpty()) {
+                            pageTimes_ = other.pageTimes_;
+                            bitField0_ = (bitField0_ & ~0x00000020);
+                        } else {
+                            ensurePageTimesIsMutable();
+                            pageTimes_.addAll(other.pageTimes_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.pageTimes_.isEmpty()) {
+                        if (pageTimesBuilder_.isEmpty()) {
+                            pageTimesBuilder_.dispose();
+                            pageTimesBuilder_ = null;
+                            pageTimes_ = other.pageTimes_;
+                            bitField0_ = (bitField0_ & ~0x00000020);
+                            pageTimesBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getPageTimesFieldBuilder() : null;
+                        } else {
+                            pageTimesBuilder_.addAllMessages(other.pageTimes_);
+                        }
+                    }
                 }
                 this.mergeUnknownFields(other.getUnknownFields());
                 onChanged();
@@ -1224,32 +1402,38 @@ public final class MetricsMessages {
                                 break;
                             case 10: {
                                 queryType_ = input.readStringRequireUtf8();
-
+                                bitField0_ |= 0x00000001;
                                 break;
                             } // case 10
                             case 18: {
                                 user_ = input.readStringRequireUtf8();
-
+                                bitField0_ |= 0x00000002;
                                 break;
                             } // case 18
                             case 24: {
                                 createDate_ = input.readInt64();
-
+                                bitField0_ |= 0x00000004;
                                 break;
                             } // case 24
                             case 34: {
                                 queryId_ = input.readStringRequireUtf8();
-
+                                bitField0_ |= 0x00000008;
                                 break;
                             } // case 34
                             case 40: {
                                 setupTime_ = input.readUInt64();
-
+                                bitField0_ |= 0x00000010;
                                 break;
                             } // case 40
                             case 50: {
-                                input.readMessage(getPageTimesFieldBuilder().getBuilder(), extensionRegistry);
-
+                                datawave.webservice.query.metric.MetricsMessages.PageMetric m = input
+                                                .readMessage(datawave.webservice.query.metric.MetricsMessages.PageMetric.parser(), extensionRegistry);
+                                if (pageTimesBuilder_ == null) {
+                                    ensurePageTimesIsMutable();
+                                    pageTimes_.add(m);
+                                } else {
+                                    pageTimesBuilder_.addMessage(m);
+                                }
                                 break;
                             } // case 50
                             default: {
@@ -1268,7 +1452,18 @@ public final class MetricsMessages {
                 return this;
             }
 
+            private int bitField0_;
+
             private java.lang.Object queryType_ = "";
+
+            /**
+             * <code>string query_type = 1;</code>
+             *
+             * @return Whether the queryType field is set.
+             */
+            public boolean hasQueryType() {
+                return ((bitField0_ & 0x00000001) != 0);
+            }
 
             /**
              * <code>string query_type = 1;</code>
@@ -1314,7 +1509,7 @@ public final class MetricsMessages {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-
+                bitField0_ |= 0x00000001;
                 queryType_ = value;
                 onChanged();
                 return this;
@@ -1326,7 +1521,7 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder clearQueryType() {
-
+                bitField0_ = (bitField0_ & ~0x00000001);
                 queryType_ = getDefaultInstance().getQueryType();
                 onChanged();
                 return this;
@@ -1344,13 +1539,22 @@ public final class MetricsMessages {
                     throw new NullPointerException();
                 }
                 checkByteStringIsUtf8(value);
-
+                bitField0_ |= 0x00000001;
                 queryType_ = value;
                 onChanged();
                 return this;
             }
 
             private java.lang.Object user_ = "";
+
+            /**
+             * <code>string user = 2;</code>
+             *
+             * @return Whether the user field is set.
+             */
+            public boolean hasUser() {
+                return ((bitField0_ & 0x00000002) != 0);
+            }
 
             /**
              * <code>string user = 2;</code>
@@ -1396,7 +1600,7 @@ public final class MetricsMessages {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-
+                bitField0_ |= 0x00000002;
                 user_ = value;
                 onChanged();
                 return this;
@@ -1408,7 +1612,7 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder clearUser() {
-
+                bitField0_ = (bitField0_ & ~0x00000002);
                 user_ = getDefaultInstance().getUser();
                 onChanged();
                 return this;
@@ -1426,13 +1630,23 @@ public final class MetricsMessages {
                     throw new NullPointerException();
                 }
                 checkByteStringIsUtf8(value);
-
+                bitField0_ |= 0x00000002;
                 user_ = value;
                 onChanged();
                 return this;
             }
 
             private long createDate_;
+
+            /**
+             * <code>int64 create_date = 3;</code>
+             *
+             * @return Whether the createDate field is set.
+             */
+            @java.lang.Override
+            public boolean hasCreateDate() {
+                return ((bitField0_ & 0x00000004) != 0);
+            }
 
             /**
              * <code>int64 create_date = 3;</code>
@@ -1452,7 +1666,7 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder setCreateDate(long value) {
-
+                bitField0_ |= 0x00000004;
                 createDate_ = value;
                 onChanged();
                 return this;
@@ -1464,13 +1678,22 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder clearCreateDate() {
-
+                bitField0_ = (bitField0_ & ~0x00000004);
                 createDate_ = 0L;
                 onChanged();
                 return this;
             }
 
             private java.lang.Object queryId_ = "";
+
+            /**
+             * <code>string query_id = 4;</code>
+             *
+             * @return Whether the queryId field is set.
+             */
+            public boolean hasQueryId() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
 
             /**
              * <code>string query_id = 4;</code>
@@ -1516,7 +1739,7 @@ public final class MetricsMessages {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-
+                bitField0_ |= 0x00000008;
                 queryId_ = value;
                 onChanged();
                 return this;
@@ -1528,7 +1751,7 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder clearQueryId() {
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 queryId_ = getDefaultInstance().getQueryId();
                 onChanged();
                 return this;
@@ -1546,13 +1769,23 @@ public final class MetricsMessages {
                     throw new NullPointerException();
                 }
                 checkByteStringIsUtf8(value);
-
+                bitField0_ |= 0x00000008;
                 queryId_ = value;
                 onChanged();
                 return this;
             }
 
             private long setupTime_;
+
+            /**
+             * <code>uint64 setup_time = 5;</code>
+             *
+             * @return Whether the setupTime field is set.
+             */
+            @java.lang.Override
+            public boolean hasSetupTime() {
+                return ((bitField0_ & 0x00000010) != 0);
+            }
 
             /**
              * <code>uint64 setup_time = 5;</code>
@@ -1572,7 +1805,7 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder setSetupTime(long value) {
-
+                bitField0_ |= 0x00000010;
                 setupTime_ = value;
                 onChanged();
                 return this;
@@ -1584,128 +1817,245 @@ public final class MetricsMessages {
              * @return This builder for chaining.
              */
             public Builder clearSetupTime() {
-
+                bitField0_ = (bitField0_ & ~0x00000010);
                 setupTime_ = 0L;
                 onChanged();
                 return this;
             }
 
-            private datawave.webservice.query.metric.MetricsMessages.PageMetric pageTimes_;
-            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.query.metric.MetricsMessages.PageMetric,datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder,datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> pageTimesBuilder_;
+            private java.util.List<datawave.webservice.query.metric.MetricsMessages.PageMetric> pageTimes_ = java.util.Collections.emptyList();
 
-            /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
-             *
-             * @return Whether the pageTimes field is set.
-             */
-            public boolean hasPageTimes() {
-                return pageTimesBuilder_ != null || pageTimes_ != null;
+            private void ensurePageTimesIsMutable() {
+                if (!((bitField0_ & 0x00000020) != 0)) {
+                    pageTimes_ = new java.util.ArrayList<datawave.webservice.query.metric.MetricsMessages.PageMetric>(pageTimes_);
+                    bitField0_ |= 0x00000020;
+                }
             }
 
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.metric.MetricsMessages.PageMetric,datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder,datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> pageTimesBuilder_;
+
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
-             *
-             * @return The pageTimes.
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            public datawave.webservice.query.metric.MetricsMessages.PageMetric getPageTimes() {
+            public java.util.List<datawave.webservice.query.metric.MetricsMessages.PageMetric> getPageTimesList() {
                 if (pageTimesBuilder_ == null) {
-                    return pageTimes_ == null ? datawave.webservice.query.metric.MetricsMessages.PageMetric.getDefaultInstance() : pageTimes_;
+                    return java.util.Collections.unmodifiableList(pageTimes_);
                 } else {
-                    return pageTimesBuilder_.getMessage();
+                    return pageTimesBuilder_.getMessageList();
                 }
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            public Builder setPageTimes(datawave.webservice.query.metric.MetricsMessages.PageMetric value) {
+            public int getPageTimesCount() {
+                if (pageTimesBuilder_ == null) {
+                    return pageTimes_.size();
+                } else {
+                    return pageTimesBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public datawave.webservice.query.metric.MetricsMessages.PageMetric getPageTimes(int index) {
+                if (pageTimesBuilder_ == null) {
+                    return pageTimes_.get(index);
+                } else {
+                    return pageTimesBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public Builder setPageTimes(int index, datawave.webservice.query.metric.MetricsMessages.PageMetric value) {
                 if (pageTimesBuilder_ == null) {
                     if (value == null) {
                         throw new NullPointerException();
                     }
-                    pageTimes_ = value;
+                    ensurePageTimesIsMutable();
+                    pageTimes_.set(index, value);
                     onChanged();
                 } else {
-                    pageTimesBuilder_.setMessage(value);
+                    pageTimesBuilder_.setMessage(index, value);
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            public Builder setPageTimes(datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder builderForValue) {
+            public Builder setPageTimes(int index, datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder builderForValue) {
                 if (pageTimesBuilder_ == null) {
-                    pageTimes_ = builderForValue.build();
+                    ensurePageTimesIsMutable();
+                    pageTimes_.set(index, builderForValue.build());
                     onChanged();
                 } else {
-                    pageTimesBuilder_.setMessage(builderForValue.build());
+                    pageTimesBuilder_.setMessage(index, builderForValue.build());
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            public Builder mergePageTimes(datawave.webservice.query.metric.MetricsMessages.PageMetric value) {
+            public Builder addPageTimes(datawave.webservice.query.metric.MetricsMessages.PageMetric value) {
                 if (pageTimesBuilder_ == null) {
-                    if (pageTimes_ != null) {
-                        pageTimes_ = datawave.webservice.query.metric.MetricsMessages.PageMetric.newBuilder(pageTimes_).mergeFrom(value).buildPartial();
-                    } else {
-                        pageTimes_ = value;
+                    if (value == null) {
+                        throw new NullPointerException();
                     }
+                    ensurePageTimesIsMutable();
+                    pageTimes_.add(value);
                     onChanged();
                 } else {
-                    pageTimesBuilder_.mergeFrom(value);
+                    pageTimesBuilder_.addMessage(value);
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public Builder addPageTimes(int index, datawave.webservice.query.metric.MetricsMessages.PageMetric value) {
+                if (pageTimesBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensurePageTimesIsMutable();
+                    pageTimes_.add(index, value);
+                    onChanged();
+                } else {
+                    pageTimesBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public Builder addPageTimes(datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder builderForValue) {
+                if (pageTimesBuilder_ == null) {
+                    ensurePageTimesIsMutable();
+                    pageTimes_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    pageTimesBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public Builder addPageTimes(int index, datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder builderForValue) {
+                if (pageTimesBuilder_ == null) {
+                    ensurePageTimesIsMutable();
+                    pageTimes_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    pageTimesBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public Builder addAllPageTimes(java.lang.Iterable<? extends datawave.webservice.query.metric.MetricsMessages.PageMetric> values) {
+                if (pageTimesBuilder_ == null) {
+                    ensurePageTimesIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, pageTimes_);
+                    onChanged();
+                } else {
+                    pageTimesBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
             public Builder clearPageTimes() {
                 if (pageTimesBuilder_ == null) {
-                    pageTimes_ = null;
+                    pageTimes_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000020);
                     onChanged();
                 } else {
-                    pageTimes_ = null;
-                    pageTimesBuilder_ = null;
+                    pageTimesBuilder_.clear();
                 }
-
                 return this;
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            public datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder getPageTimesBuilder() {
-
-                onChanged();
-                return getPageTimesFieldBuilder().getBuilder();
+            public Builder removePageTimes(int index) {
+                if (pageTimesBuilder_ == null) {
+                    ensurePageTimesIsMutable();
+                    pageTimes_.remove(index);
+                    onChanged();
+                } else {
+                    pageTimesBuilder_.remove(index);
+                }
+                return this;
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            public datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder getPageTimesOrBuilder() {
-                if (pageTimesBuilder_ != null) {
-                    return pageTimesBuilder_.getMessageOrBuilder();
+            public datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder getPageTimesBuilder(int index) {
+                return getPageTimesFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder getPageTimesOrBuilder(int index) {
+                if (pageTimesBuilder_ == null) {
+                    return pageTimes_.get(index);
                 } else {
-                    return pageTimes_ == null ? datawave.webservice.query.metric.MetricsMessages.PageMetric.getDefaultInstance() : pageTimes_;
+                    return pageTimesBuilder_.getMessageOrBuilder(index);
                 }
             }
 
             /**
-             * <code>.datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
              */
-            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.query.metric.MetricsMessages.PageMetric,datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder,datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> getPageTimesFieldBuilder() {
+            public java.util.List<? extends datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> getPageTimesOrBuilderList() {
+                if (pageTimesBuilder_ != null) {
+                    return pageTimesBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(pageTimes_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder addPageTimesBuilder() {
+                return getPageTimesFieldBuilder().addBuilder(datawave.webservice.query.metric.MetricsMessages.PageMetric.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder addPageTimesBuilder(int index) {
+                return getPageTimesFieldBuilder().addBuilder(index, datawave.webservice.query.metric.MetricsMessages.PageMetric.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.metric.PageMetric page_times = 6;</code>
+             */
+            public java.util.List<datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder> getPageTimesBuilderList() {
+                return getPageTimesFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.metric.MetricsMessages.PageMetric,datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder,datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder> getPageTimesFieldBuilder() {
                 if (pageTimesBuilder_ == null) {
-                    pageTimesBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.query.metric.MetricsMessages.PageMetric,datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder,datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder>(
-                                    getPageTimes(), getParentForChildren(), isClean());
+                    pageTimesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.metric.MetricsMessages.PageMetric,datawave.webservice.query.metric.MetricsMessages.PageMetric.Builder,datawave.webservice.query.metric.MetricsMessages.PageMetricOrBuilder>(
+                                    pageTimes_, ((bitField0_ & 0x00000020) != 0), getParentForChildren(), isClean());
                     pageTimes_ = null;
                 }
                 return pageTimesBuilder_;
@@ -3314,15 +3664,16 @@ public final class MetricsMessages {
     static {
         java.lang.String[] descriptorData = {"\n\026metrics_messages.proto\022 datawave.webse" + "rvice.query.metric\032\030exception_messages.p"
                         + "roto\"3\n\nPageMetric\022\020\n\010pagesize\030\001 \001(\004\022\023\n\013"
-                        + "return_time\030\002 \001(\004\"\254\001\n\013QueryMetric\022\022\n\nque"
-                        + "ry_type\030\001 \001(\t\022\014\n\004user\030\002 \001(\t\022\023\n\013create_da"
-                        + "te\030\003 \001(\003\022\020\n\010query_id\030\004 \001(\t\022\022\n\nsetup_time"
-                        + "\030\005 \001(\004\022@\n\npage_times\030\006 \001(\0132,.datawave.we" + "bservice.query.metric.PageMetric\"\347\001\n\027Que"
-                        + "ryMetricListResponse\022\031\n\021operation_time_m"
-                        + "s\030\001 \001(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexceptions\030"
-                        + "\003 \003(\01327.datawave.webservice.query.except" + "ion.QueryExceptionType\022=\n\006result\030\004 \003(\0132-"
-                        + ".datawave.webservice.query.metric.QueryM" + "etric\022\023\n\013num_results\030\005 \001(\005B\"\n datawave.w"
-                        + "ebservice.query.metricb\006proto3"};
+                        + "return_time\030\002 \001(\004\"\211\002\n\013QueryMetric\022\027\n\nque"
+                        + "ry_type\030\001 \001(\tH\000\210\001\001\022\021\n\004user\030\002 \001(\tH\001\210\001\001\022\030\n"
+                        + "\013create_date\030\003 \001(\003H\002\210\001\001\022\025\n\010query_id\030\004 \001("
+                        + "\tH\003\210\001\001\022\027\n\nsetup_time\030\005 \001(\004H\004\210\001\001\022@\n\npage_"
+                        + "times\030\006 \003(\0132,.datawave.webservice.query." + "metric.PageMetricB\r\n\013_query_typeB\007\n\005_use"
+                        + "rB\016\n\014_create_dateB\013\n\t_query_idB\r\n\013_setup" + "_time\"\347\001\n\027QueryMetricListResponse\022\031\n\021ope"
+                        + "ration_time_ms\030\001 \001(\004\022\020\n\010messages\030\002 \003(\t\022K"
+                        + "\n\nexceptions\030\003 \003(\01327.datawave.webservice" + ".query.exception.QueryExceptionType\022=\n\006r"
+                        + "esult\030\004 \003(\0132-.datawave.webservice.query." + "metric.QueryMetric\022\023\n\013num_results\030\005 \001(\005B"
+                        + "\"\n datawave.webservice.query.metricb\006pro" + "to3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {datawave.webservice.query.exception.ExceptionMessages.getDescriptor(),});
         internal_static_datawave_webservice_query_metric_PageMetric_descriptor = getDescriptor().getMessageTypes().get(0);
@@ -3330,8 +3681,8 @@ public final class MetricsMessages {
                         internal_static_datawave_webservice_query_metric_PageMetric_descriptor, new java.lang.String[] {"Pagesize", "ReturnTime",});
         internal_static_datawave_webservice_query_metric_QueryMetric_descriptor = getDescriptor().getMessageTypes().get(1);
         internal_static_datawave_webservice_query_metric_QueryMetric_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-                        internal_static_datawave_webservice_query_metric_QueryMetric_descriptor,
-                        new java.lang.String[] {"QueryType", "User", "CreateDate", "QueryId", "SetupTime", "PageTimes",});
+                        internal_static_datawave_webservice_query_metric_QueryMetric_descriptor, new java.lang.String[] {"QueryType", "User", "CreateDate",
+                                "QueryId", "SetupTime", "PageTimes", "QueryType", "User", "CreateDate", "QueryId", "SetupTime",});
         internal_static_datawave_webservice_query_metric_QueryMetricListResponse_descriptor = getDescriptor().getMessageTypes().get(2);
         internal_static_datawave_webservice_query_metric_QueryMetricListResponse_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_webservice_query_metric_QueryMetricListResponse_descriptor,

@@ -88,6 +88,13 @@ public final class TermWeight {
         /**
          * <code>bool zeroOffsetMatch = 6;</code>
          *
+         * @return Whether the zeroOffsetMatch field is set.
+         */
+        boolean hasZeroOffsetMatch();
+
+        /**
+         * <code>bool zeroOffsetMatch = 6;</code>
+         *
          * @return The zeroOffsetMatch.
          */
         boolean getZeroOffsetMatch();
@@ -133,6 +140,7 @@ public final class TermWeight {
                             datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
         }
 
+        private int bitField0_;
         public static final int TERMOFFSET_FIELD_NUMBER = 3;
         private com.google.protobuf.Internal.IntList termOffset_;
 
@@ -244,6 +252,16 @@ public final class TermWeight {
         /**
          * <code>bool zeroOffsetMatch = 6;</code>
          *
+         * @return Whether the zeroOffsetMatch field is set.
+         */
+        @java.lang.Override
+        public boolean hasZeroOffsetMatch() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <code>bool zeroOffsetMatch = 6;</code>
+         *
          * @return The zeroOffsetMatch.
          */
         @java.lang.Override
@@ -289,7 +307,7 @@ public final class TermWeight {
             for (int i = 0; i < score_.size(); i++) {
                 output.writeUInt32NoTag(score_.getInt(i));
             }
-            if (zeroOffsetMatch_ != false) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 output.writeBool(6, zeroOffsetMatch_);
             }
             getUnknownFields().writeTo(output);
@@ -338,7 +356,7 @@ public final class TermWeight {
                 }
                 scoreMemoizedSerializedSize = dataSize;
             }
-            if (zeroOffsetMatch_ != false) {
+            if (((bitField0_ & 0x00000001) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeBoolSize(6, zeroOffsetMatch_);
             }
             size += getUnknownFields().getSerializedSize();
@@ -362,8 +380,12 @@ public final class TermWeight {
                 return false;
             if (!getScoreList().equals(other.getScoreList()))
                 return false;
-            if (getZeroOffsetMatch() != other.getZeroOffsetMatch())
+            if (hasZeroOffsetMatch() != other.hasZeroOffsetMatch())
                 return false;
+            if (hasZeroOffsetMatch()) {
+                if (getZeroOffsetMatch() != other.getZeroOffsetMatch())
+                    return false;
+            }
             if (!getUnknownFields().equals(other.getUnknownFields()))
                 return false;
             return true;
@@ -388,8 +410,10 @@ public final class TermWeight {
                 hash = (37 * hash) + SCORE_FIELD_NUMBER;
                 hash = (53 * hash) + getScoreList().hashCode();
             }
-            hash = (37 * hash) + ZEROOFFSETMATCH_FIELD_NUMBER;
-            hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getZeroOffsetMatch());
+            if (hasZeroOffsetMatch()) {
+                hash = (37 * hash) + ZEROOFFSETMATCH_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getZeroOffsetMatch());
+            }
             hash = (29 * hash) + getUnknownFields().hashCode();
             memoizedHashCode = hash;
             return hash;
@@ -510,7 +534,7 @@ public final class TermWeight {
                 score_ = emptyIntList();
                 bitField0_ = (bitField0_ & ~0x00000004);
                 zeroOffsetMatch_ = false;
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 return this;
             }
 
@@ -537,6 +561,7 @@ public final class TermWeight {
             public datawave.ingest.protobuf.TermWeight.Info buildPartial() {
                 datawave.ingest.protobuf.TermWeight.Info result = new datawave.ingest.protobuf.TermWeight.Info(this);
                 int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
                 if (((bitField0_ & 0x00000001) != 0)) {
                     termOffset_.makeImmutable();
                     bitField0_ = (bitField0_ & ~0x00000001);
@@ -552,7 +577,11 @@ public final class TermWeight {
                     bitField0_ = (bitField0_ & ~0x00000004);
                 }
                 result.score_ = score_;
-                result.zeroOffsetMatch_ = zeroOffsetMatch_;
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    result.zeroOffsetMatch_ = zeroOffsetMatch_;
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
             }
@@ -630,7 +659,7 @@ public final class TermWeight {
                     }
                     onChanged();
                 }
-                if (other.getZeroOffsetMatch() != false) {
+                if (other.hasZeroOffsetMatch()) {
                     setZeroOffsetMatch(other.getZeroOffsetMatch());
                 }
                 this.mergeUnknownFields(other.getUnknownFields());
@@ -707,7 +736,7 @@ public final class TermWeight {
                             } // case 42
                             case 48: {
                                 zeroOffsetMatch_ = input.readBool();
-
+                                bitField0_ |= 0x00000008;
                                 break;
                             } // case 48
                             default: {
@@ -1015,6 +1044,16 @@ public final class TermWeight {
             /**
              * <code>bool zeroOffsetMatch = 6;</code>
              *
+             * @return Whether the zeroOffsetMatch field is set.
+             */
+            @java.lang.Override
+            public boolean hasZeroOffsetMatch() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
+
+            /**
+             * <code>bool zeroOffsetMatch = 6;</code>
+             *
              * @return The zeroOffsetMatch.
              */
             @java.lang.Override
@@ -1030,7 +1069,7 @@ public final class TermWeight {
              * @return This builder for chaining.
              */
             public Builder setZeroOffsetMatch(boolean value) {
-
+                bitField0_ |= 0x00000008;
                 zeroOffsetMatch_ = value;
                 onChanged();
                 return this;
@@ -1042,7 +1081,7 @@ public final class TermWeight {
              * @return This builder for chaining.
              */
             public Builder clearZeroOffsetMatch() {
-
+                bitField0_ = (bitField0_ & ~0x00000008);
                 zeroOffsetMatch_ = false;
                 onChanged();
                 return this;
@@ -1114,16 +1153,16 @@ public final class TermWeight {
 
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {
-                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"U\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
-                                + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\027\n\017zeroOffset"
-                                + "Match\030\006 \001(\010B\034\n\030datawave.ingest.protobufH" + "\001b\006proto3"};
+        java.lang.String[] descriptorData = {"\n\020TermWeight.proto\022\030datawave.ingest.prot"
+                        + "obuf\"n\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
+                        + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\034\n\017zeroOffset"
+                        + "Match\030\006 \001(\010H\000\210\001\001B\022\n\020_zeroOffsetMatchB\034\n\030" + "datawave.ingest.protobufH\001b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
         internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_ingest_protobuf_Info_descriptor,
-                        new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch",});
+                        new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch", "ZeroOffsetMatch",});
     }
 
     // @@protoc_insertion_point(outer_class_scope)

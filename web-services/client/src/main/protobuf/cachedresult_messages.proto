@@ -14,7 +14,7 @@ message Attribute {
 
 message Description {
 	string view = 1;
-	Attribute attributes = 2;
-	ColumnVisibility visibilities = 3;
+	repeated Attribute attributes = 2;
+	repeated ColumnVisibility visibilities = 3;
 }
 

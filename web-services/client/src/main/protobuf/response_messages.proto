@@ -20,21 +20,21 @@ message QueryImplListResponse {
 	repeated datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
 
 	repeated datawave.webservice.query.QueryImpl query = 4;
-	uint32 numResults = 5;
+	optional uint32 numResults = 5;
 }
 
 message GenericResponse {
 	uint64 operation_time_ms = 1;
-	string messages = 2;
+	repeated string messages = 2;
 	repeated datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
 
 	string result_class_name = 4;
-	string result_as_string = 5;
-	bool result_as_boolean = 6;
-	sint32 result_as_int = 7;
-	sint64 result_as_long = 8;
-	float result_as_float = 9;
-	double result_as_double = 10;
-	bytes result_as_bytes = 11;
-	datawave.webservice.results.cached.result.Description result_as_description = 12;
+	optional string result_as_string = 5;
+	optional bool result_as_boolean = 6;
+	optional sint32 result_as_int = 7;
+	optional sint64 result_as_long = 8;
+	optional float result_as_float = 9;
+	optional double result_as_double = 10;
+	optional bytes result_as_bytes = 11;
+	optional datawave.webservice.results.cached.result.Description result_as_description = 12;
 }
