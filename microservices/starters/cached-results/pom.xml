@@ -23,8 +23,10 @@
         <url>https://github.com/NationalSecurityAgency/datawave-spring-boot-starter-cached-results</url>
     </scm>
     <properties>
-        <version.datawave>7.3.0</version.datawave>
+        <version.datawave>7.17.0</version.datawave>
+        <version.datawave.hazelcast>4.0.2</version.datawave.hazelcast>
         <version.datawave.hazelcast-client>4.0.2</version.datawave.hazelcast-client>
+        <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.starter>4.0.4</version.datawave.starter>
         <version.datawave.starter-audit>4.0.3</version.datawave.starter-audit>
         <version.datawave.starter-query>1.0.8</version.datawave.starter-query>
@@ -89,6 +91,10 @@
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
+                        <artifactId>jakarta.validation-api</artifactId>
+                        <groupId>jakarta.validation</groupId>
+                    </exclusion>
+                    <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>org.apache.zookeeper</groupId>
                     </exclusion>
@@ -133,6 +139,10 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-spring</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-cached-results</artifactId>
         </dependency>
@@ -146,7 +156,35 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>hazelcast-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>hazelcast-common</artifactId>
+            <version>${version.datawave.hazelcast}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-api</artifactId>
+            <version>${version.datawave.query-api}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.validation-api</artifactId>
+                    <groupId>jakarta.validation</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -161,8 +199,40 @@
             <artifactId>datawave-ws-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

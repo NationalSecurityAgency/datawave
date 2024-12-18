@@ -18,10 +18,12 @@
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.2</version.accumulo>
+        <version.commons-codec>1.7</version.commons-codec>
         <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
         <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
+        <version.jakarta>2.3.3</version.jakarta>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -89,6 +91,10 @@
                         <artifactId>junit</artifactId>
                         <groupId>junit</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>javax.el</artifactId>
+                        <groupId>javax.el</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -106,6 +112,12 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${version.commons-codec}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
@@ -116,6 +128,11 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>type-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${version.jakarta}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>

@@ -24,10 +24,14 @@
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
+        <version.accumulo>2.1.2</version.accumulo>
+        <version.commons-collections4>4.0</version.commons-collections4>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
+        <version.guava>28.1-jre</version.guava>
         <version.jaxb>2.3.3</version.jaxb>
+        <version.junit>4.13.2</version.junit>
         <version.powermock>2.0.4</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
@@ -97,6 +101,15 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${version.guava}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
         </dependency>
@@ -117,6 +130,22 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+            <version>${version.accumulo}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>javax.el</artifactId>
+                    <groupId>javax.el</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>${version.commons-collections4}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
@@ -127,6 +156,17 @@
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

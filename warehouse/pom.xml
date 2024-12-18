@@ -106,6 +106,12 @@
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-core</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.el</groupId>
+                        <artifactId>javax.el</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -166,17 +172,33 @@
                         <groupId>com.google.collections</groupId>
                         <artifactId>google-collections</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.validation</groupId>
+                        <artifactId>jakarta.validation-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-common</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jakarta.validation</groupId>
+                        <artifactId>jakarta.validation-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-common-util</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jakarta.validation</groupId>
+                        <artifactId>jakarta.validation-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
@@ -249,8 +271,16 @@
                 <version>${version.hadoop}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>*</groupId>
+                        <groupId>log4j</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -281,13 +311,25 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-mapreduce-client-common</artifactId>
+                <artifactId>hadoop-mapreduce-client-hs</artifactId>
+                <version>${version.hadoop}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-api</artifactId>
                 <version>${version.hadoop}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>com.sun.jersey</groupId>
+                        <groupId>*</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-client</artifactId>
+                <version>${version.hadoop}</version>
+                <exclusions>
                     <exclusion>
                         <groupId>log4j</groupId>
                         <artifactId>*</artifactId>
@@ -304,28 +346,33 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-mapreduce-client-hs</artifactId>
-                <version>${version.hadoop}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-yarn-api</artifactId>
-                <version>${version.hadoop}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-yarn-client</artifactId>
-                <version>${version.hadoop}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-common</artifactId>
                 <version>${version.hadoop}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-server-common</artifactId>
                 <version>${version.hadoop}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlbeans</groupId>

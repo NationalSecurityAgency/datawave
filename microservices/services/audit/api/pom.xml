@@ -17,7 +17,7 @@
         <url>https://github.com/NationalSecurityAgency/datawave-audit-service</url>
     </scm>
     <properties>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.2</version.accumulo>
         <version.commons>3.9</version.commons>
         <version.guava>31.1-jre</version.guava>
     </properties>
@@ -76,6 +76,10 @@
                     <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>javax.el</artifactId>
+                        <groupId>javax.el</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>

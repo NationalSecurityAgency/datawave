@@ -125,6 +125,12 @@
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-core</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.el</groupId>
+                        <artifactId>javax.el</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>

@@ -24,21 +24,29 @@
         <version.datawave>7.14.1</version.datawave>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
+        <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
+        <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.11</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.3</version.datawave.starter>
         <version.datawave.starter-datawave-query-metric>3.0.3</version.datawave.starter-datawave-query-metric>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
+        <version.guava>31.1-jre</version.guava>
+        <version.hadoop>3.3.6</version.hadoop>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
+        <version.javax.inject>1</version.javax.inject>
         <version.protobuf-java>3.7.1</version.protobuf-java>
+        <version.spring>5.3.21</version.spring>
+        <version.spring-boot>2.7.1</version.spring-boot>
+        <version.spring-cloud-context>3.1.3</version.spring-cloud-context>
         <version.validation-api>2.0.2</version.validation-api>
         <version.webjars.bootstrap>4.3.1</version.webjars.bootstrap>
         <version.webjars.jquery>3.4.1</version.webjars.jquery>
         <version.webjars.leaflet>1.5.1</version.webjars.leaflet>
         <version.webjars.locator-core>0.35</version.webjars.locator-core>
-        <version.zookeeper>3.8.3</version.zookeeper>
+        <version.zookeeper>3.8.2</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -57,6 +65,10 @@
                 <artifactId>datawave-in-memory-accumulo</artifactId>
                 <version>${version.in-memory-accumulo}</version>
                 <exclusions>
+                    <exclusion>
+                        <artifactId>javax.el</artifactId>
+                        <groupId>javax.el</groupId>
+                    </exclusion>
                     <exclusion>
                         <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
@@ -91,6 +103,18 @@
                     <exclusion>
                         <artifactId>reload4j</artifactId>
                         <groupId>ch.qos.reload4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xalan</artifactId>
+                        <groupId>xalan</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xercesImpl</artifactId>
+                        <groupId>xerces</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -155,12 +179,30 @@
                         <artifactId>*</artifactId>
                         <groupId>junit</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>accumulo-api</artifactId>
                 <version>${version.datawave.accumulo-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>xalan</artifactId>
+                        <groupId>xalan</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xercesImpl</artifactId>
+                        <groupId>xerces</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -177,11 +219,23 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>hazelcast-common</artifactId>
                 <version>${version.datawave.hazelcast-common}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -207,17 +261,41 @@
                         <artifactId>log4j-slf4j-impl</artifactId>
                         <groupId>org.apache.logging.log4j</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-metadata</artifactId>
                 <version>${version.datawave.starter-metadata}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>xalan</artifactId>
+                        <groupId>xalan</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xercesImpl</artifactId>
+                        <groupId>xerces</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-query-metric</artifactId>
                 <version>${version.datawave.starter-datawave-query-metric}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
@@ -225,12 +303,28 @@
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
+                        <artifactId>jakarta.validation-api</artifactId>
+                        <groupId>jakarta.validation</groupId>
+                    </exclusion>
+                    <exclusion>
                         <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
                     </exclusion>
                     <exclusion>
                         <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xalan</artifactId>
+                        <groupId>xalan</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xercesImpl</artifactId>
+                        <groupId>xerces</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -243,6 +337,18 @@
                         <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>xalan</artifactId>
+                        <groupId>xalan</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>xercesImpl</artifactId>
+                        <groupId>xerces</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -254,25 +360,6 @@
                 <groupId>javax.cache</groupId>
                 <artifactId>cache-api</artifactId>
                 <version>${version.cache-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.zookeeper</groupId>
-                <artifactId>zookeeper</artifactId>
-                <version>${version.zookeeper}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>ch.qos.logback</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-log4j12</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>log4j</artifactId>
-                        <groupId>log4j</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.webjars</groupId>
@@ -305,6 +392,19 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${version.guava}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-kubernetes</artifactId>
         </dependency>
@@ -321,8 +421,46 @@
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-query</artifactId>
+            <version>${version.datawave}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>audit-api</artifactId>
+            <version>${version.datawave.audit-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>hazelcast-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>metadata-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-api</artifactId>
+            <version>${version.datawave.query-api}</version>
+            <classifier>jboss</classifier>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.validation-api</artifactId>
+                    <groupId>jakarta.validation</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -353,8 +491,88 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${version.javax.inject}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-api</artifactId>
+            <version>${version.hadoop}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>${version.hadoop}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>*</artifactId>
+                    <groupId>com.sun.jersey</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>reload4j</artifactId>
+                    <groupId>ch.qos.reload4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-reload4j</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>${version.spring}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>${version.spring}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-messaging</artifactId>
+            <version>${version.spring}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -363,6 +581,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <version>${version.spring-boot}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+            <version>${version.spring-cloud-context}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
@@ -381,13 +613,24 @@
             <artifactId>webjars-locator-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${version.spring}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test-autoconfigure</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

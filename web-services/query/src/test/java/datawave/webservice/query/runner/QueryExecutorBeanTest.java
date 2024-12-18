@@ -486,7 +486,7 @@ public class QueryExecutorBeanTest {
         predictions.add(new Prediction("source", 1));
         EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
-        EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions);
+        EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions).anyTimes();
 
         PowerMock.replayAll();
 
@@ -761,10 +761,10 @@ public class QueryExecutorBeanTest {
 
             // Wait for the create call to get to initialize
             while (!initializeLooping.get()) {
+                Thread.sleep(50);
                 if (!createQuery.isAlive() && !initializeLooping.get()) {
                     Assert.fail("createQuery thread died before reaching initialize: " + createQueryException[0]);
                 }
-                Thread.sleep(50);
             }
 
             // initialize has not completed yet so it will not appear in the cache

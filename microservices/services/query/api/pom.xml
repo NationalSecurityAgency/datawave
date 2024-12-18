@@ -20,6 +20,9 @@
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
         <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
+        <version.jakarta.xml.bind-api>2.3.3</version.jakarta.xml.bind-api>
+        <version.protostuff>1.6.2</version.protostuff>
+        <version.spring>5.3.5</version.spring>
         <version.validation-api>2.0.2</version.validation-api>
     </properties>
     <dependencyManagement>
@@ -71,8 +74,28 @@
             <artifactId>type-utils</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-api</artifactId>
+            <version>${version.protostuff}</version>
+        </dependency>
+        <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${version.jakarta.xml.bind-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${version.spring}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>${version.spring}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

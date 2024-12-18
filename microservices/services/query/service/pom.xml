@@ -19,12 +19,14 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.query.QueryService</start-class>
+        <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.starter>4.0.4</version.datawave.starter>
         <version.datawave.starter-audit>4.0.3</version.datawave.starter-audit>
         <version.datawave.starter-cached-results>1.0.10</version.datawave.starter-cached-results>
         <version.datawave.starter-query>1.0.8</version.datawave.starter-query>
-        <version.hadoop>3.3.4</version.hadoop>
+        <version.hadoop>3.3.6</version.hadoop>
+        <version.swagger.v3>2.2.0</version.swagger.v3>
         <version.webjars.foundation>6.4.3-1</version.webjars.foundation>
         <version.webjars.jquery>3.3.1-1</version.webjars.jquery>
         <version.webjars.locator-core>0.30</version.webjars.locator-core>
@@ -35,6 +37,12 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.datawave.query-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>jakarta.validation-api</artifactId>
+                        <groupId>jakarta.validation</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -72,6 +80,10 @@
                 <artifactId>hadoop-common</artifactId>
                 <version>${version.hadoop}</version>
                 <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>com.sun.jersey</groupId>
+                    </exclusion>
                     <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>org.mortbay.jetty</groupId>
@@ -184,6 +196,18 @@
         </dependency>
         <?SORTPOM RESUME?>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-query</artifactId>
             <exclusions>
@@ -199,11 +223,48 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>query-api</artifactId>
+            <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>spring-boot-starter-datawave-audit</artifactId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>hazelcast-common</artifactId>
+            <version>${version.datawave.hazelcast-common}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-api</artifactId>
+            <version>${version.datawave.query-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jakarta.validation-api</artifactId>
+                    <groupId>jakarta.validation</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${version.swagger.v3}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -214,8 +275,56 @@
             <artifactId>hadoop-hdfs</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-bus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
@@ -240,7 +349,22 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

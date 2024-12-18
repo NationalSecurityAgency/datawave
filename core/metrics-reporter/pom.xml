@@ -27,6 +27,7 @@
         <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.httpclient>4.5.10</version.httpclient>
         <version.javastatsd>3.1.0</version.javastatsd>
+        <version.slf4j-api>1.7.29</version.slf4j-api>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -74,6 +75,11 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j-api}</version>
         </dependency>
     </dependencies>
     <repositories>

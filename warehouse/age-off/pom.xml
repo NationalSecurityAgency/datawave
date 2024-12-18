@@ -22,6 +22,10 @@
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
+                    <groupId>javax.el</groupId>
+                    <artifactId>javax.el</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>xml-apis</groupId>
                     <artifactId>xml-apis</artifactId>
                 </exclusion>
@@ -61,6 +65,11 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <version>${version.hamcrest}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

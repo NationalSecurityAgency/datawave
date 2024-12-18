@@ -27,14 +27,16 @@
         <version.authorization-api>4.0.0</version.authorization-api>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-collections>4.4</version.commons-collections>
+        <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.dropwizard>4.1.2</version.dropwizard>
         <version.guava>28.1-jre</version.guava>
+        <version.hadoop>3.3.6</version.hadoop>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
         <version.slf4j>1.7.29</version.slf4j>
         <!-- snappy and dropwizard required to allow miniaccumulo to work with upgraded zookeeper -->
         <version.snappy>1.1.7</version.snappy>
         <version.spring>5.3.5</version.spring>
-        <version.zookeeper>3.8.0</version.zookeeper>
+        <version.zookeeper>3.8.2</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -151,6 +153,10 @@
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
+                        <artifactId>javax.el</artifactId>
+                        <groupId>javax.el</groupId>
+                    </exclusion>
+                    <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
                     </exclusion>
@@ -194,8 +200,27 @@
             <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${version.commons-lang3}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-api</artifactId>
+            <version>${version.hadoop}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -213,6 +238,16 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
