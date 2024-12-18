@@ -105,10 +105,18 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            // figure out if we are before the first datatype -- seek to first datatype
-            // or after the last datatype -- skip to next field
-            log.trace("datatype miss, advance to next key");
-            return new FilterResult(false, AdvanceResult.NEXT);
+
+            String lower = datatypes.lower(parser.getDatatype());
+            if (lower != null) {
+                // advance to next field
+                return new FilterResult(false, AdvanceResult.NEXT_CF);
+            }
+
+            String higher = datatypes.higher(parser.getDatatype());
+            if (higher != null) {
+                // current datatype sorts before next possible hit, advance via next
+                return new FilterResult(false, AdvanceResult.NEXT);
+            }
         }
 
         log.trace("key accepted, advancing to next CF");

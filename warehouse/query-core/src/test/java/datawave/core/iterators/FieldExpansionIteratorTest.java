@@ -76,6 +76,9 @@ public class FieldExpansionIteratorTest {
                 m.put("FIELD_D", "202410" + i + "_0\u0000datatype-a", value);
             }
 
+            // FIELD_E tests a specific datatype case
+            m.put("FIELD_E", "20241023_0\u0000datatype-d", value);
+
             bw.addMutation(m);
         }
     }
@@ -114,7 +117,7 @@ public class FieldExpansionIteratorTest {
     @Test
     public void testAllDays_noDatatypes() throws Exception {
         withDate("20241021", "20241023");
-        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D"));
+        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D", "FIELD_E"));
         drive();
     }
 
@@ -182,7 +185,13 @@ public class FieldExpansionIteratorTest {
         drive();
     }
 
-    // TODO -- when fetch columns are different from actual data
+    @Test
+    public void testDatatypeSortsAfterTopKey() throws Exception {
+        withDate("20241023", "20241023");
+        withDatatypes(Set.of("datatype-e"));
+        // withFields(Set.of("FIELD_E"));
+        drive();
+    }
 
     public void drive() throws Exception {
         Preconditions.checkNotNull(startDate);
