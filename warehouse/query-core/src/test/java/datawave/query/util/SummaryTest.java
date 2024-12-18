@@ -390,9 +390,8 @@ public abstract class SummaryTest {
         String queryString = "QUOTE:(farther) #SUMMARY(SIZE:50/VIEWS:CONTENT*/ONLY)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(
-                Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu" +
-                           "\nCONTENT2: A lawyer and his briefcase can steal more than ten: : [] 9223372036854775807 false"));
+        Set<String> goodResults = new HashSet<>(Set.of("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu"
+                        + "\nCONTENT2: A lawyer and his briefcase can steal more than ten: : [] 9223372036854775807 false"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
