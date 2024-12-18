@@ -957,13 +957,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!disableExpandIndexFunction) {
             // expand the index queries for the functions
             config.setQueryTree(timedExpandIndexQueriesForFunctions(timers, config.getQueryTree(), config, metadataHelper));
-            System.out.println(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
         }
 
         // must expand multi-normalized terms after index queries but before index expansion
         // for example, f:includeText(_ANYFIELD_, 'value')
         config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
-        System.out.println(JexlStringBuildingVisitor.buildQuery(config.getQueryTree()));
 
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
