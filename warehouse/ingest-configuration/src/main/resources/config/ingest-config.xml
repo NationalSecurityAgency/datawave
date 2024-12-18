@@ -4,7 +4,7 @@
 <!-- Used by ingest job to precreate tables and get split information. -->
 <property>
   <name>ingest.data.types</name>
-  <value>${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_INGEST_DATA_TYPES},${DEPRECATED_INGEST_DATA_TYPES}</value>
+  <value>${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_INGEST_DATA_TYPES},${DEPRECATED_INGEST_DATA_TYPES},${FIELD_MAPPINGS},${MAPPING_FIELDS}</value>
   <description>The list of datatypes to be processed by the system.</description>
 </property>
 
@@ -91,4 +91,10 @@
   <name>partitioner.default.delegate</name>
   <value>datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner</value>
 </property>
+
+<property>
+    <name>shwinfield.data.protocol.specific.field.mappings</name>
+    <value>${USER_FIELD_A},${USER_FIELD_B}->WHINDEX_FIELD_NAME</value>
+</property>
+
 </configuration>
