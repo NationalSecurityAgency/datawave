@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -15,6 +16,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.SeekingFilter;
+import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +46,7 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
     private String endDate;
 
     private Set<String> fields;
-    private Set<String> datatypes;
+    private TreeSet<String> datatypes;
 
     // track which fields this iterator has seen and returned. this collection is not persisted between teardown and rebuilds, so unique return values
     // are only guaranteed within a single non-interrupted scan session
@@ -63,7 +65,7 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
         }
 
         if (options.containsKey(DATATYPES)) {
-            datatypes = new HashSet<>(Splitter.on(',').splitToList(options.get(DATATYPES)));
+            datatypes = new TreeSet<>(Splitter.on(',').splitToList(options.get(DATATYPES)));
         }
 
         startDate = options.get(START_DATE);
@@ -93,7 +95,7 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
         if (date.compareTo(startDate) < 0) {
             // advance to start date
             log.trace("Key before start date: {} < {}", date, startDate);
-            return new FilterResult(false, AdvanceResult.NEXT);
+            return new FilterResult(false, AdvanceResult.USE_HINT);
         }
 
         if (date.compareTo(endDate) > 0) {
@@ -114,9 +116,27 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
         return new FilterResult(true, AdvanceResult.NEXT_CF);
     }
 
+    /**
+     * This method is only called when the top key's date range lies before the configured start date
+     *
+     * @param k
+     *            a key
+     * @param v
+     *            a value
+     * @return the start key for a seek range
+     */
     @Override
     public Key getNextKeyHint(Key k, Value v) {
-        return null;
+        String shard = startDate + "_0";
+
+        Text cq;
+        if (datatypes == null || datatypes.isEmpty()) {
+            cq = new Text(shard);
+        } else {
+            cq = new Text(shard + '\u0000' + datatypes.first());
+        }
+
+        return new Key(k.getRow(), k.getColumnFamily(), cq, k.getTimestamp());
     }
 
     @Override

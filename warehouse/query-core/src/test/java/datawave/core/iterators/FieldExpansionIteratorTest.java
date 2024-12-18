@@ -71,6 +71,11 @@ public class FieldExpansionIteratorTest {
             m.put("FIELD_C", "20241022_0\u0000datatype-b", value);
             m.put("FIELD_C", "20241022_0\u0000datatype-c", value);
 
+            // FIELD_D supports verification of seeking by start date
+            for (int i = 10; i < 30; i++) {
+                m.put("FIELD_D", "202410" + i + "_0\u0000datatype-a", value);
+            }
+
             bw.addMutation(m);
         }
     }
@@ -87,7 +92,7 @@ public class FieldExpansionIteratorTest {
     @Test
     public void testSingleDay_noDatatypes() throws Exception {
         withDate("20241021", "20241021");
-        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D"));
         drive();
     }
 
@@ -95,7 +100,7 @@ public class FieldExpansionIteratorTest {
     public void testSingleDay_withDatatype() throws Exception {
         withDate("20241021", "20241021");
         withDatatypes(Set.of("datatype-a"));
-        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D"));
         drive();
     }
 
@@ -109,7 +114,7 @@ public class FieldExpansionIteratorTest {
     @Test
     public void testAllDays_noDatatypes() throws Exception {
         withDate("20241021", "20241023");
-        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D"));
         drive();
     }
 
@@ -117,7 +122,7 @@ public class FieldExpansionIteratorTest {
     public void testAllDays_allDatatypes() throws Exception {
         withDate("20241021", "20241023");
         withDatatypes(Set.of("datatype-a", "datatype-b", "datatype-c"));
-        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+        withExpected(Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D"));
         drive();
     }
 
@@ -165,6 +170,15 @@ public class FieldExpansionIteratorTest {
         withDate("20241023", "20241023");
         withDatatypes(Set.of("datatype-c")); // datatype does not exist in 2024-10-23
         withFields(Set.of("FIELD_A"));
+        drive();
+    }
+
+    @Test
+    public void testSingleDayWithDataAcrossLargeDateRage() throws Exception {
+        withDate("20241023", "20241023");
+        withDatatypes(Set.of("datatype-a"));
+        withFields(Set.of("FIELD_A", "FIELD_D"));
+        withExpected(Set.of("FIELD_A", "FIELD_D"));
         drive();
     }
 
