@@ -125,12 +125,12 @@ public class ProtobufEdgePreconditionTest {
         Assert.assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
         Assert.assertEquals(
                         "count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
         Assert.assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
         Assert.assertEquals(
                         "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
 
         // vis and ts
@@ -186,7 +186,7 @@ public class ProtobufEdgePreconditionTest {
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
         Assert.assertEquals(
                         "count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(1));
         Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
         Assert.assertEquals(
@@ -195,7 +195,7 @@ public class ProtobufEdgePreconditionTest {
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
         Assert.assertEquals(
                         "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(1));
 
         Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
@@ -250,12 +250,12 @@ public class ProtobufEdgePreconditionTest {
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
         Assert.assertEquals(
                         "count: 1, bitmask: 1, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(1));
         Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
         Assert.assertEquals(
                         "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
         Assert.assertEquals(
                         "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "

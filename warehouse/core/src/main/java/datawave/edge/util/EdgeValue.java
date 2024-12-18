@@ -238,15 +238,20 @@ public class EdgeValue {
         EdgeData.EdgeValue proto = EdgeData.EdgeValue.parseFrom(value.get());
 
         EdgeValueBuilder builder = new EdgeValueBuilder();
-
-        builder.setCount(proto.getCount());
-
-        builder.setBitmask(proto.getHourBitmask());
-
-        builder.setSourceValue(proto.getSourceValue());
-
-        builder.setSinkValue(proto.getSinkValue());
-
+        if (proto.hasCount()) {
+            builder.setCount(proto.getCount());
+        } else {
+            builder.setCount(0l);
+        }
+        if (proto.hasHourBitmask()) {
+            builder.setBitmask(proto.getHourBitmask());
+        }
+        if (proto.hasSourceValue()) {
+            builder.setSourceValue(proto.getSourceValue());
+        }
+        if (proto.hasSinkValue()) {
+            builder.setSinkValue(proto.getSinkValue());
+        }
         List<Long> hoursList = proto.getHoursList();
         if (hoursList != null && hoursList.isEmpty() == false) {
             builder.setHours(hoursList);
@@ -255,19 +260,20 @@ public class EdgeValue {
         if (durationList != null && durationList.isEmpty() == false) {
             builder.setDuration(durationList);
         }
-        builder.setLoadDate(proto.getLoadDate());
-
+        if (proto.hasLoadDate()) {
+            builder.setLoadDate(proto.getLoadDate());
+        }
         if (proto.hasUuid()) {
             builder.setOnlyUuidString(false);
             builder.setUuidObj(convertUuidObject(proto.getUuid()));
-        } else {
-            if (!proto.getUuidString().isEmpty()) {
-                // if there is a uuid string in the protobuf data, it means that we shouldn't have a uuid object at all
-                builder.setOnlyUuidString(true);
-                builder.setUuid(proto.getUuidString());
-            }
+        } else if (proto.hasUuidString()) {
+            // if the uuid string is in the protobuf data, it means that we shouldn't have the uuid object at all
+            builder.setOnlyUuidString(true);
+            builder.setUuid(proto.getUuidString());
         }
-        builder.setBadActivityDate(proto.getBadActivity());
+        if (proto.hasBadActivity()) {
+            builder.setBadActivityDate(proto.getBadActivity());
+        }
         return builder.build();
     }
 
