@@ -79,6 +79,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
     private boolean expandDataPointers = false;
     private int dataPointerLengthLimit = -1;
+    private String dataPointerTruncationField;
     private IteratorEnvironment env;
     private SortedKeyValueIterator<Key,Value> dataPointerSource;
     private ObjectMapper dataPointerObjectMapper;
@@ -104,10 +105,6 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         this.filter = filter;
         this.includeParent = includeParent;
         this.env = env;
-
-        if (expandDataPointers) {
-            dataPointerObjectMapper = new ObjectMapper();
-        }
 
         // Conditionally create and initialize the child count function
         if (includeChildCount) {
@@ -146,6 +143,22 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      */
     public KeyToDocumentData withAggregationThreshold(int aggregationThreshold) {
         this.aggregationThreshold = aggregationThreshold;
+        return this;
+    }
+
+    public KeyToDocumentData withDataPointers(int characterLimit, String truncationField) {
+        if (characterLimit < -1 || characterLimit == 0) {
+            throw new IllegalArgumentException("character limit must be between -1 or greater than 0");
+        }
+        if (characterLimit > 0 && (truncationField == null || truncationField.isEmpty())) {
+            throw new IllegalArgumentException("truncationField must be specified when using a character limit");
+        }
+
+        this.expandDataPointers = true;
+        this.dataPointerLengthLimit = characterLimit;
+        this.dataPointerTruncationField = truncationField;
+        this.dataPointerObjectMapper = new ObjectMapper();
+
         return this;
     }
 
@@ -213,6 +226,11 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     }
 
     private Multimap<Key,Value> expandDataPointer(Key pointerKey, Value pointerValue) throws IOException {
+        if (!expandDataPointers) {
+            throw new IllegalStateException("cannot expand data pointers when disabled");
+        }
+
+        // do this lazily on demand
         if (dataPointerSource == null) {
             dataPointerSource = this.source.deepCopy(env);
         }
@@ -220,6 +238,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         DataPointer dataPointer = getDataPointer(pointerValue);
         Map<String,String> pointerOptions = new HashMap<>();
         pointerOptions.put(ViewDataPointer.LENGTH_LIMIT, "" + dataPointerLengthLimit);
+        if (dataPointerTruncationField != null) {
+            pointerOptions.put(ViewDataPointer.TRUNCATE_FIELD, dataPointerTruncationField);
+        }
         dataPointer.init(dataPointerSource, pointerOptions, null);
 
         return dataPointer.fetch(pointerKey);
