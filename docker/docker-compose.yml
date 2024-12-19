@@ -424,8 +424,8 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
-      - "8280:8080"
-      - "8643:8443"
+      - "8580:8080"
+      - "8943:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
