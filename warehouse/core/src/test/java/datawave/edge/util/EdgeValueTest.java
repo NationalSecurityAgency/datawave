@@ -91,7 +91,7 @@ public class EdgeValueTest {
     @Test
     public void testEdgeValueCreatesUuidObjUponRequest() throws InvalidProtocolBufferException {
         String validUuidString = "11111111-1111-1111-1111-111111111111";
-        EdgeValue eValue = createEdgeValueWithUuidObject(validUuidString);
+        EdgeValue eValue = createEdgeValueWithUuid(validUuidString);
 
         Value value = eValue.encode();
         assertNotNull("EdgeValue should convert uuid string to UUID object if UUID object was requested", eValue.getUuidObject());
@@ -157,23 +157,7 @@ public class EdgeValueTest {
 
     private EdgeValue createEdgeValueWithUuid(String validUuidString) {
         EdgeValueBuilder builder = EdgeValue.newBuilder();
-        builder.setSourceValue("");
-        builder.setSinkValue("");
-        builder.setLoadDate("");
-        builder.setOnlyUuidString(true);
         builder.setUuid(validUuidString);
-        builder.setBadActivityDate(false);
-        return builder.build();
-    }
-
-    private EdgeValue createEdgeValueWithUuidObject(String validUuidString) {
-        EdgeValueBuilder builder = EdgeValue.newBuilder();
-        builder.setSourceValue("");
-        builder.setSinkValue("");
-        builder.setLoadDate("");
-        builder.setOnlyUuidString(false);
-        builder.setUuidObj(UUID.fromString(validUuidString));
-        builder.setBadActivityDate(false);
         return builder.build();
     }
 
