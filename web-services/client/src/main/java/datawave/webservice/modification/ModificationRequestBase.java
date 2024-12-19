@@ -23,11 +23,11 @@ import org.springframework.util.MultiValueMap;
 @XmlSeeAlso({DefaultModificationRequest.class, DefaultUUIDModificationRequest.class})
 public class ModificationRequestBase implements Serializable {
 
-    private static String COLUMN_VISIBILITY = "columnVisibility";
+    private static final String COLUMN_VISIBILITY = "columnVisibility";
 
     private static final long serialVersionUID = 4312291034126058550L;
 
-    @XmlEnum(String.class)
+    @XmlEnum()
     public enum MODE {
         INSERT, UPDATE, DELETE
     }
@@ -72,7 +72,7 @@ public class ModificationRequestBase implements Serializable {
 
         @Override
         public Map<String,String> unmarshal(DefaultFieldMarking value) throws Exception {
-            HashMap<String,String> fieldMarkings = new HashMap<String,String>();
+            HashMap<String,String> fieldMarkings = new HashMap<>();
             fieldMarkings.put(COLUMN_VISIBILITY, value.fieldColumnVisibility);
             return fieldMarkings;
         }
@@ -87,6 +87,6 @@ public class ModificationRequestBase implements Serializable {
 
     public static class DefaultFieldMarking {
         @XmlElement(name = "columnVisibility", required = true)
-        public String fieldColumnVisibility;;
+        public String fieldColumnVisibility;
     }
 }

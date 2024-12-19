@@ -1,13 +1,10 @@
 package datawave.query.planner;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
-
-import com.google.common.collect.Sets;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
@@ -17,7 +14,6 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.util.StringUtils;
 
 public class QueryOptionsSwitch {
 
@@ -36,17 +32,14 @@ public class QueryOptionsSwitch {
                     config.setHitList(Boolean.parseBoolean(value));
                     break;
                 case QueryParameters.LIMIT_FIELDS:
-                    String[] lf = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    config.setLimitFields(Sets.newHashSet(lf));
+                    config.setLimitFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     break;
                 case QueryParameters.MATCHING_FIELD_SETS:
-                    String[] mfs = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    config.setMatchingFieldSets(Sets.newHashSet(mfs));
+                    config.setMatchingFieldSets(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     break;
                 case QueryParameters.GROUP_FIELDS:
-                    String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setGroupByFields(Sets.newHashSet(groups));
+                    groupFields.setGroupByFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     config.setGroupFields(groupFields);
                     // If there are any group-by fields, update the projection fields to include them.
                     if (groupFields.hasGroupByFields()) {
@@ -71,30 +64,26 @@ public class QueryOptionsSwitch {
                     config.getUniqueFields().setMostRecent(Boolean.parseBoolean(value));
                     break;
                 case QueryParameters.EXCERPT_FIELDS:
-                    ExcerptFields excerptFields = ExcerptFields.from(value);
-                    config.setExcerptFields(excerptFields);
+                    config.setExcerptFields(ExcerptFields.from(value));
                     break;
                 case QueryParameters.SUMMARY_OPTIONS:
-                    SummaryOptions summaryOptions = SummaryOptions.from(value);
-                    config.setSummaryOptions(summaryOptions);
+                    config.setSummaryOptions(SummaryOptions.from(value));
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
-                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    config.setNoExpansionFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     break;
                 case QueryParameters.LENIENT_FIELDS:
-                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    config.setLenientFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     break;
                 case QueryParameters.STRICT_FIELDS:
-                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    config.setStrictFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     break;
                 case QueryParameters.RENAME_FIELDS:
-                    Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
-                    config.setRenameFields(renameFieldExpressions);
+                    config.setRenameFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     break;
                 case QueryParameters.SUM_FIELDS:
-                    String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setSumFields(Sets.newHashSet(sumFields));
+                    groupFields.setSumFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
@@ -102,9 +91,8 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.MAX_FIELDS:
-                    String[] maxFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setMaxFields(Sets.newHashSet(maxFields));
+                    groupFields.setMaxFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
@@ -112,9 +100,8 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.MIN_FIELDS:
-                    String[] minFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setMinFields(Sets.newHashSet(minFields));
+                    groupFields.setMinFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
@@ -122,9 +109,8 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.COUNT_FIELDS:
-                    String[] countFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setCountFields(Sets.newHashSet(countFields));
+                    groupFields.setCountFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
@@ -132,9 +118,8 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.AVERAGE_FIELDS:
-                    String[] averageFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
-                    groupFields.setAverageFields(Sets.newHashSet(averageFields));
+                    groupFields.setAverageFields(new HashSet<>(List.of(value.split(Constants.COMMA))));
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {

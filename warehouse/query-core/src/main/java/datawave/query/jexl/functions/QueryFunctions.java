@@ -246,7 +246,7 @@ public class QueryFunctions {
             // @formatter:off
             return StreamSupport.stream(values.spliterator(), false)
                     .filter(Objects::nonNull)
-                    .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
+                    .filter(value -> isMatchForPattern(pattern, caseInsensitive, value))
                     .findFirst()
                     .map(EvaluationPhaseFilterFunctions::getHitTerm)
                     .map(FunctionalSet::singleton)
@@ -270,7 +270,7 @@ public class QueryFunctions {
             // @formatter:off
             return StreamSupport.stream(values.spliterator(), false)
                     .filter(Objects::nonNull)
-                    .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
+                    .filter(value -> ValueTuple.getStringValue(value).equals(valueToMatch))
                     .findFirst()
                     .map(ValueTuple::toValueTuple)
                     .map(FunctionalSet::singleton)

@@ -40,16 +40,11 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
@@ -302,7 +297,7 @@ public class QueryOptions implements OptionDescriber {
     protected long sourceLimit = -1;
     protected boolean disableIndexOnlyDocuments = false;
     protected TypeMetadata typeMetadata = new TypeMetadata();
-    protected Set<String> typeMetadataAuthsKey = Sets.newHashSet();
+    protected Set<String> typeMetadataAuthsKey = new HashSet<>();
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
@@ -344,9 +339,9 @@ public class QueryOptions implements OptionDescriber {
     protected int maxEvaluationPipelines = 25;
     protected int maxPipelineCachedResults = 25;
 
-    protected Set<String> indexOnlyFields = Sets.newHashSet();
-    protected Set<String> indexedFields = Sets.newHashSet();
-    protected Set<String> ignoreColumnFamilies = Sets.newHashSet();
+    protected Set<String> indexOnlyFields = new HashSet<>();
+    protected Set<String> indexedFields = new HashSet<>();
+    protected Set<String> ignoreColumnFamilies = new HashSet<>();
 
     protected boolean includeGroupingContext = false;
 
@@ -402,7 +397,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected String postProcessingFunctions = "";
 
-    protected Map<String,Set<String>> nonIndexedDataTypeMap = Maps.newHashMap();
+    protected Map<String,Set<String>> nonIndexedDataTypeMap = new HashMap<>();
 
     protected boolean termFrequenciesRequired = false;
     protected Set<String> termFrequencyFields = Collections.emptySet();
@@ -784,7 +779,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setDocumentPermutationClasses(String documentPermutationClassesStr) {
-        setDocumentPermutationClasses(Arrays.asList(StringUtils.split(documentPermutationClassesStr, ',')));
+        setDocumentPermutationClasses(Arrays.asList(documentPermutationClassesStr.split(Constants.COMMA)));
     }
 
     public boolean isIncludeRecordId() {
@@ -1533,11 +1528,11 @@ public class QueryOptions implements OptionDescriber {
             this.useAllowListedFields = true;
 
             String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
+            if (EVERYTHING.equals(fieldList)) {
                 this.allowListedFields = UniversalSet.instance();
-            } else if (fieldList != null && !fieldList.trim().equals("")) {
+            } else if (fieldList != null && !fieldList.trim().isEmpty()) {
                 this.allowListedFields = new HashSet<>();
-                Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+                Collections.addAll(this.allowListedFields, fieldList.split(Constants.COMMA));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
@@ -1554,9 +1549,9 @@ public class QueryOptions implements OptionDescriber {
             this.useDisallowListedFields = true;
 
             String fieldList = options.get(DISALLOWLISTED_FIELDS);
-            if (fieldList != null && !fieldList.trim().equals("")) {
+            if (fieldList != null && !fieldList.trim().isEmpty()) {
                 this.disallowListedFields = new HashSet<>();
-                Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+                Collections.addAll(this.disallowListedFields, fieldList.split(Constants.COMMA));
             }
         }
 
@@ -1658,7 +1653,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = new HashSet<>(List.of(filterCsv.split(Constants.COMMA)));
 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
 
@@ -1723,9 +1718,11 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(LIMIT_FIELDS)) {
             String limitFields = options.get(LIMIT_FIELDS);
-            for (String paramGroup : Splitter.on(',').omitEmptyStrings().trimResults().split(limitFields)) {
-                String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
-                if (keyAndValue != null && keyAndValue.length > 1) {
+            for (String paramGroup : Arrays.stream(limitFields.split(Constants.COMMA)).filter(java.util.function.Predicate.not(String::isEmpty))
+                            .map(String::trim).toArray(String[]::new)) {
+                String[] keyAndValue = Arrays.stream(paramGroup.split("=")).filter(java.util.function.Predicate.not(String::isEmpty)).map(String::trim)
+                                .toArray(String[]::new);
+                if (keyAndValue.length > 1) {
                     this.getLimitFieldsMap().put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
                 }
             }
@@ -1733,10 +1730,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(MATCHING_FIELD_SETS)) {
             String matchingFieldSets = options.get(MATCHING_FIELD_SETS);
-            for (String fieldSet : Splitter.on(',').omitEmptyStrings().trimResults().split(matchingFieldSets)) {
-                String[] fields = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(fieldSet), String.class);
+            for (String fieldSet : Arrays.stream(matchingFieldSets.split(Constants.COMMA)).filter(java.util.function.Predicate.not(String::isEmpty))
+                            .map(String::trim).toArray(String[]::new)) {
+                String[] fields = Arrays.stream(fieldSet.split("=")).filter(java.util.function.Predicate.not(String::isEmpty)).map(String::trim)
+                                .toArray(String[]::new);
                 if (fields.length != 0) {
-                    this.getMatchingFieldSets().add(new HashSet(Arrays.asList(fields)));
+                    this.getMatchingFieldSets().add(new HashSet<>(Arrays.asList(fields)));
                 }
             }
         }
@@ -1782,7 +1781,7 @@ public class QueryOptions implements OptionDescriber {
             log.debug("Adding dateIndexTimeTravel to QueryOptions? " + options.get(DATE_INDEX_TIME_TRAVEL));
             boolean dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
             if (dateIndexTimeTravel) {
-                this.setDateIndexTimeTravel(dateIndexTimeTravel);
+                this.setDateIndexTimeTravel(true);
             }
         }
 
@@ -1978,8 +1977,8 @@ public class QueryOptions implements OptionDescriber {
                 if (typeMetadataAuthsString != null && compressedMappings) {
                     typeMetadataAuthsString = decompressOption(typeMetadataAuthsString, QueryOptions.UTF8);
                 }
-                this.typeMetadataAuthsKey = Sets
-                                .newHashSet(Splitter.on(CharMatcher.anyOf(",& ")).omitEmptyStrings().trimResults().split(typeMetadataAuthsString));
+                this.typeMetadataAuthsKey = Arrays.stream(org.apache.commons.lang3.StringUtils.split(typeMetadataAuthsString, ",& "))
+                                .filter(java.util.function.Predicate.not(String::isEmpty)).map(String::trim).collect(Collectors.toSet());
             } catch (IOException e) {
                 log.warn("could not set typeMetadataAuthsKey from: \"" + typeMetadataAuthsString + "\"");
             }
@@ -2041,17 +2040,14 @@ public class QueryOptions implements OptionDescriber {
         Map<String,Set<String>> mapping = new HashMap<>();
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(Constants.COLON);
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
                 } else {
-                    String[] values = StringUtils.split(entrySplits[1], ',');
-                    HashSet<String> dataTypes = new HashSet<>();
-
-                    Collections.addAll(dataTypes, values);
+                    HashSet<String> dataTypes = new HashSet<>(List.of(entrySplits[1].split(Constants.COMMA)));
 
                     mapping.put(entrySplits[0], dataTypes);
 
@@ -2066,11 +2062,11 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public static Set<String> fetchDataTypeKeys(String data) {
-        Set<String> keys = Sets.newHashSet();
+        Set<String> keys = new HashSet<>();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(Constants.COLON);
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
@@ -2155,17 +2151,16 @@ public class QueryOptions implements OptionDescriber {
 
     public static String compressOption(final String data, final Charset characterSet) throws IOException {
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        final GZIPOutputStream gzipStream = new GZIPOutputStream(byteStream);
-        final DataOutputStream dataOut = new DataOutputStream(gzipStream);
+        try (GZIPOutputStream gzipStream = new GZIPOutputStream(byteStream)) {
+            try (DataOutputStream dataOut = new DataOutputStream(gzipStream)) {
 
-        byte[] arr = data.getBytes(characterSet);
-        final int length = arr.length;
+                byte[] arr = data.getBytes(characterSet);
+                final int length = arr.length;
 
-        dataOut.writeInt(length);
-        dataOut.write(arr);
-
-        dataOut.close();
-        byteStream.close();
+                dataOut.writeInt(length);
+                dataOut.write(arr);
+            }
+        }
 
         return new String(Base64.encodeBase64(byteStream.toByteArray()));
     }
@@ -2185,7 +2180,7 @@ public class QueryOptions implements OptionDescriber {
 
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String field : StringUtils.split(fieldStr, ',')) {
+        for (String field : fieldStr.split(Constants.COMMA)) {
             if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
                 fields.add(field);
             }
@@ -2219,7 +2214,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {
-        return Sets.newHashSet(StringUtils.split(colFams, ','));
+        return new HashSet<>(List.of(colFams.split(Constants.COMMA)));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -2276,7 +2271,7 @@ public class QueryOptions implements OptionDescriber {
         if (val == null) {
             return Collections.emptySet();
         } else {
-            return ImmutableSet.copyOf(Splitter.on(',').trimResults().split(val));
+            return Arrays.stream(val.split(Constants.COMMA)).map(String::trim).collect(Collectors.toUnmodifiableSet());
         }
     }
 
@@ -2293,7 +2288,7 @@ public class QueryOptions implements OptionDescriber {
         if (val == null) {
             return Collections.emptySet();
         } else {
-            return ImmutableSet.copyOf(Splitter.on(',').trimResults().split(val));
+            return Arrays.stream(val.split(Constants.COMMA)).map(String::trim).collect(Collectors.toUnmodifiableSet());
         }
     }
 
