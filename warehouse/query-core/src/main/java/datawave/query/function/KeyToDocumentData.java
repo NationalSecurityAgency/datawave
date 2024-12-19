@@ -28,16 +28,21 @@ import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.query.attributes.Document;
+import datawave.query.data.parsers.EventKey;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.pointer.DataPointer;
+import datawave.query.pointer.ViewDataPointer;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple3;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -72,6 +77,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     private long aggregationStop;
     private int aggregationThreshold;
 
+    private boolean expandDataPointers = false;
+    private int dataPointerLengthLimit = -1;
+    private IteratorEnvironment env;
+    private SortedKeyValueIterator<Key,Value> dataPointerSource;
+    private ObjectMapper dataPointerObjectMapper;
+
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);
     }
@@ -92,6 +103,11 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         this.equality = equality;
         this.filter = filter;
         this.includeParent = includeParent;
+        this.env = env;
+
+        if (expandDataPointers) {
+            dataPointerObjectMapper = new ObjectMapper();
+        }
 
         // Conditionally create and initialize the child count function
         if (includeChildCount) {
@@ -185,6 +201,30 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
     }
 
+    private boolean isDataPointer(Key key) {
+        EventKey eventKey = new EventKey();
+        eventKey.parse(key);
+
+        return eventKey.isDataPointer();
+    }
+
+    private DataPointer getDataPointer(Value pointerValue) throws IOException {
+        return dataPointerObjectMapper.readerFor(DataPointer.class).readValue(pointerValue.get());
+    }
+
+    private Multimap<Key,Value> expandDataPointer(Key pointerKey, Value pointerValue) throws IOException {
+        if (dataPointerSource == null) {
+            dataPointerSource = this.source.deepCopy(env);
+        }
+
+        DataPointer dataPointer = getDataPointer(pointerValue);
+        Map<String,String> pointerOptions = new HashMap<>();
+        pointerOptions.put(ViewDataPointer.LENGTH_LIMIT, "" + dataPointerLengthLimit);
+        dataPointer.init(dataPointerSource, pointerOptions, null);
+
+        return dataPointer.fetch(pointerKey);
+    }
+
     /**
      * Given a Key pointing to the start of a document to aggregate, construct a list of attributes, adding the names of the attributes to the specified set of
      * "docKeys".
@@ -220,7 +260,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     }
 
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
-                        documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
+                        if (expandDataPointers && isDataPointer(docAttrKey.get())) {
+                            Multimap<Key,Value> expandedKeys = expandDataPointer(docAttrKey.get(), source.getTopValue());
+                            for (Entry<Key,Value> entry : expandedKeys.entries()) {
+                                documentAttributes.add(Maps.immutableEntry(entry.getKey(), entry.getValue()));
+                            }
+                        } else {
+                            documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
+                        }
                     } else {
                         Key limitKey = filter.transform(docAttrKey.get());
                         if (limitKey != null) {

@@ -1,5 +1,7 @@
 package datawave.query.data.parsers;
 
+import static datawave.query.Constants.EMPTY_STRING;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
@@ -132,6 +134,19 @@ public class EventKey implements KeyParser {
         return rootUid;
     }
 
+    /**
+     * Data pointers will have an empty value
+     *
+     * @return true if the value is empty, false otherwise
+     */
+    public boolean isDataPointer() {
+        if (value == null) {
+            getValue();
+        }
+
+        return value.isEmpty();
+    }
+
     @Override
     public String getValue() {
         if (value == null) {
@@ -139,7 +154,12 @@ public class EventKey implements KeyParser {
                 scanColumnQualifier();
             }
             if (cqSplit != -1) {
-                value = cq.subSequence(cqSplit + 1, cq.length()).toString();
+                if (cqSplit + 1 < cq.length()) {
+                    value = cq.subSequence(cqSplit + 1, cq.length()).toString();
+                } else {
+                    // an empty field value indicates a data pointer
+                    value = "";
+                }
             } else {
                 throw new IllegalArgumentException("Failed to parse VALUE from event key");
             }
