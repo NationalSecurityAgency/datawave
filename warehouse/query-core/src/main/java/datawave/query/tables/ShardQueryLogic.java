@@ -1549,11 +1549,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setSummaryOptions(summaryOptions);
     }
 
-    public String getSummaryIteratorClassName() {
+    public String getSummaryIterator() {
         return getConfig().getSummaryIterator().getName();
     }
 
-    public void setSummaryIteratorClassName(String iteratorClass) {
+    public void setSummaryIterator(String iteratorClass) {
         try {
             getConfig().setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
         } catch (Exception e) {
