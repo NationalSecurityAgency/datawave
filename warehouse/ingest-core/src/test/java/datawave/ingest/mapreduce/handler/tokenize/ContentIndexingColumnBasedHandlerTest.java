@@ -384,8 +384,8 @@ public class ContentIndexingColumnBasedHandlerTest {
             Text expectedColq = new Text(TEST_TYPE + INTRA_COL_DELIMETER + TEST_UUID + INTRA_COL_DELIMETER + entry.getValue().getLeft() + INTRA_COL_DELIMETER
                             + entry.getKey());
             int count = entry.getValue().getRight().intValue();
-            // byte[] expectedValue = {(byte) 24, (byte) count};
-            byte[] expectedValue = {(byte) 26, (byte) 1, (byte) count};
+            byte[] expectedValue = {(byte) 24, (byte) count};
+            // byte[] expectedValue = {(byte) 26, (byte) 1, (byte) count};
 
             Collection<Value> values = assertContainsKey(SHARD_ID, SHARD_TABLE_NAME, expectedColf, expectedColq, tfEntries);
             if (values != null) {

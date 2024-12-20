@@ -110,7 +110,7 @@ public class EdgeValueTest {
 
         EdgeValue outValue = EdgeValue.decode(value);
         assertEquals(validUuidString, outValue.getUuid());
-        assertNotNull(outValue.getUuid());
+        assertNotNull(outValue.getUuidObject());
     }
 
     @Test
