@@ -4,4888 +4,5068 @@
 package datawave.webservice.result;
 
 public final class ResponseMessages {
-  private ResponseMessages() {}
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistryLite registry) {
-  }
+    private ResponseMessages() {}
 
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistry registry) {
-    registerAllExtensions(
-        (com.google.protobuf.ExtensionRegistryLite) registry);
-  }
-  public interface VoidResponseOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:datawave.webservice.result.VoidResponse)
-      com.google.protobuf.MessageOrBuilder {
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
 
-    /**
-     * <code>uint64 operation_time_ms = 1;</code>
-     * @return The operationTimeMs.
-     */
-    long getOperationTimeMs();
-
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return A list containing the messages.
-     */
-    java.util.List<java.lang.String>
-        getMessagesList();
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return The count of messages.
-     */
-    int getMessagesCount();
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the element to return.
-     * @return The messages at the given index.
-     */
-    java.lang.String getMessages(int index);
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the value to return.
-     * @return The bytes of the messages at the given index.
-     */
-    com.google.protobuf.ByteString
-        getMessagesBytes(int index);
-
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> 
-        getExceptionsList();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    int getExceptionsCount();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-        getExceptionsOrBuilderList();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-        int index);
-  }
-  /**
-   * Protobuf type {@code datawave.webservice.result.VoidResponse}
-   */
-  public static final class VoidResponse extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:datawave.webservice.result.VoidResponse)
-      VoidResponseOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use VoidResponse.newBuilder() to construct.
-    private VoidResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private VoidResponse() {
-      messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      exceptions_ = java.util.Collections.emptyList();
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
+        registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
     }
 
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new VoidResponse();
+    public interface VoidResponseOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.webservice.result.VoidResponse)
+                    com.google.protobuf.MessageOrBuilder {
+
+        /**
+         * <code>uint64 operation_time_ms = 1;</code>
+         *
+         * @return The operationTimeMs.
+         */
+        long getOperationTimeMs();
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return A list containing the messages.
+         */
+        java.util.List<java.lang.String> getMessagesList();
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return The count of messages.
+         */
+        int getMessagesCount();
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        java.lang.String getMessages(int index);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        com.google.protobuf.ByteString getMessagesBytes(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        int getExceptionsCount();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index);
     }
 
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              datawave.webservice.result.ResponseMessages.VoidResponse.class, datawave.webservice.result.ResponseMessages.VoidResponse.Builder.class);
-    }
-
-    public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
-    private long operationTimeMs_;
-    /**
-     * <code>uint64 operation_time_ms = 1;</code>
-     * @return The operationTimeMs.
-     */
-    @java.lang.Override
-    public long getOperationTimeMs() {
-      return operationTimeMs_;
-    }
-
-    public static final int MESSAGES_FIELD_NUMBER = 2;
-    private com.google.protobuf.LazyStringList messages_;
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return A list containing the messages.
-     */
-    public com.google.protobuf.ProtocolStringList
-        getMessagesList() {
-      return messages_;
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return The count of messages.
-     */
-    public int getMessagesCount() {
-      return messages_.size();
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the element to return.
-     * @return The messages at the given index.
-     */
-    public java.lang.String getMessages(int index) {
-      return messages_.get(index);
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the value to return.
-     * @return The bytes of the messages at the given index.
-     */
-    public com.google.protobuf.ByteString
-        getMessagesBytes(int index) {
-      return messages_.getByteString(index);
-    }
-
-    public static final int EXCEPTIONS_FIELD_NUMBER = 3;
-    private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_;
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
-      return exceptions_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-        getExceptionsOrBuilderList() {
-      return exceptions_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public int getExceptionsCount() {
-      return exceptions_.size();
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
-      return exceptions_.get(index);
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-        int index) {
-      return exceptions_.get(index);
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (operationTimeMs_ != 0L) {
-        output.writeUInt64(1, operationTimeMs_);
-      }
-      for (int i = 0; i < messages_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
-      }
-      for (int i = 0; i < exceptions_.size(); i++) {
-        output.writeMessage(3, exceptions_.get(i));
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (operationTimeMs_ != 0L) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(1, operationTimeMs_);
-      }
-      {
-        int dataSize = 0;
-        for (int i = 0; i < messages_.size(); i++) {
-          dataSize += computeStringSizeNoTag(messages_.getRaw(i));
-        }
-        size += dataSize;
-        size += 1 * getMessagesList().size();
-      }
-      for (int i = 0; i < exceptions_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, exceptions_.get(i));
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof datawave.webservice.result.ResponseMessages.VoidResponse)) {
-        return super.equals(obj);
-      }
-      datawave.webservice.result.ResponseMessages.VoidResponse other = (datawave.webservice.result.ResponseMessages.VoidResponse) obj;
-
-      if (getOperationTimeMs()
-          != other.getOperationTimeMs()) return false;
-      if (!getMessagesList()
-          .equals(other.getMessagesList())) return false;
-      if (!getExceptionsList()
-          .equals(other.getExceptionsList())) return false;
-      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getOperationTimeMs());
-      if (getMessagesCount() > 0) {
-        hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
-        hash = (53 * hash) + getMessagesList().hashCode();
-      }
-      if (getExceptionsCount() > 0) {
-        hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
-        hash = (53 * hash) + getExceptionsList().hashCode();
-      }
-      hash = (29 * hash) + getUnknownFields().hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(datawave.webservice.result.ResponseMessages.VoidResponse prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     /**
      * Protobuf type {@code datawave.webservice.result.VoidResponse}
      */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:datawave.webservice.result.VoidResponse)
-        datawave.webservice.result.ResponseMessages.VoidResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_descriptor;
-      }
+    public static final class VoidResponse extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.webservice.result.VoidResponse)
+                    VoidResponseOrBuilder {
+        private static final long serialVersionUID = 0L;
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                datawave.webservice.result.ResponseMessages.VoidResponse.class, datawave.webservice.result.ResponseMessages.VoidResponse.Builder.class);
-      }
-
-      // Construct using datawave.webservice.result.ResponseMessages.VoidResponse.newBuilder()
-      private Builder() {
-
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        operationTimeMs_ = 0L;
-
-        messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        if (exceptionsBuilder_ == null) {
-          exceptions_ = java.util.Collections.emptyList();
-        } else {
-          exceptions_ = null;
-          exceptionsBuilder_.clear();
+        // Use VoidResponse.newBuilder() to construct.
+        private VoidResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+            super(builder);
         }
-        bitField0_ = (bitField0_ & ~0x00000002);
-        return this;
-      }
 
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_descriptor;
-      }
+        private VoidResponse() {
+            messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+            exceptions_ = java.util.Collections.emptyList();
+        }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.VoidResponse getDefaultInstanceForType() {
-        return datawave.webservice.result.ResponseMessages.VoidResponse.getDefaultInstance();
-      }
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new VoidResponse();
+        }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.VoidResponse build() {
-        datawave.webservice.result.ResponseMessages.VoidResponse result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
-        return result;
-      }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.VoidResponse buildPartial() {
-        datawave.webservice.result.ResponseMessages.VoidResponse result = new datawave.webservice.result.ResponseMessages.VoidResponse(this);
-        int from_bitField0_ = bitField0_;
-        result.operationTimeMs_ = operationTimeMs_;
-        if (((bitField0_ & 0x00000001) != 0)) {
-          messages_ = messages_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000001);
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_descriptor;
         }
-        result.messages_ = messages_;
-        if (exceptionsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) != 0)) {
-            exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.exceptions_ = exceptions_;
-        } else {
-          result.exceptions_ = exceptionsBuilder_.build();
-        }
-        onBuilt();
-        return result;
-      }
 
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof datawave.webservice.result.ResponseMessages.VoidResponse) {
-          return mergeFrom((datawave.webservice.result.ResponseMessages.VoidResponse)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.result.ResponseMessages.VoidResponse.class,
+                                            datawave.webservice.result.ResponseMessages.VoidResponse.Builder.class);
         }
-      }
 
-      public Builder mergeFrom(datawave.webservice.result.ResponseMessages.VoidResponse other) {
-        if (other == datawave.webservice.result.ResponseMessages.VoidResponse.getDefaultInstance()) return this;
-        if (other.getOperationTimeMs() != 0L) {
-          setOperationTimeMs(other.getOperationTimeMs());
+        public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
+        private long operationTimeMs_;
+
+        /**
+         * <code>uint64 operation_time_ms = 1;</code>
+         *
+         * @return The operationTimeMs.
+         */
+        @java.lang.Override
+        public long getOperationTimeMs() {
+            return operationTimeMs_;
         }
-        if (!other.messages_.isEmpty()) {
-          if (messages_.isEmpty()) {
-            messages_ = other.messages_;
-            bitField0_ = (bitField0_ & ~0x00000001);
-          } else {
-            ensureMessagesIsMutable();
-            messages_.addAll(other.messages_);
-          }
-          onChanged();
+
+        public static final int MESSAGES_FIELD_NUMBER = 2;
+        private com.google.protobuf.LazyStringList messages_;
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return A list containing the messages.
+         */
+        public com.google.protobuf.ProtocolStringList getMessagesList() {
+            return messages_;
         }
-        if (exceptionsBuilder_ == null) {
-          if (!other.exceptions_.isEmpty()) {
-            if (exceptions_.isEmpty()) {
-              exceptions_ = other.exceptions_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureExceptionsIsMutable();
-              exceptions_.addAll(other.exceptions_);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return The count of messages.
+         */
+        public int getMessagesCount() {
+            return messages_.size();
+        }
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        public java.lang.String getMessages(int index) {
+            return messages_.get(index);
+        }
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        public com.google.protobuf.ByteString getMessagesBytes(int index) {
+            return messages_.getByteString(index);
+        }
+
+        public static final int EXCEPTIONS_FIELD_NUMBER = 3;
+        private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_;
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
+            return exceptions_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
+            return exceptions_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public int getExceptionsCount() {
+            return exceptions_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
+            return exceptions_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
+            return exceptions_.get(index);
+        }
+
+        private byte memoizedIsInitialized = -1;
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
+
+            memoizedIsInitialized = 1;
+            return true;
+        }
+
+        @java.lang.Override
+        public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
+            if (operationTimeMs_ != 0L) {
+                output.writeUInt64(1, operationTimeMs_);
             }
-            onChanged();
-          }
-        } else {
-          if (!other.exceptions_.isEmpty()) {
-            if (exceptionsBuilder_.isEmpty()) {
-              exceptionsBuilder_.dispose();
-              exceptionsBuilder_ = null;
-              exceptions_ = other.exceptions_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              exceptionsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getExceptionsFieldBuilder() : null;
-            } else {
-              exceptionsBuilder_.addAllMessages(other.exceptions_);
+            for (int i = 0; i < messages_.size(); i++) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
             }
-          }
+            for (int i = 0; i < exceptions_.size(); i++) {
+                output.writeMessage(3, exceptions_.get(i));
+            }
+            getUnknownFields().writeTo(output);
         }
-        this.mergeUnknownFields(other.getUnknownFields());
-        onChanged();
-        return this;
-      }
 
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
+        @java.lang.Override
+        public int getSerializedSize() {
+            int size = memoizedSize;
+            if (size != -1)
+                return size;
 
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        if (extensionRegistry == null) {
-          throw new java.lang.NullPointerException();
-        }
-        try {
-          boolean done = false;
-          while (!done) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                done = true;
-                break;
-              case 8: {
-                operationTimeMs_ = input.readUInt64();
-
-                break;
-              } // case 8
-              case 18: {
-                java.lang.String s = input.readStringRequireUtf8();
-                ensureMessagesIsMutable();
-                messages_.add(s);
-                break;
-              } // case 18
-              case 26: {
-                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType m =
-                    input.readMessage(
-                        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.parser(),
-                        extensionRegistry);
-                if (exceptionsBuilder_ == null) {
-                  ensureExceptionsIsMutable();
-                  exceptions_.add(m);
-                } else {
-                  exceptionsBuilder_.addMessage(m);
+            size = 0;
+            if (operationTimeMs_ != 0L) {
+                size += com.google.protobuf.CodedOutputStream.computeUInt64Size(1, operationTimeMs_);
+            }
+            {
+                int dataSize = 0;
+                for (int i = 0; i < messages_.size(); i++) {
+                    dataSize += computeStringSizeNoTag(messages_.getRaw(i));
                 }
-                break;
-              } // case 26
-              default: {
-                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
-                  done = true; // was an endgroup tag
-                }
-                break;
-              } // default:
-            } // switch (tag)
-          } // while (!done)
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.unwrapIOException();
-        } finally {
-          onChanged();
-        } // finally
-        return this;
-      }
-      private int bitField0_;
-
-      private long operationTimeMs_ ;
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @return The operationTimeMs.
-       */
-      @java.lang.Override
-      public long getOperationTimeMs() {
-        return operationTimeMs_;
-      }
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @param value The operationTimeMs to set.
-       * @return This builder for chaining.
-       */
-      public Builder setOperationTimeMs(long value) {
-        
-        operationTimeMs_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearOperationTimeMs() {
-        
-        operationTimeMs_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensureMessagesIsMutable() {
-        if (!((bitField0_ & 0x00000001) != 0)) {
-          messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
-          bitField0_ |= 0x00000001;
-         }
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return A list containing the messages.
-       */
-      public com.google.protobuf.ProtocolStringList
-          getMessagesList() {
-        return messages_.getUnmodifiableView();
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return The count of messages.
-       */
-      public int getMessagesCount() {
-        return messages_.size();
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index of the element to return.
-       * @return The messages at the given index.
-       */
-      public java.lang.String getMessages(int index) {
-        return messages_.get(index);
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index of the value to return.
-       * @return The bytes of the messages at the given index.
-       */
-      public com.google.protobuf.ByteString
-          getMessagesBytes(int index) {
-        return messages_.getByteString(index);
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index to set the value at.
-       * @param value The messages to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessages(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureMessagesIsMutable();
-        messages_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param value The messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addMessages(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureMessagesIsMutable();
-        messages_.add(value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param values The messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addAllMessages(
-          java.lang.Iterable<java.lang.String> values) {
-        ensureMessagesIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, messages_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearMessages() {
-        messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param value The bytes of the messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addMessagesBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        ensureMessagesIsMutable();
-        messages_.add(value);
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ =
-        java.util.Collections.emptyList();
-      private void ensureExceptionsIsMutable() {
-        if (!((bitField0_ & 0x00000002) != 0)) {
-          exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
-          bitField0_ |= 0x00000002;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> exceptionsBuilder_;
-
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
-        if (exceptionsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(exceptions_);
-        } else {
-          return exceptionsBuilder_.getMessageList();
+                size += dataSize;
+                size += 1 * getMessagesList().size();
+            }
+            for (int i = 0; i < exceptions_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, exceptions_.get(i));
+            }
+            size += getUnknownFields().getSerializedSize();
+            memoizedSize = size;
+            return size;
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public int getExceptionsCount() {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.size();
-        } else {
-          return exceptionsBuilder_.getCount();
+
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.result.ResponseMessages.VoidResponse)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.result.ResponseMessages.VoidResponse other = (datawave.webservice.result.ResponseMessages.VoidResponse) obj;
+
+            if (getOperationTimeMs() != other.getOperationTimeMs())
+                return false;
+            if (!getMessagesList().equals(other.getMessagesList()))
+                return false;
+            if (!getExceptionsList().equals(other.getExceptionsList()))
+                return false;
+            if (!getUnknownFields().equals(other.getUnknownFields()))
+                return false;
+            return true;
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.get(index);
-        } else {
-          return exceptionsBuilder_.getMessage(index);
+
+        @java.lang.Override
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
+            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getOperationTimeMs());
+            if (getMessagesCount() > 0) {
+                hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
+                hash = (53 * hash) + getMessagesList().hashCode();
+            }
+            if (getExceptionsCount() > 0) {
+                hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
+                hash = (53 * hash) + getExceptionsList().hashCode();
+            }
+            hash = (29 * hash) + getUnknownFields().hashCode();
+            memoizedHashCode = hash;
+            return hash;
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder setExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.set(index, value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.setMessage(index, value);
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder setExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.setMessage(index, builderForValue.build());
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.add(value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(value);
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(com.google.protobuf.ByteString data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.add(index, value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(index, value);
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(com.google.protobuf.ByteString data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.add(builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(builderForValue.build());
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(byte[] data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(index, builderForValue.build());
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(byte[] data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addAllExceptions(
-          java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, exceptions_);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addAllMessages(values);
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(java.io.InputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder clearExceptions() {
-        if (exceptionsBuilder_ == null) {
-          exceptions_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          exceptionsBuilder_.clear();
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder removeExceptions(int index) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.remove(index);
-          onChanged();
-        } else {
-          exceptionsBuilder_.remove(index);
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder getExceptionsBuilder(
-          int index) {
-        return getExceptionsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-          int index) {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.get(index);  } else {
-          return exceptionsBuilder_.getMessageOrBuilder(index);
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseDelimitedFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-           getExceptionsOrBuilderList() {
-        if (exceptionsBuilder_ != null) {
-          return exceptionsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(exceptions_);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder() {
-        return getExceptionsFieldBuilder().addBuilder(
-            datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder(
-          int index) {
-        return getExceptionsFieldBuilder().addBuilder(
-            index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder> 
-           getExceptionsBuilderList() {
-        return getExceptionsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-          getExceptionsFieldBuilder() {
-        if (exceptionsBuilder_ == null) {
-          exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
-                  exceptions_,
-                  ((bitField0_ & 0x00000002) != 0),
-                  getParentForChildren(),
-                  isClean());
-          exceptions_ = null;
-        }
-        return exceptionsBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
 
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:datawave.webservice.result.VoidResponse)
-    }
-
-    // @@protoc_insertion_point(class_scope:datawave.webservice.result.VoidResponse)
-    private static final datawave.webservice.result.ResponseMessages.VoidResponse DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new datawave.webservice.result.ResponseMessages.VoidResponse();
-    }
-
-    public static datawave.webservice.result.ResponseMessages.VoidResponse getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<VoidResponse>
-        PARSER = new com.google.protobuf.AbstractParser<VoidResponse>() {
-      @java.lang.Override
-      public VoidResponse parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        Builder builder = newBuilder();
-        try {
-          builder.mergeFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.setUnfinishedMessage(builder.buildPartial());
-        } catch (com.google.protobuf.UninitializedMessageException e) {
-          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
-        } catch (java.io.IOException e) {
-          throw new com.google.protobuf.InvalidProtocolBufferException(e)
-              .setUnfinishedMessage(builder.buildPartial());
-        }
-        return builder.buildPartial();
-      }
-    };
-
-    public static com.google.protobuf.Parser<VoidResponse> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<VoidResponse> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public datawave.webservice.result.ResponseMessages.VoidResponse getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface QueryImplListResponseOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:datawave.webservice.result.QueryImplListResponse)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>uint64 operation_time_ms = 1;</code>
-     * @return The operationTimeMs.
-     */
-    long getOperationTimeMs();
-
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return A list containing the messages.
-     */
-    java.util.List<java.lang.String>
-        getMessagesList();
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return The count of messages.
-     */
-    int getMessagesCount();
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the element to return.
-     * @return The messages at the given index.
-     */
-    java.lang.String getMessages(int index);
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the value to return.
-     * @return The bytes of the messages at the given index.
-     */
-    com.google.protobuf.ByteString
-        getMessagesBytes(int index);
-
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> 
-        getExceptionsList();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    int getExceptionsCount();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-        getExceptionsOrBuilderList();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-        int index);
-
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> 
-        getQueryList();
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index);
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    int getQueryCount();
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> 
-        getQueryOrBuilderList();
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(
-        int index);
-
-    /**
-     * <code>uint32 numResults = 5;</code>
-     * @return Whether the numResults field is set.
-     */
-    boolean hasNumResults();
-    /**
-     * <code>uint32 numResults = 5;</code>
-     * @return The numResults.
-     */
-    int getNumResults();
-  }
-  /**
-   * Protobuf type {@code datawave.webservice.result.QueryImplListResponse}
-   */
-  public static final class QueryImplListResponse extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:datawave.webservice.result.QueryImplListResponse)
-      QueryImplListResponseOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use QueryImplListResponse.newBuilder() to construct.
-    private QueryImplListResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private QueryImplListResponse() {
-      messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      exceptions_ = java.util.Collections.emptyList();
-      query_ = java.util.Collections.emptyList();
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new QueryImplListResponse();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              datawave.webservice.result.ResponseMessages.QueryImplListResponse.class, datawave.webservice.result.ResponseMessages.QueryImplListResponse.Builder.class);
-    }
-
-    private int bitField0_;
-    public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
-    private long operationTimeMs_;
-    /**
-     * <code>uint64 operation_time_ms = 1;</code>
-     * @return The operationTimeMs.
-     */
-    @java.lang.Override
-    public long getOperationTimeMs() {
-      return operationTimeMs_;
-    }
-
-    public static final int MESSAGES_FIELD_NUMBER = 2;
-    private com.google.protobuf.LazyStringList messages_;
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return A list containing the messages.
-     */
-    public com.google.protobuf.ProtocolStringList
-        getMessagesList() {
-      return messages_;
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return The count of messages.
-     */
-    public int getMessagesCount() {
-      return messages_.size();
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the element to return.
-     * @return The messages at the given index.
-     */
-    public java.lang.String getMessages(int index) {
-      return messages_.get(index);
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the value to return.
-     * @return The bytes of the messages at the given index.
-     */
-    public com.google.protobuf.ByteString
-        getMessagesBytes(int index) {
-      return messages_.getByteString(index);
-    }
-
-    public static final int EXCEPTIONS_FIELD_NUMBER = 3;
-    private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_;
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
-      return exceptions_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-        getExceptionsOrBuilderList() {
-      return exceptions_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public int getExceptionsCount() {
-      return exceptions_.size();
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
-      return exceptions_.get(index);
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-        int index) {
-      return exceptions_.get(index);
-    }
-
-    public static final int QUERY_FIELD_NUMBER = 4;
-    private java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> query_;
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    @java.lang.Override
-    public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList() {
-      return query_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    @java.lang.Override
-    public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> 
-        getQueryOrBuilderList() {
-      return query_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    @java.lang.Override
-    public int getQueryCount() {
-      return query_.size();
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index) {
-      return query_.get(index);
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(
-        int index) {
-      return query_.get(index);
-    }
-
-    public static final int NUMRESULTS_FIELD_NUMBER = 5;
-    private int numResults_;
-    /**
-     * <code>uint32 numResults = 5;</code>
-     * @return Whether the numResults field is set.
-     */
-    @java.lang.Override
-    public boolean hasNumResults() {
-      return ((bitField0_ & 0x00000001) != 0);
-    }
-    /**
-     * <code>uint32 numResults = 5;</code>
-     * @return The numResults.
-     */
-    @java.lang.Override
-    public int getNumResults() {
-      return numResults_;
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(com.google.protobuf.CodedInputStream input)
                         throws java.io.IOException {
-      if (operationTimeMs_ != 0L) {
-        output.writeUInt64(1, operationTimeMs_);
-      }
-      for (int i = 0; i < messages_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
-      }
-      for (int i = 0; i < exceptions_.size(); i++) {
-        output.writeMessage(3, exceptions_.get(i));
-      }
-      for (int i = 0; i < query_.size(); i++) {
-        output.writeMessage(4, query_.get(i));
-      }
-      if (((bitField0_ & 0x00000001) != 0)) {
-        output.writeUInt32(5, numResults_);
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (operationTimeMs_ != 0L) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(1, operationTimeMs_);
-      }
-      {
-        int dataSize = 0;
-        for (int i = 0; i < messages_.size(); i++) {
-          dataSize += computeStringSizeNoTag(messages_.getRaw(i));
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
-        size += dataSize;
-        size += 1 * getMessagesList().size();
-      }
-      for (int i = 0; i < exceptions_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, exceptions_.get(i));
-      }
-      for (int i = 0; i < query_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, query_.get(i));
-      }
-      if (((bitField0_ & 0x00000001) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(5, numResults_);
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSize = size;
-      return size;
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(com.google.protobuf.CodedInputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        @java.lang.Override
+        public Builder newBuilderForType() {
+            return newBuilder();
+        }
+
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
+        }
+
+        public static Builder newBuilder(datawave.webservice.result.ResponseMessages.VoidResponse prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+
+        @java.lang.Override
+        public Builder toBuilder() {
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
+        }
+
+        /**
+         * Protobuf type {@code datawave.webservice.result.VoidResponse}
+         */
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.webservice.result.VoidResponse)
+                        datawave.webservice.result.ResponseMessages.VoidResponseOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.result.ResponseMessages.VoidResponse.class,
+                                                datawave.webservice.result.ResponseMessages.VoidResponse.Builder.class);
+            }
+
+            // Construct using datawave.webservice.result.ResponseMessages.VoidResponse.newBuilder()
+            private Builder() {
+
+            }
+
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+
+            }
+
+            @java.lang.Override
+            public Builder clear() {
+                super.clear();
+                operationTimeMs_ = 0L;
+
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
+                if (exceptionsBuilder_ == null) {
+                    exceptions_ = java.util.Collections.emptyList();
+                } else {
+                    exceptions_ = null;
+                    exceptionsBuilder_.clear();
+                }
+                bitField0_ = (bitField0_ & ~0x00000002);
+                return this;
+            }
+
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_VoidResponse_descriptor;
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.VoidResponse getDefaultInstanceForType() {
+                return datawave.webservice.result.ResponseMessages.VoidResponse.getDefaultInstance();
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.VoidResponse build() {
+                datawave.webservice.result.ResponseMessages.VoidResponse result = buildPartial();
+                if (!result.isInitialized()) {
+                    throw newUninitializedMessageException(result);
+                }
+                return result;
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.VoidResponse buildPartial() {
+                datawave.webservice.result.ResponseMessages.VoidResponse result = new datawave.webservice.result.ResponseMessages.VoidResponse(this);
+                int from_bitField0_ = bitField0_;
+                result.operationTimeMs_ = operationTimeMs_;
+                if (((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = messages_.getUnmodifiableView();
+                    bitField0_ = (bitField0_ & ~0x00000001);
+                }
+                result.messages_ = messages_;
+                if (exceptionsBuilder_ == null) {
+                    if (((bitField0_ & 0x00000002) != 0)) {
+                        exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
+                        bitField0_ = (bitField0_ & ~0x00000002);
+                    }
+                    result.exceptions_ = exceptions_;
+                } else {
+                    result.exceptions_ = exceptionsBuilder_.build();
+                }
+                onBuilt();
+                return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.result.ResponseMessages.VoidResponse) {
+                    return mergeFrom((datawave.webservice.result.ResponseMessages.VoidResponse) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
+            }
+
+            public Builder mergeFrom(datawave.webservice.result.ResponseMessages.VoidResponse other) {
+                if (other == datawave.webservice.result.ResponseMessages.VoidResponse.getDefaultInstance())
+                    return this;
+                if (other.getOperationTimeMs() != 0L) {
+                    setOperationTimeMs(other.getOperationTimeMs());
+                }
+                if (!other.messages_.isEmpty()) {
+                    if (messages_.isEmpty()) {
+                        messages_ = other.messages_;
+                        bitField0_ = (bitField0_ & ~0x00000001);
+                    } else {
+                        ensureMessagesIsMutable();
+                        messages_.addAll(other.messages_);
+                    }
+                    onChanged();
+                }
+                if (exceptionsBuilder_ == null) {
+                    if (!other.exceptions_.isEmpty()) {
+                        if (exceptions_.isEmpty()) {
+                            exceptions_ = other.exceptions_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                        } else {
+                            ensureExceptionsIsMutable();
+                            exceptions_.addAll(other.exceptions_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.exceptions_.isEmpty()) {
+                        if (exceptionsBuilder_.isEmpty()) {
+                            exceptionsBuilder_.dispose();
+                            exceptionsBuilder_ = null;
+                            exceptions_ = other.exceptions_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                            exceptionsBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getExceptionsFieldBuilder() : null;
+                        } else {
+                            exceptionsBuilder_.addAllMessages(other.exceptions_);
+                        }
+                    }
+                }
+                this.mergeUnknownFields(other.getUnknownFields());
+                onChanged();
+                return this;
+            }
+
+            @java.lang.Override
+            public final boolean isInitialized() {
+                return true;
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws java.io.IOException {
+                if (extensionRegistry == null) {
+                    throw new java.lang.NullPointerException();
+                }
+                try {
+                    boolean done = false;
+                    while (!done) {
+                        int tag = input.readTag();
+                        switch (tag) {
+                            case 0:
+                                done = true;
+                                break;
+                            case 8: {
+                                operationTimeMs_ = input.readUInt64();
+
+                                break;
+                            } // case 8
+                            case 18: {
+                                java.lang.String s = input.readStringRequireUtf8();
+                                ensureMessagesIsMutable();
+                                messages_.add(s);
+                                break;
+                            } // case 18
+                            case 26: {
+                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType m = input.readMessage(
+                                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.parser(), extensionRegistry);
+                                if (exceptionsBuilder_ == null) {
+                                    ensureExceptionsIsMutable();
+                                    exceptions_.add(m);
+                                } else {
+                                    exceptionsBuilder_.addMessage(m);
+                                }
+                                break;
+                            } // case 26
+                            default: {
+                                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                                    done = true; // was an endgroup tag
+                                }
+                                break;
+                            } // default:
+                        } // switch (tag)
+                    } // while (!done)
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    throw e.unwrapIOException();
+                } finally {
+                    onChanged();
+                } // finally
+                return this;
+            }
+
+            private int bitField0_;
+
+            private long operationTimeMs_;
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @return The operationTimeMs.
+             */
+            @java.lang.Override
+            public long getOperationTimeMs() {
+                return operationTimeMs_;
+            }
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @param value
+             *            The operationTimeMs to set.
+             * @return This builder for chaining.
+             */
+            public Builder setOperationTimeMs(long value) {
+
+                operationTimeMs_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearOperationTimeMs() {
+
+                operationTimeMs_ = 0L;
+                onChanged();
+                return this;
+            }
+
+            private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+
+            private void ensureMessagesIsMutable() {
+                if (!((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
+                    bitField0_ |= 0x00000001;
+                }
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return A list containing the messages.
+             */
+            public com.google.protobuf.ProtocolStringList getMessagesList() {
+                return messages_.getUnmodifiableView();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return The count of messages.
+             */
+            public int getMessagesCount() {
+                return messages_.size();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the element to return.
+             * @return The messages at the given index.
+             */
+            public java.lang.String getMessages(int index) {
+                return messages_.get(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the value to return.
+             * @return The bytes of the messages at the given index.
+             */
+            public com.google.protobuf.ByteString getMessagesBytes(int index) {
+                return messages_.getByteString(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index to set the value at.
+             * @param value
+             *            The messages to set.
+             * @return This builder for chaining.
+             */
+            public Builder setMessages(int index, java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessages(java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
+                ensureMessagesIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, messages_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearMessages() {
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The bytes of the messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                checkByteStringIsUtf8(value);
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ = java.util.Collections.emptyList();
+
+            private void ensureExceptionsIsMutable() {
+                if (!((bitField0_ & 0x00000002) != 0)) {
+                    exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
+                    bitField0_ |= 0x00000002;
+                }
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> exceptionsBuilder_;
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
+                if (exceptionsBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(exceptions_);
+                } else {
+                    return exceptionsBuilder_.getMessageList();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public int getExceptionsCount() {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.size();
+                } else {
+                    return exceptionsBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.get(index);
+                } else {
+                    return exceptionsBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.set(index, value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.setMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.setMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(index, value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, exceptions_);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder clearExceptions() {
+                if (exceptionsBuilder_ == null) {
+                    exceptions_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000002);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.clear();
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder removeExceptions(int index) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.remove(index);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.remove(index);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder getExceptionsBuilder(int index) {
+                return getExceptionsFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.get(index);
+                } else {
+                    return exceptionsBuilder_.getMessageOrBuilder(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
+                if (exceptionsBuilder_ != null) {
+                    return exceptionsBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(exceptions_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder() {
+                return getExceptionsFieldBuilder().addBuilder(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder(int index) {
+                return getExceptionsFieldBuilder().addBuilder(index,
+                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder> getExceptionsBuilderList() {
+                return getExceptionsFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsFieldBuilder() {
+                if (exceptionsBuilder_ == null) {
+                    exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
+                                    exceptions_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
+                    exceptions_ = null;
+                }
+                return exceptionsBuilder_;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
+            }
+
+            // @@protoc_insertion_point(builder_scope:datawave.webservice.result.VoidResponse)
+        }
+
+        // @@protoc_insertion_point(class_scope:datawave.webservice.result.VoidResponse)
+        private static final datawave.webservice.result.ResponseMessages.VoidResponse DEFAULT_INSTANCE;
+        static {
+            DEFAULT_INSTANCE = new datawave.webservice.result.ResponseMessages.VoidResponse();
+        }
+
+        public static datawave.webservice.result.ResponseMessages.VoidResponse getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+
+        private static final com.google.protobuf.Parser<VoidResponse> PARSER = new com.google.protobuf.AbstractParser<VoidResponse>() {
+            @java.lang.Override
+            public VoidResponse parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                Builder builder = newBuilder();
+                try {
+                    builder.mergeFrom(input, extensionRegistry);
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    throw e.setUnfinishedMessage(builder.buildPartial());
+                } catch (com.google.protobuf.UninitializedMessageException e) {
+                    throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+                } catch (java.io.IOException e) {
+                    throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(builder.buildPartial());
+                }
+                return builder.buildPartial();
+            }
+        };
+
+        public static com.google.protobuf.Parser<VoidResponse> parser() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<VoidResponse> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public datawave.webservice.result.ResponseMessages.VoidResponse getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof datawave.webservice.result.ResponseMessages.QueryImplListResponse)) {
-        return super.equals(obj);
-      }
-      datawave.webservice.result.ResponseMessages.QueryImplListResponse other = (datawave.webservice.result.ResponseMessages.QueryImplListResponse) obj;
+    public interface QueryImplListResponseOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.webservice.result.QueryImplListResponse)
+                    com.google.protobuf.MessageOrBuilder {
 
-      if (getOperationTimeMs()
-          != other.getOperationTimeMs()) return false;
-      if (!getMessagesList()
-          .equals(other.getMessagesList())) return false;
-      if (!getExceptionsList()
-          .equals(other.getExceptionsList())) return false;
-      if (!getQueryList()
-          .equals(other.getQueryList())) return false;
-      if (hasNumResults() != other.hasNumResults()) return false;
-      if (hasNumResults()) {
-        if (getNumResults()
-            != other.getNumResults()) return false;
-      }
-      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
-      return true;
-    }
+        /**
+         * <code>uint64 operation_time_ms = 1;</code>
+         *
+         * @return The operationTimeMs.
+         */
+        long getOperationTimeMs();
 
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getOperationTimeMs());
-      if (getMessagesCount() > 0) {
-        hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
-        hash = (53 * hash) + getMessagesList().hashCode();
-      }
-      if (getExceptionsCount() > 0) {
-        hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
-        hash = (53 * hash) + getExceptionsList().hashCode();
-      }
-      if (getQueryCount() > 0) {
-        hash = (37 * hash) + QUERY_FIELD_NUMBER;
-        hash = (53 * hash) + getQueryList().hashCode();
-      }
-      if (hasNumResults()) {
-        hash = (37 * hash) + NUMRESULTS_FIELD_NUMBER;
-        hash = (53 * hash) + getNumResults();
-      }
-      hash = (29 * hash) + getUnknownFields().hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return A list containing the messages.
+         */
+        java.util.List<java.lang.String> getMessagesList();
 
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return The count of messages.
+         */
+        int getMessagesCount();
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        java.lang.String getMessages(int index);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        com.google.protobuf.ByteString getMessagesBytes(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        int getExceptionsCount();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        int getQueryCount();
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> getQueryOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(int index);
+
+        /**
+         * <code>uint32 numResults = 5;</code>
+         *
+         * @return Whether the numResults field is set.
+         */
+        boolean hasNumResults();
+
+        /**
+         * <code>uint32 numResults = 5;</code>
+         *
+         * @return The numResults.
+         */
+        int getNumResults();
     }
 
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(datawave.webservice.result.ResponseMessages.QueryImplListResponse prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     /**
      * Protobuf type {@code datawave.webservice.result.QueryImplListResponse}
      */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:datawave.webservice.result.QueryImplListResponse)
-        datawave.webservice.result.ResponseMessages.QueryImplListResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
-      }
+    public static final class QueryImplListResponse extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.webservice.result.QueryImplListResponse)
+                    QueryImplListResponseOrBuilder {
+        private static final long serialVersionUID = 0L;
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                datawave.webservice.result.ResponseMessages.QueryImplListResponse.class, datawave.webservice.result.ResponseMessages.QueryImplListResponse.Builder.class);
-      }
-
-      // Construct using datawave.webservice.result.ResponseMessages.QueryImplListResponse.newBuilder()
-      private Builder() {
-
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        operationTimeMs_ = 0L;
-
-        messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        if (exceptionsBuilder_ == null) {
-          exceptions_ = java.util.Collections.emptyList();
-        } else {
-          exceptions_ = null;
-          exceptionsBuilder_.clear();
+        // Use QueryImplListResponse.newBuilder() to construct.
+        private QueryImplListResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+            super(builder);
         }
-        bitField0_ = (bitField0_ & ~0x00000002);
-        if (queryBuilder_ == null) {
-          query_ = java.util.Collections.emptyList();
-        } else {
-          query_ = null;
-          queryBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000004);
-        numResults_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        return this;
-      }
 
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
-      }
+        private QueryImplListResponse() {
+            messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+            exceptions_ = java.util.Collections.emptyList();
+            query_ = java.util.Collections.emptyList();
+        }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.QueryImplListResponse getDefaultInstanceForType() {
-        return datawave.webservice.result.ResponseMessages.QueryImplListResponse.getDefaultInstance();
-      }
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new QueryImplListResponse();
+        }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.QueryImplListResponse build() {
-        datawave.webservice.result.ResponseMessages.QueryImplListResponse result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
-        return result;
-      }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.QueryImplListResponse buildPartial() {
-        datawave.webservice.result.ResponseMessages.QueryImplListResponse result = new datawave.webservice.result.ResponseMessages.QueryImplListResponse(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        result.operationTimeMs_ = operationTimeMs_;
-        if (((bitField0_ & 0x00000001) != 0)) {
-          messages_ = messages_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000001);
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
         }
-        result.messages_ = messages_;
-        if (exceptionsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) != 0)) {
-            exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.exceptions_ = exceptions_;
-        } else {
-          result.exceptions_ = exceptionsBuilder_.build();
-        }
-        if (queryBuilder_ == null) {
-          if (((bitField0_ & 0x00000004) != 0)) {
-            query_ = java.util.Collections.unmodifiableList(query_);
-            bitField0_ = (bitField0_ & ~0x00000004);
-          }
-          result.query_ = query_;
-        } else {
-          result.query_ = queryBuilder_.build();
-        }
-        if (((from_bitField0_ & 0x00000008) != 0)) {
-          result.numResults_ = numResults_;
-          to_bitField0_ |= 0x00000001;
-        }
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
 
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof datawave.webservice.result.ResponseMessages.QueryImplListResponse) {
-          return mergeFrom((datawave.webservice.result.ResponseMessages.QueryImplListResponse)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.result.ResponseMessages.QueryImplListResponse.class,
+                                            datawave.webservice.result.ResponseMessages.QueryImplListResponse.Builder.class);
         }
-      }
 
-      public Builder mergeFrom(datawave.webservice.result.ResponseMessages.QueryImplListResponse other) {
-        if (other == datawave.webservice.result.ResponseMessages.QueryImplListResponse.getDefaultInstance()) return this;
-        if (other.getOperationTimeMs() != 0L) {
-          setOperationTimeMs(other.getOperationTimeMs());
+        private int bitField0_;
+        public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
+        private long operationTimeMs_;
+
+        /**
+         * <code>uint64 operation_time_ms = 1;</code>
+         *
+         * @return The operationTimeMs.
+         */
+        @java.lang.Override
+        public long getOperationTimeMs() {
+            return operationTimeMs_;
         }
-        if (!other.messages_.isEmpty()) {
-          if (messages_.isEmpty()) {
-            messages_ = other.messages_;
-            bitField0_ = (bitField0_ & ~0x00000001);
-          } else {
-            ensureMessagesIsMutable();
-            messages_.addAll(other.messages_);
-          }
-          onChanged();
+
+        public static final int MESSAGES_FIELD_NUMBER = 2;
+        private com.google.protobuf.LazyStringList messages_;
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return A list containing the messages.
+         */
+        public com.google.protobuf.ProtocolStringList getMessagesList() {
+            return messages_;
         }
-        if (exceptionsBuilder_ == null) {
-          if (!other.exceptions_.isEmpty()) {
-            if (exceptions_.isEmpty()) {
-              exceptions_ = other.exceptions_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureExceptionsIsMutable();
-              exceptions_.addAll(other.exceptions_);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return The count of messages.
+         */
+        public int getMessagesCount() {
+            return messages_.size();
+        }
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        public java.lang.String getMessages(int index) {
+            return messages_.get(index);
+        }
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        public com.google.protobuf.ByteString getMessagesBytes(int index) {
+            return messages_.getByteString(index);
+        }
+
+        public static final int EXCEPTIONS_FIELD_NUMBER = 3;
+        private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_;
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
+            return exceptions_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
+            return exceptions_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public int getExceptionsCount() {
+            return exceptions_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
+            return exceptions_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
+            return exceptions_.get(index);
+        }
+
+        public static final int QUERY_FIELD_NUMBER = 4;
+        private java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> query_;
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        @java.lang.Override
+        public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList() {
+            return query_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        @java.lang.Override
+        public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> getQueryOrBuilderList() {
+            return query_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        @java.lang.Override
+        public int getQueryCount() {
+            return query_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index) {
+            return query_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(int index) {
+            return query_.get(index);
+        }
+
+        public static final int NUMRESULTS_FIELD_NUMBER = 5;
+        private int numResults_;
+
+        /**
+         * <code>uint32 numResults = 5;</code>
+         *
+         * @return Whether the numResults field is set.
+         */
+        @java.lang.Override
+        public boolean hasNumResults() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <code>uint32 numResults = 5;</code>
+         *
+         * @return The numResults.
+         */
+        @java.lang.Override
+        public int getNumResults() {
+            return numResults_;
+        }
+
+        private byte memoizedIsInitialized = -1;
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
+
+            memoizedIsInitialized = 1;
+            return true;
+        }
+
+        @java.lang.Override
+        public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
+            if (operationTimeMs_ != 0L) {
+                output.writeUInt64(1, operationTimeMs_);
             }
-            onChanged();
-          }
-        } else {
-          if (!other.exceptions_.isEmpty()) {
-            if (exceptionsBuilder_.isEmpty()) {
-              exceptionsBuilder_.dispose();
-              exceptionsBuilder_ = null;
-              exceptions_ = other.exceptions_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              exceptionsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getExceptionsFieldBuilder() : null;
-            } else {
-              exceptionsBuilder_.addAllMessages(other.exceptions_);
+            for (int i = 0; i < messages_.size(); i++) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
             }
-          }
-        }
-        if (queryBuilder_ == null) {
-          if (!other.query_.isEmpty()) {
-            if (query_.isEmpty()) {
-              query_ = other.query_;
-              bitField0_ = (bitField0_ & ~0x00000004);
-            } else {
-              ensureQueryIsMutable();
-              query_.addAll(other.query_);
+            for (int i = 0; i < exceptions_.size(); i++) {
+                output.writeMessage(3, exceptions_.get(i));
             }
-            onChanged();
-          }
-        } else {
-          if (!other.query_.isEmpty()) {
-            if (queryBuilder_.isEmpty()) {
-              queryBuilder_.dispose();
-              queryBuilder_ = null;
-              query_ = other.query_;
-              bitField0_ = (bitField0_ & ~0x00000004);
-              queryBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getQueryFieldBuilder() : null;
-            } else {
-              queryBuilder_.addAllMessages(other.query_);
+            for (int i = 0; i < query_.size(); i++) {
+                output.writeMessage(4, query_.get(i));
             }
-          }
+            if (((bitField0_ & 0x00000001) != 0)) {
+                output.writeUInt32(5, numResults_);
+            }
+            getUnknownFields().writeTo(output);
         }
-        if (other.hasNumResults()) {
-          setNumResults(other.getNumResults());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        onChanged();
-        return this;
-      }
 
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
+        @java.lang.Override
+        public int getSerializedSize() {
+            int size = memoizedSize;
+            if (size != -1)
+                return size;
 
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        if (extensionRegistry == null) {
-          throw new java.lang.NullPointerException();
-        }
-        try {
-          boolean done = false;
-          while (!done) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                done = true;
-                break;
-              case 8: {
-                operationTimeMs_ = input.readUInt64();
-
-                break;
-              } // case 8
-              case 18: {
-                java.lang.String s = input.readStringRequireUtf8();
-                ensureMessagesIsMutable();
-                messages_.add(s);
-                break;
-              } // case 18
-              case 26: {
-                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType m =
-                    input.readMessage(
-                        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.parser(),
-                        extensionRegistry);
-                if (exceptionsBuilder_ == null) {
-                  ensureExceptionsIsMutable();
-                  exceptions_.add(m);
-                } else {
-                  exceptionsBuilder_.addMessage(m);
+            size = 0;
+            if (operationTimeMs_ != 0L) {
+                size += com.google.protobuf.CodedOutputStream.computeUInt64Size(1, operationTimeMs_);
+            }
+            {
+                int dataSize = 0;
+                for (int i = 0; i < messages_.size(); i++) {
+                    dataSize += computeStringSizeNoTag(messages_.getRaw(i));
                 }
-                break;
-              } // case 26
-              case 34: {
-                datawave.webservice.query.QueryMessages.QueryImpl m =
-                    input.readMessage(
-                        datawave.webservice.query.QueryMessages.QueryImpl.parser(),
-                        extensionRegistry);
-                if (queryBuilder_ == null) {
-                  ensureQueryIsMutable();
-                  query_.add(m);
-                } else {
-                  queryBuilder_.addMessage(m);
-                }
-                break;
-              } // case 34
-              case 40: {
-                numResults_ = input.readUInt32();
-                bitField0_ |= 0x00000008;
-                break;
-              } // case 40
-              default: {
-                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
-                  done = true; // was an endgroup tag
-                }
-                break;
-              } // default:
-            } // switch (tag)
-          } // while (!done)
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.unwrapIOException();
-        } finally {
-          onChanged();
-        } // finally
-        return this;
-      }
-      private int bitField0_;
-
-      private long operationTimeMs_ ;
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @return The operationTimeMs.
-       */
-      @java.lang.Override
-      public long getOperationTimeMs() {
-        return operationTimeMs_;
-      }
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @param value The operationTimeMs to set.
-       * @return This builder for chaining.
-       */
-      public Builder setOperationTimeMs(long value) {
-        
-        operationTimeMs_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearOperationTimeMs() {
-        
-        operationTimeMs_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensureMessagesIsMutable() {
-        if (!((bitField0_ & 0x00000001) != 0)) {
-          messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
-          bitField0_ |= 0x00000001;
-         }
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return A list containing the messages.
-       */
-      public com.google.protobuf.ProtocolStringList
-          getMessagesList() {
-        return messages_.getUnmodifiableView();
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return The count of messages.
-       */
-      public int getMessagesCount() {
-        return messages_.size();
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index of the element to return.
-       * @return The messages at the given index.
-       */
-      public java.lang.String getMessages(int index) {
-        return messages_.get(index);
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index of the value to return.
-       * @return The bytes of the messages at the given index.
-       */
-      public com.google.protobuf.ByteString
-          getMessagesBytes(int index) {
-        return messages_.getByteString(index);
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index to set the value at.
-       * @param value The messages to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessages(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureMessagesIsMutable();
-        messages_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param value The messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addMessages(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureMessagesIsMutable();
-        messages_.add(value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param values The messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addAllMessages(
-          java.lang.Iterable<java.lang.String> values) {
-        ensureMessagesIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, messages_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearMessages() {
-        messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param value The bytes of the messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addMessagesBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        ensureMessagesIsMutable();
-        messages_.add(value);
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ =
-        java.util.Collections.emptyList();
-      private void ensureExceptionsIsMutable() {
-        if (!((bitField0_ & 0x00000002) != 0)) {
-          exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
-          bitField0_ |= 0x00000002;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> exceptionsBuilder_;
-
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
-        if (exceptionsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(exceptions_);
-        } else {
-          return exceptionsBuilder_.getMessageList();
+                size += dataSize;
+                size += 1 * getMessagesList().size();
+            }
+            for (int i = 0; i < exceptions_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, exceptions_.get(i));
+            }
+            for (int i = 0; i < query_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(4, query_.get(i));
+            }
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeUInt32Size(5, numResults_);
+            }
+            size += getUnknownFields().getSerializedSize();
+            memoizedSize = size;
+            return size;
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public int getExceptionsCount() {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.size();
-        } else {
-          return exceptionsBuilder_.getCount();
+
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.result.ResponseMessages.QueryImplListResponse)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.result.ResponseMessages.QueryImplListResponse other = (datawave.webservice.result.ResponseMessages.QueryImplListResponse) obj;
+
+            if (getOperationTimeMs() != other.getOperationTimeMs())
+                return false;
+            if (!getMessagesList().equals(other.getMessagesList()))
+                return false;
+            if (!getExceptionsList().equals(other.getExceptionsList()))
+                return false;
+            if (!getQueryList().equals(other.getQueryList()))
+                return false;
+            if (hasNumResults() != other.hasNumResults())
+                return false;
+            if (hasNumResults()) {
+                if (getNumResults() != other.getNumResults())
+                    return false;
+            }
+            if (!getUnknownFields().equals(other.getUnknownFields()))
+                return false;
+            return true;
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.get(index);
-        } else {
-          return exceptionsBuilder_.getMessage(index);
+
+        @java.lang.Override
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
+            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getOperationTimeMs());
+            if (getMessagesCount() > 0) {
+                hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
+                hash = (53 * hash) + getMessagesList().hashCode();
+            }
+            if (getExceptionsCount() > 0) {
+                hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
+                hash = (53 * hash) + getExceptionsList().hashCode();
+            }
+            if (getQueryCount() > 0) {
+                hash = (37 * hash) + QUERY_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryList().hashCode();
+            }
+            if (hasNumResults()) {
+                hash = (37 * hash) + NUMRESULTS_FIELD_NUMBER;
+                hash = (53 * hash) + getNumResults();
+            }
+            hash = (29 * hash) + getUnknownFields().hashCode();
+            memoizedHashCode = hash;
+            return hash;
         }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder setExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.set(index, value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.setMessage(index, value);
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder setExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.setMessage(index, builderForValue.build());
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.add(value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(value);
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(com.google.protobuf.ByteString data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.add(index, value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(index, value);
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(com.google.protobuf.ByteString data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.add(builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(builderForValue.build());
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(byte[] data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(index, builderForValue.build());
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(byte[] data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addAllExceptions(
-          java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, exceptions_);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addAllMessages(values);
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(java.io.InputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder clearExceptions() {
-        if (exceptionsBuilder_ == null) {
-          exceptions_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          exceptionsBuilder_.clear();
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder removeExceptions(int index) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.remove(index);
-          onChanged();
-        } else {
-          exceptionsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder getExceptionsBuilder(
-          int index) {
-        return getExceptionsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-          int index) {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.get(index);  } else {
-          return exceptionsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-           getExceptionsOrBuilderList() {
-        if (exceptionsBuilder_ != null) {
-          return exceptionsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(exceptions_);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder() {
-        return getExceptionsFieldBuilder().addBuilder(
-            datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder(
-          int index) {
-        return getExceptionsFieldBuilder().addBuilder(
-            index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder> 
-           getExceptionsBuilderList() {
-        return getExceptionsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-          getExceptionsFieldBuilder() {
-        if (exceptionsBuilder_ == null) {
-          exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
-                  exceptions_,
-                  ((bitField0_ & 0x00000002) != 0),
-                  getParentForChildren(),
-                  isClean());
-          exceptions_ = null;
-        }
-        return exceptionsBuilder_;
-      }
 
-      private java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> query_ =
-        java.util.Collections.emptyList();
-      private void ensureQueryIsMutable() {
-        if (!((bitField0_ & 0x00000004) != 0)) {
-          query_ = new java.util.ArrayList<datawave.webservice.query.QueryMessages.QueryImpl>(query_);
-          bitField0_ |= 0x00000004;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.QueryMessages.QueryImpl, datawave.webservice.query.QueryMessages.QueryImpl.Builder, datawave.webservice.query.QueryMessages.QueryImplOrBuilder> queryBuilder_;
-
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList() {
-        if (queryBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(query_);
-        } else {
-          return queryBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public int getQueryCount() {
-        if (queryBuilder_ == null) {
-          return query_.size();
-        } else {
-          return queryBuilder_.getCount();
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index) {
-        if (queryBuilder_ == null) {
-          return query_.get(index);
-        } else {
-          return queryBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder setQuery(
-          int index, datawave.webservice.query.QueryMessages.QueryImpl value) {
-        if (queryBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureQueryIsMutable();
-          query_.set(index, value);
-          onChanged();
-        } else {
-          queryBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder setQuery(
-          int index, datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
-        if (queryBuilder_ == null) {
-          ensureQueryIsMutable();
-          query_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          queryBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder addQuery(datawave.webservice.query.QueryMessages.QueryImpl value) {
-        if (queryBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureQueryIsMutable();
-          query_.add(value);
-          onChanged();
-        } else {
-          queryBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder addQuery(
-          int index, datawave.webservice.query.QueryMessages.QueryImpl value) {
-        if (queryBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureQueryIsMutable();
-          query_.add(index, value);
-          onChanged();
-        } else {
-          queryBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder addQuery(
-          datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
-        if (queryBuilder_ == null) {
-          ensureQueryIsMutable();
-          query_.add(builderForValue.build());
-          onChanged();
-        } else {
-          queryBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder addQuery(
-          int index, datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
-        if (queryBuilder_ == null) {
-          ensureQueryIsMutable();
-          query_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          queryBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder addAllQuery(
-          java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl> values) {
-        if (queryBuilder_ == null) {
-          ensureQueryIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, query_);
-          onChanged();
-        } else {
-          queryBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder clearQuery() {
-        if (queryBuilder_ == null) {
-          query_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000004);
-          onChanged();
-        } else {
-          queryBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public Builder removeQuery(int index) {
-        if (queryBuilder_ == null) {
-          ensureQueryIsMutable();
-          query_.remove(index);
-          onChanged();
-        } else {
-          queryBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public datawave.webservice.query.QueryMessages.QueryImpl.Builder getQueryBuilder(
-          int index) {
-        return getQueryFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(
-          int index) {
-        if (queryBuilder_ == null) {
-          return query_.get(index);  } else {
-          return queryBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> 
-           getQueryOrBuilderList() {
-        if (queryBuilder_ != null) {
-          return queryBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(query_);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public datawave.webservice.query.QueryMessages.QueryImpl.Builder addQueryBuilder() {
-        return getQueryFieldBuilder().addBuilder(
-            datawave.webservice.query.QueryMessages.QueryImpl.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public datawave.webservice.query.QueryMessages.QueryImpl.Builder addQueryBuilder(
-          int index) {
-        return getQueryFieldBuilder().addBuilder(
-            index, datawave.webservice.query.QueryMessages.QueryImpl.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
-       */
-      public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Builder> 
-           getQueryBuilderList() {
-        return getQueryFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.QueryMessages.QueryImpl, datawave.webservice.query.QueryMessages.QueryImpl.Builder, datawave.webservice.query.QueryMessages.QueryImplOrBuilder> 
-          getQueryFieldBuilder() {
-        if (queryBuilder_ == null) {
-          queryBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              datawave.webservice.query.QueryMessages.QueryImpl, datawave.webservice.query.QueryMessages.QueryImpl.Builder, datawave.webservice.query.QueryMessages.QueryImplOrBuilder>(
-                  query_,
-                  ((bitField0_ & 0x00000004) != 0),
-                  getParentForChildren(),
-                  isClean());
-          query_ = null;
-        }
-        return queryBuilder_;
-      }
-
-      private int numResults_ ;
-      /**
-       * <code>uint32 numResults = 5;</code>
-       * @return Whether the numResults field is set.
-       */
-      @java.lang.Override
-      public boolean hasNumResults() {
-        return ((bitField0_ & 0x00000008) != 0);
-      }
-      /**
-       * <code>uint32 numResults = 5;</code>
-       * @return The numResults.
-       */
-      @java.lang.Override
-      public int getNumResults() {
-        return numResults_;
-      }
-      /**
-       * <code>uint32 numResults = 5;</code>
-       * @param value The numResults to set.
-       * @return This builder for chaining.
-       */
-      public Builder setNumResults(int value) {
-        bitField0_ |= 0x00000008;
-        numResults_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>uint32 numResults = 5;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearNumResults() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        numResults_ = 0;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:datawave.webservice.result.QueryImplListResponse)
-    }
-
-    // @@protoc_insertion_point(class_scope:datawave.webservice.result.QueryImplListResponse)
-    private static final datawave.webservice.result.ResponseMessages.QueryImplListResponse DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new datawave.webservice.result.ResponseMessages.QueryImplListResponse();
-    }
-
-    public static datawave.webservice.result.ResponseMessages.QueryImplListResponse getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<QueryImplListResponse>
-        PARSER = new com.google.protobuf.AbstractParser<QueryImplListResponse>() {
-      @java.lang.Override
-      public QueryImplListResponse parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        Builder builder = newBuilder();
-        try {
-          builder.mergeFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.setUnfinishedMessage(builder.buildPartial());
-        } catch (com.google.protobuf.UninitializedMessageException e) {
-          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
-        } catch (java.io.IOException e) {
-          throw new com.google.protobuf.InvalidProtocolBufferException(e)
-              .setUnfinishedMessage(builder.buildPartial());
-        }
-        return builder.buildPartial();
-      }
-    };
-
-    public static com.google.protobuf.Parser<QueryImplListResponse> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<QueryImplListResponse> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public datawave.webservice.result.ResponseMessages.QueryImplListResponse getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface GenericResponseOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:datawave.webservice.result.GenericResponse)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>uint64 operation_time_ms = 1;</code>
-     * @return The operationTimeMs.
-     */
-    long getOperationTimeMs();
-
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return A list containing the messages.
-     */
-    java.util.List<java.lang.String>
-        getMessagesList();
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return The count of messages.
-     */
-    int getMessagesCount();
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the element to return.
-     * @return The messages at the given index.
-     */
-    java.lang.String getMessages(int index);
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the value to return.
-     * @return The bytes of the messages at the given index.
-     */
-    com.google.protobuf.ByteString
-        getMessagesBytes(int index);
-
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> 
-        getExceptionsList();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    int getExceptionsCount();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-        getExceptionsOrBuilderList();
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-        int index);
-
-    /**
-     * <code>string result_class_name = 4;</code>
-     * @return The resultClassName.
-     */
-    java.lang.String getResultClassName();
-    /**
-     * <code>string result_class_name = 4;</code>
-     * @return The bytes for resultClassName.
-     */
-    com.google.protobuf.ByteString
-        getResultClassNameBytes();
-
-    /**
-     * <code>string result_as_string = 5;</code>
-     * @return Whether the resultAsString field is set.
-     */
-    boolean hasResultAsString();
-    /**
-     * <code>string result_as_string = 5;</code>
-     * @return The resultAsString.
-     */
-    java.lang.String getResultAsString();
-    /**
-     * <code>string result_as_string = 5;</code>
-     * @return The bytes for resultAsString.
-     */
-    com.google.protobuf.ByteString
-        getResultAsStringBytes();
-
-    /**
-     * <code>bool result_as_boolean = 6;</code>
-     * @return Whether the resultAsBoolean field is set.
-     */
-    boolean hasResultAsBoolean();
-    /**
-     * <code>bool result_as_boolean = 6;</code>
-     * @return The resultAsBoolean.
-     */
-    boolean getResultAsBoolean();
-
-    /**
-     * <code>sint32 result_as_int = 7;</code>
-     * @return Whether the resultAsInt field is set.
-     */
-    boolean hasResultAsInt();
-    /**
-     * <code>sint32 result_as_int = 7;</code>
-     * @return The resultAsInt.
-     */
-    int getResultAsInt();
-
-    /**
-     * <code>sint64 result_as_long = 8;</code>
-     * @return Whether the resultAsLong field is set.
-     */
-    boolean hasResultAsLong();
-    /**
-     * <code>sint64 result_as_long = 8;</code>
-     * @return The resultAsLong.
-     */
-    long getResultAsLong();
-
-    /**
-     * <code>float result_as_float = 9;</code>
-     * @return Whether the resultAsFloat field is set.
-     */
-    boolean hasResultAsFloat();
-    /**
-     * <code>float result_as_float = 9;</code>
-     * @return The resultAsFloat.
-     */
-    float getResultAsFloat();
-
-    /**
-     * <code>double result_as_double = 10;</code>
-     * @return Whether the resultAsDouble field is set.
-     */
-    boolean hasResultAsDouble();
-    /**
-     * <code>double result_as_double = 10;</code>
-     * @return The resultAsDouble.
-     */
-    double getResultAsDouble();
-
-    /**
-     * <code>bytes result_as_bytes = 11;</code>
-     * @return Whether the resultAsBytes field is set.
-     */
-    boolean hasResultAsBytes();
-    /**
-     * <code>bytes result_as_bytes = 11;</code>
-     * @return The resultAsBytes.
-     */
-    com.google.protobuf.ByteString getResultAsBytes();
-
-    /**
-     * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-     * @return Whether the resultAsDescription field is set.
-     */
-    boolean hasResultAsDescription();
-    /**
-     * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-     * @return The resultAsDescription.
-     */
-    datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription();
-    /**
-     * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-     */
-    datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder();
-  }
-  /**
-   * Protobuf type {@code datawave.webservice.result.GenericResponse}
-   */
-  public static final class GenericResponse extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:datawave.webservice.result.GenericResponse)
-      GenericResponseOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use GenericResponse.newBuilder() to construct.
-    private GenericResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private GenericResponse() {
-      messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      exceptions_ = java.util.Collections.emptyList();
-      resultClassName_ = "";
-      resultAsString_ = "";
-      resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new GenericResponse();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              datawave.webservice.result.ResponseMessages.GenericResponse.class, datawave.webservice.result.ResponseMessages.GenericResponse.Builder.class);
-    }
-
-    private int bitField0_;
-    public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
-    private long operationTimeMs_;
-    /**
-     * <code>uint64 operation_time_ms = 1;</code>
-     * @return The operationTimeMs.
-     */
-    @java.lang.Override
-    public long getOperationTimeMs() {
-      return operationTimeMs_;
-    }
-
-    public static final int MESSAGES_FIELD_NUMBER = 2;
-    private com.google.protobuf.LazyStringList messages_;
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return A list containing the messages.
-     */
-    public com.google.protobuf.ProtocolStringList
-        getMessagesList() {
-      return messages_;
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @return The count of messages.
-     */
-    public int getMessagesCount() {
-      return messages_.size();
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the element to return.
-     * @return The messages at the given index.
-     */
-    public java.lang.String getMessages(int index) {
-      return messages_.get(index);
-    }
-    /**
-     * <code>repeated string messages = 2;</code>
-     * @param index The index of the value to return.
-     * @return The bytes of the messages at the given index.
-     */
-    public com.google.protobuf.ByteString
-        getMessagesBytes(int index) {
-      return messages_.getByteString(index);
-    }
-
-    public static final int EXCEPTIONS_FIELD_NUMBER = 3;
-    private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_;
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
-      return exceptions_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-        getExceptionsOrBuilderList() {
-      return exceptions_;
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public int getExceptionsCount() {
-      return exceptions_.size();
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
-      return exceptions_.get(index);
-    }
-    /**
-     * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-        int index) {
-      return exceptions_.get(index);
-    }
-
-    public static final int RESULT_CLASS_NAME_FIELD_NUMBER = 4;
-    private volatile java.lang.Object resultClassName_;
-    /**
-     * <code>string result_class_name = 4;</code>
-     * @return The resultClassName.
-     */
-    @java.lang.Override
-    public java.lang.String getResultClassName() {
-      java.lang.Object ref = resultClassName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        resultClassName_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string result_class_name = 4;</code>
-     * @return The bytes for resultClassName.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getResultClassNameBytes() {
-      java.lang.Object ref = resultClassName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        resultClassName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int RESULT_AS_STRING_FIELD_NUMBER = 5;
-    private volatile java.lang.Object resultAsString_;
-    /**
-     * <code>string result_as_string = 5;</code>
-     * @return Whether the resultAsString field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsString() {
-      return ((bitField0_ & 0x00000001) != 0);
-    }
-    /**
-     * <code>string result_as_string = 5;</code>
-     * @return The resultAsString.
-     */
-    @java.lang.Override
-    public java.lang.String getResultAsString() {
-      java.lang.Object ref = resultAsString_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        resultAsString_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string result_as_string = 5;</code>
-     * @return The bytes for resultAsString.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getResultAsStringBytes() {
-      java.lang.Object ref = resultAsString_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        resultAsString_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int RESULT_AS_BOOLEAN_FIELD_NUMBER = 6;
-    private boolean resultAsBoolean_;
-    /**
-     * <code>bool result_as_boolean = 6;</code>
-     * @return Whether the resultAsBoolean field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsBoolean() {
-      return ((bitField0_ & 0x00000002) != 0);
-    }
-    /**
-     * <code>bool result_as_boolean = 6;</code>
-     * @return The resultAsBoolean.
-     */
-    @java.lang.Override
-    public boolean getResultAsBoolean() {
-      return resultAsBoolean_;
-    }
-
-    public static final int RESULT_AS_INT_FIELD_NUMBER = 7;
-    private int resultAsInt_;
-    /**
-     * <code>sint32 result_as_int = 7;</code>
-     * @return Whether the resultAsInt field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsInt() {
-      return ((bitField0_ & 0x00000004) != 0);
-    }
-    /**
-     * <code>sint32 result_as_int = 7;</code>
-     * @return The resultAsInt.
-     */
-    @java.lang.Override
-    public int getResultAsInt() {
-      return resultAsInt_;
-    }
-
-    public static final int RESULT_AS_LONG_FIELD_NUMBER = 8;
-    private long resultAsLong_;
-    /**
-     * <code>sint64 result_as_long = 8;</code>
-     * @return Whether the resultAsLong field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsLong() {
-      return ((bitField0_ & 0x00000008) != 0);
-    }
-    /**
-     * <code>sint64 result_as_long = 8;</code>
-     * @return The resultAsLong.
-     */
-    @java.lang.Override
-    public long getResultAsLong() {
-      return resultAsLong_;
-    }
-
-    public static final int RESULT_AS_FLOAT_FIELD_NUMBER = 9;
-    private float resultAsFloat_;
-    /**
-     * <code>float result_as_float = 9;</code>
-     * @return Whether the resultAsFloat field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsFloat() {
-      return ((bitField0_ & 0x00000010) != 0);
-    }
-    /**
-     * <code>float result_as_float = 9;</code>
-     * @return The resultAsFloat.
-     */
-    @java.lang.Override
-    public float getResultAsFloat() {
-      return resultAsFloat_;
-    }
-
-    public static final int RESULT_AS_DOUBLE_FIELD_NUMBER = 10;
-    private double resultAsDouble_;
-    /**
-     * <code>double result_as_double = 10;</code>
-     * @return Whether the resultAsDouble field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsDouble() {
-      return ((bitField0_ & 0x00000020) != 0);
-    }
-    /**
-     * <code>double result_as_double = 10;</code>
-     * @return The resultAsDouble.
-     */
-    @java.lang.Override
-    public double getResultAsDouble() {
-      return resultAsDouble_;
-    }
-
-    public static final int RESULT_AS_BYTES_FIELD_NUMBER = 11;
-    private com.google.protobuf.ByteString resultAsBytes_;
-    /**
-     * <code>bytes result_as_bytes = 11;</code>
-     * @return Whether the resultAsBytes field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsBytes() {
-      return ((bitField0_ & 0x00000040) != 0);
-    }
-    /**
-     * <code>bytes result_as_bytes = 11;</code>
-     * @return The resultAsBytes.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getResultAsBytes() {
-      return resultAsBytes_;
-    }
-
-    public static final int RESULT_AS_DESCRIPTION_FIELD_NUMBER = 12;
-    private datawave.webservice.results.cached.result.CachedresultMessages.Description resultAsDescription_;
-    /**
-     * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-     * @return Whether the resultAsDescription field is set.
-     */
-    @java.lang.Override
-    public boolean hasResultAsDescription() {
-      return ((bitField0_ & 0x00000080) != 0);
-    }
-    /**
-     * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-     * @return The resultAsDescription.
-     */
-    @java.lang.Override
-    public datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription() {
-      return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance() : resultAsDescription_;
-    }
-    /**
-     * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-     */
-    @java.lang.Override
-    public datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder() {
-      return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance() : resultAsDescription_;
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseDelimitedFrom(java.io.InputStream input)
                         throws java.io.IOException {
-      if (operationTimeMs_ != 0L) {
-        output.writeUInt64(1, operationTimeMs_);
-      }
-      for (int i = 0; i < messages_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
-      }
-      for (int i = 0; i < exceptions_.size(); i++) {
-        output.writeMessage(3, exceptions_.get(i));
-      }
-      if (!getResultClassNameBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, resultClassName_);
-      }
-      if (((bitField0_ & 0x00000001) != 0)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, resultAsString_);
-      }
-      if (((bitField0_ & 0x00000002) != 0)) {
-        output.writeBool(6, resultAsBoolean_);
-      }
-      if (((bitField0_ & 0x00000004) != 0)) {
-        output.writeSInt32(7, resultAsInt_);
-      }
-      if (((bitField0_ & 0x00000008) != 0)) {
-        output.writeSInt64(8, resultAsLong_);
-      }
-      if (((bitField0_ & 0x00000010) != 0)) {
-        output.writeFloat(9, resultAsFloat_);
-      }
-      if (((bitField0_ & 0x00000020) != 0)) {
-        output.writeDouble(10, resultAsDouble_);
-      }
-      if (((bitField0_ & 0x00000040) != 0)) {
-        output.writeBytes(11, resultAsBytes_);
-      }
-      if (((bitField0_ & 0x00000080) != 0)) {
-        output.writeMessage(12, getResultAsDescription());
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (operationTimeMs_ != 0L) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(1, operationTimeMs_);
-      }
-      {
-        int dataSize = 0;
-        for (int i = 0; i < messages_.size(); i++) {
-          dataSize += computeStringSizeNoTag(messages_.getRaw(i));
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
-        size += dataSize;
-        size += 1 * getMessagesList().size();
-      }
-      for (int i = 0; i < exceptions_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, exceptions_.get(i));
-      }
-      if (!getResultClassNameBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, resultClassName_);
-      }
-      if (((bitField0_ & 0x00000001) != 0)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, resultAsString_);
-      }
-      if (((bitField0_ & 0x00000002) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(6, resultAsBoolean_);
-      }
-      if (((bitField0_ & 0x00000004) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(7, resultAsInt_);
-      }
-      if (((bitField0_ & 0x00000008) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(8, resultAsLong_);
-      }
-      if (((bitField0_ & 0x00000010) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeFloatSize(9, resultAsFloat_);
-      }
-      if (((bitField0_ & 0x00000020) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(10, resultAsDouble_);
-      }
-      if (((bitField0_ & 0x00000040) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(11, resultAsBytes_);
-      }
-      if (((bitField0_ & 0x00000080) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(12, getResultAsDescription());
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSize = size;
-      return size;
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseDelimitedFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(com.google.protobuf.CodedInputStream input)
+                        throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse parseFrom(com.google.protobuf.CodedInputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        @java.lang.Override
+        public Builder newBuilderForType() {
+            return newBuilder();
+        }
+
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
+        }
+
+        public static Builder newBuilder(datawave.webservice.result.ResponseMessages.QueryImplListResponse prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+
+        @java.lang.Override
+        public Builder toBuilder() {
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
+        }
+
+        /**
+         * Protobuf type {@code datawave.webservice.result.QueryImplListResponse}
+         */
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.webservice.result.QueryImplListResponse)
+                        datawave.webservice.result.ResponseMessages.QueryImplListResponseOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.result.ResponseMessages.QueryImplListResponse.class,
+                                                datawave.webservice.result.ResponseMessages.QueryImplListResponse.Builder.class);
+            }
+
+            // Construct using datawave.webservice.result.ResponseMessages.QueryImplListResponse.newBuilder()
+            private Builder() {
+
+            }
+
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+
+            }
+
+            @java.lang.Override
+            public Builder clear() {
+                super.clear();
+                operationTimeMs_ = 0L;
+
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
+                if (exceptionsBuilder_ == null) {
+                    exceptions_ = java.util.Collections.emptyList();
+                } else {
+                    exceptions_ = null;
+                    exceptionsBuilder_.clear();
+                }
+                bitField0_ = (bitField0_ & ~0x00000002);
+                if (queryBuilder_ == null) {
+                    query_ = java.util.Collections.emptyList();
+                } else {
+                    query_ = null;
+                    queryBuilder_.clear();
+                }
+                bitField0_ = (bitField0_ & ~0x00000004);
+                numResults_ = 0;
+                bitField0_ = (bitField0_ & ~0x00000008);
+                return this;
+            }
+
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.QueryImplListResponse getDefaultInstanceForType() {
+                return datawave.webservice.result.ResponseMessages.QueryImplListResponse.getDefaultInstance();
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.QueryImplListResponse build() {
+                datawave.webservice.result.ResponseMessages.QueryImplListResponse result = buildPartial();
+                if (!result.isInitialized()) {
+                    throw newUninitializedMessageException(result);
+                }
+                return result;
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.QueryImplListResponse buildPartial() {
+                datawave.webservice.result.ResponseMessages.QueryImplListResponse result = new datawave.webservice.result.ResponseMessages.QueryImplListResponse(
+                                this);
+                int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
+                result.operationTimeMs_ = operationTimeMs_;
+                if (((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = messages_.getUnmodifiableView();
+                    bitField0_ = (bitField0_ & ~0x00000001);
+                }
+                result.messages_ = messages_;
+                if (exceptionsBuilder_ == null) {
+                    if (((bitField0_ & 0x00000002) != 0)) {
+                        exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
+                        bitField0_ = (bitField0_ & ~0x00000002);
+                    }
+                    result.exceptions_ = exceptions_;
+                } else {
+                    result.exceptions_ = exceptionsBuilder_.build();
+                }
+                if (queryBuilder_ == null) {
+                    if (((bitField0_ & 0x00000004) != 0)) {
+                        query_ = java.util.Collections.unmodifiableList(query_);
+                        bitField0_ = (bitField0_ & ~0x00000004);
+                    }
+                    result.query_ = query_;
+                } else {
+                    result.query_ = queryBuilder_.build();
+                }
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    result.numResults_ = numResults_;
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.bitField0_ = to_bitField0_;
+                onBuilt();
+                return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.result.ResponseMessages.QueryImplListResponse) {
+                    return mergeFrom((datawave.webservice.result.ResponseMessages.QueryImplListResponse) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
+            }
+
+            public Builder mergeFrom(datawave.webservice.result.ResponseMessages.QueryImplListResponse other) {
+                if (other == datawave.webservice.result.ResponseMessages.QueryImplListResponse.getDefaultInstance())
+                    return this;
+                if (other.getOperationTimeMs() != 0L) {
+                    setOperationTimeMs(other.getOperationTimeMs());
+                }
+                if (!other.messages_.isEmpty()) {
+                    if (messages_.isEmpty()) {
+                        messages_ = other.messages_;
+                        bitField0_ = (bitField0_ & ~0x00000001);
+                    } else {
+                        ensureMessagesIsMutable();
+                        messages_.addAll(other.messages_);
+                    }
+                    onChanged();
+                }
+                if (exceptionsBuilder_ == null) {
+                    if (!other.exceptions_.isEmpty()) {
+                        if (exceptions_.isEmpty()) {
+                            exceptions_ = other.exceptions_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                        } else {
+                            ensureExceptionsIsMutable();
+                            exceptions_.addAll(other.exceptions_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.exceptions_.isEmpty()) {
+                        if (exceptionsBuilder_.isEmpty()) {
+                            exceptionsBuilder_.dispose();
+                            exceptionsBuilder_ = null;
+                            exceptions_ = other.exceptions_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                            exceptionsBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getExceptionsFieldBuilder() : null;
+                        } else {
+                            exceptionsBuilder_.addAllMessages(other.exceptions_);
+                        }
+                    }
+                }
+                if (queryBuilder_ == null) {
+                    if (!other.query_.isEmpty()) {
+                        if (query_.isEmpty()) {
+                            query_ = other.query_;
+                            bitField0_ = (bitField0_ & ~0x00000004);
+                        } else {
+                            ensureQueryIsMutable();
+                            query_.addAll(other.query_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.query_.isEmpty()) {
+                        if (queryBuilder_.isEmpty()) {
+                            queryBuilder_.dispose();
+                            queryBuilder_ = null;
+                            query_ = other.query_;
+                            bitField0_ = (bitField0_ & ~0x00000004);
+                            queryBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getQueryFieldBuilder() : null;
+                        } else {
+                            queryBuilder_.addAllMessages(other.query_);
+                        }
+                    }
+                }
+                if (other.hasNumResults()) {
+                    setNumResults(other.getNumResults());
+                }
+                this.mergeUnknownFields(other.getUnknownFields());
+                onChanged();
+                return this;
+            }
+
+            @java.lang.Override
+            public final boolean isInitialized() {
+                return true;
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws java.io.IOException {
+                if (extensionRegistry == null) {
+                    throw new java.lang.NullPointerException();
+                }
+                try {
+                    boolean done = false;
+                    while (!done) {
+                        int tag = input.readTag();
+                        switch (tag) {
+                            case 0:
+                                done = true;
+                                break;
+                            case 8: {
+                                operationTimeMs_ = input.readUInt64();
+
+                                break;
+                            } // case 8
+                            case 18: {
+                                java.lang.String s = input.readStringRequireUtf8();
+                                ensureMessagesIsMutable();
+                                messages_.add(s);
+                                break;
+                            } // case 18
+                            case 26: {
+                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType m = input.readMessage(
+                                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.parser(), extensionRegistry);
+                                if (exceptionsBuilder_ == null) {
+                                    ensureExceptionsIsMutable();
+                                    exceptions_.add(m);
+                                } else {
+                                    exceptionsBuilder_.addMessage(m);
+                                }
+                                break;
+                            } // case 26
+                            case 34: {
+                                datawave.webservice.query.QueryMessages.QueryImpl m = input
+                                                .readMessage(datawave.webservice.query.QueryMessages.QueryImpl.parser(), extensionRegistry);
+                                if (queryBuilder_ == null) {
+                                    ensureQueryIsMutable();
+                                    query_.add(m);
+                                } else {
+                                    queryBuilder_.addMessage(m);
+                                }
+                                break;
+                            } // case 34
+                            case 40: {
+                                numResults_ = input.readUInt32();
+                                bitField0_ |= 0x00000008;
+                                break;
+                            } // case 40
+                            default: {
+                                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                                    done = true; // was an endgroup tag
+                                }
+                                break;
+                            } // default:
+                        } // switch (tag)
+                    } // while (!done)
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    throw e.unwrapIOException();
+                } finally {
+                    onChanged();
+                } // finally
+                return this;
+            }
+
+            private int bitField0_;
+
+            private long operationTimeMs_;
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @return The operationTimeMs.
+             */
+            @java.lang.Override
+            public long getOperationTimeMs() {
+                return operationTimeMs_;
+            }
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @param value
+             *            The operationTimeMs to set.
+             * @return This builder for chaining.
+             */
+            public Builder setOperationTimeMs(long value) {
+
+                operationTimeMs_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearOperationTimeMs() {
+
+                operationTimeMs_ = 0L;
+                onChanged();
+                return this;
+            }
+
+            private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+
+            private void ensureMessagesIsMutable() {
+                if (!((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
+                    bitField0_ |= 0x00000001;
+                }
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return A list containing the messages.
+             */
+            public com.google.protobuf.ProtocolStringList getMessagesList() {
+                return messages_.getUnmodifiableView();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return The count of messages.
+             */
+            public int getMessagesCount() {
+                return messages_.size();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the element to return.
+             * @return The messages at the given index.
+             */
+            public java.lang.String getMessages(int index) {
+                return messages_.get(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the value to return.
+             * @return The bytes of the messages at the given index.
+             */
+            public com.google.protobuf.ByteString getMessagesBytes(int index) {
+                return messages_.getByteString(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index to set the value at.
+             * @param value
+             *            The messages to set.
+             * @return This builder for chaining.
+             */
+            public Builder setMessages(int index, java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessages(java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
+                ensureMessagesIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, messages_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearMessages() {
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The bytes of the messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                checkByteStringIsUtf8(value);
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ = java.util.Collections.emptyList();
+
+            private void ensureExceptionsIsMutable() {
+                if (!((bitField0_ & 0x00000002) != 0)) {
+                    exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
+                    bitField0_ |= 0x00000002;
+                }
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> exceptionsBuilder_;
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
+                if (exceptionsBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(exceptions_);
+                } else {
+                    return exceptionsBuilder_.getMessageList();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public int getExceptionsCount() {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.size();
+                } else {
+                    return exceptionsBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.get(index);
+                } else {
+                    return exceptionsBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.set(index, value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.setMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.setMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(index, value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, exceptions_);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder clearExceptions() {
+                if (exceptionsBuilder_ == null) {
+                    exceptions_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000002);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.clear();
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder removeExceptions(int index) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.remove(index);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.remove(index);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder getExceptionsBuilder(int index) {
+                return getExceptionsFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.get(index);
+                } else {
+                    return exceptionsBuilder_.getMessageOrBuilder(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
+                if (exceptionsBuilder_ != null) {
+                    return exceptionsBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(exceptions_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder() {
+                return getExceptionsFieldBuilder().addBuilder(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder(int index) {
+                return getExceptionsFieldBuilder().addBuilder(index,
+                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder> getExceptionsBuilderList() {
+                return getExceptionsFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsFieldBuilder() {
+                if (exceptionsBuilder_ == null) {
+                    exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
+                                    exceptions_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
+                    exceptions_ = null;
+                }
+                return exceptionsBuilder_;
+            }
+
+            private java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> query_ = java.util.Collections.emptyList();
+
+            private void ensureQueryIsMutable() {
+                if (!((bitField0_ & 0x00000004) != 0)) {
+                    query_ = new java.util.ArrayList<datawave.webservice.query.QueryMessages.QueryImpl>(query_);
+                    bitField0_ |= 0x00000004;
+                }
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.QueryMessages.QueryImpl,datawave.webservice.query.QueryMessages.QueryImpl.Builder,datawave.webservice.query.QueryMessages.QueryImplOrBuilder> queryBuilder_;
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl> getQueryList() {
+                if (queryBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(query_);
+                } else {
+                    return queryBuilder_.getMessageList();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public int getQueryCount() {
+                if (queryBuilder_ == null) {
+                    return query_.size();
+                } else {
+                    return queryBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl getQuery(int index) {
+                if (queryBuilder_ == null) {
+                    return query_.get(index);
+                } else {
+                    return queryBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder setQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl value) {
+                if (queryBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureQueryIsMutable();
+                    query_.set(index, value);
+                    onChanged();
+                } else {
+                    queryBuilder_.setMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder setQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
+                if (queryBuilder_ == null) {
+                    ensureQueryIsMutable();
+                    query_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    queryBuilder_.setMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder addQuery(datawave.webservice.query.QueryMessages.QueryImpl value) {
+                if (queryBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureQueryIsMutable();
+                    query_.add(value);
+                    onChanged();
+                } else {
+                    queryBuilder_.addMessage(value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder addQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl value) {
+                if (queryBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureQueryIsMutable();
+                    query_.add(index, value);
+                    onChanged();
+                } else {
+                    queryBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder addQuery(datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
+                if (queryBuilder_ == null) {
+                    ensureQueryIsMutable();
+                    query_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    queryBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder addQuery(int index, datawave.webservice.query.QueryMessages.QueryImpl.Builder builderForValue) {
+                if (queryBuilder_ == null) {
+                    ensureQueryIsMutable();
+                    query_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    queryBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder addAllQuery(java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl> values) {
+                if (queryBuilder_ == null) {
+                    ensureQueryIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, query_);
+                    onChanged();
+                } else {
+                    queryBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder clearQuery() {
+                if (queryBuilder_ == null) {
+                    query_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000004);
+                    onChanged();
+                } else {
+                    queryBuilder_.clear();
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public Builder removeQuery(int index) {
+                if (queryBuilder_ == null) {
+                    ensureQueryIsMutable();
+                    query_.remove(index);
+                    onChanged();
+                } else {
+                    queryBuilder_.remove(index);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.Builder getQueryBuilder(int index) {
+                return getQueryFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImplOrBuilder getQueryOrBuilder(int index) {
+                if (queryBuilder_ == null) {
+                    return query_.get(index);
+                } else {
+                    return queryBuilder_.getMessageOrBuilder(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImplOrBuilder> getQueryOrBuilderList() {
+                if (queryBuilder_ != null) {
+                    return queryBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(query_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.Builder addQueryBuilder() {
+                return getQueryFieldBuilder().addBuilder(datawave.webservice.query.QueryMessages.QueryImpl.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.Builder addQueryBuilder(int index) {
+                return getQueryFieldBuilder().addBuilder(index, datawave.webservice.query.QueryMessages.QueryImpl.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl query = 4;</code>
+             */
+            public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Builder> getQueryBuilderList() {
+                return getQueryFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.QueryMessages.QueryImpl,datawave.webservice.query.QueryMessages.QueryImpl.Builder,datawave.webservice.query.QueryMessages.QueryImplOrBuilder> getQueryFieldBuilder() {
+                if (queryBuilder_ == null) {
+                    queryBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.QueryMessages.QueryImpl,datawave.webservice.query.QueryMessages.QueryImpl.Builder,datawave.webservice.query.QueryMessages.QueryImplOrBuilder>(
+                                    query_, ((bitField0_ & 0x00000004) != 0), getParentForChildren(), isClean());
+                    query_ = null;
+                }
+                return queryBuilder_;
+            }
+
+            private int numResults_;
+
+            /**
+             * <code>uint32 numResults = 5;</code>
+             *
+             * @return Whether the numResults field is set.
+             */
+            @java.lang.Override
+            public boolean hasNumResults() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
+
+            /**
+             * <code>uint32 numResults = 5;</code>
+             *
+             * @return The numResults.
+             */
+            @java.lang.Override
+            public int getNumResults() {
+                return numResults_;
+            }
+
+            /**
+             * <code>uint32 numResults = 5;</code>
+             *
+             * @param value
+             *            The numResults to set.
+             * @return This builder for chaining.
+             */
+            public Builder setNumResults(int value) {
+                bitField0_ |= 0x00000008;
+                numResults_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>uint32 numResults = 5;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearNumResults() {
+                bitField0_ = (bitField0_ & ~0x00000008);
+                numResults_ = 0;
+                onChanged();
+                return this;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
+            }
+
+            // @@protoc_insertion_point(builder_scope:datawave.webservice.result.QueryImplListResponse)
+        }
+
+        // @@protoc_insertion_point(class_scope:datawave.webservice.result.QueryImplListResponse)
+        private static final datawave.webservice.result.ResponseMessages.QueryImplListResponse DEFAULT_INSTANCE;
+        static {
+            DEFAULT_INSTANCE = new datawave.webservice.result.ResponseMessages.QueryImplListResponse();
+        }
+
+        public static datawave.webservice.result.ResponseMessages.QueryImplListResponse getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+
+        private static final com.google.protobuf.Parser<QueryImplListResponse> PARSER = new com.google.protobuf.AbstractParser<QueryImplListResponse>() {
+            @java.lang.Override
+            public QueryImplListResponse parsePartialFrom(com.google.protobuf.CodedInputStream input,
+                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+                Builder builder = newBuilder();
+                try {
+                    builder.mergeFrom(input, extensionRegistry);
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    throw e.setUnfinishedMessage(builder.buildPartial());
+                } catch (com.google.protobuf.UninitializedMessageException e) {
+                    throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+                } catch (java.io.IOException e) {
+                    throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(builder.buildPartial());
+                }
+                return builder.buildPartial();
+            }
+        };
+
+        public static com.google.protobuf.Parser<QueryImplListResponse> parser() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<QueryImplListResponse> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public datawave.webservice.result.ResponseMessages.QueryImplListResponse getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof datawave.webservice.result.ResponseMessages.GenericResponse)) {
-        return super.equals(obj);
-      }
-      datawave.webservice.result.ResponseMessages.GenericResponse other = (datawave.webservice.result.ResponseMessages.GenericResponse) obj;
+    public interface GenericResponseOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.webservice.result.GenericResponse)
+                    com.google.protobuf.MessageOrBuilder {
 
-      if (getOperationTimeMs()
-          != other.getOperationTimeMs()) return false;
-      if (!getMessagesList()
-          .equals(other.getMessagesList())) return false;
-      if (!getExceptionsList()
-          .equals(other.getExceptionsList())) return false;
-      if (!getResultClassName()
-          .equals(other.getResultClassName())) return false;
-      if (hasResultAsString() != other.hasResultAsString()) return false;
-      if (hasResultAsString()) {
-        if (!getResultAsString()
-            .equals(other.getResultAsString())) return false;
-      }
-      if (hasResultAsBoolean() != other.hasResultAsBoolean()) return false;
-      if (hasResultAsBoolean()) {
-        if (getResultAsBoolean()
-            != other.getResultAsBoolean()) return false;
-      }
-      if (hasResultAsInt() != other.hasResultAsInt()) return false;
-      if (hasResultAsInt()) {
-        if (getResultAsInt()
-            != other.getResultAsInt()) return false;
-      }
-      if (hasResultAsLong() != other.hasResultAsLong()) return false;
-      if (hasResultAsLong()) {
-        if (getResultAsLong()
-            != other.getResultAsLong()) return false;
-      }
-      if (hasResultAsFloat() != other.hasResultAsFloat()) return false;
-      if (hasResultAsFloat()) {
-        if (java.lang.Float.floatToIntBits(getResultAsFloat())
-            != java.lang.Float.floatToIntBits(
-                other.getResultAsFloat())) return false;
-      }
-      if (hasResultAsDouble() != other.hasResultAsDouble()) return false;
-      if (hasResultAsDouble()) {
-        if (java.lang.Double.doubleToLongBits(getResultAsDouble())
-            != java.lang.Double.doubleToLongBits(
-                other.getResultAsDouble())) return false;
-      }
-      if (hasResultAsBytes() != other.hasResultAsBytes()) return false;
-      if (hasResultAsBytes()) {
-        if (!getResultAsBytes()
-            .equals(other.getResultAsBytes())) return false;
-      }
-      if (hasResultAsDescription() != other.hasResultAsDescription()) return false;
-      if (hasResultAsDescription()) {
-        if (!getResultAsDescription()
-            .equals(other.getResultAsDescription())) return false;
-      }
-      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
-      return true;
-    }
+        /**
+         * <code>uint64 operation_time_ms = 1;</code>
+         *
+         * @return The operationTimeMs.
+         */
+        long getOperationTimeMs();
 
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getOperationTimeMs());
-      if (getMessagesCount() > 0) {
-        hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
-        hash = (53 * hash) + getMessagesList().hashCode();
-      }
-      if (getExceptionsCount() > 0) {
-        hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
-        hash = (53 * hash) + getExceptionsList().hashCode();
-      }
-      hash = (37 * hash) + RESULT_CLASS_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getResultClassName().hashCode();
-      if (hasResultAsString()) {
-        hash = (37 * hash) + RESULT_AS_STRING_FIELD_NUMBER;
-        hash = (53 * hash) + getResultAsString().hashCode();
-      }
-      if (hasResultAsBoolean()) {
-        hash = (37 * hash) + RESULT_AS_BOOLEAN_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-            getResultAsBoolean());
-      }
-      if (hasResultAsInt()) {
-        hash = (37 * hash) + RESULT_AS_INT_FIELD_NUMBER;
-        hash = (53 * hash) + getResultAsInt();
-      }
-      if (hasResultAsLong()) {
-        hash = (37 * hash) + RESULT_AS_LONG_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getResultAsLong());
-      }
-      if (hasResultAsFloat()) {
-        hash = (37 * hash) + RESULT_AS_FLOAT_FIELD_NUMBER;
-        hash = (53 * hash) + java.lang.Float.floatToIntBits(
-            getResultAsFloat());
-      }
-      if (hasResultAsDouble()) {
-        hash = (37 * hash) + RESULT_AS_DOUBLE_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            java.lang.Double.doubleToLongBits(getResultAsDouble()));
-      }
-      if (hasResultAsBytes()) {
-        hash = (37 * hash) + RESULT_AS_BYTES_FIELD_NUMBER;
-        hash = (53 * hash) + getResultAsBytes().hashCode();
-      }
-      if (hasResultAsDescription()) {
-        hash = (37 * hash) + RESULT_AS_DESCRIPTION_FIELD_NUMBER;
-        hash = (53 * hash) + getResultAsDescription().hashCode();
-      }
-      hash = (29 * hash) + getUnknownFields().hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return A list containing the messages.
+         */
+        java.util.List<java.lang.String> getMessagesList();
 
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return The count of messages.
+         */
+        int getMessagesCount();
 
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(datawave.webservice.result.ResponseMessages.GenericResponse prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        java.lang.String getMessages(int index);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        com.google.protobuf.ByteString getMessagesBytes(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index);
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        int getExceptionsCount();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList();
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index);
+
+        /**
+         * <code>string result_class_name = 4;</code>
+         *
+         * @return The resultClassName.
+         */
+        java.lang.String getResultClassName();
+
+        /**
+         * <code>string result_class_name = 4;</code>
+         *
+         * @return The bytes for resultClassName.
+         */
+        com.google.protobuf.ByteString getResultClassNameBytes();
+
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
+         * @return Whether the resultAsString field is set.
+         */
+        boolean hasResultAsString();
+
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
+         * @return The resultAsString.
+         */
+        java.lang.String getResultAsString();
+
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
+         * @return The bytes for resultAsString.
+         */
+        com.google.protobuf.ByteString getResultAsStringBytes();
+
+        /**
+         * <code>bool result_as_boolean = 6;</code>
+         *
+         * @return Whether the resultAsBoolean field is set.
+         */
+        boolean hasResultAsBoolean();
+
+        /**
+         * <code>bool result_as_boolean = 6;</code>
+         *
+         * @return The resultAsBoolean.
+         */
+        boolean getResultAsBoolean();
+
+        /**
+         * <code>sint32 result_as_int = 7;</code>
+         *
+         * @return Whether the resultAsInt field is set.
+         */
+        boolean hasResultAsInt();
+
+        /**
+         * <code>sint32 result_as_int = 7;</code>
+         *
+         * @return The resultAsInt.
+         */
+        int getResultAsInt();
+
+        /**
+         * <code>sint64 result_as_long = 8;</code>
+         *
+         * @return Whether the resultAsLong field is set.
+         */
+        boolean hasResultAsLong();
+
+        /**
+         * <code>sint64 result_as_long = 8;</code>
+         *
+         * @return The resultAsLong.
+         */
+        long getResultAsLong();
+
+        /**
+         * <code>float result_as_float = 9;</code>
+         *
+         * @return Whether the resultAsFloat field is set.
+         */
+        boolean hasResultAsFloat();
+
+        /**
+         * <code>float result_as_float = 9;</code>
+         *
+         * @return The resultAsFloat.
+         */
+        float getResultAsFloat();
+
+        /**
+         * <code>double result_as_double = 10;</code>
+         *
+         * @return Whether the resultAsDouble field is set.
+         */
+        boolean hasResultAsDouble();
+
+        /**
+         * <code>double result_as_double = 10;</code>
+         *
+         * @return The resultAsDouble.
+         */
+        double getResultAsDouble();
+
+        /**
+         * <code>bytes result_as_bytes = 11;</code>
+         *
+         * @return Whether the resultAsBytes field is set.
+         */
+        boolean hasResultAsBytes();
+
+        /**
+         * <code>bytes result_as_bytes = 11;</code>
+         *
+         * @return The resultAsBytes.
+         */
+        com.google.protobuf.ByteString getResultAsBytes();
+
+        /**
+         * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return Whether the resultAsDescription field is set.
+         */
+        boolean hasResultAsDescription();
+
+        /**
+         * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return The resultAsDescription.
+         */
+        datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription();
+
+        /**
+         * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         */
+        datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder();
     }
 
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     /**
      * Protobuf type {@code datawave.webservice.result.GenericResponse}
      */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:datawave.webservice.result.GenericResponse)
-        datawave.webservice.result.ResponseMessages.GenericResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_descriptor;
-      }
+    public static final class GenericResponse extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.webservice.result.GenericResponse)
+                    GenericResponseOrBuilder {
+        private static final long serialVersionUID = 0L;
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                datawave.webservice.result.ResponseMessages.GenericResponse.class, datawave.webservice.result.ResponseMessages.GenericResponse.Builder.class);
-      }
+        // Use GenericResponse.newBuilder() to construct.
+        private GenericResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+            super(builder);
+        }
 
-      // Construct using datawave.webservice.result.ResponseMessages.GenericResponse.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
+        private GenericResponse() {
+            messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+            exceptions_ = java.util.Collections.emptyList();
+            resultClassName_ = "";
+            resultAsString_ = "";
+            resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
+        }
 
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-          getExceptionsFieldBuilder();
-          getResultAsDescriptionFieldBuilder();
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new GenericResponse();
         }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        operationTimeMs_ = 0L;
 
-        messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        if (exceptionsBuilder_ == null) {
-          exceptions_ = java.util.Collections.emptyList();
-        } else {
-          exceptions_ = null;
-          exceptionsBuilder_.clear();
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
-        bitField0_ = (bitField0_ & ~0x00000002);
-        resultClassName_ = "";
 
-        resultAsString_ = "";
-        bitField0_ = (bitField0_ & ~0x00000004);
-        resultAsBoolean_ = false;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        resultAsInt_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000010);
-        resultAsLong_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000020);
-        resultAsFloat_ = 0F;
-        bitField0_ = (bitField0_ & ~0x00000040);
-        resultAsDouble_ = 0D;
-        bitField0_ = (bitField0_ & ~0x00000080);
-        resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000100);
-        if (resultAsDescriptionBuilder_ == null) {
-          resultAsDescription_ = null;
-        } else {
-          resultAsDescriptionBuilder_.clear();
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_descriptor;
         }
-        bitField0_ = (bitField0_ & ~0x00000200);
-        return this;
-      }
 
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_descriptor;
-      }
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.result.ResponseMessages.GenericResponse.class,
+                                            datawave.webservice.result.ResponseMessages.GenericResponse.Builder.class);
+        }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.GenericResponse getDefaultInstanceForType() {
-        return datawave.webservice.result.ResponseMessages.GenericResponse.getDefaultInstance();
-      }
+        private int bitField0_;
+        public static final int OPERATION_TIME_MS_FIELD_NUMBER = 1;
+        private long operationTimeMs_;
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.GenericResponse build() {
-        datawave.webservice.result.ResponseMessages.GenericResponse result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
+        /**
+         * <code>uint64 operation_time_ms = 1;</code>
+         *
+         * @return The operationTimeMs.
+         */
+        @java.lang.Override
+        public long getOperationTimeMs() {
+            return operationTimeMs_;
         }
-        return result;
-      }
 
-      @java.lang.Override
-      public datawave.webservice.result.ResponseMessages.GenericResponse buildPartial() {
-        datawave.webservice.result.ResponseMessages.GenericResponse result = new datawave.webservice.result.ResponseMessages.GenericResponse(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        result.operationTimeMs_ = operationTimeMs_;
-        if (((bitField0_ & 0x00000001) != 0)) {
-          messages_ = messages_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000001);
-        }
-        result.messages_ = messages_;
-        if (exceptionsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) != 0)) {
-            exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.exceptions_ = exceptions_;
-        } else {
-          result.exceptions_ = exceptionsBuilder_.build();
-        }
-        result.resultClassName_ = resultClassName_;
-        if (((from_bitField0_ & 0x00000004) != 0)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.resultAsString_ = resultAsString_;
-        if (((from_bitField0_ & 0x00000008) != 0)) {
-          result.resultAsBoolean_ = resultAsBoolean_;
-          to_bitField0_ |= 0x00000002;
-        }
-        if (((from_bitField0_ & 0x00000010) != 0)) {
-          result.resultAsInt_ = resultAsInt_;
-          to_bitField0_ |= 0x00000004;
-        }
-        if (((from_bitField0_ & 0x00000020) != 0)) {
-          result.resultAsLong_ = resultAsLong_;
-          to_bitField0_ |= 0x00000008;
-        }
-        if (((from_bitField0_ & 0x00000040) != 0)) {
-          result.resultAsFloat_ = resultAsFloat_;
-          to_bitField0_ |= 0x00000010;
-        }
-        if (((from_bitField0_ & 0x00000080) != 0)) {
-          result.resultAsDouble_ = resultAsDouble_;
-          to_bitField0_ |= 0x00000020;
-        }
-        if (((from_bitField0_ & 0x00000100) != 0)) {
-          to_bitField0_ |= 0x00000040;
-        }
-        result.resultAsBytes_ = resultAsBytes_;
-        if (((from_bitField0_ & 0x00000200) != 0)) {
-          if (resultAsDescriptionBuilder_ == null) {
-            result.resultAsDescription_ = resultAsDescription_;
-          } else {
-            result.resultAsDescription_ = resultAsDescriptionBuilder_.build();
-          }
-          to_bitField0_ |= 0x00000080;
-        }
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
+        public static final int MESSAGES_FIELD_NUMBER = 2;
+        private com.google.protobuf.LazyStringList messages_;
 
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof datawave.webservice.result.ResponseMessages.GenericResponse) {
-          return mergeFrom((datawave.webservice.result.ResponseMessages.GenericResponse)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return A list containing the messages.
+         */
+        public com.google.protobuf.ProtocolStringList getMessagesList() {
+            return messages_;
         }
-      }
 
-      public Builder mergeFrom(datawave.webservice.result.ResponseMessages.GenericResponse other) {
-        if (other == datawave.webservice.result.ResponseMessages.GenericResponse.getDefaultInstance()) return this;
-        if (other.getOperationTimeMs() != 0L) {
-          setOperationTimeMs(other.getOperationTimeMs());
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @return The count of messages.
+         */
+        public int getMessagesCount() {
+            return messages_.size();
         }
-        if (!other.messages_.isEmpty()) {
-          if (messages_.isEmpty()) {
-            messages_ = other.messages_;
-            bitField0_ = (bitField0_ & ~0x00000001);
-          } else {
-            ensureMessagesIsMutable();
-            messages_.addAll(other.messages_);
-          }
-          onChanged();
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the element to return.
+         * @return The messages at the given index.
+         */
+        public java.lang.String getMessages(int index) {
+            return messages_.get(index);
         }
-        if (exceptionsBuilder_ == null) {
-          if (!other.exceptions_.isEmpty()) {
-            if (exceptions_.isEmpty()) {
-              exceptions_ = other.exceptions_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+
+        /**
+         * <code>repeated string messages = 2;</code>
+         *
+         * @param index
+         *            The index of the value to return.
+         * @return The bytes of the messages at the given index.
+         */
+        public com.google.protobuf.ByteString getMessagesBytes(int index) {
+            return messages_.getByteString(index);
+        }
+
+        public static final int EXCEPTIONS_FIELD_NUMBER = 3;
+        private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_;
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
+            return exceptions_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
+            return exceptions_;
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public int getExceptionsCount() {
+            return exceptions_.size();
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
+            return exceptions_.get(index);
+        }
+
+        /**
+         * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
+            return exceptions_.get(index);
+        }
+
+        public static final int RESULT_CLASS_NAME_FIELD_NUMBER = 4;
+        private volatile java.lang.Object resultClassName_;
+
+        /**
+         * <code>string result_class_name = 4;</code>
+         *
+         * @return The resultClassName.
+         */
+        @java.lang.Override
+        public java.lang.String getResultClassName() {
+            java.lang.Object ref = resultClassName_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
             } else {
-              ensureExceptionsIsMutable();
-              exceptions_.addAll(other.exceptions_);
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                resultClassName_ = s;
+                return s;
             }
-            onChanged();
-          }
-        } else {
-          if (!other.exceptions_.isEmpty()) {
-            if (exceptionsBuilder_.isEmpty()) {
-              exceptionsBuilder_.dispose();
-              exceptionsBuilder_ = null;
-              exceptions_ = other.exceptions_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              exceptionsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getExceptionsFieldBuilder() : null;
+        }
+
+        /**
+         * <code>string result_class_name = 4;</code>
+         *
+         * @return The bytes for resultClassName.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getResultClassNameBytes() {
+            java.lang.Object ref = resultClassName_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                resultClassName_ = b;
+                return b;
             } else {
-              exceptionsBuilder_.addAllMessages(other.exceptions_);
+                return (com.google.protobuf.ByteString) ref;
             }
-          }
         }
-        if (!other.getResultClassName().isEmpty()) {
-          resultClassName_ = other.resultClassName_;
-          onChanged();
-        }
-        if (other.hasResultAsString()) {
-          bitField0_ |= 0x00000004;
-          resultAsString_ = other.resultAsString_;
-          onChanged();
-        }
-        if (other.hasResultAsBoolean()) {
-          setResultAsBoolean(other.getResultAsBoolean());
-        }
-        if (other.hasResultAsInt()) {
-          setResultAsInt(other.getResultAsInt());
-        }
-        if (other.hasResultAsLong()) {
-          setResultAsLong(other.getResultAsLong());
-        }
-        if (other.hasResultAsFloat()) {
-          setResultAsFloat(other.getResultAsFloat());
-        }
-        if (other.hasResultAsDouble()) {
-          setResultAsDouble(other.getResultAsDouble());
-        }
-        if (other.hasResultAsBytes()) {
-          setResultAsBytes(other.getResultAsBytes());
-        }
-        if (other.hasResultAsDescription()) {
-          mergeResultAsDescription(other.getResultAsDescription());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        onChanged();
-        return this;
-      }
 
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
+        public static final int RESULT_AS_STRING_FIELD_NUMBER = 5;
+        private volatile java.lang.Object resultAsString_;
 
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        if (extensionRegistry == null) {
-          throw new java.lang.NullPointerException();
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
+         * @return Whether the resultAsString field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsString() {
+            return ((bitField0_ & 0x00000001) != 0);
         }
-        try {
-          boolean done = false;
-          while (!done) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                done = true;
-                break;
-              case 8: {
-                operationTimeMs_ = input.readUInt64();
 
-                break;
-              } // case 8
-              case 18: {
-                java.lang.String s = input.readStringRequireUtf8();
-                ensureMessagesIsMutable();
-                messages_.add(s);
-                break;
-              } // case 18
-              case 26: {
-                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType m =
-                    input.readMessage(
-                        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.parser(),
-                        extensionRegistry);
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
+         * @return The resultAsString.
+         */
+        @java.lang.Override
+        public java.lang.String getResultAsString() {
+            java.lang.Object ref = resultAsString_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                resultAsString_ = s;
+                return s;
+            }
+        }
+
+        /**
+         * <code>string result_as_string = 5;</code>
+         *
+         * @return The bytes for resultAsString.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getResultAsStringBytes() {
+            java.lang.Object ref = resultAsString_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                resultAsString_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        public static final int RESULT_AS_BOOLEAN_FIELD_NUMBER = 6;
+        private boolean resultAsBoolean_;
+
+        /**
+         * <code>bool result_as_boolean = 6;</code>
+         *
+         * @return Whether the resultAsBoolean field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsBoolean() {
+            return ((bitField0_ & 0x00000002) != 0);
+        }
+
+        /**
+         * <code>bool result_as_boolean = 6;</code>
+         *
+         * @return The resultAsBoolean.
+         */
+        @java.lang.Override
+        public boolean getResultAsBoolean() {
+            return resultAsBoolean_;
+        }
+
+        public static final int RESULT_AS_INT_FIELD_NUMBER = 7;
+        private int resultAsInt_;
+
+        /**
+         * <code>sint32 result_as_int = 7;</code>
+         *
+         * @return Whether the resultAsInt field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsInt() {
+            return ((bitField0_ & 0x00000004) != 0);
+        }
+
+        /**
+         * <code>sint32 result_as_int = 7;</code>
+         *
+         * @return The resultAsInt.
+         */
+        @java.lang.Override
+        public int getResultAsInt() {
+            return resultAsInt_;
+        }
+
+        public static final int RESULT_AS_LONG_FIELD_NUMBER = 8;
+        private long resultAsLong_;
+
+        /**
+         * <code>sint64 result_as_long = 8;</code>
+         *
+         * @return Whether the resultAsLong field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsLong() {
+            return ((bitField0_ & 0x00000008) != 0);
+        }
+
+        /**
+         * <code>sint64 result_as_long = 8;</code>
+         *
+         * @return The resultAsLong.
+         */
+        @java.lang.Override
+        public long getResultAsLong() {
+            return resultAsLong_;
+        }
+
+        public static final int RESULT_AS_FLOAT_FIELD_NUMBER = 9;
+        private float resultAsFloat_;
+
+        /**
+         * <code>float result_as_float = 9;</code>
+         *
+         * @return Whether the resultAsFloat field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsFloat() {
+            return ((bitField0_ & 0x00000010) != 0);
+        }
+
+        /**
+         * <code>float result_as_float = 9;</code>
+         *
+         * @return The resultAsFloat.
+         */
+        @java.lang.Override
+        public float getResultAsFloat() {
+            return resultAsFloat_;
+        }
+
+        public static final int RESULT_AS_DOUBLE_FIELD_NUMBER = 10;
+        private double resultAsDouble_;
+
+        /**
+         * <code>double result_as_double = 10;</code>
+         *
+         * @return Whether the resultAsDouble field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsDouble() {
+            return ((bitField0_ & 0x00000020) != 0);
+        }
+
+        /**
+         * <code>double result_as_double = 10;</code>
+         *
+         * @return The resultAsDouble.
+         */
+        @java.lang.Override
+        public double getResultAsDouble() {
+            return resultAsDouble_;
+        }
+
+        public static final int RESULT_AS_BYTES_FIELD_NUMBER = 11;
+        private com.google.protobuf.ByteString resultAsBytes_;
+
+        /**
+         * <code>bytes result_as_bytes = 11;</code>
+         *
+         * @return Whether the resultAsBytes field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsBytes() {
+            return ((bitField0_ & 0x00000040) != 0);
+        }
+
+        /**
+         * <code>bytes result_as_bytes = 11;</code>
+         *
+         * @return The resultAsBytes.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getResultAsBytes() {
+            return resultAsBytes_;
+        }
+
+        public static final int RESULT_AS_DESCRIPTION_FIELD_NUMBER = 12;
+        private datawave.webservice.results.cached.result.CachedresultMessages.Description resultAsDescription_;
+
+        /**
+         * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return Whether the resultAsDescription field is set.
+         */
+        @java.lang.Override
+        public boolean hasResultAsDescription() {
+            return ((bitField0_ & 0x00000080) != 0);
+        }
+
+        /**
+         * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         *
+         * @return The resultAsDescription.
+         */
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription() {
+            return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance()
+                            : resultAsDescription_;
+        }
+
+        /**
+         * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+         */
+        @java.lang.Override
+        public datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder() {
+            return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance()
+                            : resultAsDescription_;
+        }
+
+        private byte memoizedIsInitialized = -1;
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
+
+            memoizedIsInitialized = 1;
+            return true;
+        }
+
+        @java.lang.Override
+        public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
+            if (operationTimeMs_ != 0L) {
+                output.writeUInt64(1, operationTimeMs_);
+            }
+            for (int i = 0; i < messages_.size(); i++) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, messages_.getRaw(i));
+            }
+            for (int i = 0; i < exceptions_.size(); i++) {
+                output.writeMessage(3, exceptions_.get(i));
+            }
+            if (!getResultClassNameBytes().isEmpty()) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 4, resultClassName_);
+            }
+            if (((bitField0_ & 0x00000001) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 5, resultAsString_);
+            }
+            if (((bitField0_ & 0x00000002) != 0)) {
+                output.writeBool(6, resultAsBoolean_);
+            }
+            if (((bitField0_ & 0x00000004) != 0)) {
+                output.writeSInt32(7, resultAsInt_);
+            }
+            if (((bitField0_ & 0x00000008) != 0)) {
+                output.writeSInt64(8, resultAsLong_);
+            }
+            if (((bitField0_ & 0x00000010) != 0)) {
+                output.writeFloat(9, resultAsFloat_);
+            }
+            if (((bitField0_ & 0x00000020) != 0)) {
+                output.writeDouble(10, resultAsDouble_);
+            }
+            if (((bitField0_ & 0x00000040) != 0)) {
+                output.writeBytes(11, resultAsBytes_);
+            }
+            if (((bitField0_ & 0x00000080) != 0)) {
+                output.writeMessage(12, getResultAsDescription());
+            }
+            getUnknownFields().writeTo(output);
+        }
+
+        @java.lang.Override
+        public int getSerializedSize() {
+            int size = memoizedSize;
+            if (size != -1)
+                return size;
+
+            size = 0;
+            if (operationTimeMs_ != 0L) {
+                size += com.google.protobuf.CodedOutputStream.computeUInt64Size(1, operationTimeMs_);
+            }
+            {
+                int dataSize = 0;
+                for (int i = 0; i < messages_.size(); i++) {
+                    dataSize += computeStringSizeNoTag(messages_.getRaw(i));
+                }
+                size += dataSize;
+                size += 1 * getMessagesList().size();
+            }
+            for (int i = 0; i < exceptions_.size(); i++) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(3, exceptions_.get(i));
+            }
+            if (!getResultClassNameBytes().isEmpty()) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, resultClassName_);
+            }
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, resultAsString_);
+            }
+            if (((bitField0_ & 0x00000002) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeBoolSize(6, resultAsBoolean_);
+            }
+            if (((bitField0_ & 0x00000004) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeSInt32Size(7, resultAsInt_);
+            }
+            if (((bitField0_ & 0x00000008) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeSInt64Size(8, resultAsLong_);
+            }
+            if (((bitField0_ & 0x00000010) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeFloatSize(9, resultAsFloat_);
+            }
+            if (((bitField0_ & 0x00000020) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeDoubleSize(10, resultAsDouble_);
+            }
+            if (((bitField0_ & 0x00000040) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeBytesSize(11, resultAsBytes_);
+            }
+            if (((bitField0_ & 0x00000080) != 0)) {
+                size += com.google.protobuf.CodedOutputStream.computeMessageSize(12, getResultAsDescription());
+            }
+            size += getUnknownFields().getSerializedSize();
+            memoizedSize = size;
+            return size;
+        }
+
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.result.ResponseMessages.GenericResponse)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.result.ResponseMessages.GenericResponse other = (datawave.webservice.result.ResponseMessages.GenericResponse) obj;
+
+            if (getOperationTimeMs() != other.getOperationTimeMs())
+                return false;
+            if (!getMessagesList().equals(other.getMessagesList()))
+                return false;
+            if (!getExceptionsList().equals(other.getExceptionsList()))
+                return false;
+            if (!getResultClassName().equals(other.getResultClassName()))
+                return false;
+            if (hasResultAsString() != other.hasResultAsString())
+                return false;
+            if (hasResultAsString()) {
+                if (!getResultAsString().equals(other.getResultAsString()))
+                    return false;
+            }
+            if (hasResultAsBoolean() != other.hasResultAsBoolean())
+                return false;
+            if (hasResultAsBoolean()) {
+                if (getResultAsBoolean() != other.getResultAsBoolean())
+                    return false;
+            }
+            if (hasResultAsInt() != other.hasResultAsInt())
+                return false;
+            if (hasResultAsInt()) {
+                if (getResultAsInt() != other.getResultAsInt())
+                    return false;
+            }
+            if (hasResultAsLong() != other.hasResultAsLong())
+                return false;
+            if (hasResultAsLong()) {
+                if (getResultAsLong() != other.getResultAsLong())
+                    return false;
+            }
+            if (hasResultAsFloat() != other.hasResultAsFloat())
+                return false;
+            if (hasResultAsFloat()) {
+                if (java.lang.Float.floatToIntBits(getResultAsFloat()) != java.lang.Float.floatToIntBits(other.getResultAsFloat()))
+                    return false;
+            }
+            if (hasResultAsDouble() != other.hasResultAsDouble())
+                return false;
+            if (hasResultAsDouble()) {
+                if (java.lang.Double.doubleToLongBits(getResultAsDouble()) != java.lang.Double.doubleToLongBits(other.getResultAsDouble()))
+                    return false;
+            }
+            if (hasResultAsBytes() != other.hasResultAsBytes())
+                return false;
+            if (hasResultAsBytes()) {
+                if (!getResultAsBytes().equals(other.getResultAsBytes()))
+                    return false;
+            }
+            if (hasResultAsDescription() != other.hasResultAsDescription())
+                return false;
+            if (hasResultAsDescription()) {
+                if (!getResultAsDescription().equals(other.getResultAsDescription()))
+                    return false;
+            }
+            if (!getUnknownFields().equals(other.getUnknownFields()))
+                return false;
+            return true;
+        }
+
+        @java.lang.Override
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            hash = (37 * hash) + OPERATION_TIME_MS_FIELD_NUMBER;
+            hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getOperationTimeMs());
+            if (getMessagesCount() > 0) {
+                hash = (37 * hash) + MESSAGES_FIELD_NUMBER;
+                hash = (53 * hash) + getMessagesList().hashCode();
+            }
+            if (getExceptionsCount() > 0) {
+                hash = (37 * hash) + EXCEPTIONS_FIELD_NUMBER;
+                hash = (53 * hash) + getExceptionsList().hashCode();
+            }
+            hash = (37 * hash) + RESULT_CLASS_NAME_FIELD_NUMBER;
+            hash = (53 * hash) + getResultClassName().hashCode();
+            if (hasResultAsString()) {
+                hash = (37 * hash) + RESULT_AS_STRING_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsString().hashCode();
+            }
+            if (hasResultAsBoolean()) {
+                hash = (37 * hash) + RESULT_AS_BOOLEAN_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getResultAsBoolean());
+            }
+            if (hasResultAsInt()) {
+                hash = (37 * hash) + RESULT_AS_INT_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsInt();
+            }
+            if (hasResultAsLong()) {
+                hash = (37 * hash) + RESULT_AS_LONG_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getResultAsLong());
+            }
+            if (hasResultAsFloat()) {
+                hash = (37 * hash) + RESULT_AS_FLOAT_FIELD_NUMBER;
+                hash = (53 * hash) + java.lang.Float.floatToIntBits(getResultAsFloat());
+            }
+            if (hasResultAsDouble()) {
+                hash = (37 * hash) + RESULT_AS_DOUBLE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getResultAsDouble()));
+            }
+            if (hasResultAsBytes()) {
+                hash = (37 * hash) + RESULT_AS_BYTES_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsBytes().hashCode();
+            }
+            if (hasResultAsDescription()) {
+                hash = (37 * hash) + RESULT_AS_DESCRIPTION_FIELD_NUMBER;
+                hash = (53 * hash) + getResultAsDescription().hashCode();
+            }
+            hash = (29 * hash) + getUnknownFields().hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(com.google.protobuf.ByteString data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(com.google.protobuf.ByteString data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(byte[] data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(byte[] data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(java.io.InputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseDelimitedFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(com.google.protobuf.CodedInputStream input)
+                        throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
+        }
+
+        public static datawave.webservice.result.ResponseMessages.GenericResponse parseFrom(com.google.protobuf.CodedInputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        @java.lang.Override
+        public Builder newBuilderForType() {
+            return newBuilder();
+        }
+
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
+        }
+
+        public static Builder newBuilder(datawave.webservice.result.ResponseMessages.GenericResponse prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+
+        @java.lang.Override
+        public Builder toBuilder() {
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
+        }
+
+        /**
+         * Protobuf type {@code datawave.webservice.result.GenericResponse}
+         */
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.webservice.result.GenericResponse)
+                        datawave.webservice.result.ResponseMessages.GenericResponseOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.result.ResponseMessages.GenericResponse.class,
+                                                datawave.webservice.result.ResponseMessages.GenericResponse.Builder.class);
+            }
+
+            // Construct using datawave.webservice.result.ResponseMessages.GenericResponse.newBuilder()
+            private Builder() {
+                maybeForceBuilderInitialization();
+            }
+
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
+            }
+
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {
+                    getExceptionsFieldBuilder();
+                    getResultAsDescriptionFieldBuilder();
+                }
+            }
+
+            @java.lang.Override
+            public Builder clear() {
+                super.clear();
+                operationTimeMs_ = 0L;
+
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
                 if (exceptionsBuilder_ == null) {
-                  ensureExceptionsIsMutable();
-                  exceptions_.add(m);
+                    exceptions_ = java.util.Collections.emptyList();
                 } else {
-                  exceptionsBuilder_.addMessage(m);
+                    exceptions_ = null;
+                    exceptionsBuilder_.clear();
                 }
-                break;
-              } // case 26
-              case 34: {
-                resultClassName_ = input.readStringRequireUtf8();
+                bitField0_ = (bitField0_ & ~0x00000002);
+                resultClassName_ = "";
 
-                break;
-              } // case 34
-              case 42: {
-                resultAsString_ = input.readStringRequireUtf8();
+                resultAsString_ = "";
+                bitField0_ = (bitField0_ & ~0x00000004);
+                resultAsBoolean_ = false;
+                bitField0_ = (bitField0_ & ~0x00000008);
+                resultAsInt_ = 0;
+                bitField0_ = (bitField0_ & ~0x00000010);
+                resultAsLong_ = 0L;
+                bitField0_ = (bitField0_ & ~0x00000020);
+                resultAsFloat_ = 0F;
+                bitField0_ = (bitField0_ & ~0x00000040);
+                resultAsDouble_ = 0D;
+                bitField0_ = (bitField0_ & ~0x00000080);
+                resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000100);
+                if (resultAsDescriptionBuilder_ == null) {
+                    resultAsDescription_ = null;
+                } else {
+                    resultAsDescriptionBuilder_.clear();
+                }
+                bitField0_ = (bitField0_ & ~0x00000200);
+                return this;
+            }
+
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.result.ResponseMessages.internal_static_datawave_webservice_result_GenericResponse_descriptor;
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.GenericResponse getDefaultInstanceForType() {
+                return datawave.webservice.result.ResponseMessages.GenericResponse.getDefaultInstance();
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.GenericResponse build() {
+                datawave.webservice.result.ResponseMessages.GenericResponse result = buildPartial();
+                if (!result.isInitialized()) {
+                    throw newUninitializedMessageException(result);
+                }
+                return result;
+            }
+
+            @java.lang.Override
+            public datawave.webservice.result.ResponseMessages.GenericResponse buildPartial() {
+                datawave.webservice.result.ResponseMessages.GenericResponse result = new datawave.webservice.result.ResponseMessages.GenericResponse(this);
+                int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
+                result.operationTimeMs_ = operationTimeMs_;
+                if (((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = messages_.getUnmodifiableView();
+                    bitField0_ = (bitField0_ & ~0x00000001);
+                }
+                result.messages_ = messages_;
+                if (exceptionsBuilder_ == null) {
+                    if (((bitField0_ & 0x00000002) != 0)) {
+                        exceptions_ = java.util.Collections.unmodifiableList(exceptions_);
+                        bitField0_ = (bitField0_ & ~0x00000002);
+                    }
+                    result.exceptions_ = exceptions_;
+                } else {
+                    result.exceptions_ = exceptionsBuilder_.build();
+                }
+                result.resultClassName_ = resultClassName_;
+                if (((from_bitField0_ & 0x00000004) != 0)) {
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.resultAsString_ = resultAsString_;
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    result.resultAsBoolean_ = resultAsBoolean_;
+                    to_bitField0_ |= 0x00000002;
+                }
+                if (((from_bitField0_ & 0x00000010) != 0)) {
+                    result.resultAsInt_ = resultAsInt_;
+                    to_bitField0_ |= 0x00000004;
+                }
+                if (((from_bitField0_ & 0x00000020) != 0)) {
+                    result.resultAsLong_ = resultAsLong_;
+                    to_bitField0_ |= 0x00000008;
+                }
+                if (((from_bitField0_ & 0x00000040) != 0)) {
+                    result.resultAsFloat_ = resultAsFloat_;
+                    to_bitField0_ |= 0x00000010;
+                }
+                if (((from_bitField0_ & 0x00000080) != 0)) {
+                    result.resultAsDouble_ = resultAsDouble_;
+                    to_bitField0_ |= 0x00000020;
+                }
+                if (((from_bitField0_ & 0x00000100) != 0)) {
+                    to_bitField0_ |= 0x00000040;
+                }
+                result.resultAsBytes_ = resultAsBytes_;
+                if (((from_bitField0_ & 0x00000200) != 0)) {
+                    if (resultAsDescriptionBuilder_ == null) {
+                        result.resultAsDescription_ = resultAsDescription_;
+                    } else {
+                        result.resultAsDescription_ = resultAsDescriptionBuilder_.build();
+                    }
+                    to_bitField0_ |= 0x00000080;
+                }
+                result.bitField0_ = to_bitField0_;
+                onBuilt();
+                return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.result.ResponseMessages.GenericResponse) {
+                    return mergeFrom((datawave.webservice.result.ResponseMessages.GenericResponse) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
+            }
+
+            public Builder mergeFrom(datawave.webservice.result.ResponseMessages.GenericResponse other) {
+                if (other == datawave.webservice.result.ResponseMessages.GenericResponse.getDefaultInstance())
+                    return this;
+                if (other.getOperationTimeMs() != 0L) {
+                    setOperationTimeMs(other.getOperationTimeMs());
+                }
+                if (!other.messages_.isEmpty()) {
+                    if (messages_.isEmpty()) {
+                        messages_ = other.messages_;
+                        bitField0_ = (bitField0_ & ~0x00000001);
+                    } else {
+                        ensureMessagesIsMutable();
+                        messages_.addAll(other.messages_);
+                    }
+                    onChanged();
+                }
+                if (exceptionsBuilder_ == null) {
+                    if (!other.exceptions_.isEmpty()) {
+                        if (exceptions_.isEmpty()) {
+                            exceptions_ = other.exceptions_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                        } else {
+                            ensureExceptionsIsMutable();
+                            exceptions_.addAll(other.exceptions_);
+                        }
+                        onChanged();
+                    }
+                } else {
+                    if (!other.exceptions_.isEmpty()) {
+                        if (exceptionsBuilder_.isEmpty()) {
+                            exceptionsBuilder_.dispose();
+                            exceptionsBuilder_ = null;
+                            exceptions_ = other.exceptions_;
+                            bitField0_ = (bitField0_ & ~0x00000002);
+                            exceptionsBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getExceptionsFieldBuilder() : null;
+                        } else {
+                            exceptionsBuilder_.addAllMessages(other.exceptions_);
+                        }
+                    }
+                }
+                if (!other.getResultClassName().isEmpty()) {
+                    resultClassName_ = other.resultClassName_;
+                    onChanged();
+                }
+                if (other.hasResultAsString()) {
+                    bitField0_ |= 0x00000004;
+                    resultAsString_ = other.resultAsString_;
+                    onChanged();
+                }
+                if (other.hasResultAsBoolean()) {
+                    setResultAsBoolean(other.getResultAsBoolean());
+                }
+                if (other.hasResultAsInt()) {
+                    setResultAsInt(other.getResultAsInt());
+                }
+                if (other.hasResultAsLong()) {
+                    setResultAsLong(other.getResultAsLong());
+                }
+                if (other.hasResultAsFloat()) {
+                    setResultAsFloat(other.getResultAsFloat());
+                }
+                if (other.hasResultAsDouble()) {
+                    setResultAsDouble(other.getResultAsDouble());
+                }
+                if (other.hasResultAsBytes()) {
+                    setResultAsBytes(other.getResultAsBytes());
+                }
+                if (other.hasResultAsDescription()) {
+                    mergeResultAsDescription(other.getResultAsDescription());
+                }
+                this.mergeUnknownFields(other.getUnknownFields());
+                onChanged();
+                return this;
+            }
+
+            @java.lang.Override
+            public final boolean isInitialized() {
+                return true;
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws java.io.IOException {
+                if (extensionRegistry == null) {
+                    throw new java.lang.NullPointerException();
+                }
+                try {
+                    boolean done = false;
+                    while (!done) {
+                        int tag = input.readTag();
+                        switch (tag) {
+                            case 0:
+                                done = true;
+                                break;
+                            case 8: {
+                                operationTimeMs_ = input.readUInt64();
+
+                                break;
+                            } // case 8
+                            case 18: {
+                                java.lang.String s = input.readStringRequireUtf8();
+                                ensureMessagesIsMutable();
+                                messages_.add(s);
+                                break;
+                            } // case 18
+                            case 26: {
+                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType m = input.readMessage(
+                                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.parser(), extensionRegistry);
+                                if (exceptionsBuilder_ == null) {
+                                    ensureExceptionsIsMutable();
+                                    exceptions_.add(m);
+                                } else {
+                                    exceptionsBuilder_.addMessage(m);
+                                }
+                                break;
+                            } // case 26
+                            case 34: {
+                                resultClassName_ = input.readStringRequireUtf8();
+
+                                break;
+                            } // case 34
+                            case 42: {
+                                resultAsString_ = input.readStringRequireUtf8();
+                                bitField0_ |= 0x00000004;
+                                break;
+                            } // case 42
+                            case 48: {
+                                resultAsBoolean_ = input.readBool();
+                                bitField0_ |= 0x00000008;
+                                break;
+                            } // case 48
+                            case 56: {
+                                resultAsInt_ = input.readSInt32();
+                                bitField0_ |= 0x00000010;
+                                break;
+                            } // case 56
+                            case 64: {
+                                resultAsLong_ = input.readSInt64();
+                                bitField0_ |= 0x00000020;
+                                break;
+                            } // case 64
+                            case 77: {
+                                resultAsFloat_ = input.readFloat();
+                                bitField0_ |= 0x00000040;
+                                break;
+                            } // case 77
+                            case 81: {
+                                resultAsDouble_ = input.readDouble();
+                                bitField0_ |= 0x00000080;
+                                break;
+                            } // case 81
+                            case 90: {
+                                resultAsBytes_ = input.readBytes();
+                                bitField0_ |= 0x00000100;
+                                break;
+                            } // case 90
+                            case 98: {
+                                input.readMessage(getResultAsDescriptionFieldBuilder().getBuilder(), extensionRegistry);
+                                bitField0_ |= 0x00000200;
+                                break;
+                            } // case 98
+                            default: {
+                                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                                    done = true; // was an endgroup tag
+                                }
+                                break;
+                            } // default:
+                        } // switch (tag)
+                    } // while (!done)
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    throw e.unwrapIOException();
+                } finally {
+                    onChanged();
+                } // finally
+                return this;
+            }
+
+            private int bitField0_;
+
+            private long operationTimeMs_;
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @return The operationTimeMs.
+             */
+            @java.lang.Override
+            public long getOperationTimeMs() {
+                return operationTimeMs_;
+            }
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @param value
+             *            The operationTimeMs to set.
+             * @return This builder for chaining.
+             */
+            public Builder setOperationTimeMs(long value) {
+
+                operationTimeMs_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>uint64 operation_time_ms = 1;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearOperationTimeMs() {
+
+                operationTimeMs_ = 0L;
+                onChanged();
+                return this;
+            }
+
+            private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+
+            private void ensureMessagesIsMutable() {
+                if (!((bitField0_ & 0x00000001) != 0)) {
+                    messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
+                    bitField0_ |= 0x00000001;
+                }
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return A list containing the messages.
+             */
+            public com.google.protobuf.ProtocolStringList getMessagesList() {
+                return messages_.getUnmodifiableView();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return The count of messages.
+             */
+            public int getMessagesCount() {
+                return messages_.size();
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the element to return.
+             * @return The messages at the given index.
+             */
+            public java.lang.String getMessages(int index) {
+                return messages_.get(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index of the value to return.
+             * @return The bytes of the messages at the given index.
+             */
+            public com.google.protobuf.ByteString getMessagesBytes(int index) {
+                return messages_.getByteString(index);
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param index
+             *            The index to set the value at.
+             * @param value
+             *            The messages to set.
+             * @return This builder for chaining.
+             */
+            public Builder setMessages(int index, java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessages(java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param values
+             *            The messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addAllMessages(java.lang.Iterable<java.lang.String> values) {
+                ensureMessagesIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, messages_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearMessages() {
+                messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated string messages = 2;</code>
+             *
+             * @param value
+             *            The bytes of the messages to add.
+             * @return This builder for chaining.
+             */
+            public Builder addMessagesBytes(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                checkByteStringIsUtf8(value);
+                ensureMessagesIsMutable();
+                messages_.add(value);
+                onChanged();
+                return this;
+            }
+
+            private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ = java.util.Collections.emptyList();
+
+            private void ensureExceptionsIsMutable() {
+                if (!((bitField0_ & 0x00000002) != 0)) {
+                    exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
+                    bitField0_ |= 0x00000002;
+                }
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> exceptionsBuilder_;
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
+                if (exceptionsBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(exceptions_);
+                } else {
+                    return exceptionsBuilder_.getMessageList();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public int getExceptionsCount() {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.size();
+                } else {
+                    return exceptionsBuilder_.getCount();
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.get(index);
+                } else {
+                    return exceptionsBuilder_.getMessage(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.set(index, value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.setMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder setExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.setMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
+                if (exceptionsBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(index, value);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(index, value);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addExceptions(int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addMessage(index, builderForValue.build());
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder addAllExceptions(java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, exceptions_);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.addAllMessages(values);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder clearExceptions() {
+                if (exceptionsBuilder_ == null) {
+                    exceptions_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000002);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.clear();
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public Builder removeExceptions(int index) {
+                if (exceptionsBuilder_ == null) {
+                    ensureExceptionsIsMutable();
+                    exceptions_.remove(index);
+                    onChanged();
+                } else {
+                    exceptionsBuilder_.remove(index);
+                }
+                return this;
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder getExceptionsBuilder(int index) {
+                return getExceptionsFieldBuilder().getBuilder(index);
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(int index) {
+                if (exceptionsBuilder_ == null) {
+                    return exceptions_.get(index);
+                } else {
+                    return exceptionsBuilder_.getMessageOrBuilder(index);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsOrBuilderList() {
+                if (exceptionsBuilder_ != null) {
+                    return exceptionsBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(exceptions_);
+                }
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder() {
+                return getExceptionsFieldBuilder().addBuilder(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder(int index) {
+                return getExceptionsFieldBuilder().addBuilder(index,
+                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
+            }
+
+            /**
+             * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
+             */
+            public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder> getExceptionsBuilderList() {
+                return getExceptionsFieldBuilder().getBuilderList();
+            }
+
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> getExceptionsFieldBuilder() {
+                if (exceptionsBuilder_ == null) {
+                    exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder,datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
+                                    exceptions_, ((bitField0_ & 0x00000002) != 0), getParentForChildren(), isClean());
+                    exceptions_ = null;
+                }
+                return exceptionsBuilder_;
+            }
+
+            private java.lang.Object resultClassName_ = "";
+
+            /**
+             * <code>string result_class_name = 4;</code>
+             *
+             * @return The resultClassName.
+             */
+            public java.lang.String getResultClassName() {
+                java.lang.Object ref = resultClassName_;
+                if (!(ref instanceof java.lang.String)) {
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    resultClassName_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>string result_class_name = 4;</code>
+             *
+             * @return The bytes for resultClassName.
+             */
+            public com.google.protobuf.ByteString getResultClassNameBytes() {
+                java.lang.Object ref = resultClassName_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                    resultClassName_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>string result_class_name = 4;</code>
+             *
+             * @param value
+             *            The resultClassName to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultClassName(java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+
+                resultClassName_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>string result_class_name = 4;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultClassName() {
+
+                resultClassName_ = getDefaultInstance().getResultClassName();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>string result_class_name = 4;</code>
+             *
+             * @param value
+             *            The bytes for resultClassName to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultClassNameBytes(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                checkByteStringIsUtf8(value);
+
+                resultClassName_ = value;
+                onChanged();
+                return this;
+            }
+
+            private java.lang.Object resultAsString_ = "";
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
+             * @return Whether the resultAsString field is set.
+             */
+            public boolean hasResultAsString() {
+                return ((bitField0_ & 0x00000004) != 0);
+            }
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
+             * @return The resultAsString.
+             */
+            public java.lang.String getResultAsString() {
+                java.lang.Object ref = resultAsString_;
+                if (!(ref instanceof java.lang.String)) {
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    resultAsString_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
+             * @return The bytes for resultAsString.
+             */
+            public com.google.protobuf.ByteString getResultAsStringBytes() {
+                java.lang.Object ref = resultAsString_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                    resultAsString_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
+             * @param value
+             *            The resultAsString to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsString(java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
                 bitField0_ |= 0x00000004;
-                break;
-              } // case 42
-              case 48: {
-                resultAsBoolean_ = input.readBool();
-                bitField0_ |= 0x00000008;
-                break;
-              } // case 48
-              case 56: {
-                resultAsInt_ = input.readSInt32();
-                bitField0_ |= 0x00000010;
-                break;
-              } // case 56
-              case 64: {
-                resultAsLong_ = input.readSInt64();
-                bitField0_ |= 0x00000020;
-                break;
-              } // case 64
-              case 77: {
-                resultAsFloat_ = input.readFloat();
-                bitField0_ |= 0x00000040;
-                break;
-              } // case 77
-              case 81: {
-                resultAsDouble_ = input.readDouble();
-                bitField0_ |= 0x00000080;
-                break;
-              } // case 81
-              case 90: {
-                resultAsBytes_ = input.readBytes();
-                bitField0_ |= 0x00000100;
-                break;
-              } // case 90
-              case 98: {
-                input.readMessage(
-                    getResultAsDescriptionFieldBuilder().getBuilder(),
-                    extensionRegistry);
-                bitField0_ |= 0x00000200;
-                break;
-              } // case 98
-              default: {
-                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
-                  done = true; // was an endgroup tag
+                resultAsString_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsString() {
+                bitField0_ = (bitField0_ & ~0x00000004);
+                resultAsString_ = getDefaultInstance().getResultAsString();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>string result_as_string = 5;</code>
+             *
+             * @param value
+             *            The bytes for resultAsString to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsStringBytes(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
                 }
-                break;
-              } // default:
-            } // switch (tag)
-          } // while (!done)
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.unwrapIOException();
-        } finally {
-          onChanged();
-        } // finally
-        return this;
-      }
-      private int bitField0_;
+                checkByteStringIsUtf8(value);
+                bitField0_ |= 0x00000004;
+                resultAsString_ = value;
+                onChanged();
+                return this;
+            }
 
-      private long operationTimeMs_ ;
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @return The operationTimeMs.
-       */
-      @java.lang.Override
-      public long getOperationTimeMs() {
-        return operationTimeMs_;
-      }
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @param value The operationTimeMs to set.
-       * @return This builder for chaining.
-       */
-      public Builder setOperationTimeMs(long value) {
-        
-        operationTimeMs_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>uint64 operation_time_ms = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearOperationTimeMs() {
-        
-        operationTimeMs_ = 0L;
-        onChanged();
-        return this;
-      }
+            private boolean resultAsBoolean_;
 
-      private com.google.protobuf.LazyStringList messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensureMessagesIsMutable() {
-        if (!((bitField0_ & 0x00000001) != 0)) {
-          messages_ = new com.google.protobuf.LazyStringArrayList(messages_);
-          bitField0_ |= 0x00000001;
-         }
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return A list containing the messages.
-       */
-      public com.google.protobuf.ProtocolStringList
-          getMessagesList() {
-        return messages_.getUnmodifiableView();
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return The count of messages.
-       */
-      public int getMessagesCount() {
-        return messages_.size();
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index of the element to return.
-       * @return The messages at the given index.
-       */
-      public java.lang.String getMessages(int index) {
-        return messages_.get(index);
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index of the value to return.
-       * @return The bytes of the messages at the given index.
-       */
-      public com.google.protobuf.ByteString
-          getMessagesBytes(int index) {
-        return messages_.getByteString(index);
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param index The index to set the value at.
-       * @param value The messages to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessages(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureMessagesIsMutable();
-        messages_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param value The messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addMessages(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensureMessagesIsMutable();
-        messages_.add(value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param values The messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addAllMessages(
-          java.lang.Iterable<java.lang.String> values) {
-        ensureMessagesIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, messages_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearMessages() {
-        messages_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string messages = 2;</code>
-       * @param value The bytes of the messages to add.
-       * @return This builder for chaining.
-       */
-      public Builder addMessagesBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        ensureMessagesIsMutable();
-        messages_.add(value);
-        onChanged();
-        return this;
-      }
+            /**
+             * <code>bool result_as_boolean = 6;</code>
+             *
+             * @return Whether the resultAsBoolean field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsBoolean() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
 
-      private java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> exceptions_ =
-        java.util.Collections.emptyList();
-      private void ensureExceptionsIsMutable() {
-        if (!((bitField0_ & 0x00000002) != 0)) {
-          exceptions_ = new java.util.ArrayList<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType>(exceptions_);
-          bitField0_ |= 0x00000002;
-         }
-      }
+            /**
+             * <code>bool result_as_boolean = 6;</code>
+             *
+             * @return The resultAsBoolean.
+             */
+            @java.lang.Override
+            public boolean getResultAsBoolean() {
+                return resultAsBoolean_;
+            }
 
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> exceptionsBuilder_;
+            /**
+             * <code>bool result_as_boolean = 6;</code>
+             *
+             * @param value
+             *            The resultAsBoolean to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsBoolean(boolean value) {
+                bitField0_ |= 0x00000008;
+                resultAsBoolean_ = value;
+                onChanged();
+                return this;
+            }
 
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> getExceptionsList() {
-        if (exceptionsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(exceptions_);
-        } else {
-          return exceptionsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public int getExceptionsCount() {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.size();
-        } else {
-          return exceptionsBuilder_.getCount();
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getExceptions(int index) {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.get(index);
-        } else {
-          return exceptionsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder setExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.set(index, value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder setExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.add(value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType value) {
-        if (exceptionsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureExceptionsIsMutable();
-          exceptions_.add(index, value);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.add(builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addExceptions(
-          int index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder builderForValue) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          exceptionsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder addAllExceptions(
-          java.lang.Iterable<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType> values) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, exceptions_);
-          onChanged();
-        } else {
-          exceptionsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder clearExceptions() {
-        if (exceptionsBuilder_ == null) {
-          exceptions_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          exceptionsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public Builder removeExceptions(int index) {
-        if (exceptionsBuilder_ == null) {
-          ensureExceptionsIsMutable();
-          exceptions_.remove(index);
-          onChanged();
-        } else {
-          exceptionsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder getExceptionsBuilder(
-          int index) {
-        return getExceptionsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder getExceptionsOrBuilder(
-          int index) {
-        if (exceptionsBuilder_ == null) {
-          return exceptions_.get(index);  } else {
-          return exceptionsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<? extends datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-           getExceptionsOrBuilderList() {
-        if (exceptionsBuilder_ != null) {
-          return exceptionsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(exceptions_);
-        }
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder() {
-        return getExceptionsFieldBuilder().addBuilder(
-            datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder addExceptionsBuilder(
-          int index) {
-        return getExceptionsFieldBuilder().addBuilder(
-            index, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .datawave.webservice.query.exception.QueryExceptionType exceptions = 3;</code>
-       */
-      public java.util.List<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder> 
-           getExceptionsBuilderList() {
-        return getExceptionsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder> 
-          getExceptionsFieldBuilder() {
-        if (exceptionsBuilder_ == null) {
-          exceptionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder, datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder>(
-                  exceptions_,
-                  ((bitField0_ & 0x00000002) != 0),
-                  getParentForChildren(),
-                  isClean());
-          exceptions_ = null;
-        }
-        return exceptionsBuilder_;
-      }
+            /**
+             * <code>bool result_as_boolean = 6;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsBoolean() {
+                bitField0_ = (bitField0_ & ~0x00000008);
+                resultAsBoolean_ = false;
+                onChanged();
+                return this;
+            }
 
-      private java.lang.Object resultClassName_ = "";
-      /**
-       * <code>string result_class_name = 4;</code>
-       * @return The resultClassName.
-       */
-      public java.lang.String getResultClassName() {
-        java.lang.Object ref = resultClassName_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          resultClassName_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>string result_class_name = 4;</code>
-       * @return The bytes for resultClassName.
-       */
-      public com.google.protobuf.ByteString
-          getResultClassNameBytes() {
-        java.lang.Object ref = resultClassName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          resultClassName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string result_class_name = 4;</code>
-       * @param value The resultClassName to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultClassName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        resultClassName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string result_class_name = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultClassName() {
-        
-        resultClassName_ = getDefaultInstance().getResultClassName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string result_class_name = 4;</code>
-       * @param value The bytes for resultClassName to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultClassNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        resultClassName_ = value;
-        onChanged();
-        return this;
-      }
+            private int resultAsInt_;
 
-      private java.lang.Object resultAsString_ = "";
-      /**
-       * <code>string result_as_string = 5;</code>
-       * @return Whether the resultAsString field is set.
-       */
-      public boolean hasResultAsString() {
-        return ((bitField0_ & 0x00000004) != 0);
-      }
-      /**
-       * <code>string result_as_string = 5;</code>
-       * @return The resultAsString.
-       */
-      public java.lang.String getResultAsString() {
-        java.lang.Object ref = resultAsString_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          resultAsString_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+            /**
+             * <code>sint32 result_as_int = 7;</code>
+             *
+             * @return Whether the resultAsInt field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsInt() {
+                return ((bitField0_ & 0x00000010) != 0);
+            }
+
+            /**
+             * <code>sint32 result_as_int = 7;</code>
+             *
+             * @return The resultAsInt.
+             */
+            @java.lang.Override
+            public int getResultAsInt() {
+                return resultAsInt_;
+            }
+
+            /**
+             * <code>sint32 result_as_int = 7;</code>
+             *
+             * @param value
+             *            The resultAsInt to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsInt(int value) {
+                bitField0_ |= 0x00000010;
+                resultAsInt_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>sint32 result_as_int = 7;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsInt() {
+                bitField0_ = (bitField0_ & ~0x00000010);
+                resultAsInt_ = 0;
+                onChanged();
+                return this;
+            }
+
+            private long resultAsLong_;
+
+            /**
+             * <code>sint64 result_as_long = 8;</code>
+             *
+             * @return Whether the resultAsLong field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsLong() {
+                return ((bitField0_ & 0x00000020) != 0);
+            }
+
+            /**
+             * <code>sint64 result_as_long = 8;</code>
+             *
+             * @return The resultAsLong.
+             */
+            @java.lang.Override
+            public long getResultAsLong() {
+                return resultAsLong_;
+            }
+
+            /**
+             * <code>sint64 result_as_long = 8;</code>
+             *
+             * @param value
+             *            The resultAsLong to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsLong(long value) {
+                bitField0_ |= 0x00000020;
+                resultAsLong_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>sint64 result_as_long = 8;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsLong() {
+                bitField0_ = (bitField0_ & ~0x00000020);
+                resultAsLong_ = 0L;
+                onChanged();
+                return this;
+            }
+
+            private float resultAsFloat_;
+
+            /**
+             * <code>float result_as_float = 9;</code>
+             *
+             * @return Whether the resultAsFloat field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsFloat() {
+                return ((bitField0_ & 0x00000040) != 0);
+            }
+
+            /**
+             * <code>float result_as_float = 9;</code>
+             *
+             * @return The resultAsFloat.
+             */
+            @java.lang.Override
+            public float getResultAsFloat() {
+                return resultAsFloat_;
+            }
+
+            /**
+             * <code>float result_as_float = 9;</code>
+             *
+             * @param value
+             *            The resultAsFloat to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsFloat(float value) {
+                bitField0_ |= 0x00000040;
+                resultAsFloat_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>float result_as_float = 9;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsFloat() {
+                bitField0_ = (bitField0_ & ~0x00000040);
+                resultAsFloat_ = 0F;
+                onChanged();
+                return this;
+            }
+
+            private double resultAsDouble_;
+
+            /**
+             * <code>double result_as_double = 10;</code>
+             *
+             * @return Whether the resultAsDouble field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsDouble() {
+                return ((bitField0_ & 0x00000080) != 0);
+            }
+
+            /**
+             * <code>double result_as_double = 10;</code>
+             *
+             * @return The resultAsDouble.
+             */
+            @java.lang.Override
+            public double getResultAsDouble() {
+                return resultAsDouble_;
+            }
+
+            /**
+             * <code>double result_as_double = 10;</code>
+             *
+             * @param value
+             *            The resultAsDouble to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsDouble(double value) {
+                bitField0_ |= 0x00000080;
+                resultAsDouble_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>double result_as_double = 10;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsDouble() {
+                bitField0_ = (bitField0_ & ~0x00000080);
+                resultAsDouble_ = 0D;
+                onChanged();
+                return this;
+            }
+
+            private com.google.protobuf.ByteString resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
+
+            /**
+             * <code>bytes result_as_bytes = 11;</code>
+             *
+             * @return Whether the resultAsBytes field is set.
+             */
+            @java.lang.Override
+            public boolean hasResultAsBytes() {
+                return ((bitField0_ & 0x00000100) != 0);
+            }
+
+            /**
+             * <code>bytes result_as_bytes = 11;</code>
+             *
+             * @return The resultAsBytes.
+             */
+            @java.lang.Override
+            public com.google.protobuf.ByteString getResultAsBytes() {
+                return resultAsBytes_;
+            }
+
+            /**
+             * <code>bytes result_as_bytes = 11;</code>
+             *
+             * @param value
+             *            The resultAsBytes to set.
+             * @return This builder for chaining.
+             */
+            public Builder setResultAsBytes(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000100;
+                resultAsBytes_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>bytes result_as_bytes = 11;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearResultAsBytes() {
+                bitField0_ = (bitField0_ & ~0x00000100);
+                resultAsBytes_ = getDefaultInstance().getResultAsBytes();
+                onChanged();
+                return this;
+            }
+
+            private datawave.webservice.results.cached.result.CachedresultMessages.Description resultAsDescription_;
+            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Description,datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder,datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder> resultAsDescriptionBuilder_;
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @return Whether the resultAsDescription field is set.
+             */
+            public boolean hasResultAsDescription() {
+                return ((bitField0_ & 0x00000200) != 0);
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             *
+             * @return The resultAsDescription.
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription() {
+                if (resultAsDescriptionBuilder_ == null) {
+                    return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance()
+                                    : resultAsDescription_;
+                } else {
+                    return resultAsDescriptionBuilder_.getMessage();
+                }
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            public Builder setResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
+                if (resultAsDescriptionBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    resultAsDescription_ = value;
+                    onChanged();
+                } else {
+                    resultAsDescriptionBuilder_.setMessage(value);
+                }
+                bitField0_ |= 0x00000200;
+                return this;
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            public Builder setResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder builderForValue) {
+                if (resultAsDescriptionBuilder_ == null) {
+                    resultAsDescription_ = builderForValue.build();
+                    onChanged();
+                } else {
+                    resultAsDescriptionBuilder_.setMessage(builderForValue.build());
+                }
+                bitField0_ |= 0x00000200;
+                return this;
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            public Builder mergeResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
+                if (resultAsDescriptionBuilder_ == null) {
+                    if (((bitField0_ & 0x00000200) != 0) && resultAsDescription_ != null
+                                    && resultAsDescription_ != datawave.webservice.results.cached.result.CachedresultMessages.Description
+                                                    .getDefaultInstance()) {
+                        resultAsDescription_ = datawave.webservice.results.cached.result.CachedresultMessages.Description.newBuilder(resultAsDescription_)
+                                        .mergeFrom(value).buildPartial();
+                    } else {
+                        resultAsDescription_ = value;
+                    }
+                    onChanged();
+                } else {
+                    resultAsDescriptionBuilder_.mergeFrom(value);
+                }
+                bitField0_ |= 0x00000200;
+                return this;
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            public Builder clearResultAsDescription() {
+                if (resultAsDescriptionBuilder_ == null) {
+                    resultAsDescription_ = null;
+                    onChanged();
+                } else {
+                    resultAsDescriptionBuilder_.clear();
+                }
+                bitField0_ = (bitField0_ & ~0x00000200);
+                return this;
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder getResultAsDescriptionBuilder() {
+                bitField0_ |= 0x00000200;
+                onChanged();
+                return getResultAsDescriptionFieldBuilder().getBuilder();
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            public datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder() {
+                if (resultAsDescriptionBuilder_ != null) {
+                    return resultAsDescriptionBuilder_.getMessageOrBuilder();
+                } else {
+                    return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance()
+                                    : resultAsDescription_;
+                }
+            }
+
+            /**
+             * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
+             */
+            private com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Description,datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder,datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder> getResultAsDescriptionFieldBuilder() {
+                if (resultAsDescriptionBuilder_ == null) {
+                    resultAsDescriptionBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.webservice.results.cached.result.CachedresultMessages.Description,datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder,datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder>(
+                                    getResultAsDescription(), getParentForChildren(), isClean());
+                    resultAsDescription_ = null;
+                }
+                return resultAsDescriptionBuilder_;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
+            }
+
+            // @@protoc_insertion_point(builder_scope:datawave.webservice.result.GenericResponse)
         }
-      }
-      /**
-       * <code>string result_as_string = 5;</code>
-       * @return The bytes for resultAsString.
-       */
-      public com.google.protobuf.ByteString
-          getResultAsStringBytes() {
-        java.lang.Object ref = resultAsString_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          resultAsString_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
+
+        // @@protoc_insertion_point(class_scope:datawave.webservice.result.GenericResponse)
+        private static final datawave.webservice.result.ResponseMessages.GenericResponse DEFAULT_INSTANCE;
+        static {
+            DEFAULT_INSTANCE = new datawave.webservice.result.ResponseMessages.GenericResponse();
         }
-      }
-      /**
-       * <code>string result_as_string = 5;</code>
-       * @param value The resultAsString to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsString(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        resultAsString_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string result_as_string = 5;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsString() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        resultAsString_ = getDefaultInstance().getResultAsString();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string result_as_string = 5;</code>
-       * @param value The bytes for resultAsString to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsStringBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        bitField0_ |= 0x00000004;
-        resultAsString_ = value;
-        onChanged();
-        return this;
-      }
 
-      private boolean resultAsBoolean_ ;
-      /**
-       * <code>bool result_as_boolean = 6;</code>
-       * @return Whether the resultAsBoolean field is set.
-       */
-      @java.lang.Override
-      public boolean hasResultAsBoolean() {
-        return ((bitField0_ & 0x00000008) != 0);
-      }
-      /**
-       * <code>bool result_as_boolean = 6;</code>
-       * @return The resultAsBoolean.
-       */
-      @java.lang.Override
-      public boolean getResultAsBoolean() {
-        return resultAsBoolean_;
-      }
-      /**
-       * <code>bool result_as_boolean = 6;</code>
-       * @param value The resultAsBoolean to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsBoolean(boolean value) {
-        bitField0_ |= 0x00000008;
-        resultAsBoolean_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>bool result_as_boolean = 6;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsBoolean() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        resultAsBoolean_ = false;
-        onChanged();
-        return this;
-      }
-
-      private int resultAsInt_ ;
-      /**
-       * <code>sint32 result_as_int = 7;</code>
-       * @return Whether the resultAsInt field is set.
-       */
-      @java.lang.Override
-      public boolean hasResultAsInt() {
-        return ((bitField0_ & 0x00000010) != 0);
-      }
-      /**
-       * <code>sint32 result_as_int = 7;</code>
-       * @return The resultAsInt.
-       */
-      @java.lang.Override
-      public int getResultAsInt() {
-        return resultAsInt_;
-      }
-      /**
-       * <code>sint32 result_as_int = 7;</code>
-       * @param value The resultAsInt to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsInt(int value) {
-        bitField0_ |= 0x00000010;
-        resultAsInt_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>sint32 result_as_int = 7;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsInt() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        resultAsInt_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private long resultAsLong_ ;
-      /**
-       * <code>sint64 result_as_long = 8;</code>
-       * @return Whether the resultAsLong field is set.
-       */
-      @java.lang.Override
-      public boolean hasResultAsLong() {
-        return ((bitField0_ & 0x00000020) != 0);
-      }
-      /**
-       * <code>sint64 result_as_long = 8;</code>
-       * @return The resultAsLong.
-       */
-      @java.lang.Override
-      public long getResultAsLong() {
-        return resultAsLong_;
-      }
-      /**
-       * <code>sint64 result_as_long = 8;</code>
-       * @param value The resultAsLong to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsLong(long value) {
-        bitField0_ |= 0x00000020;
-        resultAsLong_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>sint64 result_as_long = 8;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsLong() {
-        bitField0_ = (bitField0_ & ~0x00000020);
-        resultAsLong_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private float resultAsFloat_ ;
-      /**
-       * <code>float result_as_float = 9;</code>
-       * @return Whether the resultAsFloat field is set.
-       */
-      @java.lang.Override
-      public boolean hasResultAsFloat() {
-        return ((bitField0_ & 0x00000040) != 0);
-      }
-      /**
-       * <code>float result_as_float = 9;</code>
-       * @return The resultAsFloat.
-       */
-      @java.lang.Override
-      public float getResultAsFloat() {
-        return resultAsFloat_;
-      }
-      /**
-       * <code>float result_as_float = 9;</code>
-       * @param value The resultAsFloat to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsFloat(float value) {
-        bitField0_ |= 0x00000040;
-        resultAsFloat_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>float result_as_float = 9;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsFloat() {
-        bitField0_ = (bitField0_ & ~0x00000040);
-        resultAsFloat_ = 0F;
-        onChanged();
-        return this;
-      }
-
-      private double resultAsDouble_ ;
-      /**
-       * <code>double result_as_double = 10;</code>
-       * @return Whether the resultAsDouble field is set.
-       */
-      @java.lang.Override
-      public boolean hasResultAsDouble() {
-        return ((bitField0_ & 0x00000080) != 0);
-      }
-      /**
-       * <code>double result_as_double = 10;</code>
-       * @return The resultAsDouble.
-       */
-      @java.lang.Override
-      public double getResultAsDouble() {
-        return resultAsDouble_;
-      }
-      /**
-       * <code>double result_as_double = 10;</code>
-       * @param value The resultAsDouble to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsDouble(double value) {
-        bitField0_ |= 0x00000080;
-        resultAsDouble_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>double result_as_double = 10;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsDouble() {
-        bitField0_ = (bitField0_ & ~0x00000080);
-        resultAsDouble_ = 0D;
-        onChanged();
-        return this;
-      }
-
-      private com.google.protobuf.ByteString resultAsBytes_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <code>bytes result_as_bytes = 11;</code>
-       * @return Whether the resultAsBytes field is set.
-       */
-      @java.lang.Override
-      public boolean hasResultAsBytes() {
-        return ((bitField0_ & 0x00000100) != 0);
-      }
-      /**
-       * <code>bytes result_as_bytes = 11;</code>
-       * @return The resultAsBytes.
-       */
-      @java.lang.Override
-      public com.google.protobuf.ByteString getResultAsBytes() {
-        return resultAsBytes_;
-      }
-      /**
-       * <code>bytes result_as_bytes = 11;</code>
-       * @param value The resultAsBytes to set.
-       * @return This builder for chaining.
-       */
-      public Builder setResultAsBytes(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000100;
-        resultAsBytes_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>bytes result_as_bytes = 11;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearResultAsBytes() {
-        bitField0_ = (bitField0_ & ~0x00000100);
-        resultAsBytes_ = getDefaultInstance().getResultAsBytes();
-        onChanged();
-        return this;
-      }
-
-      private datawave.webservice.results.cached.result.CachedresultMessages.Description resultAsDescription_;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          datawave.webservice.results.cached.result.CachedresultMessages.Description, datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder, datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder> resultAsDescriptionBuilder_;
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       * @return Whether the resultAsDescription field is set.
-       */
-      public boolean hasResultAsDescription() {
-        return ((bitField0_ & 0x00000200) != 0);
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       * @return The resultAsDescription.
-       */
-      public datawave.webservice.results.cached.result.CachedresultMessages.Description getResultAsDescription() {
-        if (resultAsDescriptionBuilder_ == null) {
-          return resultAsDescription_ == null ? datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance() : resultAsDescription_;
-        } else {
-          return resultAsDescriptionBuilder_.getMessage();
+        public static datawave.webservice.result.ResponseMessages.GenericResponse getDefaultInstance() {
+            return DEFAULT_INSTANCE;
         }
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      public Builder setResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
-        if (resultAsDescriptionBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          resultAsDescription_ = value;
-          onChanged();
-        } else {
-          resultAsDescriptionBuilder_.setMessage(value);
-        }
-        bitField0_ |= 0x00000200;
-        return this;
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      public Builder setResultAsDescription(
-          datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder builderForValue) {
-        if (resultAsDescriptionBuilder_ == null) {
-          resultAsDescription_ = builderForValue.build();
-          onChanged();
-        } else {
-          resultAsDescriptionBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000200;
-        return this;
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      public Builder mergeResultAsDescription(datawave.webservice.results.cached.result.CachedresultMessages.Description value) {
-        if (resultAsDescriptionBuilder_ == null) {
-          if (((bitField0_ & 0x00000200) != 0) &&
-              resultAsDescription_ != null &&
-              resultAsDescription_ != datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance()) {
-            resultAsDescription_ =
-              datawave.webservice.results.cached.result.CachedresultMessages.Description.newBuilder(resultAsDescription_).mergeFrom(value).buildPartial();
-          } else {
-            resultAsDescription_ = value;
-          }
-          onChanged();
-        } else {
-          resultAsDescriptionBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000200;
-        return this;
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      public Builder clearResultAsDescription() {
-        if (resultAsDescriptionBuilder_ == null) {
-          resultAsDescription_ = null;
-          onChanged();
-        } else {
-          resultAsDescriptionBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000200);
-        return this;
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      public datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder getResultAsDescriptionBuilder() {
-        bitField0_ |= 0x00000200;
-        onChanged();
-        return getResultAsDescriptionFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      public datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder getResultAsDescriptionOrBuilder() {
-        if (resultAsDescriptionBuilder_ != null) {
-          return resultAsDescriptionBuilder_.getMessageOrBuilder();
-        } else {
-          return resultAsDescription_ == null ?
-              datawave.webservice.results.cached.result.CachedresultMessages.Description.getDefaultInstance() : resultAsDescription_;
-        }
-      }
-      /**
-       * <code>.datawave.webservice.results.cached.result.Description result_as_description = 12;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          datawave.webservice.results.cached.result.CachedresultMessages.Description, datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder, datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder> 
-          getResultAsDescriptionFieldBuilder() {
-        if (resultAsDescriptionBuilder_ == null) {
-          resultAsDescriptionBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              datawave.webservice.results.cached.result.CachedresultMessages.Description, datawave.webservice.results.cached.result.CachedresultMessages.Description.Builder, datawave.webservice.results.cached.result.CachedresultMessages.DescriptionOrBuilder>(
-                  getResultAsDescription(),
-                  getParentForChildren(),
-                  isClean());
-          resultAsDescription_ = null;
-        }
-        return resultAsDescriptionBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
 
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
+        private static final com.google.protobuf.Parser<GenericResponse> PARSER = new com.google.protobuf.AbstractParser<GenericResponse>() {
+            @java.lang.Override
+            public GenericResponse parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                Builder builder = newBuilder();
+                try {
+                    builder.mergeFrom(input, extensionRegistry);
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    throw e.setUnfinishedMessage(builder.buildPartial());
+                } catch (com.google.protobuf.UninitializedMessageException e) {
+                    throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+                } catch (java.io.IOException e) {
+                    throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(builder.buildPartial());
+                }
+                return builder.buildPartial();
+            }
+        };
 
+        public static com.google.protobuf.Parser<GenericResponse> parser() {
+            return PARSER;
+        }
 
-      // @@protoc_insertion_point(builder_scope:datawave.webservice.result.GenericResponse)
+        @java.lang.Override
+        public com.google.protobuf.Parser<GenericResponse> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public datawave.webservice.result.ResponseMessages.GenericResponse getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    // @@protoc_insertion_point(class_scope:datawave.webservice.result.GenericResponse)
-    private static final datawave.webservice.result.ResponseMessages.GenericResponse DEFAULT_INSTANCE;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_result_VoidResponse_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_result_GenericResponse_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable;
+
+    public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
+        return descriptor;
+    }
+
+    private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-      DEFAULT_INSTANCE = new datawave.webservice.result.ResponseMessages.GenericResponse();
+        java.lang.String[] descriptorData = {"\n\027response_messages.proto\022\032datawave.webs" + "ervice.result\032\030exception_messages.proto\032"
+                        + "\024query_messages.proto\032\033cachedresult_mess" + "ages.proto\"\210\001\n\014VoidResponse\022\031\n\021operation"
+                        + "_time_ms\030\001 \001(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexce"
+                        + "ptions\030\003 \003(\01327.datawave.webservice.query" + ".exception.QueryExceptionType\"\356\001\n\025QueryI"
+                        + "mplListResponse\022\031\n\021operation_time_ms\030\001 \001"
+                        + "(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexceptions\030\003 \003(\013" + "27.datawave.webservice.query.exception.Q"
+                        + "ueryExceptionType\0223\n\005query\030\004 \003(\0132$.dataw" + "ave.webservice.query.QueryImpl\022\027\n\nnumRes"
+                        + "ults\030\005 \001(\rH\000\210\001\001B\r\n\013_numResults\"\374\004\n\017Gener"
+                        + "icResponse\022\031\n\021operation_time_ms\030\001 \001(\004\022\020\n"
+                        + "\010messages\030\002 \003(\t\022K\n\nexceptions\030\003 \003(\01327.da" + "tawave.webservice.query.exception.QueryE"
+                        + "xceptionType\022\031\n\021result_class_name\030\004 \001(\t\022"
+                        + "\035\n\020result_as_string\030\005 \001(\tH\000\210\001\001\022\036\n\021result"
+                        + "_as_boolean\030\006 \001(\010H\001\210\001\001\022\032\n\rresult_as_int\030"
+                        + "\007 \001(\021H\002\210\001\001\022\033\n\016result_as_long\030\010 \001(\022H\003\210\001\001\022"
+                        + "\034\n\017result_as_float\030\t \001(\002H\004\210\001\001\022\035\n\020result_"
+                        + "as_double\030\n \001(\001H\005\210\001\001\022\034\n\017result_as_bytes\030"
+                        + "\013 \001(\014H\006\210\001\001\022Z\n\025result_as_description\030\014 \001(" + "\01326.datawave.webservice.results.cached.r"
+                        + "esult.DescriptionH\007\210\001\001B\023\n\021_result_as_str" + "ingB\024\n\022_result_as_booleanB\020\n\016_result_as_"
+                        + "intB\021\n\017_result_as_longB\022\n\020_result_as_flo" + "atB\023\n\021_result_as_doubleB\022\n\020_result_as_by"
+                        + "tesB\030\n\026_result_as_descriptionB\036\n\032datawav" + "e.webservice.resultH\003b\006proto3"};
+        descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
+                        new com.google.protobuf.Descriptors.FileDescriptor[] {datawave.webservice.query.exception.ExceptionMessages.getDescriptor(),
+                                datawave.webservice.query.QueryMessages.getDescriptor(),
+                                datawave.webservice.results.cached.result.CachedresultMessages.getDescriptor(),});
+        internal_static_datawave_webservice_result_VoidResponse_descriptor = getDescriptor().getMessageTypes().get(0);
+        internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_result_VoidResponse_descriptor,
+                        new java.lang.String[] {"OperationTimeMs", "Messages", "Exceptions",});
+        internal_static_datawave_webservice_result_QueryImplListResponse_descriptor = getDescriptor().getMessageTypes().get(1);
+        internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_result_QueryImplListResponse_descriptor,
+                        new java.lang.String[] {"OperationTimeMs", "Messages", "Exceptions", "Query", "NumResults", "NumResults",});
+        internal_static_datawave_webservice_result_GenericResponse_descriptor = getDescriptor().getMessageTypes().get(2);
+        internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_result_GenericResponse_descriptor,
+                        new java.lang.String[] {"OperationTimeMs", "Messages", "Exceptions", "ResultClassName", "ResultAsString", "ResultAsBoolean",
+                                "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription", "ResultAsString",
+                                "ResultAsBoolean", "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription",});
+        datawave.webservice.query.exception.ExceptionMessages.getDescriptor();
+        datawave.webservice.query.QueryMessages.getDescriptor();
+        datawave.webservice.results.cached.result.CachedresultMessages.getDescriptor();
     }
 
-    public static datawave.webservice.result.ResponseMessages.GenericResponse getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<GenericResponse>
-        PARSER = new com.google.protobuf.AbstractParser<GenericResponse>() {
-      @java.lang.Override
-      public GenericResponse parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        Builder builder = newBuilder();
-        try {
-          builder.mergeFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.setUnfinishedMessage(builder.buildPartial());
-        } catch (com.google.protobuf.UninitializedMessageException e) {
-          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
-        } catch (java.io.IOException e) {
-          throw new com.google.protobuf.InvalidProtocolBufferException(e)
-              .setUnfinishedMessage(builder.buildPartial());
-        }
-        return builder.buildPartial();
-      }
-    };
-
-    public static com.google.protobuf.Parser<GenericResponse> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<GenericResponse> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public datawave.webservice.result.ResponseMessages.GenericResponse getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_datawave_webservice_result_VoidResponse_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_datawave_webservice_result_QueryImplListResponse_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_datawave_webservice_result_GenericResponse_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable;
-
-  public static com.google.protobuf.Descriptors.FileDescriptor
-      getDescriptor() {
-    return descriptor;
-  }
-  private static  com.google.protobuf.Descriptors.FileDescriptor
-      descriptor;
-  static {
-    java.lang.String[] descriptorData = {
-      "\n\027response_messages.proto\022\032datawave.webs" +
-      "ervice.result\032\030exception_messages.proto\032" +
-      "\024query_messages.proto\032\033cachedresult_mess" +
-      "ages.proto\"\210\001\n\014VoidResponse\022\031\n\021operation" +
-      "_time_ms\030\001 \001(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexce" +
-      "ptions\030\003 \003(\01327.datawave.webservice.query" +
-      ".exception.QueryExceptionType\"\356\001\n\025QueryI" +
-      "mplListResponse\022\031\n\021operation_time_ms\030\001 \001" +
-      "(\004\022\020\n\010messages\030\002 \003(\t\022K\n\nexceptions\030\003 \003(\013" +
-      "27.datawave.webservice.query.exception.Q" +
-      "ueryExceptionType\0223\n\005query\030\004 \003(\0132$.dataw" +
-      "ave.webservice.query.QueryImpl\022\027\n\nnumRes" +
-      "ults\030\005 \001(\rH\000\210\001\001B\r\n\013_numResults\"\374\004\n\017Gener" +
-      "icResponse\022\031\n\021operation_time_ms\030\001 \001(\004\022\020\n" +
-      "\010messages\030\002 \003(\t\022K\n\nexceptions\030\003 \003(\01327.da" +
-      "tawave.webservice.query.exception.QueryE" +
-      "xceptionType\022\031\n\021result_class_name\030\004 \001(\t\022" +
-      "\035\n\020result_as_string\030\005 \001(\tH\000\210\001\001\022\036\n\021result" +
-      "_as_boolean\030\006 \001(\010H\001\210\001\001\022\032\n\rresult_as_int\030" +
-      "\007 \001(\021H\002\210\001\001\022\033\n\016result_as_long\030\010 \001(\022H\003\210\001\001\022" +
-      "\034\n\017result_as_float\030\t \001(\002H\004\210\001\001\022\035\n\020result_" +
-      "as_double\030\n \001(\001H\005\210\001\001\022\034\n\017result_as_bytes\030" +
-      "\013 \001(\014H\006\210\001\001\022Z\n\025result_as_description\030\014 \001(" +
-      "\01326.datawave.webservice.results.cached.r" +
-      "esult.DescriptionH\007\210\001\001B\023\n\021_result_as_str" +
-      "ingB\024\n\022_result_as_booleanB\020\n\016_result_as_" +
-      "intB\021\n\017_result_as_longB\022\n\020_result_as_flo" +
-      "atB\023\n\021_result_as_doubleB\022\n\020_result_as_by" +
-      "tesB\030\n\026_result_as_descriptionB\036\n\032datawav" +
-      "e.webservice.resultH\003b\006proto3"
-    };
-    descriptor = com.google.protobuf.Descriptors.FileDescriptor
-      .internalBuildGeneratedFileFrom(descriptorData,
-        new com.google.protobuf.Descriptors.FileDescriptor[] {
-          datawave.webservice.query.exception.ExceptionMessages.getDescriptor(),
-          datawave.webservice.query.QueryMessages.getDescriptor(),
-          datawave.webservice.results.cached.result.CachedresultMessages.getDescriptor(),
-        });
-    internal_static_datawave_webservice_result_VoidResponse_descriptor =
-      getDescriptor().getMessageTypes().get(0);
-    internal_static_datawave_webservice_result_VoidResponse_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_datawave_webservice_result_VoidResponse_descriptor,
-        new java.lang.String[] { "OperationTimeMs", "Messages", "Exceptions", });
-    internal_static_datawave_webservice_result_QueryImplListResponse_descriptor =
-      getDescriptor().getMessageTypes().get(1);
-    internal_static_datawave_webservice_result_QueryImplListResponse_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_datawave_webservice_result_QueryImplListResponse_descriptor,
-        new java.lang.String[] { "OperationTimeMs", "Messages", "Exceptions", "Query", "NumResults", "NumResults", });
-    internal_static_datawave_webservice_result_GenericResponse_descriptor =
-      getDescriptor().getMessageTypes().get(2);
-    internal_static_datawave_webservice_result_GenericResponse_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_datawave_webservice_result_GenericResponse_descriptor,
-        new java.lang.String[] { "OperationTimeMs", "Messages", "Exceptions", "ResultClassName", "ResultAsString", "ResultAsBoolean", "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription", "ResultAsString", "ResultAsBoolean", "ResultAsInt", "ResultAsLong", "ResultAsFloat", "ResultAsDouble", "ResultAsBytes", "ResultAsDescription", });
-    datawave.webservice.query.exception.ExceptionMessages.getDescriptor();
-    datawave.webservice.query.QueryMessages.getDescriptor();
-    datawave.webservice.results.cached.result.CachedresultMessages.getDescriptor();
-  }
-
-  // @@protoc_insertion_point(outer_class_scope)
+    // @@protoc_insertion_point(outer_class_scope)
 }
