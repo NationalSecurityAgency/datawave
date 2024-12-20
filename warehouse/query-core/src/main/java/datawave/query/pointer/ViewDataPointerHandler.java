@@ -5,7 +5,6 @@ import static datawave.query.Constants.EMPTY_VALUE;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -16,50 +15,32 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.attribute.pointer.DataPointer;
+import datawave.attribute.pointer.ViewDataPointer;
 import datawave.query.data.parsers.EventKey;
 import datawave.query.table.parser.ContentKeyValueFactory;
 
-public class ViewDataPointer implements DataPointer {
-    @JsonIgnore
+public class ViewDataPointerHandler implements DataPointerHandler {
     public static final String LENGTH_LIMIT = "ViewDataPointer.limit.length";
-    @JsonIgnore
     public static final String TRUNCATE_FIELD = "ViewDataPointer.truncate.field";
 
-    private final String type = "dView";
-
-    @JsonProperty
-    private String shard;
-
-    @JsonProperty
-    private String docId;
-
-    @JsonProperty
-    private String view;
-
-    @JsonIgnore
     private SortedKeyValueIterator<Key,Value> source;
-
-    @JsonIgnore
     private IteratorEnvironment env;
-
-    @JsonIgnore
     private int lengthLimit = -1;
-
-    @JsonIgnore
     private String truncateField;
+    private final ObjectMapper dataPointerObjectMapper;
 
-    public ViewDataPointer() {
-        // no-op
+    public ViewDataPointerHandler() {
+        dataPointerObjectMapper = new ObjectMapper();
     }
 
-    public ViewDataPointer(String docId, String view) {
-        this.docId = docId;
-        this.view = view;
+    @Override
+    public boolean canFetch(DataPointer pointer) {
+        return pointer instanceof ViewDataPointer;
     }
 
     @Override
@@ -75,12 +56,12 @@ public class ViewDataPointer implements DataPointer {
     }
 
     @Override
-    public Multimap<Key,Value> fetch(Key reference) throws IOException {
+    public Multimap<Key,Value> fetch(DataPointer pointer, Key reference) throws IOException {
         if (source == null) {
             throw new IllegalStateException("cannot fetch without initializing a source iterator");
         }
 
-        Key startKey = new Key(shard, "d", docId + '\u0000' + view);
+        Key startKey = pointer.get();
         Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
 
         // construct the view range
@@ -114,6 +95,19 @@ public class ViewDataPointer implements DataPointer {
         return data;
     }
 
+    @Override
+    public boolean isPointer(Key key, Value value) {
+        EventKey eventKey = new EventKey();
+        eventKey.parse(key);
+
+        return eventKey.isDataPointer() && value != null && value.get().length > 0;
+    }
+
+    @Override
+    public DataPointer getPointer(Key key, Value value) throws IOException {
+        return dataPointerObjectMapper.readerFor(DataPointer.class).readValue(value.get());
+    }
+
     private Key getEventKey(Key reference, EventKey referenceParser, byte[] value) {
         return new Key(reference.getRow(), reference.getColumnFamily(), new Text(referenceParser.getField() + '\u0000' + new String(value)),
                         reference.getColumnVisibility(), reference.getTimestamp());
@@ -122,32 +116,5 @@ public class ViewDataPointer implements DataPointer {
     private Key getTruncatedKey(Key reference, EventKey referenceParser) {
         return new Key(reference.getRow(), reference.getColumnFamily(), new Text(truncateField + '\u0000' + referenceParser.getField()),
                         reference.getColumnVisibility(), reference.getTimestamp());
-    }
-
-    private Value decodeAndTruncate(Value raw) {
-        byte[] rawBytes = ContentKeyValueFactory.decodeAndDecompressContent(raw.get());
-        if (lengthLimit != -1 && rawBytes.length > lengthLimit) {
-            byte[] truncatedBytes = Arrays.copyOf(rawBytes, lengthLimit);
-            return new Value(truncatedBytes);
-        }
-
-        return new Value(rawBytes);
-    }
-
-    @Override
-    public List<Key> getTransformKeys(Key reference) {
-        EventKey parsedKey = new EventKey();
-        parsedKey.parse(reference);
-
-        // create the keys to be transformed by the EventQueryDataDecorator to produce a lookup for this content directly
-        // SOME_FIELD=/DataWave/Query/LookupContentUUID/{view}/{id}
-        // SOME_FIELD_CONTENT_UID=event:shardID/datatype/uid
-        // SOME_FIELD_CONTENT_VIEW={view}
-
-        Key idKey = new Key(reference.getRow().toString(), reference.getColumnFamily().toString(), parsedKey.getField() + "_CONTENT_ID" + '\u0000'
-                        + reference.getRow().toString() + '/' + parsedKey.getDatatype() + '/' + parsedKey.getUid());
-        Key viewKey = new Key(reference.getRow().toString(), reference.getColumnFamily().toString(), parsedKey.getField() + "_CONTENT_VIEW" + '\u0000' + view);
-
-        return List.of(idKey, viewKey);
     }
 }

@@ -285,6 +285,10 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
+    public static final String DATA_POINTER_ENABLED = "data.pointer.enabled";
+    public static final String DATA_POINTER_MAX_LENGTH = "data.pointer.max.length";
+    public static final String DATA_POINTER_TRUNCATION_FIELD = "data.pointer.truncation.field";
+
     protected Map<String,String> options;
 
     protected String scanId;
@@ -465,6 +469,10 @@ public class QueryOptions implements OptionDescriber {
     private long cardinality = Long.MAX_VALUE;
     private long cardinalityThreshold = Long.MIN_VALUE;
 
+    protected boolean dataPointerEnabled = false;
+    protected long dataPointerMaxLength = -1;
+    protected String dataPointerTruncationField;
+
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -584,6 +592,10 @@ public class QueryOptions implements OptionDescriber {
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
         this.cardinality = other.cardinality;
+
+        this.dataPointerEnabled = other.dataPointerEnabled;
+        this.dataPointerMaxLength = other.dataPointerMaxLength;
+        this.dataPointerTruncationField = other.dataPointerTruncationField;
     }
 
     public String getQuery() {
@@ -1402,6 +1414,10 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
+        options.put(DATA_POINTER_ENABLED, "Allow data pointers to be resolved into fields");
+        options.put(DATA_POINTER_MAX_LENGTH, "Length over which a data pointer being embedded in a field will be truncated, -1 is unlimited");
+        options.put(DATA_POINTER_TRUNCATION_FIELD,
+                        "Field to write truncated data pointer field names to. If not set truncated pointer fields will not be recorded");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1919,6 +1935,18 @@ public class QueryOptions implements OptionDescriber {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
             }
+        }
+
+        if (options.containsKey(DATA_POINTER_ENABLED)) {
+            setDataPointerEnabled(Boolean.parseBoolean(options.get(DATA_POINTER_ENABLED)));
+        }
+
+        if (options.containsKey(DATA_POINTER_MAX_LENGTH)) {
+            setDataPointerMaxLength(Long.parseLong(options.get(DATA_POINTER_MAX_LENGTH)));
+        }
+
+        if (options.containsKey(DATA_POINTER_TRUNCATION_FIELD)) {
+            setDataPointerTruncationField(options.get(DATA_POINTER_TRUNCATION_FIELD));
         }
 
         return true;
@@ -2440,5 +2468,29 @@ public class QueryOptions implements OptionDescriber {
 
     public long getCardinalityThreshold() {
         return cardinalityThreshold;
+    }
+
+    public boolean isDataPointerEnabled() {
+        return this.dataPointerEnabled;
+    }
+
+    public void setDataPointerEnabled(boolean enabled) {
+        this.dataPointerEnabled = enabled;
+    }
+
+    public long getDataPointerMaxLength() {
+        return this.dataPointerMaxLength;
+    }
+
+    public void setDataPointerMaxLength(long maxLength) {
+        this.dataPointerMaxLength = maxLength;
+    }
+
+    public String getDataPointerTruncationField() {
+        return this.dataPointerTruncationField;
+    }
+
+    public void setDataPointerTruncationField(String truncationField) {
+        this.dataPointerTruncationField = truncationField;
     }
 }

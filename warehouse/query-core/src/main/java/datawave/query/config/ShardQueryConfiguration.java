@@ -528,6 +528,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private double fieldIndexHoleMinThreshold = 1.0d;
 
     /**
+     * When enabled data pointers in the event will be resolved
+     */
+    private boolean dataPointerEnabled = false;
+    /**
+     * The maximum length of a data pointer to add into the event, -1 indicates unlimited
+     */
+    private long dataPointerMaxLength = -1;
+    /**
+     * The field to append with the fieldName of the truncated field when dataPointerMaxLength is used to truncate a data pointers content
+     */
+    private String dataPointerTruncationField;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -768,6 +781,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setDataPointerEnabled(other.isDataPointerEnabled());
+        this.setDataPointerMaxLength(other.getDataPointerMaxLength());
+        this.setDataPointerTruncationField(other.getDataPointerTruncationField());
     }
 
     /**
@@ -3038,7 +3054,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
-                getCardinalityThreshold() == that.getCardinalityThreshold();
+                getCardinalityThreshold() == that.getCardinalityThreshold() &&
+                isDataPointerEnabled() == that.isDataPointerEnabled() &&
+                getDataPointerMaxLength() == that.getDataPointerMaxLength() &&
+                Objects.equals(getDataPointerTruncationField(), that.getDataPointerTruncationField());
         // @formatter:on
     }
 
@@ -3244,7 +3263,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
-                getCardinalityThreshold()
+                getCardinalityThreshold(),
+                isDataPointerEnabled(),
+                getDataPointerMaxLength(),
+                getDataPointerTruncationField()
         );
         // @formatter:on
     }
@@ -3278,5 +3300,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public boolean isDataPointerEnabled() {
+        return dataPointerEnabled;
+    }
+
+    public void setDataPointerEnabled(boolean dataPointerEnabled) {
+        this.dataPointerEnabled = dataPointerEnabled;
+    }
+
+    public long getDataPointerMaxLength() {
+        return dataPointerMaxLength;
+    }
+
+    public void setDataPointerMaxLength(long dataPointerMaxLength) {
+        this.dataPointerMaxLength = dataPointerMaxLength;
+    }
+
+    public String getDataPointerTruncationField() {
+        return dataPointerTruncationField;
+    }
+
+    public void setDataPointerTruncationField(String dataPointerTruncationField) {
+        this.dataPointerTruncationField = dataPointerTruncationField;
     }
 }

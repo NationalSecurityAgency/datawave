@@ -2308,6 +2308,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
             }
 
+            if (config.isDataPointerEnabled()) {
+                addOption(cfg, QueryOptions.DATA_POINTER_ENABLED, Boolean.toString(config.isDataPointerEnabled()), false);
+                addOption(cfg, QueryOptions.DATA_POINTER_MAX_LENGTH, Long.toString(config.getDataPointerMaxLength()), false);
+                addOption(cfg, QueryOptions.DATA_POINTER_TRUNCATION_FIELD, config.getDataPointerTruncationField(), false);
+            }
+
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
             configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), isPreload);

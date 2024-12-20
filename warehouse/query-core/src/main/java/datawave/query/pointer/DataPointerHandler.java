@@ -1,7 +1,6 @@
 package datawave.query.pointer;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -9,16 +8,18 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.Multimap;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(value = ViewDataPointer.class, name = "dView")})
-public interface DataPointer {
+import datawave.attribute.pointer.DataPointer;
+
+public interface DataPointerHandler {
     void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env);
 
-    Multimap<Key,Value> fetch(Key reference) throws IOException;
+    boolean canFetch(DataPointer pointer);
 
-    List<Key> getTransformKeys(Key reference);
+    Multimap<Key,Value> fetch(DataPointer pointer, Key reference) throws IOException;
+
+    boolean isPointer(Key key, Value value);
+
+    DataPointer getPointer(Key key, Value value) throws IOException;
 }

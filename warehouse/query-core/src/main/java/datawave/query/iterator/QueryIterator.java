@@ -106,6 +106,8 @@ import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
+import datawave.query.pointer.DataPointerHandler;
+import datawave.query.pointer.ViewDataPointerHandler;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
@@ -767,6 +769,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             this.includeHierarchyFields)
                             .withRangeProvider(getRangeProvider())
                             .withAggregationThreshold(getDocAggregationThresholdMs());
+            configureKeyToDocumentDataPointers((KeyToDocumentData) docMapper);
             //  @formatter:on
         }
 
@@ -909,6 +912,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         return documents;
+    }
+
+    private void configureKeyToDocumentDataPointers(KeyToDocumentData keyToDocumentData) {
+        if (isDataPointerEnabled()) {
+            DataPointerHandler dataPointerHandler = new ViewDataPointerHandler();
+            Map<String,String> dataPointerHandlerOptions = new HashMap<>();
+            dataPointerHandlerOptions.put(ViewDataPointerHandler.LENGTH_LIMIT, "" + getDataPointerMaxLength());
+            dataPointerHandlerOptions.put(ViewDataPointerHandler.TRUNCATE_FIELD, getDataPointerTruncationField());
+            dataPointerHandler.init(source.deepCopy(myEnvironment), dataPointerHandlerOptions, myEnvironment);
+            keyToDocumentData.withDataPointers(dataPointerHandler);
+        }
     }
 
     protected Iterator<Entry<Key,Document>> getEvaluation(SortedKeyValueIterator<Key,Value> sourceDeepCopy, Iterator<Entry<Key,Document>> documents,
@@ -1097,6 +1111,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             getEventEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields)
                             .withRangeProvider(getRangeProvider())
                             .withAggregationThreshold(getDocAggregationThresholdMs());
+            configureKeyToDocumentDataPointers(docMapper);
             //  @formatter:on
 
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,

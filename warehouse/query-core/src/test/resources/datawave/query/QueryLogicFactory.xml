@@ -289,6 +289,10 @@
         <property name="sortQueryPostIndexWithFieldCounts" value="true" />
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
+        <!-- data pointer configuration -->
+        <property name="dataPointerEnabled" value="true" />
+        <property name="dataPointerMaxLength" value="100" />
+        <property name="dataPointerTruncationField" value="TRUNCATED_FIELDS" />
     </bean>
 
     <bean id="IvaratorScanHintRule" class="datawave.query.planner.scanhints.IvaratorScanHint"/>

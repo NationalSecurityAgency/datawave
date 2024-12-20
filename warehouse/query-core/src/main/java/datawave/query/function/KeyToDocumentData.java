@@ -28,21 +28,19 @@ import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
+import datawave.attribute.pointer.DataPointer;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.query.attributes.Document;
-import datawave.query.data.parsers.EventKey;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.aggregation.DocumentData;
-import datawave.query.pointer.DataPointer;
-import datawave.query.pointer.ViewDataPointer;
+import datawave.query.pointer.DataPointerHandler;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple3;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -78,11 +76,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     private int aggregationThreshold;
 
     private boolean expandDataPointers = false;
-    private int dataPointerLengthLimit = -1;
-    private String dataPointerTruncationField;
     private IteratorEnvironment env;
-    private SortedKeyValueIterator<Key,Value> dataPointerSource;
-    private ObjectMapper dataPointerObjectMapper;
+    private DataPointerHandler dataPointerHandler;
 
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);
@@ -146,18 +141,13 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         return this;
     }
 
-    public KeyToDocumentData withDataPointers(int characterLimit, String truncationField) {
-        if (characterLimit < -1 || characterLimit == 0) {
-            throw new IllegalArgumentException("character limit must be between -1 or greater than 0");
+    public KeyToDocumentData withDataPointers(DataPointerHandler handler) {
+        if (handler == null) {
+            throw new IllegalArgumentException("DataPointerHandler may not be null");
         }
-        if (characterLimit > 0 && (truncationField == null || truncationField.isEmpty())) {
-            throw new IllegalArgumentException("truncationField must be specified when using a character limit");
-        }
-
+        
         this.expandDataPointers = true;
-        this.dataPointerLengthLimit = characterLimit;
-        this.dataPointerTruncationField = truncationField;
-        this.dataPointerObjectMapper = new ObjectMapper();
+        this.dataPointerHandler = handler;
 
         return this;
     }
@@ -214,38 +204,6 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
     }
 
-    private boolean isDataPointer(Key key) {
-        EventKey eventKey = new EventKey();
-        eventKey.parse(key);
-
-        return eventKey.isDataPointer();
-    }
-
-    private DataPointer getDataPointer(Value pointerValue) throws IOException {
-        return dataPointerObjectMapper.readerFor(DataPointer.class).readValue(pointerValue.get());
-    }
-
-    private Multimap<Key,Value> expandDataPointer(Key pointerKey, Value pointerValue) throws IOException {
-        if (!expandDataPointers) {
-            throw new IllegalStateException("cannot expand data pointers when disabled");
-        }
-
-        // do this lazily on demand
-        if (dataPointerSource == null) {
-            dataPointerSource = this.source.deepCopy(env);
-        }
-
-        DataPointer dataPointer = getDataPointer(pointerValue);
-        Map<String,String> pointerOptions = new HashMap<>();
-        pointerOptions.put(ViewDataPointer.LENGTH_LIMIT, "" + dataPointerLengthLimit);
-        if (dataPointerTruncationField != null) {
-            pointerOptions.put(ViewDataPointer.TRUNCATE_FIELD, dataPointerTruncationField);
-        }
-        dataPointer.init(dataPointerSource, pointerOptions, null);
-
-        return dataPointer.fetch(pointerKey);
-    }
-
     /**
      * Given a Key pointing to the start of a document to aggregate, construct a list of attributes, adding the names of the attributes to the specified set of
      * "docKeys".
@@ -281,8 +239,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     }
 
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
-                        if (expandDataPointers && isDataPointer(docAttrKey.get())) {
-                            Multimap<Key,Value> expandedKeys = expandDataPointer(docAttrKey.get(), source.getTopValue());
+                        if (expandDataPointers && dataPointerHandler.isPointer(docAttrKey.get(), source.getTopValue())) {
+                            DataPointer pointer = dataPointerHandler.getPointer(docAttrKey.get(), source.getTopValue());
+                            Multimap<Key,Value> expandedKeys = dataPointerHandler.fetch(pointer, docAttrKey.get());
                             for (Entry<Key,Value> entry : expandedKeys.entries()) {
                                 documentAttributes.add(Maps.immutableEntry(entry.getKey(), entry.getValue()));
                             }

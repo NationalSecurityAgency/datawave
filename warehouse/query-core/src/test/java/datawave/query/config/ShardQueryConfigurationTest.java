@@ -604,6 +604,13 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("dataPointerEnabled", false);
+        updatedValues.put("dataPointerEnabled", true);
+        defaultValues.put("dataPointerMaxLength", -1l);
+        updatedValues.put("dataPointerMaxLength", 100l);
+        defaultValues.put("dataPointerTruncationField", null);
+        updatedValues.put("dataPointerTruncationField", "TRUNCATED");
     }
 
     private Query createQuery(String query) {

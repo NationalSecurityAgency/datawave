@@ -3027,4 +3027,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
     }
+
+    public void setDataPointerEnabled(boolean enabled) {
+        getConfig().setDataPointerEnabled(enabled);
+    }
+
+    public boolean isDataPointerEnabled() {
+        return getConfig().isDataPointerEnabled();
+    }
+
+    public void setDataPointerMaxLength(long maxLength) {
+        getConfig().setDataPointerMaxLength(maxLength);
+    }
+
+    public long getDataPointerMaxLength() {
+        return getConfig().getDataPointerMaxLength();
+    }
+
+    public void setDataPointerTruncationField(String truncationField) {
+        getConfig().setDataPointerTruncationField(truncationField);
+    }
+
+    public String getDataPointerTruncationField() {
+        return getConfig().getDataPointerTruncationField();
+    }
 }
