@@ -959,14 +959,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedExpandIndexQueriesForFunctions(timers, config.getQueryTree(), config, metadataHelper));
         }
 
-        // must expand multi-normalized terms after index queries but before index expansion
-        // for example, f:includeText(_ANYFIELD_, 'value')
-        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
-
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
+        // need to run this before normalization expansion otherwise nasty regexes could slip through
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Unfielded Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
+
+        // must expand multi-normalized terms after index queries but before index expansion
+        // for example, f:includeText(_ANYFIELD_, 'value') would get missed by the multi normalizer visitor, but expanding it first allows the EQ node to get
+        // expanded
+        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
