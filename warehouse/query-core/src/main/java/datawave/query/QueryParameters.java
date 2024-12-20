@@ -134,6 +134,11 @@ public class QueryParameters {
     public static final String CONTENT_VIEW_ALL = "content.view.all";
 
     /**
+     * Used by the ContentQueryLogic to determine if views should be decoded from base64
+     */
+    public static final String DECODE_VIEW = "content.view.decode";
+
+    /**
      * Used to specify the class used to perform visibility interpretations into markings.
      */
     public static final String VISIBILITY_INTERPRETER = "visibility.interpreter";
