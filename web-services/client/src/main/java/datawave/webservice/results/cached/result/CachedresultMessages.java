@@ -2403,7 +2403,7 @@ public final class CachedresultMessages {
                         + "ibute\022\014\n\004name\030\001 \001(\t\"\270\001\n\013Description\022\014\n\004v"
                         + "iew\030\001 \001(\t\022H\n\nattributes\030\002 \003(\01324.datawave" + ".webservice.results.cached.result.Attrib"
                         + "ute\022Q\n\014visibilities\030\003 \003(\0132;.datawave.web" + "service.results.cached.result.ColumnVisi"
-                        + "bilityB+\n)datawave.webservice.results.ca" + "ched.resultb\006proto3"};
+                        + "bilityB-\n)datawave.webservice.results.ca" + "ched.resultH\003b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_webservice_results_cached_result_ColumnVisibility_descriptor = getDescriptor().getMessageTypes().get(0);

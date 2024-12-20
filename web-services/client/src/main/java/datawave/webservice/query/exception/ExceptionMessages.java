@@ -799,7 +799,7 @@ public final class ExceptionMessages {
     static {
         java.lang.String[] descriptorData = {"\n\030exception_messages.proto\022#datawave.web" + "service.query.exception\"T\n\022QueryExceptio"
                         + "nType\022\024\n\007message\030\001 \001(\tH\000\210\001\001\022\022\n\005cause\030\002 \001"
-                        + "(\tH\001\210\001\001B\n\n\010_messageB\010\n\006_causeB%\n#datawav" + "e.webservice.query.exceptionb\006proto3"};
+                        + "(\tH\001\210\001\001B\n\n\010_messageB\010\n\006_causeB\'\n#datawav" + "e.webservice.query.exceptionH\003b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor = getDescriptor().getMessageTypes().get(0);

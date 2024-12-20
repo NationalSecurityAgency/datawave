@@ -3008,7 +3008,7 @@ public final class QueryMessages {
                                 + "e\030\n \001(\003\022\020\n\010pagesize\030\013 \001(\r\022B\n\nparameters\030"
                                 + "\014 \003(\0132..datawave.webservice.query.QueryI" + "mpl.Parameter\032<\n\tParameter\022\026\n\016parameter_"
                                 + "name\030\001 \001(\t\022\027\n\017parameter_value\030\002 \001(\tB\r\n\013_"
-                                + "query_nameB\r\n\013_begin_dateB\013\n\t_end_dateB\033" + "\n\031datawave.webservice.queryb\006proto3"};
+                                + "query_nameB\r\n\013_begin_dateB\013\n\t_end_dateB\035" + "\n\031datawave.webservice.queryH\003b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_webservice_query_QueryImpl_descriptor = getDescriptor().getMessageTypes().get(0);

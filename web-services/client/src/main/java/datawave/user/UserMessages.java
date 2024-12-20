@@ -648,7 +648,7 @@ public final class UserMessages {
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
         java.lang.String[] descriptorData = {"\n\023user_messages.proto\022\rdatawave.user\"#\n\022"
-                        + "UserAuthorizations\022\r\n\005auths\030\001 \003(\tB\017\n\rdat" + "awave.userb\006proto3"};
+                        + "UserAuthorizations\022\r\n\005auths\030\001 \003(\tB\021\n\rdat" + "awave.userH\003b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_user_UserAuthorizations_descriptor = getDescriptor().getMessageTypes().get(0);

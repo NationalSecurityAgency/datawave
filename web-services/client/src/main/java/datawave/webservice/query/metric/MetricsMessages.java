@@ -3673,7 +3673,7 @@ public final class MetricsMessages {
                         + "ration_time_ms\030\001 \001(\004\022\020\n\010messages\030\002 \003(\t\022K"
                         + "\n\nexceptions\030\003 \003(\01327.datawave.webservice" + ".query.exception.QueryExceptionType\022=\n\006r"
                         + "esult\030\004 \003(\0132-.datawave.webservice.query." + "metric.QueryMetric\022\023\n\013num_results\030\005 \001(\005B"
-                        + "\"\n datawave.webservice.query.metricb\006pro" + "to3"};
+                        + "$\n datawave.webservice.query.metricH\003b\006p" + "roto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {datawave.webservice.query.exception.ExceptionMessages.getDescriptor(),});
         internal_static_datawave_webservice_query_metric_PageMetric_descriptor = getDescriptor().getMessageTypes().get(0);

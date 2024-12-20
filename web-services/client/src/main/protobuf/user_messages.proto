@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package datawave.user;
-
+option optimize_for = LITE_RUNTIME;
 option java_package = "datawave.user";
 
 message UserAuthorizations {
