@@ -23,15 +23,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
@@ -81,7 +77,7 @@ import datawave.util.UniversalSet;
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
 
-    public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
+    public static final String PARAM_VALUE_SEP_STR = String.valueOf(Constants.PARAM_VALUE_SEP);
     public static final String TABLE_NAME_SOURCE = "tableName";
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 
@@ -204,7 +200,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String dateIndexTableName = TableName.DATE_INDEX;
     private String indexStatsTableName = TableName.INDEX_STATS;
     private String defaultDateTypeName = "EVENT";
-    // should we cleanup the shards and days hints that are sent to the tservers?
+    // should we clean up the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
     // BatchScanner and query results options
     private Integer numQueryThreads = 8;
@@ -232,7 +228,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> filterClassNames = Collections.emptyList();
     private List<String> indexFilteringClassNames = new ArrayList<>();
     // Used for ignoring 'd' and 'tf' column family in `shard`
-    private Set<String> nonEventKeyPrefixes = Sets.newHashSet("d", "tf");
+    private Set<String> nonEventKeyPrefixes = new HashSet<>(Set.of("d", "tf"));
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
     // Filter results on datatypes. Default to having no filters
@@ -244,9 +240,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> disallowlistedFields = new HashSet<>(0);
-    private Set<String> indexedFields = Sets.newHashSet();
-    private Set<String> reverseIndexedFields = Sets.newHashSet();
-    private Set<String> normalizedFields = Sets.newHashSet();
+    private Set<String> indexedFields = new HashSet<>();
+    private Set<String> reverseIndexedFields = new HashSet<>();
+    private Set<String> normalizedFields = new HashSet<>();
     private Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
     private Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
@@ -257,7 +253,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,Date> whindexCreationDates = new HashMap<>();
 
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
-    private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
+    private Set<String> disallowedRegexPatterns = new HashSet<>(Set.of(".*", ".*?"));
 
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
@@ -281,7 +277,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean limitFieldsPreQueryEvaluation = false;
     /**
-     * when <code>limitFieldsPreQueryEvaluation = true</code> this field will be used to record which fields were limited
+     * when {@code limitFieldsPreQueryEvaluation = true} this field will be used to record which fields were limited
      */
     private String limitFieldsField = null;
     private boolean hitList = false;
@@ -634,41 +630,40 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFstCount(other.getFstCount());
         this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
         this.setFullTableScanEnabled(other.getFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(
-                        null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other.getRealmSuffixExclusionPatterns()));
+        this.setRealmSuffixExclusionPatterns(null == other.getRealmSuffixExclusionPatterns() ? null : new ArrayList<>(other.getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormat(other.getShardDateFormat());
         this.setShardDateFormatter(new SimpleDateFormat(this.getShardDateFormat()));
         this.setUseEnrichers(other.getUseEnrichers());
-        this.setEnricherClassNames(null == other.getEnricherClassNames() ? null : Lists.newArrayList(other.getEnricherClassNames()));
+        this.setEnricherClassNames(null == other.getEnricherClassNames() ? null : new ArrayList<>(other.getEnricherClassNames()));
         this.setUseFilters(other.getUseFilters());
-        this.setFilterClassNames(null == other.getFilterClassNames() ? null : Lists.newArrayList(other.getFilterClassNames()));
-        this.setIndexFilteringClassNames(null == other.getIndexFilteringClassNames() ? null : Lists.newArrayList(other.getIndexFilteringClassNames()));
-        this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
-        this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
+        this.setFilterClassNames(null == other.getFilterClassNames() ? null : new ArrayList<>(other.getFilterClassNames()));
+        this.setIndexFilteringClassNames(null == other.getIndexFilteringClassNames() ? null : new ArrayList<>(other.getIndexFilteringClassNames()));
+        this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : new HashSet<>(other.getNonEventKeyPrefixes()));
+        this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : new HashSet<>(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
-                        : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
-        this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : Lists.newArrayList(other.getIndexValueHoles()));
-        this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
-        this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
-        this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
-        this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
-        this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : Sets.newHashSet(other.getReverseIndexedFields()));
-        this.setNormalizedFields(null == other.getNormalizedFields() ? null : Sets.newHashSet(other.getNormalizedFields()));
+                        : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : new HashSet<>(other.getDatatypeFilter()));
+        this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : new ArrayList<>(other.getIndexValueHoles()));
+        this.setProjectFields(null == other.getProjectFields() ? null : new HashSet<>(other.getProjectFields()));
+        this.setRenameFields(null == other.getRenameFields() ? null : new HashSet<>(other.getRenameFields()));
+        this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : new HashSet<>(other.getDisallowlistedFields()));
+        this.setIndexedFields(null == other.getIndexedFields() ? null : new HashSet<>(other.getIndexedFields()));
+        this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : new HashSet<>(other.getReverseIndexedFields()));
+        this.setNormalizedFields(null == other.getNormalizedFields() ? null : new HashSet<>(other.getNormalizedFields()));
         this.setDataTypes(null == other.getDataTypes() ? null : HashMultimap.create(other.getDataTypes()));
         this.setQueryFieldsDatatypes(null == other.getQueryFieldsDatatypes() ? null : HashMultimap.create(other.getQueryFieldsDatatypes()));
         this.setNormalizedFieldsDatatypes(null == other.getNormalizedFieldsDatatypes() ? null : HashMultimap.create(other.getNormalizedFieldsDatatypes()));
-        this.setFieldToDiscreteIndexTypes(null == other.getFieldToDiscreteIndexTypes() ? null : Maps.newHashMap(other.getFieldToDiscreteIndexTypes()));
+        this.setFieldToDiscreteIndexTypes(null == other.getFieldToDiscreteIndexTypes() ? null : new HashMap<>(other.getFieldToDiscreteIndexTypes()));
         this.setCompositeToFieldMap(null == other.getCompositeToFieldMap() ? null : ArrayListMultimap.create(other.getCompositeToFieldMap()));
-        this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : Maps.newHashMap(other.getCompositeTransitionDates()));
-        this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : Maps.newHashMap(other.getCompositeFieldSeparators()));
-        this.setWhindexCreationDates(null == other.getWhindexCreationDates() ? null : Maps.newHashMap(other.getWhindexCreationDates()));
+        this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : new HashMap<>(other.getCompositeTransitionDates()));
+        this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : new HashMap<>(other.getCompositeFieldSeparators()));
+        this.setWhindexCreationDates(null == other.getWhindexCreationDates() ? null : new HashMap<>(other.getWhindexCreationDates()));
         this.setGeneratePlanOnly(other.isGeneratePlanOnly());
         this.setSortedUIDs(other.isSortedUIDs());
-        this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
+        this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : new HashSet<>(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
-        this.setLimitFields(null == other.getLimitFields() ? null : Sets.newHashSet(other.getLimitFields()));
-        this.setMatchingFieldSets(null == other.getMatchingFieldSets() ? null : Sets.newHashSet(other.getMatchingFieldSets()));
+        this.setLimitFields(null == other.getLimitFields() ? null : new HashSet<>(other.getLimitFields()));
+        this.setMatchingFieldSets(null == other.getMatchingFieldSets() ? null : new HashSet<>(other.getMatchingFieldSets()));
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
@@ -680,9 +675,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIncludeDataTypeAsField(other.getIncludeDataTypeAsField());
         this.setIncludeRecordId(other.getIncludeRecordId());
         this.setIncludeHierarchyFields(other.getIncludeHierarchyFields());
-        this.setHierarchyFieldOptions(null == other.getHierarchyFieldOptions() ? null : Maps.newHashMap(other.getHierarchyFieldOptions()));
+        this.setHierarchyFieldOptions(null == other.getHierarchyFieldOptions() ? null : new HashMap<>(other.getHierarchyFieldOptions()));
         this.setIncludeGroupingContext(other.getIncludeGroupingContext());
-        this.setDocumentPermutations(null == other.getDocumentPermutations() ? null : Lists.newArrayList(other.getDocumentPermutations()));
+        this.setDocumentPermutations(null == other.getDocumentPermutations() ? null : new ArrayList<>(other.getDocumentPermutations()));
         this.setFilterMaskedValues(other.getFilterMaskedValues());
         this.setReducedResponse(other.isReducedResponse());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
@@ -715,8 +710,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
         this.setLocalIvaratorCacheDirConfigs(
-                        null == other.getLocalIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getLocalIvaratorCacheDirConfigs()));
-        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
+                        null == other.getLocalIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getLocalIvaratorCacheDirConfigs()));
+        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
@@ -750,9 +745,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
-        this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
+        this.setContentFieldNames(null == other.getContentFieldNames() ? null : new ArrayList<>(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
-        this.setDisallowedRegexPatterns(null == other.getEvaluationOnlyFields() ? null : Sets.newHashSet(other.getDisallowedRegexPatterns()));
+        this.setDisallowedRegexPatterns(null == other.getEvaluationOnlyFields() ? null : new HashSet<>(other.getDisallowedRegexPatterns()));
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
@@ -791,7 +786,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
-                        other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+                        other.getNoExpansionIfCurrentDateTypes() == null ? null : new HashSet<>(other.getNoExpansionIfCurrentDateTypes()));
     }
 
     /**
@@ -808,7 +803,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         this.setQueries(queries);
 
-        // do not preserve the original queries iter. getQueriesIter will create a new
+        // do not preserve the original queries' iter. getQueriesIter will create a new
         // iterator based off of the queries collection if queriesIter is null
         this.setQueriesIter(null);
 
@@ -824,8 +819,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setLocalIvaratorCacheDirConfigs(
-                        null == other.getLocalIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getLocalIvaratorCacheDirConfigs()));
-        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
+                        null == other.getLocalIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getLocalIvaratorCacheDirConfigs()));
+        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
 
         this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
@@ -845,7 +840,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
         this.setFstCount(other.getFstCount());
 
-        this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
+        this.setIndexedFields(null == other.getIndexedFields() ? null : new HashSet<>(other.getIndexedFields()));
 
         this.setSortedUIDs(other.isSortedUIDs());
         this.setBloom(other.getBloom());
@@ -1085,7 +1080,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getDatatypeFilterAsString() {
-        return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
+        return String.join(Constants.COMMA, this.getDatatypeFilter());
     }
 
     private Set<String> deconstruct(Collection<String> fields) {
@@ -1101,7 +1096,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getProjectFieldsAsString() {
-        return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
+        return String.join(Constants.COMMA, this.getProjectFields());
     }
 
     public Set<String> getRenameFields() {
@@ -1121,7 +1116,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getDisallowlistedFieldsAsString() {
-        return StringUtils.join(this.getDisallowlistedFields(), Constants.PARAM_VALUE_SEP);
+        return String.join(Constants.COMMA, this.getDisallowlistedFields());
     }
 
     public Boolean getUseEnrichers() {
@@ -1261,7 +1256,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *            filter value
      */
     public void putFilterOptions(final String option, final String value) {
-        if (StringUtils.isNotBlank(option) && StringUtils.isNotBlank(value)) {
+        if (option != null && value != null && !option.isBlank() && !value.isBlank()) {
             filterOptions.put(option, value);
         }
     }
@@ -1293,9 +1288,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return filterClassNames;
     }
 
-    @SuppressWarnings("unchecked")
     public void setFilterClassNames(List<String> filterClassNames) {
-        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
+        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.emptyList()));
     }
 
     /**
@@ -1317,9 +1311,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @param classNames
      *            the names of predicate-implemented classes to use when scanning the field index
      */
-    @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
-        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
+        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.emptyList()));
     }
 
     public Class<? extends Type<?>> getDefaultType() {
@@ -1352,7 +1345,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getNonEventKeyPrefixesAsString() {
-        return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
+        return String.join(Constants.COMMA, this.getNonEventKeyPrefixes());
     }
 
     public Set<String> getUnevaluatedFields() {
@@ -1739,11 +1732,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
-        this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
+        this.indexedFields = new HashSet<>(indexedFieldsAndTypes.keySet());
     }
 
     public void setIndexedFields(Set<String> indexedFields) {
-        this.indexedFields = (null == indexedFields) ? Collections.emptySet() : Sets.newHashSet(indexedFields);
+        this.indexedFields = (null == indexedFields) ? Collections.emptySet() : new HashSet<>(indexedFields);
     }
 
     public Set<String> getReverseIndexedFields() {
@@ -1751,11 +1744,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
-        this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
+        this.reverseIndexedFields = new HashSet<>(reverseIndexedFieldsAndTypes.keySet());
     }
 
     public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
-        this.reverseIndexedFields = reverseIndexedFields == null ? new HashSet<>() : Sets.newHashSet(reverseIndexedFields);
+        this.reverseIndexedFields = reverseIndexedFields == null ? new HashSet<>() : new HashSet<>(reverseIndexedFields);
     }
 
     public Set<String> getNormalizedFields() {
@@ -1836,7 +1829,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNormalizedFieldsDatatypes(Multimap<String,Type<?>> normalizedFieldsDatatypes) {
         this.normalizedFieldsDatatypes = (null == normalizedFieldsDatatypes) ? HashMultimap.create() : normalizedFieldsDatatypes;
-        this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
+        this.normalizedFields = new HashSet<>(this.normalizedFieldsDatatypes.keySet());
     }
 
     public Set<String> getLimitFields() {
@@ -1848,7 +1841,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getLimitFieldsAsString() {
-        return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
+        return String.join(Constants.COMMA, this.getLimitFields());
     }
 
     public Set<String> getMatchingFieldSets() {
@@ -1860,7 +1853,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getMatchingFieldSetsAsString() {
-        return StringUtils.join(this.getMatchingFieldSets(), Constants.PARAM_VALUE_SEP);
+        return String.join(Constants.COMMA, this.getMatchingFieldSets());
     }
 
     public boolean isLimitFieldsPreQueryEvaluation() {
