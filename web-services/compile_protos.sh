@@ -1,10 +1,21 @@
 #!/bin/bash 
 
+function usage() {
+    echo "USAGE: ./compile_protos.sh <versionNumber>"
+
+    exit 1
+}
+
+if [ -z "${1}" ] ; then
+      usage
+      return 1
+fi
+
 # test to see if we have protoc installed
-VERSION=`protoc --version 2>/dev/null | grep "3.16.3" |  wc -l`
+VERSION=`protoc --version 2>/dev/null | grep "$1" |  wc -l`
 if [ "$VERSION" -ne 1 ] ; then
    # Nope: bail
-   echo "::protoc is not available or incorrect version. Requires libprotoc 3.16.0"
+   echo "::protoc is not available or incorrect version. Requires libprotoc $1"
    exit 0
 fi
 
