@@ -48,19 +48,15 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
@@ -211,7 +207,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected boolean disableCompositeFields = false;
 
     /**
-     * Disables the test for non existent fields.
+     * Disables the test for non-existent fields.
      */
     protected boolean disableTestNonExistentFields = false;
 
@@ -256,11 +252,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private static Set<String> cachedReverseIndexedFields = null;
     private static Set<String> cachedNormalizedFields = null;
 
-    protected List<PushDownRule> rules = Lists.newArrayList();
+    protected List<PushDownRule> rules = new ArrayList<>();
 
     // A set of node plans. Basically these are transforms that will be applied to nodes. One example use is to
     // force certain regex patterns to be pushed down to evaluation
-    private List<NodeTransformRule> transformRules = Lists.newArrayList();
+    private List<NodeTransformRule> transformRules = new ArrayList<>();
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
 
@@ -440,7 +436,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         startConcurrentExecution(config);
 
-        // lets mark the query as started (used by ivarators at a minimum)
+        // let's mark the query as started (used by ivarators at a minimum)
         try {
             markQueryStarted(config, settings);
         } catch (Exception e) {
@@ -558,7 +554,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
 
-        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
+        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(new ArrayList<>(Collections.singletonList(cfg)));
 
         stopwatch.stop();
 
@@ -575,7 +571,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.isSortGeoWaveQueryRanges()) {
                 List<String> geoFields = new ArrayList<>();
                 for (String fieldName : config.getIndexedFields()) {
-                    for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
+                    for (Type<?> type : config.getQueryFieldsDatatypes().get(fieldName)) {
                         if (type instanceof AbstractGeometryType) {
                             geoFields.add(fieldName);
                             break;
@@ -761,7 +757,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
-        addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
+        addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, String.join(Constants.COMMA, config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
@@ -816,7 +812,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
 
-        // lets mark the query as closed (used by ivarators at a minimum)
+        // let's mark the query as closed (used by ivarators at a minimum)
         try {
             markQueryStopped(config, settings);
         } catch (Exception e) {
@@ -1146,7 +1142,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedMarkIndexValueGaps(timers, config.getQueryTree(), config, metadataHelper));
         }
 
-        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
+        // let's precompute the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
         Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
@@ -1192,7 +1188,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
 
                 // NOTE: GeoWavePruningVisitor should run before QueryPruningVisitor. If it runs after, there is a chance
-                // that GeoWavePruningVisitor will prune all of the remaining indexed terms, which would leave a GeoWave
+                // that GeoWavePruningVisitor will prune all the remaining indexed terms, which would leave a GeoWave
                 // function without any indexed terms or ranges, which should evaluate to false. That case won't be handled
                 // properly if we run GeoWavePruningVisitor after QueryPruningVisitor.
                 config.setQueryTree(timedPruneGeoWaveTerms(timers, config.getQueryTree(), metadataHelper));
@@ -1238,7 +1234,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
-                if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException) {
+                if (e.getCause() instanceof DoNotPerformOptimizedQueryException) {
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
                 }
                 QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
@@ -1340,9 +1336,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             if (null != fieldToDatatypeMap) {
-                Set<String> indexedFields = Sets.newHashSet();
-                Set<String> reverseIndexedFields = Sets.newHashSet();
-                Set<String> normalizedFields = Sets.newHashSet();
+                Set<String> indexedFields = new HashSet<>();
+                Set<String> reverseIndexedFields = new HashSet<>();
+                Set<String> normalizedFields = new HashSet<>();
 
                 loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, reverseIndexedFields, normalizedFields, false);
 
@@ -1446,7 +1442,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         config.getTableHints().put(hintTable, tableHints);
                     }
 
-                    // is the hint well defined?
+                    // is the hint well-defined?
                     if (hintRule.getHintName() == null || hintRule.getHintValue() == null) {
                         log.warn("Skipping invalid ScanHintRule. No hint name or value set. " + hintRule);
                         continue;
@@ -1715,13 +1711,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Verify that the query does not contain fields we've never seen
         // before
-        Set<String> specialFields = Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD);
+        Set<String> specialFields = new HashSet<>(Set.of(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD));
         Set<String> nonexistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(metadataHelper, script, config.getDatatypeFilter(), specialFields);
 
         if (log.isDebugEnabled()) {
             log.debug("Testing for non-existent fields, found: " + nonexistentFields.size());
         }
-        // ensure that all of the fields actually exist in the data dictionary
+        // ensure that all the fields actually exist in the data dictionary
         Set<String> allFields = null;
         try {
             allFields = metadataHelper.getAllFields(config.getDatatypeFilter());
@@ -1743,7 +1739,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         uniqueFields.add(JexlEvaluation.HIT_TERM_FIELD);
         if (!uniqueFields.containsAll(fields)) {
-            Set<String> missingFields = Sets.newHashSet(config.getUniqueFields().getFields());
+            Set<String> missingFields = new HashSet<>(config.getUniqueFields().getFields());
             missingFields.removeAll(uniqueFields);
             nonexistentFields.addAll(missingFields);
         }
@@ -2026,7 +2022,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @throws TableNotFoundException
      *             if the table is not found
      * @throws ExecutionException
-     *             for execuition errors
+     *             for execution errors
      * @throws InstantiationException
      *             for issues with instantiation
      * @throws IllegalAccessException
@@ -2761,7 +2757,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Set the list of nonEventKeyPrefixes
         if (null != config.getNonEventKeyPrefixes() && !config.getNonEventKeyPrefixes().isEmpty()) {
-            addOption(cfg, QueryOptions.IGNORE_COLUMN_FAMILIES, QueryOptions.buildIgnoredColumnFamiliesString(Sets.newHashSet("d", "tf")), false);
+            addOption(cfg, QueryOptions.IGNORE_COLUMN_FAMILIES, QueryOptions.buildIgnoredColumnFamiliesString(new HashSet<>(Set.of("d", "tf"))), false);
         }
 
         // Include the option to filter masked values
@@ -2882,7 +2878,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     public Tuple2<CloseableIterable<QueryPlan>,Boolean> getQueryRanges(ScannerFactory scannerFactory, MetadataHelper metadataHelper,
                     ShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
-        Preconditions.checkNotNull(queryTree);
+        if (queryTree == null) {
+            throw new NullPointerException("queryTree is null");
+        }
 
         boolean needsFullTable = false;
         String fullTableScanReason = null;
@@ -2926,7 +2924,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setDatatypeFilter(ingestTypes);
             } else {
                 Set<String> parameterTypes = config.getDatatypeFilter();
-                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+                // get the intersection of ingestTypes and parameterTypes
+                Set<String> intersectedTypes = new HashSet<>(ingestTypes);
+                intersectedTypes.retainAll(parameterTypes);
 
                 if (intersectedTypes.isEmpty()) {
                     throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
@@ -2945,7 +2945,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
 
             if (!ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
-                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+                // get the intersection of ingestTypes and parameterTypes
+                Set<String> intersectedTypes = new HashSet<>(ingestTypes);
+                intersectedTypes.retainAll(parameterTypes);
 
                 if (intersectedTypes.isEmpty()) {
                     throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
@@ -3092,10 +3094,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config) throws DatawaveQueryException {
-        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex", () -> {
-            // sort by implied cardinality
-            return OrderByCostVisitor.order(config.getQueryTree());
-        });
+        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex",
+                /* sort by implied cardinality */ () -> OrderByCostVisitor.order(config.getQueryTree()));
     }
 
     /**
@@ -3185,7 +3185,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             @Override
             public Iterator<T> iterator() {
-                return Collections.<T> emptyList().iterator();
+                return Collections.emptyIterator();
             }
 
             @Override
