@@ -33,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Lists;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;

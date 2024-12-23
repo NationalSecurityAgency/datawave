@@ -1,6 +1,5 @@
 package datawave.query.iterator;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static datawave.query.iterator.profile.QuerySpan.Stage.DocumentProjection;
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
@@ -13,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,7 +36,7 @@ import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
@@ -46,12 +46,10 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
@@ -171,7 +169,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected List<String> deepCopyStages = new LinkedList<>();
 
     protected Map<String,String> documentOptions;
-    protected NestedIterator<Key> initKeySource, seekKeySource;
+    protected NestedIterator<Key> initKeySource;
+    protected NestedIterator<Key> seekKeySource;
     protected Iterator<Entry<Key,Document>> documentIterator;
     protected boolean fieldIndexSatisfiesQuery = false;
 
@@ -407,7 +406,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("Received non-inclusive event specific range: " + documentRange);
                 }
                 if (gatherTimingDetails()) {
-                    this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable(), myEnvironment);
+                    this.seekKeySource = new EvaluationTrackingNestedIterator<>(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable(),
+                                    myEnvironment);
                 } else {
                     this.seekKeySource = new EmptyTreeIterable();
                 }
@@ -418,7 +418,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 if (log.isTraceEnabled()) {
                     log.trace("Received event specific range: " + documentRange);
                 }
-                // We can take a shortcut to the directly to the event
+                // We can take a shortcut directly to the event
                 Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
                 if (log.isTraceEnabled()) {
                     log.trace("Transformed document key: " + documentKey);
@@ -427,7 +427,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 // aren't needed for evaluation
 
                 if (gatherTimingDetails()) {
-                    this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.DocumentSpecificTree, trackingSpan,
+                    this.seekKeySource = new EvaluationTrackingNestedIterator<>(QuerySpan.Stage.DocumentSpecificTree, trackingSpan,
                                     new DocumentSpecificNestedIterator(documentKey), myEnvironment);
                 } else {
                     this.seekKeySource = new DocumentSpecificNestedIterator(documentKey);
@@ -634,7 +634,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *             for issues with access
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+            throws IOException, ConfigException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         // If we had an event-specific range previously, we need to reset it back
         // to the source we created during init
         NestedIterator<Key> docIter = getOrSetKeySource(documentRange, getScript());
@@ -646,7 +646,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         if (gatherTimingDetails()) {
-            docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
+            docIter = new EvaluationTrackingNestedIterator<>(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
         }
 
         // Seek() the boolean logic stuff
@@ -707,8 +707,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return an iterator to elements that satisfy the predicate
      */
     public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
-        checkNotNull(unfiltered);
-        checkNotNull(predicate);
+        if (unfiltered == null || predicate == null) {
+            throw new NullPointerException();
+        }
         return new UnmodifiableIterator<T>() {
             private T next;
 
@@ -836,7 +837,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         SortedKeyValueIterator<Key,Value> evaluationSource = getSourceDeepCopy("document pipeline - evaluation");
 
         if (gatherTimingDetails()) {
-            documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, evaluationSource,
+            documents = new EvaluationTrackingIterator<>(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, evaluationSource,
                             documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies, inclusive));
         } else {
             documents = getEvaluation(documentSpecificSource, evaluationSource, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
@@ -863,7 +864,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // apply any configured post-processing
         documents = getPostProcessingChain(documents);
         if (gatherTimingDetails()) {
-            documents = new EvaluationTrackingIterator(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
+            documents = new EvaluationTrackingIterator<>(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
         }
 
         // Filter out masked values if requested
@@ -952,7 +953,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (!this.disableEvaluation) {
 
             JexlEvaluation jexlEvaluationFunction = getJexlEvaluation(documentSource);
-            Collection<String> variables = null;
+            Collection<String> variables;
             if (null != documentSource && null != documentSource.getQuery()) {
 
                 variables = VariableNameVisitor.parseQuery(jexlEvaluationFunction.parse(documentSource.getQuery()));
@@ -1008,7 +1009,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
                 }
                 return Iterators.transform(matchedDocuments, new TupleToEntry<>());
-            } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException e) {
+            } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException |
+                     InvocationTargetException | NoSuchMethodException e) {
                 throw new IllegalStateException("Could not perform delayed index only evaluation", e);
             }
         } else if (log.isTraceEnabled()) {
@@ -1058,7 +1060,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource, JexlArithmetic arithmetic) {
-        JexlEvaluation jexlEvaluationFunction = null;
+        JexlEvaluation jexlEvaluationFunction;
 
         if (arithmetic == null) {
             arithmetic = getArithmetic();
@@ -1224,7 +1226,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * If we are performing evaluation (have a query) and are not performing a full-table scan, then we want to instantiate the boolean logic iterators
      *
-     * @return Whether or not the boolean logic iterators should be used
+     * @return Whether the boolean logic iterators should be used
      */
     public boolean instantiateBooleanLogic() {
         return !this.disableEvaluation && !this.fullTableScanOnly;
@@ -1260,7 +1262,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         } else if (this.useDisallowListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.disallowListedFields.removeAll(getMatchingFieldList());
+                getMatchingFieldList().forEach(this.disallowListedFields::remove);
             }
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
                             new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
@@ -1272,7 +1274,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected DocumentProjection getCompositeProjection() {
-        Set<String> composites = Sets.newHashSet();
+        Set<String> composites = new HashSet<>();
         if (compositeMetadata != null) {
             for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values()) {
                 for (String compositeField : val.keySet()) {
@@ -1284,7 +1286,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         // make sure we include any fields being matched in the limit fields mechanism
         if (!this.matchingFieldSets.isEmpty()) {
-            composites.removeAll(getMatchingFieldList());
+            getMatchingFieldList().forEach(composites::remove);
         }
         return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
                         Projection.ProjectionType.EXCLUDES);
@@ -1304,7 +1306,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return - true if this is a document specific range, false if not.
      */
     public static boolean isDocumentSpecificRange(Range r) {
-        Preconditions.checkNotNull(r);
+        if (r == null) {
+            throw new NullPointerException();
+        }
 
         // Also @see datawave.query.index.lookup.TupleToRange
         // We have already made the assertion that the client is sending us
@@ -1327,12 +1331,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // Column Family must contain a null byte separator.
-        Text startCF = startKey.getColumnFamily();
-        Text endCF = endKey.getColumnFamily();
-        if (startCF.find(Constants.NULL) == -1 || endCF.find(Constants.NULL) == -1) {
-            return false;
-        }
-        return true;
+        return startKey.getColumnFamily().find(Constants.NULL) != -1 && endKey.getColumnFamily().find(Constants.NULL) != -1;
     }
 
     /**
@@ -1366,7 +1365,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript)
-                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
+            throws IOException, ConfigException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1418,7 +1417,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             debugBooleanLogicIterators(sourceIter);
 
             if (sourceIter != null) {
-                sourceIter = new SeekableNestedIterator(sourceIter, this.myEnvironment);
+                sourceIter = new SeekableNestedIterator<>(sourceIter, this.myEnvironment);
             }
         }
 
@@ -1444,13 +1443,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException {
+            throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return createIteratorBuildingVisitor(IteratorBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs);
     }
 
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
                     boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
+            throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
@@ -1461,7 +1460,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         indexedFields.removeAll(nonIndexedFields);
 
         // @formatter:off
-        return c.newInstance()
+        return c.getDeclaredConstructor().newInstance()
                 .setSource(this, this.myEnvironment)
                 .setTimeFilter(this.getTimeFilter())
                 .setTypeMetadata(this.getTypeMetadata())
@@ -1515,7 +1514,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     private BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory(SourceFactory<Key,Value> sourceFactory) {
-        return new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
+        return new BasePoolableObjectFactory<>() {
             @Override
             public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
                 return sourceFactory.getSourceDeepCopy("ivarator");
@@ -1536,7 +1535,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected String getHdfsCacheSubDirPrefix() {
         // if we have a document specific range, or a list of specific doc ids (bundled document specific range per-se), then
         // we could have multiple iterators running against this shard for this query at the same time.
-        // In this case we need to differentiate between the ivarator directories being created. However this is
+        // In this case we need to differentiate between the ivarator directories being created. However, this is
         // a situation we do not want to be in, so we will also display a large warning to be seen by the accumulo monitor.
         String hdfsPrefix = null;
         if (isDocumentSpecificRange(this.range)) {
@@ -1553,14 +1552,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
 
         return new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(), isQueryFullySatisfiedInitialState);
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public String getQuery() {
-        return query;
     }
 
     /**
