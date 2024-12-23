@@ -1,5 +1,8 @@
 package datawave.query.config;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -48,9 +51,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.util.TableName;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class ShardQueryConfigurationTest {
 
@@ -671,8 +671,8 @@ public class ShardQueryConfigurationTest {
                 assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
             }
         }
-        assertEquals("Unexpected additional entries in defaultValues: " + values.keySet().stream().filter(fieldsFound::contains).collect(Collectors.toSet()), values.size(),
-                        fieldsFound.size());
+        assertEquals("Unexpected additional entries in defaultValues: " + values.keySet().stream().filter(fieldsFound::contains).collect(Collectors.toSet()),
+                        values.size(), fieldsFound.size());
     }
 
     public boolean isUnorderedListEqual(String expected, String actual) {
