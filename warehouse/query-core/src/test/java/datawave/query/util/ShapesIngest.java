@@ -272,18 +272,18 @@ public class ShapesIngest {
             m.put("fi\0TYPE", "regular\0" + octagon + "\0" + octagonUid, cv, ts, value);
 
             // EDGES
-            m.put("fi\0EDGES", "acute\0" + triangle + "\0" + acuteUid, cv, ts, value);
-            m.put("fi\0EDGES", "equilateral\0" + triangle + "\0" + equilateralUid, cv, ts, value);
-            m.put("fi\0EDGES", "isosceles\0" + triangle + "\0" + isoscelesUid, cv, ts, value);
-            m.put("fi\0EDGES", "square\0" + quadrilateral + "\0" + squareUid, cv, ts, value);
-            m.put("fi\0EDGES", "rectangle\0" + quadrilateral + "\0" + rectangleUid, cv, ts, value);
-            m.put("fi\0EDGES", "rhomboid\0" + quadrilateral + "\0" + rhomboidUid, cv, ts, value);
-            m.put("fi\0EDGES", "rhombus\0" + quadrilateral + "\0" + rhombusUid, cv, ts, value);
-            m.put("fi\0EDGES", "trapezoid\0" + quadrilateral + "\0" + trapezoidUid, cv, ts, value);
-            m.put("fi\0EDGES", "kite\0" + quadrilateral + "\0" + kiteUid, cv, ts, value);
-            m.put("fi\0EDGES", "regular\0" + pentagon + "\0" + pentagonUid, cv, ts, value);
-            m.put("fi\0EDGES", "regular\0" + hexagon + "\0" + hexagonUid, cv, ts, value);
-            m.put("fi\0EDGES", "regular\0" + octagon + "\0" + octagonUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("3") + "\0" + triangle + "\0" + acuteUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("3") + "\0" + triangle + "\0" + equilateralUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("3") + "\0" + triangle + "\0" + isoscelesUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + squareUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + rectangleUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + rhomboidUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + rhombusUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + trapezoidUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + kiteUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("5") + "\0" + pentagon + "\0" + pentagonUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("6") + "\0" + hexagon + "\0" + hexagonUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("7") + "\0" + octagon + "\0" + octagonUid, cv, ts, value);
 
             // ONLY_*
             m.put("fi\0ONLY_TRI", "tri\0" + triangle + "\0" + acuteUid, cv, ts, value);
@@ -648,7 +648,7 @@ public class ShapesIngest {
             builder.addUID(uid);
         } else {
             builder.setIGNORE(true);
-            builder.setCOUNT(1L);
+            builder.setCOUNT(17L); // arbitrary prime number below the 20 max uid limit
         }
         return new Value(builder.build().toByteArray());
     }
