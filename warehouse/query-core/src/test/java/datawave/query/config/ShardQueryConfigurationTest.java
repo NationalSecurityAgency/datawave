@@ -39,9 +39,11 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
@@ -51,7 +53,7 @@ import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
+    public static final Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -467,6 +469,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("excerptFields", ExcerptFields.from("FIELD_E/10,FIELD_F/11"));
         defaultValues.put("excerptIterator", TermFrequencyExcerptIterator.class);
         updatedValues.put("excerptIterator", TermFrequencyIndexIterator.class);
+        defaultValues.put("summaryOptions", new SummaryOptions());
+        updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
+        defaultValues.put("summaryIterator", ContentSummaryIterator.class);
+        updatedValues.put("summaryIterator", ContentSummaryIterator.class);
         defaultValues.put("fiFieldSeek", -1);
         updatedValues.put("fiFieldSeek", 10);
         defaultValues.put("fiNextSeek", -1);
