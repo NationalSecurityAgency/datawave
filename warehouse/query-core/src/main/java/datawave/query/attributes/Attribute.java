@@ -4,15 +4,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
@@ -23,6 +20,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -39,7 +38,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected Key metadata = null;
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
     protected boolean fromIndex = true; // Assume attributes are from the index unless specified otherwise.
-    private static final Map<Text,ColumnVisibility> visibilityCache = Collections.synchronizedMap(new LRUMap<>(5000));
+    private static final LoadingCache<Text,ColumnVisibility> visibilityCache = Caffeine.newBuilder().maximumSize(500).build(ColumnVisibility::new);
 
     public Attribute() {}
 
@@ -55,12 +54,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     public ColumnVisibility getColumnVisibility() {
         if (isMetadataSet()) {
             Text colVisTxt = metadata.getColumnVisibility();
-            if (visibilityCache.containsKey(colVisTxt)) {
-                return visibilityCache.get(colVisTxt).deepCopy();
-            }
-            ColumnVisibility newColvis = new ColumnVisibility(colVisTxt);
-            visibilityCache.put(colVisTxt, newColvis);
-            return newColvis.deepCopy();
+            return visibilityCache.get(colVisTxt).deepCopy();
         }
         return Constants.EMPTY_VISIBILITY;
     }
