@@ -6,9 +6,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Level;
 import org.junit.Rule;
 import org.junit.Test;
@@ -500,27 +500,6 @@ public class QueryPruningVisitorTest {
 
         assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         assertEquals(query, JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
-    }
-
-    @Test
-    public void dualStatementQueryTest() throws ParseException {
-        String query = "(Expression = 'somevalue'); FIELD == 'x'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-
-        assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
-        assertEquals(query, JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
-
-        query = "(Expression = 'somevalue'); FIELD == 'x' || true";
-        script = JexlASTHelper.parseJexlQuery(query);
-
-        assertEquals(QueryPruningVisitor.TruthState.TRUE, QueryPruningVisitor.getState(script));
-        assertEquals("(Expression = 'somevalue'); true", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
-
-        query = "(Expression = 'somevalue'); FIELD == 'x' && false";
-        script = JexlASTHelper.parseJexlQuery(query);
-
-        assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
-        assertEquals("(Expression = 'somevalue'); false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
     }
 
     @Test

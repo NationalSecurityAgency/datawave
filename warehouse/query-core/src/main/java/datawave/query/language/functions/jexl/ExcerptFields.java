@@ -10,8 +10,8 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Function to specify when excerpts should be included for results for any phrases that were identified as matching hits. This function accepts a list of
- * fields with a corresponding offset value in the format {@code FIELD/offset,FIELD/offset,...}. See {@link datawave.query.attributes.ExcerptFields} for
- * additional documentation on supported formatting.
+ * fields with a corresponding offset value and direction in the format {@code FIELD/offset/direction,FIELD/offset/direction,...}. See
+ * {@link datawave.query.attributes.ExcerptFields} for additional documentation on supported formatting.
  */
 public class ExcerptFields extends JexlQueryFunction {
 

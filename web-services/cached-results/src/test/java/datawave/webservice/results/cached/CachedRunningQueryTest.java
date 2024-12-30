@@ -19,7 +19,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
-import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
+import datawave.core.query.cachedresults.CacheableQueryRowImpl;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CachedRunningQuery.class)

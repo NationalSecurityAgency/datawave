@@ -12,11 +12,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,27 +39,27 @@ public class AncestorUidIntersectorTest {
         node1 = new ASTEQNode(1);
         JexlNode reference1 = new ASTReference(2);
         node1.jjtAddChild(reference1, 0);
-        JexlNode name = new ASTIdentifier(3);
-        name.image = "fieldName1";
+        ASTIdentifier name = JexlNodes.makeIdentifier();
+        JexlNodes.setIdentifier(name, "fieldName1");
         reference1.jjtAddChild(name, 0);
 
         JexlNode reference2 = new ASTReference(4);
         node1.jjtAddChild(reference2, 1);
-        JexlNode value = new ASTStringLiteral(5);
-        value.image = "fieldValue1";
+        ASTStringLiteral value = JexlNodes.makeStringLiteral();
+        JexlNodes.setLiteral(value, "fieldValue1");
         reference2.jjtAddChild(value, 0);
 
         node2 = new ASTEQNode(6);
         reference1 = new ASTReference(7);
         node2.jjtAddChild(reference1, 0);
-        name = new ASTIdentifier(8);
-        name.image = "fieldName2";
+        name = JexlNodes.makeIdentifier();
+        JexlNodes.setIdentifier(name, "fieldName2");
         reference1.jjtAddChild(name, 0);
 
         reference2 = new ASTReference(9);
         node2.jjtAddChild(reference2, 1);
-        value = new ASTStringLiteral(10);
-        value.image = "fieldValue2";
+        value = JexlNodes.makeStringLiteral();
+        JexlNodes.setLiteral(value, "fieldValue2");
         reference2.jjtAddChild(value, 0);
     }
 

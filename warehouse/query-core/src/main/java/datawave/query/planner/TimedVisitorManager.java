@@ -2,7 +2,7 @@ package datawave.query.planner;
 
 import static datawave.query.planner.DefaultQueryPlanner.logQuery;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.InvalidQueryTreeException;

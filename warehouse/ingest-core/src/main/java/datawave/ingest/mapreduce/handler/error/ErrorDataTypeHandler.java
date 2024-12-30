@@ -47,7 +47,7 @@ import datawave.util.time.DateHelper;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>ErrorDataType</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -170,7 +170,7 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
 
         // ***** event column *****
         String eventDate = "";
-        if (event.getDate() > Long.MIN_VALUE) {
+        if (event.isTimestampSet()) {
             eventDate = DateHelper.format(event.getDate());
         }
         Text colq = safeAppend(null, eventDate);

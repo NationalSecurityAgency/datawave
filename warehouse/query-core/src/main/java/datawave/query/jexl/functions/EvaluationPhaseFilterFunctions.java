@@ -212,12 +212,15 @@ public class EvaluationPhaseFilterFunctions {
      * <li>{@code args[2,...]}: the regexes to use to find matches</li>
      * </ul>
      *
+     * Note: As of jexl3, jexl does not consider array parameters to be the same as varargs, so if you expect a variable number of arguments, you must use
+     * varargs.
+     *
      * @param args
      *            the arguments array
      *
      * @return the {@link FunctionalSet} of matches.
      */
-    public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object[] args) {
+    public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
         Object minimumRequired = args[0];
         Object fieldValue = args[1];
         Object[] regexes = Arrays.copyOfRange(args, 2, args.length);
@@ -1646,7 +1649,7 @@ public class EvaluationPhaseFilterFunctions {
      * Given the string "FIRST.SECOND.THIRD.FOURTH"
      * - A value of 0 for pos will result in the substring 'SECOND.THIRD'
      * - A value of 1 for pos will result in the substring 'SECOND'
-     * - A value of 2 for pos will result in an exception being thrown
+     * - A value of 2 for pos will result in null being returned
      * </pre>
      *
      * @param input
@@ -1660,7 +1663,10 @@ public class EvaluationPhaseFilterFunctions {
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = getIndicesOfPeriods(input);
         if (indices.length < pos + 1) {
-            throw new IllegalArgumentException("Input " + input + " does not have a '.' at position " + pos + " from the left.");
+            if (log.isTraceEnabled()) {
+                log.trace("Not enough grouping info to extract group " + pos + " from the left for input " + input);
+            }
+            return null;
         }
         return input.substring(0, indices[indices.length - pos - 1]);
     }
@@ -1674,7 +1680,7 @@ public class EvaluationPhaseFilterFunctions {
      * - A value of 0 for pos will result in the substring 'FOURTH'
      * - A value of 1 for pos will result in the substring 'THIRD.FOURTH'
      * - A value of 2 for pos will result in the substring 'SECOND.THIRD.FOURTH'
-     * - A value of 3 for pos will result in an exception being thrown
+     * - A value of 3 for pos will result in null being returned
      * </pre>
      *
      * @param input
@@ -1686,7 +1692,10 @@ public class EvaluationPhaseFilterFunctions {
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = getIndicesOfPeriods(input);
         if (indices.length < pos + 1) {
-            throw new IllegalArgumentException("Input " + input + " does not have a '.' at position " + pos + " from the right.");
+            if (log.isTraceEnabled()) {
+                log.trace("Not enough grouping info to extract group " + pos + " from the right for input " + input);
+            }
+            return null;
         }
         return input.substring(indices[indices.length - pos - 1] + 1);
     }

@@ -13,59 +13,90 @@ public final class TermWeight {
         // repeated uint32 termOffset = 3;
         /**
          * <code>repeated uint32 termOffset = 3;</code>
+         *
+         * @return list of term offsets
          */
         java.util.List<java.lang.Integer> getTermOffsetList();
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
+         *
+         * @return the number of term offsets in the list
          */
         int getTermOffsetCount();
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the term offset at the provided index
          */
         int getTermOffset(int index);
 
         // repeated uint32 prevSkips = 4;
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
+         *
+         * @return list of previous skips
          */
         java.util.List<java.lang.Integer> getPrevSkipsList();
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
+         *
+         * @return the prev skips count
          */
         int getPrevSkipsCount();
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the prev skip at the provided index
          */
         int getPrevSkips(int index);
 
         // repeated uint32 score = 5;
         /**
          * <code>repeated uint32 score = 5;</code>
+         *
+         * @return list of scores
          */
         java.util.List<java.lang.Integer> getScoreList();
 
         /**
          * <code>repeated uint32 score = 5;</code>
+         *
+         * @return the number of scores in the list
          */
         int getScoreCount();
 
         /**
          * <code>repeated uint32 score = 5;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the score at the provided index
          */
         int getScore(int index);
 
         // optional bool zeroOffsetMatch = 6 [default = true];
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+         *
+         * @return if it has a zero offset
          */
         boolean hasZeroOffsetMatch();
 
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+         *
+         * @return the zero offset match
          */
         boolean getZeroOffsetMatch();
     }
@@ -237,6 +268,8 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
+         *
+         * @return list of term offsets
          */
         public java.util.List<java.lang.Integer> getTermOffsetList() {
             return termOffset_;
@@ -244,6 +277,8 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
+         *
+         * @return the term offset count
          */
         public int getTermOffsetCount() {
             return termOffset_.size();
@@ -251,6 +286,11 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the term offset at the provided index
          */
         public int getTermOffset(int index) {
             return termOffset_.get(index);
@@ -262,6 +302,8 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
+         *
+         * @return the prev skips list
          */
         public java.util.List<java.lang.Integer> getPrevSkipsList() {
             return prevSkips_;
@@ -269,6 +311,8 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
+         *
+         * @return the prev scips count
          */
         public int getPrevSkipsCount() {
             return prevSkips_.size();
@@ -276,6 +320,11 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the prev skip at the provided index
          */
         public int getPrevSkips(int index) {
             return prevSkips_.get(index);
@@ -294,6 +343,8 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 score = 5;</code>
+         *
+         * @return the size of the score list
          */
         public int getScoreCount() {
             return score_.size();
@@ -301,6 +352,11 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 score = 5;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the score at the provided index
          */
         public int getScore(int index) {
             return score_.get(index);
@@ -312,6 +368,8 @@ public final class TermWeight {
 
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+         *
+         * @return if it has a zero offset
          */
         public boolean hasZeroOffsetMatch() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -319,6 +377,8 @@ public final class TermWeight {
 
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+         *
+         * @return the zero offset match
          */
         public boolean getZeroOffsetMatch() {
             return zeroOffsetMatch_;
@@ -649,6 +709,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @return list of term offsets
              */
             public java.util.List<java.lang.Integer> getTermOffsetList() {
                 return java.util.Collections.unmodifiableList(termOffset_);
@@ -656,6 +718,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @return the number of term offsets in the least
              */
             public int getTermOffsetCount() {
                 return termOffset_.size();
@@ -663,6 +727,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the term offset at the provided index
              */
             public int getTermOffset(int index) {
                 return termOffset_.get(index);
@@ -670,6 +739,13 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new term offset
+             *
+             * @return builder to set term offset at provided index
              */
             public Builder setTermOffset(int index, int value) {
                 ensureTermOffsetIsMutable();
@@ -680,6 +756,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @param value
+             *            the new term offset
+             *
+             * @return builder to add new term offset provided
              */
             public Builder addTermOffset(int value) {
                 ensureTermOffsetIsMutable();
@@ -690,6 +771,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @param values
+             *            iterable of term offsets to add to the list
+             *
+             * @return builder to add term offsets provided
              */
             public Builder addAllTermOffset(java.lang.Iterable<? extends java.lang.Integer> values) {
                 ensureTermOffsetIsMutable();
@@ -700,6 +786,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
+             *
+             * @return builder to clear term offsets
              */
             public Builder clearTermOffset() {
                 termOffset_ = java.util.Collections.emptyList();
@@ -720,6 +808,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @return the prev skip list
              */
             public java.util.List<java.lang.Integer> getPrevSkipsList() {
                 return java.util.Collections.unmodifiableList(prevSkips_);
@@ -727,6 +817,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @return the number of items in the prev skip list
              */
             public int getPrevSkipsCount() {
                 return prevSkips_.size();
@@ -734,6 +826,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the prev skip at the provided index
              */
             public int getPrevSkips(int index) {
                 return prevSkips_.get(index);
@@ -741,6 +838,13 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            new prev skip value
+             *
+             * @return builder to set the prev skips value at the provided index
              */
             public Builder setPrevSkips(int index, int value) {
                 ensurePrevSkipsIsMutable();
@@ -751,6 +855,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @param value
+             *            new prev skips value to add
+             *
+             * @return builder to add a prev skips value
              */
             public Builder addPrevSkips(int value) {
                 ensurePrevSkipsIsMutable();
@@ -761,6 +870,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @param values
+             *            iterable of perv skips to add
+             *
+             * @return builder to add iterable of values
              */
             public Builder addAllPrevSkips(java.lang.Iterable<? extends java.lang.Integer> values) {
                 ensurePrevSkipsIsMutable();
@@ -771,6 +885,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
+             *
+             * @return builder to clear prev skips
              */
             public Builder clearPrevSkips() {
                 prevSkips_ = java.util.Collections.emptyList();
@@ -791,6 +907,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
+             *
+             * @return list of scores
              */
             public java.util.List<java.lang.Integer> getScoreList() {
                 return java.util.Collections.unmodifiableList(score_);
@@ -805,6 +923,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the score at the provided index
              */
             public int getScore(int index) {
                 return score_.get(index);
@@ -812,6 +935,13 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new score value
+             *
+             * @return builder to set the score at the provided index
              */
             public Builder setScore(int index, int value) {
                 ensureScoreIsMutable();
@@ -822,6 +952,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
+             *
+             * @param value
+             *            the score to add
+             *
+             * @return return a builder to add the provided score
              */
             public Builder addScore(int value) {
                 ensureScoreIsMutable();
@@ -832,6 +967,11 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
+             *
+             * @param values
+             *            iterable of scores to add
+             *
+             * @return builder to add the iterable of scores provided
              */
             public Builder addAllScore(java.lang.Iterable<? extends java.lang.Integer> values) {
                 ensureScoreIsMutable();
@@ -842,6 +982,8 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
+             *
+             * @return builder to clear the scores
              */
             public Builder clearScore() {
                 score_ = java.util.Collections.emptyList();
@@ -855,6 +997,8 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+             *
+             * @return if it has zero offset match
              */
             public boolean hasZeroOffsetMatch() {
                 return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -862,6 +1006,8 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+             *
+             * @return the zero offset match
              */
             public boolean getZeroOffsetMatch() {
                 return zeroOffsetMatch_;
@@ -869,6 +1015,11 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+             *
+             * @param value
+             *            zero offset match value
+             *
+             * @return builder to set the zero offset match
              */
             public Builder setZeroOffsetMatch(boolean value) {
                 bitField0_ |= 0x00000008;
@@ -879,6 +1030,8 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
+             *
+             * @return builder to clear zero offset match
              */
             public Builder clearZeroOffsetMatch() {
                 bitField0_ = (bitField0_ & ~0x00000008);

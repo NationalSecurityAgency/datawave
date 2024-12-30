@@ -13,172 +13,239 @@ public final class QueryMessages {
         // required string query_logic_name = 1;
         /**
          * <code>required string query_logic_name = 1;</code>
+         *
+         * @return if it has query logic name
          */
         boolean hasQueryLogicName();
 
         /**
          * <code>required string query_logic_name = 1;</code>
+         *
+         * @return query logic name
          */
         java.lang.String getQueryLogicName();
 
         /**
          * <code>required string query_logic_name = 1;</code>
+         *
+         * @return query logic name byte string
          */
         com.google.protobuf.ByteString getQueryLogicNameBytes();
 
         // required string id = 2;
         /**
          * <code>required string id = 2;</code>
+         *
+         * @return if it has id
          */
         boolean hasId();
 
         /**
          * <code>required string id = 2;</code>
+         *
+         * @return the id
          */
         java.lang.String getId();
 
         /**
          * <code>required string id = 2;</code>
+         *
+         * @return id byte string
          */
         com.google.protobuf.ByteString getIdBytes();
 
         // optional string query_name = 3;
         /**
          * <code>optional string query_name = 3;</code>
+         *
+         * @return if it has query name
          */
         boolean hasQueryName();
 
         /**
          * <code>optional string query_name = 3;</code>
+         *
+         * @return query name
          */
         java.lang.String getQueryName();
 
         /**
          * <code>optional string query_name = 3;</code>
+         *
+         * @return query name byte string
          */
         com.google.protobuf.ByteString getQueryNameBytes();
 
         // required string user_DN = 4;
         /**
          * <code>required string user_DN = 4;</code>
+         *
+         * @return if it has user dn
          */
         boolean hasUserDN();
 
         /**
          * <code>required string user_DN = 4;</code>
+         *
+         * @return user dn
          */
         java.lang.String getUserDN();
 
         /**
          * <code>required string user_DN = 4;</code>
+         *
+         * @return user dn byte string
          */
         com.google.protobuf.ByteString getUserDNBytes();
 
         // required string query = 5;
         /**
          * <code>required string query = 5;</code>
+         *
+         * @return if it has a query
          */
         boolean hasQuery();
 
         /**
          * <code>required string query = 5;</code>
+         *
+         * @return the query
          */
         java.lang.String getQuery();
 
         /**
          * <code>required string query = 5;</code>
+         *
+         * @return query byte string
          */
         com.google.protobuf.ByteString getQueryBytes();
 
         // required string query_visibility = 6;
         /**
          * <code>required string query_visibility = 6;</code>
+         *
+         * @return if it has query visibility
          */
         boolean hasQueryVisibility();
 
         /**
          * <code>required string query_visibility = 6;</code>
+         *
+         * @return the query visibility
          */
         java.lang.String getQueryVisibility();
 
         /**
          * <code>required string query_visibility = 6;</code>
+         *
+         * @return query visibility byte string
          */
         com.google.protobuf.ByteString getQueryVisibilityBytes();
 
         // optional int64 begin_date = 7;
         /**
          * <code>optional int64 begin_date = 7;</code>
+         *
+         * @return if it has a begin date
          */
         boolean hasBeginDate();
 
         /**
          * <code>optional int64 begin_date = 7;</code>
+         *
+         * @return begin date
          */
         long getBeginDate();
 
         // optional int64 end_date = 8;
         /**
          * <code>optional int64 end_date = 8;</code>
+         *
+         * @return if it has end date
          */
         boolean hasEndDate();
 
         /**
          * <code>optional int64 end_date = 8;</code>
+         *
+         * @return end date
          */
         long getEndDate();
 
         // required string query_authorizations = 9;
         /**
          * <code>required string query_authorizations = 9;</code>
+         *
+         * @return if it has query authorizations
          */
         boolean hasQueryAuthorizations();
 
         /**
          * <code>required string query_authorizations = 9;</code>
+         *
+         * @return query authorizations
          */
         java.lang.String getQueryAuthorizations();
 
         /**
          * <code>required string query_authorizations = 9;</code>
+         *
+         * @return query authorization
          */
         com.google.protobuf.ByteString getQueryAuthorizationsBytes();
 
         // required int64 expiration_date = 10;
         /**
          * <code>required int64 expiration_date = 10;</code>
+         *
+         * @return if it has an expiration date
          */
         boolean hasExpirationDate();
 
         /**
          * <code>required int64 expiration_date = 10;</code>
+         *
+         * @return the expiration date
          */
         long getExpirationDate();
 
         // required uint32 pagesize = 11 [default = 0];
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         *
+         * @return if it has page size
          */
         boolean hasPagesize();
 
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         *
+         * @return the page size
          */
         int getPagesize();
 
         // repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @return the parameters list
          */
         java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> getParametersList();
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the parameter at the index provided
          */
         datawave.webservice.query.QueryMessages.QueryImpl.Parameter getParameters(int index);
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @return the number of parameters
          */
         int getParametersCount();
     }
@@ -317,32 +384,44 @@ public final class QueryMessages {
             // required string parameter_name = 1;
             /**
              * <code>required string parameter_name = 1;</code>
+             *
+             * @return if it has parameter name
              */
             boolean hasParameterName();
 
             /**
              * <code>required string parameter_name = 1;</code>
+             *
+             * @return parameter name
              */
             java.lang.String getParameterName();
 
             /**
              * <code>required string parameter_name = 1;</code>
+             *
+             * @return parameter name byte string
              */
             com.google.protobuf.ByteString getParameterNameBytes();
 
             // required string parameter_value = 2;
             /**
              * <code>required string parameter_value = 2;</code>
+             *
+             * @return if it has parameter value
              */
             boolean hasParameterValue();
 
             /**
              * <code>required string parameter_value = 2;</code>
+             *
+             * @return parameter value
              */
             java.lang.String getParameterValue();
 
             /**
              * <code>required string parameter_value = 2;</code>
+             *
+             * @return parameter value byte string
              */
             com.google.protobuf.ByteString getParameterValueBytes();
         }
@@ -427,6 +506,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string parameter_name = 1;</code>
+             *
+             * @return if it has parameter name
              */
             public boolean hasParameterName() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -434,6 +515,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string parameter_name = 1;</code>
+             *
+             * @return parameter name
              */
             public java.lang.String getParameterName() {
                 java.lang.Object ref = parameterName_;
@@ -451,6 +534,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string parameter_name = 1;</code>
+             *
+             * @return parameter name byte string
              */
             public com.google.protobuf.ByteString getParameterNameBytes() {
                 java.lang.Object ref = parameterName_;
@@ -469,6 +554,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string parameter_value = 2;</code>
+             *
+             * @return if it has parameter value
              */
             public boolean hasParameterValue() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -476,6 +563,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string parameter_value = 2;</code>
+             *
+             * @return parameter value
              */
             public java.lang.String getParameterValue() {
                 java.lang.Object ref = parameterValue_;
@@ -493,6 +582,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string parameter_value = 2;</code>
+             *
+             * @return parameter value byte string
              */
             public com.google.protobuf.ByteString getParameterValueBytes() {
                 java.lang.Object ref = parameterValue_;
@@ -737,6 +828,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 *
+                 * @return if it has parameter name
                  */
                 public boolean hasParameterName() {
                     return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -744,6 +837,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 *
+                 * @return parameter name
                  */
                 public java.lang.String getParameterName() {
                     java.lang.Object ref = parameterName_;
@@ -758,6 +853,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 *
+                 * @return parameter name byte string
                  */
                 public com.google.protobuf.ByteString getParameterNameBytes() {
                     java.lang.Object ref = parameterName_;
@@ -772,6 +869,11 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 *
+                 * @param value
+                 *            new parameter name
+                 *
+                 * @return builder to set parameter name to passed in value
                  */
                 public Builder setParameterName(java.lang.String value) {
                     if (value == null) {
@@ -785,6 +887,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 *
+                 * @return builder to clear the parameter name
                  */
                 public Builder clearParameterName() {
                     bitField0_ = (bitField0_ & ~0x00000001);
@@ -795,6 +899,11 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 *
+                 * @param value
+                 *            new parameter name
+                 *
+                 * @return builder to set parameter name
                  */
                 public Builder setParameterNameBytes(com.google.protobuf.ByteString value) {
                     if (value == null) {
@@ -811,6 +920,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 *
+                 * @return if it has parameter value
                  */
                 public boolean hasParameterValue() {
                     return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -818,6 +929,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 *
+                 * @return parameter value
                  */
                 public java.lang.String getParameterValue() {
                     java.lang.Object ref = parameterValue_;
@@ -832,6 +945,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 *
+                 * @return parameter value byte string
                  */
                 public com.google.protobuf.ByteString getParameterValueBytes() {
                     java.lang.Object ref = parameterValue_;
@@ -846,6 +961,11 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 *
+                 * @param value
+                 *            the new parameter value
+                 *
+                 * @return builder to set parameter value
                  */
                 public Builder setParameterValue(java.lang.String value) {
                     if (value == null) {
@@ -859,6 +979,8 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 *
+                 * @return builder to clear parameter value
                  */
                 public Builder clearParameterValue() {
                     bitField0_ = (bitField0_ & ~0x00000002);
@@ -869,6 +991,11 @@ public final class QueryMessages {
 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 *
+                 * @param value
+                 *            new value
+                 *
+                 * @return builder to set parameter value
                  */
                 public Builder setParameterValueBytes(com.google.protobuf.ByteString value) {
                     if (value == null) {
@@ -898,6 +1025,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_logic_name = 1;</code>
+         *
+         * @return if it has query logic name
          */
         public boolean hasQueryLogicName() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -905,6 +1034,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_logic_name = 1;</code>
+         *
+         * @return query logic name
          */
         public java.lang.String getQueryLogicName() {
             java.lang.Object ref = queryLogicName_;
@@ -922,6 +1053,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_logic_name = 1;</code>
+         *
+         * @return query logic name byte string
          */
         public com.google.protobuf.ByteString getQueryLogicNameBytes() {
             java.lang.Object ref = queryLogicName_;
@@ -940,6 +1073,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string id = 2;</code>
+         *
+         * @return if it has id
          */
         public boolean hasId() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -947,6 +1082,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string id = 2;</code>
+         *
+         * @return the id
          */
         public java.lang.String getId() {
             java.lang.Object ref = id_;
@@ -964,6 +1101,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string id = 2;</code>
+         *
+         * @return the id byte string
          */
         public com.google.protobuf.ByteString getIdBytes() {
             java.lang.Object ref = id_;
@@ -982,6 +1121,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional string query_name = 3;</code>
+         *
+         * @return if it has query name
          */
         public boolean hasQueryName() {
             return ((bitField0_ & 0x00000004) == 0x00000004);
@@ -989,6 +1130,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional string query_name = 3;</code>
+         *
+         * @return the query name
          */
         public java.lang.String getQueryName() {
             java.lang.Object ref = queryName_;
@@ -1006,6 +1149,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional string query_name = 3;</code>
+         *
+         * @return the query name byte string
          */
         public com.google.protobuf.ByteString getQueryNameBytes() {
             java.lang.Object ref = queryName_;
@@ -1024,6 +1169,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string user_DN = 4;</code>
+         *
+         * @return if it has user dn
          */
         public boolean hasUserDN() {
             return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -1031,6 +1178,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string user_DN = 4;</code>
+         *
+         * @return the user dn
          */
         public java.lang.String getUserDN() {
             java.lang.Object ref = userDN_;
@@ -1048,6 +1197,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string user_DN = 4;</code>
+         *
+         * @return the user dn byte string
          */
         public com.google.protobuf.ByteString getUserDNBytes() {
             java.lang.Object ref = userDN_;
@@ -1066,6 +1217,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query = 5;</code>
+         *
+         * @return if it has query
          */
         public boolean hasQuery() {
             return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -1073,6 +1226,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query = 5;</code>
+         *
+         * @return the query
          */
         public java.lang.String getQuery() {
             java.lang.Object ref = query_;
@@ -1090,6 +1245,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query = 5;</code>
+         *
+         * @return the query byte string
          */
         public com.google.protobuf.ByteString getQueryBytes() {
             java.lang.Object ref = query_;
@@ -1108,6 +1265,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_visibility = 6;</code>
+         *
+         * @return if it has query visibility
          */
         public boolean hasQueryVisibility() {
             return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -1115,6 +1274,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_visibility = 6;</code>
+         *
+         * @return the query visibility
          */
         public java.lang.String getQueryVisibility() {
             java.lang.Object ref = queryVisibility_;
@@ -1132,6 +1293,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_visibility = 6;</code>
+         *
+         * @return the query visibility byte string
          */
         public com.google.protobuf.ByteString getQueryVisibilityBytes() {
             java.lang.Object ref = queryVisibility_;
@@ -1150,6 +1313,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional int64 begin_date = 7;</code>
+         *
+         * @return if it has begin date
          */
         public boolean hasBeginDate() {
             return ((bitField0_ & 0x00000040) == 0x00000040);
@@ -1157,6 +1322,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional int64 begin_date = 7;</code>
+         *
+         * @return the begin date
          */
         public long getBeginDate() {
             return beginDate_;
@@ -1168,6 +1335,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional int64 end_date = 8;</code>
+         *
+         * @return if it has end date
          */
         public boolean hasEndDate() {
             return ((bitField0_ & 0x00000080) == 0x00000080);
@@ -1175,6 +1344,8 @@ public final class QueryMessages {
 
         /**
          * <code>optional int64 end_date = 8;</code>
+         *
+         * @return the end date
          */
         public long getEndDate() {
             return endDate_;
@@ -1186,6 +1357,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_authorizations = 9;</code>
+         *
+         * @return if it has query authorizations
          */
         public boolean hasQueryAuthorizations() {
             return ((bitField0_ & 0x00000100) == 0x00000100);
@@ -1193,6 +1366,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_authorizations = 9;</code>
+         *
+         * @return the query authorizations
          */
         public java.lang.String getQueryAuthorizations() {
             java.lang.Object ref = queryAuthorizations_;
@@ -1210,6 +1385,8 @@ public final class QueryMessages {
 
         /**
          * <code>required string query_authorizations = 9;</code>
+         *
+         * @return the query authorizations byte string
          */
         public com.google.protobuf.ByteString getQueryAuthorizationsBytes() {
             java.lang.Object ref = queryAuthorizations_;
@@ -1228,6 +1405,8 @@ public final class QueryMessages {
 
         /**
          * <code>required int64 expiration_date = 10;</code>
+         *
+         * @return if it has expiration date
          */
         public boolean hasExpirationDate() {
             return ((bitField0_ & 0x00000200) == 0x00000200);
@@ -1235,6 +1414,8 @@ public final class QueryMessages {
 
         /**
          * <code>required int64 expiration_date = 10;</code>
+         *
+         * @return the expiration date
          */
         public long getExpirationDate() {
             return expirationDate_;
@@ -1246,6 +1427,8 @@ public final class QueryMessages {
 
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         *
+         * @return if it has page size
          */
         public boolean hasPagesize() {
             return ((bitField0_ & 0x00000400) == 0x00000400);
@@ -1253,6 +1436,8 @@ public final class QueryMessages {
 
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         *
+         * @return the page size
          */
         public int getPagesize() {
             return pagesize_;
@@ -1264,6 +1449,8 @@ public final class QueryMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @return parameters list
          */
         public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> getParametersList() {
             return parameters_;
@@ -1271,6 +1458,8 @@ public final class QueryMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @return parameters list
          */
         public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder> getParametersOrBuilderList() {
             return parameters_;
@@ -1278,6 +1467,8 @@ public final class QueryMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @return the size of the parameters list
          */
         public int getParametersCount() {
             return parameters_.size();
@@ -1285,6 +1476,11 @@ public final class QueryMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the parameter at the given index
          */
         public datawave.webservice.query.QueryMessages.QueryImpl.Parameter getParameters(int index) {
             return parameters_.get(index);
@@ -1292,6 +1488,11 @@ public final class QueryMessages {
 
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the parameter at the index
          */
         public datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder getParametersOrBuilder(int index) {
             return parameters_.get(index);
@@ -1764,6 +1965,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_logic_name = 1;</code>
+             *
+             * @return if it has query logic name
              */
             public boolean hasQueryLogicName() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1771,6 +1974,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_logic_name = 1;</code>
+             *
+             * @return the query logic name
              */
             public java.lang.String getQueryLogicName() {
                 java.lang.Object ref = queryLogicName_;
@@ -1785,6 +1990,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_logic_name = 1;</code>
+             *
+             * @return the query logic name byte string
              */
             public com.google.protobuf.ByteString getQueryLogicNameBytes() {
                 java.lang.Object ref = queryLogicName_;
@@ -1799,6 +2006,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_logic_name = 1;</code>
+             *
+             * @param value
+             *            the new query logic name
+             *
+             * @return builder to set the query logic name to a new value
              */
             public Builder setQueryLogicName(java.lang.String value) {
                 if (value == null) {
@@ -1812,6 +2024,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_logic_name = 1;</code>
+             *
+             * @return builder to clear the query logic name
              */
             public Builder clearQueryLogicName() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -1822,6 +2036,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_logic_name = 1;</code>
+             *
+             * @param value
+             *            the value
+             *
+             * @return builder to set the query logic name byte string
              */
             public Builder setQueryLogicNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1838,6 +2057,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string id = 2;</code>
+             *
+             * @return if it has id
              */
             public boolean hasId() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -1845,6 +2066,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string id = 2;</code>
+             *
+             * @return the id
              */
             public java.lang.String getId() {
                 java.lang.Object ref = id_;
@@ -1859,6 +2082,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string id = 2;</code>
+             *
+             * @return the id byte string
              */
             public com.google.protobuf.ByteString getIdBytes() {
                 java.lang.Object ref = id_;
@@ -1873,6 +2098,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string id = 2;</code>
+             *
+             * @param value
+             *            the new id value
+             *
+             * @return builder to set the new id
              */
             public Builder setId(java.lang.String value) {
                 if (value == null) {
@@ -1886,6 +2116,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string id = 2;</code>
+             *
+             * @return builder to clear the id
              */
             public Builder clearId() {
                 bitField0_ = (bitField0_ & ~0x00000002);
@@ -1896,6 +2128,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string id = 2;</code>
+             *
+             * @param value
+             *            byte string for the new id
+             *
+             * @return builder to set the id
              */
             public Builder setIdBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1912,6 +2149,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional string query_name = 3;</code>
+             *
+             * @return if it has query name
              */
             public boolean hasQueryName() {
                 return ((bitField0_ & 0x00000004) == 0x00000004);
@@ -1919,6 +2158,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional string query_name = 3;</code>
+             *
+             * @return the query name
              */
             public java.lang.String getQueryName() {
                 java.lang.Object ref = queryName_;
@@ -1933,6 +2174,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional string query_name = 3;</code>
+             *
+             * @return the query name byte string
              */
             public com.google.protobuf.ByteString getQueryNameBytes() {
                 java.lang.Object ref = queryName_;
@@ -1947,6 +2190,11 @@ public final class QueryMessages {
 
             /**
              * <code>optional string query_name = 3;</code>
+             *
+             * @param value
+             *            the new query name
+             *
+             * @return builder to set the query name to the new value
              */
             public Builder setQueryName(java.lang.String value) {
                 if (value == null) {
@@ -1960,6 +2208,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional string query_name = 3;</code>
+             *
+             * @return builder to clear the query name
              */
             public Builder clearQueryName() {
                 bitField0_ = (bitField0_ & ~0x00000004);
@@ -1970,6 +2220,11 @@ public final class QueryMessages {
 
             /**
              * <code>optional string query_name = 3;</code>
+             *
+             * @param value
+             *            new query name as byte string
+             *
+             * @return builder to set the query name to a new value
              */
             public Builder setQueryNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1986,6 +2241,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string user_DN = 4;</code>
+             *
+             * @return if it has user dn
              */
             public boolean hasUserDN() {
                 return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -1993,6 +2250,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string user_DN = 4;</code>
+             *
+             * @return the user dn
              */
             public java.lang.String getUserDN() {
                 java.lang.Object ref = userDN_;
@@ -2007,6 +2266,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string user_DN = 4;</code>
+             *
+             * @return the user dn byte string
              */
             public com.google.protobuf.ByteString getUserDNBytes() {
                 java.lang.Object ref = userDN_;
@@ -2021,6 +2282,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string user_DN = 4;</code>
+             *
+             * @param value
+             *            the new user dn
+             *
+             * @return builder to set the user dn to a new value
              */
             public Builder setUserDN(java.lang.String value) {
                 if (value == null) {
@@ -2034,6 +2300,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string user_DN = 4;</code>
+             *
+             * @return builder to clear the user dn
              */
             public Builder clearUserDN() {
                 bitField0_ = (bitField0_ & ~0x00000008);
@@ -2044,6 +2312,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string user_DN = 4;</code>
+             *
+             * @param value
+             *            user dn byte string
+             *
+             * @return builder ot set the user dn to the new byte string
              */
             public Builder setUserDNBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2060,6 +2333,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query = 5;</code>
+             *
+             * @return if it has query
              */
             public boolean hasQuery() {
                 return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -2067,6 +2342,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query = 5;</code>
+             *
+             * @return the query
              */
             public java.lang.String getQuery() {
                 java.lang.Object ref = query_;
@@ -2081,6 +2358,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query = 5;</code>
+             *
+             * @return the query byte string
              */
             public com.google.protobuf.ByteString getQueryBytes() {
                 java.lang.Object ref = query_;
@@ -2095,6 +2374,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query = 5;</code>
+             *
+             * @param value
+             *            the new query value
+             *
+             * @return builder to set the query to a new value
              */
             public Builder setQuery(java.lang.String value) {
                 if (value == null) {
@@ -2108,6 +2392,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query = 5;</code>
+             *
+             * @return builder to clear the query
              */
             public Builder clearQuery() {
                 bitField0_ = (bitField0_ & ~0x00000010);
@@ -2118,6 +2404,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query = 5;</code>
+             *
+             * @param value
+             *            byte string for the new query value
+             *
+             * @return builder to set the query to a new value
              */
             public Builder setQueryBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2134,6 +2425,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_visibility = 6;</code>
+             *
+             * @return if it has query visibility
              */
             public boolean hasQueryVisibility() {
                 return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -2141,6 +2434,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_visibility = 6;</code>
+             *
+             * @return the query visibility
              */
             public java.lang.String getQueryVisibility() {
                 java.lang.Object ref = queryVisibility_;
@@ -2155,6 +2450,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_visibility = 6;</code>
+             *
+             * @return query visibility byte string
              */
             public com.google.protobuf.ByteString getQueryVisibilityBytes() {
                 java.lang.Object ref = queryVisibility_;
@@ -2169,6 +2466,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_visibility = 6;</code>
+             *
+             * @param value
+             *            the new query visibility
+             *
+             * @return builder to set query visibility
              */
             public Builder setQueryVisibility(java.lang.String value) {
                 if (value == null) {
@@ -2182,6 +2484,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_visibility = 6;</code>
+             *
+             * @return builder to clear query visibility
              */
             public Builder clearQueryVisibility() {
                 bitField0_ = (bitField0_ & ~0x00000020);
@@ -2192,6 +2496,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_visibility = 6;</code>
+             *
+             * @param value
+             *            query visibility byte string
+             *
+             * @return builder to set query visibility to new byte string
              */
             public Builder setQueryVisibilityBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2208,6 +2517,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 begin_date = 7;</code>
+             *
+             * @return if it has begin date
              */
             public boolean hasBeginDate() {
                 return ((bitField0_ & 0x00000040) == 0x00000040);
@@ -2215,6 +2526,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 begin_date = 7;</code>
+             *
+             * @return begin date
              */
             public long getBeginDate() {
                 return beginDate_;
@@ -2222,6 +2535,11 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 begin_date = 7;</code>
+             *
+             * @param value
+             *            the new begin date
+             *
+             * @return builder to set the begin date to a new value
              */
             public Builder setBeginDate(long value) {
                 bitField0_ |= 0x00000040;
@@ -2232,6 +2550,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 begin_date = 7;</code>
+             *
+             * @return builder to clear the begin date
              */
             public Builder clearBeginDate() {
                 bitField0_ = (bitField0_ & ~0x00000040);
@@ -2245,6 +2565,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 end_date = 8;</code>
+             *
+             * @return if it has end date
              */
             public boolean hasEndDate() {
                 return ((bitField0_ & 0x00000080) == 0x00000080);
@@ -2252,6 +2574,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 end_date = 8;</code>
+             *
+             * @return the end date
              */
             public long getEndDate() {
                 return endDate_;
@@ -2259,6 +2583,11 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 end_date = 8;</code>
+             *
+             * @param value
+             *            the new end date
+             *
+             * @return builder to set end date to new value
              */
             public Builder setEndDate(long value) {
                 bitField0_ |= 0x00000080;
@@ -2269,6 +2598,8 @@ public final class QueryMessages {
 
             /**
              * <code>optional int64 end_date = 8;</code>
+             *
+             * @return builder to clear the end date
              */
             public Builder clearEndDate() {
                 bitField0_ = (bitField0_ & ~0x00000080);
@@ -2282,6 +2613,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_authorizations = 9;</code>
+             *
+             * @return if it has query authorizations
              */
             public boolean hasQueryAuthorizations() {
                 return ((bitField0_ & 0x00000100) == 0x00000100);
@@ -2289,6 +2622,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_authorizations = 9;</code>
+             *
+             * @return query authorizations
              */
             public java.lang.String getQueryAuthorizations() {
                 java.lang.Object ref = queryAuthorizations_;
@@ -2303,6 +2638,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_authorizations = 9;</code>
+             *
+             * @return query authorizations byte string
              */
             public com.google.protobuf.ByteString getQueryAuthorizationsBytes() {
                 java.lang.Object ref = queryAuthorizations_;
@@ -2317,6 +2654,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_authorizations = 9;</code>
+             *
+             * @param value
+             *            the new query authorizations
+             *
+             * @return builder to set query authorizations to provided value
              */
             public Builder setQueryAuthorizations(java.lang.String value) {
                 if (value == null) {
@@ -2330,6 +2672,8 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_authorizations = 9;</code>
+             *
+             * @return builder to clear query authorizations
              */
             public Builder clearQueryAuthorizations() {
                 bitField0_ = (bitField0_ & ~0x00000100);
@@ -2340,6 +2684,11 @@ public final class QueryMessages {
 
             /**
              * <code>required string query_authorizations = 9;</code>
+             *
+             * @param value
+             *            query authorization byte string
+             *
+             * @return builder to set query authorization to new byte string
              */
             public Builder setQueryAuthorizationsBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2356,6 +2705,8 @@ public final class QueryMessages {
 
             /**
              * <code>required int64 expiration_date = 10;</code>
+             *
+             * @return if it has expiration date
              */
             public boolean hasExpirationDate() {
                 return ((bitField0_ & 0x00000200) == 0x00000200);
@@ -2363,6 +2714,8 @@ public final class QueryMessages {
 
             /**
              * <code>required int64 expiration_date = 10;</code>
+             *
+             * @return the expiration date
              */
             public long getExpirationDate() {
                 return expirationDate_;
@@ -2370,6 +2723,11 @@ public final class QueryMessages {
 
             /**
              * <code>required int64 expiration_date = 10;</code>
+             *
+             * @param value
+             *            the expiration date
+             *
+             * @return builder to set expiration date to new value
              */
             public Builder setExpirationDate(long value) {
                 bitField0_ |= 0x00000200;
@@ -2380,6 +2738,8 @@ public final class QueryMessages {
 
             /**
              * <code>required int64 expiration_date = 10;</code>
+             *
+             * @return builder to clear expiration date
              */
             public Builder clearExpirationDate() {
                 bitField0_ = (bitField0_ & ~0x00000200);
@@ -2393,6 +2753,8 @@ public final class QueryMessages {
 
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             *
+             * @return if it has page size
              */
             public boolean hasPagesize() {
                 return ((bitField0_ & 0x00000400) == 0x00000400);
@@ -2400,6 +2762,8 @@ public final class QueryMessages {
 
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             *
+             * @return page size
              */
             public int getPagesize() {
                 return pagesize_;
@@ -2407,6 +2771,11 @@ public final class QueryMessages {
 
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             *
+             * @param value
+             *            new page size
+             *
+             * @return builder to set page size to new value
              */
             public Builder setPagesize(int value) {
                 bitField0_ |= 0x00000400;
@@ -2417,6 +2786,8 @@ public final class QueryMessages {
 
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             *
+             * @return builder to clear page size
              */
             public Builder clearPagesize() {
                 bitField0_ = (bitField0_ & ~0x00000400);
@@ -2437,6 +2808,8 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @return list of parameters
              */
             public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> getParametersList() {
                 return java.util.Collections.unmodifiableList(parameters_);
@@ -2444,6 +2817,8 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @return the number of parameters in the list
              */
             public int getParametersCount() {
                 return parameters_.size();
@@ -2451,6 +2826,11 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the parameter at the provided index
              */
             public datawave.webservice.query.QueryMessages.QueryImpl.Parameter getParameters(int index) {
                 return parameters_.get(index);
@@ -2458,6 +2838,13 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new value to be set at the provided index
+             *
+             * @return builder to set parameter at provided index
              */
             public Builder setParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter value) {
                 if (value == null) {
@@ -2471,6 +2858,13 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            paramater value to be set at provided index
+             *
+             * @return builder to set parameter at provided index
              */
             public Builder setParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder builderForValue) {
                 ensureParametersIsMutable();
@@ -2481,6 +2875,11 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param value
+             *            the new parameter to add to the list
+             *
+             * @return builder to add parameter
              */
             public Builder addParameters(datawave.webservice.query.QueryMessages.QueryImpl.Parameter value) {
                 if (value == null) {
@@ -2494,6 +2893,13 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new parameter to add at the index provided
+             *
+             * @return builder to add parameter
              */
             public Builder addParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter value) {
                 if (value == null) {
@@ -2507,6 +2913,11 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param builderForValue
+             *            parameter to add to the list of parameters
+             *
+             * @return builder to add parameters
              */
             public Builder addParameters(datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder builderForValue) {
                 ensureParametersIsMutable();
@@ -2517,6 +2928,13 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param index
+             *            the index
+             * @param builderForValue
+             *            builder to creat the value to add at the provided index
+             *
+             * @return builder to add parameter at provided index
              */
             public Builder addParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder builderForValue) {
                 ensureParametersIsMutable();
@@ -2527,6 +2945,11 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param values
+             *            iterator of values to add to the parameter list
+             *
+             * @return builder to add parameters
              */
             public Builder addAllParameters(java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl.Parameter> values) {
                 ensureParametersIsMutable();
@@ -2537,6 +2960,8 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @return builder to clear the parameters list
              */
             public Builder clearParameters() {
                 parameters_ = java.util.Collections.emptyList();
@@ -2547,6 +2972,11 @@ public final class QueryMessages {
 
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return builder to remove parameters at the provided index
              */
             public Builder removeParameters(int index) {
                 ensureParametersIsMutable();

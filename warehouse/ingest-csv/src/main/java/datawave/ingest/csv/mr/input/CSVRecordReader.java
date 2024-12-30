@@ -37,7 +37,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
     private static final IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
     private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
-    private String csvEventId;
+    protected String csvEventId;
     private final Multimap<String,Object> metadataForValidation = ArrayListMultimap.create(100, 1);
     private String rawData = null;
 
@@ -202,7 +202,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             }
         }
         // if we set the date with id, don't overwrite it
-        if (!(fieldName.equals(eventDateFieldName) && event.getDate() > Long.MIN_VALUE)) {
+        if (!(fieldName.equals(eventDateFieldName) && event.isTimestampSet())) {
             super.checkField(fieldName, fieldValue);
         }
 

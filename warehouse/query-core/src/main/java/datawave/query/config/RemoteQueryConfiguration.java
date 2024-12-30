@@ -2,18 +2,22 @@ package datawave.query.config;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Objects;
 
+import datawave.core.query.configuration.CheckpointableQueryConfiguration;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.tables.RemoteEventQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * <p>
  * A GenericQueryConfiguration implementation that provides the additional logic on top of the traditional query that is needed to run a remote query logic
  *
  */
-public class RemoteQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+public class RemoteQueryConfiguration extends GenericQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
 
     private static final long serialVersionUID = -4354990715046146110L;
 
@@ -21,8 +25,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
     private String remoteId;
 
     private String remoteQueryLogic;
-
-    private Query query;
 
     /**
      * Default constructor
@@ -45,7 +47,22 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
         // RemoteQueryConfiguration copy
         this.remoteId = other.getRemoteId();
         this.remoteQueryLogic = other.getRemoteQueryLogic();
-        this.query = other.getQuery();
+    }
+
+    /**
+     * This constructor is used when we are creating a checkpoint for a set of ranges (i.e. QueryData objects). All configuration required for post planning
+     * needs to be copied over here.
+     *
+     * @param other
+     * @param queries
+     */
+    public RemoteQueryConfiguration(RemoteQueryConfiguration other, Collection<QueryData> queries) {
+        this(other);
+    }
+
+    @Override
+    public RemoteQueryConfiguration checkpoint() {
+        return new RemoteQueryConfiguration(this, Collections.EMPTY_LIST);
     }
 
     /**
@@ -78,32 +95,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
         return new RemoteQueryConfiguration(other);
     }
 
-    /**
-     * Factory method that creates a RemoteQueryConfiguration deep copy from a RemoteQueryLogic
-     *
-     * @param remoteQueryLogic
-     *            - a configured RemoteQueryLogic
-     * @return - a RemoteQueryConfiguration
-     */
-    public static RemoteQueryConfiguration create(RemoteEventQueryLogic remoteQueryLogic) {
-        return create(remoteQueryLogic.getConfig());
-    }
-
-    /**
-     * Factory method that creates a RemoteQueryConfiguration from a RemoteQueryLogic and a Query
-     *
-     * @param remoteQueryLogic
-     *            - a configured RemoteQueryLogic
-     * @param query
-     *            - a configured Query object
-     * @return - a RemoteQueryConfiguration
-     */
-    public static RemoteQueryConfiguration create(RemoteEventQueryLogic remoteQueryLogic, Query query) {
-        RemoteQueryConfiguration config = create(remoteQueryLogic);
-        config.setQuery(query);
-        return config;
-    }
-
     public String getRemoteId() {
         return remoteId;
     }
@@ -118,14 +109,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
 
     public void setRemoteQueryLogic(String remoteQueryLogic) {
         this.remoteQueryLogic = remoteQueryLogic;
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     @Override
@@ -144,6 +127,11 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), getRemoteId(), getRemoteQueryLogic(), getQuery());
+    }
+
+    // Part of the Serializable interface used to initialize any transient members during deserialization
+    protected Object readResolve() throws ObjectStreamException {
+        return this;
     }
 
 }

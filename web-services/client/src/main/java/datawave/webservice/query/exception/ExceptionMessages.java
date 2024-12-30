@@ -13,32 +13,44 @@ public final class ExceptionMessages {
         // optional string message = 1;
         /**
          * <code>optional string message = 1;</code>
+         *
+         * @return if it has message
          */
         boolean hasMessage();
 
         /**
          * <code>optional string message = 1;</code>
+         *
+         * @return the message
          */
         java.lang.String getMessage();
 
         /**
          * <code>optional string message = 1;</code>
+         *
+         * @return the message byte string
          */
         com.google.protobuf.ByteString getMessageBytes();
 
         // optional string cause = 2;
         /**
          * <code>optional string cause = 2;</code>
+         *
+         * @return if it has cause
          */
         boolean hasCause();
 
         /**
          * <code>optional string cause = 2;</code>
+         *
+         * @return the cause
          */
         java.lang.String getCause();
 
         /**
          * <code>optional string cause = 2;</code>
+         *
+         * @return the cause byte string
          */
         com.google.protobuf.ByteString getCauseBytes();
     }
@@ -123,6 +135,8 @@ public final class ExceptionMessages {
 
         /**
          * <code>optional string message = 1;</code>
+         *
+         * @return if it has a message
          */
         public boolean hasMessage() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -130,6 +144,8 @@ public final class ExceptionMessages {
 
         /**
          * <code>optional string message = 1;</code>
+         *
+         * @return the message
          */
         public java.lang.String getMessage() {
             java.lang.Object ref = message_;
@@ -147,6 +163,8 @@ public final class ExceptionMessages {
 
         /**
          * <code>optional string message = 1;</code>
+         *
+         * @return the message byte string
          */
         public com.google.protobuf.ByteString getMessageBytes() {
             java.lang.Object ref = message_;
@@ -165,6 +183,8 @@ public final class ExceptionMessages {
 
         /**
          * <code>optional string cause = 2;</code>
+         *
+         * @return if it has a cause
          */
         public boolean hasCause() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -172,6 +192,8 @@ public final class ExceptionMessages {
 
         /**
          * <code>optional string cause = 2;</code>
+         *
+         * @return the cause
          */
         public java.lang.String getCause() {
             java.lang.Object ref = cause_;
@@ -189,6 +211,8 @@ public final class ExceptionMessages {
 
         /**
          * <code>optional string cause = 2;</code>
+         *
+         * @return the cause byte string
          */
         public com.google.protobuf.ByteString getCauseBytes() {
             java.lang.Object ref = cause_;
@@ -419,6 +443,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string message = 1;</code>
+             *
+             * @return if it has a message
              */
             public boolean hasMessage() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -426,6 +452,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string message = 1;</code>
+             *
+             * @return the message
              */
             public java.lang.String getMessage() {
                 java.lang.Object ref = message_;
@@ -440,6 +468,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string message = 1;</code>
+             *
+             * @return the message byte string
              */
             public com.google.protobuf.ByteString getMessageBytes() {
                 java.lang.Object ref = message_;
@@ -454,6 +484,11 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string message = 1;</code>
+             *
+             * @param value
+             *            the message
+             *
+             * @return builder to set the message
              */
             public Builder setMessage(java.lang.String value) {
                 if (value == null) {
@@ -467,6 +502,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string message = 1;</code>
+             *
+             * @return builder to clear the message
              */
             public Builder clearMessage() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -477,6 +514,11 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string message = 1;</code>
+             *
+             * @param value
+             *            the value byte string
+             *
+             * @return builder to set the message to provided byte string
              */
             public Builder setMessageBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -493,6 +535,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string cause = 2;</code>
+             *
+             * @return if it has a cause
              */
             public boolean hasCause() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -500,6 +544,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string cause = 2;</code>
+             *
+             * @return the cause
              */
             public java.lang.String getCause() {
                 java.lang.Object ref = cause_;
@@ -514,6 +560,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string cause = 2;</code>
+             *
+             * @return the cause byte string
              */
             public com.google.protobuf.ByteString getCauseBytes() {
                 java.lang.Object ref = cause_;
@@ -528,6 +576,11 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string cause = 2;</code>
+             *
+             * @param value
+             *            the cause
+             *
+             * @return builder to set the cause to the provided value
              */
             public Builder setCause(java.lang.String value) {
                 if (value == null) {
@@ -541,6 +594,8 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string cause = 2;</code>
+             *
+             * @return builder to clear the cause
              */
             public Builder clearCause() {
                 bitField0_ = (bitField0_ & ~0x00000002);
@@ -551,6 +606,11 @@ public final class ExceptionMessages {
 
             /**
              * <code>optional string cause = 2;</code>
+             *
+             * @param value
+             *            new cause value as byte string
+             *
+             * @return builder to set cause to byte string
              */
             public Builder setCauseBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {

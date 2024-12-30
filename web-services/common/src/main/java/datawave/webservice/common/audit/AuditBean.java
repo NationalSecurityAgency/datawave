@@ -14,6 +14,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.springframework.util.MultiValueMap;
 
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -55,7 +56,7 @@ public class AuditBean {
         }
     }
 
-    public String audit(MultivaluedMap<String,String> parameters) throws Exception {
+    public String audit(MultiValueMap<String,String> parameters) throws Exception {
         return auditService.audit(auditParameterBuilder.convertAndValidate(parameters));
     }
 }

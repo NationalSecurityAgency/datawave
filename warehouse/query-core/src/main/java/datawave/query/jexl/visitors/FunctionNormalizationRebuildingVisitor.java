@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
+import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,10 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
@@ -71,7 +72,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         List<ASTFunctionNode> functions = Lists.newArrayList();
 
         // create the distinct normalization lists.
-        List<List<Type<?>>> lists = getNormalizerListsForArgs(function, allNormalizers, descriptor, helper, datatypeFilter);
+        List<List<Type<?>>> lists = getNormalizerListsForArgs((ASTArguments) function.jjtGetChild(1), allNormalizers, descriptor, helper, datatypeFilter);
 
         // now for each unique list of normalizers, lets normalize the function arguments
         for (List<Type<?>> list : lists) {
@@ -139,7 +140,10 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
             if (comparison == 0) {
                 comparison = n1.jjtGetNumChildren() - n2.jjtGetNumChildren();
                 if (comparison == 0) {
-                    comparison = (n1.image == null ? (n2.image == null ? 0 : -1) : (n2.image == null ? 1 : n1.image.compareTo(n2.image)));
+                    Object n1Image = JexlNodes.getIdentifierOrLiteral(n1);
+                    Object n2Image = JexlNodes.getIdentifierOrLiteral(n2);
+                    comparison = (n1Image == null ? (n2Image == null ? 0 : -1)
+                                    : (n2Image == null ? 1 : String.valueOf(n1Image).compareTo(String.valueOf(n2Image))));
                     if (comparison == 0) {
                         for (int i = 0; i < n1.jjtGetNumChildren(); i++) {
                             comparison = compareChild(n1.jjtGetChild(i), n2.jjtGetChild(i));
@@ -159,8 +163,8 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      * Create lists of normalizers that maps to the function arguments. Each list is a unique list of normalizers. Each list will be applied to the arguments to
      * produce a separate function instance.
      *
-     * @param function
-     *            a function
+     * @param arguments
+     *            the function arguments
      * @param allNormalizers
      *            the normalizers
      * @param descriptor
@@ -171,11 +175,11 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      *            a datatype filter
      * @return the list of normalizer lists
      */
-    private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers,
+    private static List<List<Type<?>>> getNormalizerListsForArgs(ASTArguments arguments, Multimap<String,Type<?>> allNormalizers,
                     JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
 
-        lists.add(new ArrayList<>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
+        lists.add(new ArrayList<>(Arrays.asList(new Type<?>[arguments.jjtGetNumChildren()])));
 
         // first we go through the arguments and determine those that reference the same field.
         // this is done by assuming that if the fields returned by descriptor.fields is the same
@@ -187,12 +191,12 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         // functions will be applied to each field in turn instead of every combination thereof.
         Map<Set<String>,Set<Integer>> fieldGroups = new HashMap<>();
         Set<String> EMPTY_SET = new HashSet<>();
-        for (int i = 0; i < function.jjtGetNumChildren(); i++) {
+        for (int i = 0; i < arguments.jjtGetNumChildren(); i++) {
             // get the fields that go with this argument IFF this is a string literal argument
             Set<String> fields = EMPTY_SET;
-            List<JexlNode> literals = JexlASTHelper.getLiterals(function.jjtGetChild(i));
+            List<JexlNode> literals = JexlASTHelper.getLiterals(arguments.jjtGetChild(i));
             if ((literals.size() == 1) && (literals.get(0) instanceof ASTStringLiteral)) {
-                fields = new HashSet<>(descriptor.fieldsForNormalization(helper, datatypeFilter, i - 2));
+                fields = new HashSet<>(descriptor.fieldsForNormalization(helper, datatypeFilter, i));
             }
             if (fieldGroups.containsKey(fields)) {
                 fieldGroups.get(fields).add(i);
@@ -244,20 +248,17 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     }
 
     @Override
-    public Object visit(ASTFunctionNode node, Object data) {
-        ASTFunctionNode newNode = newInstanceOfType(node);
-        newNode.image = node.image;
+    public Object visit(ASTArguments node, Object data) {
+        ASTArguments newNode = newInstanceOfType(node);
+        JexlNodes.copyIdentifierOrLiteral(node, newNode);
         ArrayList<JexlNode> children = newArrayList();
-        JexlNode[] childNodes = children(node);
-        for (int i = 0; i < childNodes.length; i++) {
-            // passing in i-2 because the first function argument is actually at node 2. The first two
-            // nodes are the namespace and function name.
-            JexlNode copiedChild = (JexlNode) childNodes[i].jjtAccept(this, i);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode copiedChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, i);
             if (copiedChild != null) {
                 children.add(copiedChild);
             }
         }
-        return children(newNode, children.toArray(new JexlNode[0]));
+        return setChildren(newNode, children.toArray(new JexlNode[0]));
     }
 
     @Override
@@ -272,14 +273,14 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
 
         try {
             normalizer = normalizers.get(index);
-            String normalizedValue = (descriptor.regexArguments() ? normalizer.normalizeRegex(node.image) : normalizer.normalize(node.image));
-            ASTStringLiteral normalizedLiteral = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-            normalizedLiteral.image = normalizedValue;
+            String normalizedValue = (descriptor.regexArguments() ? normalizer.normalizeRegex(node.getLiteral()) : normalizer.normalize(node.getLiteral()));
+            ASTStringLiteral normalizedLiteral = JexlNodes.makeStringLiteral();
+            JexlNodes.setLiteral(normalizedLiteral, normalizedValue);
             return normalizedLiteral;
         } catch (Exception e) {
             // If we can't normalize a term, note that, and quit
             if (log.isTraceEnabled()) {
-                log.trace("Failed to normalized " + node.image + " with " + normalizer != null ? normalizer.getClass().getName() : null + " normalizer");
+                log.trace("Failed to normalized " + node.getLiteral() + " with " + normalizer != null ? normalizer.getClass().getName() : null + " normalizer");
             }
 
             this.normalizationFailed = true;

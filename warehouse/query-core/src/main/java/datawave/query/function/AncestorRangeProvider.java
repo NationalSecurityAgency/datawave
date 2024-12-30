@@ -6,8 +6,9 @@ import org.apache.hadoop.io.Text;
 import datawave.query.tld.TLD;
 
 /**
- * For use in the {@link datawave.query.ancestor.AncestorQueryIterator}
  * <p>
+ * For use in the {@link datawave.query.ancestor.AncestorQueryIterator}
+ * </p>
  *
  */
 public class AncestorRangeProvider extends DocumentRangeProvider {

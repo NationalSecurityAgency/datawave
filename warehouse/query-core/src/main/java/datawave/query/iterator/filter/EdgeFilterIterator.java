@@ -1,5 +1,7 @@
 package datawave.query.iterator.filter;
 
+import static datawave.query.jexl.DatawaveInterpreter.isMatched;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,18 +14,21 @@ import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.Expression;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.model.EdgeModelAware.Fields;
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
+import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.edge.util.EdgeKeyUtil;
+import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.DefaultArithmetic;
 
 /**
  * This is a simple JEXL query filter iterator used in conjunction with the EdgeQueryLogic to evaluate more complicated expressions against edge keys.
@@ -42,15 +47,19 @@ public class EdgeFilterIterator extends Filter {
     public static final String JEXL_STATS_OPTION = "jexlStatsQuery";
     public static final String PREFILTER_ALLOWLIST = "prefilter";
 
-    private static final JexlEngine jexlEngine = new JexlEngine();
+    private static final Engine jexlEngine;
 
     private boolean protobuffFormat;
     private boolean includeStatsEdges;
-    private Expression expression = null;
-    private Expression statsExpression = null;
+    private JexlExpression expression = null;
+    private JexlExpression statsExpression = null;
     private JexlContext ctx = new MapContext();
 
     private HashMultimap<String,String> preFilterValues;
+
+    static {
+        jexlEngine = ArithmeticJexlEngines.getEngine(new DefaultArithmetic());
+    }
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
@@ -123,14 +132,14 @@ public class EdgeFilterIterator extends Filter {
         if (null != edgeDate)
             edgeDate = edgeDate.toLowerCase();
 
-        ctx.set(EdgeModelAware.EDGE_SOURCE.toLowerCase(), source);
-        ctx.set(EdgeModelAware.EDGE_SINK.toLowerCase(), sink);
-        ctx.set(EdgeModelAware.EDGE_TYPE.toLowerCase(), edgeType);
-        ctx.set(EdgeModelAware.EDGE_RELATIONSHIP.toLowerCase(), edgeRelationship);
-        ctx.set(EdgeModelAware.EDGE_ATTRIBUTE1.toLowerCase(), edgeAttribute1);
-        ctx.set(EdgeModelAware.EDGE_ATTRIBUTE2.toLowerCase(), edgeAttribute2);
-        ctx.set(EdgeModelAware.EDGE_ATTRIBUTE3.toLowerCase(), edgeAttribute3);
-        ctx.set(EdgeModelAware.DATE.toLowerCase(), edgeDate);
+        ctx.set(FieldKey.EDGE_SOURCE.name().toLowerCase(), source);
+        ctx.set(FieldKey.EDGE_SINK.name().toLowerCase(), sink);
+        ctx.set(FieldKey.EDGE_TYPE.name().toLowerCase(), edgeType);
+        ctx.set(FieldKey.EDGE_RELATIONSHIP.name().toLowerCase(), edgeRelationship);
+        ctx.set(FieldKey.EDGE_ATTRIBUTE1.name().toLowerCase(), edgeAttribute1);
+        ctx.set(FieldKey.EDGE_ATTRIBUTE2.name().toLowerCase(), edgeAttribute2);
+        ctx.set(FieldKey.EDGE_ATTRIBUTE3.name().toLowerCase(), edgeAttribute3);
+        ctx.set(FieldKey.DATE.name().toLowerCase(), edgeDate);
     }
 
     /**
@@ -196,7 +205,7 @@ public class EdgeFilterIterator extends Filter {
         boolean retVal = true;
         if (preFilterValues != null) {
             for (Map.Entry<FieldKey,String> entry : keyComponents.entrySet()) {
-                String fieldName = Fields.getInstance().getFieldName(entry.getKey());
+                String fieldName = entry.getKey().name();
                 Set<String> values = preFilterValues.get(fieldName);
                 if (values == null || values.size() < 1) {
                     // if we encountered a regex, we'll just let the jexl engine handle it, or filter it by a different field
@@ -257,7 +266,8 @@ public class EdgeFilterIterator extends Filter {
             if (includeStatsEdges) {
                 if (statsExpression != null) {
                     setupContext(ctx, keyComponents);
-                    value = (boolean) statsExpression.evaluate(ctx);
+                    Object o = statsExpression.evaluate(ctx);
+                    value = isMatched(o);
                 } else {
                     value = true;
                 }
@@ -266,7 +276,8 @@ public class EdgeFilterIterator extends Filter {
             }
         } else {
             setupContext(ctx, keyComponents);
-            value = (boolean) expression.evaluate(ctx);
+            Object o = expression.evaluate(ctx);
+            value = isMatched(o);
         }
 
         return value;

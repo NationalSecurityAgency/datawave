@@ -83,6 +83,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.FOO.4" + "\u0000" + "5", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.FOO.5" + "\u0000" + "22", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "UUID.FOO.0" + "\u0000" + "CORLEONE", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GROUP" + "\u0000" + "MAFIA", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
 
@@ -95,6 +96,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + sopranoUID, "AGE.FOO.0" + "\u0000" + "16", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "AGE.FOO.1" + "\u0000" + "18", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "UUID.FOO.0" + "\u0000" + "SOPRANO", columnVisibilityEnglish, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "GROUP" + "\u0000" + "MAFIA", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
 
@@ -111,6 +113,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + caponeUID, "AGE.FOO.2" + "\u0000" + "20", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "AGE.FOO.3" + "\u0000" + "40", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "UUID.FOO.0" + "\u0000" + "CAPONE", columnVisibilityEnglish, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GROUP" + "\u0000" + "MAFIA", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "3", columnVisibilityItalian, timeStamp, emptyValue);
@@ -399,11 +402,18 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numberType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
+            mutation = new Mutation("GROUP");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+
             mutation = new Mutation("RECORD");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(7L)));
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
+
         } finally {
             if (null != bw) {
                 bw.close();

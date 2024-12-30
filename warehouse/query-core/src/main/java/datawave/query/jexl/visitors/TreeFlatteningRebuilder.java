@@ -1,25 +1,21 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
@@ -27,17 +23,16 @@ import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. A reference with a reference
- * expression child represents a set of parentheses in the printed query - that combination of nodes will be removed except when they are used for a marked
- * node, or when they are being used within a a NOT node. References are required for things like String Literals and Identifiers, so they will be left alone in
- * those cases. NOTE: If you remove reference expressions and references, this will adversely affect the jexl evaluation of the query.
+ * This will flatten ands and ors. If requested this will also remove reference expressions where possible. A reference expression represents a set of
+ * parentheses in the printed query - that node will be removed except when it is used for a marked node, or when it is being used within a NOT node. NOTE: If
+ * you remove reference expressions, this may adversely affect the jexl evaluation of the query.
  */
 public class TreeFlatteningRebuilder {
     private static final Logger log = Logger.getLogger(TreeFlatteningRebuilder.class);
-    private final boolean removeReferences;
+    private final boolean simplifyReferenceExpressions;
 
-    public TreeFlatteningRebuilder(boolean removeReferences) {
-        this.removeReferences = removeReferences;
+    public TreeFlatteningRebuilder(boolean simplifyReferenceExpressions) {
+        this.simplifyReferenceExpressions = simplifyReferenceExpressions;
     }
 
     /**
@@ -55,8 +50,8 @@ public class TreeFlatteningRebuilder {
     }
 
     /**
-     * This will flatten ands, ors, and references and references expressions NOTE: If you remove reference expressions and references, this may adversely
-     * affect the evaluation of the query (true in the index query logic case: bug?).
+     * This will flatten ands, ors, and references expressions NOTE: If you remove reference expressions, this may adversely affect the evaluation of the query
+     * (true in the index query logic case: bug?).
      *
      * @param node
      *            a node
@@ -70,20 +65,20 @@ public class TreeFlatteningRebuilder {
     }
 
     /**
-     * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
-     * expressions and references, this may adversely affect the evaluation of the query (true in the index query logic case: bug?).
+     * This will flatten ands and ors. If requested this will also remove reference expressions where possible. NOTE: If you remove reference expressions, this
+     * may adversely affect the evaluation of the query (true in the index query logic case: bug?).
      *
      * @param <T>
      *            type of the node
-     * @param removeReferences
-     *            flag to remove references
+     * @param simplifyReferenceExpressions
+     *            flag to simplify reference expressions
      * @param rootNode
      *            the root node
      * @return the flattened copy
      */
     @SuppressWarnings("unchecked")
-    private static <T extends JexlNode> T flatten(T rootNode, boolean removeReferences) {
-        TreeFlatteningRebuilder visitor = new TreeFlatteningRebuilder(removeReferences);
+    private static <T extends JexlNode> T flatten(T rootNode, boolean simplifyReferenceExpressions) {
+        TreeFlatteningRebuilder visitor = new TreeFlatteningRebuilder(simplifyReferenceExpressions);
         return visitor.flattenTree(rootNode);
     }
 
@@ -129,16 +124,17 @@ public class TreeFlatteningRebuilder {
             boolean hasChildren = node.jjtGetNumChildren() > 0;
 
             // if this is a reference node, flatten it
-            if (hasChildren && node instanceof ASTReference) {
-                newNode = flattenReference((ASTReference) JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
+            if (hasChildren && node instanceof ASTReferenceExpression) {
+                newNode = flattenReferenceExpression(
+                                (ASTReferenceExpression) JexlNodes.setChildren(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
             }
             // if this is an AND or OR node, flatten it
             else if (hasChildren && (node instanceof ASTOrNode || node instanceof ASTAndNode)) {
-                newNode = flattenAndOrNode(JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
+                newNode = flattenAndOrNode(JexlNodes.setChildren(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
             }
             // if this is a node with children, assign the children
             else if (hasChildren && node == parentStack.peek()) {
-                newNode = JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0]));
+                newNode = JexlNodes.setChildren(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0]));
             }
             // if this is a leaf node, just keep it
             else {
@@ -188,9 +184,15 @@ public class TreeFlatteningRebuilder {
             // if this node has children, create copies of them
             if (poppedNode.jjtGetNumChildren() > 0) {
                 List<JexlNode> copiedChildren = new ArrayList<>();
-                List<JexlNode> children = (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) ? getAndOrLeaves(poppedNode)
-                                : Arrays.asList(children(poppedNode));
-
+                List<JexlNode> children;
+                if (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) {
+                    children = getAndOrLeaves(poppedNode);
+                } else {
+                    children = new ArrayList<>();
+                    for (int i = 0; i < poppedNode.jjtGetNumChildren(); i++) {
+                        children.add(poppedNode.jjtGetChild(i));
+                    }
+                }
                 for (JexlNode child : children) {
                     if (child != null) {
 
@@ -203,7 +205,7 @@ public class TreeFlatteningRebuilder {
                 }
 
                 // Reassign the children for this copied node
-                JexlNodes.children(poppedNode, copiedChildren.toArray(new JexlNode[0]));
+                JexlNodes.setChildren(poppedNode, copiedChildren.toArray(new JexlNode[0]));
             }
         }
 
@@ -229,8 +231,8 @@ public class TreeFlatteningRebuilder {
                         (currNode instanceof ASTOrNode ||
                         (currNode instanceof ASTAndNode && !isBoundedRange((ASTAndNode) currNode))))) {
                 // @formatter:on
-                for (JexlNode child : children(currNode)) {
-                    stack.push(child);
+                for (int i = 0; i < currNode.jjtGetNumChildren(); i++) {
+                    stack.push(currNode.jjtGetChild(i));
                 }
             } else {
                 children.push(currNode);
@@ -258,13 +260,12 @@ public class TreeFlatteningRebuilder {
             newNode = RebuildingVisitor.copy(node);
         } else {
             newNode = JexlNodes.newInstanceOfType(node);
-            newNode.image = node.image;
-
+            JexlNodes.copyIdentifierOrLiteral(node, newNode);
             JexlNodes.ensureCapacity(newNode, node.jjtGetNumChildren());
 
-            int nodeIdx = 0;
-            for (JexlNode child : children(node))
-                newNode.jjtAddChild(child, nodeIdx++);
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                newNode.jjtAddChild(node.jjtGetChild(i), i);
+            }
         }
         return newNode;
     }
@@ -309,33 +310,30 @@ public class TreeFlatteningRebuilder {
     }
 
     /**
-     * Given a reference node, if we are configured to remove references, we will attempt to remove references and reference expressions, where possible.
-     * Otherwise, we will preserve them.
+     * Given a reference expression node, if we are configured to simplify reference expressions, we will attempt to remove reference expressions, where
+     * possible. Otherwise, we will preserve them.
      *
      * @param node
-     *            the reference node to flatten
-     * @return the flattened reference node
+     *            the reference expression node to flatten
+     * @return the flattened reference expression node
      */
-    private JexlNode flattenReference(ASTReference node) {
+    private JexlNode flattenReferenceExpression(ASTReferenceExpression node) {
         JexlNode parent = node.jjtGetParent();
 
         // if we are told not to remove references OR
         // if this is a marked node OR
         // if this is an assignment node OR
         // if the parent is a NOT node, keep the reference
-        if (!removeReferences || parent instanceof ASTNotNode || JexlASTHelper.dereference(node) instanceof ASTAssignment
+        if (!simplifyReferenceExpressions || parent instanceof ASTNotNode || JexlASTHelper.dereference(node) instanceof ASTAssignment
                         || QueryPropertyMarkerVisitor.getInstance(node).isAnyType()) {
             return node;
         }
-        // if this is a (reference -> reference expression) combo with a single child, remove the reference and reference expression
-        else if (node.jjtGetNumChildren() == 1 && node.jjtGetChild(0) instanceof ASTReferenceExpression) {
-            ASTReferenceExpression refExp = (ASTReferenceExpression) node.jjtGetChild(0);
-            if (refExp.jjtGetNumChildren() == 1) {
-                return refExp.jjtGetChild(0);
-            }
+        // if this is a reference expression with a single child, remove the reference expression
+        else if (node.jjtGetNumChildren() == 1) {
+            return node.jjtGetChild(0);
         }
 
-        // otherwise, keep the reference
+        // otherwise, keep the reference expression
         return node;
     }
 
@@ -362,9 +360,9 @@ public class TreeFlatteningRebuilder {
 
             Deque<JexlNode> children = new LinkedList<>();
             Deque<JexlNode> stack = new LinkedList<>();
-
-            for (JexlNode child : children(node))
-                stack.push(child);
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                stack.push(node.jjtGetChild(i));
+            }
 
             while (!stack.isEmpty()) {
                 JexlNode poppedNode = stack.pop();
@@ -379,7 +377,7 @@ public class TreeFlatteningRebuilder {
                 }
             }
 
-            return JexlNodes.children(node, children.toArray(new JexlNode[0]));
+            return JexlNodes.setChildren(node, children.toArray(new JexlNode[0]));
         }
     }
 

@@ -1,24 +1,11 @@
 package datawave.webservice.common.connection.config;
 
 import org.apache.deltaspike.core.api.config.ConfigResolver;
-import org.apache.log4j.Logger;
 
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.util.EnvProvider;
+import datawave.core.common.result.ConnectionPoolProperties;
+import datawave.core.common.util.EnvProvider;
 
-public class ConnectionPoolConfiguration {
-
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ConnectionPoolConfiguration.class);
-
-    private String username;
-    private String password;
-    private String instance;
-    private String zookeepers;
-    private int lowPriorityPoolSize;
-    private int normalPriorityPoolSize;
-    private int highPriorityPoolSize;
-    private int adminPriorityPoolSize;
-
+public class ConnectionPoolConfiguration extends ConnectionPoolProperties {
     public ConnectionPoolConfiguration(String poolName) {
         username = ConfigResolver.getPropertyValue("dw." + poolName + ".accumulo.userName");
         password = resolvePassword(poolName);
@@ -41,37 +28,4 @@ public class ConnectionPoolConfiguration {
         String value = ConfigResolver.getPropertyValue("dw." + poolName + ".accumulo.password");
         return EnvProvider.resolve(value);
     }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getInstance() {
-        return instance;
-    }
-
-    public String getZookeepers() {
-        return zookeepers;
-    }
-
-    public int getLowPriorityPoolSize() {
-        return lowPriorityPoolSize;
-    }
-
-    public int getNormalPriorityPoolSize() {
-        return normalPriorityPoolSize;
-    }
-
-    public int getHighPriorityPoolSize() {
-        return highPriorityPoolSize;
-    }
-
-    public int getAdminPriorityPoolSize() {
-        return adminPriorityPoolSize;
-    }
-
 }

@@ -1,7 +1,7 @@
 package datawave.query.planner.rules;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -10,10 +10,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,9 +38,11 @@ public class NodeTransformVisitorTest {
             if (node instanceof ASTAndNode) {
                 // reverse the children
                 ArrayList<JexlNode> children = newArrayList();
-                children.addAll(Arrays.asList(children(node)));
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    children.add(node.jjtGetChild(i));
+                }
                 Collections.reverse(children);
-                return children(node, children.toArray(new JexlNode[0]));
+                return setChildren(node, children.toArray(new JexlNode[0]));
             }
             return node;
         }

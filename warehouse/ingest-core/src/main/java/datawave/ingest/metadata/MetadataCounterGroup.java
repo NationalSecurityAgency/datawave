@@ -11,7 +11,7 @@ import com.google.common.base.Objects;
 public class MetadataCounterGroup {
     private static final Logger log = Logger.getLogger(MetadataCounterGroup.class);
     private final Text columnFamily;
-    private HashMap<String,CountAndKeyComponents> counts = new HashMap<>();
+    private HashMap<String,Components> counts = new HashMap<>();
 
     public MetadataCounterGroup(String groupName, Text tableName) {
         this.columnFamily = new Text(groupName + RawRecordMetadata.DELIMITER + tableName);
@@ -28,9 +28,9 @@ public class MetadataCounterGroup {
     /* rowId is either the fieldName or the Lac */
     public void addToCount(long countDelta, String dataType, String rowId, String date) {
         String hashMapKey = createKey(dataType, rowId, date);
-        CountAndKeyComponents value = counts.get(hashMapKey);
+        Components value = counts.get(hashMapKey);
         if (null == value) {
-            counts.put(hashMapKey, new CountAndKeyComponents(dataType, rowId, date, countDelta));
+            counts.put(hashMapKey, new Components(dataType, rowId, date, countDelta));
         } else {
             value.incrementCount(countDelta);
         }
@@ -44,17 +44,17 @@ public class MetadataCounterGroup {
         return columnFamily;
     }
 
-    public Collection<CountAndKeyComponents> getEntries() {
+    public Collection<Components> getEntries() {
         return counts.values();
     }
 
-    public class CountAndKeyComponents {
+    public static class Components {
         private final String dataType;
         private final String rowId;
         private final String date;
         private long count;
 
-        public CountAndKeyComponents(String dataType, String rowId, String date, long countDelta) {
+        public Components(String dataType, String rowId, String date, long countDelta) {
             this.dataType = dataType;
             this.rowId = rowId;
             this.date = date;
@@ -84,18 +84,18 @@ public class MetadataCounterGroup {
             return hashCode;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof CountAndKeyComponents)) {
-                return false;
-            }
-            CountAndKeyComponents other = (CountAndKeyComponents) o;
-            return Objects.equal(this.dataType, other.dataType) && Objects.equal(this.rowId, other.rowId) && Objects.equal(this.date, other.date)
-                            && count == other.count;
-        }
-
         public long getCount() {
             return count;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Components)) {
+                return false;
+            }
+            Components other = (Components) o;
+            return Objects.equal(this.dataType, other.dataType) && Objects.equal(this.rowId, other.rowId) && Objects.equal(this.date, other.date)
+                            && count == other.count;
         }
     }
 }

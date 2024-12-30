@@ -2,7 +2,7 @@ package datawave.test;
 
 import java.util.Comparator;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;

@@ -1,18 +1,22 @@
 package datawave.query.jexl.visitors;
 
-import java.io.StringReader;
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.Parser;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.Parser;
+import org.apache.commons.jexl3.parser.StringProvider;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 
 import com.google.common.collect.Sets;
 
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
@@ -35,12 +39,12 @@ public class VariableNameVisitor extends BaseVisitor {
      */
     public static Set<String> parseQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
-        Parser parser = new Parser(new StringReader(";"));
+        Parser parser = new Parser(new StringProvider(";"));
 
         // Parse the query
         try {
-            return parseQuery(parser.parse(new StringReader(query), null));
-        } catch (TokenMgrError e) {
+            return parseQuery(parser.parse(null, jexlFeatures(), query, null));
+        } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }
     }
@@ -62,14 +66,16 @@ public class VariableNameVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTIdentifier node, Object data) {
-        this.variableNames.add(node.image);
+        this.variableNames.add(node.getName());
         return super.visit(node, data);
     }
 
     @Override
-    public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
-            this.variableNames.add(ExceededOrThresholdMarkerJexlNode.getField(node));
+    public Object visit(ASTAndNode node, Object data) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isType(EXCEEDED_OR)) {
+            ExceededOr exceededOr = new ExceededOr(instance.getSource());
+            this.variableNames.add(exceededOr.getField());
             return data;
         } else {
             return super.visit(node, data);

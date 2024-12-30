@@ -2,16 +2,15 @@ package datawave.query.jexl.visitors;
 
 import java.util.Collection;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -138,12 +137,6 @@ public class GeoWaveQueryInfoVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

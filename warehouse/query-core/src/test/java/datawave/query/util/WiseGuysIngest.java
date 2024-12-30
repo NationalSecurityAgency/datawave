@@ -1,13 +1,20 @@
 package datawave.query.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.AbstractMap;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -24,14 +31,20 @@ import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.data.type.util.Geometry;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
+import datawave.ingest.mapreduce.handler.shard.content.OffsetQueue;
+import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
+import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
 
 public class WiseGuysIngest {
 
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
 
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
@@ -41,34 +54,42 @@ public class WiseGuysIngest {
     private static final Type<?> geoType = new GeometryType();
 
     protected static final String datatype = "test";
+    protected static final String secondDataType = "test2";
     protected static final String date = "20130101";
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    public static final String tattagliaUID = UID.builder().newId("Tattaglia".toString().getBytes(), (Date) null).toString();
 
-    protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
-        if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
-            return ipAddressType.normalize(colVal.getValue());
-        } else {
-            return lcNoDiacriticsType.normalize(colVal.getValue());
+    protected static String normalizeColVal(Map.Entry<String,String> colVal) {
+        switch (colVal.getKey()) {
+            case "FROM_ADDRESS":
+            case "TO_ADDRESS":
+                return ipAddressType.normalize(colVal.getValue());
+            default:
+                return lcNoDiacriticsType.normalize(colVal.getValue());
         }
     }
 
     protected static String normalizerForColumn(String column) {
-        if ("AGE".equals(column) || "MAGIC".equals(column) || "ETA".equals(column)) {
-            return numberType.getClass().getName();
-        } else if ("FROM_ADDRESS".equals(column) || "TO_ADDRESS".equals(column)) {
-            return ipAddressType.getClass().getName();
-        } else if ("GEO".equals(column)) {
-            return geoType.getClass().getName();
-        } else {
-            return lcNoDiacriticsType.getClass().getName();
+        switch (column) {
+            case "AGE":
+            case "MAGIC":
+            case "ETA":
+                return numberType.getClass().getName();
+            case "FROM_ADDRESS":
+            case "TO_ADDRESS":
+                return ipAddressType.getClass().getName();
+            case "GEO":
+                return geoType.getClass().getName();
+            default:
+                return lcNoDiacriticsType.getClass().getName();
         }
     }
 
@@ -158,6 +179,12 @@ public class WiseGuysIngest {
                             timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "GEO" + "\u0000" + "POINT(30 30)", columnVisibility, timeStamp, emptyValue);
+
+            // second datatype shard data
+            mutation.put(secondDataType + "\u0000" + tattagliaUID, "NAME.0" + "\u0000" + "Philip", columnVisibility, timeStamp, emptyValue);
+            mutation.put(secondDataType + "\u0000" + tattagliaUID, "GENDER.0" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
+            mutation.put(secondDataType + "\u0000" + tattagliaUID, "AGE.0" + "\u0000" + "70", columnVisibility, timeStamp, emptyValue);
+            mutation.put(secondDataType + "\u0000" + tattagliaUID, "UUID.0" + "\u0000" + "TATTAGLIA", columnVisibility, timeStamp, emptyValue);
 
             bw.addMutation(mutation);
 
@@ -355,6 +382,23 @@ public class WiseGuysIngest {
                 bw.addMutation(mutation);
             }
 
+            // second datatype shard index data
+            // uuid
+            mutation = new Mutation(lcNoDiacriticsType.normalize("TATTAGLIA"));
+            mutation.put("UUID".toUpperCase(), shard + "\u0000" + secondDataType, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(tattagliaUID));
+            bw.addMutation(mutation);
+            // names
+            mutation = new Mutation(lcNoDiacriticsType.normalize("Philip"));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + secondDataType, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(tattagliaUID));
+            bw.addMutation(mutation);
+            // ages
+            mutation = new Mutation(numberType.normalize("70"));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + secondDataType, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(tattagliaUID));
+            bw.addMutation(mutation);
+
             // add some index-only fields
             mutation = new Mutation("chicago");
             mutation.put("LOCATION", shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -549,6 +593,10 @@ public class WiseGuysIngest {
             mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
+            mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
+            mutation.put("GENDER".toUpperCase(), shard + "\u0000" + secondDataType, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(tattagliaUID));
+            bw.addMutation(mutation);
             // ages
             mutation = new Mutation(new StringBuilder(numberType.normalize("30")).reverse());
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -696,6 +744,20 @@ public class WiseGuysIngest {
                 mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
             }
 
+            // second datatype field index data
+            // uuid
+            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("TATTAGLIA") + "\u0000" + secondDataType + "\u0000" + tattagliaUID, columnVisibility,
+                            timeStamp, emptyValue);
+            // names
+            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("PHILIP") + "\u0000" + secondDataType + "\u0000" + tattagliaUID, columnVisibility,
+                            timeStamp, emptyValue);
+            // genders
+            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + secondDataType + "\u0000" + tattagliaUID, columnVisibility,
+                            timeStamp, emptyValue);
+            // ages
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("70") + "\u0000" + secondDataType + "\u0000" + tattagliaUID, columnVisibility, timeStamp,
+                            emptyValue);
+
             // add some index-only fields
             mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
@@ -707,6 +769,11 @@ public class WiseGuysIngest {
             addFiTfTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
             addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
             addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+
+            addDColumn(datatype, corleoneUID, "CONTENT", "Im gonna make him an offer he cant refuse", bw);
+            addDColumn(datatype, sopranoUID, "CONTENT", "If you can quote the rules then you can obey them", bw);
+            addDColumn(datatype, caponeUID, "CONTENT", "You can get much farther with a kind word and a gun than you can with a kind word alone", bw);
+            addDColumn(datatype, caponeUID, "CONTENT2", "A lawyer and his briefcase can steal more than ten men with guns.", bw);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -725,6 +792,14 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NAME")), emptyValue);
             bw.addMutation(mutation);
 
+            mutation = new Mutation("NAME");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(secondDataType + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(secondDataType + "\u0000" + normalizerForColumn("NAME")), emptyValue);
+            bw.addMutation(mutation);
+
             mutation = new Mutation("NOME");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
@@ -741,6 +816,14 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENDER")), emptyValue);
             bw.addMutation(mutation);
 
+            mutation = new Mutation("GENDER");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(secondDataType + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(11L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(secondDataType + "\u0000" + normalizerForColumn("GENDER")), emptyValue);
+            bw.addMutation(mutation);
+
             mutation = new Mutation("GENERE");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(21L)));
@@ -755,6 +838,14 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("AGE")), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("AGE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(secondDataType + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(secondDataType + "\u0000" + normalizerForColumn("AGE")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("ETA");
@@ -797,6 +888,14 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("UUID");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(secondDataType + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(secondDataType), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(secondDataType + "\u0000" + normalizerForColumn("UUID")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("BIRTH_DATE");
@@ -993,14 +1092,43 @@ public class WiseGuysIngest {
         Mutation fi = new Mutation(shard);
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                         emptyValue);
-
+        OffsetQueue<Integer> tokenOffsetCache = new BoundedOffsetQueue<>(500);
+        int i = 0;
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
             fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                             emptyValue);
-            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility, timeStamp,
-                            emptyValue);
+            tokenOffsetCache.addOffset(new TermAndZone(token, field.toUpperCase()), i);
+
+            i++;
+        }
+        for (BoundedOffsetQueue.OffsetList<Integer> offsets : tokenOffsetCache.offsets()) {
+            NormalizedFieldAndValue nfv = new NormalizedFieldAndValue(offsets.termAndZone.zone, offsets.termAndZone.term);
+            TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
+            for (Integer offset : offsets.offsets) {
+                builder.addTermOffset(offset);
+            }
+            Value value = new Value(builder.build().toByteArray());
+            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(nfv.getIndexedFieldValue()) + "\u0000" + nfv.getIndexedFieldName(),
+                            columnVisibility, timeStamp, value);
         }
         bw.addMutation(fi);
+    }
+
+    private static void addDColumn(String datatype, String uid, String contentName, String content, BatchWriter bw)
+                    throws IOException, MutationsRejectedException {
+        Mutation d = new Mutation(shard);
+
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream(Math.max(content.getBytes().length / 2, 1024));
+        final OutputStream b64s = Base64.getEncoder().wrap(bos);
+        final GZIPOutputStream gzip = new GZIPOutputStream(b64s);
+        gzip.write(content.getBytes());
+        gzip.close();
+        b64s.close();
+        bos.close();
+        Value value = new Value(bos.toByteArray());
+
+        d.put("d", datatype + "\u0000" + uid + "\u0000" + contentName, columnVisibility, timeStamp, value);
+        bw.addMutation(d);
     }
 }

@@ -2,7 +2,7 @@ package datawave.query.index.lookup;
 
 import java.util.Iterator;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;

@@ -6,32 +6,33 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 
@@ -39,7 +40,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(UnfieldedIndexExpansionVisitor.class);
 
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
@@ -55,6 +56,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         this.allTypes = helper.getAllDatatypes();
+        this.stage = "field";
     }
 
     /**
@@ -92,7 +94,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
         if (script.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
-            log.warn(qe);
+            log.warn("Empty script", qe);
             throw new EmptyUnfieldedTermExpansionException(qe);
         }
         return script;
@@ -108,7 +110,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             case 1:
                 return children.get(0);
             default:
-                return JexlNodeFactory.createUnwrappedOrNode(children);
+                return JexlNodeFactory.createOrNode(children);
         }
     }
 
@@ -140,7 +142,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             case 1:
                 return children.get(0);
             default:
-                return JexlNodeFactory.createUnwrappedAndNode(children);
+                return JexlNodeFactory.createAndNode(children);
         }
     }
 
@@ -197,7 +199,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         ASTReferenceExpression ref = (ASTReferenceExpression) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
+        if (ref.jjtGetNumChildren() == 0) {
             return null;
         } else {
             return ref;

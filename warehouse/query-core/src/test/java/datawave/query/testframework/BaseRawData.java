@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.bouncycastle.util.Strings;
 import org.junit.Assert;
 
 import datawave.data.normalizer.Normalizer;
@@ -81,8 +80,7 @@ public abstract class BaseRawData implements RawData {
     public void processFields(final String datatype, final String[] fields) {
         // add each header event
         final List<String> hdrs = getHeaders();
-        // ensure headers match field input
-        Assert.assertEquals(hdrs.size(), fields.length);
+        Assert.assertTrue("The number of fields must be equal or greater than the number of headers", fields.length >= hdrs.size());
 
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);
@@ -90,7 +88,7 @@ public abstract class BaseRawData implements RawData {
             final Set<String> values = new HashSet<>();
             // convert multi-value fields into a set of values
             if (isMultiValueField(header)) {
-                String[] multi = Strings.split(fields[n], RawDataManager.MULTIVALUE_SEP_CHAR);
+                String[] multi = fields[n].split(RawDataManager.MULTIVALUE_SEP);
                 for (String s : multi) {
                     if (norm instanceof NumberNormalizer) {
                         values.add(s);
@@ -100,7 +98,7 @@ public abstract class BaseRawData implements RawData {
                 }
             } else if (isTokenizedField(header)) {
                 // convert field to a list of tokens that include the complete field
-                String[] multi = Strings.split(fields[n], ' ');
+                String[] multi = fields[n].split(" ");
                 // add full field as an event
                 values.add(fields[n]);
                 for (String s : multi) {
@@ -125,6 +123,19 @@ public abstract class BaseRawData implements RawData {
                 this.event.put(key, values);
             }
         }
+
+        if (fields.length > hdrs.size() && hasExtraFields()) {
+            // extra fields are in the form of fieldName=fieldValue.
+            for (int i = hdrs.size(); i < fields.length; i++) {
+                String value = fields[i];
+            }
+        } else if (fields.length != hdrs.size()) {
+            Assert.fail("The number of fields did not equal the number of headers and hasExtraFields() returned false indicating that there were no extra fields expected");
+        }
+    }
+
+    protected boolean hasExtraFields() {
+        return false;
     }
 
     /**

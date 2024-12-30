@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlScript;
 
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
@@ -22,14 +23,17 @@ public class EdgePreconditionCacheHelper {
     }
 
     private void createEngine(EdgePreconditionArithmetic arithmetic) {
-        this.setEngine(new EdgeJexlEngine(null, arithmetic, null, null));
-        this.getEngine().setDebug(false); // Turn off debugging to make things go faster
-        this.getEngine().setCache(50); // Set cache size lower than default value of 512
+        // @formatter:off
+        this.setEngine(new EdgeJexlEngine(new JexlBuilder()
+                .arithmetic(arithmetic)
+                .debug(false) // Turn off debugging to make things go faster
+                .cache(50))); // Set cache size lower than default value of 512
+        // @formatter:on
     }
 
-    public Map<String,Script> createScriptCacheFromEdges(Map<String,EdgeDefinitionConfigurationHelper> edges) {
+    public Map<String,JexlScript> createScriptCacheFromEdges(Map<String,EdgeDefinitionConfigurationHelper> edges) {
 
-        Map<String,Script> scriptCache = new HashMap<>();
+        Map<String,JexlScript> scriptCache = new HashMap<>();
 
         for (String dataTypeKey : edges.keySet()) {
             List<EdgeDefinition> edgeList = edges.get(dataTypeKey).getEdges();
@@ -43,7 +47,7 @@ public class EdgePreconditionCacheHelper {
         return scriptCache;
     }
 
-    public Script createScriptFromString(String jexlPrecondition) {
+    public JexlScript createScriptFromString(String jexlPrecondition) {
         return engine.createScript(jexlPrecondition);
     }
 

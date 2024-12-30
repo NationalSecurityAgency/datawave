@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,7 +32,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
-import datawave.query.predicate.PeekingPredicate;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;

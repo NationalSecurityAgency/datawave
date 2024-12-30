@@ -7,14 +7,21 @@ import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.CredentialException;
+import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
+import org.jboss.security.SecurityContextAssociation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.SslClientAuthMode;
@@ -60,6 +67,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     private final boolean trustedHeaderAuthentication;
     private final boolean jwtHeaderAuthentication;
     private final Set<String> dnsToPrune;
+    private final Map<Class<? extends LoginException>,Integer> returnCodeMap = new HashMap();
 
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism() {
@@ -90,6 +98,16 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         }
         SUBJECT_DN_HEADER = System.getProperty("dw.trusted.header.subjectDn", "X-SSL-ClientCert-Subject".toLowerCase());
         ISSUER_DN_HEADER = System.getProperty("dw.trusted.header.issuerDn", "X-SSL-ClientCert-Issuer".toLowerCase());
+        // These LoginExceptions are thrown from DatawavePrincipalLoginModule and
+        // caught and saved in the SecurityContext in JBossCachedAuthenticationManager.
+
+        // there was some problem with the credential that prevented evaluation
+        returnCodeMap.put(CredentialException.class, HttpStatus.SC_UNAUTHORIZED);
+        // credential was evaluated and rejected
+        returnCodeMap.put(AccountLockedException.class, HttpStatus.SC_FORBIDDEN);
+        returnCodeMap.put(FailedLoginException.class, HttpStatus.SC_FORBIDDEN);
+        // there was a system error that prevented evaluation of the credential
+        returnCodeMap.put(LoginException.class, HttpStatus.SC_SERVICE_UNAVAILABLE);
     }
 
     @Override
@@ -223,7 +241,25 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
 
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange httpServerExchange, SecurityContext securityContext) {
-        return new ChallengeResult(false);
+        // FORBIDDEN (403) was the previous default response code returned when an exception happened
+        // in the DatawavePrincipalLoginModule and this method returned ChallengeResult(false)
+        int returnCode = HttpStatus.SC_FORBIDDEN;
+        org.jboss.security.SecurityContext sc = SecurityContextAssociation.getSecurityContext();
+        if (sc != null) {
+            // A LoginException is thrown from DatawavePrincipalLoginModule and caught
+            // and saved in the SecurityContext in JBossCachedAuthenticationManager.
+            Exception e = (Exception) sc.getData().get("org.jboss.security.exception");
+            if (e != null) {
+                if (returnCodeMap.containsKey(e.getClass())) {
+                    returnCode = returnCodeMap.get(e.getClass());
+                }
+                if (logger.isTraceEnabled()) {
+                    logger.trace("exception class: {} returnCode: {}", e.getClass().getCanonicalName(), returnCode);
+                }
+            }
+        }
+        // The ChallengeResult is evaluated in SecurityContextImpl.transition()
+        return new ChallengeResult(true, returnCode);
     }
 
     private String getSingleHeader(HeaderMap headers, String headerName) throws MultipleHeaderException {

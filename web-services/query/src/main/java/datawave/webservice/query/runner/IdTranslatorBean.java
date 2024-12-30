@@ -42,18 +42,18 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.util.DateFormatter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.configuration.IdTranslatorConfiguration;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.VoidResponse;
 
@@ -273,10 +273,10 @@ public class IdTranslatorBean {
     private String getAuths(String logicName, Principal principal) {
         String userAuths;
         try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
-                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
+                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
             userAuths = WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
         } catch (Exception e) {
             log.error("Failed to get user query authorizations", e);

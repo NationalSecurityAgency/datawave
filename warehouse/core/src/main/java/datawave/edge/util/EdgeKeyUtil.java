@@ -14,7 +14,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.type.Type;
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
+import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.util.StringUtils;
 
 /**

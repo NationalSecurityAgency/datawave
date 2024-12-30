@@ -27,8 +27,9 @@ import datawave.ingest.metric.IngestProcess;
 import datawave.metrics.mapreduce.util.TypeNameConverter;
 
 /**
- * A map task to import Bulk Ingest metrics. Given a Counters object from a Bulk Ingest job, this mapper will format the data into a table structure similar to:
  * <p>
+ * A map task to import Bulk Ingest metrics. Given a Counters object from a Bulk Ingest job, this mapper will format the data into a table structure similar to:
+ * </p>
  *
  * <pre>
  * {@code
@@ -41,7 +42,7 @@ import datawave.metrics.mapreduce.util.TypeNameConverter;
  * </pre>
  * <p>
  * There are no values stored- all information is a part of the key (row, column family, column qualifier).
- *
+ * </p>
  */
 public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
 

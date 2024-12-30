@@ -11,12 +11,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
+import datawave.microservice.query.Query;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.query.table.parser.ContentKeyValueFactory.ContentKeyValue;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -24,6 +24,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
+@SuppressWarnings("rawtypes")
 public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
 
     private static final Logger log = Logger.getLogger(ContentQueryTransformer.class);
@@ -31,12 +32,18 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     protected final Map<Metadata,String> metadataIdMap;
+    protected final boolean decodeView;
 
     public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+        this(query, markingFunctions, responseObjectFactory, false);
+    }
+
+    public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
         this.metadataIdMap = extractMetadadaIdMap(query);
+        this.decodeView = decodeView;
     }
 
     /**
@@ -137,7 +144,13 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         field.setMarkings(ckv.getMarkings());
         field.setName(ckv.getViewName());
         field.setTimestamp(entry.getKey().getTimestamp());
-        field.setValue(ckv.getContents());
+        if (this.decodeView) {
+            // settings a String value causes the value not to be base64 encoded, see TypedValue
+            field.setValue(new String(ckv.getContents()));
+        } else {
+            // settings a byte value causes the value to be base64 encoded, see TypedValue
+            field.setValue(ckv.getContents());
+        }
 
         List<FieldBase> fields = new ArrayList<>();
         fields.add(field);

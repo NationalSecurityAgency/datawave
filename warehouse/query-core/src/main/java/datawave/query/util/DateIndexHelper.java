@@ -43,7 +43,7 @@ import datawave.util.StringUtils;
  * Helper class to fetch data from the date index.
  * </p>
  * <table border="1">
- * <caption></caption>
+ * <caption>DateIndex</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

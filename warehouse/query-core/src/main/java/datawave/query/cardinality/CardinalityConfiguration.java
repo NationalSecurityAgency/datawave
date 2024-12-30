@@ -15,7 +15,7 @@ import com.google.common.collect.Multimap;
 import datawave.query.model.QueryModel;
 
 public class CardinalityConfiguration {
-
+    private boolean enabled = false;
     private Set<String> cardinalityFields = null;
     private Map<String,String> cardinalityFieldReverseMapping = null;
     private String cardinalityUidField = null;
@@ -23,6 +23,14 @@ public class CardinalityConfiguration {
     private int flushThreshold = 50000;
 
     private String[] nonDocumentFields = {"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE"};
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
     public Set<String> getCardinalityFields() {
         return cardinalityFields;

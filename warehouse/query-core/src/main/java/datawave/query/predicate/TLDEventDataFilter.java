@@ -12,8 +12,8 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
@@ -154,18 +154,18 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * client. If a Key returns true but keep() returns false the document will be used for context evaluation, but will not be returned to the client. If a Key
      * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      *
-     * @param input
+     * @param entry
      *            an input
      * @return true if Key should be added to context, false otherwise
      */
     @Override
-    public boolean apply(Entry<Key,String> input) {
-        return apply(input, true);
+    public boolean apply(Entry<Key,String> entry) {
+        return apply(entry, true);
     }
 
     @Override
-    public boolean peek(Entry<Key,String> input) {
-        return apply(input, false);
+    public boolean peek(Entry<Key,String> entry) {
+        return apply(entry, false);
     }
 
     private boolean apply(Entry<Key,String> input, boolean update) {

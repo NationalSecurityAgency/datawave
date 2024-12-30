@@ -13,64 +13,100 @@ public final class Uid {
         // required bool IGNORE = 1;
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return if it has IGNORE
          */
         boolean hasIGNORE();
 
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return IGNORE flag
          */
         boolean getIGNORE();
 
         // required uint64 COUNT = 2;
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return if it has COUNT
          */
         boolean hasCOUNT();
 
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return the COUNT
          */
         long getCOUNT();
 
         // repeated string UID = 3;
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return list of UIDs
          */
         java.util.List<java.lang.String> getUIDList();
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return the number of UIDs in the list
          */
         int getUIDCount();
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the UID at the provided index
          */
         java.lang.String getUID(int index);
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return uid byte string
          */
         com.google.protobuf.ByteString getUIDBytes(int index);
 
         // repeated string REMOVEDUID = 4;
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return list of removed uids
          */
         java.util.List<java.lang.String> getREMOVEDUIDList();
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return number of removed uids in the list
          */
         int getREMOVEDUIDCount();
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the removed uid at the provided index
          */
         java.lang.String getREMOVEDUID(int index);
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return removed uid byte string at the provided index
          */
         com.google.protobuf.ByteString getREMOVEDUIDBytes(int index);
     }
@@ -197,6 +233,8 @@ public final class Uid {
 
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return if it has IGNORE
          */
         public boolean hasIGNORE() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -204,6 +242,8 @@ public final class Uid {
 
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return IGNORE flag
          */
         public boolean getIGNORE() {
             return iGNORE_;
@@ -215,6 +255,8 @@ public final class Uid {
 
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return if it has COUNT
          */
         public boolean hasCOUNT() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -222,6 +264,8 @@ public final class Uid {
 
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return the COUNT
          */
         public long getCOUNT() {
             return cOUNT_;
@@ -233,6 +277,8 @@ public final class Uid {
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return the uid list
          */
         public java.util.List<java.lang.String> getUIDList() {
             return uID_;
@@ -240,6 +286,8 @@ public final class Uid {
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return the uid count
          */
         public int getUIDCount() {
             return uID_.size();
@@ -247,6 +295,11 @@ public final class Uid {
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the uid at the provided index
          */
         public java.lang.String getUID(int index) {
             return uID_.get(index);
@@ -254,6 +307,11 @@ public final class Uid {
 
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the uid byte string at the provided index
          */
         public com.google.protobuf.ByteString getUIDBytes(int index) {
             return uID_.getByteString(index);
@@ -265,6 +323,8 @@ public final class Uid {
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return list of removed uids
          */
         public java.util.List<java.lang.String> getREMOVEDUIDList() {
             return rEMOVEDUID_;
@@ -272,6 +332,8 @@ public final class Uid {
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return the size of the removed uid list
          */
         public int getREMOVEDUIDCount() {
             return rEMOVEDUID_.size();
@@ -279,6 +341,11 @@ public final class Uid {
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return removed uid at the provided index
          */
         public java.lang.String getREMOVEDUID(int index) {
             return rEMOVEDUID_.get(index);
@@ -286,6 +353,11 @@ public final class Uid {
 
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return removed uid byte string at provided index
          */
         public com.google.protobuf.ByteString getREMOVEDUIDBytes(int index) {
             return rEMOVEDUID_.getByteString(index);
@@ -612,6 +684,8 @@ public final class Uid {
 
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @return if it has INGORE flag
              */
             public boolean hasIGNORE() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -619,6 +693,8 @@ public final class Uid {
 
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @return the IGNORE flag
              */
             public boolean getIGNORE() {
                 return iGNORE_;
@@ -626,6 +702,11 @@ public final class Uid {
 
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @param value
+             *            the IGNORE value
+             *
+             * @return builder to set IGNORE flag to provided value
              */
             public Builder setIGNORE(boolean value) {
                 bitField0_ |= 0x00000001;
@@ -636,6 +717,8 @@ public final class Uid {
 
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @return builder to clear IGNORE flag
              */
             public Builder clearIGNORE() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -649,6 +732,8 @@ public final class Uid {
 
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @return if it has COUNT set
              */
             public boolean hasCOUNT() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -656,6 +741,8 @@ public final class Uid {
 
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @return the COUNT
              */
             public long getCOUNT() {
                 return cOUNT_;
@@ -663,6 +750,11 @@ public final class Uid {
 
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @param value
+             *            the new COUNT value
+             *
+             * @return builder to set COUNT to provided value
              */
             public Builder setCOUNT(long value) {
                 bitField0_ |= 0x00000002;
@@ -673,6 +765,8 @@ public final class Uid {
 
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @return builder to clear the COUNT
              */
             public Builder clearCOUNT() {
                 bitField0_ = (bitField0_ & ~0x00000002);
@@ -693,6 +787,8 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @return the uid list
              */
             public java.util.List<java.lang.String> getUIDList() {
                 return java.util.Collections.unmodifiableList(uID_);
@@ -700,6 +796,8 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @return the uid list size
              */
             public int getUIDCount() {
                 return uID_.size();
@@ -707,6 +805,11 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the uid at the provided index
              */
             public java.lang.String getUID(int index) {
                 return uID_.get(index);
@@ -714,6 +817,11 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return uid byte string at the provided index
              */
             public com.google.protobuf.ByteString getUIDBytes(int index) {
                 return uID_.getByteString(index);
@@ -721,6 +829,13 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new uid value
+             *
+             * @return builder to set the uid at the proved index
              */
             public Builder setUID(int index, java.lang.String value) {
                 if (value == null) {
@@ -734,6 +849,11 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param value
+             *            the new uid to add to the list
+             *
+             * @return builder to add the provided uid
              */
             public Builder addUID(java.lang.String value) {
                 if (value == null) {
@@ -747,6 +867,11 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param values
+             *            iterable of uids to add to the list
+             *
+             * @return builder to add the new uid values
              */
             public Builder addAllUID(java.lang.Iterable<java.lang.String> values) {
                 ensureUIDIsMutable();
@@ -757,6 +882,8 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @return builder to clear uid list
              */
             public Builder clearUID() {
                 uID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -767,6 +894,11 @@ public final class Uid {
 
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param value
+             *            the uid byte string
+             *
+             * @return builder to add uid byte string provided
              */
             public Builder addUIDBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -790,6 +922,8 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @return the removed uid list
              */
             public java.util.List<java.lang.String> getREMOVEDUIDList() {
                 return java.util.Collections.unmodifiableList(rEMOVEDUID_);
@@ -797,6 +931,8 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @return the size of the removed uid list
              */
             public int getREMOVEDUIDCount() {
                 return rEMOVEDUID_.size();
@@ -804,6 +940,11 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return get the removed uid at the provided index
              */
             public java.lang.String getREMOVEDUID(int index) {
                 return rEMOVEDUID_.get(index);
@@ -811,6 +952,11 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return byte string ofremoved uid at the provided index
              */
             public com.google.protobuf.ByteString getREMOVEDUIDBytes(int index) {
                 return rEMOVEDUID_.getByteString(index);
@@ -818,6 +964,13 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new removed uid value
+             *
+             * @return builder to set the removed uid at the provided index
              */
             public Builder setREMOVEDUID(int index, java.lang.String value) {
                 if (value == null) {
@@ -831,6 +984,11 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param value
+             *            the removed uid value to add to the list
+             *
+             * @return builder to add removed uid provided
              */
             public Builder addREMOVEDUID(java.lang.String value) {
                 if (value == null) {
@@ -844,6 +1002,11 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param values
+             *            iterator of uids to add to removed uid list
+             *
+             * @return builder to add all values to removed uid list
              */
             public Builder addAllREMOVEDUID(java.lang.Iterable<java.lang.String> values) {
                 ensureREMOVEDUIDIsMutable();
@@ -854,6 +1017,8 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @return builder to clear removed uid list
              */
             public Builder clearREMOVEDUID() {
                 rEMOVEDUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -864,6 +1029,11 @@ public final class Uid {
 
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param value
+             *            byte string value
+             *
+             * @return builder to add removed uid byte string value
              */
             public Builder addREMOVEDUIDBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {

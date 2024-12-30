@@ -22,10 +22,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
@@ -156,7 +155,6 @@ public class RangeStreamQueryTest {
         config.setDatatypeFilter(Collections.singleton("datatype"));
         config.setQueryFieldsDatatypes(fieldToDataType);
         config.setIndexedFields(fieldToDataType);
-        config.setShardsPerDayThreshold(2);
     }
 
     @AfterClass
@@ -384,7 +382,8 @@ public class RangeStreamQueryTest {
 
         // Run a standard limited-scanner range stream.
         count++;
-        rangeStream = new RangeStream(config, new ScannerFactory(config.getClient(), 1), helper);
+        ScannerFactory scannerFactory = new ScannerFactory(config);
+        rangeStream = new RangeStream(config, scannerFactory, helper);
         rangeStream.setLimitScanners(true);
 
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.assertj.core.api.AbstractIterableAssert;
 import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.ListAssert;

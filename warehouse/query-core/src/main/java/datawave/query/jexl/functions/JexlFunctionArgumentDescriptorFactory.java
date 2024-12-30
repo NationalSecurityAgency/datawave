@@ -1,16 +1,14 @@
 package datawave.query.jexl.functions;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
  * This interface can be implemented by a class supplying JEXL functions to provide additional information about the arguments. The initial purpose of this is
@@ -69,40 +67,19 @@ public interface JexlFunctionArgumentDescriptorFactory {
          * Uses the FunctionReferenceVisitor to try and get the namespace from a function node
          */
         public static Class<?> extractFunctionClass(ASTFunctionNode node) {
-            String namespace = node.jjtGetChild(0).image;
+            if (node.jjtGetNumChildren() == 2 && node.jjtGetChild(0) instanceof ASTNamespaceIdentifier && node.jjtGetChild(1) instanceof ASTArguments) {
+                ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
 
-            Object possibleMatch = ArithmeticJexlEngines.functions().get(namespace);
-
-            if (possibleMatch != null && possibleMatch instanceof Class<?>) {
-                return (Class<?>) possibleMatch;
+                Object possibleMatch = ArithmeticJexlEngines.functions().get(namespaceNode.getNamespace());
+                if (possibleMatch instanceof Class<?>) {
+                    return (Class<?>) possibleMatch;
+                } else {
+                    throw new IllegalArgumentException("Found a possible match in namespace " + namespaceNode.getNamespace() + " was not a class, was a "
+                                    + (possibleMatch != null ? possibleMatch.getClass() : null));
+                }
             } else {
-                throw new IllegalArgumentException("Found a possible match in namespace " + namespace + " was not a class, was a "
-                                + (possibleMatch != null ? possibleMatch.getClass() : null));
+                throw new IllegalArgumentException("Expected children not found in ASTFunctionNode");
             }
         }
-    }
-}
-
-class FunctionVisitor extends BaseVisitor {
-    private ImmutableList.Builder<ASTFunctionNode> functions = ImmutableList.builder();
-
-    public ImmutableList<ASTFunctionNode> functions() {
-        return functions.build();
-    }
-
-    @Override
-    public Object visit(ASTFunctionNode node, Object data) {
-        functions.add(node);
-
-        // we may be passed a function as an argument
-        node.childrenAccept(this, null);
-        return null;
-    }
-}
-
-class GetNamespace implements Function<ASTFunctionNode,String> {
-    @Override
-    public String apply(ASTFunctionNode from) {
-        return from.jjtGetChild(0).image;
     }
 }

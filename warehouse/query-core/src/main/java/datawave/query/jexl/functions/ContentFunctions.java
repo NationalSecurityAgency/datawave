@@ -211,8 +211,8 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> scoredPhrase(Float minScore, TermOffsetMap termOffsetMap, String... terms) {
-        return new ContentOrderedEvaluator(Collections.emptySet(), 1, minScore, termOffsetMap, terms).evaluate();
+    public static Collection<String> scoredPhrase(Number minScore, TermOffsetMap termOffsetMap, String... terms) {
+        return new ContentOrderedEvaluator(Collections.emptySet(), 1, minScore.floatValue(), termOffsetMap, terms).evaluate();
     }
 
     /**
@@ -228,8 +228,8 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> scoredPhrase(Object zone, Float minScore, TermOffsetMap termOffsetMap, String... terms) {
-        return new ContentOrderedEvaluator(getFields(zone), 1, minScore, termOffsetMap, terms).evaluate();
+    public static Collection<String> scoredPhrase(Object zone, Number minScore, TermOffsetMap termOffsetMap, String... terms) {
+        return new ContentOrderedEvaluator(getFields(zone), 1, minScore.floatValue(), termOffsetMap, terms).evaluate();
     }
 
     /**

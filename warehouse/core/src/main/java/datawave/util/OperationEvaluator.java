@@ -401,6 +401,8 @@ public class OperationEvaluator {
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      *
+     * @param <T>
+     *            comparable class
      * @param left
      *            the left side of the expression
      * @param right
@@ -412,7 +414,7 @@ public class OperationEvaluator {
     public static <T extends Comparable<T>> boolean compare(T left, T right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
         operator = CharMatcher.whitespace().removeFrom(operator);
-        switch (CharMatcher.whitespace().removeFrom(operator)) {
+        switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
                 return left == right || left.compareTo(right) == 0;
@@ -442,19 +444,23 @@ public class OperationEvaluator {
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      *
+     * @param <T>
+     *            comparable class
      * @param left
      *            the left side of the expression
      * @param right
      *            the right side of the expression
      * @param operator
      *            the logical operator
+     * @param comparator
+     *            the comparator
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static <T> boolean compare(T left, T right, String operator, Comparator<T> comparator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
         Preconditions.checkNotNull(comparator, "comparator must not be null");
         operator = CharMatcher.whitespace().removeFrom(operator);
-        switch (CharMatcher.whitespace().removeFrom(operator)) {
+        switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
                 return left == right || comparator.compare(left, right) == 0;

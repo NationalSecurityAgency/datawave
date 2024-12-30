@@ -7,8 +7,10 @@ import static org.junit.Assert.assertNull;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,13 +35,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 
 import datawave.configuration.spring.BeanProvider;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.result.ConnectionPool;
 import datawave.security.DnList;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.system.AuthorizationCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 
 @RunWith(Arquillian.class)
 public class CredentialsCacheBeanTest {
@@ -170,17 +173,12 @@ public class CredentialsCacheBeanTest {
 
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
         @Override
-        public String getConnectionUserName(String poolName) {
+        public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) {
             return null;
         }
 
         @Override
-        public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) {
-            return null;
-        }
-
-        @Override
-        public AccumuloClient getClient(String poolName, Priority priority, Map<String,String> trackingMap) {
+        public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap) {
             return null;
         }
 
@@ -190,8 +188,28 @@ public class CredentialsCacheBeanTest {
         }
 
         @Override
+        public String report() {
+            return null;
+        }
+
+        @Override
+        public List<ConnectionPool> getConnectionPools() {
+            return null;
+        }
+
+        @Override
+        public int getConnectionUsagePercent() {
+            return 0;
+        }
+
+        @Override
         public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
             return null;
+        }
+
+        @Override
+        public void close() throws Exception {
+
         }
     }
 }
