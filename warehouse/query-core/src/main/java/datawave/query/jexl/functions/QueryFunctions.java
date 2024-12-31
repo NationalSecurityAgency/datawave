@@ -42,6 +42,7 @@ public class QueryFunctions {
     public static final String COUNT = "count";
     public static final String AVERAGE = "average";
     public static final String RENAME_FUNCTION = "rename";
+    public static final String MAX_UNIQUE_COUNT = "max_unique_count";
 
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
 

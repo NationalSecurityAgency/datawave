@@ -1231,7 +1231,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields.clone();
+        this.uniqueFields = uniqueFields;
     }
 
     public Set<String> getHitsOnlySet() {

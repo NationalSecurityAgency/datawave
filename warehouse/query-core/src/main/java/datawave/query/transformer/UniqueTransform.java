@@ -39,7 +39,6 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.model.QueryModel;
 import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
 import datawave.query.util.sortedmap.FileKeyDocumentSortedMap;
 import datawave.query.util.sortedmap.FileSortedMap;
@@ -57,9 +56,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
 
     private BloomFilter<byte[]> bloom;
-    private UniqueFields uniqueFields = new UniqueFields();
-    private HdfsBackedSortedMap<byte[],Document> map;
+    private UniqueFields uniqueFields;
+    private HdfsBackedSortedMap<byte[],Document> documentMap;
     private HdfsBackedSortedMap<Key,Document> returnSet;
+    private HdfsBackedSortedMap<byte[],Integer> countMap;
     private Iterator<Entry<Key,Document>> setIterator;
 
     /**
@@ -97,8 +97,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         if (!this.uniqueFields.equals(uniqueFields)) {
             this.uniqueFields = uniqueFields.clone();
             log.info("Resetting unique fields on the unique transform");
-            if (map != null) {
-                map.clear();
+            if (documentMap != null) {
+                documentMap.clear();
                 returnSet.clear();
             } else {
                 bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
@@ -140,10 +140,31 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
 
             try {
-                if (map != null) {
+                // If the document map is not null, we are tracking the most recent unique and/or the max count of each unique result.
+                if (documentMap != null) {
                     byte[] signature = getBytes(keyDocumentEntry.getValue());
-                    synchronized (map) {
-                        this.map.put(signature, keyDocumentEntry.getValue());
+                    // If the count map is not null, check if we have exceeded the max count.
+                    if (countMap != null) {
+                        synchronized (countMap) {
+                            // Increment the count by one in the count map.
+                            Integer count = countMap.getOrDefault(signature, 0);
+                            count++;
+                            countMap.put(signature, count);
+                            synchronized (documentMap) {
+                                // If the count exceeds the max count, ensure the document is removed from the document map.
+                                if (count > uniqueFields.getMaxCount()) {
+                                    documentMap.remove(signature);
+                                } else {
+                                    // Otherwise, update the document map.
+                                    documentMap.put(signature, keyDocumentEntry.getValue());
+                                }
+                            }
+                        }
+                    } else {
+                        // If the count map is null, we are only fetching the most recent result, and are not concerned about the max count.
+                        synchronized (documentMap) {
+                            this.documentMap.put(signature, keyDocumentEntry.getValue());
+                        }
                     }
                     return null;
                 } else if (!isDuplicate(keyDocumentEntry.getValue())) {
@@ -171,11 +192,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     @Override
     public Map.Entry<Key,Document> flush() {
-        if (map != null) {
-            synchronized (map) {
+        if (documentMap != null) {
+            synchronized (documentMap) {
                 // persist the map so that we do not loose these results and we compact the files for the final iteration.
                 try {
-                    map.persist();
+                    documentMap.persist();
                 } catch (IOException ioe) {
                     throw new DatawaveFatalQueryException("Unable to persist the most recent unique maps", ioe);
                 }
@@ -194,7 +215,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * This will run through the set and create a new set ordered by Key, Document
      */
     private void setupIterator() {
-        for (Map.Entry<byte[],Document> entry : map.entrySet()) {
+        for (Map.Entry<byte[],Document> entry : documentMap.entrySet()) {
             returnSet.put(getDocKey(entry.getValue()), entry.getValue());
         }
         // now persist the return set so that we don't lose the results and compact the sets
@@ -311,7 +332,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private void addValues(final String field, Attribute<?> attribute, Multimap<String,String> values) {
         if (attribute instanceof Attributes) {
             // @formatter:off
-            ((Attributes) attribute).getAttributes().stream()
+            ((Attributes) attribute).getAttributes()
                     .forEach(a -> addValues(field, a, values));
             // @formatter:on
         } else {
@@ -423,9 +444,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     public static class Builder {
         private UniqueFields uniqueFields;
-        private Comparator<byte[]> keyComparator;
-        private FileSortedMap.RewriteStrategy<byte[],Document> keyValueComparator;
-        private QueryModel model;
+        private final Comparator<byte[]> keyComparator;
+        private final FileSortedMap.RewriteStrategy<byte[],Document> rewriteNewerTimestamp;
+        private final FileSortedMap.RewriteStrategy<byte[],Document> neverRewrite;
         private int bufferPersistThreshold;
         private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
         private String hdfsSiteConfigURLs;
@@ -438,11 +459,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         public Builder() {
             keyComparator = new ByteArrayComparator();
 
-            keyValueComparator = (key, original, update) -> {
+            rewriteNewerTimestamp = (key, original, update) -> {
                 long ts1 = getTimestamp(original);
                 long ts2 = getTimestamp(update);
                 return (ts2 > ts1);
             };
+
+            neverRewrite = (key, original, update) -> false;
         }
 
         /**
@@ -472,19 +495,15 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 }
             }
 
-            if (pathAndFs.isEmpty())
+            if (pathAndFs.isEmpty()) {
                 throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirConfigs);
+            }
 
             return pathAndFs;
         }
 
         public Builder withUniqueFields(UniqueFields fields) {
             this.uniqueFields = fields;
-            return this;
-        }
-
-        public Builder withModel(QueryModel model) {
-            this.model = model;
             return this;
         }
 
@@ -531,32 +550,54 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         public UniqueTransform build() throws IOException {
             UniqueTransform transform = new UniqueTransform(uniqueFields, queryExecutionForPageTimeout);
 
-            if (transform.uniqueFields.isMostRecent()) {
+            // If we either need to fetch the most recent unique result, or we have a max unique count, we will require the hdfs backed sets.
+            if (transform.uniqueFields.isMostRecent() || transform.uniqueFields.getMaxCount() > 0) {
                 // @formatter:off
                 // noinspection unchecked
-                transform.map = (HdfsBackedSortedMap<byte[],Document>) HdfsBackedSortedMap.builder()
-                        .withComparator(keyComparator)
-                        .withRewriteStrategy(keyValueComparator)
-                        .withBufferPersistThreshold(bufferPersistThreshold)
-                        .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
-                        .withUniqueSubPath("byUniqueKey")
-                        .withMaxOpenFiles(maxOpenFiles)
-                        .withNumRetries(numRetries)
-                        .withPersistOptions(persistOptions)
-                        .withMapFactory(new FileByteDocumentSortedMap.Factory())
-                        .build();
-
-                // noinspection unchecked
                 transform.returnSet = (HdfsBackedSortedMap<Key,Document>) HdfsBackedSortedMap.builder()
-                        .withBufferPersistThreshold(bufferPersistThreshold)
-                        .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
-                        .withUniqueSubPath("byDocKey")
-                        .withMaxOpenFiles(maxOpenFiles)
-                        .withNumRetries(numRetries)
-                        .withPersistOptions(persistOptions)
-                        .withMapFactory(new FileKeyDocumentSortedMap.Factory())
-                        .build();
+                                .withBufferPersistThreshold(bufferPersistThreshold)
+                                .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
+                                .withUniqueSubPath("byDocKey")
+                                .withMaxOpenFiles(maxOpenFiles)
+                                .withNumRetries(numRetries)
+                                .withPersistOptions(persistOptions)
+                                .withMapFactory(new FileKeyDocumentSortedMap.Factory())
+                                .build();
                 // @formatter:on
+
+                // If isMostRecent is true, the document map should be updated whenever we have a value with a more recent timestamp. Otherwise, we only want to
+                // retain the first value (when we have a max unique count without isMostRecent).
+                FileSortedMap.RewriteStrategy<byte[],Document> rewriteStrategy = transform.uniqueFields.isMostRecent() ? rewriteNewerTimestamp : neverRewrite;
+
+                // @formatter:off
+                // noinspection unchecked
+                transform.documentMap = (HdfsBackedSortedMap<byte[],Document>) HdfsBackedSortedMap.builder()
+                                .withComparator(keyComparator)
+                                .withRewriteStrategy(rewriteStrategy)
+                                .withBufferPersistThreshold(bufferPersistThreshold)
+                                .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
+                                .withUniqueSubPath("byUniqueKey")
+                                .withMaxOpenFiles(maxOpenFiles)
+                                .withNumRetries(numRetries)
+                                .withPersistOptions(persistOptions)
+                                .withMapFactory(new FileByteDocumentSortedMap.Factory())
+                                .build();
+                // @formatter:on
+                
+                if (transform.uniqueFields.getMaxCount() > 0) {
+                    // @formatter:off
+                    //noinspection unchecked
+                    transform.countMap = (HdfsBackedSortedMap<byte[],Integer>) HdfsBackedSortedMap.builder()
+                                    .withComparator(keyComparator)
+                                    .withBufferPersistThreshold(bufferPersistThreshold)
+                                    .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
+                                    .withUniqueSubPath("byMaxUniqueKey")
+                                    .withMaxOpenFiles(maxOpenFiles)
+                                    .withNumRetries(numRetries)
+                                    .withPersistOptions(persistOptions)
+                                    .withMapFactory(new FileByteDocumentSortedMap.Factory()).build();
+                    // @formatter:on
+                }
             } else {
                 transform.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
             }

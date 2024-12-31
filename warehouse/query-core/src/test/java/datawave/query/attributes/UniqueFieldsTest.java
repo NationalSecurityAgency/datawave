@@ -74,6 +74,24 @@ public class UniqueFieldsTest {
         assertEquals("FIELDA[ALL],FIELDB[ALL,DAY],FIELDC[HOUR],FIELDD[HOUR,MINUTE]", uniqueFields.toString());
     }
 
+    @Test
+    public void testUniqueFieldsWithMostRecentToString() {
+        UniqueFields uniqueFields = new UniqueFields();
+        uniqueFields.put("fieldA", UniqueGranularity.ALL);
+        uniqueFields.put("fieldB", UniqueGranularity.ALL);
+        uniqueFields.setMostRecent(true);
+        assertEquals("_MOST_RECENT_,FIELDA[ALL],FIELDB[ALL]", uniqueFields.toString());
+    }
+
+    @Test
+    public void testUniqueFieldsWithMaxCountToString() {
+        UniqueFields uniqueFields = new UniqueFields();
+        uniqueFields.put("fieldA", UniqueGranularity.ALL);
+        uniqueFields.put("fieldB", UniqueGranularity.ALL);
+        uniqueFields.setMaxCount(3);
+        assertEquals("_MAX_COUNT_[3],FIELDA[ALL],FIELDB[ALL]", uniqueFields.toString());
+    }
+
     /**
      * Verify that {@link UniqueFields#from(String)} returns null when given a null input.
      */
@@ -268,6 +286,21 @@ public class UniqueFieldsTest {
         expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
 
         UniqueFields actual = UniqueFields.from("fieldA[ALL], fieldB[ALL, DAY], fieldC[HOUR],fieldD[HOUR, MINUTE]");
+
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Verify that a string with most recent markers and a max count are parsed correctly.
+     */
+    @Test
+    public void testParsingMostRecentAndMaxCount() {
+        UniqueFields expected = new UniqueFields();
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.setMostRecent(true);
+        expected.setMaxCount(3);
+
+        UniqueFields actual = UniqueFields.from("_MOST_RECENT_,_MAX_COUNT_[3],fieldA[ALL]");
 
         assertEquals(expected, actual);
     }

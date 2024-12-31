@@ -50,6 +50,8 @@ import datawave.query.jexl.functions.QueryFunctions;
  * {@code unique_by_second('field1','field2')}</li>
  * <li>{@code f:most_recent_unique...} Adding most_recent_ before any unique function will set the most.recent.unique flag to true, e.g.
  * {@code most_recent_unique_by_day('field1','field2')}</li>
+ * <li>{@code f:max_unique_count()}: Expects a single integer value representing the maximum number of times a non-unique result targeted by the unique function
+ * may occur before to be included in the unique results</li>
  * <li>{@code f:rename}: Expects a comma-delimited list field/field mappings e.g. {@code f:rename('field1=field2','field3=field4')}</li>
  * <li>{@code f:sum}: Expects a comma-delimited list of fields to sum the values of in a grouping.</li>
  * <li>{@code f:min}: Expects a comma-delimited list of fields to find the minimum value of in a grouping.</li>
@@ -260,6 +262,12 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
                     updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(function));
+                    return null;
+                }
+                case QueryFunctions.MAX_UNIQUE_COUNT: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    optionsMap.put(QueryParameters.MAX_UNIQUE_COUNT, optionsList.get(0));
                     return null;
                 }
                 case QueryFunctions.GROUPBY_FUNCTION: {
