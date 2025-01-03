@@ -11,11 +11,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
-import org.apache.logging.log4j.core.config.plugins.Plugin;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 

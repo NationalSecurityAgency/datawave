@@ -5,24 +5,16 @@ import java.io.IOException;
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
 
     private IteratorScope scope;
-    private AccumuloConfiguration conf;
 
     public BulkIteratorEnvironment(IteratorScope scope) {
         this.scope = scope;
-        this.conf = DefaultConfiguration.getInstance();
     }
 
     @Override

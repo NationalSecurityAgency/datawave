@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;

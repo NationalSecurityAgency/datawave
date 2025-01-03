@@ -97,7 +97,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
