@@ -79,6 +79,8 @@ public class Constants {
     // From ingest
     public static final Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
 
+    public static final Text D_COLUMN_FAMILY = new Text("d");
+
     // content functions
     public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
     public static final String CONTENT_FUNCTION_NAMESPACE = ContentFunctions.CONTENT_FUNCTION_NAMESPACE;

@@ -3,6 +3,7 @@ package datawave.query.tables;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -12,6 +13,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -127,7 +129,6 @@ public class RunningResource extends AccumuloResource {
         if (baseScanner != null) {
             ((Scanner) baseScanner).setRange(currentRange.iterator().next());
         }
-
     }
 
     /**
@@ -154,6 +155,14 @@ public class RunningResource extends AccumuloResource {
                 log.trace("Adding setting, " + setting);
             baseScanner.addScanIterator(setting);
         }
+
+        if (baseScanner instanceof SessionOptions) {
+            SessionOptionsDelegate delegate = new SessionOptionsDelegate(options);
+
+            baseScanner.setConsistencyLevel(delegate.getConsistencyLevel());
+            baseScanner.setExecutionHints(delegate.getExecutionHints());
+        }
+
         return this;
     }
 
@@ -229,4 +238,18 @@ public class RunningResource extends AccumuloResource {
 
     }
 
+    /**
+     * Accumulo's {@link ScannerBase} provides the ability to {@link ScannerBase#setExecutionHints(Map)} but no way to get the execution hints. Remedy that with
+     * a little delegating.
+     */
+    public static class SessionOptionsDelegate extends SessionOptions {
+
+        public SessionOptionsDelegate(SessionOptions options) {
+            super(options);
+        }
+
+        public Map<String,String> getExecutionHints() {
+            return this.executionHints;
+        }
+    }
 }

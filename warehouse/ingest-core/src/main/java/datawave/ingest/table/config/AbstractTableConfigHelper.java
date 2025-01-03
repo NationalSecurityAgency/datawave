@@ -82,6 +82,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            the aggregators that should be set on {@code tableName}
      * @param tops
      *            accumulo table operations helper for configuring tables
+     * @param config
+     *            the configuration
      * @param log
      *            a {@link Logger} for diagnostic messages
      *
@@ -143,6 +145,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            the aggregators to check for on {@code tableName}
      * @param tops
      *            accumulo table operations helper for configuring tables
+     * @param config
+     *            the configuration
      * @return {@code true} if {@code aggregators} are configured on {@code tableName} and {@code false} if not
      *
      * @throws TableNotFoundException

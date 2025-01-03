@@ -40,7 +40,6 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 
 public class DiscoveryIteratorTest {
-    static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
 
     @Test
     public void testHappyPath() throws Throwable {

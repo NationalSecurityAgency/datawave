@@ -16,11 +16,15 @@ import java.util.function.Supplier;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -31,6 +35,8 @@ import datawave.webservice.query.exception.QueryException;
  * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
  */
 public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseIndexExpansionVisitor.class);
     private static final int MIN_THREADS = 1;
 
     protected ShardQueryConfiguration config;
@@ -48,6 +54,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected ExecutorService executor;
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
+
+    protected String stage = "default";
 
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
                     throws TableNotFoundException {
@@ -232,6 +240,52 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
         public void setRebuiltNode(JexlNode rebuiltNode) {
             this.rebuiltNode = rebuiltNode;
+        }
+    }
+
+    protected String getStage() {
+        return this.stage;
+    }
+
+    /**
+     * Log the result of the index expansion for the provided term
+     *
+     * @param node
+     *            the term
+     * @param lookupMap
+     *            the result of the lookup
+     */
+    protected void logResult(JexlNode node, IndexLookupMap lookupMap) {
+        logResult(getStage(), node, lookupMap);
+    }
+
+    /**
+     * Log the result of index expansion for the provided term.
+     *
+     * @param stage
+     *            which visitor is running
+     * @param node
+     *            the term
+     * @param lookupMap
+     *            the result of the lookup
+     */
+    protected void logResult(String stage, JexlNode node, IndexLookupMap lookupMap) {
+        String field = JexlASTHelper.getIdentifier(node);
+
+        if (lookupMap == null) {
+            log.debug("Lookup map was null for term [{}]", JexlStringBuildingVisitor.buildQuery(node));
+            return;
+        }
+
+        if (lookupMap.containsKey(field)) {
+            String term = JexlStringBuildingVisitor.buildQuery(node);
+            if (lookupMap.get(field).isEmpty()) {
+                log.debug("{} expansion for term [{}] failed (no data)", stage, term);
+            } else if (lookupMap.get(field).isThresholdExceeded()) {
+                log.debug("{} expansion for term [{}] failed (threshold)", stage, term);
+            } else {
+                log.debug("{} expansion for term [{}] success ({} values)", stage, term, lookupMap.get(field).size());
+            }
         }
     }
 
