@@ -128,7 +128,18 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <!--   reduce type metadata     -->
+        <property name="reduceTypeMetadata" value="false" />
+        <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--   query sorting options     -->
+        <property name="sortQueryPreIndexWithImpliedCounts" value="true" />
+        <property name="sortQueryPreIndexWithFieldCounts" value="true" />
+        <property name="sortQueryPostIndexWithTermCounts" value="true" />
+        <property name="sortQueryPostIndexWithFieldCounts" value="true" />
         <property name="eventFieldSeek" value="3" />
+        <!-- cardinality threshold enables running ivarators as filter iterators -->
+        <property name="cardinalityThreshold" value="50"/>
+        <property name="seekingEventAggregation" value="true"/>
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

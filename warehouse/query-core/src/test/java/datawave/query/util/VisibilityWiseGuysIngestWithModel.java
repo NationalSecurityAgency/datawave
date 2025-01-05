@@ -776,6 +776,24 @@ public class VisibilityWiseGuysIngestWithModel {
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
+            // for testing #NOEXPANSION function
+            mutation = new Mutation("FASTENER");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+
+            // for testing #NOEXPANSION function
+            mutation = new Mutation("FIXTURE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+
         } finally {
             if (null != bw) {
                 bw.close();
@@ -787,8 +805,8 @@ public class VisibilityWiseGuysIngestWithModel {
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
 
             mutation = new Mutation("NAM");
-            mutation.put("DATAWAVE", "NAME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
-            mutation.put("DATAWAVE", "NOME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            // Tests pattern mapping.
+            mutation.put("DATAWAVE", "NAME|NOME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("AG");
@@ -820,6 +838,12 @@ public class VisibilityWiseGuysIngestWithModel {
             mutation = new Mutation("COLOR");
             mutation.put("DATAWAVE", "COLOR" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             mutation.put("DATAWAVE", "HUE" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            bw.addMutation(mutation);
+
+            // specifically for testing the #NOEXPANSION function
+            mutation = new Mutation("FASTENER");
+            mutation.put("DATAWAVE", "FASTENER" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            mutation.put("DATAWAVE", "FIXTURE" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             bw.addMutation(mutation);
 
         } finally {

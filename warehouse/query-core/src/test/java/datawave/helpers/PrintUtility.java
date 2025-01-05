@@ -23,6 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.ExtendedHyperLogLogPlus;
 import datawave.ingest.protobuf.Uid;
+import datawave.util.CompositeTimestamp;
 
 /**
  * A set of static methods for printing tables in mock Accumulo instance.
@@ -61,8 +62,10 @@ public class PrintUtility {
             final Scanner scanner = client.createScanner(tableName, authorizations);
             for (final Entry<Key,Value> e : scanner) {
                 sb.append(e.getKey().toStringNoTime());
-                sb.append(' ');
-                sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
+                sb.append(" EventDate ");
+                sb.append(dateFormat.format(new Date(CompositeTimestamp.getEventDate(e.getKey().getTimestamp()))));
+                sb.append(" AgeOffDate ");
+                sb.append(dateFormat.format(new Date(CompositeTimestamp.getAgeOffDate(e.getKey().getTimestamp()))));
                 sb.append('\t');
                 sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
                 sb.append("\n");
@@ -85,8 +88,10 @@ public class PrintUtility {
         final Scanner scanner = client.createScanner(tableName, authorizations);
         for (final Entry<Key,Value> e : scanner) {
             sb.append(e.getKey().toStringNoTime());
-            sb.append(' ');
-            sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
+            sb.append(" EventDate ");
+            sb.append(dateFormat.format(new Date(CompositeTimestamp.getEventDate(e.getKey().getTimestamp()))));
+            sb.append(" AgeOffDate ");
+            sb.append(dateFormat.format(new Date(CompositeTimestamp.getAgeOffDate(e.getKey().getTimestamp()))));
             sb.append('\t');
             sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
             sb.append("\n");
