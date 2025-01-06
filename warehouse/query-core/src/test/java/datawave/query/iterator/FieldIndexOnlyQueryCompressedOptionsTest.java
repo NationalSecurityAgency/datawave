@@ -8,10 +8,10 @@ import java.util.Map;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class FieldIndexOnlyQueryCompressedOptionsTest {
 
@@ -51,7 +51,7 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
         key2 = new Key("key_2");
         testRange = new Range(key1, key2);
 
-        mockSeq = EasyMock.createMock(ByteSequence.class);
+        mockSeq = Mockito.mock(ByteSequence.class);
         byteSeq = new ArrayList<ByteSequence>();
         byteSeq.add(mockSeq);
 

@@ -11,6 +11,7 @@ out the [prereqs](#prereqs) at a minimum):
 git submodule update --init --recursive
 
 # build docker images for datawave and all of the microservices
+# optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
 mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 # bootstrap the services, and bring them up using docker compose
@@ -135,6 +136,17 @@ Enabled via the 'dictionary', or 'full' profile.
 
 You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
 
+### File Provider
+
+Enabled via the 'file-provider', or 'full' profile.
+
+This microservice is in development, and can be found in this repo.
+
+[Datawave File Provider Service](https://github.com/NationalSecurityAgency/datawave-file-provider-service/tree/main) provides file management and access to Datawave and it's services.
+
+You will need to build the docker image for this service on your local machine following the instructions in the file provider service README.
+
+
 ## Usage
 
 Please read through these instructions in their entirety before attempting to build or deploy Datawave.
@@ -207,7 +219,7 @@ export DW_BIND_HOST=0.0.0.0
 
 This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
 
-What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md).
+What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../contrib/datawave-quickstart/README.md).
 
 ```
 # Add the quickstart env.sh to your .bashrc
@@ -326,6 +338,10 @@ Start the default services, and the dictionary service:
 Start the default services, the kafka services, and the dictionary service:
 
 ```docker compose --profile quickstart --profile dictionary --profile kafka up -d```
+
+Start the default services, and the file provider service:
+
+```docker compose --profile quickstart --profile file-provider up -d```
 
 Start all services:
 
