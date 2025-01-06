@@ -347,8 +347,6 @@ public class ShardIndexQueryTableStaticMethods {
      *            the query configuration
      * @param scannerFactory
      *            the scanner factory
-     * @param dataTypes
-     *            the data types
      * @param helperRef
      *            the metadata helper
      * @param fieldName
@@ -358,16 +356,13 @@ public class ShardIndexQueryTableStaticMethods {
      * @return The index lookup instance
      */
     public static IndexLookup expandRegexTerms(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName,
-                    Collection<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) {
+                    MetadataHelper helperRef, ExecutorService execService) {
         Set<String> patterns = Sets.newHashSet();
 
         Object literal = JexlASTHelper.getLiteralValue(node);
+        patterns.add(String.valueOf(literal));
 
-        if (literal instanceof String) {
-            patterns.add((String) literal);
-        } else if (literal instanceof Number) {
-            patterns.add(literal.toString());
-        } else {
+        if (!(literal instanceof String || literal instanceof Number)) {
             log.warn("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
         }
 
