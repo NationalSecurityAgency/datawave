@@ -46,8 +46,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.function.LogTiming;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 
 public class UniqueTransformTest {
