@@ -65,8 +65,6 @@ import datawave.webservice.response.StatsResponse;
 @ActiveProfiles({"StatsServiceTest", "stats-service-enabled"})
 public class StatsServiceTest {
     
-    private static final int ZK_PORT = 22181;
-    
     private static final String ZK_MONITOR_PATH = "/accumulo/%s/monitor/http_addr";
     private static final String ZK_MONITOR_DATA = "localhost:9995";
     
@@ -96,7 +94,22 @@ public class StatsServiceTest {
     @BeforeAll
     public static void setupZK() throws Exception {
         //@formatter:off
-        server = new TestingServer(ZK_PORT, true);
+        int retryCounter = 10;
+        boolean started = false;
+        while (!started && retryCounter > 0) {
+            retryCounter--;
+            try {
+                server = new TestingServer(true);
+                started = true;
+            } catch (Exception ex) {
+                if (server != null) {
+                    server.stop();
+                }
+            }
+        }
+        if (!started) {
+            server = new TestingServer(true);
+        }
         expectedMonitorResponse = new String(Files.readAllBytes(Paths.get(
             StatsServiceTest.class.getClassLoader().getResource("accumulo-monitor-stats.xml").toURI())));
         //@formatter:on
@@ -181,7 +194,7 @@ public class StatsServiceTest {
         @Qualifier("warehouse")
         public AccumuloClient warehouseClient() throws Exception {
             Properties testProperties = new Properties();
-            testProperties.setProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey(), String.format("localhost:%d", ZK_PORT));
+            testProperties.setProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey(), String.format("localhost:%d", server.getPort()));
             final AccumuloClient accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance("testInstance")) {
                 @Override
                 public Properties properties() {
@@ -190,7 +203,7 @@ public class StatsServiceTest {
             };
             //@formatter:off
             try (CuratorFramework curator = CuratorFrameworkFactory.newClient(
-                    String.format("localhost:%d", ZK_PORT), new RetryOneTime(500))) {
+                    String.format("localhost:%d", server.getPort()), new RetryOneTime(500))) {
                 curator.start();
                 curator.create().creatingParentContainersIfNeeded()
                     .forPath(String.format(ZK_MONITOR_PATH, accumuloClient.instanceOperations().getInstanceId()), ZK_MONITOR_DATA.getBytes());

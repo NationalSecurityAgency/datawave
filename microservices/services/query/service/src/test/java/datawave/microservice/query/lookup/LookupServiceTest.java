@@ -107,9 +107,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -120,7 +123,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 "LuceneUUIDEventQuery",
                 1,
                 false,
-                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS"), response.getHeaders().toString()))),
                 1,
                 Collections.singletonList(uuidType),
                 pageSize,
@@ -206,9 +209,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -219,7 +225,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 "LuceneUUIDEventQuery",
                 1,
                 false,
-                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS"), response.getHeaders().toString()))),
                 1,
                 Collections.singletonList("PAGE_TITLE"),
                 pageSize,
@@ -312,8 +318,10 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             }
             // add a config object to the query status, which would normally be added by the executor service
             for (QueryStatus status : queryStatuses) {
-                status.setConfig(new GenericQueryConfiguration());
-                queryStorageCache.updateQueryStatus(status);
+                if (status.getConfig() == null) {
+                    status.setConfig(new GenericQueryConfiguration());
+                    queryStorageCache.updateQueryStatus(status);
+                }
             }
             Thread.sleep(500);
         }
@@ -337,9 +345,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -354,7 +365,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 "ContentQuery",
                 1,
                 false,
-                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS"), response.getHeaders().toString()))),
                 pageSize,
                 Objects.requireNonNull(queryResponse));
         // @formatter:on
@@ -466,8 +477,10 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             }
             // add a config object to the query status, which would normally be added by the executor service
             for (QueryStatus status : queryStatuses) {
-                status.setConfig(new GenericQueryConfiguration());
-                queryStorageCache.updateQueryStatus(status);
+                if (status.getConfig() == null) {
+                    status.setConfig(new GenericQueryConfiguration());
+                    queryStorageCache.updateQueryStatus(status);
+                }
             }
             Thread.sleep(500);
         }
@@ -501,9 +514,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
+        Assertions.assertEquals("false",
+                        Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -518,7 +534,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 "ContentQuery",
                 1,
                 false,
-                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS"), response.getHeaders().toString()))),
                 pageSize,
                 Objects.requireNonNull(queryResponse));
         // @formatter:on

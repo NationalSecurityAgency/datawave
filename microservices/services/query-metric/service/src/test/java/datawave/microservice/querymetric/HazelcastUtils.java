@@ -29,7 +29,7 @@ import com.hazelcast.partition.PartitionService;
 
 public class HazelcastUtils {
     
-    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = 120;
+    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = 300;
     
     public static class CountdownLatchAdapter implements Latch {
         
