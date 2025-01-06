@@ -184,7 +184,7 @@ function datawaveIngestWikipedia() {
    [ ! -f "${wikipediaRawFile}" ] && error "File not found: ${wikipediaRawFile}" && return 1
 
    local wikipediaHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${wikipediaRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${wikipediaRawFile} ${wikipediaHdfsFile}"
+   local putFileCommand="hdfs dfs -copyFromLocal -f ${wikipediaRawFile} ${wikipediaHdfsFile}"
 
    local inputFormat="datawave.ingest.wikipedia.WikipediaEventInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${wikipediaHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=wikipedia ${extraOpts}"
@@ -211,7 +211,7 @@ function datawaveIngestCsv() {
    [ ! -f "${csvRawFile}" ] && error "File not found: ${csvRawFile}" && return 1
 
    local csvHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${csvRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${csvRawFile} ${csvHdfsFile}"
+   local putFileCommand="hdfs dfs -copyFromLocal -f ${csvRawFile} ${csvHdfsFile}"
 
    local inputFormat="datawave.ingest.csv.mr.input.CSVFileInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${csvHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=mycsv ${extraOpts}"
@@ -232,7 +232,7 @@ function datawaveIngestJson() {
    [ ! -f "${jsonRawFile}" ] && error "File not found: ${jsonRawFile}" && return 1
 
    local jsonHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${jsonRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsFile}"
+   local putFileCommand="hdfs dfs -copyFromLocal -f ${jsonRawFile} ${jsonHdfsFile}"
 
    local inputFormat="datawave.ingest.json.mr.input.JsonInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${jsonHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=myjson ${extraOpts}"
@@ -347,3 +347,10 @@ function datawaveIngestTarballName() {
    local dwVersion="$(getDataWaveVersion)"
    echo "$( basename "${DW_DATAWAVE_INGEST_TARBALL/-\*-/-$dwVersion-}" )"
 }
+
+function datawaveIngestExamples() {
+   datawaveIngestWikipedia ${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}
+   datawaveIngestJson ${DW_DATAWAVE_INGEST_TEST_FILE_JSON}
+   datawaveIngestCsv ${DW_DATAWAVE_INGEST_TEST_FILE_CSV}
+}
+

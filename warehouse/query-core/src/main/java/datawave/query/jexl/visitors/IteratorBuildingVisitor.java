@@ -67,6 +67,7 @@ import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.data.parsers.FieldIndexKey;
@@ -90,6 +91,8 @@ import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.OrIterator;
+import datawave.query.iterator.logic.RangeFilterIterator;
+import datawave.query.iterator.logic.RegexFilterIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -162,6 +165,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
+    protected EventDataQueryFilter fiAttrFilter;
+    protected EventDataQueryFilter eventAttrFilter;
     protected Set<String> fieldsToAggregate = Collections.emptySet();
     protected Set<String> termFrequencyFields = Collections.emptySet();
     protected boolean allowTermFrequencyLookup = true;
@@ -203,6 +208,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     // SatisfactionVisitor can be changed to accomodate the conditions that
     // caused it.
     protected boolean isQueryFullySatisfied;
+
+    protected boolean useRegexFilter = false;
 
     /**
      * Keep track of the iterator environment since we are deep copying
@@ -313,7 +320,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                                         .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
                                         .collect(Collectors.toList());
                         if (functionNodes.isEmpty()) {
-                            ivarateRange(and, source, data);
+                            if (useRegexFilter) {
+                                contextRequiredRange(and, source, data);
+                            } else {
+                                ivarateRange(and, source, data);
+                            }
                         } else {
                             ivarateFilter(and, source, data, functionNodes);
                         }
@@ -321,10 +332,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
                     }
                 } else if (source instanceof ASTERNode || source instanceof ASTNRNode) {
-                    try {
-                        ivarateRegex(and, source, data);
-                    } catch (IOException ioe) {
-                        throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
+                    if (source instanceof ASTERNode && useRegexFilter) {
+                        // build context iterator for regex filter
+                        contextRequiredRegex(and, source, data);
+                    } else {
+                        try {
+                            ivarateRegex(and, source, data);
+                        } catch (IOException ioe) {
+                            throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
+                        }
                     }
                 } else {
                     QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
@@ -458,7 +474,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTypeMetadata(typeMetadata);
             builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
-            builder.setAttrFilter(attrFilter);
+            // this code path is only executed in the context of a document range. This optimization scans
+            // the TF directly instead of the FI.
+            builder.setAttrFilter(eventAttrFilter);
             builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, tfNextSeek));
             builder.setNode(rootNode);
@@ -1276,6 +1294,72 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         ivarate(builder, rootNode, sourceNode, data);
     }
 
+    /**
+     * Create a context-required regex filter. This allows a regex term to defeat documents on the field index without aggregating every single uid that
+     * matches.
+     *
+     * @param and
+     *            the marker node
+     * @param source
+     *            the source of the marker
+     * @param data
+     *            an iterator builder
+     */
+    private void contextRequiredRegex(ASTAndNode and, JexlNode source, Object data) {
+
+        SortedKeyValueIterator<Key,Value> sourceCopy = this.source.deepCopy(env);
+        String field = JexlASTHelper.getIdentifier(source);
+        String literal = String.valueOf(JexlASTHelper.getLiteralValue(source));
+
+        RegexFilterIterator include = new RegexFilterIterator();
+        include.withSource(sourceCopy);
+        include.withField(field);
+        include.withPattern(literal);
+        include.withTimeFilter(timeFilter.getKeyTimeFilter());
+        include.withAggregation(isQueryFullySatisfied);
+        if (isQueryFullySatisfied) {
+            // only aggregate attributes if the query is fully satisfied via the field index
+            include.withAttributeFactory(new PreNormalizedAttributeFactory(typeMetadata));
+        }
+
+        AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+        iterators.addInclude(include);
+    }
+
+    /**
+     * Create a context-required range filter. This allows a range term to defeat documents on the field index without aggregating every single uid that
+     * matches.
+     *
+     * @param and
+     *            the marker node
+     * @param source
+     *            the source of the marker
+     * @param data
+     *            an iterator builder
+     */
+    private void contextRequiredRange(ASTAndNode and, JexlNode source, Object data) {
+
+        SortedKeyValueIterator<Key,Value> sourceCopy = this.source.deepCopy(env);
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(source);
+
+        RangeFilterIterator include = new RangeFilterIterator();
+        include.withSource(sourceCopy);
+        include.withField(range.getFieldName());
+        include.withTimeFilter(timeFilter.getKeyTimeFilter());
+        include.withLowerBound(range.getLower().toString());
+        include.withUpperBound(range.getUpper().toString());
+        include.withLowerInclusive(range.isLowerInclusive());
+        include.withUpperInclusive(range.isUpperInclusive());
+        include.withAggregation(isQueryFullySatisfied);
+        if (isQueryFullySatisfied) {
+            // only aggregate attributes if the query is fully satisfied via the field index
+            include.withAttributeFactory(new PreNormalizedAttributeFactory(typeMetadata));
+        }
+
+        AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+        iterators.addInclude(include);
+    }
+
     protected TermFrequencyAggregator getTermFrequencyAggregator(String identifier, JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
         ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
 
@@ -1574,6 +1658,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
 
+    public IteratorBuildingVisitor setFiAttrFilter(EventDataQueryFilter fiAttrFilter) {
+        this.fiAttrFilter = fiAttrFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setEventAttrFilter(EventDataQueryFilter eventAttrFilter) {
+        this.eventAttrFilter = eventAttrFilter;
+        return this;
+    }
+
     public IteratorBuildingVisitor setDatatypeFilter(Predicate<Key> datatypeFilter) {
         this.datatypeFilter = datatypeFilter;
         return this;
@@ -1748,6 +1842,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String,Object> exceededOrEvaluationCache) {
         this.exceededOrEvaluationCache = exceededOrEvaluationCache;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setUseRegexFilter(boolean useRegexFilter) {
+        this.useRegexFilter = useRegexFilter;
         return this;
     }
 
