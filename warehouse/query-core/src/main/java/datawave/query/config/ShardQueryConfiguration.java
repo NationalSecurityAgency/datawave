@@ -17,10 +17,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -45,11 +47,13 @@ import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -82,7 +86,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 
     @SuppressWarnings("unused")
-    private static final long serialVersionUID = -4354990715046146110L;
+    private static final long serialVersionUID = 2321985989282659247L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
 
     // is this a tld query, explicitly default to false
@@ -97,6 +101,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
+    private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
+
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
     private boolean collapseUids = false;
@@ -118,7 +124,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
-    private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -434,6 +439,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the excerpt iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
+    private SummaryOptions summaryOptions = new SummaryOptions();
+
+    // The class for the summary iterator
+    private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
+
     /**
      * A bloom filter to avoid duplicate results if needed
      */
@@ -446,6 +456,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int eventNextSeek = -1;
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
+
+    /**
+     * Flag that enables a field-based seeking aggregation in the standard event query. Must be used in conjunction with {@link #eventFieldSeek}
+     */
+    private boolean seekingEventAggregation = false;
 
     /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
@@ -473,24 +488,38 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryOptions = false;
 
     /**
-     * Flag to control gathering field counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     * Flag that sorts the query prior to the global index lookup using inferred costs. This step may reduce time spent in the global index depending on
+     * individual term selectivity.
      */
-    private boolean useFieldCounts = false;
-    /**
-     * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
-     */
-    private boolean useTermCounts = false;
-    /**
-     * Flag to control sorting a query by inferred default costs prior to the global index lookup. This step may reduce time performing a secondary sort as when
-     * {@link #sortQueryByCounts} is enabled.
-     */
-    private boolean sortQueryBeforeGlobalIndex = false;
+    private boolean sortQueryPreIndexWithImpliedCounts = false;
 
     /**
-     * Flag to control if a query is sorted by either field or term counts. Either {@link #useFieldCounts} or {@link #useTermCounts} must be set for this option
-     * to take effect.
+     * Flag that sorts the query prior to the global index lookup using field counts from the {@link TableName#METADATA} table. This option opens a scanner and
+     * thus is more expensive than sorting by implied counts, but is potentially more accurate.
      */
-    private boolean sortQueryByCounts = false;
+    private boolean sortQueryPreIndexWithFieldCounts = false;
+
+    /**
+     * Flag that sorts the query using field counts gathered as part of the global index lookup. Negated terms and branches are not considered.
+     */
+    private boolean sortQueryPostIndexWithFieldCounts = false;
+
+    /**
+     * Flag that sorts the query using term counts gathered as part of the global index lookup. Negated terms and branches are not considered.
+     */
+    private boolean sortQueryPostIndexWithTermCounts = false;
+
+    /**
+     * If a query's cardinality is under this threshold, ivarators will be run as context required filter iterators.
+     */
+    private int cardinalityThreshold;
+
+    /**
+     * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
+     * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
+     */
+    private boolean useQueryTreeScanHintRules = false;
+    private List<ScanHintRule<JexlNode>> queryTreeScanHintRules = new ArrayList<>();
 
     /**
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
@@ -536,6 +565,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
+        this.setMaxAnyFieldScanTimeMillis(other.getMaxAnyFieldScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
@@ -549,7 +579,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
-        this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -715,12 +744,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
+        this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
+        this.setSummaryIterator(other.getSummaryIterator());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
         this.setEventNextSeek(other.getEventNextSeek());
         this.setTfFieldSeek(other.getTfFieldSeek());
         this.setTfNextSeek(other.getTfNextSeek());
+        this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
@@ -728,10 +760,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
-        this.setUseFieldCounts(other.getUseFieldCounts());
-        this.setUseTermCounts(other.getUseTermCounts());
-        this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
-        this.setSortQueryByCounts(other.isSortQueryByCounts());
+        this.setSortQueryPreIndexWithImpliedCounts(other.isSortQueryPreIndexWithImpliedCounts());
+        this.setSortQueryPreIndexWithFieldCounts(other.isSortQueryPreIndexWithFieldCounts());
+        this.setSortQueryPostIndexWithTermCounts(other.isSortQueryPostIndexWithTermCounts());
+        this.setSortQueryPostIndexWithFieldCounts(other.isSortQueryPostIndexWithFieldCounts());
+        this.setCardinalityThreshold(other.getCardinalityThreshold());
+        this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
+        this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
     }
 
@@ -2252,14 +2287,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
-    public boolean getSequentialScheduler() {
-        return sequentialScheduler;
-    }
-
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        this.sequentialScheduler = sequentialScheduler;
-    }
-
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2589,6 +2616,24 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptIterator = excerptIterator;
     }
 
+    public SummaryOptions getSummaryOptions() {
+        return summaryOptions;
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        if (summaryOptions != null) {
+            this.summaryOptions = summaryOptions;
+        }
+    }
+
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
+        return summaryIterator;
+    }
+
+    public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
+        this.summaryIterator = summaryIterator;
+    }
+
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -2635,6 +2680,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setTfNextSeek(int tfNextSeek) {
         this.tfNextSeek = tfNextSeek;
+    }
+
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        this.seekingEventAggregation = seekingEventAggregation;
     }
 
     public long getVisitorFunctionMaxWeight() {
@@ -2737,36 +2790,44 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
     }
 
-    public boolean getUseTermCounts() {
-        return useTermCounts;
+    public boolean isSortQueryPreIndexWithImpliedCounts() {
+        return sortQueryPreIndexWithImpliedCounts;
     }
 
-    public void setUseTermCounts(boolean useTermCounts) {
-        this.useTermCounts = useTermCounts;
+    public void setSortQueryPreIndexWithImpliedCounts(boolean sortQueryPreIndexWithImpliedCounts) {
+        this.sortQueryPreIndexWithImpliedCounts = sortQueryPreIndexWithImpliedCounts;
     }
 
-    public boolean getUseFieldCounts() {
-        return useFieldCounts;
+    public boolean isSortQueryPreIndexWithFieldCounts() {
+        return sortQueryPreIndexWithFieldCounts;
     }
 
-    public void setUseFieldCounts(boolean useFieldCounts) {
-        this.useFieldCounts = useFieldCounts;
+    public void setSortQueryPreIndexWithFieldCounts(boolean sortQueryPreIndexWithFieldCounts) {
+        this.sortQueryPreIndexWithFieldCounts = sortQueryPreIndexWithFieldCounts;
     }
 
-    public boolean isSortQueryBeforeGlobalIndex() {
-        return sortQueryBeforeGlobalIndex;
+    public boolean isSortQueryPostIndexWithFieldCounts() {
+        return sortQueryPostIndexWithFieldCounts;
     }
 
-    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
-        this.sortQueryBeforeGlobalIndex = sortQueryBeforeGlobalIndex;
+    public void setSortQueryPostIndexWithFieldCounts(boolean sortQueryPostIndexWithFieldCounts) {
+        this.sortQueryPostIndexWithFieldCounts = sortQueryPostIndexWithFieldCounts;
     }
 
-    public boolean isSortQueryByCounts() {
-        return sortQueryByCounts;
+    public boolean isSortQueryPostIndexWithTermCounts() {
+        return sortQueryPostIndexWithTermCounts;
     }
 
-    public void setSortQueryByCounts(boolean sortQueryByCounts) {
-        this.sortQueryByCounts = sortQueryByCounts;
+    public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
+        this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
+    }
+
+    public int getCardinalityThreshold() {
+        return cardinalityThreshold;
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        this.cardinalityThreshold = cardinalityThreshold;
     }
 
     @Override
@@ -2798,7 +2859,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
-                getSequentialScheduler() == that.getSequentialScheduler() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
                 getLogTimingDetails() == that.getLogTimingDetails() &&
                 getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
@@ -2960,22 +3020,25 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
+                Objects.equals(getSummaryOptions(), that.getSummaryOptions()) &&
                 getFiFieldSeek() == that.getFiFieldSeek() &&
                 getFiNextSeek() == that.getFiNextSeek() &&
                 getEventFieldSeek() == that.getEventFieldSeek() &&
                 getEventNextSeek() == that.getEventNextSeek() &&
                 getTfFieldSeek() == that.getTfFieldSeek() &&
                 getTfNextSeek() == that.getTfNextSeek() &&
+                isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
-                getUseFieldCounts() == that.getUseFieldCounts() &&
-                getUseTermCounts() == that.getUseTermCounts() &&
-                isSortQueryBeforeGlobalIndex() == that.isSortQueryBeforeGlobalIndex() &&
-                isSortQueryByCounts() == that.isSortQueryByCounts();
+                isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
+                isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
+                isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
+                isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
+                getCardinalityThreshold() == that.getCardinalityThreshold();
         // @formatter:on
     }
 
@@ -3005,7 +3068,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
-                getSequentialScheduler(),
                 getCollectTimingDetails(),
                 getLogTimingDetails(),
                 getSendTimingToStatsd(),
@@ -3164,22 +3226,26 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getLenientFields(),
                 getStrictFields(),
                 getExcerptFields(),
+                getSummaryOptions(),
                 getFiFieldSeek(),
                 getFiNextSeek(),
                 getEventFieldSeek(),
                 getEventNextSeek(),
                 getTfFieldSeek(),
                 getTfNextSeek(),
+                isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
                 isLazySetMechanismEnabled(),
                 getDocAggregationThresholdMs(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
-                getUseFieldCounts(),
-                getUseTermCounts(),
-                isSortQueryBeforeGlobalIndex(),
-                isSortQueryByCounts());
+                isSortQueryPreIndexWithImpliedCounts(),
+                isSortQueryPreIndexWithFieldCounts(),
+                isSortQueryPostIndexWithTermCounts(),
+                isSortQueryPostIndexWithFieldCounts(),
+                getCardinalityThreshold()
+        );
         // @formatter:on
     }
 
@@ -3188,5 +3254,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;
+    }
+
+    public boolean isUseQueryTreeScanHintRules() {
+        return useQueryTreeScanHintRules;
+    }
+
+    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
+        this.useQueryTreeScanHintRules = useQueryTreeScanHintRules;
+    }
+
+    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
+        return queryTreeScanHintRules;
+    }
+
+    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
+        this.queryTreeScanHintRules = queryTreeScanHintRules;
+    }
+
+    public long getMaxAnyFieldScanTimeMillis() {
+        return maxAnyFieldScanTimeMillis;
+    }
+
+    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
+        this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
     }
 }
