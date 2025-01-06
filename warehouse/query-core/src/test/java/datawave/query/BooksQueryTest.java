@@ -136,9 +136,9 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
                             String name = attr.getData().toString();
                             String[] parts = StringUtils.split(name, ' ');
                             if (parts.length > 1) {
-                                attrs.put(AUTHOR_FIRST_NAME + attrExtra, new Content(parts[0], attr.getMetadata(), false));
+                                attrs.put(AUTHOR_FIRST_NAME + attrExtra, new Content(parts[0], attr.getMetadata(), false, attr));
                             }
-                            attrs.put(AUTHOR_LAST_NAME + attrExtra, new Content(parts[parts.length - 1], attr.getMetadata(), false));
+                            attrs.put(AUTHOR_LAST_NAME + attrExtra, new Content(parts[parts.length - 1], attr.getMetadata(), false, attr));
                         }
                     }
                     for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : attrs.entrySet()) {

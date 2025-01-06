@@ -30,7 +30,6 @@ public class DifferentClassesMergeTest {
     private static final long TIMESTAMP_IN_FUTURE = 1000L * 60 * 60 * 24 * 365 * 1000; // 1,000 years in the future
     public static final long DAYS_AGO = -1000L * 60 * 60 * 24;
 
-    private FileRuleWatcher watcher;
     private ColumnVisibilityLabeledFilter parentFilter;
     // childFilter inherits matchPattern contents from parentFilter
     private EdgeColumnQualifierTokenFilter childFilter;
@@ -40,12 +39,11 @@ public class DifferentClassesMergeTest {
         // create childFilter
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         FileSystem fs = childPath.getFileSystem(new Configuration());
-        watcher = new FileRuleWatcher(fs, childPath, 1);
-        childFilter = (EdgeColumnQualifierTokenFilter) loadRulesFromFile(watcher, fs, childPath);
+        childFilter = (EdgeColumnQualifierTokenFilter) loadRulesFromFile(fs, childPath);
 
         // create parentFilter
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
-        parentFilter = (ColumnVisibilityLabeledFilter) loadRulesFromFile(watcher, fs, rootPath);
+        parentFilter = (ColumnVisibilityLabeledFilter) loadRulesFromFile(fs, rootPath);
     }
 
     @Test
@@ -208,8 +206,9 @@ public class DifferentClassesMergeTest {
         assertFalse(parentFilter.accept(key, new Value()));
     }
 
-    private static AppliedRule loadRulesFromFile(FileRuleWatcher watcher, FileSystem fs, Path filePath) throws IOException {
-        Collection<FilterRule> rules = watcher.loadContents(fs.open(filePath));
+    private static AppliedRule loadRulesFromFile(FileSystem fs, Path filePath) throws IOException {
+        FileRuleCacheValue ruleValue = new FileRuleCacheValue(fs, filePath, 1);
+        Collection<FilterRule> rules = ruleValue.loadFilterRules(null);
         // should only have the single rule
         assertEquals(1, rules.size());
         return (AppliedRule) rules.iterator().next();

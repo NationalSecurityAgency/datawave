@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
@@ -31,5 +32,36 @@ public class ContentTest extends AttributeTest {
 
         attr = new Content(value, docKey, true);
         testToKeep(attr, true);
+    }
+
+    @Test
+    public void testSourceSerialization() {
+        Content content = new Content("derivativeValue", new Key("derivativeValue"), false,
+                        new Content("sourceValue", new Key("sourceKey", "sourceCf", "sourceCq", "sourceVis"), true));
+
+        // test kryo
+        Attribute<?> deserialized = serializeKryo(content);
+        validateSourceSerialization(deserialized);
+
+        // test regular
+        deserialized = serialize(content);
+        validateSourceSerialization(deserialized);
+    }
+
+    private void validateSourceSerialization(Attribute<?> deserialized) {
+        assertTrue(deserialized instanceof Content);
+        Content deserializedContent = (Content) deserialized;
+        assertEquals("derivativeValue", deserializedContent.getContent());
+        assertTrue(deserializedContent.getSource() != null);
+        assertTrue(deserializedContent.getSource() instanceof Content);
+        Content sourceContent = (Content) deserializedContent.getSource();
+        assertEquals("sourceValue", sourceContent.getContent());
+        assertTrue(sourceContent.isMetadataSet());
+        // the only thing preserved is the visibility
+        assertEquals("", sourceContent.getMetadata().getRow().toString());
+        assertEquals("", sourceContent.getMetadata().getColumnFamily().toString());
+        assertEquals("", sourceContent.getMetadata().getColumnQualifier().toString());
+        assertEquals("sourceVis", sourceContent.getMetadata().getColumnVisibility().toString());
+        assertEquals(true, sourceContent.isToKeep());
     }
 }

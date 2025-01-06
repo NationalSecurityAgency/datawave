@@ -574,8 +574,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         Multimap<String,NormalizedContentInterface> mSink = null;
 
         for (EdgeDefinition edgeDef : edgeDefs) {
-            arithmetic.clearMatchingGroups();
+            arithmetic.clear();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
+            Map<String,Set<String>> excludedGroups = new HashMap<>();
+
             String jexlPreconditions = null;
 
             // don't bother evaluating preconditions if we know this event doesn't have the necessary fields for this edge
@@ -612,8 +614,26 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
                     } else {
                         matchingGroups = arithmetic.getMatchingGroups();
+                        excludedGroups = arithmetic.getExcludedGroups();
+
+                        for (Entry excluded : excludedGroups.entrySet()) {
+                            for (Object value : (HashSet) excluded.getValue()) {
+                                if (matchingGroups.containsKey(excluded.getKey())) {
+                                    matchingGroups.get(excluded.getKey()).remove(value);
+                                    if (matchingGroups.get(excluded.getKey()).isEmpty()) {
+                                        matchingGroups.remove(excluded.getKey());
+                                    }
+                                }
+                            }
+
+                        }
+
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
+                        }
+
+                        if (edgeDef.isGroupAware() && matchingGroups.size() == 0) {
+                            continue;
                         }
 
                     }
@@ -1147,7 +1167,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     protected Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
                     EdgeKey.DATE_TYPE date_type) {
-        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEventDate(), date_type);
+        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEvent().getTimestamp(), date_type);
     }
 
     private Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
@@ -1171,7 +1191,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         builder.setSourceData(value).setStatsType(statsType).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
                         .setSourceRelationship(vertex.getRelationshipType()).setSourceAttribute1(vertex.getCollectionType())
                         .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
-                        .setTimestamp(edgeValue.getEventDate()).setDateType(date_type);
+                        .setTimestamp(edgeValue.getEvent().getTimestamp()).setDateType(date_type);
         builder.setDeleted(edgeValue.isDeleting());
         Key key = builder.build().encode();
         boolean isNewKey = false;

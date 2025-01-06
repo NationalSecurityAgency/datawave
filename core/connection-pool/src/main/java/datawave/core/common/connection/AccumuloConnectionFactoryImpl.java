@@ -126,7 +126,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             PasswordToken password = new PasswordToken(new byte[0]);
             if (pair != null && user.equals(pair.getFirst()))
                 password = pair.getSecond();
-            SecurityOperations security = cache.getInstance().getConnector(user, password).securityOperations();
+            SecurityOperations security = new InMemoryAccumuloClient(user, cache.getInstance()).securityOperations();
             Set<String> users = security.listLocalUsers();
             if (!users.contains(conf.getUsername())) {
                 security.createLocalUser(conf.getUsername(), new PasswordToken(conf.getPassword()));

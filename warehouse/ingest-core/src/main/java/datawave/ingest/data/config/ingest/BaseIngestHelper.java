@@ -47,6 +47,7 @@ import datawave.util.StringUtils;
  * fields values from the datatypes that they represent.
  */
 public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
+
     /**
      * Configuration parameter to specify that data should be marked for delete on ingest.
      */
@@ -985,8 +986,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
                             break;
                         case DROP:
-                            // for the leave policy, only add a failed normalization
-                            // field
+                            // for the drop policy, clear out the exception,
+                            // clear out the indexed field value and add
+                            // a failed normalization field
+                            n.setError(null);
+                            n.setIndexedFieldValue(null);
+                            results.put(n.getIndexedFieldName(), n);
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
                             break;
                         case FAIL:

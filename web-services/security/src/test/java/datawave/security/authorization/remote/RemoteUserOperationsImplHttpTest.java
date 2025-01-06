@@ -1,6 +1,7 @@
 package datawave.security.authorization.remote;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -9,33 +10,58 @@ import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
 
+import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
+import org.jboss.security.JSSESecurityDomain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
+import org.springframework.cache.support.SimpleCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import datawave.microservice.query.Query;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
 import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.json.DefaultMapperDecorator;
+import datawave.webservice.common.json.ObjectMapperDecorator;
 import datawave.webservice.common.remote.TestJSSESecurityDomain;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
 import datawave.webservice.dictionary.data.DescriptionBase;
@@ -54,46 +80,105 @@ import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
 
+@RunWith(SpringRunner.class)
+@ContextConfiguration
 public class RemoteUserOperationsImplHttpTest {
 
-    private static final int keysize = 2048;
+    @EnableCaching
+    @Configuration
+    static class Config {
 
-    private static final String commonName = "cn=www.test.us";
-    private static final String alias = "tomcat";
-    private static final char[] keyPass = "changeit".toCharArray();
+        @Bean
+        public CacheManager remoteOperationsCacheManager() {
+            SimpleCacheManager cacheManager = new SimpleCacheManager();
+            List<Cache> caches = new ArrayList<Cache>();
+            caches.add(new ConcurrentMapCache("listEffectiveAuthorizations"));
+            caches.add(new ConcurrentMapCache("getRemoteUser"));
+            cacheManager.setCaches(caches);
+            return cacheManager;
+        }
 
-    private X500Principal x500Principal;
+        @Bean
+        public ObjectMapperDecorator objectMapperDecorator() {
+            return new DefaultMapperDecorator();
+        }
+
+        @Bean
+        public ManagedExecutorService executorService() {
+            return Mockito.mock(ManagedExecutorService.class);
+        }
+
+        @Bean
+        public JSSESecurityDomain jsseSecurityDomain() throws CertificateException, NoSuchAlgorithmException {
+            String alias = "tomcat";
+            char[] keyPass = "changeit".toCharArray();
+            int keysize = 2048;
+            String commonName = "cn=www.test.us";
+
+            KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
+            generater.initialize(keysize);
+            KeyPair keypair = generater.generateKeyPair();
+            PrivateKey privKey = keypair.getPrivate();
+            final X509Certificate[] chain = new X509Certificate[1];
+            X500Principal x500Principal = new X500Principal(commonName);
+            final ZonedDateTime start = ZonedDateTime.now().minusWeeks(1);
+            final ZonedDateTime until = start.plusYears(1);
+            X509CertificateBuilder builder = new X509CertificateBuilder().setIssuerDn(x500Principal).setSerialNumber(new BigInteger(10, new SecureRandom()))
+                            .setNotValidBefore(start).setNotValidAfter(until).setSubjectDn(x500Principal).setPublicKey(keypair.getPublic())
+                            .setSigningKey(keypair.getPrivate()).setSignatureAlgorithmName("SHA256withRSA");
+            chain[0] = builder.build();
+
+            return new TestJSSESecurityDomain(alias, privKey, keyPass, chain);
+        }
+
+        @Bean
+        public HttpServer server() throws IOException {
+            HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+            server.setExecutor(null);
+            server.start();
+            return server;
+        }
+
+        @Bean
+        public RemoteUserOperationsImpl remote(HttpServer server) {
+            // create a remote event query logic that has our own server behind it
+            RemoteUserOperationsImpl remote = new RemoteUserOperationsImpl();
+            remote.setQueryServiceURI("/Security/User/");
+            remote.setQueryServiceScheme("http");
+            remote.setQueryServiceHost("localhost");
+            remote.setQueryServicePort(server.getAddress().getPort());
+            remote.setResponseObjectFactory(new MockResponseObjectFactory());
+            return remote;
+        }
+    }
+
+    private static final SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
+    private static final SubjectIssuerDNPair otherUserDN = SubjectIssuerDNPair.of("otherUserDn", "issuerDn");
+    private static Authorizations auths = new Authorizations("auth1", "auth2");
 
     private static final int PORT = 0;
 
+    private final DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
+    private final DatawavePrincipal principal = new DatawavePrincipal((Collections.singleton(user)));
+
+    private final DatawaveUser otherUser = new DatawaveUser(otherUserDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null,
+                    -1L);
+    private final DatawavePrincipal otherPrincipal = new DatawavePrincipal((Collections.singleton(otherUser)));
+
+    @Autowired
     private HttpServer server;
 
-    private RemoteUserOperationsImpl remote;
+    @Autowired
+    private UserOperations remote;
+
+    private DefaultAuthorizationsList listEffectiveAuthResponse;
 
     @Before
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
-        KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
-        generater.initialize(keysize);
-        KeyPair keypair = generater.generateKeyPair();
-        PrivateKey privKey = keypair.getPrivate();
-        final X509Certificate[] chain = new X509Certificate[1];
-        x500Principal = new X500Principal(commonName);
-        final ZonedDateTime start = ZonedDateTime.now().minusWeeks(1);
-        final ZonedDateTime until = start.plusYears(1);
-        X509CertificateBuilder builder = new X509CertificateBuilder().setIssuerDn(x500Principal).setSerialNumber(new BigInteger(10, new SecureRandom()))
-                        .setNotValidBefore(start).setNotValidAfter(until).setSubjectDn(x500Principal).setPublicKey(keypair.getPublic())
-                        .setSigningKey(keypair.getPrivate()).setSignatureAlgorithmName("SHA256withRSA");
-        chain[0] = builder.build();
 
-        server = HttpServer.create(new InetSocketAddress(PORT), 0);
-        server.setExecutor(null);
-        server.start();
-
-        DefaultAuthorizationsList listEffectiveAuthResponse = new DefaultAuthorizationsList();
-        listEffectiveAuthResponse.setUserAuths("testuserDn", "testissuerDn", Arrays.asList("auth1", "auth2"));
-        listEffectiveAuthResponse.setAuthMapping(new HashMap<>());
+        setListEffectiveAuthResponse(userDN, auths);
 
         HttpHandler listEffectiveAuthorizationsHandler = new HttpHandler() {
             @Override
@@ -122,17 +207,6 @@ public class RemoteUserOperationsImplHttpTest {
 
         server.createContext("/Security/User/listEffectiveAuthorizations", listEffectiveAuthorizationsHandler);
         server.createContext("/Security/User/flushCachedCredentials", flushHandler);
-
-        // create a remote event query logic that has our own server behind it
-        remote = new RemoteUserOperationsImpl();
-        remote.setQueryServiceURI("/Security/User/");
-        remote.setQueryServiceScheme("http");
-        remote.setQueryServiceHost("localhost");
-        remote.setQueryServicePort(server.getAddress().getPort());
-        remote.setExecutorService(null);
-        remote.setObjectMapperDecorator(new DefaultMapperDecorator());
-        remote.setResponseObjectFactory(new MockResponseObjectFactory());
-        remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privKey, keyPass, chain));
     }
 
     @After
@@ -142,15 +216,33 @@ public class RemoteUserOperationsImplHttpTest {
         }
     }
 
+    private void setListEffectiveAuthResponse(SubjectIssuerDNPair userDN, Authorizations auths) {
+        listEffectiveAuthResponse = new DefaultAuthorizationsList();
+        listEffectiveAuthResponse.setUserAuths(userDN.subjectDN(), userDN.issuerDN(), Arrays.asList(auths.toString().split(",")));
+        listEffectiveAuthResponse.addAuths(userDN.subjectDN(), userDN.issuerDN(), Arrays.asList(auths.toString().split(",")));
+    }
+
     @Test
     public void testRemoteUserOperations() throws Exception {
-        DatawavePrincipal principal = new DatawavePrincipal(commonName);
 
-        AuthorizationsListBase auths = remote.listEffectiveAuthorizations(principal);
-        assertEquals(2, auths.getAllAuths().size());
+        AuthorizationsListBase returnedAuths = remote.listEffectiveAuthorizations(principal);
+        assertEquals(2, returnedAuths.getAllAuths().size());
 
         GenericResponse flush = remote.flushCachedCredentials(principal);
         assertEquals("test flush result", flush.getResult());
+
+        ProxiedUserDetails returnedUser = remote.getRemoteUser(principal);
+
+        // ensure that we get the cached user details
+        ProxiedUserDetails dupeReturnedUser = remote.getRemoteUser(principal);
+        assertEquals(returnedUser, dupeReturnedUser);
+
+        // setup the list effective auth response for the other user
+        setListEffectiveAuthResponse(otherUserDN, auths);
+
+        // ensure that we get the other user details, not the cached user details
+        ProxiedUserDetails newReturnedUser = remote.getRemoteUser(otherPrincipal);
+        assertNotEquals(returnedUser, newReturnedUser);
     }
 
     public static class MockResponseObjectFactory extends ResponseObjectFactory {

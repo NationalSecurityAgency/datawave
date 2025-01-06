@@ -43,6 +43,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.accumulo.core.client.mapred.AccumuloInputFormat;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.lang.StringUtils;
@@ -763,7 +764,7 @@ public class MapReduceBean {
 
         FSDataInputStream fis;
         try {
-            if (!fs.exists(resultFile) || !fs.isFile(resultFile)) {
+            if (!fs.exists(resultFile) || !fs.getFileStatus(resultFile).isFile()) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND,
                                 MessageFormat.format("{0} at path {1}", fileName, resultsDir));
                 response.addException(qe);

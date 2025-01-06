@@ -2,9 +2,13 @@ package datawave.query;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -20,10 +24,11 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.SeekingFilter;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections.iterators.IteratorChain;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -33,13 +38,24 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
@@ -48,6 +64,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
@@ -59,13 +76,24 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution
  * <p>
- * Data is from {@link ShapesIngest} test set
+ * Data is from {@link ShapesIngest} test set.
+ * <p>
+ * <b>Note:</b> This test class does NOT use of the {@link RebuildingScannerTestHelper}. That helper class makes use of the Apache Common's
+ * {@link IteratorChain} in a way that is incompatible with Accumulo's {@link SeekingFilter}. Namely, during a rebuild on a next call the ScannerHelper's call
+ * to 'ChainIterator.next' will swap in a whole new seeking filter in a way that causes the call to 'range.clip' on SeekingFilter#222 to return null.
  */
 public abstract class ShapesTest {
 
-    private static final Logger log = Logger.getLogger(ShapesTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ShapesTest.class);
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Collections.singleton(auths);
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    // temporary stores for when forcing ivarators via absurdly low index expansion thresholds
+    private int maxUnfieldedExpansionThreshold;
+    private int maxValueExpansionThreshold;
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -99,8 +127,8 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            QueryTestTableHelper testHelper = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            client = testHelper.client;
+            InMemoryInstance i = new InMemoryInstance(ShardRange.class.getName());
+            client = new InMemoryAccumuloClient("", i);
 
             ShapesIngest.writeData(client, ShapesIngest.RangeType.SHARD);
 
@@ -122,8 +150,8 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            QueryTestTableHelper testHelper = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            client = testHelper.client;
+            InMemoryInstance i = new InMemoryInstance(DocumentRange.class.getName());
+            client = new InMemoryAccumuloClient("", i);
 
             ShapesIngest.writeData(client, ShapesIngest.RangeType.DOCUMENT);
 
@@ -155,9 +183,22 @@ public abstract class ShapesTest {
     }
 
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
+
+        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        Preconditions.checkNotNull(hadoopConfig);
+        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
+
+        logic.setMaxFieldIndexRangeSplit(1); // keep things simple
+
+        // disable by default to make clear what tests actually require these settings
+        logic.setSortQueryPostIndexWithTermCounts(false);
+        logic.setCardinalityThreshold(0);
     }
 
     @After
@@ -234,7 +275,7 @@ public abstract class ShapesTest {
             GenericQueryConfiguration config = logic.initialize(clientForTest, settings, authSet);
             logic.setupQuery(config);
         } catch (Exception e) {
-            log.info("exception while planning query: " + e);
+            log.info("exception while planning query", e);
             throw e;
         }
     }
@@ -262,12 +303,12 @@ public abstract class ShapesTest {
 
         Set<String> missing = Sets.difference(expected, found);
         if (!missing.isEmpty()) {
-            log.info("missing uuids: " + missing);
+            log.info("missing uuids: {}", missing);
         }
 
         Set<String> extra = Sets.difference(found, expected);
         if (!extra.isEmpty()) {
-            log.info("extra uuids: " + extra);
+            log.info("extra uuids: {}", extra);
         }
 
         assertEquals(expected, found);
@@ -286,8 +327,8 @@ public abstract class ShapesTest {
             ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ASTJexlScript plannedScript = logic.getConfig().getQueryTree();
             if (!TreeEqualityVisitor.isEqual(expected, plannedScript)) {
-                log.info("expected: " + query);
-                log.info("planned : " + logic.getConfig().getQueryString());
+                log.info("expected: {}", query);
+                log.info("planned : {}", logic.getConfig().getQueryString());
                 fail("Planned query did not match expectation");
             }
         } catch (ParseException e) {
@@ -861,4 +902,439 @@ public abstract class ShapesTest {
         }
     }
 
+    @Test
+    public void testSortQueryPreIndexWithImpliedCounts() throws Exception {
+        try {
+            // sorting via implied counts should push TYPE to the right of SHAPE
+            withQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
+            withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,pentagon");
+
+            Set<String> expectedUids = new HashSet<>(triangleUids);
+            withExpected(expectedUids);
+
+            disableAllSortOptions();
+            logic.setSortQueryPreIndexWithImpliedCounts(true);
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
+        } finally {
+            disableAllSortOptions();
+        }
+    }
+
+    @Test
+    public void testSortQueryPreIndexWithFieldCounts() throws Exception {
+        try {
+            // SHAPE cardinality for triangle and pentagon types is 23
+            // TYPE cardinality for triangle and pentagon types is 21
+            withQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
+            withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,pentagon");
+
+            Set<String> expectedUids = new HashSet<>(triangleUids);
+            withExpected(expectedUids);
+
+            disableAllSortOptions();
+            logic.setSortQueryPreIndexWithFieldCounts(true);
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
+        } finally {
+            disableAllSortOptions();
+        }
+    }
+
+    private void disableAllSortOptions() {
+        logic.setSortQueryPreIndexWithImpliedCounts(false);
+        logic.setSortQueryPreIndexWithFieldCounts(false);
+        logic.setSortQueryPostIndexWithFieldCounts(false);
+        logic.setSortQueryPostIndexWithTermCounts(false);
+    }
+
+    @Test
+    public void testLeadingRegexIvarator() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+
+            withQuery("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            withExpected(triangleUids);
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testTrailingRegex_ContextFilter_withMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    // the query is satisfiable from the field index, so the values are aggregated.
+    // enabling hit list arithmetic disables this feature.
+    @Test
+    public void testTrailingRegex_ContextFilter_withMatches_withHitList() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            // disable field index aggregation for event fields
+            logic.setHitList(true);
+
+            withQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            withExpected(Sets.newHashSet(ShapesIngest.acuteUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'acute' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+            logic.setHitList(false);
+        }
+    }
+
+    @Test
+    public void testTailingRegex_ContextFilter_noMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+            // this does not intersect
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ 'tr.*?'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testLeadingRegex_ContextFilter_withMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            withExpected(Sets.newHashSet(ShapesIngest.equilateralUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testLeadingRegex_ContextFilter_withMatches_withHitList() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            logic.setHitList(true);
+
+            withQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            withExpected(Sets.newHashSet(ShapesIngest.equilateralUid));
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'equilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+            logic.setHitList(false);
+        }
+    }
+
+    @Test
+    public void testLeadingRegex_ContextFilter_noMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+            // this does not intersect
+
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'quadrilateral' && ((_Value_ = true) && (SHAPE =~ '.*angle'))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testBoundedRangeIvarator() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+
+            withQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            withExpected(triangleUids);
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testBoundedRange_ContextFilter_withMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for range filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("SHAPE == 'triangle' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+            withExpected(triangleUids);
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
+    public void testBoundedRange_ContextFilter_noMatches() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for range filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            withQuery("SHAPE == 'octagon' && ((_Bounded_ = true) && (EDGES > '2' && EDGES < '7'))");
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'octagon' && ((_Value_ = true) && ((_Bounded_ = true) && (EDGES > '+aE2' && EDGES < '+aE7')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    /**
+     * Helper method to explicitly disable ivarator configs. Ivarator configs are set at the beginning of each test, so this operation is not destructive.
+     * <p>
+     * Used to test context filter iterators.
+     */
+    private void disableIvaratorConfigs() {
+        logic.setHdfsSiteConfigURLs(null);
+        logic.setIvaratorCacheDirConfigs(Collections.emptyList());
+    }
+
+    private void saveIndexExpansionConfigs() {
+        maxUnfieldedExpansionThreshold = logic.getMaxUnfieldedExpansionThreshold();
+        maxValueExpansionThreshold = logic.getMaxValueExpansionThreshold();
+    }
+
+    private void forceIvarators() {
+        logic.setMaxUnfieldedExpansionThreshold(1);
+        logic.setMaxValueExpansionThreshold(1);
+    }
+
+    private void reloadIndexExpansionConfigs() {
+        logic.setMaxUnfieldedExpansionThreshold(maxUnfieldedExpansionThreshold);
+        logic.setMaxValueExpansionThreshold(maxValueExpansionThreshold);
+    }
+
+    @Test
+    public void testAttributeNormalizers() throws Exception {
+        withQuery("SHAPE == 'triangle'");
+        withExpected(new HashSet<>(triangleUids));
+        planAndExecuteQuery();
+
+        assertAttributeNormalizer("EDGES", NumberType.class);
+        assertAttributeNormalizer("ONLY_TRI", LcNoDiacriticsType.class);
+        assertAttributeNormalizer("PROPERTIES", NoOpType.class);
+        assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+        assertAttributeNormalizer("TYPE", LcNoDiacriticsType.class);
+        assertAttributeNormalizer("UUID", NoOpType.class);
+    }
+
+    // use projection to trigger reduction
+    @Test
+    public void testReduceTypeMetadataViaIncludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadata();
+        try {
+            withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
+            logic.setReduceTypeMetadata(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadata(orig);
+        }
+    }
+
+    // use disallow listed fields to trigger reduction
+    @Test
+    public void testReduceTypeMetadataViaExcludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadata();
+        try {
+            withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
+            logic.setReduceTypeMetadata(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadata(orig);
+        }
+    }
+
+    // use projection to trigger reduction per shard
+    @Test
+    public void testReduceTypeMetadataPerShardViaIncludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadataPerShard();
+        try {
+            withIncludeFields(Set.of("EDGES", "UUID", "SHAPE"));
+            logic.setReduceTypeMetadataPerShard(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadataPerShard(orig);
+        }
+    }
+
+    // use disallow listed fields to trigger reduction
+    @Test
+    public void testReduceTypeMetadataPerShardViaExcludeFields() throws Exception {
+        boolean orig = logic.getReduceTypeMetadataPerShard();
+        try {
+            withExcludeFields(Set.of("ONLY_TRI", "PROPERTIES", "TYPE"));
+            logic.setReduceTypeMetadata(true);
+
+            withQuery("SHAPE == 'triangle'");
+            withExpected(new HashSet<>(triangleUids));
+            planAndExecuteQuery();
+
+            assertAttributeNormalizer("EDGES", NumberType.class);
+            assertAttributeNormalizer("SHAPE", LcNoDiacriticsType.class);
+            assertAttributeNormalizer("UUID", NoOpType.class);
+
+            assertFieldNotFound("ONLY_TRI");
+            assertFieldNotFound("PROPERTIES");
+            assertFieldNotFound("TYPE");
+        } finally {
+            logic.setReduceTypeMetadata(orig);
+        }
+    }
+
+    private void withIncludeFields(Set<String> includes) {
+        parameters.put(QueryParameters.RETURN_FIELDS, Joiner.on(',').join(includes));
+    }
+
+    private void withExcludeFields(Set<String> excludes) {
+        parameters.put(QueryParameters.DISALLOWLISTED_FIELDS, Joiner.on(',').join(excludes));
+    }
+
+    private void assertAttributeNormalizer(String field, Class<?> expectedNormalizer) {
+        for (Document result : results) {
+            Attribute<?> attrs = result.get(field);
+            if (attrs instanceof TypeAttribute<?>) {
+                TypeAttribute<?> attr = (TypeAttribute<?>) attrs;
+                assertSame(expectedNormalizer, attr.getType().getClass());
+            }
+        }
+    }
+
+    private void assertFieldNotFound(String field) {
+        for (Document result : results) {
+            Attribute<?> attrs = result.get(field);
+            assertNull("Expected null value for field " + field, attrs);
+        }
+    }
 }

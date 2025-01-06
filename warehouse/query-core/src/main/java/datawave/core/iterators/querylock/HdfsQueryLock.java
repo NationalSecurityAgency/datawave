@@ -87,7 +87,7 @@ public class HdfsQueryLock implements QueryLock {
             hdfsCacheURI = new URI(hdfsCacheDirURI);
             fs = fsCache.getFileSystem(hdfsCacheURI);
             if (fs.exists(new Path(hdfsCacheURI))) {
-                Exception exception = null;
+                IOException exception = null;
 
                 // create the cancelled file
                 for (int i = 0; i < 10; i++) {
@@ -96,7 +96,7 @@ public class HdfsQueryLock implements QueryLock {
                         if (fs.createNewFile(getClosedFile(hdfsBaseURI))) {
                             break;
                         }
-                    } catch (Exception e) {
+                    } catch (IOException e) {
                         exception = e;
                         // try again
                     }

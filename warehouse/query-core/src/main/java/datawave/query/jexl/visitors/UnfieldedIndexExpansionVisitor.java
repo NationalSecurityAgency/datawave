@@ -18,15 +18,17 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
@@ -38,7 +40,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(UnfieldedIndexExpansionVisitor.class);
 
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
@@ -54,6 +56,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         this.allTypes = helper.getAllDatatypes();
+        this.stage = "field";
     }
 
     /**
@@ -91,7 +94,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
         if (script.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
-            log.warn(qe);
+            log.warn("Empty script", qe);
             throw new EmptyUnfieldedTermExpansionException(qe);
         }
         return script;

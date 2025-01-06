@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
-import org.javatuples.Triplet;
-
 import datawave.query.jexl.functions.TermFrequencyList;
 
 /**
@@ -99,9 +97,9 @@ public class TermOffsetMap {
      *            the field
      * @return the phrase indexes
      */
-    public Collection<Triplet<String,Integer,Integer>> getPhraseIndexes(String field) {
+    public Collection<PhraseOffset> getPhraseIndexes(String field) {
         if (phraseIndexes != null) {
-            return phraseIndexes.getIndices(field);
+            return phraseIndexes.getPhraseOffsets(field);
         }
         return null;
     }
@@ -109,7 +107,7 @@ public class TermOffsetMap {
     /**
      * Return the underlying {@link PhraseIndexes} object
      *
-     * @return a phraseindexes object
+     * @return a PhraseIndexes object
      */
     public PhraseIndexes getPhraseIndexes() {
         return phraseIndexes;
