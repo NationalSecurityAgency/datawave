@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -8,17 +9,17 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.test.JexlNodeAssert;
 
 public class PushdownNegationVisitorTest {
@@ -87,42 +88,42 @@ public class PushdownNegationVisitorTest {
     @Test
     public void testAnd() {
         String query = "!(F1 == 'v1' && F2 == 'v2')";
-        String expected = "(!(F1 == 'v1') || !(F2 == 'v2'))";
+        String expected = "!(F1 == 'v1') || !(F2 == 'v2')";
         test(query, expected);
     }
 
     @Test
     public void testAndNE() {
         String query = "!(F1 != 'v1' && F2 != 'v2')";
-        String expected = "(F1 == 'v1' || F2 == 'v2')";
+        String expected = "F1 == 'v1' || F2 == 'v2'";
         test(query, expected);
     }
 
     @Test
     public void testOr() {
         String query = "!(F1 == 'v1' || F2 == 'v2')";
-        String expected = "(!(F1 == 'v1') && !(F2 == 'v2'))";
+        String expected = "!(F1 == 'v1') && !(F2 == 'v2')";
         test(query, expected);
     }
 
     @Test
     public void testOrNE() {
         String query = "!(F1 != 'v1' || F2 != 'v2')";
-        String expected = "(F1 == 'v1' && F2 == 'v2')";
+        String expected = "F1 == 'v1' && F2 == 'v2'";
         test(query, expected);
     }
 
     @Test
     public void testNestedAnd() {
         String query = "!(F1 == 'v1' && F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))";
-        String expected = "(!(F1 == 'v1') || !(F2 == 'v2') || ((!(F3 == 'v3') && !(F4 == 'v4'))))";
+        String expected = "!(F1 == 'v1') || !(F2 == 'v2') || (!(F3 == 'v3') && !(F4 == 'v4'))";
         test(query, expected);
     }
 
     @Test
     public void testNestedAndMixedCancels() {
         String query = "!(F1 != 'v1' && !F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))";
-        String expected = "(F1 == 'v1' || F2 == 'v2' || ((!(F3 == 'v3') && !(F4 == 'v4'))))";
+        String expected = "F1 == 'v1' || F2 == 'v2' || (!(F3 == 'v3') && !(F4 == 'v4'))";
         test(query, expected);
     }
 
@@ -137,7 +138,7 @@ public class PushdownNegationVisitorTest {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' && F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))");
         String orig = JexlStringBuildingVisitor.buildQuery(query);
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        assertEquals("(!(F1 == 'v1') || !(F2 == 'v2') || ((!(F3 == 'v3') && !(F4 == 'v4'))))", JexlStringBuildingVisitor.buildQuery(result));
+        assertEquals("!(F1 == 'v1') || !(F2 == 'v2') || (!(F3 == 'v3') && !(F4 == 'v4'))", JexlStringBuildingVisitor.buildQuery(result));
         assertNotEquals(orig, JexlStringBuildingVisitor.buildQuery(result));
         assertEquals(orig, JexlStringBuildingVisitor.buildQuery(query));
     }
@@ -145,28 +146,28 @@ public class PushdownNegationVisitorTest {
     @Test
     public void testNestedOr() {
         String query = "!(F1 == 'v1' || F2 == 'v2' || (F3 == 'v3' && F4 == 'v4'))";
-        String expected = "(!(F1 == 'v1') && !(F2 == 'v2') && ((!(F3 == 'v3') || !(F4 == 'v4'))))";
+        String expected = "!(F1 == 'v1') && !(F2 == 'v2') && (!(F3 == 'v3') || !(F4 == 'v4'))";
         test(query, expected);
     }
 
     @Test
     public void testNestedOrMixedCancels() {
         String query = "!(F1 != 'v1' || !F2 == 'v2' || (F3 == 'v3' && F4 == 'v4'))";
-        String expected = "(F1 == 'v1' && F2 == 'v2' && ((!(F3 == 'v3') || !(F4 == 'v4'))))";
+        String expected = "F1 == 'v1' && F2 == 'v2' && (!(F3 == 'v3') || !(F4 == 'v4'))";
         test(query, expected);
     }
 
     @Test
     public void testDelayedPropertyMarkerPropagate() {
         String query = "!((_Delayed_ = true) && (F1 == 'v1' || F2 == 'v2'))";
-        String expected = "((_Delayed_ = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))";
+        String expected = "((_Delayed_ = true) && (!(F1 == 'v1') && !(F2 == 'v2')))";
         test(query, expected);
     }
 
     @Test
     public void testEvaluationOnlyPropertyMarkerPropagate() {
         String query = "!((_Eval_ = true) && (F1 == 'v1' || F2 == 'v2'))";
-        String expected = "((_Eval_ = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))";
+        String expected = "((_Eval_ = true) && (!(F1 == 'v1') && !(F2 == 'v2')))";
         test(query, expected);
     }
 
@@ -215,7 +216,7 @@ public class PushdownNegationVisitorTest {
     @Test
     public void testMixedMarkers() {
         String query = "!((_Delayed_ = true) && (F1 == 'v1' && ((_Term_ = true) && (F2 == 'v2'))))";
-        String expected = "((_Delayed_ = true) && ((!(F1 == 'v1') || !((_Term_ = true) && (F2 == 'v2')))))";
+        String expected = "((_Delayed_ = true) && (!(F1 == 'v1') || !((_Term_ = true) && (F2 == 'v2'))))";
         test(query, expected);
     }
 
@@ -229,7 +230,7 @@ public class PushdownNegationVisitorTest {
     @Test
     public void testNegatedUnionOfMarkerNodes() {
         String query = "!( ((_Delayed_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO =~ 'xy.*')) )";
-        String expected = "(!((_Delayed_ = true) && (FOO =~ 'ba.*')) || !((_Delayed_ = true) && (FOO =~ 'xy.*')))";
+        String expected = "!((_Delayed_ = true) && (FOO =~ 'ba.*')) || !((_Delayed_ = true) && (FOO =~ 'xy.*'))";
         test(query, expected);
     }
 
@@ -242,7 +243,7 @@ public class PushdownNegationVisitorTest {
 
         // mark it
         String markedSource = "((_Delayed_ = true) && (FOO =~ 'ba.*'))";
-        JexlNode marked = ASTDelayedPredicate.create(sourceNode);
+        JexlNode marked = QueryPropertyMarker.create(sourceNode, DELAYED);
         assertEquals(markedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
 
         // negate
@@ -298,9 +299,9 @@ public class PushdownNegationVisitorTest {
         List<JexlNode> children = new ArrayList<>();
         children.add(child1);
         children.add(child2);
-        JexlNode and = JexlNodeFactory.createUnwrappedAndNode(children);
+        JexlNode and = JexlNodeFactory.createAndNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(and, true);
-        assertEquals("!((!(f1 == 'v1') || !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+        assertEquals("!(!(f1 == 'v1') || !(f2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
 
     @Test
@@ -310,9 +311,9 @@ public class PushdownNegationVisitorTest {
         List<JexlNode> children = new ArrayList<>();
         children.add(child1);
         children.add(child2);
-        JexlNode or = JexlNodeFactory.createUnwrappedOrNode(children);
+        JexlNode or = JexlNodeFactory.createOrNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(or, true);
-        assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+        assertEquals("!(!(f1 == 'v1') && !(f2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
 
     @Test

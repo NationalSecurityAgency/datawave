@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,7 +19,6 @@ import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 
@@ -182,7 +181,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
-                        "FOO == 'jsub' && (((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))",
+                        "FOO == 'jsub' && ((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz'))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))",
                         result);
     }
 
@@ -196,7 +195,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
-                        "FOO == 'jsub' && (((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca1' && FOO <= 'ca11')))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca1' && UNINDEXED <= 'ca11'))",
+                        "FOO == 'jsub' && ((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca1' && FOO <= 'ca11'))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca1' && UNINDEXED <= 'ca11'))",
                         result);
     }
 
@@ -210,7 +209,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
-                        "FOO == 'jsub' && (((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca11' && FOO <= 'ca111')))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca11' && UNINDEXED <= 'ca111'))",
+                        "FOO == 'jsub' && ((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca11' && FOO <= 'ca111'))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca11' && UNINDEXED <= 'ca111'))",
                         result);
     }
 
@@ -224,7 +223,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
-                        "FOO == 'jsub' && (((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca2' && FOO <= 'ca21')))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca2' && UNINDEXED <= 'ca21'))",
+                        "FOO == 'jsub' && ((_Hole_ = true) && ((_Bounded_ = true) && (FOO >= 'ca2' && FOO <= 'ca21'))) && ((_Bounded_ = true) && (UNINDEXED >= 'ca2' && UNINDEXED <= 'ca21'))",
                         result);
     }
 

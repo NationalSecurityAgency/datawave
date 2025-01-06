@@ -2,6 +2,7 @@ package datawave.query.testframework.cardata;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,9 +16,11 @@ import org.apache.log4j.Logger;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.NumberType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
+import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.RawDataManager;
@@ -74,7 +77,8 @@ public class CarsDataType extends AbstractDataTypeConfig {
         COLOR(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
         DOORS(Normalizer.NUMBER_NORMALIZER),
         WHEELS(Normalizer.NUMBER_NORMALIZER),
-        DESC(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true);
+        DESC(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        VISIBILITY(Normalizer.NOOP_NORMALIZER, false);
 
         private static final List<String> Headers;
 
@@ -120,6 +124,14 @@ public class CarsDataType extends AbstractDataTypeConfig {
 
         public static List<String> headers() {
             return Headers;
+        }
+
+        public static List<String> eventSecurityFieldNames() {
+            return Collections.singletonList(VISIBILITY.name());
+        }
+
+        public static List<String> eventSecurityFieldDomains() {
+            return Collections.singletonList(MarkingFunctions.Default.COLUMN_VISIBILITY);
         }
 
         /**
@@ -221,6 +233,9 @@ public class CarsDataType extends AbstractDataTypeConfig {
 
         // fields
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", CarField.headers()));
+        this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_NAMES, String.join(",", CarField.eventSecurityFieldNames()));
+        this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS,
+                        String.join(",", CarField.eventSecurityFieldDomains()));
 
         log.debug(this.toString());
     }

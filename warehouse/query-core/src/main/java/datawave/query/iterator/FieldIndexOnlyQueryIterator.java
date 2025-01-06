@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -32,9 +31,6 @@ import datawave.query.attributes.Document;
 import datawave.query.function.DataTypeAsField;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.LogTiming;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.errors.UnindexedException;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
@@ -43,7 +39,6 @@ import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.SourceTrackingIterator;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -215,13 +210,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
 
-        // Parse & flatten the query
-        try {
-            script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-        } catch (ParseException e) {
-            throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-        }
-
         this.documentOptions = options;
         this.myEnvironment = env;
 
@@ -269,7 +257,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
 
             satisfactionVisitor.setUnindexedFields(unindexedTypes);
             // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
-            this.script.jjtAccept(satisfactionVisitor, null);
+            this.getScript().jjtAccept(satisfactionVisitor, null);
 
             isQueryFullySatisfiedInitialState = satisfactionVisitor.isQueryFullySatisfied();
 
@@ -280,7 +268,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         visitor.setUnindexedFields(unindexedTypes);
 
         // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
-        script.jjtAccept(visitor, null);
+        getScript().jjtAccept(visitor, null);
         NestedIterator<Key> root = visitor.root();
 
         if (null == root) {
@@ -347,31 +335,9 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new LogTiming(trackingSpan));
         }
 
-        if (this.getReturnType() == ReturnType.kryo) {
-            // Serialize the Document using Kryo
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
-        } else if (this.getReturnType() == ReturnType.writable) {
-            // Use the Writable interface to serialize the Document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new WritableDocumentSerializer(isReducedResponse()));
-        } else if (this.getReturnType() == ReturnType.tostring) {
-            // Just return a toString() representation of the document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new ToStringDocumentSerializer(isReducedResponse()));
-        } else {
-            throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
-        }
+        documentIterator = fieldIndexDocuments;
 
-        // Determine if we have items to return
-        if (this.serializedDocuments.hasNext()) {
-            Entry<Key,Value> entry = this.serializedDocuments.next();
-
-            this.key = entry.getKey();
-            this.value = entry.getValue();
-
-            entry = null;
-        } else {
-            this.key = null;
-            this.value = null;
-        }
+        prepareKeyValue();
     }
 
     /**

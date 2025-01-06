@@ -1,5 +1,6 @@
 package datawave.query.language.parser.jexl;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -9,9 +10,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 public class JexlNodeSetTest {
@@ -294,7 +295,7 @@ public class JexlNodeSetTest {
         assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
 
         String delayed = "((_Delayed_ = true) && (FOO == 'bar'))";
-        JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
+        JexlNode delayedNode = QueryPropertyMarker.create(sourceNode, DELAYED);
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
 
         JexlNodeSet nodeSet = new JexlNodeSet();
@@ -313,7 +314,7 @@ public class JexlNodeSetTest {
         assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
 
         String delayed = "((_Delayed_ = true) && (FOO == 'bar'))";
-        JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
+        JexlNode delayedNode = QueryPropertyMarker.create(sourceNode, DELAYED);
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
 
         JexlNodeSet nodeSet = new JexlNodeSet();

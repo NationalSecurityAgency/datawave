@@ -33,9 +33,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -51,8 +53,6 @@ import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
   */
@@ -125,9 +125,9 @@ public abstract class ValueToAttributesTest {
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -245,9 +245,9 @@ public abstract class ValueToAttributesTest {
             compositeMetadata.setCompositeFieldMappingByType(ingestType, "MAKE_COLOR", Arrays.asList("MAKE", "COLOR"));
             compositeMetadata.setCompositeFieldMappingByType(ingestType, "COLOR_WHEELS", Arrays.asList("MAKE", "COLOR"));
         }
-
         TypeMetadata typeMetadata = new TypeMetadata(
-                        "MAKE:[beep:datawave.data.type.LcNoDiacriticsType];MAKE_COLOR:[beep:datawave.data.type.NoOpType];START_DATE:[beep:datawave.data.type.DateType];TYPE_NOEVAL:[beep:datawave.data.type.LcNoDiacriticsType];IP_ADDR:[beep:datawave.data.type.IpAddressType];WHEELS:[beep:datawave.data.type.LcNoDiacriticsType,datawave.data.type.NumberType];COLOR:[beep:datawave.data.type.LcNoDiacriticsType];COLOR_WHEELS:[beep:datawave.data.type.NoOpType];TYPE:[beep:datawave.data.type.LcNoDiacriticsType]");
+                        "dts:[0:beep];types:[0:datawave.data.type.DateType,1:datawave.data.type.IpAddressType,2:datawave.data.type.LcNoDiacriticsType,3:datawave.data.type.NoOpType,4:datawave.data.type.NumberType];MAKE:[0:2];MAKE_COLOR:[0:3];START_DATE:[0:0];TYPE_NOEVAL:[0:2];IP_ADDR:[0:1];WHEELS:[0:2,0:4];COLOR:[0:2];COLOR_WHEELS:[0:3];TYPE:[0:2]");
+
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         ValueToAttributes valueToAttributes = new ValueToAttributes(compositeMetadata, typeMetadata, null, markingFunctions, true);
     }

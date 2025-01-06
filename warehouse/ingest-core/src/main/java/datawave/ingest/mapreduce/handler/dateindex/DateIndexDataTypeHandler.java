@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -38,7 +39,6 @@ import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.aggregator.DateIndexDateAggregator;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * <p>
@@ -49,7 +49,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>DataTypeHandler</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -70,7 +70,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  *
  * <p>
  * The table with the name specified by {@link #DATEINDEX_TNAME} will be the date index table.
- *
+ * </p>
  *
  *
  * @param <KEYIN>

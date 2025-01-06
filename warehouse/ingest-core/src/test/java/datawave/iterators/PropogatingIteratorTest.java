@@ -82,10 +82,22 @@ public class PropogatingIteratorTest {
     public static class MockIteratorEnvironment implements IteratorEnvironment {
         AccumuloConfiguration conf;
         private final boolean major;
+        private final boolean isUser;
+
+        public MockIteratorEnvironment(AccumuloConfiguration conf) {
+            this.conf = conf;
+            this.isUser = false;
+            this.major = false;
+        }
 
         public MockIteratorEnvironment(boolean major) {
+            this(major, false);
+        }
+
+        public MockIteratorEnvironment(boolean major, boolean isUser) {
             this.conf = DefaultConfiguration.getInstance();
             this.major = major;
+            this.isUser = isUser;
         }
 
         @Override
@@ -104,6 +116,11 @@ public class PropogatingIteratorTest {
         @Override
         public boolean isFullMajorCompaction() {
             return major;
+        }
+
+        @Override
+        public boolean isUserCompaction() {
+            return isUser;
         }
 
         @Override

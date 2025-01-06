@@ -10,6 +10,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlElements;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,16 +31,14 @@ public class MapReduceJobDescription implements Serializable {
     @XmlElement(name = "JobType", required = true)
     protected String jobType = null;
 
-    @JsonProperty(value = "RequiredRuntimeParameters")
     // work-around for bug in jackson-databind
     @XmlElementWrapper(name = "RequiredRuntimeParameters")
-    @XmlElement(name = "Parameter")
+    @XmlElements(@XmlElement(name = "Parameter", type = String.class))
     protected List<String> requiredRuntimeParameters = null;
 
-    @JsonProperty(value = "OptionalRuntimeParameters")
     // work-around for bug in jackson-databind
     @XmlElementWrapper(name = "OptionalRuntimeParameters")
-    @XmlElement(name = "Parameter")
+    @XmlElements(@XmlElement(name = "Parameter", type = String.class))
     protected List<String> optionalRuntimeParameters = null;
 
     @JsonProperty(value = "WorkflowAlgorithmDescriptions")

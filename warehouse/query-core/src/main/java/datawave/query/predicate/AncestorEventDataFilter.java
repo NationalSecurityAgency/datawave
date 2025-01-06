@@ -36,12 +36,12 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
      * @see datawave.query.function.Filter#accept(org.apache.accumulo.core.data.Key)
      */
     @Override
-    public boolean apply(Entry<Key,String> input) {
+    public boolean apply(Entry<Key,String> entry) {
         // if the base document, then accept em all, otherwise defer to the quey field filter
-        if (keep(input.getKey())) {
+        if (keep(entry.getKey())) {
             return true;
         } else {
-            return super.apply(input);
+            return super.apply(entry);
         }
     }
 

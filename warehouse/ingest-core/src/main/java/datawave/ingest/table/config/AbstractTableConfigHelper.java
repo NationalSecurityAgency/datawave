@@ -13,7 +13,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.constraints.DefaultKeySizeConstraint;
+import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.hadoop.conf.Configuration;
@@ -24,6 +24,11 @@ import datawave.ingest.table.aggregator.CombinerConfiguration;
 import datawave.iterators.PropogatingIterator;
 
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
+
+    public static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
+    protected Configuration config;
+
+    protected AbstractTableConfigHelper() {}
 
     @Override
     public abstract void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
@@ -77,6 +82,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            the aggregators that should be set on {@code tableName}
      * @param tops
      *            accumulo table operations helper for configuring tables
+     * @param config
+     *            the configuration
      * @param log
      *            a {@link Logger} for diagnostic messages
      *
@@ -87,15 +94,15 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Logger log)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        if (areAggregatorsConfigured(tableName, aggregators, tops)) {
+    protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config,
+                    Logger log) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        if (areAggregatorsConfigured(tableName, aggregators, tops, config)) {
             log.debug(tableName + " appears to have its aggregators configured already.");
             return;
         }
 
         log.info("Configuring aggregators for " + tableName);
-        Map<String,String> props = generateInitialTableProperties();
+        Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));
         for (Entry<String,String> prop : props.entrySet()) {
             tops.setProperty(tableName, prop.getKey(), prop.getValue());
@@ -105,14 +112,22 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
     /**
      * Copied from Accumulo 1.9 IteratorUtil
      *
+     * @param config
+     *            the configuration
+     * @param tableName
+     *            the table name
+     *
      * @return a map of the table properties
      */
-    public static Map<String,String> generateInitialTableProperties() {
+    public static Map<String,String> generateInitialTableProperties(Configuration config, String tableName) {
         TreeMap<String,String> props = new TreeMap<>();
 
-        for (IteratorScope iterScope : IteratorScope.values()) {
-            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
-            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+        boolean disableVersioning = config != null && config.getBoolean(tableName + DISABLE_VERSIONING_ITERATOR, false);
+        if (!disableVersioning) {
+            for (IteratorScope iterScope : IteratorScope.values()) {
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+            }
         }
 
         props.put(Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
@@ -130,14 +145,17 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            the aggregators to check for on {@code tableName}
      * @param tops
      *            accumulo table operations helper for configuring tables
+     * @param config
+     *            the configuration
      * @return {@code true} if {@code aggregators} are configured on {@code tableName} and {@code false} if not
      *
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
+    protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config)
+                    throws TableNotFoundException {
         boolean aggregatorsConfigured = false;
-        Map<String,String> props = generateInitialTableProperties();
+        Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));
         Iterable<Entry<String,String>> properties;
         try {

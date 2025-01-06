@@ -1,21 +1,21 @@
 package datawave.core.iterators.key.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class FiKeyUtilTest {
+class FiKeyUtilTest {
 
     private final Key fikey = new Key("row", "fi\0FIELD", "value\0datatype\0uid");
     private final Key fikeyWithNulls = new Key("row", "fi\0FIELD", "v\0a\0l\0u\0e\0datatype\0uid");
     private final Key fikeyWithChildUid = new Key("row", "fi\0FIELD", "value\0datatype\0uid.12.37");
 
     @Test
-    public void testSimpleParse() {
+    void testSimpleParse() {
         assertTrue(FiKeyUtil.instanceOf(fikey));
         //  @formatter:off
         assertAll(
@@ -28,7 +28,7 @@ public class FiKeyUtilTest {
     }
 
     @Test
-    public void testParsingValueWithNulls() {
+    void testParsingValueWithNulls() {
         assertTrue(FiKeyUtil.instanceOf(fikeyWithNulls));
         //  @formatter:off
         assertAll(
@@ -41,7 +41,7 @@ public class FiKeyUtilTest {
     }
 
     @Test
-    public void testParseChildUid() {
+    void testParseChildUid() {
         assertTrue(FiKeyUtil.instanceOf(fikeyWithChildUid));
         //  @formatter:off
         assertAll(
@@ -54,7 +54,7 @@ public class FiKeyUtilTest {
     }
 
     @Test
-    public void testParseNoValue() {
+    void testParseNoValue() {
         Key key = new Key("row", "fi\0FIELD", "datatype\0uid");
         assertThrows(IllegalArgumentException.class, () -> {
             assertEquals(".getValueString() should have thrown an IllegalArgumentException error: ", "", FiKeyUtil.getValueString(key));
@@ -62,7 +62,7 @@ public class FiKeyUtilTest {
     }
 
     @Test
-    public void testParseNoDatatype() {
+    void testParseNoDatatype() {
         Key key = new Key("row", "fi\0FIELD", "value\0uid");
         assertThrows(IllegalArgumentException.class, () -> {
             assertEquals(".getDatatypeString() should have thrown an IllegalArgumentException error: ", "", FiKeyUtil.getDatatypeString(key));
@@ -72,7 +72,7 @@ public class FiKeyUtilTest {
     // getUidString simply returns everything after the last null byte. If the column qualifier is wrong
     // then the method will return the wrong value
     @Test
-    public void testParseNoUid() {
+    void testParseNoUid() {
         Key key = new Key("row", "fi\0FIELD", "value\0datatype");
         assertEquals("datatype", FiKeyUtil.getUidString(key));
     }

@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ import java.util.SortedMap;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -100,11 +102,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     private static final Logger log = Logger.getLogger(EventMapper.class);
 
-    /**
-     * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is greater than (now - interval) then it
-     * will be processed.
-     */
-    public static final String DISCARD_INTERVAL = "event.discard.interval";
+    // for backward compatibility, these DISCARD constants are maintained here as well
+    public static final String DISCARD_INTERVAL = DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL;
+    public static final String DISCARD_FUTURE_INTERVAL = DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL;
+
+    public static final String RECORD_PREDICATES = "event.predicates";
 
     public static final String CONTEXT_WRITER_CLASS = "ingest.event.mapper.context.writer.class";
     public static final String CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS = "ingest.event.mapper.context.writer.output.table.counters";
@@ -132,14 +134,16 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     protected Map<String,List<DataTypeHandler<K1>>> typeMap = new HashMap<>();
 
-    /**
-     * might as well cache the discard interval
-     */
-    protected Map<String,Long> dataTypeDiscardIntervalCache = new HashMap<>();
+    // Predicates are used to filter out events if needed. If predicates exist
+    // for a datatype, then the predicates need to all pass (return true)
+    // inorder to ingest the record. The event is otherwise dropped and a counter is
+    // incremented for the predicate class.
+    protected Map<String,Set<RawRecordPredicate>> predicateMap = new HashMap<>();
+
+    // base set of predicates
+    private Collection<String> predicates = Collections.emptyList();
 
     private FileSplit split = null;
-
-    private long interval = 0l;
 
     private static Now now = Now.getInstance();
 
@@ -187,7 +191,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Initialize the Type Registry
         TypeRegistry.getInstance(context.getConfiguration());
 
-        interval = context.getConfiguration().getLong(DISCARD_INTERVAL, 0l);
+        // load the predicates applied to all types
+        predicates = new HashSet<>(context.getConfiguration().getTrimmedStringCollection(RECORD_PREDICATES));
+        // always add the discard interval predicates
+        predicates.add(DataTypeDiscardIntervalPredicate.class.getName());
+        predicates.add(DataTypeDiscardFutureIntervalPredicate.class.getName());
 
         // default to true, but it can be disabled
         createSequenceFileName = context.getConfiguration().getBoolean(LOAD_SEQUENCE_FILE_NAME, true);
@@ -286,7 +294,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     }
 
     /**
-     * Get the data type handlers for a given type name. This will also fill the dataTypeDiscardIntervalCache and the validators as a side effect.
+     * Get the data type handlers for a given type name. This will also fill the predicate map and the validators as a side effect.
      *
      * @param typeStr
      *            name of the type
@@ -300,11 +308,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
             typeMap.put(typeStr, new ArrayList<>());
 
-            long myInterval = context.getConfiguration().getLong(typeStr + "." + DISCARD_INTERVAL, interval);
-
-            dataTypeDiscardIntervalCache.put(typeStr, myInterval);
-
-            log.info("Setting up type: " + typeStr + " with interval " + myInterval);
+            predicateMap.put(typeStr, getPredicates(typeStr, context, predicates));
 
             if (!TypeRegistry.getTypeNames().contains(typeStr)) {
                 log.warn("Attempted to load configuration for a type that does not exist in the registry: " + typeStr);
@@ -364,6 +368,35 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         return typeMap.get(typeStr);
     }
 
+    private Set<RawRecordPredicate> getPredicates(final String type, final Context context, final Collection<String> basePredicates) {
+        Collection<String> predicateClasses = new HashSet<>(context.getConfiguration().getTrimmedStringCollection(type + "." + RECORD_PREDICATES));
+        predicateClasses.addAll(basePredicates);
+        if (!predicateClasses.isEmpty()) {
+            return predicateClasses.stream().map(s -> {
+                try {
+                    return Class.forName(s);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException("Cannot load predicate for type " + type + ": " + s, e);
+                }
+            }).filter(c -> {
+                if (!RawRecordPredicate.class.isAssignableFrom(c)) {
+                    throw new IllegalArgumentException("Predicate " + c.getName() + " for type " + type + " is not a RawRecordPredicate.");
+                }
+                return true;
+            }).map(c -> {
+                try {
+                    RawRecordPredicate predicate = (RawRecordPredicate) c.getDeclaredConstructor().newInstance();
+                    predicate.setConfiguration(type, context.getConfiguration());
+                    return predicate;
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("Predicate " + c.getName() + " for type " + type + " could not be constructed.", e);
+                }
+            }).collect(Collectors.toSet());
+        } else {
+            return Collections.EMPTY_SET;
+        }
+    }
+
     private List<String> getDataTypeFilterClassNames() {
 
         SortedMap<Integer,String[]> priorityToFilters = new TreeMap<>();
@@ -394,15 +427,13 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             eventMapperTimer.start();
         }
 
-        // ensure this datatype's handlers etc are loaded such that the dataTypeDiscardIntervalCache and validators are filled as well
+        // ensure this datatype's handlers etc are loaded such that the predicates and validators are filled as well
         List<DataTypeHandler<K1>> typeHandlers = loadDataType(value.getDataType().typeName(), context);
 
         // This is a little bit fragile, but there is no other way
         // to get the context on a partitioner, and we are only
         // using this to set some counters that collect stats.
         MultiTableRangePartitioner.setContext(context);
-
-        Long myInterval = dataTypeDiscardIntervalCache.get(value.getDataType().typeName());
 
         // setup the configuration on the event
         // this is automatically done by the sequence reader....
@@ -463,12 +494,17 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, "1");
         }
 
-        // Determine whether the event date is greater than the interval. Excluding fatal error events.
-        if (!value.fatalError() && null != myInterval && 0L != myInterval && (value.getDate() < (now.get() - myInterval))) {
-            if (log.isInfoEnabled())
-                log.info("Event with time " + value.getDate() + " older than specified interval of " + (now.get() - myInterval) + ", skipping...");
-            getCounter(context, IngestInput.OLD_EVENT).increment(1);
-            return;
+        if (!value.fatalError()) {
+            // Determine whether the event should be filtered for any other reason
+            Set<RawRecordPredicate> predicates = predicateMap.get(value.getDataType().typeName());
+            if (null != predicates && !predicates.isEmpty()) {
+                for (RawRecordPredicate predicate : predicates) {
+                    if (!predicate.test(value)) {
+                        getCounter(context, IngestInput.FILTER.name(), predicate.getCounterName()).increment(1);
+                        return;
+                    }
+                }
+            }
         }
 
         // Add the list of handlers with the ALL specified handlers

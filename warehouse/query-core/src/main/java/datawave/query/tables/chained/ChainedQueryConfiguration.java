@@ -1,18 +1,19 @@
 package datawave.query.tables.chained;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.Query;
 
 public class ChainedQueryConfiguration extends GenericQueryConfiguration {
 
     private static final long serialVersionUID = 444695916607959066L;
-    private Query query = null;
 
+    // for backward compatability
     public void setQueryImpl(Query query) {
-        this.query = query;
+        setQuery(query);
     }
 
+    // for backward capatability
     public Query getQueryImpl() {
-        return this.query;
+        return getQuery();
     }
 }

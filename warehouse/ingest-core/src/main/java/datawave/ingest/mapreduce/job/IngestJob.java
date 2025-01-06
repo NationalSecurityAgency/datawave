@@ -31,13 +31,10 @@ import java.util.Map;
 import java.util.Observer;
 import java.util.Set;
 
-import org.apache.accumulo.core.Constants;
-import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -82,6 +79,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.springframework.util.StopWatch;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
@@ -242,7 +240,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-collectDistributionStats]");
         System.out.println("                     [-ingestMetricsDisabled]");
         System.out.println("                     [-ingestMetricsLabel label]");
-        System.out.println("                     [-compressionType lzo|gz]");
+        System.out.println("                     [-compressionType lzo|gz|zstd]");
         System.out.println("                     [-compressionTableDisallowList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
@@ -252,6 +250,11 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+
+        long start = System.currentTimeMillis();
+
+        StopWatch sw = new StopWatch("Ingest Job");
+        sw.start("local init");
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -324,7 +327,6 @@ public class IngestJob implements Tool {
         conf = job.getConfiguration();
 
         setupHandlers(conf);
-
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -360,14 +362,18 @@ public class IngestJob implements Tool {
         log.info("InputFormat: " + job.getInputFormatClass().getName());
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
-        log.info("Split File: " + workDirPath + "/splits.txt");
+        log.info("Split File: " + conf.get(TableSplitsCache.SPLITS_CACHE_DIR) + "/"
+                        + conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
 
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
         URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory(conf));
 
         startDaemonProcesses(conf);
-        long start = System.currentTimeMillis();
+        sw.stop();
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        sw.start("AM Init");
+
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
@@ -420,13 +426,20 @@ public class IngestJob implements Tool {
                 }
             }
         }
+        sw.stop();
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
 
+        sw.start("MR Job");
         job.waitForCompletion(true);
+        sw.stop();
+
         long stop = System.currentTimeMillis();
+
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        log.info(sw.prettyPrint());
 
         // output the counters to the log
         Counters counters = job.getCounters();
-        log.info(counters);
         try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
             RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
 
@@ -530,6 +543,10 @@ public class IngestJob implements Tool {
         }
 
         return 0;
+    }
+
+    private String formatTaskInfo(StopWatch.TaskInfo taskInfo) {
+        return "Timing - " + taskInfo.getTaskName() + ": " + taskInfo.getTimeSeconds() + " s";
     }
 
     private void setupHandlers(Configuration conf) {
@@ -682,7 +699,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-cacheBaseDir")) {
                 cacheBaseDir = args[++i];
             } else if (args[i].equals("-cacheJars")) {
-                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].split("\\s*,\\s*"));
+                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].replaceAll("\\s+", "").split(","));
                 for (String jarString : jars) {
                     File jar = new File(jarString);
                     Path file = new Path(cacheBaseDir, jar.getName());
@@ -716,9 +733,6 @@ public class IngestJob implements Tool {
                 maxRFileEntries = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-maxRFileUncompressedSize")) {
                 maxRFileSize = Long.parseLong(args[++i]);
-            } else if (args[i].equals("-shardedMapFiles")) {
-                conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, args[++i]);
-                ShardedTableMapFile.extractShardedTableMapFilePaths(conf);
             } else if (args[i].equals("-createTables")) {
                 createTables = true;
             } else if (args[i].startsWith(REDUCE_TASKS_ARG_PREFIX)) {
@@ -828,12 +842,16 @@ public class IngestJob implements Tool {
      */
     protected void configureBulkPartitionerAndOutputFormatter(Job job, AccumuloHelper cbHelper, Configuration conf, FileSystem outputFs)
                     throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
-        if (null == conf.get("split.work.dir")) {
-            conf.set("split.work.dir", conf.get("ingest.work.dir.qualified"));
+        if (null == conf.get(SplitsFile.SPLIT_WORK_DIR)) {
+            conf.set(SplitsFile.SPLIT_WORK_DIR, conf.get("ingest.work.dir.qualified"));
         }
         conf.setInt("splits.num.reduce", this.reduceTasks);
         // used by the output formatter and the sharded partitioner
-        ShardedTableMapFile.setupFile(conf);
+        long before = System.currentTimeMillis();
+        SplitsFile.setupFile(job, conf);
+        long after = System.currentTimeMillis();
+
+        log.info("Sharded splits files setup time: " + (after - before) + "ms");
 
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableDisallowList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
@@ -1580,6 +1598,8 @@ public class IngestJob implements Tool {
                         key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
 
+    public final static int MAX_DATA_TO_PRINT = 64;
+
     /**
      * Output a verbose counter
      *
@@ -1604,9 +1624,8 @@ public class IngestJob implements Tool {
     public static void verboseCounter(TaskInputOutputContext context, String location, Text tableName, byte[] row, byte[] colFamily, byte[] colQualifier,
                     Text colVis, byte[] val) {
         String labelString = new ColumnVisibility(colVis).toString();
-        String s = Key.toPrintableString(row, 0, row.length, Constants.MAX_DATA_TO_PRINT) + " "
-                        + Key.toPrintableString(colFamily, 0, colFamily.length, Constants.MAX_DATA_TO_PRINT) + ":"
-                        + Key.toPrintableString(colQualifier, 0, colQualifier.length, Constants.MAX_DATA_TO_PRINT) + " " + labelString + " "
+        String s = Key.toPrintableString(row, 0, row.length, MAX_DATA_TO_PRINT) + " " + Key.toPrintableString(colFamily, 0, colFamily.length, MAX_DATA_TO_PRINT)
+                        + ":" + Key.toPrintableString(colQualifier, 0, colQualifier.length, MAX_DATA_TO_PRINT) + " " + labelString + " "
                         + (val == null ? "null" : String.valueOf(val.length) + " value bytes");
 
         s = s.replace('\n', ' ');

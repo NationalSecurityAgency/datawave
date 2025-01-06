@@ -36,6 +36,9 @@ Generate the password-less ssh key now?"
 source "${BIN_DIR}/env.sh"
 source "${THIS_DIR}/bootstrap.sh"
 
+# If Hadoop is not installed, verify that the two checksums match before installing.
+hadoopIsInstalled || verifyChecksum "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" "${DW_HADOOP_DIST_SHA512_CHECKSUM}"
+
 hadoopIsInstalled && info "Hadoop is already installed" && exit 1
 
 [ -f "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_DIST}" ] || fatal "Hadoop tarball not found"

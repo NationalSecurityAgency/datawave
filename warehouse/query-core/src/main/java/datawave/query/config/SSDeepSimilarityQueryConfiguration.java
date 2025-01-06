@@ -6,21 +6,24 @@ import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.Multimap;
 
-import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
+import datawave.util.ssdeep.ChunkSizeEncoding;
+import datawave.util.ssdeep.IntegerEncoding;
+import datawave.util.ssdeep.NGramGenerator;
+import datawave.util.ssdeep.NGramTuple;
+import datawave.util.ssdeep.SSDeepHash;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
 
     int queryThreads = 100;
-    int maxRepeatedCharacters = 3;
 
+    int ngramSize = NGramGenerator.DEFAULT_NGRAM_SIZE;
+    int maxRepeatedCharacters = SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS;
+    int minHashSize = NGramGenerator.DEFAULT_MIN_HASH_SIZE;
     int indexBuckets = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_COUNT;
     int bucketEncodingBase = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_BASE;
     int bucketEncodingLength = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_LENGTH;
@@ -30,15 +33,13 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private ChunkSizeEncoding chunkSizeEncoder;
 
-    private Query query;
-
     private Collection<Range> ranges;
 
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
     public SSDeepSimilarityQueryConfiguration() {
         super();
-        query = new QueryImpl();
+        setQuery(new QueryImpl());
     }
 
     public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
@@ -47,14 +48,6 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public static SSDeepSimilarityQueryConfiguration create() {
         return new SSDeepSimilarityQueryConfiguration();
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     public Collection<Range> getRanges() {
@@ -89,12 +82,28 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         this.queryThreads = queryThreads;
     }
 
+    public int getNGramSize() {
+        return ngramSize;
+    }
+
+    public void setNGramSize(int ngramSize) {
+        this.ngramSize = ngramSize;
+    }
+
     public int getMaxRepeatedCharacters() {
         return maxRepeatedCharacters;
     }
 
     public void setMaxRepeatedCharacters(int maxRepeatedCharacters) {
         this.maxRepeatedCharacters = maxRepeatedCharacters;
+    }
+
+    public int getMinHashSize() {
+        return minHashSize;
+    }
+
+    public void setMinHashSize(int minHashSize) {
+        this.minHashSize = minHashSize;
     }
 
     public int getBucketEncodingBase() {

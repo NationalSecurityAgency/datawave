@@ -7,6 +7,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 
 public class TestBaseIngestHelper extends BaseIngestHelper {
+
     private final Multimap<String,NormalizedContentInterface> eventFields;
 
     /**

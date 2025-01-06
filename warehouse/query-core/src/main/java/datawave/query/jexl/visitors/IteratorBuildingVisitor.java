@@ -1,6 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -26,29 +31,24 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.Script;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.DroppedExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -67,6 +67,7 @@ import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.data.parsers.FieldIndexKey;
@@ -90,6 +91,8 @@ import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.OrIterator;
+import datawave.query.iterator.logic.RangeFilterIterator;
+import datawave.query.iterator.logic.RegexFilterIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -104,8 +107,7 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.parser.JavaRegexAnalyzer;
@@ -163,6 +165,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
+    protected EventDataQueryFilter fiAttrFilter;
+    protected EventDataQueryFilter eventAttrFilter;
     protected Set<String> fieldsToAggregate = Collections.emptySet();
     protected Set<String> termFrequencyFields = Collections.emptySet();
     protected boolean allowTermFrequencyLookup = true;
@@ -205,6 +209,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     // caused it.
     protected boolean isQueryFullySatisfied;
 
+    protected boolean useRegexFilter = false;
+
     /**
      * Keep track of the iterator environment since we are deep copying
      */
@@ -243,7 +249,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
-        if (instance.isType(ExceededOrThresholdMarkerJexlNode.class)) {
+        if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY, DROPPED)) {
+            if (instance.isType(DELAYED)) {
+                JexlNode subNode = instance.getSource();
+                if (subNode instanceof ASTEQNode) {
+                    delayedEqNodes.add(subNode);
+                }
+                if (isQueryFullySatisfied) {
+                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                }
+                log.trace("Will not process ASTDelayedPredicate.");
+            }
+            return null;
+        } else if (instance.isType(EXCEEDED_OR)) {
             JexlNode source = instance.getSource();
             // if the parent is our ExceededOrThreshold marker, then use an
             // Ivarator to get the job done
@@ -268,7 +286,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 throw new DatawaveFatalQueryException(qe);
             }
             ((IndexRangeIteratorBuilder) data).setRange(range);
-        } else if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
+        } else if (instance.isType(EXCEEDED_VALUE)) {
             // if the parent is our ExceededValueThreshold marker, then use an
             // Ivarator to get the job done unless we don't have to
             JexlNode source = instance.getSource();
@@ -302,7 +320,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                                         .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
                                         .collect(Collectors.toList());
                         if (functionNodes.isEmpty()) {
-                            ivarateRange(and, source, data);
+                            if (useRegexFilter) {
+                                contextRequiredRange(and, source, data);
+                            } else {
+                                ivarateRange(and, source, data);
+                            }
                         } else {
                             ivarateFilter(and, source, data, functionNodes);
                         }
@@ -310,10 +332,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
                     }
                 } else if (source instanceof ASTERNode || source instanceof ASTNRNode) {
-                    try {
-                        ivarateRegex(and, source, data);
-                    } catch (IOException ioe) {
-                        throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
+                    if (source instanceof ASTERNode && useRegexFilter) {
+                        // build context iterator for regex filter
+                        contextRequiredRegex(and, source, data);
+                    } else {
+                        try {
+                            ivarateRegex(and, source, data);
+                        } catch (IOException ioe) {
+                            throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
+                        }
                     }
                 } else {
                     QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
@@ -447,7 +474,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTypeMetadata(typeMetadata);
             builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
-            builder.setAttrFilter(attrFilter);
+            // this code path is only executed in the context of a document range. This optimization scans
+            // the TF directly instead of the FI.
+            builder.setAttrFilter(eventAttrFilter);
             builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, tfNextSeek));
             builder.setNode(rootNode);
@@ -565,10 +594,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     private String formatIncludesOrExcludes(List<NestedIterator> in) {
         String builder = in.toString();
-        builder = builder.replaceAll("OrIterator:", "\n\tOrIterator:");
-        builder = builder.replaceAll("Includes:", "\n\t\tIncludes:");
-        builder = builder.replaceAll("Excludes:", "\n\t\tExcludes:");
-        builder = builder.replaceAll("Bridge:", "\n\t\t\tBridge:");
+        builder = builder.replace("OrIterator:", "\n\tOrIterator:");
+        builder = builder.replace("Includes:", "\n\t\tIncludes:");
+        builder = builder.replace("Excludes:", "\n\t\tExcludes:");
+        builder = builder.replace("Bridge:", "\n\t\t\tBridge:");
         return builder;
     }
 
@@ -630,12 +659,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         // if i find a method node then i can't build an index for the identifier it is called on
-        return null;
-    }
-
-    @Override
-    public Object visit(ASTSizeMethod node, Object data) {
-        // if i find a size method node then i can't build an index for the identifier it is called on
         return null;
     }
 
@@ -874,26 +897,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
     }
 
-    @Override
-    public Object visit(ASTReference node, Object o) {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        // Recurse only if not delayed, evaluation only, or ignored
-        if (instance.isNotAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class, DroppedExpression.class)) {
-            super.visit(node, o);
-        } else if (instance.isType(ASTDelayedPredicate.class)) {
-            JexlNode subNode = instance.getSource();
-            if (subNode instanceof ASTEQNode) {
-                delayedEqNodes.add(subNode);
-            }
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
-            log.trace("Will not process ASTDelayedPredicate.");
-        }
-
-        return null;
-    }
-
     /**
      * This method should only be used when we know it is not a term frequency or index only in the limited case, as we will subsequently evaluate this
      * expression during final evaluation
@@ -1015,7 +1018,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // Set the literal in the IndexIterator
         if (o instanceof IndexIteratorBuilder) {
             IndexIteratorBuilder builder = (IndexIteratorBuilder) o;
-            builder.setField(JexlASTHelper.deconstructIdentifier(node.image));
+            builder.setField(JexlASTHelper.deconstructIdentifier(node.getName()));
         }
 
         if (isUnindexed(node)) {
@@ -1032,7 +1035,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // Set the literal in the IndexIterator
         AbstractIteratorBuilder builder = (AbstractIteratorBuilder) o;
         if (builder != null) {
-            builder.setValue(node.image);
+            builder.setValue(node.getLiteral());
         }
 
         return null;
@@ -1043,7 +1046,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // Set the literal in the IndexIterator
         AbstractIteratorBuilder builder = (AbstractIteratorBuilder) o;
         if (builder != null) {
-            builder.setValue(node.image);
+            builder.setValue(String.valueOf(node.getLiteral()));
         }
 
         return null;
@@ -1130,42 +1133,37 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         IvaratorBuilder builder = null;
 
         try {
-            String id = ExceededOrThresholdMarkerJexlNode.getId(sourceNode);
-            String field = JexlASTHelper.deconstructIdentifier(ExceededOrThresholdMarkerJexlNode.getField(sourceNode));
-            ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(sourceNode);
-
-            if (params.getRanges() != null && !params.getRanges().isEmpty()) {
+            ExceededOr exceededOr = new ExceededOr(sourceNode);
+            if (exceededOr.getParams().getRanges() != null && !exceededOr.getParams().getRanges().isEmpty()) {
                 IndexRangeIteratorBuilder rangeIterBuilder = new IndexRangeIteratorBuilder();
                 builder = rangeIterBuilder;
 
-                SortedSet<Range> ranges = params.getSortedAccumuloRanges();
-                rangeIterBuilder.setSubRanges(params.getSortedAccumuloRanges());
-
+                SortedSet<Range> ranges = exceededOr.getParams().getSortedAccumuloRanges();
+                rangeIterBuilder.setSubRanges(exceededOr.getParams().getSortedAccumuloRanges());
                 // cache these ranges for use during Jexl Evaluation
                 if (exceededOrEvaluationCache != null)
-                    exceededOrEvaluationCache.put(id, ranges);
-
+                    exceededOrEvaluationCache.put(exceededOr.getId(), ranges);
                 LiteralRange<?> fullRange = new LiteralRange<>(String.valueOf(ranges.first().getStartKey().getRow()), ranges.first().isStartKeyInclusive(),
-                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), field, NodeOperand.AND);
-
+                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(),
+                                JexlASTHelper.deconstructIdentifier(exceededOr.getField()), NodeOperand.AND);
                 rangeIterBuilder.setRange(fullRange);
             } else {
                 IndexListIteratorBuilder listIterBuilder = new IndexListIteratorBuilder();
                 builder = listIterBuilder;
 
-                if (params.getValues() != null && !params.getValues().isEmpty()) {
-                    Set<String> values = new TreeSet<>(params.getValues());
+                if (exceededOr.getParams().getValues() != null && !exceededOr.getParams().getValues().isEmpty()) {
+                    Set<String> values = new TreeSet<>(exceededOr.getParams().getValues());
                     listIterBuilder.setValues(values);
 
                     // cache these values for use during Jexl Evaluation
                     if (exceededOrEvaluationCache != null)
-                        exceededOrEvaluationCache.put(id, values);
-                } else if (params.getFstURI() != null) {
-                    URI fstUri = new URI(params.getFstURI());
+                        exceededOrEvaluationCache.put(exceededOr.getId(), values);
+                } else if (exceededOr.getParams().getFstURI() != null) {
+                    URI fstUri = new URI(exceededOr.getParams().getFstURI());
                     FST fst;
                     // only recompute this if not already set since this is potentially expensive
-                    if (exceededOrEvaluationCache.containsKey(id)) {
-                        fst = (FST) exceededOrEvaluationCache.get(id);
+                    if (exceededOrEvaluationCache.containsKey(exceededOr.getId())) {
+                        fst = (FST) exceededOrEvaluationCache.get(exceededOr.getId());
                     } else {
                         fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
                                         hdfsFileSystem.getFileSystem(fstUri));
@@ -1174,17 +1172,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
                     // cache this fst for use during JexlEvaluation.
                     if (exceededOrEvaluationCache != null)
-                        exceededOrEvaluationCache.put(id, fst);
+                        exceededOrEvaluationCache.put(exceededOr.getId(), fst);
                 }
 
                 // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
                 listIterBuilder.setNegated(false);
             }
 
-            builder.setField(field);
+            builder.setField(JexlASTHelper.deconstructIdentifier(exceededOr.getField()));
         } catch (IOException | URISyntaxException | NullPointerException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e,
-                            MessageFormat.format("Class: {0}", ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e, MessageFormat.format("Marker Type: {0}", EXCEEDED_OR));
             throw new DatawaveFatalQueryException(qe);
         }
 
@@ -1289,6 +1286,72 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         ivarate(builder, rootNode, sourceNode, data);
     }
 
+    /**
+     * Create a context-required regex filter. This allows a regex term to defeat documents on the field index without aggregating every single uid that
+     * matches.
+     *
+     * @param and
+     *            the marker node
+     * @param source
+     *            the source of the marker
+     * @param data
+     *            an iterator builder
+     */
+    private void contextRequiredRegex(ASTAndNode and, JexlNode source, Object data) {
+
+        SortedKeyValueIterator<Key,Value> sourceCopy = this.source.deepCopy(env);
+        String field = JexlASTHelper.getIdentifier(source);
+        String literal = String.valueOf(JexlASTHelper.getLiteralValue(source));
+
+        RegexFilterIterator include = new RegexFilterIterator();
+        include.withSource(sourceCopy);
+        include.withField(field);
+        include.withPattern(literal);
+        include.withTimeFilter(timeFilter.getKeyTimeFilter());
+        include.withAggregation(isQueryFullySatisfied);
+        if (isQueryFullySatisfied) {
+            // only aggregate attributes if the query is fully satisfied via the field index
+            include.withAttributeFactory(new PreNormalizedAttributeFactory(typeMetadata));
+        }
+
+        AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+        iterators.addInclude(include);
+    }
+
+    /**
+     * Create a context-required range filter. This allows a range term to defeat documents on the field index without aggregating every single uid that
+     * matches.
+     *
+     * @param and
+     *            the marker node
+     * @param source
+     *            the source of the marker
+     * @param data
+     *            an iterator builder
+     */
+    private void contextRequiredRange(ASTAndNode and, JexlNode source, Object data) {
+
+        SortedKeyValueIterator<Key,Value> sourceCopy = this.source.deepCopy(env);
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(source);
+
+        RangeFilterIterator include = new RangeFilterIterator();
+        include.withSource(sourceCopy);
+        include.withField(range.getFieldName());
+        include.withTimeFilter(timeFilter.getKeyTimeFilter());
+        include.withLowerBound(range.getLower().toString());
+        include.withUpperBound(range.getUpper().toString());
+        include.withLowerInclusive(range.isLowerInclusive());
+        include.withUpperInclusive(range.isUpperInclusive());
+        include.withAggregation(isQueryFullySatisfied);
+        if (isQueryFullySatisfied) {
+            // only aggregate attributes if the query is fully satisfied via the field index
+            include.withAttributeFactory(new PreNormalizedAttributeFactory(typeMetadata));
+        }
+
+        AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+        iterators.addInclude(include);
+    }
+
     protected TermFrequencyAggregator getTermFrequencyAggregator(String identifier, JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
         ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
 
@@ -1321,7 +1384,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public static class FunctionFilter implements Filter {
 
-        private final Script script;
+        private final JexlScript script;
         private final DatawaveJexlContext context = new DatawaveJexlContext();
         private final FieldIndexKey parser = new FieldIndexKey();
 
@@ -1329,10 +1392,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
             if (nodes.size() > 1) {
                 ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-                children(script, andNode);
-                children(andNode, nodes.toArray(new JexlNode[nodes.size()]));
+                setChildren(script, andNode);
+                setChildren(andNode, nodes.toArray(new JexlNode[0]));
             } else {
-                children(script, nodes.get(0));
+                setChildren(script, nodes.get(0));
             }
 
             String query = JexlStringBuildingVisitor.buildQuery(script);
@@ -1525,7 +1588,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     protected boolean isUnindexed(ASTIdentifier node) {
-        final String fieldName = JexlASTHelper.deconstructIdentifier(node.image);
+        final String fieldName = JexlASTHelper.deconstructIdentifier(node.getName());
         return unindexedFields.contains(fieldName);
     }
 
@@ -1584,6 +1647,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setAttrFilter(EventDataQueryFilter attrFilter) {
         this.attrFilter = attrFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setFiAttrFilter(EventDataQueryFilter fiAttrFilter) {
+        this.fiAttrFilter = fiAttrFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setEventAttrFilter(EventDataQueryFilter eventAttrFilter) {
+        this.eventAttrFilter = eventAttrFilter;
         return this;
     }
 
@@ -1761,6 +1834,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String,Object> exceededOrEvaluationCache) {
         this.exceededOrEvaluationCache = exceededOrEvaluationCache;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setUseRegexFilter(boolean useRegexFilter) {
+        this.useRegexFilter = useRegexFilter;
         return this;
     }
 

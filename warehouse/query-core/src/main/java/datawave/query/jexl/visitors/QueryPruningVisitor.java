@@ -6,61 +6,55 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAmbiguous;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTArrayAccess;
-import org.apache.commons.jexl2.parser.ASTArrayLiteral;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
-import org.apache.commons.jexl2.parser.ASTBlock;
-import org.apache.commons.jexl2.parser.ASTConstructorNode;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEmptyFunction;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFloatLiteral;
-import org.apache.commons.jexl2.parser.ASTForeachStatement;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTIfStatement;
-import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMapEntry;
-import org.apache.commons.jexl2.parser.ASTMapLiteral;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTReturnStatement;
-import org.apache.commons.jexl2.parser.ASTSizeFunction;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTernaryNode;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.ASTVar;
-import org.apache.commons.jexl2.parser.ASTWhileStatement;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArrayAccess;
+import org.apache.commons.jexl3.parser.ASTArrayLiteral;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl3.parser.ASTBlock;
+import org.apache.commons.jexl3.parser.ASTConstructorNode;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEmptyFunction;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTForeachStatement;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTIfStatement;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMapEntry;
+import org.apache.commons.jexl3.parser.ASTMapLiteral;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTReturnStatement;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTernaryNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ASTVar;
+import org.apache.commons.jexl3.parser.ASTWhileStatement;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -315,22 +309,10 @@ public class QueryPruningVisitor extends BaseVisitor {
         }
     }
 
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        if (node.jjtGetNumChildren() != 1) {
-            throw new IllegalStateException("ASTReference must only have one child: " + node);
-        }
-        Object o = node.jjtGetChild(0).jjtAccept(this, data);
-
-        pruneJunctionWithSingleChild(node);
-
-        return o;
-    }
-
     /**
      * When a junction is pruned to a single child also prune that junction and the surrounding reference expression
      * <p>
-     * <code>parent - ref - refExpr - and/or - single child</code>
+     * <code>parent - refExpr - and/or - single child</code>
      * <p>
      * prunes to
      * <p>
@@ -340,16 +322,13 @@ public class QueryPruningVisitor extends BaseVisitor {
      *            a JexlNode
      */
     private void pruneJunctionWithSingleChild(JexlNode node) {
-        boolean isRef = node.getClass().isAssignableFrom(ASTReference.class);
-        if (isRef && node.jjtGetNumChildren() == 1 && node.jjtGetChild(0) instanceof ASTReferenceExpression) {
-            JexlNode refExpr = node.jjtGetChild(0);
-            if (refExpr.jjtGetNumChildren() > 0) {
-                JexlNode junction = refExpr.jjtGetChild(0);
-                if (junction.jjtGetNumChildren() == 1 && (junction instanceof ASTOrNode || junction instanceof ASTAndNode)) {
-                    JexlNode parent = node.jjtGetParent();
-                    JexlNode source = junction.jjtGetChild(0);
-                    JexlNodes.swap(parent, node, source);
-                }
+        boolean isRefExp = node.getClass().isAssignableFrom(ASTReferenceExpression.class);
+        if (isRefExp && node.jjtGetNumChildren() == 1) {
+            JexlNode junction = node.jjtGetChild(0);
+            if (junction.jjtGetNumChildren() == 1 && (junction instanceof ASTOrNode || junction instanceof ASTAndNode)) {
+                JexlNode parent = node.jjtGetParent();
+                JexlNode source = junction.jjtGetChild(0);
+                JexlNodes.swap(parent, node, source);
             }
         }
     }
@@ -359,8 +338,11 @@ public class QueryPruningVisitor extends BaseVisitor {
         if (node.jjtGetNumChildren() != 1) {
             throw new IllegalStateException("ASTReferenceExpression must only have one child: " + node);
         }
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
 
-        return node.jjtGetChild(0).jjtAccept(this, data);
+        pruneJunctionWithSingleChild(node);
+
+        return o;
     }
 
     // true/false for respective nodes
@@ -375,12 +357,6 @@ public class QueryPruningVisitor extends BaseVisitor {
         return TruthState.FALSE;
     }
 
-    // propagate unknown for all other things we may encounter
-    @Override
-    public Object visit(SimpleNode node, Object data) {
-        return TruthState.UNKNOWN;
-    }
-
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return TruthState.UNKNOWN;
@@ -388,11 +364,6 @@ public class QueryPruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTBlock node, Object data) {
-        return TruthState.UNKNOWN;
-    }
-
-    @Override
-    public Object visit(ASTAmbiguous node, Object data) {
         return TruthState.UNKNOWN;
     }
 
@@ -437,12 +408,12 @@ public class QueryPruningVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
+    public Object visit(ASTAddNode node, Object data) {
         return TruthState.UNKNOWN;
     }
 
     @Override
-    public Object visit(ASTAdditiveOperator node, Object data) {
+    public Object visit(ASTSubNode node, Object data) {
         return TruthState.UNKNOWN;
     }
 
@@ -482,16 +453,6 @@ public class QueryPruningVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTIntegerLiteral node, Object data) {
-        return TruthState.UNKNOWN;
-    }
-
-    @Override
-    public Object visit(ASTFloatLiteral node, Object data) {
-        return TruthState.UNKNOWN;
-    }
-
-    @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return TruthState.UNKNOWN;
     }
@@ -523,11 +484,6 @@ public class QueryPruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        return TruthState.UNKNOWN;
-    }
-
-    @Override
-    public Object visit(ASTSizeMethod node, Object data) {
         return TruthState.UNKNOWN;
     }
 
@@ -610,7 +566,7 @@ public class QueryPruningVisitor extends BaseVisitor {
                         }
                     }
 
-                    JexlNodes.children(parent, children.toArray(new JexlNode[children.size()]));
+                    JexlNodes.setChildren(parent, children.toArray(new JexlNode[children.size()]));
                 }
             }
 
@@ -618,11 +574,7 @@ public class QueryPruningVisitor extends BaseVisitor {
             // for extra reference expressions and prune those.
             if ((toReplace instanceof ASTOrNode || toReplace instanceof ASTAndNode) && (parent != null && parent.jjtGetNumChildren() == 1)) {
                 if (parent instanceof ASTReferenceExpression && parent.jjtGetParent() != null) {
-                    JexlNode grandparent = parent.jjtGetParent();
-                    if (grandparent instanceof ASTReference && grandparent.jjtGetParent() != null) {
-                        JexlNode greatGrandParent = grandparent.jjtGetParent();
-                        JexlNodes.swap(greatGrandParent, grandparent, parent.jjtGetChild(0));
-                    }
+                    JexlNodes.swap(parent.jjtGetParent(), parent, parent.jjtGetChild(0));
                 }
             }
         }

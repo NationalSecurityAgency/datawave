@@ -46,6 +46,8 @@ public class ProcessUtils {
 
     /**
      * Returns the path of the currently executing JVM, or simply "java" if the path can't be verified for whatever reason
+     *
+     * @return the path of java
      */
     public static String getJavaPath() {
         // Sanity check current 'java.home' path

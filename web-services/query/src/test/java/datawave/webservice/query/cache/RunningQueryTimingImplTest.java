@@ -8,6 +8,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.microservice.query.config.QueryExpirationProperties;
+
 /**
  *
  */
@@ -26,8 +28,8 @@ public class RunningQueryTimingImplTest {
     public void tearDown() throws Exception {}
 
     @Test
-    public void testQueryExpirationConfigurationDefaults() {
-        QueryExpirationConfiguration conf = new QueryExpirationConfiguration();
+    public void testQueryExpirationPropertiesDefaults() {
+        QueryExpirationProperties conf = new QueryExpirationProperties();
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, -1);
 
         assertEquals(60 * 60 * 1000, timing.getMaxCallMs());
@@ -36,11 +38,11 @@ public class RunningQueryTimingImplTest {
     }
 
     @Test
-    public void testQueryExpirationConfiguration() {
-        QueryExpirationConfiguration conf = new QueryExpirationConfiguration();
-        conf.setCallTime(10);
-        conf.setPageShortCircuitTimeout(9);
-        conf.setPageSizeShortCircuitCheckTime(5);
+    public void testQueryExpirationProperties() {
+        QueryExpirationProperties conf = new QueryExpirationProperties();
+        conf.setCallTimeout(10);
+        conf.setShortCircuitTimeout(9);
+        conf.setShortCircuitCheckTime(5);
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, -1);
 
         assertEquals(10 * 60 * 1000, timing.getMaxCallMs());
@@ -49,8 +51,8 @@ public class RunningQueryTimingImplTest {
     }
 
     @Test
-    public void testQueryExpirationConfigurationWithTimeout() {
-        QueryExpirationConfiguration conf = new QueryExpirationConfiguration();
+    public void testQueryExpirationPropertiesWithTimeout() {
+        QueryExpirationProperties conf = new QueryExpirationProperties();
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 20);
 
         assertEquals(20 * 60 * 1000, timing.getMaxCallMs());

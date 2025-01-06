@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -16,9 +15,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,7 +29,6 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
@@ -137,7 +135,7 @@ public class IntersectionTest {
 
         // Assert expected index info
         IndexInfo expectedIndexInfo = new IndexInfo(3);
-        expectedIndexInfo.applyNode(JexlASTHelper.parseJexlQuery("(F1 == 'v1' && F2 == 'v2')").jjtGetChild(0));
+        expectedIndexInfo.applyNode(JexlASTHelper.parseJexlQuery("F1 == 'v1' && F2 == 'v2'").jjtGetChild(0));
 
         assertEquals(expectedIndexInfo, nextedTuple.second());
         assertTrue(TreeEqualityVisitor.isEqual(expectedIndexInfo.getNode(), nextedTuple.second().getNode()));

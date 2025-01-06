@@ -1,13 +1,12 @@
 package datawave.query.planner.pushdown;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
+import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
 import java.util.NoSuchElementException;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import datawave.query.Constants;
@@ -105,8 +104,8 @@ public class CostEstimator {
             }
             case ParserTreeConstants.JJTANDNODE: {
                 Cost andCost = null;
-                for (JexlNode child : children(node)) {
-                    Cost childCost = computeCostForSubtree(child);
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    Cost childCost = computeCostForSubtree(node.jjtGetChild(i));
 
                     // Retain the least-costly child in an AND
                     if (null == andCost) {
@@ -126,8 +125,8 @@ public class CostEstimator {
             }
             case ParserTreeConstants.JJTORNODE: {
                 Cost orCost = new Cost();
-                for (JexlNode child : children(node)) {
-                    Cost childCost = computeCostForSubtree(child);
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    Cost childCost = computeCostForSubtree(node.jjtGetChild(i));
 
                     orCost.incrementBy(childCost);
                 }

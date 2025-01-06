@@ -8,19 +8,16 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.Mockito;
 
 import com.google.common.cache.Cache;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
-@RunWith(PowerMockRunner.class)
 public class QueryExpirationBeanTest {
 
     private static CreatedQueryLogicCacheBean qlCache;
@@ -32,7 +29,7 @@ public class QueryExpirationBeanTest {
         queryCache = new QueryCache();
         queryCache.init();
         qlCache = new CreatedQueryLogicCacheBean();
-        connFactory = PowerMock.createMock(AccumuloConnectionFactory.class);
+        connFactory = Mockito.mock(AccumuloConnectionFactory.class);
     }
 
     @Test
@@ -51,18 +48,21 @@ public class QueryExpirationBeanTest {
         Assert.assertFalse("Query Cache still contains query", queryCache.containsKey(qid));
         Assert.assertFalse("Query Logic Cache still contains query logic", qlCache.snapshot().containsKey(qid));
 
+        Cache<String,RunningQuery> queryCacheBuild = queryCache.buildCache();
         for (int i = 0; i < 5; i++) {
             RunningQuery runningQuery = createRunningQuery();
             String key = runningQuery.getSettings().getId().toString();
-            queryCache.put(key, runningQuery);
+            queryCacheBuild.put(key, runningQuery);
             qlCache.add(key, key, runningQuery.getLogic(), null);
         }
-        int queryCacheSize = Whitebox.getInternalState(queryCache, Cache.class).asMap().size();
+        int queryCacheSize = queryCacheBuild.asMap().size();
         Assert.assertEquals(5, queryCacheSize);
         Assert.assertEquals(5, qlCache.snapshot().size());
         bean.close();
         qlCache.shutdown();
-        queryCacheSize = Whitebox.getInternalState(queryCache, Cache.class).asMap().size();
+
+        queryCacheBuild = queryCache.buildCache();
+        queryCacheSize = queryCacheBuild.asMap().size();
         Assert.assertEquals("Query Cache is not empty: " + queryCacheSize, 0, queryCacheSize);
         Assert.assertEquals("Query Logic Cache is not empty: " + qlCache.snapshot().size(), 0, qlCache.snapshot().size());
     }
@@ -70,14 +70,14 @@ public class QueryExpirationBeanTest {
     private QueryExpirationBean createBean(int expireTime) throws IllegalArgumentException, IllegalAccessException {
         QueryExpirationBean bean = new QueryExpirationBean();
 
-        QueryExpirationConfiguration expirationConfiguration = new QueryExpirationConfiguration();
-        setInternalState(expirationConfiguration, "idleTimeMinutes", expireTime);
-        setInternalState(expirationConfiguration, "callTimeMinutes", expireTime);
+        QueryExpirationProperties expirationConfiguration = new QueryExpirationProperties();
+        expirationConfiguration.setIdleTimeout(expireTime);
+        expirationConfiguration.setCallTimeout(expireTime);
 
-        setInternalState(bean, QueryExpirationConfiguration.class, expirationConfiguration);
-        setInternalState(bean, QueryCache.class, queryCache);
-        setInternalState(bean, CreatedQueryLogicCacheBean.class, qlCache);
-        setInternalState(bean, AccumuloConnectionFactory.class, connFactory);
+        bean.conf = expirationConfiguration;
+        bean.cache = queryCache;
+        bean.qlCache = qlCache;
+        bean.connectionFactory = connFactory;
 
         return bean;
     }

@@ -6,8 +6,8 @@ import static org.junit.Assert.fail;
 
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -122,28 +122,28 @@ public class PullupUnexecutableNodesVisitorTest {
     @Test
     public void testNegatedUnionWithDelayedTerm() {
         String query = "!(FOO == 'bar' || ((_Delayed_ = true) && (FOO == 'baz')))";
-        String expected = "(!(FOO == 'bar') && !(FOO == 'baz'))"; // negations pushed, delayed marker correctly removed
+        String expected = "!(FOO == 'bar') && !(FOO == 'baz')"; // negations pushed, delayed marker correctly removed
         test(query, expected);
     }
 
     @Test
     public void testNegatedIntersectionWithDelayedTerm() {
         String query = "!(FOO == 'bar' && ((_Delayed_ = true) && (FOO == 'baz')))";
-        String expected = "(!(FOO == 'bar') || !(FOO == 'baz'))"; // negations pushed, delayed marker correctly removed
+        String expected = "!(FOO == 'bar') || !(FOO == 'baz')"; // negations pushed, delayed marker correctly removed
         test(query, expected);
     }
 
     @Test
     public void testNegatedUnionWithNegatedDelayedTerm() {
         String query = "!(FOO == 'bar' || !((_Delayed_ = true) && (FOO == 'baz')))";
-        String expected = "(!(FOO == 'bar') && FOO == 'baz')"; // negations pushed, flips negation of delayed term, delayed term correctly removed
+        String expected = "!(FOO == 'bar') && FOO == 'baz'"; // negations pushed, flips negation of delayed term, delayed term correctly removed
         test(query, expected);
     }
 
     @Test
     public void testNegatedIntersectionWithNegatedDelayedTerm() {
         String query = "!(FOO == 'bar' && !((_Delayed_ = true) && (FOO == 'baz')))";
-        String expected = "(!(FOO == 'bar') || FOO == 'baz')"; // negations pushed, flips negation of delayed term, delayed term correctly removed
+        String expected = "!(FOO == 'bar') || FOO == 'baz'"; // negations pushed, flips negation of delayed term, delayed term correctly removed
         test(query, expected);
     }
 

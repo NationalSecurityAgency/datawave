@@ -36,11 +36,12 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -49,8 +50,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -127,9 +126,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -250,7 +249,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                 "CANINE.PET.12:bernese", "CAT.PET.12:himalayan", "BIRD.PET.12:cockatiel", "FISH.PET.12:swordtail",
                 "CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "BIRD.PET.13:lovebird", "FISH.PET.13:tetra",
                 "CANINE.WILD.1:coyote", "CAT.WILD.1:tiger", "BIRD.WILD.1:hawk", "FISH.WILD.1:tuna",
-                "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
+                "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
         //@formatter:on
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
@@ -268,7 +267,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
         // definitely should NOT include group 2 or 3
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "CANINE.PET.1:basset", "CANINE.PET.12:bernese", "CANINE.PET.13:shepherd",
-                        "CANINE.WILD.1:coyote");
+                        "CANINE.WILD.1:coyote", "CANINE.PET.50:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -285,8 +284,76 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
         // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
         Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
+        // added because sorting query causes 'basset' to evaluate first
+        goodResults.addAll(Sets.newHashSet("CANINE.PET.1:basset", "BIRD.PET.1:canary"));
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testGroupWithExpandedRegexNaturalOrderAndMatchesInGroup() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
+        extraParameters.put("return.fields", "CANINE,BIRD");
+
+        // this is the same query as above with terms in natural order after regex expansion
+        String queryString = "(CANINE == 'chihuahua' || CANINE == 'beagle' || CANINE == 'dachshund' || CANINE == 'basset') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+
+        // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
+        Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
+        // added because sorting query causes 'basset' to evaluate first
+        goodResults.addAll(Sets.newHashSet("CANINE.PET.1:basset", "BIRD.PET.1:canary"));
+
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testGroupWithExpandedRegexAlphabeticalOrderAndMatchesInGroup() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
+        extraParameters.put("return.fields", "CANINE,BIRD");
+
+        // this is the same query as above but union terms are ordered alphabetically
+        String queryString = "(CANINE == 'basset' || CANINE == 'beagle' || CANINE == 'chihuahua' || CANINE == 'dachshund') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+
+        // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
+        Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
+
+        // extra groups when 'basset' sorts first
+        // 'chihuahua' is from group 2, so when LimitFields reduces the document it only returns fields from group 2
+        // when 'basset' sorts first it is from group 1, so LimitFields reduces the document fields to groups 1 and 2
+        goodResults.addAll(Sets.newHashSet("CANINE.PET.1:basset", "BIRD.PET.1:canary"));
+
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testGroupWithExpandedRegexAlphabeticalOrderAndMatchesInGroupPartTwo() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
+        extraParameters.put("return.fields", "CANINE,BIRD");
+
+        // this is the same query as above but 'beagle' is sorted first on purpose to demonstrate group 0 influencing return fields
+        String queryString = "(CANINE == 'beagle' || CANINE == 'basset' || CANINE == 'chihuahua' || CANINE == 'dachshund') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+
+        // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
+        Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
+
+        // similar to above, when 'beagle' sorts first group 0 is added to the HIT_TERM and LimitFields will return those fields
+        goodResults.addAll(Sets.newHashSet("BIRD.PET.0:parakeet", "CANINE.PET.0:beagle"));
+
+        // disable just for this test to prove group 0 can be returned
+        logic.setSortQueryPreIndexWithFieldCounts(false);
+        logic.setSortQueryPreIndexWithImpliedCounts(false);
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        logic.setSortQueryPreIndexWithFieldCounts(true);
+        logic.setSortQueryPreIndexWithImpliedCounts(true);
     }
 
     @Test
@@ -300,7 +367,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
 
         Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "BIRD:canary", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd",
-                        "CANINE:bernese");
+                        "CANINE:bernese", "CANINE:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -318,7 +385,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese",
                         "FISH:tuna", "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
                         "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
-                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote", "SIZE:20,12.5", "SIZE:90,26.5");
+
+                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote", "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -336,7 +404,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         Set<String> goodResults = Sets.newHashSet("CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese", "FISH:tuna",
                         "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
                         "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
-                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "SIZE:20,12.5", "SIZE:90,26.5");
+
+                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -356,8 +425,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
                         "CAT.WILD.1:tiger", "FISH.PET.2:angelfish", "CAT.PET.0:tabby", "FISH.WILD.2:mackerel", "FISH.PET.13:tetra", "FISH.PET.1:goldfish",
                         "FISH.PET.3:guppy", "CAT.PET.12:himalayan", "FISH.WILD.1:tuna", "FISH.WILD.3:salmon", "CAT.WILD.3:puma", "CAT.WILD.2:leopard",
+
                         "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5",
-                        "SIZE.CANINE.WILD.1:90,26.5");
+                        "SIZE.CANINE.WILD.1:90,26.5", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -377,8 +447,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
                         "CAT.WILD.1:tiger", "FISH.PET.2:angelfish", "CAT.PET.0:tabby", "FISH.WILD.2:mackerel", "FISH.PET.13:tetra", "FISH.PET.1:goldfish",
                         "FISH.PET.3:guppy", "CAT.PET.12:himalayan", "FISH.WILD.1:tuna", "FISH.WILD.3:salmon", "CAT.WILD.3:puma", "CAT.WILD.2:leopard",
+
                         "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5",
-                        "SIZE.CANINE.WILD.1:90,26.5");
+                        "SIZE.CANINE.WILD.1:90,26.5", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }

@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
@@ -48,7 +48,7 @@ public class DocumentKeysFunction {
 
         ContentFunctionsDescriptor descriptor = new ContentFunctionsDescriptor();
         ContentJexlArgumentDescriptor argsDescriptor;
-        Set<String>[] fieldsAndTerms;
+        ContentFunctionsDescriptor.FieldTerms fieldsAndTerms;
         JexlNode parent;
         String field;
 
@@ -56,7 +56,7 @@ public class DocumentKeysFunction {
         for (String key : functions.keySet()) {
             Collection<Function> coll = functions.get(key);
             for (Function f : coll) {
-                parent = f.args().get(0).jjtGetParent();
+                parent = f.args().get(0).jjtGetParent().jjtGetParent();
 
                 if (!(parent instanceof ASTFunctionNode)) {
                     throw new IllegalArgumentException("parent was not a function node");
@@ -67,12 +67,12 @@ public class DocumentKeysFunction {
                 // content, tf, and indexed fields are not actually needed to extract fields from the function node
                 fieldsAndTerms = argsDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null);
 
-                if (fieldsAndTerms[0].size() != 1) {
+                if (fieldsAndTerms.totalFields() != 1) {
                     throw new IllegalStateException("content function had more than one field");
                 }
 
-                field = JexlASTHelper.deconstructIdentifier(fieldsAndTerms[0].iterator().next());
-                ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms[1]);
+                field = JexlASTHelper.deconstructIdentifier(fieldsAndTerms.getFields().iterator().next());
+                ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms.getTerms());
                 contentFunctions.put(contentFunction.getField(), contentFunction);
 
                 if (isFunctionNegated(f)) {
