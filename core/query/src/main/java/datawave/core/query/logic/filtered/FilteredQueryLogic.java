@@ -9,11 +9,11 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.core.query.logic.DelegatingQueryLogic;
 import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.UserOperations;
 
