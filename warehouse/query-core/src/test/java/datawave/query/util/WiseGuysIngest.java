@@ -773,6 +773,7 @@ public class WiseGuysIngest {
             addDColumn(datatype, corleoneUID, "CONTENT", "Im gonna make him an offer he cant refuse", bw);
             addDColumn(datatype, sopranoUID, "CONTENT", "If you can quote the rules then you can obey them", bw);
             addDColumn(datatype, caponeUID, "CONTENT", "You can get much farther with a kind word and a gun than you can with a kind word alone", bw);
+            addDColumn(datatype, caponeUID, "CONTENT2", "A lawyer and his briefcase can steal more than ten men with guns.", bw);
         } finally {
             if (null != bw) {
                 bw.close();
