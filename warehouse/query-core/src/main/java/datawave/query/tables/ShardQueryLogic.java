@@ -63,6 +63,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
@@ -89,7 +90,6 @@ import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
-import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
@@ -1025,6 +1025,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
+        // Get the SUMMARY parameter if given
+        String summaryParam = settings.findParameter(QueryParameters.SUMMARY_OPTIONS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(summaryParam)) {
+            SummaryOptions summaryOptions = SummaryOptions.from(summaryParam);
+            this.setSummaryOptions(summaryOptions);
+            config.setSummaryOptions(summaryOptions);
+        }
+
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (StringUtils.isNotBlank(hitListString)) {
@@ -1288,11 +1296,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        if (config.getSequentialScheduler()) {
-            return new SequentialScheduler(config, scannerFactory);
-        } else {
-            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
-        }
+        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -1571,6 +1575,26 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
         } catch (Exception e) {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
+        }
+    }
+
+    public SummaryOptions getSummaryOptions() {
+        return getConfig().getSummaryOptions();
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        getConfig().setSummaryOptions(summaryOptions);
+    }
+
+    public String getSummaryIterator() {
+        return getConfig().getSummaryIterator().getName();
+    }
+
+    public void setSummaryIterator(String iteratorClass) {
+        try {
+            getConfig().setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException("Illegal content summary iterator class", e);
         }
     }
 
@@ -2404,14 +2428,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setLimitTermExpansionToModel(shouldLimitTermExpansionToModel);
     }
 
-    public boolean getSequentialScheduler() {
-        return getConfig().getSequentialScheduler();
-    }
-
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        getConfig().setSequentialScheduler(sequentialScheduler);
-    }
-
     public boolean getParseTldUids() {
         return getConfig().getParseTldUids();
     }
@@ -3023,6 +3039,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
         getConfig().setSortQueryPostIndexWithTermCounts(sortQueryPostIndexWithTermCounts);
+    }
+
+    public int getCardinalityThreshold() {
+        return getConfig().getCardinalityThreshold();
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        getConfig().setCardinalityThreshold(cardinalityThreshold);
     }
 
     public boolean isUseQueryTreeScanHintRules() {

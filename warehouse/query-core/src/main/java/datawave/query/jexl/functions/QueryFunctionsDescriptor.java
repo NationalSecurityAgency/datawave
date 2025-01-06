@@ -181,6 +181,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.SUMMARY_FUNCTION:
+                    break;
                 case QueryFunctions.MATCH_REGEX:
                 case BETWEEN:
                 case LENGTH:
@@ -284,6 +286,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }
+                break;
+            case QueryFunctions.SUMMARY_FUNCTION:
                 break;
             default:
                 throw new IllegalArgumentException("Unknown Query function: " + name);
