@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Document;
@@ -22,8 +25,8 @@ import datawave.query.iterator.SeekableIterator;
  *
  *
  */
-public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key> {
-    private final static Logger log = Logger.getLogger(IndexIteratorBridge.class);
+public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key>, Comparable<IndexIteratorBridge> {
+    private static final Logger log = Logger.getLogger(IndexIteratorBridge.class);
 
     /*
      * The AccumuloIterator this object wraps.
@@ -38,12 +41,14 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     private String field;
 
     private JexlNode node;
+    private boolean nonEventField;
 
     /**
      * track the last Key returned for move purposes
      */
     private Key prevKey;
-    private Document prevDocument, nextDocument;
+    private Document prevDocument;
+    private Document nextDocument;
 
     public IndexIteratorBridge(DocumentIterator delegate, JexlNode node, String field) {
         this.delegate = delegate;
@@ -161,11 +166,14 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
         return Collections.emptyList();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("This iterator does not support remove().");
     }
 
-    public void initialize() {}
+    public void initialize() {
+        // no-op
+    }
 
     @Override
     public String toString() {
@@ -194,5 +202,46 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     @Override
     public void setContext(Key context) {
         // no-op
+    }
+
+    @Override
+    public boolean isNonEventField() {
+        return nonEventField;
+    }
+
+    public void setNonEventField(boolean nonEventField) {
+        this.nonEventField = nonEventField;
+    }
+
+    @Override
+    public int compareTo(IndexIteratorBridge other) {
+        //  @formatter:off
+        return new CompareToBuilder().append(this.field, other.field)
+                        .append(this.node, other.node)
+                        .append(this.delegate, other.delegate)
+                        .build();
+        //  @formatter:on
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof IndexIteratorBridge) {
+            return Objects.equals(this, o);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        //  @formatter:off
+        return new HashCodeBuilder(23,31)
+                        .append(field)
+                        .append(node)
+                        .append(delegate)
+                        .toHashCode();
+        //  @formatter:on
     }
 }

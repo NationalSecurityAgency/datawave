@@ -31,8 +31,10 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
@@ -44,8 +46,6 @@ import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests for usage of #NO_EXPANSION in queries.
@@ -95,7 +95,7 @@ public abstract class NoExpansionTests {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -149,7 +149,7 @@ public abstract class NoExpansionTests {
         // order of terms in planned script is arbitrary, fall back to comparing the jexl trees
         ASTJexlScript plannedScript = JexlASTHelper.parseJexlQuery(plan);
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(this.expectedPlan);
-        JexlNodeAssert.assertThat(expectedScript).isEqualTo(plannedScript);
+        JexlNodeAssert.assertThat(plannedScript).isEqualTo(expectedScript);
     }
 
     private AccumuloClient createClient() throws Exception {
@@ -179,8 +179,8 @@ public abstract class NoExpansionTests {
      */
     @Test
     public void testDefaultQueryModelExpansion() throws Exception {
-        givenQuery("COLOR == 'blue'");
-        givenExpectedPlan("(COLOR == 'blue' || HUE == 'blue')");
+        givenQuery("COLOR == 'blue' && FASTENER == 'bolt'");
+        givenExpectedPlan("(COLOR == 'blue' || HUE == 'blue') && (FASTENER == 'bolt' || FIXTURE == 'bolt')");
 
         runTestQuery();
     }
@@ -197,6 +197,17 @@ public abstract class NoExpansionTests {
     }
 
     /**
+     * Verify that when #NO_EXPANSION is specified in the query string itself with multiple fields, expansion does not occur.
+     */
+    @Test
+    public void testNoExpansionViaFunctionWithMultipleFields() throws Exception {
+        givenQuery("COLOR == 'blue' && FASTENER == 'bolt' && f:noExpansion(COLOR,FASTENER)");
+        givenExpectedPlan("COLOR == 'blue' && FASTENER == 'bolt'");
+
+        runTestQuery();
+    }
+
+    /**
      * Verify that when #NO_EXPANSION is specified via the query parameters, expansion does not occur.
      */
     @Test
@@ -204,6 +215,18 @@ public abstract class NoExpansionTests {
         givenQuery("COLOR == 'blue'");
         givenQueryParameter(QueryParameters.NO_EXPANSION_FIELDS, "COLOR");
         givenExpectedPlan("COLOR == 'blue'");
+
+        runTestQuery();
+    }
+
+    /**
+     * Verify that when #NO_EXPANSION is specified via the query parameters, expansion does not occur.
+     */
+    @Test
+    public void testNoExpansionViaQueryParametersWithMultipleFields() throws Exception {
+        givenQuery("COLOR == 'blue' && FASTENER == 'bolt'");
+        givenQueryParameter(QueryParameters.NO_EXPANSION_FIELDS, "COLOR,FASTENER");
+        givenExpectedPlan("COLOR == 'blue' && FASTENER == 'bolt'");
 
         runTestQuery();
     }

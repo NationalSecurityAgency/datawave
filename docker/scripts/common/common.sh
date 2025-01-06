@@ -1,6 +1,17 @@
 #!/bin/bash
 
-DATAWAVE_ENDPOINT=https://localhost:8443/DataWave/Query
+WEBSERVICE="${WEBSERVICE:-false}"
+
+if [ "$WEBSERVICE" = true ]; then
+    DATAWAVE_ENDPOINT=https://localhost:9443/DataWave/Query
+    CACHEDRESULTS_ENDPOINT=https://localhost:9443/DataWave/CachedResults
+    MAPREDUCE_ENDPOINT=https://localhost:9443/DataWave/MapReduce
+else
+    DATAWAVE_ENDPOINT=https://localhost:8443/query/v1/query
+    CACHEDRESULTS_ENDPOINT=https://localhost:8443/query/v1/cachedresults
+    MAPREDUCE_ENDPOINT=https://localhost:8443/query/v1/mapreduce
+fi
+
 METRICS_ENDPOINT=https://localhost:8543/querymetric/v1
 
 createTempPem() {
@@ -74,4 +85,35 @@ logMetrics () {
         echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/${QUERY_ID}"
         echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/${QUERY_ID}" >> ${QUERY_TYPE}_${QUERY_ID}/querySummary.txt
     fi
+}
+
+printLine() {
+    echo "$( printGreen "********************************************************************************************************" )"
+}
+
+printRed() {
+    echo -ne "${DW_COLOR_RED}${1}${DW_COLOR_RESET}"
+}
+
+printGreen() {
+    echo -ne "${DW_COLOR_GREEN}${1}${DW_COLOR_RESET}"
+}
+
+setPrintColors() {
+    DW_COLOR_RED="\033[31m"
+    DW_COLOR_GREEN="\033[32m"
+    DW_COLOR_RESET="\033[m"
+}
+
+setTestLabels() {
+    LABEL_PASS="$( printGreen PASSED )"
+    LABEL_FAIL="$( printRed FAILED )"
+}
+
+printTestStatus() {
+    elapsed_time=$(echo "scale=3; ($2 - $1) / 1000000000" | bc)
+    echo
+    echo "Test Total Time: $elapsed_time seconds"
+    echo "Test Status: $3"
+    echo
 }

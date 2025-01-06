@@ -12,19 +12,23 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
+import datawave.core.query.configuration.QueryData;
+
 public class QueryDataTest {
 
     @Test
     public void testCopyConstructor() {
+        String tableName = "SHARD";
         String query = "FOO == 'bar'";
         Collection<Range> ranges = Collections.singleton(new Range(new Key("row"), true, new Key("row\0"), false));
         Collection<String> columnFamilies = Collections.singleton("FOO");
         List<IteratorSetting> settings = new ArrayList<>();
         settings.add(new IteratorSetting(20, "iterator", "QueryIterator.class"));
 
-        QueryData original = new QueryData(query, ranges, columnFamilies, settings);
+        QueryData original = new QueryData(tableName, query, ranges, columnFamilies, settings);
         QueryData copy = new QueryData(original);
 
+        assertEquals(original.getTableName(), copy.getTableName());
         assertEquals(original.getQuery(), copy.getQuery());
         assertEquals(original.getRanges(), copy.getRanges());
         assertEquals(original.getColumnFamilies(), copy.getColumnFamilies());

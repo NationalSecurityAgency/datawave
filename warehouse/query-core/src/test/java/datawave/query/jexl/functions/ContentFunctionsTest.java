@@ -1,13 +1,12 @@
 package datawave.query.jexl.functions;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,15 +22,10 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
-import org.javatuples.Triplet;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.protobuf.TermWeightPosition;
@@ -43,24 +37,24 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList.Zone;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.postprocessing.tf.PhraseOffset;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 
 public class ContentFunctionsTest {
-    static final Logger log = Logger.getLogger(ContentFunctionsTest.class);
     private static DatawaveJexlEngine engine;
 
     private JexlContext context;
     private TermOffsetMap termOffSetMap;
 
-    private String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
-    private String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
+    private final String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+    private final String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
-    private String eventId = EVENT_ID;
+    private final String eventId = EVENT_ID;
 
     @BeforeClass
-    public static void setUp() throws URISyntaxException {
+    public static void setUp() {
         Map<String,Object> functions = new HashMap<>(ArithmeticJexlEngines.functions());
         functions.put("f", QueryFunctions.class);
         functions.put("geo", GeoFunctions.class);
@@ -164,12 +158,11 @@ public class ContentFunctionsTest {
                         .build();
     }
 
-    private void assertPhraseOffset(String field, int startOffset, int endOffset) {
-        Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
+    private void assertPhraseOffset(String field, final int startOffset, final int endOffset) {
+        Collection<PhraseOffset> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
         boolean found = phraseOffsets.stream()
-                        .anyMatch((pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
-        Assert.assertTrue(
-                        "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
+                        .anyMatch(pair -> pair.getEventId().equals(eventId) && pair.getStartOffset() == startOffset && pair.getEndOffset() == endOffset);
+        assertTrue("Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
                         found);
     }
 
@@ -178,7 +171,7 @@ public class ContentFunctionsTest {
     }
 
     private void assertPhraseOffsetsEmpty() {
-        Assert.assertTrue("Expected empty phrase offset map", termOffSetMap.getPhraseIndexes() == null || termOffSetMap.getPhraseIndexes().isEmpty());
+        assertTrue("Expected empty phrase offset map", termOffSetMap.getPhraseIndexes() == null || termOffSetMap.getPhraseIndexes().isEmpty());
     }
 
     @Test
@@ -187,18 +180,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0));
-        list2 = asList(Arrays.asList(5, 6, 7), Arrays.asList(0, 2, 0)); // match (6-2) should match (3+1)
+        list1 = asList(List.of(1, 2, 3), List.of(0, 0, 0));
+        list2 = asList(List.of(5, 6, 7), List.of(0, 2, 0)); // match (6-2) should match (3+1)
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 3, 4);
     }
 
@@ -208,20 +201,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
-        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
-        t3 = asList(Arrays.asList(1, 101, 202, 213, 253, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        t1 = asList(List.of(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), List.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(List.of(212, 229, 252, 272), List.of(0, 0, 0, 0));
+        t3 = asList(List.of(1, 101, 202, 213, 253, 312, 336), List.of(0, 0, 0, 0, 0, 0, 0));
 
-        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
-        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
-        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 252, 253);
     }
 
@@ -231,20 +224,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
-        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
-        t3 = asList(Arrays.asList(1, 101, 202, 213, 251, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        t1 = asList(List.of(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), List.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(List.of(212, 229, 252, 272), List.of(0, 0, 0, 0));
+        t3 = asList(List.of(1, 101, 202, 213, 251, 312, 336), List.of(0, 0, 0, 0, 0, 0, 0));
 
-        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
-        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
-        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 251, 252);
     }
 
@@ -254,20 +247,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
-        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
-        t3 = asList(Arrays.asList(1, 101, 202, 213, 252, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        t1 = asList(List.of(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), List.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(List.of(212, 229, 252, 272), List.of(0, 0, 0, 0));
+        t3 = asList(List.of(1, 101, 202, 213, 252, 312, 336), List.of(0, 0, 0, 0, 0, 0, 0));
 
-        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
-        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
-        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 252, 252);
     }
 
@@ -277,20 +270,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
-        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
-        t3 = asList(Arrays.asList(1, 101, 202, 213, 252, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        t1 = asList(List.of(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), List.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(List.of(212, 229, 252, 272), List.of(0, 0, 0, 0));
+        t3 = asList(List.of(1, 101, 202, 213, 252, 312, 336), List.of(0, 0, 0, 0, 0, 0, 0));
 
-        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
-        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
-        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        termOffSetMap.putTermFrequencyList("a", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.putTermFrequencyList("b", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.putTermFrequencyList("c", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), t3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 252, 252);
     }
 
@@ -303,18 +296,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0));
-        list2 = asList(Arrays.asList(5, 6, 7), Arrays.asList(0, 0, 3)); // match (7-3_ should match (3+1)
+        list1 = asList(List.of(1, 2, 3), List.of(0, 0, 0));
+        list2 = asList(List.of(5, 6, 7), List.of(0, 0, 3)); // match (7-3_ should match (3+1)
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", false, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", false, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", false, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", false, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -327,15 +320,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(3, 4, 5);
 
-        termOffSetMap.putTermFrequencyList("dog's", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog's", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 2, 3);
     }
 
@@ -359,15 +352,15 @@ public class ContentFunctionsTest {
         list1 = asList(1);
         list2 = asList(2);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 2);
     }
 
@@ -380,13 +373,13 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(5, 6, 7);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -399,13 +392,13 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(5);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -415,18 +408,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(4), Arrays.asList(1));
-        list2 = asList(Arrays.asList(2), Arrays.asList(1)); // (10-6) = (3+1)
+        list1 = asList(List.of(4), List.of(1));
+        list2 = asList(List.of(2), List.of(1)); // (10-6) = (3+1)
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 2, 3);
     }
 
@@ -439,15 +432,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = new ArrayList<>();
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -463,16 +456,16 @@ public class ContentFunctionsTest {
         list2 = asList(3, 7, 11);
         list3 = asList(10, 15, 20, 25);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 7, 10);
     }
 
@@ -487,16 +480,16 @@ public class ContentFunctionsTest {
         list2 = asList(3, 4, 5);
         list3 = asList(10, 15, 20, 25);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -511,16 +504,16 @@ public class ContentFunctionsTest {
         list2 = asList(3, 4, 5);
         list3 = asList(10, 15, 20, 25);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -535,16 +528,16 @@ public class ContentFunctionsTest {
         list2 = asList(2, 4, 20);
         list3 = asList(6, 8, 15);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 4, 6);
     }
 
@@ -557,15 +550,15 @@ public class ContentFunctionsTest {
         list1 = asList(1);
         list2 = asList(2);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 2);
     }
 
@@ -578,14 +571,14 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(5, 6, 7);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -598,14 +591,14 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(5);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -618,13 +611,13 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = new ArrayList<>();
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -638,16 +631,16 @@ public class ContentFunctionsTest {
         list2 = asList(3, 7, 11);
         list3 = asList(10, 15, 20, 25);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 9, 11);
     }
 
@@ -661,15 +654,15 @@ public class ContentFunctionsTest {
         list2 = asList(3, 4, 5);
         list3 = asList(10, 15, 20, 25);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -682,15 +675,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(3, 4, 5);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 2, 3);
     }
 
@@ -700,18 +693,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 1, 0));
-        list2 = asList(Arrays.asList(5, 6, 7), Arrays.asList(2, 2, 2));
+        list1 = asList(List.of(1, 2, 3), List.of(0, 1, 0));
+        list2 = asList(List.of(5, 6, 7), List.of(2, 2, 2));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 2, 5);
     }
 
@@ -724,15 +717,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(4, 5, 6);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 3, 4);
     }
 
@@ -742,18 +735,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 1, 0));
-        list2 = asList(Arrays.asList(5, 6, 7), Arrays.asList(1, 3, 1));
+        list1 = asList(List.of(1, 2, 3), List.of(0, 1, 0));
+        list2 = asList(List.of(5, 6, 7), List.of(1, 3, 1));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 2, 6);
     }
 
@@ -767,16 +760,16 @@ public class ContentFunctionsTest {
         list2 = asList(2);
         list3 = asList(3);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 3);
     }
 
@@ -786,20 +779,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(Arrays.asList(1), Arrays.asList(0));
-        list2 = asList(Arrays.asList(3), Arrays.asList(1)); // ~3-5
-        list3 = asList(Arrays.asList(4, 10), Arrays.asList(0, 0));
+        list1 = asList(List.of(1), List.of(0));
+        list2 = asList(List.of(3), List.of(1)); // ~3-5
+        list3 = asList(List.of(4, 10), List.of(0, 0));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 4);
     }
 
@@ -813,16 +806,16 @@ public class ContentFunctionsTest {
         list2 = asList(2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40);
         list3 = asList(41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 39, 41);
     }
 
@@ -835,15 +828,15 @@ public class ContentFunctionsTest {
         list1 = asList(3, 4, 5);
         list2 = asList(1, 2);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -853,18 +846,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(3, 4, 5), Arrays.asList(0, 0, 2));
-        list2 = asList(Arrays.asList(1, 2), Arrays.asList(0, 1));
+        list1 = asList(List.of(3, 4, 5), List.of(0, 0, 2));
+        list2 = asList(List.of(1, 2), List.of(0, 1));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -878,16 +871,16 @@ public class ContentFunctionsTest {
         list2 = asList(3);
         list3 = asList(2);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -897,20 +890,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(Arrays.asList(4), Arrays.asList(0));
-        list2 = asList(Arrays.asList(3), Arrays.asList(1));
-        list3 = asList(Arrays.asList(2), Arrays.asList(0));
+        list1 = asList(List.of(4), List.of(0));
+        list2 = asList(List.of(3), List.of(1));
+        list3 = asList(List.of(2), List.of(0));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -924,16 +917,16 @@ public class ContentFunctionsTest {
         list2 = asList(4);
         list3 = asList(3);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -943,20 +936,20 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(Arrays.asList(2), Arrays.asList(0));
-        list2 = asList(Arrays.asList(4), Arrays.asList(0));
-        list3 = asList(Arrays.asList(3), Arrays.asList(0));
+        list1 = asList(List.of(2), List.of(0));
+        list2 = asList(List.of(4), List.of(0));
+        list3 = asList(List.of(3), List.of(0));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("fish", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -969,15 +962,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(4, 5, 6);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -987,18 +980,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(1, 1, 1));
-        list2 = asList(Arrays.asList(4, 5, 6), Arrays.asList(0, 1, 1));
+        list1 = asList(List.of(1, 2, 3), List.of(1, 1, 1));
+        list2 = asList(List.of(4, 5, 6), List.of(0, 1, 1));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1010,14 +1003,14 @@ public class ContentFunctionsTest {
         List<TermWeightPosition> list1;
         list1 = asList(1, 3, 5);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1029,14 +1022,14 @@ public class ContentFunctionsTest {
         List<TermWeightPosition> list1;
         list1 = asList(1, 2, 5);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 2);
     }
 
@@ -1048,14 +1041,14 @@ public class ContentFunctionsTest {
         List<TermWeightPosition> list1;
         list1 = asList(1, 4, 5);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 4, 5);
     }
 
@@ -1067,14 +1060,14 @@ public class ContentFunctionsTest {
         List<TermWeightPosition> list1;
         list1 = asList(1, 4);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1086,14 +1079,14 @@ public class ContentFunctionsTest {
         List<TermWeightPosition> list1;
         list1 = asList(1, 3);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 3);
     }
 
@@ -1103,16 +1096,16 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
-        list1 = asList(Arrays.asList(1, 4), Arrays.asList(0, 1));
+        list1 = asList(List.of(1, 4), List.of(0, 1));
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 3);
     }
 
@@ -1125,15 +1118,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 5);
         list2 = asList(3);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 3);
     }
 
@@ -1150,15 +1143,15 @@ public class ContentFunctionsTest {
         list1 = asList(1, 2, 3);
         list2 = asList(3, 4, 5);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 3, 3);
     }
 
@@ -1172,16 +1165,16 @@ public class ContentFunctionsTest {
         list2 = asList(5, 7, 9);
         list3 = asList(6, 8, 10);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 4, 6);
     }
 
@@ -1195,16 +1188,16 @@ public class ContentFunctionsTest {
         list2 = asList(5, 7, 9);
         list3 = asList(6, 8, 10);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1218,16 +1211,16 @@ public class ContentFunctionsTest {
         list2 = asList(4, 7, 8, 10); // rat
         list3 = asList(4, 6); // dog
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 4, 4);
     }
 
@@ -1241,16 +1234,16 @@ public class ContentFunctionsTest {
         list2 = asList(5, 7, 9); // rat
         list3 = asList(4, 6, 10); // dog
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1264,16 +1257,16 @@ public class ContentFunctionsTest {
         list2 = asList(1); // rat
         list3 = asList(1); // dog
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 1);
     }
 
@@ -1283,20 +1276,20 @@ public class ContentFunctionsTest {
 
         JexlExpression expr = engine.createExpression(query);
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(false, Arrays.asList(135), Arrays.asList(6)); // cat
-        list2 = asList(Arrays.asList(135), Arrays.asList(6)); // rat
-        list3 = asList(Arrays.asList(1), Arrays.asList(1)); // dog
+        list1 = asList(false, List.of(135), List.of(6)); // cat
+        list2 = asList(List.of(135), List.of(6)); // rat
+        list3 = asList(List.of(1), List.of(1)); // dog
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1310,16 +1303,16 @@ public class ContentFunctionsTest {
         list2 = asList(1); // rat
         list3 = asList(2); // dog
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 2);
     }
 
@@ -1332,15 +1325,15 @@ public class ContentFunctionsTest {
         list1 = asList(1); // cat
         list2 = asList(1, 5); // rat
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 1);
     }
 
@@ -1353,15 +1346,15 @@ public class ContentFunctionsTest {
         list1 = asList(5); // cat
         list2 = asList(1, 5); // rat
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 5, 5);
     }
 
@@ -1375,16 +1368,16 @@ public class ContentFunctionsTest {
         list2 = asList(2);
         list3 = asList(1);
 
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("rat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1394,18 +1387,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0), Arrays.asList(-0.223f, -1.4339f, -0.0001f));
-        list2 = asList(Arrays.asList(3, 4, 5), Arrays.asList(0, 0, 0), Arrays.asList(-0.001f, -1.4339f, -0.2001f));
+        list1 = asList(List.of(1, 2, 3), List.of(0, 0, 0), List.of(-0.223f, -1.4339f, -0.0001f));
+        list2 = asList(List.of(3, 4, 5), List.of(0, 0, 0), List.of(-0.001f, -1.4339f, -0.2001f));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 3, 3);
     }
 
@@ -1415,18 +1408,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0), Arrays.asList(-0.223f, -1.4339f, -0.0001f));
-        list2 = asList(Arrays.asList(3, 4, 5), Arrays.asList(0, 0, 0), Arrays.asList(-0.001f, -1.4339f, -0.2001f));
+        list1 = asList(List.of(1, 2, 3), List.of(0, 0, 0), List.of(-0.223f, -1.4339f, -0.0001f));
+        list2 = asList(List.of(3, 4, 5), List.of(0, 0, 0), List.of(-0.001f, -1.4339f, -0.2001f));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 3, 3);
     }
 
@@ -1436,18 +1429,18 @@ public class ContentFunctionsTest {
         JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0), Arrays.asList(-0.223f, -1.4339f, -0.2001f));
-        list2 = asList(Arrays.asList(3, 4, 5), Arrays.asList(0, 0, 0), Arrays.asList(-0.001f, -1.4339f, -0.2001f));
+        list1 = asList(List.of(1, 2, 3), List.of(0, 0, 0), List.of(-0.223f, -1.4339f, -0.2001f));
+        list2 = asList(List.of(3, 4, 5), List.of(0, 0, 0), List.of(-0.001f, -1.4339f, -0.2001f));
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1464,16 +1457,16 @@ public class ContentFunctionsTest {
         list2 = asList(4, 5, 6);
         list3 = asList(11, 12, 14);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(ArithmeticJexlEngines.isMatched(o), true));
+        assertTrue(expect(ArithmeticJexlEngines.isMatched(o), true));
         assertPhraseOffset("CONTENT", 1, 4);
     }
 
@@ -1491,16 +1484,16 @@ public class ContentFunctionsTest {
         list2 = asList(9, 10, 11);
         list3 = asList(7, 12);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 10, 12);
     }
 
@@ -1518,16 +1511,16 @@ public class ContentFunctionsTest {
         list2 = asList(3, 9, 10, 12, 13, 20, 23, 25);
         list3 = asList(1, 12, 13, 27);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1542,29 +1535,29 @@ public class ContentFunctionsTest {
         list2 = asList(4, 5, 6);
         list3 = asList(4, 5, 6);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId + ".1"), list3)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("bat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId + ".1"), list3)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
 
         JexlExpression expr = engine.createExpression(query1);
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 4);
 
         termOffSetMap.getPhraseIndexes().clear();
         expr = engine.createExpression(query2);
         o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
 
         termOffSetMap.getPhraseIndexes().clear();
         expr = engine.createExpression(query);
         o = expr.evaluate(context);
-        Assert.assertTrue(expect(ArithmeticJexlEngines.isMatched(o), true));
+        assertTrue(expect(ArithmeticJexlEngines.isMatched(o), true));
         assertPhraseOffset("CONTENT", 1, 4);
     }
 
@@ -1632,7 +1625,7 @@ public class ContentFunctionsTest {
     public void testJexlFunctionArgumentDescriptor9() throws ParseException {
         String query = "content:" + phraseFunction + "(termOffsetMap, 'hello', 'world')";
         String expected = "(BODY == 'hello' and BODY == 'world')";
-        testJexlFunctionArgumentDescriptors(query, expected, Sets.newHashSet("BODY"));
+        testJexlFunctionArgumentDescriptors(query, expected, Set.of("BODY"));
     }
 
     @Test
@@ -1649,8 +1642,8 @@ public class ContentFunctionsTest {
 
     private void testJexlFunctionArgumentDescriptors(String query, String expected, Set<String> contentFields) throws ParseException {
         MockMetadataHelper metadataHelper = new MockMetadataHelper();
-        metadataHelper.addTermFrequencyFields(Arrays.asList("BODY", "META"));
-        metadataHelper.setIndexedFields(Sets.newHashSet("BODY", "META"));
+        metadataHelper.addTermFrequencyFields(List.of("BODY", "META"));
+        metadataHelper.setIndexedFields(Set.of("BODY", "META"));
 
         if (contentFields != null) {
             metadataHelper.addContentFields(contentFields);
@@ -1661,7 +1654,7 @@ public class ContentFunctionsTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         JexlNode child = script.jjtGetChild(0);
-        Assert.assertEquals("First child of ASTJexlScript is not an AStFunctionNode", ASTFunctionNode.class, child.getClass());
+        assertEquals("First child of ASTJexlScript is not an AStFunctionNode", ASTFunctionNode.class, child.getClass());
 
         ASTFunctionNode function = (ASTFunctionNode) child;
 
@@ -1671,7 +1664,7 @@ public class ContentFunctionsTest {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         JexlNode scriptChild = expectedScript.jjtGetChild(0);
 
-        Assert.assertTrue("Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was " + JexlStringBuildingVisitor.buildQuery(indexQuery),
+        assertTrue("Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was " + JexlStringBuildingVisitor.buildQuery(indexQuery),
                         JexlASTHelper.equals(scriptChild, indexQuery));
     }
 
@@ -1684,16 +1677,16 @@ public class ContentFunctionsTest {
         list1 = asList(1, 3);
         list2 = asList(2);
 
-        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
 
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 3);
     }
 
@@ -1708,18 +1701,18 @@ public class ContentFunctionsTest {
         list3 = asList(260, 284, 304);
         list4 = asList(1165);
 
-        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
-                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
+        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("car",
+                        new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list3), Map.entry(new Zone("META", true, eventId), list4)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList("foo", "bar", "car"));
+        context.set("BODY", List.of("foo", "bar", "car"));
 
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1735,18 +1728,18 @@ public class ContentFunctionsTest {
         list3 = asList(260, 284, 304);
         list4 = asList(1165);
 
-        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
-                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
+        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("car",
+                        new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list3), Map.entry(new Zone("META", true, eventId), list4)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList("foo", "bar", "car"));
+        context.set("BODY", List.of("foo", "bar", "car"));
 
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1762,18 +1755,18 @@ public class ContentFunctionsTest {
         list3 = asList(260, 284, 304);
         list4 = asList(1165);
 
-        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
-                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
+        termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("car",
+                        new TermFrequencyList(Map.entry(new Zone("BODY", true, eventId), list3), Map.entry(new Zone("META", true, eventId), list4)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList("foo", "bar", "car"));
+        context.set("BODY", List.of("foo", "bar", "car"));
 
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1840,25 +1833,25 @@ public class ContentFunctionsTest {
         // ///////////////////////////
 
         // full terms list
-        Assert.assertNotNull(termOffsetMap.getTermFrequencyList("his"));
+        assertNotNull(termOffsetMap.getTermFrequencyList("his"));
         String[] terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        assertEquals(Set.of(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        assertEquals(Set.of(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // ///////////////////////////
         // Within functions
@@ -1866,23 +1859,23 @@ public class ContentFunctionsTest {
 
         // full terms list
         terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 14, termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.within("BODY", 14, termOffsetMap, terms));
 
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.within("BODY", 15, termOffsetMap, terms));
+        assertEquals(Set.of(), ContentFunctions.within("BODY", 15, termOffsetMap, terms));
 
         // placement does not matter
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 11, termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.within("BODY", 11, termOffsetMap, terms));
 
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 12, termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.within("BODY", 12, termOffsetMap, terms));
 
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 10, termOffsetMap, terms));
+        assertEquals(Set.of("BODY"), ContentFunctions.within("BODY", 10, termOffsetMap, terms));
     }
 
     private Zone genTestZone() {
@@ -1928,17 +1921,16 @@ public class ContentFunctionsTest {
 
         // The only match, [19, 20], is in ZONE2.
         // Thus, evaluating ZONE1 should return false here (see #1171)...
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase(zone1.getZone(), termOffsetMap, terms));
+        assertEquals(Set.of(), ContentFunctions.phrase(zone1.getZone(), termOffsetMap, terms));
 
         // Ensure that we do get the hit if we evaluate the other zone
-        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase(zone2.getZone(), termOffsetMap, terms));
+        assertEquals(Set.of(zone2.getZone()), ContentFunctions.phrase(zone2.getZone(), termOffsetMap, terms));
 
         // Ensure that we get the hit if we evaluate both zones
-        Assert.assertEquals(Collections.singleton(zone2.getZone()),
-                        ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termOffsetMap, terms));
+        assertEquals(Set.of(zone2.getZone()), ContentFunctions.phrase(List.of(zone1.getZone(), zone2.getZone()), termOffsetMap, terms));
 
         // Ensure that we get the hit if we evaluate null zone
-        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase((Object) null, termOffsetMap, terms));
+        assertEquals(Set.of(zone2.getZone()), ContentFunctions.phrase((Object) null, termOffsetMap, terms));
     }
 
     /**
@@ -1953,15 +1945,15 @@ public class ContentFunctionsTest {
         list1 = asList(1);
         list2 = asList(2);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(false);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffsetsEmpty();
     }
 
@@ -1977,15 +1969,15 @@ public class ContentFunctionsTest {
         list1 = asList(1);
         list2 = asList(2);
 
-        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
-        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT", true, eventId), list2)));
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("BODY"));
+        termOffSetMap.setExcerptFields(Set.of("BODY"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffsetsEmpty();
     }
 
@@ -2014,12 +2006,12 @@ public class ContentFunctionsTest {
         termOffSetMap.putTermFrequencyList("dog", dogList);
         termOffSetMap.putTermFrequencyList("cat", catList);
         termOffSetMap.setGatherPhraseOffsets(true);
-        termOffSetMap.setExcerptFields(Collections.singleton("CONTENT"));
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 2);
         assertNoPhraseOffsetsFor("BODY");
     }
@@ -2039,9 +2031,9 @@ public class ContentFunctionsTest {
         termOffsetMap.putTermFrequencyList("fish", new TermFrequencyList(multimap));
 
         // full terms list
-        Assert.assertNotNull(termOffsetMap.getTermFrequencyList("blue"));
-        Assert.assertNotNull(termOffsetMap.getTermFrequencyList("fish"));
+        assertNotNull(termOffsetMap.getTermFrequencyList("blue"));
+        assertNotNull(termOffsetMap.getTermFrequencyList("fish"));
         String[] terms = new String[] {"blue", "fish"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        assertEquals(Set.of(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
     }
 }

@@ -2,35 +2,37 @@ package datawave.query.edge;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.audit.SelectorExtractor;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.edge.util.EdgeKeyUtil;
+import datawave.microservice.query.Query;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
-import datawave.query.config.EdgeQueryConfiguration;
 import datawave.query.iterator.filter.EdgeFilterIterator;
+import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
 public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 
@@ -48,10 +50,22 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 
     public DefaultExtendedEdgeQueryLogic(DefaultExtendedEdgeQueryLogic logic) {
         super(logic);
+
+        // Set EdgeQueryConfiguration variables
+        this.config = EdgeExtendedSummaryConfiguration.create(logic);
+
         summaryInputType = logic.isSummaryInputType();
         summaryOutputType = logic.isSummaryOutputType();
         allowOverrideIO = logic.isAllowOverrideIO();
         listSelectorExtractor = logic.getSelectorExtractor();
+    }
+
+    @Override
+    public EdgeExtendedSummaryConfiguration getConfig() {
+        if (config == null) {
+            config = new EdgeExtendedSummaryConfiguration();
+        }
+        return (EdgeExtendedSummaryConfiguration) config;
     }
 
     @Override
@@ -60,36 +74,42 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     }
 
     @Override
-    protected EdgeQueryConfiguration setUpConfig(Query settings) {
-        return new EdgeExtendedSummaryConfiguration(this, settings).parseParameters(settings);
-    }
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
+        currentIteratorPriority = super.getBaseIteratorPriority() + 30;
 
-    @Override
-    public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
-        EdgeExtendedSummaryConfiguration localConf = (EdgeExtendedSummaryConfiguration) configuration;
+        EdgeExtendedSummaryConfiguration config = getConfig().parseParameters(settings);
 
-        config = (EdgeExtendedSummaryConfiguration) configuration;
-        prefilterValues = null;
-        EdgeExtendedSummaryConfiguration.dateType dateFilterType = localConf.getDateRangeType();
+        config.setClient(client);
+        config.setAuthorizations(auths);
 
-        if (log.isTraceEnabled()) {
-            log.trace("Performing edge table query: " + config.getQueryString());
+        String queryString = getJexlQueryString(settings);
+
+        if (null == queryString) {
+            throw new IllegalArgumentException("Query cannot be null");
+        } else {
+            config.setQueryString(queryString);
         }
+        config.setBeginDate(settings.getBeginDate());
+        config.setEndDate(settings.getEndDate());
+
+        scannerFactory = new ScannerFactory(client);
+
+        prefilterValues = null;
+        EdgeExtendedSummaryConfiguration.dateType dateFilterType = config.getDateRangeType();
+
+        log.debug("Performing edge table query: " + config.getQueryString());
 
         // TODO check to see if overriding I/O necessary
-        if (allowOverrideIO && localConf.isOverRideInput()) {
-            this.summaryInputType = localConf.isSummaryInputType();
+        if (allowOverrideIO && config.isOverRideInput()) {
+            this.summaryInputType = config.isSummaryInputType();
         }
-        if (allowOverrideIO && localConf.isOverRideOutput()) {
-            this.summaryOutputType = localConf.isAggregateResults();
+        if (allowOverrideIO && config.isOverRideOutput()) {
+            this.summaryOutputType = config.isAggregateResults();
         }
 
-        boolean includeStats = localConf.includeStats();
+        boolean includeStats = config.includeStats();
 
-        String queryString = config.getQueryString();
-
-        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getClient(), config.getModelTableName(), config.getAuthorizations());
-
+        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations());
         loadQueryModel(metadataHelper, config);
 
         // Don't apply model if this.summaryInputType == true, which indicates that
@@ -105,8 +125,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         String normalizedQuery = "";
         String statsNormalizedQuery = "";
 
-        QueryData qData = configureRanges(queryString);
-        setRanges(qData.getRanges());
+        Set<Range> ranges = configureRanges(queryString);
 
         VisitationContext context = null;
         if (this.summaryInputType == false) {
@@ -118,20 +137,20 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
                     log.trace("Jexl after normalizing both vertices: " + normalizedQuery);
                 }
             } catch (JexlException ex) {
-                try {
-                    log.error("Error parsing user query.", ex);
-                } catch (Exception ex2) {
-                    log.error("Exception thrown by logger (???)");
-                }
+                log.error("Error parsing user query.", ex);
             }
         }
 
-        if ((null == normalizedQuery || normalizedQuery.equals("")) && qData.getRanges().size() < 1) {
+        if ((null == normalizedQuery || normalizedQuery.equals("")) && ranges.size() < 1) {
             throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
         }
 
-        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
-                        dateFilterType));
+        QueryData qData = new QueryData();
+        qData.setTableName(config.getTableName());
+        qData.setRanges(ranges);
+
+        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, config.getDateFilterSkipLimit(),
+                        config.getDateFilterScanLimit(), dateFilterType));
 
         if (!normalizedQuery.equals("")) {
             if (log.isTraceEnabled()) {
@@ -159,39 +178,24 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             addIterator(qData, edgeIteratorSetting);
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Configuring connection: tableName: " + config.getTableName() + ", auths: " + config.getAuthorizations());
-        }
-
-        BatchScanner scanner = createBatchScanner(config);
-
-        if (log.isTraceEnabled()) {
-            log.trace("Using the following ranges: " + qData.getRanges());
-        }
-
         if (context != null && context.isHasAllCompleteColumnFamilies()) {
             for (Text columnFamily : context.getColumnFamilies()) {
-                scanner.fetchColumnFamily(columnFamily);
+                qData.addColumnFamily(columnFamily);
             }
-
         }
-        scanner.setRanges(qData.getRanges());
 
         addCustomFilters(qData, currentIteratorPriority);
 
-        for (IteratorSetting setting : qData.getSettings()) {
-            scanner.addScanIterator(setting);
-        }
+        config.setQueries(Collections.singletonList(qData));
 
-        this.scanner = scanner;
-        this.iterator = scanner.iterator();
+        return config;
     }
 
     @Override
-    protected QueryData configureRanges(String queryString) throws ParseException {
+    protected Set<Range> configureRanges(String queryString) throws ParseException {
         if (this.summaryInputType) {
             Set<Range> ranges = computeRanges((EdgeExtendedSummaryConfiguration) this.config);
-            return new QueryData().withRanges(ranges);
+            return ranges;
         } else {
             return super.configureRanges(queryString);
         }
@@ -241,12 +245,12 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.getEdgeFields());
     }
 
     @Override
     public List<String> getSelectors(Query settings) throws IllegalArgumentException {
-        EdgeExtendedSummaryConfiguration conf = (EdgeExtendedSummaryConfiguration) setUpConfig(settings);
+        EdgeExtendedSummaryConfiguration conf = new EdgeExtendedSummaryConfiguration().parseParameters(settings);
         List<String> selectorList = null;
         SelectorExtractor selExtr;
 
@@ -300,4 +304,5 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     public void setListSelectorExtractor(SelectorExtractor listSelectorExtractor) {
         this.listSelectorExtractor = listSelectorExtractor;
     }
+
 }

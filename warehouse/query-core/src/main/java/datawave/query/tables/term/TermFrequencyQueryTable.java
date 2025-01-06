@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -19,20 +18,19 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.QueryParameters;
 import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
 public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
@@ -58,7 +56,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public Priority getConnectionPriority() {
-        return AccumuloConnectionFactory.Priority.NORMAL;
+        return Priority.NORMAL;
     }
 
     @Override

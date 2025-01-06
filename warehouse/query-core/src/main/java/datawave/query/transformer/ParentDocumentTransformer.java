@@ -7,10 +7,10 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.tld.TLD;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
