@@ -77,6 +77,9 @@ public class GenericQueryConfiguration implements Serializable {
 
     // either IMMEDIATE or EVENTUAL
     private Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels = new HashMap<>();
+    // provides default scan hints
+    // NOTE: accumulo reserves the execution hint name 'meta'
+    // NOTE: datawave reserves the execution hint name 'expansion' for index expansion
     private Map<String,Map<String,String>> tableHints = new HashMap<>();
 
     /**
@@ -120,7 +123,8 @@ public class GenericQueryConfiguration implements Serializable {
         this.setEndDate(other.getEndDate());
         this.setMaxWork(other.getMaxWork());
         this.setQueries(other.getQueries());
-        this.setQueriesIter(other.getQueriesIter());
+        // copying the query iterators can cause issues if the query is running.
+        // this.setQueriesIter(other.getQueriesIter());
         this.setQueryString(other.getQueryString());
         this.setTableName(other.getTableName());
         this.setReduceResults(other.isReduceResults());
