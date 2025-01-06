@@ -94,6 +94,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-keyword-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
         </dependency>
         <dependency>
@@ -679,6 +684,7 @@
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>${project.groupId}:datawave-ingest-ssdeep</include>
+                                            <include>${project.groupId}:datawave-keyword-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
@@ -694,6 +700,7 @@
                                             <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
                                             <include>org.javatuples:javatuples</include>
                                             <include>com.google.code.gson:gson</include>
+                                            <include>com.ibm.icu:icu4j</include>
                                             <include>com.clearspring.analytics:stream</include>
                                             <include>org.apache.lucene:lucene-core</include>
                                             <include>com.timgroup:java-statsd-client</include>

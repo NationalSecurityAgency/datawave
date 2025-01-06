@@ -27,6 +27,7 @@
         <module>assemble</module>
         <module>ingest-wikipedia</module>
         <module>ingest-nyctlc</module>
+        <module>keyword-common</module>
         <module>metrics-core</module>
         <module>ops-tools</module>
         <module>data-dictionary-core</module>
