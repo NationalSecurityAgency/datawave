@@ -6,8 +6,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.query.Query;
 
 /**
  * Abstract class that encompasses the members necessary to run a ChainedQuery. Any implementation should need two {@link QueryLogic}'s, the original query the

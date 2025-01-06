@@ -7,6 +7,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
 
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -24,8 +26,6 @@ import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple2;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -51,15 +51,15 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     }
 
     @Override
-    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
+                    boolean isPreload) throws DatawaveQueryException {
 
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
             throw new FullTableScansDisallowedException(qe);
         }
 
-        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
+        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, queryString, isFullTable, isPreload);
         if (!usePrecomputedFacets)
             cfg.setIteratorClass(DynamicFacetIterator.class.getName());
         else {

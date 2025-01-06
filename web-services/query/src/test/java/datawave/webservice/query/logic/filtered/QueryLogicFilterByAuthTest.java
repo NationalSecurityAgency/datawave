@@ -9,6 +9,8 @@ import java.util.LinkedHashSet;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Test;
 
+import datawave.core.query.logic.filtered.QueryLogicFilterByAuth;
+
 public class QueryLogicFilterByAuthTest {
     @Test
     public void testDefaults() {

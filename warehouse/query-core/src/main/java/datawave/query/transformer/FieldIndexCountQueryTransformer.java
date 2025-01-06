@@ -11,17 +11,17 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.data.hash.UID;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
 import datawave.util.TextUtil;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -149,12 +149,11 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
     }
 
     @Override
-    public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
-
-        List<CacheableQueryRow> cqoList = new ArrayList<>();
+    public CacheableQueryRow writeToCache(Object o) throws QueryException {
         EventBase event = (EventBase) o;
 
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
+        cqo.setMarkingFunctions(this.markingFunctions);
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
         cqo.setDataType(metadata.getDataType());
@@ -169,9 +168,7 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         // set the size in bytes using the initial event size as an approximation
         cqo.setSizeInBytes(event.getSizeInBytes());
 
-        cqoList.add(cqo);
-
-        return cqoList;
+        return cqo;
     }
 
     private FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
@@ -185,44 +182,37 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
     }
 
     @Override
-    public List<Object> readFromCache(List<CacheableQueryRow> cacheableQueryRowList) {
-
-        List<Object> eventList = new ArrayList<>();
-
-        for (CacheableQueryRow cqr : cacheableQueryRowList) {
-            if (this.variableFieldList == null) {
-                this.variableFieldList = cqr.getVariableColumnNames();
-            }
-            Map<String,String> markings = cqr.getMarkings();
-            String dataType = cqr.getDataType();
-            String internalId = cqr.getEventId();
-            String row = cqr.getRow();
-
-            EventBase event = this.responseObjectFactory.getEvent();
-            event.setMarkings(markings);
-
-            Metadata metadata = new Metadata();
-            metadata.setDataType(dataType);
-            metadata.setInternalId(internalId);
-            metadata.setRow(row);
-            metadata.setTable(logic.getTableName());
-            event.setMetadata(metadata);
-
-            List<FieldBase> fieldList = new ArrayList<>();
-            Map<String,String> columnValueMap = cqr.getColumnValues();
-            for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
-                String columnName = entry.getKey();
-                String columnValue = entry.getValue();
-                Map<String,String> columnMarkings = cqr.getColumnMarkings(columnName);
-                String columnVisibility = cqr.getColumnVisibility(columnName);
-                Long columnTimestamp = cqr.getColumnTimestamp(columnName);
-                FieldBase field = this.makeField(columnName, columnMarkings, columnVisibility, columnTimestamp, columnValue);
-                fieldList.add(field);
-            }
-            event.setFields(fieldList);
-            eventList.add(event);
+    public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
+        if (this.variableFieldList == null) {
+            this.variableFieldList = cacheableQueryRow.getVariableColumnNames();
         }
+        Map<String,String> markings = cacheableQueryRow.getMarkings();
+        String dataType = cacheableQueryRow.getDataType();
+        String internalId = cacheableQueryRow.getEventId();
+        String row = cacheableQueryRow.getRow();
 
-        return eventList;
+        EventBase event = this.responseObjectFactory.getEvent();
+        event.setMarkings(markings);
+
+        Metadata metadata = new Metadata();
+        metadata.setDataType(dataType);
+        metadata.setInternalId(internalId);
+        metadata.setRow(row);
+        metadata.setTable(logic.getTableName());
+        event.setMetadata(metadata);
+
+        List<FieldBase> fieldList = new ArrayList<>();
+        Map<String,String> columnValueMap = cacheableQueryRow.getColumnValues();
+        for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
+            String columnName = entry.getKey();
+            String columnValue = entry.getValue();
+            Map<String,String> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
+            String columnVisibility = cacheableQueryRow.getColumnVisibility(columnName);
+            Long columnTimestamp = cacheableQueryRow.getColumnTimestamp(columnName);
+            FieldBase field = this.makeField(columnName, columnMarkings, columnVisibility, columnTimestamp, columnValue);
+            fieldList.add(field);
+        }
+        event.setFields(fieldList);
+        return event;
     }
 }

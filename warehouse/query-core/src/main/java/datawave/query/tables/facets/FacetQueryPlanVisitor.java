@@ -72,6 +72,7 @@ public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableItera
 
         //  @formatter:off
         QueryPlan plan = new QueryPlan()
+                        .withTableName(config.getShardTableName())
                         .withQueryTree(node)
                         .withRanges(Collections.singleton(new Range(startKey, true, endKey, false)))
                         .withColumnFamilies(fieldPairs);

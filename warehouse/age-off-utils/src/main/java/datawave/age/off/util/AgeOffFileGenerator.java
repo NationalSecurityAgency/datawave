@@ -70,6 +70,7 @@ public class AgeOffFileGenerator {
     }
 
     private void openConfigurationElement() throws IOException {
+        this.writer.write("<?xml version=\"1.0\"?>\n");
         this.writer.write("<ageoffConfiguration>\n");
     }
 }

@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -25,8 +26,10 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
+import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -37,7 +40,6 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 
@@ -180,7 +182,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     forwardLookupData.getSessions().add(bs);
-                    iter = Iterators.concat(iter, bs);
+                    iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                 }
 
                 forwardLookupData.setTimedScanFuture(execService.submit(createTimedCallable(iter, fields, forwardLookupData, indexLookupMap)));
@@ -211,7 +213,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     reverseLookupData.getSessions().add(bs);
-                    iter = Iterators.concat(iter, bs);
+                    iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                 }
 
                 reverseLookupData.setTimedScanFuture(execService.submit(createTimedCallable(iter, reverseFields, reverseLookupData, indexLookupMap)));
@@ -265,6 +267,10 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     while (iter.hasNext()) {
+                        // check if interrupted which may be triggered by closing a batch scanner
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException();
+                        }
 
                         Entry<Key,Value> entry = iter.next();
 
@@ -358,7 +364,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         private Future<Boolean> timedScanFuture;
         private CountDownLatch lookupStartedLatch;
         private CountDownLatch lookupStoppedLatch;
-        private long lookupStartTimeMillis = Long.MAX_VALUE;
+        private AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
 
         public Collection<ScannerSession> getSessions() {
             return sessions;
@@ -392,12 +398,12 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             this.lookupStoppedLatch = lookupStoppedLatch;
         }
 
-        public long getLookupStartTimeMillis() {
+        public AtomicLong getLookupStartTimeMillis() {
             return lookupStartTimeMillis;
         }
 
         public void setLookupStartTimeMillis(long lookupStartTimeMillis) {
-            this.lookupStartTimeMillis = lookupStartTimeMillis;
+            this.lookupStartTimeMillis.set(lookupStartTimeMillis);
         }
     }
 }

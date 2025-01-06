@@ -16,6 +16,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.edge.util.EdgeValue;
+import datawave.util.CompositeTimestamp;
 import datawave.util.time.DateHelper;
 
 /**
@@ -30,8 +31,6 @@ public class LoadDateFilter extends DateTypeFilter {
         Range range = new Range();
         try {
             range.readFields(in);
-        } catch (Exception e2) {
-            throw new IOException(e2);
         } finally {
             in.close();
             b.close();
@@ -120,6 +119,6 @@ public class LoadDateFilter extends DateTypeFilter {
     // event date from the timestamp value rather than the column qualifier.
     private String extractEventDate(Key k) {
 
-        return DateHelper.format(k.getTimestamp());
+        return DateHelper.format(CompositeTimestamp.getEventDate(k.getTimestamp()));
     }
 }

@@ -24,6 +24,7 @@ import datawave.query.util.Tuple2;
 public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<QueryPlan>> {
 
     private static final Logger log = Logger.getLogger(TupleToRange.class);
+    protected String tableName;
     protected JexlNode currentScript;
     protected JexlNode tree = null;
     protected ShardQueryConfiguration config;
@@ -34,7 +35,8 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      * @param config
      *            a configuration
      */
-    public TupleToRange(JexlNode currentNode, ShardQueryConfiguration config) {
+    public TupleToRange(String tableName, JexlNode currentNode, ShardQueryConfiguration config) {
+        this.tableName = tableName;
         this.currentScript = currentNode;
         this.config = config;
     }
@@ -57,15 +59,15 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
 
         if (isDocumentRange(indexInfo)) {
 
-            return createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
+            return createDocumentRanges(tableName, queryNode, shard, indexInfo, config.isTldQuery());
 
         } else if (isShardRange(shard)) {
 
-            return createShardRange(queryNode, shard, indexInfo);
+            return createShardRange(tableName, queryNode, shard, indexInfo);
 
         } else {
 
-            return createDayRange(queryNode, shard, indexInfo);
+            return createDayRange(tableName, queryNode, shard, indexInfo);
         }
     }
 
@@ -103,7 +105,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      *            check for tld query
      * @return an iterator of query plans
      */
-    public static Iterator<QueryPlan> createDocumentRanges(JexlNode queryNode, String shard, IndexInfo indexInfo, boolean isTldQuery) {
+    public static Iterator<QueryPlan> createDocumentRanges(String tableName, JexlNode queryNode, String shard, IndexInfo indexInfo, boolean isTldQuery) {
         List<QueryPlan> queryPlans = Lists.newArrayListWithCapacity(indexInfo.uids().size());
 
         for (IndexMatch indexMatch : indexInfo.uids()) {
@@ -129,6 +131,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
 
             //  @formatter:off
             QueryPlan queryPlan = new QueryPlan()
+                            .withTableName(tableName)
                             .withQueryTree(indexMatch.getNode())
                             .withRanges(Collections.singleton(range))
                             .withFieldCounts(indexInfo.getFieldCounts())
@@ -140,7 +143,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         return queryPlans.iterator();
     }
 
-    public static Iterator<QueryPlan> createShardRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
+    public static Iterator<QueryPlan> createShardRange(String tableName, JexlNode queryNode, String shard, IndexInfo indexInfo) {
         JexlNode myNode = queryNode;
         if (indexInfo.getNode() != null) {
             myNode = indexInfo.getNode();
@@ -154,6 +157,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
 
         //  @formatter:off
         QueryPlan queryPlan = new QueryPlan()
+                        .withTableName(tableName)
                         .withQueryTree(myNode)
                         .withRanges(Collections.singleton(range))
                         .withFieldCounts(indexInfo.getFieldCounts())
@@ -163,7 +167,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         return Collections.singleton(queryPlan).iterator();
     }
 
-    public static Iterator<QueryPlan> createDayRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
+    public static Iterator<QueryPlan> createDayRange(String tableName, JexlNode queryNode, String shard, IndexInfo indexInfo) {
         JexlNode myNode = queryNode;
         if (indexInfo.getNode() != null) {
             myNode = indexInfo.getNode();
@@ -176,6 +180,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
 
         //  @formatter:off
         QueryPlan queryPlan = new QueryPlan()
+                        .withTableName(tableName)
                         .withQueryTree(myNode)
                         .withRanges(Collections.singleton(range))
                         .withFieldCounts(indexInfo.getFieldCounts())

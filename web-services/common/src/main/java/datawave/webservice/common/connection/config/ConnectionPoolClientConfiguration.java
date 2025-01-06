@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.result.ConnectionPoolClientProperties;
 import datawave.webservice.common.connection.AccumuloClientConfiguration;
 
 /**
@@ -15,10 +16,9 @@ import datawave.webservice.common.connection.AccumuloClientConfiguration;
  * dw.{pool}.client.{tableName}.consistency = IMMEDIATE|EVENTUAL dw.{pool}.client.{tableName}.{hintName} = {hintValue}
  *
  */
-public class ConnectionPoolClientConfiguration {
+public class ConnectionPoolClientConfiguration extends ConnectionPoolClientProperties {
 
     private static final Logger log = Logger.getLogger(ConnectionPoolConfiguration.class);
-    private AccumuloClientConfiguration config = new AccumuloClientConfiguration();
 
     public ConnectionPoolClientConfiguration(String poolName) {
         String prefix = "dw." + poolName + ".client";
@@ -38,7 +38,4 @@ public class ConnectionPoolClientConfiguration {
         }
     }
 
-    public AccumuloClientConfiguration getConfiguration() {
-        return config;
-    }
 }

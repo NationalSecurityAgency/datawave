@@ -15,6 +15,8 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -262,6 +264,11 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CityField.EVENT_ID.name();
+    }
+
+    @Override
+    public ShardQueryLogic createShardQueryLogic() {
+        ShardQueryLogic logic = super.createShardQueryLogic();
 
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
 
@@ -272,6 +279,7 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
             }
         }
 
-        this.logic.setParser(parser);
+        logic.setParser(parser);
+        return logic;
     }
 }

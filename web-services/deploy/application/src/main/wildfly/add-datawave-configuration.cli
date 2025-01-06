@@ -131,6 +131,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteDictionary.scheme:add(value=${dictionary.remoteservice.scheme})
 /system-property=dw.remoteDictionary.host:add(value=${dictionary.remoteservice.host})
 /system-property=dw.remoteDictionary.port:add(value=${dictionary.remoteservice.port})
+/system-property=dw.remoteDictionary.useConfiguredURIForRedirect:add(value=${dictionary.remoteservice.useConfiguredURIForRedirect})
 
 # Accumulo microservice config
 /system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
@@ -147,6 +148,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteQueryMetricService.scheme:add(value=${querymetric.remoteservice.scheme})
 /system-property=dw.remoteQueryMetricService.host:add(value=${querymetric.remoteservice.host})
 /system-property=dw.remoteQueryMetricService.port:add(value=${querymetric.remoteservice.port})
+/system-property=dw.remoteQueryMetricService.useConfiguredURIForRedirect:add(value=${querymetric.remoteservice.useConfiguredURIForRedirect})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)

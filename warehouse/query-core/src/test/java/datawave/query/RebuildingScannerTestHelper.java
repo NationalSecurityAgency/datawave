@@ -526,6 +526,11 @@ public class RebuildingScannerTestHelper {
         }
 
         @Override
+        public synchronized void setExecutionHints(Map<String,String> hints) {
+            // no-op
+        }
+
+        @Override
         public void setRange(Range range) {
             ((InMemoryScanner) delegate).setRange(range);
         }
@@ -594,6 +599,11 @@ public class RebuildingScannerTestHelper {
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
 
+        }
+
+        @Override
+        public synchronized void setExecutionHints(Map<String,String> hints) {
+            // no-op
         }
 
         @Override
