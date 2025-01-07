@@ -20,13 +20,8 @@ findAccumuloJar (){
   ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
 }
 findZookeeperJar(){
-  result=$(ls -1 $ZOOKEEPER_HOME/zookeeper-*.jar 2>/dev/null | head -1)
-  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/zookeeper-*.jar | head -1)
-  echo $result
-}
-findZookeeperJuteJar(){
-  result=$(ls -1 $ZOOKEEPER_HOME/zookeeper-jute-*.jar 2>/dev/null | head -1)
-  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/zookeeper-jute-*.jar | head -1)
+  result=$(ls -1 $ZOOKEEPER_HOME/$1-*.jar 2>/dev/null | head -1)
+  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/$1-*.jar | head -1)
   echo $result
 }
 
@@ -99,8 +94,8 @@ INFINISPAN_CORE_JAR=$(findJar infinispan-core)
 INFINISPAN_COMMONS_JAR=$(findJar infinispan-commons)
 JBOSS_LOGGING_JAR=$(findJar jboss-logging)
 JGROUPS_JAR=$(findJar jgroups)
-ZOOKEEPER_JAR=$(findZookeeperJar)
-ZOOKEEPER_JUTE_JAR=$(findZookeeperJuteJar)
+ZOOKEEPER_JAR=$(findZookeeperJar zookeeper)
+ZOOKEEPER_JUTE_JAR=$(findZookeeperJar zookeeper-jute)
 DATAWAVE_QUERY_CORE_JAR=$(findJar datawave-query-core)
 COMMONS_JEXL_JAR=$(findJar commons-jexl3)
 PROTOSTUFF_API_JAR=$(findJar protostuff-api)
