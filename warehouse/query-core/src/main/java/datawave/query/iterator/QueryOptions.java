@@ -1483,6 +1483,8 @@ public class QueryOptions implements OptionDescriber {
         // Currently writable, kryo or toString
         if (options.containsKey(Constants.RETURN_TYPE)) {
             setReturnType(DocumentSerialization.ReturnType.valueOf(options.get(Constants.RETURN_TYPE)));
+        } else {
+            setReturnType(DocumentSerialization.ReturnType.kryo);
         }
 
         // Boolean: should each attribute maintain a ColumnVisibility.
@@ -1498,10 +1500,11 @@ public class QueryOptions implements OptionDescriber {
             setFullTableScanOnly(false);
         }
 
-        /*
-         * if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) { setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES))); } else {
-         * setTrackSizes(true); }
-         */
+        if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
+            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
+        } else {
+            setTrackSizes(true);
+        }
 
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
