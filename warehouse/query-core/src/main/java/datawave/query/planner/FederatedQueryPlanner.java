@@ -484,7 +484,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
 
             // If the start of the first index hole occurs after the configured start date, add a range spanning from
-            // the beginDate to one day before the start of the first index hole.
+            // the beginDate to one millisecond before the start of the first index hole.
             Pair<Date,Date> firstHole = it.next();
             // Track the end of the previous range.
             Date endOfPrevRange;
@@ -711,7 +711,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Return one day before the given date.
+     * Return one millisecond before the given date.
      */
     private Date oneMsBefore(Date date) {
         Calendar calendar = Calendar.getInstance();
