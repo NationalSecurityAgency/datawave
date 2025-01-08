@@ -32,7 +32,6 @@ public class QueryValidationResponse extends BaseResponse {
     private List<Result> results;
 
     @XmlElementWrapper(name = "ExecutedRules")
-    @XmlElement(name = "RuleName")
     private List<String> executedRules;
 
     public String getLogicName() {
