@@ -2,6 +2,7 @@ package datawave.query.iterator;
 
 import static datawave.query.iterator.QueryOptions.ALLOW_FIELD_INDEX_EVALUATION;
 import static datawave.query.iterator.QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP;
+import static datawave.query.iterator.QueryOptions.COLLECT_TIMING_DETAILS;
 import static datawave.query.iterator.QueryOptions.CONTAINS_INDEX_ONLY_TERMS;
 import static datawave.query.iterator.QueryOptions.END_TIME;
 import static datawave.query.iterator.QueryOptions.HDFS_SITE_CONFIG_URLS;
@@ -1061,6 +1062,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY, query);
         // none
         options.put(INDEX_ONLY_FIELDS, "");
+        options.put(COLLECT_TIMING_DETAILS, "false");
 
         replayAll();
 
@@ -1105,6 +1107,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY, query);
         // none
         options.put(INDEX_ONLY_FIELDS, "");
+        options.put(COLLECT_TIMING_DETAILS, "false");
 
         replayAll();
 
@@ -1149,6 +1152,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3,TF_FIELD4");
         // set because we have index only fields used
         options.put(CONTAINS_INDEX_ONLY_TERMS, "true");
+        options.put(COLLECT_TIMING_DETAILS, "false");
 
         replayAll();
 
@@ -1195,6 +1199,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3,TF_FIELD4");
         // set to be the term frequency fields required for the query?
         options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD0,TF_FIELD1,TF_FIELD2,TF_FIELD4");
+        options.put(COLLECT_TIMING_DETAILS, "false");
 
         replayAll();
 

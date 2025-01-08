@@ -1584,6 +1584,9 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
             this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
+        } else {
+            System.out.println(this.collectTimingDetails);
+            this.collectTimingDetails = true;
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
