@@ -262,13 +262,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             final boolean fieldConfigCacheEnabled = config.getBoolean(this.getType().typeName() + FIELD_CONFIG_CACHE_ENABLED, false);
             final boolean fieldConfigCacheLimitDebug = config.getBoolean(this.getType().typeName() + FIELD_CONFIG_CACHE_KEY_LIMIT_DEBUG, false);
             final int fieldConfigCacheLimit = config.getInt(this.getType().typeName() + FIELD_CONFIG_CACHE_KEY_LIMIT, 100);
-            if (log.isDebugEnabled()) {
-                log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
-                log.debug("Field config cache enabled: " + fieldConfigCacheEnabled);
-                if (fieldConfigCacheEnabled) {
-                    log.debug("Field config cache limit: " + fieldConfigCacheLimit);
-                    log.debug("Field config cache limit debug: " + fieldConfigCacheLimitDebug);
-                }
+            log.info("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
+            log.info("Field config cache enabled: " + fieldConfigCacheEnabled);
+            if (fieldConfigCacheEnabled) {
+                log.info("Field config cache limit: " + fieldConfigCacheLimit);
+                log.info("Field config cache limit debug: " + fieldConfigCacheLimitDebug);
             }
             fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
             if (fieldConfigCacheEnabled) {
