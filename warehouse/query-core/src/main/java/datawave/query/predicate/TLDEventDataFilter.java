@@ -790,7 +790,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                 }
             }
 
-            return new String(cq, 0, stopIndex);
+            return new String(cq, 0, stopIndex != -1 ? stopIndex : length);
         }
     }
 

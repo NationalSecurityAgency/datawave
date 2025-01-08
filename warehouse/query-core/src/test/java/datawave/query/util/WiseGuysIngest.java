@@ -21,6 +21,9 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import datawave.attribute.pointer.ViewDataPointer;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.DateType;
@@ -60,6 +63,7 @@ public class WiseGuysIngest {
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000L;
+    protected static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
@@ -92,6 +96,10 @@ public class WiseGuysIngest {
                 return lcNoDiacriticsType.getClass().getName();
         }
     }
+
+    private final static String corleonePhilosophy = "Life ain't no fairy tale, kid. It's a hustle, a game of survival. Loyalty's a luxury, respect's currency. You snitch, you die. You disrespect, you pay. Trust no one, least of all yourself. Play smart, play dirty, and never let 'em see you sweat. That's how you climb the ladder, one betrayal at a time.";
+    private final static String sopranoPhilosophy = "They say the streets ain't got no heart, but they lie. The streets got a rhythm, a beat. It's the rhythm of survival, the beat of ambition. You gotta dance to that tune, feel the pulse of the game. Respect that rhythm, and it'll carry you higher than you ever dreamed. But step out of time, and the streets will grind you to dust.";
+    private final static String caponePhilosophy = "This world's a dog-eat-dog world, kid. Loyalty? A fool's game. Friendship? A fleeting illusion. Money? The only thing that matters. You gotta climb over whoever's in your way, use 'em, exploit 'em. No mercy, no regrets. The strong survive, the weak perish. That's the law of the jungle, and this concrete jungle ain't no different.";
 
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
 
@@ -131,6 +139,10 @@ public class WiseGuysIngest {
                             emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp, emptyValue);
+            // corleone data pointer
+            ViewDataPointer vdp = new ViewDataPointer(shard, datatype, corleoneUID, "PHILOSOPHY");
+            mutation.put(datatype + "\u0000" + corleoneUID, "PHILOSOPHY" + '\u0000', columnVisibility, timeStamp,
+                            new Value(objectMapper.writeValueAsString(vdp)));
 
             mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneChildUID, "ETA.0" + "\u0000" + "12", columnVisibility, timeStamp, emptyValue);
@@ -153,6 +165,10 @@ public class WiseGuysIngest {
             mutation.put(datatype + "\u0000" + sopranoUID, "QUOTE" + "\u0000" + "If you can quote the rules then you can obey them", columnVisibility,
                             timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "GEO" + "\u0000" + "POINT(20 20)", columnVisibility, timeStamp, emptyValue);
+            // soprano data pointer
+            vdp = new ViewDataPointer(shard, datatype, sopranoUID, "PHILOSOPHY");
+            mutation.put(datatype + "\u0000" + sopranoUID, "PHILOSOPHY" + '\u0000', columnVisibility, timeStamp,
+                            new Value(objectMapper.writeValueAsString(vdp)));
 
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.0" + "\u0000" + "ALPHONSE", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.1" + "\u0000" + "FRANK", columnVisibility, timeStamp, emptyValue);
@@ -179,6 +195,10 @@ public class WiseGuysIngest {
                             timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "GEO" + "\u0000" + "POINT(30 30)", columnVisibility, timeStamp, emptyValue);
+            // capone data pointer
+            vdp = new ViewDataPointer(shard, datatype, caponeUID, "PHILOSOPHY");
+            mutation.put(datatype + "\u0000" + caponeUID, "PHILOSOPHY" + '\u0000', columnVisibility, timeStamp,
+                            new Value(objectMapper.writeValueAsString(vdp)));
 
             // second datatype shard data
             mutation.put(secondDataType + "\u0000" + tattagliaUID, "NAME.0" + "\u0000" + "Philip", columnVisibility, timeStamp, emptyValue);
@@ -421,6 +441,11 @@ public class WiseGuysIngest {
             addTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
             addTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
             addTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+
+            // add philosophy tokens
+            addTokens(bw, range, "PHILOSOPHY", corleonePhilosophy, corleoneUID);
+            addTokens(bw, range, "PHILOSOPHY", sopranoPhilosophy, sopranoUID);
+            addTokens(bw, range, "PHILOSOPHY", caponePhilosophy, caponeUID);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -774,6 +799,15 @@ public class WiseGuysIngest {
             addDColumn(datatype, sopranoUID, "CONTENT", "If you can quote the rules then you can obey them", bw);
             addDColumn(datatype, caponeUID, "CONTENT", "You can get much farther with a kind word and a gun than you can with a kind word alone", bw);
             addDColumn(datatype, caponeUID, "CONTENT2", "A lawyer and his briefcase can steal more than ten men with guns.", bw);
+
+            // add some data pointers with matching d columns
+            addFiTfTokens(bw, range, "PHILOSOPHY", corleonePhilosophy, corleoneUID);
+            addDColumn(datatype, corleoneUID, "PHILOSOPHY", corleonePhilosophy, bw);
+            addFiTfTokens(bw, range, "PHILOSOPHY", sopranoPhilosophy, sopranoUID);
+            addDColumn(datatype, sopranoUID, "PHILOSOPHY", sopranoPhilosophy, bw);
+            addFiTfTokens(bw, range, "PHILOSOPHY", caponePhilosophy, caponeUID);
+            addDColumn(datatype, caponeUID, "PHILOSOPHY", caponePhilosophy, bw);
+
         } finally {
             if (null != bw) {
                 bw.close();
@@ -955,6 +989,14 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
             bw.addMutation(mutation);
 
+            // add a field for data pointers
+            mutation = new Mutation("PHILOSOPHY");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
+
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
         } finally {
             if (null != bw) {
                 bw.close();

@@ -168,7 +168,8 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
 
         try {
             String data = Text.decode(holder.getBytes(), index + 1, (holder.getLength() - (index + 1)));
-
+            // TODO at this point any field built from a pointer should always be set as keep=false this either has to happen here directly or be handled in the
+            // attrFilter
             Attribute<?> attr = this.attrFactory.create(fieldName, data, k, (attrFilter == null || attrFilter.keep(k)));
             if (attrFilter != null) {
                 attr.setToKeep(attrFilter.keep(k));

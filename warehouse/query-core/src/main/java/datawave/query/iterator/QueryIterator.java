@@ -104,6 +104,7 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.jexl.visitors.RegexFieldVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.pointer.DataPointerHandler;
@@ -916,11 +917,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     private void configureKeyToDocumentDataPointers(KeyToDocumentData keyToDocumentData) {
         if (isDataPointerEnabled()) {
-            DataPointerHandler dataPointerHandler = new ViewDataPointerHandler();
-            Map<String,String> dataPointerHandlerOptions = new HashMap<>();
-            dataPointerHandlerOptions.put(ViewDataPointerHandler.LENGTH_LIMIT, "" + getDataPointerMaxLength());
-            dataPointerHandlerOptions.put(ViewDataPointerHandler.TRUNCATE_FIELD, getDataPointerTruncationField());
-            dataPointerHandler.init(source.deepCopy(myEnvironment), dataPointerHandlerOptions, myEnvironment);
+            Set<String> regexFields = RegexFieldVisitor.parseRegexFields(getQuery());
+            DataPointerHandler dataPointerHandler = new ViewDataPointerHandler(regexFields, (int) getDataPointerMaxLength(), getDataPointerTruncationField());
+
+            dataPointerHandler.init(source.deepCopy(myEnvironment), Collections.emptyMap(), myEnvironment);
             keyToDocumentData.withDataPointers(dataPointerHandler);
         }
     }

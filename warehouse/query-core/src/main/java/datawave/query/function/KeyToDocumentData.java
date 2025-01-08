@@ -145,7 +145,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         if (handler == null) {
             throw new IllegalArgumentException("DataPointerHandler may not be null");
         }
-        
+
         this.expandDataPointers = true;
         this.dataPointerHandler = handler;
 

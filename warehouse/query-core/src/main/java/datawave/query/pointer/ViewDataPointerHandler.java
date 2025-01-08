@@ -6,16 +6,20 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -25,17 +29,31 @@ import datawave.query.data.parsers.EventKey;
 import datawave.query.table.parser.ContentKeyValueFactory;
 
 public class ViewDataPointerHandler implements DataPointerHandler {
-    public static final String LENGTH_LIMIT = "ViewDataPointer.limit.length";
-    public static final String TRUNCATE_FIELD = "ViewDataPointer.truncate.field";
+    ;
+    private static final Multimap<Key,Value> EMPTY_MAP = ArrayListMultimap.create(0, 0);
 
     private SortedKeyValueIterator<Key,Value> source;
-    private IteratorEnvironment env;
+    private final Set<String> fetchFields;
     private int lengthLimit = -1;
-    private String truncateField;
-    private final ObjectMapper dataPointerObjectMapper;
+    private final String truncateField;
+    private final ObjectMapper dataPointerObjectMapper = new ObjectMapper();
 
     public ViewDataPointerHandler() {
-        dataPointerObjectMapper = new ObjectMapper();
+        this(null);
+    }
+
+    public ViewDataPointerHandler(Set<String> fetchFields) {
+        this(fetchFields, -1);
+    }
+
+    public ViewDataPointerHandler(Set<String> fetchFields, int lengthLimit) {
+        this(fetchFields, lengthLimit, null);
+    }
+
+    public ViewDataPointerHandler(Set<String> fetchFields, int lengthLimit, String truncateField) {
+        this.fetchFields = fetchFields;
+        this.lengthLimit = lengthLimit;
+        this.truncateField = truncateField;
     }
 
     @Override
@@ -46,13 +64,6 @@ public class ViewDataPointerHandler implements DataPointerHandler {
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) {
         this.source = source;
-        this.env = env;
-        if (options != null && options.containsKey(LENGTH_LIMIT)) {
-            lengthLimit = Integer.parseInt(options.get(LENGTH_LIMIT));
-        }
-        if (options != null && options.containsKey(TRUNCATE_FIELD)) {
-            truncateField = options.get(TRUNCATE_FIELD);
-        }
     }
 
     @Override
@@ -61,25 +72,32 @@ public class ViewDataPointerHandler implements DataPointerHandler {
             throw new IllegalStateException("cannot fetch without initializing a source iterator");
         }
 
+        if (!canFetch(pointer)) {
+            return EMPTY_MAP;
+        }
+
+        EventKey referenceParser = new EventKey();
+        referenceParser.parse(reference);
+
+        if (fetchFields != null && !fetchFields.contains(referenceParser.getField())) {
+            return EMPTY_MAP;
+        }
+
         Key startKey = pointer.get();
         Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
 
         // construct the view range
         Range dColumn = new Range(startKey, true, endKey, false);
 
-        source.seek(dColumn, Collections.emptyList(), true);
+        source.seek(dColumn, Collections.emptyList(), false);
 
-        Multimap<Key,Value> data = HashMultimap.create();
-
-        EventKey referenceParser = null;
+        Multimap<Key,Value> data = ArrayListMultimap.create(1, 1);
 
         // pull back all the data
         while (source.hasTop()) {
-            if (referenceParser == null) {
-                referenceParser = new EventKey();
-                referenceParser.parse(reference);
-            }
             byte[] rawBytes = ContentKeyValueFactory.decodeAndDecompressContent(source.getTopValue().get());
+            Key top = source.getTopKey();
+            long dataTimestamp = top.getTimestamp();
             if (lengthLimit != -1 && rawBytes.length > lengthLimit) {
                 // truncate
                 rawBytes = Arrays.copyOf(rawBytes, lengthLimit);
@@ -87,7 +105,7 @@ public class ViewDataPointerHandler implements DataPointerHandler {
                     data.put(getTruncatedKey(reference, referenceParser), EMPTY_VALUE);
                 }
             }
-            data.put(getEventKey(reference, referenceParser, rawBytes), EMPTY_VALUE);
+            data.put(getEventKey(reference, referenceParser, rawBytes, top.getColumnVisibility(), dataTimestamp), EMPTY_VALUE);
 
             source.next();
         }
@@ -108,9 +126,9 @@ public class ViewDataPointerHandler implements DataPointerHandler {
         return dataPointerObjectMapper.readerFor(DataPointer.class).readValue(value.get());
     }
 
-    private Key getEventKey(Key reference, EventKey referenceParser, byte[] value) {
-        return new Key(reference.getRow(), reference.getColumnFamily(), new Text(referenceParser.getField() + '\u0000' + new String(value)),
-                        reference.getColumnVisibility(), reference.getTimestamp());
+    private Key getEventKey(Key reference, EventKey referenceParser, byte[] value, Text visibility, long timestamp) {
+        return new Key(reference.getRow(), reference.getColumnFamily(), new Text(referenceParser.getField() + '\u0000' + new String(value)), visibility,
+                        timestamp);
     }
 
     private Key getTruncatedKey(Key reference, EventKey referenceParser) {

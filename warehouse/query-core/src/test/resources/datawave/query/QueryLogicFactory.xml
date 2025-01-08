@@ -291,7 +291,7 @@
         <property name="cardinalityThreshold" value="50"/>
         <!-- data pointer configuration -->
         <property name="dataPointerEnabled" value="true" />
-        <property name="dataPointerMaxLength" value="100" />
+        <property name="dataPointerMaxLength" value="-1" />
         <property name="dataPointerTruncationField" value="TRUNCATED_FIELDS" />
     </bean>
 
