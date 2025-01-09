@@ -3,6 +3,11 @@ package datawave.ingest.mapreduce.job.reindex;
 import static datawave.ingest.data.config.DataTypeHelper.Properties.DATA_NAME;
 import static datawave.ingest.mapreduce.EventMapper.CONTEXT_WRITER_CLASS;
 import static datawave.ingest.mapreduce.EventMapper.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS;
+import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
+import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GIDX_TNAME;
+import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GRIDX_TNAME;
+import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_TNAME;
+import static datawave.ingest.table.config.LoadDateTableConfigHelper.LOAD_DATES_TABLE_NAME_PROP;
 import static org.apache.commons.lang3.StringUtils.reverse;
 
 import java.io.IOException;
@@ -14,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import datawave.ingest.metadata.EventMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -58,6 +64,13 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     public static final String DUMP_COUNTERS = "ShardReindexMapper.dumpCounters";
     public static final String BATCH_MODE = "ShardReindexMapper.batchMode";
     public static final String GENERATE_METADATA = "ShardReindexMapper.generateMetadata";
+    public static final String METADATA_ONLY = "ShardReindexMapper.metadataOnly";
+    public static final String METADATA_DISABLE_FREQUENCY_COUNTS = "ShardReindexMapper.metadata.disable.frequency.counts";
+    public static final String METADATA_GENERATE_FROM_FI = "ShardReindexMapper.metadata.generate.from.fi";
+    public static final String METADATA_GENERATE_RI_FROM_FI = "ShardReindexMapper.metadata.generate.ri.from.fi";
+    public static final String METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP = "ShardReindexMapper.metadata.generate.ri.from.fi.with.lookup";
+    public static final String METADATA_GENERATE_FROM_TF = "ShardReindexMapper.metadata.generate.from.tf";
+
     private static final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
 
     private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
@@ -96,6 +109,18 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private boolean generateTF = false;
     private boolean floorTimestamps = true;
     private boolean generateMetadata = false;
+    // prevent anything but metadata from being output, event data will generate keys after ingest that will be discarded
+    // fi/tf data for a field will generate counts and i/tf entries. There is no good way to directly detect reverse index entries from fi only
+    // see fi reverse lookup enabled for fi metadata checks
+    // to disable frequency data set metadataDisableFrequencyCounts flag
+    private boolean metadataOnly = false;
+    // disable metadataFrequency entries from being written
+    private boolean disableMetadataFrequencyCounts = false;
+    private boolean generateMetadataFromFi = false;
+    private boolean generateMetadataFromTf = false;
+
+    // generating metadata
+    private EventMetadata generatedEventMetadata = null;
 
     // data processing/reuse
     private Multimap<String,String> dataMap;
@@ -140,9 +165,9 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         this.cleanupShard = config.getBoolean(CLEANUP_SHARD, this.cleanupShard);
 
-        this.shardTable = new Text(config.get(ShardedDataTypeHandler.SHARD_TNAME, "shard"));
-        this.indexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex"));
-        this.reverseIndexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex"));
+        this.shardTable = new Text(config.get(SHARD_TNAME, "shard"));
+        this.indexTable = new Text(config.get(SHARD_GIDX_TNAME, "shardIndex"));
+        this.reverseIndexTable = new Text(config.get(SHARD_GRIDX_TNAME, "shardReverseIndex"));
 
         this.propagateDeletes = config.getBoolean(PROPAGATE_DELETES, this.propagateDeletes);
 
@@ -158,6 +183,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         log.info("reprocessing events: " + this.reprocessEvents);
 
         this.floorTimestamps = config.getBoolean(FLOOR_TIMESTAMPS, this.floorTimestamps);
+        this.metadataOnly = config.getBoolean(METADATA_ONLY, this.metadataOnly);
+        this.disableMetadataFrequencyCounts = config.getBoolean(METADATA_DISABLE_FREQUENCY_COUNTS, this.disableMetadataFrequencyCounts);
+        this.generateMetadataFromFi = config.getBoolean(METADATA_GENERATE_FROM_FI, this.generateMetadataFromFi);
+        this.generateMetadataFromTf = config.getBoolean(METADATA_GENERATE_FROM_TF, this.generateMetadataFromTf);
+
+        if (this.generateMetadataFromFi || this.generateMetadataFromTf) {
+            // create an EventMetadata to write data to
+            generatedEventMetadata = new EventMetadata(new Text(config.get(SHARD_TNAME)), new Text(config.get(METADATA_TABLE_NAME)), config.get(LOAD_DATES_TABLE_NAME_PROP) != null ? new Text(config.get(LOAD_DATES_TABLE_NAME_PROP)) : null, new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
+        }
 
         if (this.reprocessEvents) {
             // check for consistency with cleanup shard settings
@@ -223,7 +257,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                         .getClass(CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
         try {
             contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
+
+            if (this.metadataOnly) {
+                // wrap the context with a context that will strip anything but keys for the DatawaveMetadata table
+                contextWriter = new DatawaveMetadataOnlyContext(contextWriter, disableMetadataFrequencyCounts);
+            }
+
             contextWriter.setup(config, config.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
+
+
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             throw new IOException("Failed to initialize " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         }
@@ -328,6 +370,14 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private void processFIKey(Key key, Value value, Context context) throws IOException, InterruptedException {
         if (!this.reprocessEvents || (this.reprocessEvents && this.defaultHelper.isIndexOnlyField(getFieldFromFI(key)))) {
             processFI(context, key);
+        }
+
+        if (this.generateMetadataFromFi) {
+            // if not generating the ri then modify the helper to prevent the ri entry from being created
+            // if generating the ri but the lookup fails use a modified helper
+            generatedEventMetadata.addEvent();
+
+            // TODO if counts are disabled, and this is a metadata only job set flag to prevent reprocessing for fast skipping until the next field
         }
     }
 

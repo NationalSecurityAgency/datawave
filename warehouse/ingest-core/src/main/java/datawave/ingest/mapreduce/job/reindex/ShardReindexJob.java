@@ -155,6 +155,7 @@ public class ShardReindexJob implements Tool {
         configuration.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, !jobConfig.preserveTimestamps);
         configuration.setBoolean(ShardReindexMapper.ENABLE_REINDEX_COUNTERS, jobConfig.enableCounters);
         configuration.setBoolean(ShardReindexMapper.DUMP_COUNTERS, jobConfig.dumpCounters);
+        configuration.setBoolean(ShardReindexMapper.METADATA_ONLY, jobConfig.metadataOnly);
 
         // Verify the batch mode by converting it to the enum, this will throw an IllegalArgumentException if it cannot be converted
         ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode);
@@ -784,6 +785,9 @@ public class ShardReindexJob implements Tool {
 
         @Parameter(names = "--skipMetadata", description = "disable writing DatawaveMetadata for job")
         private boolean skipMetadata = false;
+
+        @Parameter(names = "--metadataOnly", description = "generates DatawaveMetadata counts only, no other output is generated")
+        private boolean metadataOnly = false;
 
         @Parameter(names = "--resourceGroup", description = "Applies a scan_type hint on accumulo scanners")
         private String resourceGroup;
