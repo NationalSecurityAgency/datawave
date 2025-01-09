@@ -97,7 +97,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
@@ -639,7 +638,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // Seek() the boolean logic stuff
-        ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
+        docIter.seek(range, columnFamilies, inclusive);
 
         // now lets start off the nested iterator
         docIter.initialize();

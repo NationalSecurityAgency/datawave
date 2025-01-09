@@ -9,6 +9,7 @@ import org.apache.accumulo.core.data.Range;
 /**
  *
  */
+@Deprecated(forRemoval = true, since = "7.13.0")
 public interface SeekableIterator {
     /**
      * @see org.apache.accumulo.core.iterators.SortedKeyValueIterator
