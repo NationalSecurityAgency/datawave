@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
@@ -45,7 +44,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -62,7 +60,6 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-    private final Calendar calendar = Calendar.getInstance();
 
     // we want a unique set of plans, but maintain insertion order (facilitates easier testing)
     private final Set<String> plans = new LinkedHashSet<>();
@@ -323,13 +320,13 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         ShardQueryConfiguration firstConfigCopy = null;
         UUID queryId = originalConfig.getQuery().getId();
         for (Pair<Date,Date> dateRange : dateRanges) {
-            // Format the start and end date of the current sub-query to execute.
-            String subStartDate = dateFormat.format(dateRange.getLeft());
+            // Format the beginDate and endDate of the current sub-query to execute.
+            String subBeginDate = dateFormat.format(dateRange.getLeft());
             String subEndDate = dateFormat.format(dateRange.getRight());
 
             // Start a new stopwatch.
             TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
-                            + dateRanges.size() + "] against date range (" + subStartDate + "-" + subEndDate + ")");
+                            + dateRanges.size() + "] against date range (" + subBeginDate + "-" + subEndDate + ")");
 
             // Set the new date range in a copy of the config.
             ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
@@ -347,13 +344,13 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
             } catch (Exception e) {
-                log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
+                log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subBeginDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
                 plans.add(subPlan.plannedScript);
                 updatePlannedScript();
 
-                // Copy over any changes in the sub-config to the original config. This will not affect the start date, end date, or timers of the original
+                // Copy over any changes in the sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
                 // config.
                 copySubConfigPropertiesToOriginal(originalConfig, configCopy);
                 throw e;
@@ -383,7 +380,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         // Update the planned script.
         updatePlannedScript();
 
-        // Copy over any changes from the first sub-config to the original config. This will not affect the start date, end date, or timers of the original
+        // Copy over any changes from the first sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
         // config.
         copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
 
@@ -433,7 +430,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
      * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
      */
-    private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
+    protected SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
@@ -482,79 +479,110 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         } else {
             // Otherwise, get the valid date ranges. First, Merge any overlaps.
             SortedSet<Pair<Date,Date>> mergedHoles = mergeRanges(relevantHoles);
+            // Adjust the index holes so that they span from 00:00:00.000 on the first day to 23:59:59.999 on the last day
+            mergedHoles = spanEntireDays(mergedHoles);
             Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
 
-            // If the start of the first hole occurs after the configured start date, add a range spanning from the start date to one day before the start
-            // of the first hole.
+            // If the start of the first index hole occurs after the configured start date, add a range spanning from
+            // the beginDate to one millisecond before the start of the first index hole.
             Pair<Date,Date> firstHole = it.next();
-            if (firstHole.getLeft().getTime() > config.getBeginDate().getTime()) {
-                subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), oneDayBefore(firstHole.getLeft())));
-                // If the end of the first hole occurs before or on the configured end date, add the entire span for the first hole.
+            // Track the end of the previous range.
+            Date endOfPrevRange;
+            if (firstHole.getLeft().getTime() >= config.getBeginDate().getTime()) {
+                if (firstHole.getLeft().getTime() > config.getBeginDate().getTime()) {
+                    // Add a range from the configured beginDate to just before
+                    // the start of the first index hole. This date range is indexed
+                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), oneMsBefore(firstHole.getLeft())));
+                }
+
+                // the start of the first index hole is on or after the configured beginDate
                 if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
+                    // If the end of the first index hole occurs before or on the configured endDate,
+                    // add the entire span for the first index hole. This date range is not indexed
                     subDateRanges.add(firstHole);
+                    endOfPrevRange = firstHole.getRight();
                 } else {
-                    // Otherwise, add a range from the start of the first hole to the configured end date.
+                    // Otherwise, add a range from the start of the first index hole to
+                    // the configured endDate. This date range is not indexed
                     subDateRanges.add(Pair.of(firstHole.getLeft(), new Date(config.getEndDate().getTime())));
+                    endOfPrevRange = config.getEndDate();
                 }
-                // If the start of the first hole is equal to the configured start date, check if the entire hole falls within the query's date range.
-            } else if (firstHole.getLeft().getTime() == config.getBeginDate().getTime()) {
-                // If the end of the first hole occurs before or on the configured end date, add the entire span for the first hole.
+            } else {
+                // the start of the first index hole is before the configured beginDate
                 if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
-                    subDateRanges.add(firstHole);
-                } else {
-                    // Otherwise, the first hole spans over the query's date range.
-                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), new Date(config.getEndDate().getTime())));
-                }
-                // If the start of the first hole occurs before the configured start date, check how much of the hole falls within the query's date range.
-            } else if (firstHole.getLeft().getTime() < config.getBeginDate().getTime()) {
-                // If the end of the first hole occurs before or on the configured end date, add a range spanning from the configured start date to the end of
-                // the first hole.
-                if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
+                    // If the end of the first index hole occurs before or on the configured endDate, add a range spanning
+                    // from the configured beginDate to the end of the first index hole. This date range is not indexed
                     subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), firstHole.getRight()));
+                    endOfPrevRange = firstHole.getRight();
                 } else {
-                    // Otherwise, the first hole spans over the query's date range.
+                    // Otherwise, the first index hole spans over the query's date range. This date range is not indexed
                     subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), new Date(config.getEndDate().getTime())));
+                    endOfPrevRange = config.getEndDate();
                 }
             }
 
-            // Track the end of the previous hole.
-            Date endOfPrevHole = firstHole.getRight();
-            while (it.hasNext()) {
-                // The start of the next hole is guaranteed to fall within the original query's target date range. Add a target date range from one day after
-                // the end of the previous hole to one day before the start of the next hole.
+            while (it.hasNext() && (endOfPrevRange.getTime() < config.getEndDate().getTime())) {
+                // The start of the next index hole is guaranteed to fall within the original query's target date range. Add a date range from
+                // one millisecond after the end of the previous index hole to one millisecond before the start of the next index hole.
+                // This date range is between index holes and is indexed
                 Pair<Date,Date> currentHole = it.next();
-                subDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), oneDayBefore(currentHole.getLeft())));
+                subDateRanges.add(Pair.of(oneMsAfter(endOfPrevRange), oneMsBefore(currentHole.getLeft())));
 
-                // If there is another hole, the current hole is guaranteed to fall within the original target's date range. Add it to the sub ranges.
                 if (it.hasNext()) {
+                    // If there is another index hole, the current index hole is guaranteed to fall within the original
+                    // target's date range. Add it to the sub ranges. This date range is not indexed
                     subDateRanges.add(currentHole);
+                    endOfPrevRange = currentHole.getRight();
                 } else {
-                    // If this is the last hole, it is possible that the end date falls outside the original query's target date range. If so, shorten it to end
-                    // at the original target end date.
+                    // If this is the last hole, it is possible that the endDate falls outside the original query's target date range.
+                    // If so, shorten it to end at the original query endDate. This date range is not indexed
                     if (currentHole.getRight().getTime() > config.getEndDate().getTime()) {
                         subDateRanges.add(Pair.of(currentHole.getLeft(), config.getEndDate()));
+                        endOfPrevRange = config.getEndDate();
                     } else {
                         // If it does not fall outside the target date range, include it as is.
                         subDateRanges.add(currentHole);
+                        endOfPrevRange = currentHole.getRight();
                     }
                 }
-                endOfPrevHole = currentHole.getRight();
             }
 
-            // If the last hole we saw ended before the end of the original query's target date range, add a target date range from one day after the end of the
-            // last hole to the original target end date.
-            if (endOfPrevHole.getTime() < config.getEndDate().getTime()) {
-                subDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), new Date(config.getEndDate().getTime())));
+            // If the last hole we saw ended before the end of the original query's target date range, add date range from one
+            // millisecond after the end of the last index hole to the original query endDate.
+            if (endOfPrevRange.getTime() < config.getEndDate().getTime()) {
+                subDateRanges.add(Pair.of(oneMsAfter(endOfPrevRange), config.getEndDate()));
             }
         }
 
         return subDateRanges;
     }
 
+    private SortedSet<Pair<Date,Date>> spanEntireDays(Collection<Pair<Date,Date>> holes) {
+        SortedSet<Pair<Date,Date>> holesThatSpanEntireDays = new TreeSet<>();
+        holes.stream().forEach(p -> holesThatSpanEntireDays.add(spanEntireDays(p)));
+        return holesThatSpanEntireDays;
+    }
+
+    private Pair<Date,Date> spanEntireDays(Pair<Date,Date> hole) {
+        Calendar begin = Calendar.getInstance();
+        begin.setTime(hole.getLeft());
+        begin.set(Calendar.HOUR, 0);
+        begin.set(Calendar.MINUTE, 0);
+        begin.set(Calendar.SECOND, 0);
+        begin.set(Calendar.MILLISECOND, 0);
+        Calendar end = Calendar.getInstance();
+        end.setTime(hole.getRight());
+        end.set(Calendar.HOUR, 23);
+        end.set(Calendar.MINUTE, 59);
+        end.set(Calendar.SECOND, 59);
+        end.set(Calendar.MILLISECOND, 999);
+        return Pair.of(begin.getTime(), end.getTime());
+    }
+
     /**
      * Return the set of fields in the query.
      */
-    private Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) throws NoResultsException {
+    protected Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) throws NoResultsException {
         // Parse the query.
         ASTJexlScript queryTree = queryPlanner.parseQueryAndValidatePattern(query, null);
 
@@ -673,9 +701,30 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
+     * Return one millisecond after the given date.
+     */
+    private Date oneMsAfter(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date(date.getTime()));
+        calendar.add(Calendar.MILLISECOND, 1);
+        return calendar.getTime();
+    }
+
+    /**
+     * Return one millisecond before the given date.
+     */
+    private Date oneMsBefore(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date(date.getTime()));
+        calendar.add(Calendar.MILLISECOND, -1);
+        return calendar.getTime();
+    }
+
+    /**
      * Return the given date with the number of dates added to it.
      */
     private Date addDays(Date date, int daysToAdd) {
+        Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date(date.getTime()));
         calendar.add(Calendar.DATE, daysToAdd);
         return calendar.getTime();
