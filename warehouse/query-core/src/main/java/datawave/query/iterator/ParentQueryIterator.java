@@ -59,10 +59,10 @@ public class ParentQueryIterator extends QueryIterator {
 
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (evaluationFilter == null && script != null) {
+        if (evaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             this.evaluationFilter = new ParentEventDataFilter(expressionFilters);
         }
@@ -76,6 +76,22 @@ public class ParentQueryIterator extends QueryIterator {
      */
     public EventDataQueryFilter getEventFilter() {
         return getEvaluationFilter();
+    }
+
+    @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null) {
+            fiEvaluationFilter = getEvaluationFilter();
+        }
+        return fiEvaluationFilter.clone();
+    }
+
+    @Override
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (eventEvaluationFilter == null) {
+            eventEvaluationFilter = getEvaluationFilter();
+        }
+        return eventEvaluationFilter.clone();
     }
 
     @Override
