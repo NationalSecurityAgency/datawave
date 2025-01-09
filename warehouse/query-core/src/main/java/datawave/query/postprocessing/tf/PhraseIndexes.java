@@ -7,11 +7,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.javatuples.Triplet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -27,47 +27,52 @@ import datawave.query.Constants;
  * required to retrieve excerpts when requested.
  */
 public class PhraseIndexes {
-    private static final Logger log = Logger.getLogger(PhraseIndexes.class);
+    private static final Logger log = LoggerFactory.getLogger(PhraseIndexes.class);
+
+    private static final Comparator<PhraseOffset> endOffsetComparator = Comparator.comparingInt(PhraseOffset::getEndOffset);
+
+    private static final Comparator<Integer> reverseIntegerCompare = ((Comparator<Integer>) Integer::compareTo).reversed();
+
+    private static final String WHITESPACE = "\\s";
+    public static final Pattern whitespacePattern = Pattern.compile(WHITESPACE);
 
     /**
-     * A Map of fieldname to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventid(key)
+     * A Map of field name to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventId(key)
      */
-    private final SortedSetMultimap<String,Triplet<String,Integer,Integer>> map = TreeMultimap.create();
+    private final SortedSetMultimap<String,PhraseOffset> map = TreeMultimap.create();
 
     /**
-     * Returns a new {@link PhraseIndexes} parsed from the string. The provided string is expected to have the format returned by
+     * Returns a new {@link PhraseIndexes} object parsed from the string. The provided string is expected to have the format returned by
      * {@link PhraseIndexes#toString()}.
      * <ul>
      * <li>Given null, null will be returned.</li>
      * <li>Given an empty or blank string, an empty {@link PhraseIndexes} will be returned.</li>
-     * <li>Given {@code BODY:1,2:3,5/CONTENT:5,6:7,6}, a {@link PhraseIndexes} will be returned with offsets [1,2] and [3,5] for field {@code BODY}, and offsets
-     * [5,6] and [7,6] for field {@code CONTENT}.</li>
+     * <li>Given {@code BODY:event1,1,2:event2,3,5/CONTENT:event3,5,6:event4,7,6}, a {@link PhraseIndexes} will be returned with offsets [1,2] for event1 and
+     * [3,5] for event2 in the field {@code BODY}, and offsets [5,6] in event3 and [7,6] for event4 and field {@code CONTENT}.</li>
      * </ul>
      *
-     * @param string
+     * @param phraseIndexString
      *            the string to parse
      * @return the parsed {@link PhraseIndexes}
      */
-    public static PhraseIndexes from(String string) {
-        if (string == null) {
+    public static PhraseIndexes from(String phraseIndexString) {
+        if (phraseIndexString == null) {
             return null;
         }
 
         // Strip whitespaces.
-        string = StringUtils.deleteWhitespace(string);
+        phraseIndexString = whitespacePattern.matcher(phraseIndexString).replaceAll("");
 
         PhraseIndexes phraseIndexes = new PhraseIndexes();
-        String[] fieldParts = string.split(Constants.FORWARD_SLASH);
+        final String[] fieldParts = phraseIndexString.split(Constants.FORWARD_SLASH);
         for (String fieldPart : fieldParts) {
             String[] parts = fieldPart.split(Constants.COLON);
             String field = parts[0];
+
             for (int i = 1; i < parts.length; i++) {
                 String[] indexParts = parts[i].split(Constants.COMMA);
-                String eventId = indexParts[0];
                 // if the event ID is empty, then it must have been null initially (see toString())
-                if (eventId.isEmpty()) {
-                    eventId = null;
-                }
+                String eventId = indexParts[0].isEmpty() ? null : indexParts[0];
                 int start = Integer.parseInt(indexParts[1]);
                 int end = Integer.parseInt(indexParts[2]);
                 phraseIndexes.addIndexTriplet(field, eventId, start, end);
@@ -84,8 +89,8 @@ public class PhraseIndexes {
      */
     public void addAll(PhraseIndexes phraseIndexes) {
         for (String field : phraseIndexes.getFields()) {
-            for (Triplet<String,Integer,Integer> indice : phraseIndexes.getIndices(field)) {
-                addIndexTriplet(field, indice.getValue0(), indice.getValue1(), indice.getValue2());
+            for (PhraseOffset entry : phraseIndexes.getPhraseOffsets(field)) {
+                addIndexTriplet(field, entry.getEventId(), entry.getStartOffset(), entry.getEndOffset());
             }
         }
     }
@@ -112,22 +117,22 @@ public class PhraseIndexes {
 
         // first remove any overlapping phrases and extend the start/end appropriately
         if (map.containsKey(field)) {
-            Iterator<Triplet<String,Integer,Integer>> indices = map.get(field).iterator();
+            Iterator<PhraseOffset> indices = map.get(field).iterator();
             while (indices.hasNext()) {
-                Triplet<String,Integer,Integer> indice = indices.next();
+                PhraseOffset entry = indices.next();
                 // if we have gone past the end, then no more possibility of overlapping
-                if (indice.getValue1() > end) {
+                if (entry.getStartOffset() > end) {
                     break;
                 }
                 // if from the same event/document, and the endpoints overlap
-                if (Objects.equals(eventId, indice.getValue0()) && overlaps(indice.getValue1(), indice.getValue2(), start, end)) {
-                    start = Math.min(start, indice.getValue1());
-                    end = Math.max(end, indice.getValue2());
+                if (Objects.equals(eventId, entry.getEventId()) && overlaps(entry.getStartOffset(), entry.getEndOffset(), start, end)) {
+                    start = Math.min(start, entry.getStartOffset());
+                    end = Math.max(end, entry.getEndOffset());
                     indices.remove();
                 }
             }
         }
-        map.put(field, Triplet.with(eventId, start, end));
+        map.put(field, PhraseOffset.with(eventId, start, end));
     }
 
     /**
@@ -138,18 +143,18 @@ public class PhraseIndexes {
      * @param offset
      *            The phrase triplet
      */
-    public void addIndexTriplet(String field, Triplet<String,Integer,Integer> offset) {
-        addIndexTriplet(field, offset.getValue0(), offset.getValue1(), offset.getValue2());
+    public void addIndexTriplet(String field, PhraseOffset offset) {
+        addIndexTriplet(field, offset.getEventId(), offset.getStartOffset(), offset.getEndOffset());
     }
 
     /**
-     * Get all index pairs found for matching hits for the specified field. May return null.
+     * Get all offsets found for matching hits for the specified field. May return an empty collection or null.
      *
      * @param field
      *            the field
      * @return the index pairs if any, otherwise null
      */
-    public Collection<Triplet<String,Integer,Integer>> getIndices(String field) {
+    public Collection<PhraseOffset> getPhraseOffsets(String field) {
         return map.get(field);
     }
 
@@ -189,57 +194,6 @@ public class PhraseIndexes {
         return map.containsKey(field);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PhraseIndexes that = (PhraseIndexes) o;
-        return Objects.equals(map, that.map);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(map);
-    }
-
-    /**
-     * Returns this {@link PhraseIndexes} as a formatted string that can later be parsed back into a {@link PhraseIndexes} using
-     * {@link PhraseIndexes#from(String)}. The string will have the format FIELD:eventId,start,end:eventId,start,end:.../FIELD:eventId,start,end:...
-     *
-     * @return a formatted string
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        Iterator<String> fieldIterator = map.keySet().iterator();
-        while (fieldIterator.hasNext()) {
-            // Write the field.
-            String field = fieldIterator.next();
-            sb.append(field).append(Constants.COLON);
-            // Write the indexes found for the field.
-            Iterator<Triplet<String,Integer,Integer>> indexIterator = map.get(field).iterator();
-            while (indexIterator.hasNext()) {
-                Triplet<String,Integer,Integer> indexTriplet = indexIterator.next();
-                if (indexTriplet.getValue0() != null) {
-                    sb.append(indexTriplet.getValue0());
-                }
-                sb.append(Constants.COMMA).append(indexTriplet.getValue1());
-                sb.append(Constants.COMMA).append(indexTriplet.getValue2());
-                if (indexIterator.hasNext()) {
-                    sb.append(Constants.COLON);
-                }
-            }
-            if (fieldIterator.hasNext()) {
-                sb.append(Constants.FORWARD_SLASH);
-            }
-        }
-        return sb.toString();
-    }
-
     /**
      * Utility function to see if two offset ranges overlap
      *
@@ -266,8 +220,8 @@ public class PhraseIndexes {
      *            pos
      * @return true if overlapping
      */
-    public static boolean overlaps(Triplet<String,Integer,Integer> triplet, TermWeightPosition pos) {
-        return overlaps(triplet.getValue1(), triplet.getValue2(), pos.getLowOffset(), pos.getOffset());
+    public static boolean overlaps(PhraseOffset triplet, TermWeightPosition pos) {
+        return overlaps(triplet.getStartOffset(), triplet.getEndOffset(), pos.getLowOffset(), pos.getOffset());
     }
 
     /**
@@ -281,18 +235,18 @@ public class PhraseIndexes {
      *            term weight position
      * @return the overlapping triplet
      */
-    public Triplet<String,Integer,Integer> getOverlap(String fieldName, String eventId, TermWeightPosition position) {
-        Collection<Triplet<String,Integer,Integer>> indexes = getIndices(fieldName);
-        if (indexes != null) {
+    public PhraseOffset getOverlap(String fieldName, String eventId, TermWeightPosition position) {
+        Collection<PhraseOffset> phraseOffsets = getPhraseOffsets(fieldName);
+        if (phraseOffsets != null) {
             int start = position.getLowOffset();
             int end = position.getOffset();
-            for (Triplet<String,Integer,Integer> triplet : indexes) {
+            for (PhraseOffset offset : phraseOffsets) {
                 // if the start of the triplet is past the end, then no more possibility of overlapping
-                if (triplet.getValue1() > end) {
+                if (offset.getStartOffset() > end) {
                     break;
                 }
-                if (Objects.equals(eventId, triplet.getValue0()) && overlaps(triplet.getValue1(), triplet.getValue2(), start, end)) {
-                    return triplet;
+                if (Objects.equals(eventId, offset.getEventId()) && overlaps(offset.getStartOffset(), offset.getEndOffset(), start, end)) {
+                    return offset;
                 }
             }
         }
@@ -311,12 +265,12 @@ public class PhraseIndexes {
      * @return An overlapping TermWeightPosition if any
      */
     public TermWeightPosition getOverlappingPosition(String fieldName, String eventId, TermWeight.Info twInfo) {
-        // get the phases for this fieldname
-        Collection<Triplet<String,Integer,Integer>> triplets = getIndices(fieldName);
+        // get the phases for this field name
+        Collection<PhraseOffset> triplets = getPhraseOffsets(fieldName);
 
         if (triplets != null) {
             // get the triplets is reverse sorted order base on the end index and filtered by event id
-            List<Triplet<String,Integer,Integer>> reverseEndIndexSortedList = triplets.stream().filter(t -> Objects.equals(eventId, t.getValue0()))
+            List<PhraseOffset> reverseEndIndexSortedList = triplets.stream().filter(t -> Objects.equals(eventId, t.getEventId()))
                             .sorted(endOffsetComparator.reversed()).collect(Collectors.toList());
 
             if (!reverseEndIndexSortedList.isEmpty()) {
@@ -344,9 +298,9 @@ public class PhraseIndexes {
                     int start = twInfo.getTermOffsetCount() - 1;
 
                     // iterator through the phrase triplets
-                    for (Triplet<String,Integer,Integer> triplet : reverseEndIndexSortedList) {
+                    for (PhraseOffset triplet : reverseEndIndexSortedList) {
                         // find the index of the first offset before or equal to the triplet end offset plus the max skip value
-                        start = findPrevOffset(twInfo, start, triplet.getValue2() + maxSkip);
+                        start = findPrevOffset(twInfo, start, triplet.getEndOffset() + maxSkip);
                         // if we have an index, then search backwards for an overlap
                         if (start >= 0) {
                             for (int offsetIndex = start; offsetIndex >= 0; offsetIndex--) {
@@ -354,7 +308,7 @@ public class PhraseIndexes {
                                 TermWeightPosition pos = position.build();
                                 if (PhraseIndexes.overlaps(triplet, pos)) {
                                     return pos;
-                                } else if (pos.getOffset() < triplet.getValue1()) {
+                                } else if (pos.getOffset() < triplet.getStartOffset()) {
                                     break;
                                 }
                             }
@@ -398,18 +352,54 @@ public class PhraseIndexes {
         return nextOffset;
     }
 
-    private static final Comparator<Triplet<String,Integer,Integer>> endOffsetComparator = new Comparator<Triplet<String,Integer,Integer>>() {
-        @Override
-        public int compare(Triplet<String,Integer,Integer> o1, Triplet<String,Integer,Integer> o2) {
-            return o1.getValue2() - o2.getValue2();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-    };
-
-    private static final Comparator<Integer> reverseIntegerCompare = new Comparator<Integer>() {
-        @Override
-        public int compare(Integer o1, Integer o2) {
-            return o1.compareTo(o2);
+        if (o == null || getClass() != o.getClass()) {
+            return false;
         }
-    }.reversed();
+        PhraseIndexes that = (PhraseIndexes) o;
+        return Objects.equals(map, that.map);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(map);
+    }
+
+    /**
+     * Returns this {@link PhraseIndexes} as a formatted string that can later be parsed back into a {@link PhraseIndexes} using
+     * {@link PhraseIndexes#from(String)}. The string will have the format FIELD:eventId,start,end:eventId,start,end:.../FIELD:eventId,start,end:...
+     *
+     * @return a formatted string
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> fieldIterator = map.keySet().iterator();
+        while (fieldIterator.hasNext()) {
+            // Write the field.
+            String field = fieldIterator.next();
+            sb.append(field).append(Constants.COLON);
+            // Write the indexes found for the field.
+            Iterator<PhraseOffset> indexIterator = map.get(field).iterator();
+            while (indexIterator.hasNext()) {
+                PhraseOffset indexTriplet = indexIterator.next();
+                if (indexTriplet.getEventId() != null) {
+                    sb.append(indexTriplet.getEventId());
+                }
+                sb.append(Constants.COMMA).append(indexTriplet.getStartOffset());
+                sb.append(Constants.COMMA).append(indexTriplet.getEndOffset());
+                if (indexIterator.hasNext()) {
+                    sb.append(Constants.COLON);
+                }
+            }
+            if (fieldIterator.hasNext()) {
+                sb.append(Constants.FORWARD_SLASH);
+            }
+        }
+        return sb.toString();
+    }
 }

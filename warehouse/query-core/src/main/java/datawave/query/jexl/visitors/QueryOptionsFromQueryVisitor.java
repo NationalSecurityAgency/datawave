@@ -4,9 +4,7 @@ import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
 import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,12 +20,10 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
-import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
@@ -63,7 +59,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
-                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
+                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.SUMMARY_FUNCTION, QueryFunctions.NO_EXPANSION,
                     QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX,
                     QueryFunctions.AVERAGE, QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
 
@@ -251,6 +247,12 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
                     updateFieldsOption(optionsMap, QueryParameters.EXCERPT_FIELDS, optionsList);
+                    return null;
+                }
+                case QueryFunctions.SUMMARY_FUNCTION: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.SUMMARY_OPTIONS, JOINER.join(options));
                     return null;
                 }
                 case QueryFunctions.NO_EXPANSION: {

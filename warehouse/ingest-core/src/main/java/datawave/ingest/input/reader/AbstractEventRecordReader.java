@@ -35,6 +35,7 @@ import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.policy.Policy;
+import datawave.util.CompositeTimestamp;
 
 public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWritable,K> implements EventRecordReader {
 
@@ -246,7 +247,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
                     }
                 }
             }
-            if (event.getDate() == Long.MIN_VALUE) {
+            if (!event.isTimestampSet()) {
                 List<String> patterns = new ArrayList<>(formatters.size());
                 for (SimpleDateFormat formatter : formatters) {
                     patterns.add(formatter.toPattern());

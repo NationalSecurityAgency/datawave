@@ -814,7 +814,7 @@ public class DocumentGrouperTest {
         givenCountFields("PEAK", "LOC");
         givenAverageFields("PEAK");
 
-        givenRemappedFields();
+        givenQueryModelApplied();
 
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
@@ -878,7 +878,7 @@ public class DocumentGrouperTest {
         givenGroupFields("GEN", "AG");
         givenSumFields("PEAK");
 
-        givenRemappedFields();
+        givenQueryModelApplied();
 
         // We should see groups being counted and aggregation for HEIGHT occurring.
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
@@ -953,7 +953,7 @@ public class DocumentGrouperTest {
         givenGroupFields("GEN", "AG");
         givenSumFields("PEAK");
 
-        givenRemappedFields();
+        givenQueryModelApplied();
 
         // We should see an 'empty' group and aggregation for HEIGHT occurring.
         givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
@@ -994,6 +994,78 @@ public class DocumentGrouperTest {
         // @formatter:on
     }
 
+    /**
+     * Verify that given fields with the same value that have the same model mapping, that only one of each distinct field-value pairing are counted.
+     */
+    @Test
+    public void testDedupingEquivalentEntriesWithModelMapping() {
+        givenGroupFields("GEN", "AG");
+        givenCountFields("AG");
+        givenSumFields("AG");
+        givenAverageFields("AG");
+        givenMaxFields("AG");
+        givenMinFields("AG");
+
+        givenQueryModelApplied();
+
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.3").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.3").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.4").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.4").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.5").withLcNoDiacritics("FEMALE"));
+
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.3").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.3").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.4").withNumberType("30"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.5").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.5").withNumberType("5"));
+
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("50"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("65"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("60"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.4").withNumberType("55"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.5").withNumberType("48"));
+
+        givenDocumentEntry(DocumentEntry.of("LOCATION.1").withLcNoDiacritics("West"));
+        givenDocumentEntry(DocumentEntry.of("LOCATION.2").withLcNoDiacritics("North").withLcNoDiacritics("East"));
+
+        executeGrouping();
+
+        // We should see each field mapped to their root model name.
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "30")).hasCount(1)
+                        .hasAggregatedCount("AG", 1L)
+                        .hasAggregatedAverage("AG", new BigDecimal("30"))
+                        .hasAggregatedSum("AG", new BigDecimal("30"))
+                        .hasAggregatedMin("AG", new NumberType("30"))
+                        .hasAggregatedMax("AG", new NumberType("30"));
+
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "5")).hasCount(2)
+                        .hasAggregatedCount("AG", 2L)
+                        .hasAggregatedAverage("AG", new BigDecimal("5"))
+                        .hasAggregatedSum("AG", new BigDecimal("10"))
+                        .hasAggregatedMin("AG", new NumberType("5"))
+                        .hasAggregatedMax("AG", new NumberType("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(2)
+                        .hasAggregatedCount("AG", 2L)
+                        .hasAggregatedAverage("AG", new BigDecimal("20"))
+                        .hasAggregatedSum("AG", new BigDecimal("40"))
+                        .hasAggregatedMin("AG", new NumberType("20"))
+                        .hasAggregatedMax("AG", new NumberType("20"));
+        // @formatter:on
+    }
+
     private void givenGroupFields(String... fields) {
         groupFields.setGroupByFields(Sets.newHashSet(Arrays.asList(fields)));
     }
@@ -1018,7 +1090,7 @@ public class DocumentGrouperTest {
         groupFields.setMaxFields(Sets.newHashSet(Arrays.asList(fields)));
     }
 
-    private void givenRemappedFields() {
+    private void givenQueryModelApplied() {
         this.groupFields.remapFields(inverseReverseMap, reverseMap);
     }
 

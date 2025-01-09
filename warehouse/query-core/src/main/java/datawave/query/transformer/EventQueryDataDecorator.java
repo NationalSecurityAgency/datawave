@@ -18,7 +18,7 @@ public class EventQueryDataDecorator {
     private Logger log = Logger.getLogger(EventQueryDataDecorator.class);
     private ResponseObjectFactory responseObjectFactory;
 
-    private EventQueryDataDecorator() {}
+    public EventQueryDataDecorator() {}
 
     public void decorateData(Multimap<String,FieldBase> data) {
         // Get the values for the FieldName to put the decorated data into

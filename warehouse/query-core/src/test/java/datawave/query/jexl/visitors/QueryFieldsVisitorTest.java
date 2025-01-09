@@ -194,6 +194,12 @@ public class QueryFieldsVisitorTest {
         test(query, Collections.singleton("FOO"));
     }
 
+    @Test
+    public void testMethod() throws ParseException {
+        String query = "QUOTE.size() == 1";
+        test(query, Collections.emptySet());
+    }
+
     private void test(String query, Set<String> fields) throws ParseException {
 
         // query as string entrance point

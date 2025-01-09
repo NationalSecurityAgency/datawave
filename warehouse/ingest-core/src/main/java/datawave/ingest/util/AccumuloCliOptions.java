@@ -21,6 +21,7 @@ public class AccumuloCliOptions {
 
     @SuppressWarnings("static-access")
     public AccumuloCliOptions() {
+
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo username").create("u"));
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo password").create("p"));
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo instance name").create("i"));
