@@ -16,6 +16,9 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 
 public class KeyValueByteDocumentTransforms {
 
+    private static KryoDocumentSerializer serializer = new KryoDocumentSerializer(false, true);
+    private static KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
+
     public static byte[] keyToByte(Key key) {
         if (key == null) {
             return null;
@@ -34,8 +37,10 @@ public class KeyValueByteDocumentTransforms {
         if (doc == null) {
             return null;
         }
-        DocumentSerializer serializer = new KryoDocumentSerializer(false, true);
-        byte[] document = serializer.serialize(doc);
+        byte[] document;
+        synchronized (serializer) {
+            document = serializer.serialize(doc);
+        }
         return new Value(document);
     }
 
@@ -43,9 +48,9 @@ public class KeyValueByteDocumentTransforms {
         if (value == null) {
             return null;
         }
-        DocumentDeserializer deserializer = new KryoDocumentDeserializer();
-        Document document = deserializer.deserialize(new ByteArrayInputStream(value.get()));
-        return document;
+        synchronized (deserializer) {
+            return deserializer.deserialize(new ByteArrayInputStream(value.get()));
+        }
     }
 
     public static Map.Entry<byte[],Document> keyValueToByteDocument(Map.Entry<Key,Value> keyValue) {

@@ -206,6 +206,7 @@ public class FileSerializableSortedMap<K extends Serializable,V extends Serializ
             byte[] buffer = new byte[4];
             stream.read(buffer);
 
+            // read the 4 bytes of an integer in a deterministic order0
             return ((buffer[3] & 0xFF)) + ((buffer[2] & 0xFF) << 8) + ((buffer[1] & 0xFF) << 16) + ((buffer[0]) << 24);
         }
 
@@ -238,6 +239,7 @@ public class FileSerializableSortedMap<K extends Serializable,V extends Serializ
 
         @Override
         public void writeSize(int size) throws IOException {
+            // write the 4 bytes of a integer in a deterministic order0
             delegate.write((size >>> 24) & 0xFF);
             delegate.write((size >>> 16) & 0xFF);
             delegate.write((size >>> 8) & 0xFF);
