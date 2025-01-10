@@ -276,13 +276,18 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
      */
     public class MergeSortIterator implements Iterator<Entry<K,V>> {
 
+        // this is the entire set of iterators
         private List<Iterator<Entry<K,V>>> iterators = new ArrayList<>();
+        // this is the list of the last key from each of the iterators available to use
         private List<K> lastList = new ArrayList<>();
+        // booleans denoting if an iterator has been completely used up
         private boolean[] finished = null;
+        // This map holds the key/values to be returned next.
         private SortedMap<K,V> map = null;
         private boolean populated = false;
         private K nextKey = null;
         private V nextValue = null;
+        // This is the set of iterators that contributed to the last value returned
         private List<Iterator<Entry<K,V>>> nextIterators = new ArrayList<>();
 
         public MergeSortIterator() {
@@ -365,12 +370,15 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
                     Iterator<Entry<K,V>> it = nextIterators.get(i);
                     if (it.hasNext()) {
                         Entry<K,V> val = it.next();
+                        // remember the last key returned
                         lastList.set(i, val.getKey());
                         if ((rewriteStrategy == null) || (!map.containsKey(val.getKey()))
                                         || (rewriteStrategy.rewrite(val.getKey(), map.get(val.getKey()), val.getValue()))) {
+                            // update the map if the rewrite policy allows (or a new key)
                             map.put(val.getKey(), val.getValue());
                         }
                     } else {
+                        // remember that we are done with this iterator
                         lastList.set(i, null);
                         finished[i] = true;
                     }
@@ -378,8 +386,10 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
             }
 
             if (!map.isEmpty()) {
+                // now get the next key/value from the map
                 nextKey = map.firstKey();
                 nextValue = map.remove(nextKey);
+                // and update the list of iterators that contributed to this next key
                 for (int i = 0; i < iterators.size(); i++) {
                     if (!finished[i] && equals(nextKey, lastList.get(i))) {
                         nextIterators.set(i, iterators.get(i));
