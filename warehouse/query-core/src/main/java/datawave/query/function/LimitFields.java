@@ -259,7 +259,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 int keepers = countKeepersForFieldMap.get(keyNoGrouping);
                 int originalCount = countForFieldMap.get(keyNoGrouping);
                 if (originalCount > keepers) {
-                    document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true, false);
+                    document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true);
 
                     // some sanity checks
                     int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
