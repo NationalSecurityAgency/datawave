@@ -19,11 +19,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ArrayListMultimap;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.metadata.EventMetadata;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -118,9 +127,14 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private boolean disableMetadataFrequencyCounts = false;
     private boolean generateMetadataFromFi = false;
     private boolean generateMetadataFromTf = false;
+    private boolean generateReverseIndexMetadataFromFi = false;
+    private boolean generateReverseIndexMetadataWithLookup = false;
 
-    // generating metadata
+    // generating metadata for fi/tf
     private EventMetadata generatedEventMetadata = null;
+    private String lastMetadataField = null;
+    private Map<String,Boolean> dataTypeReverseMetadataLookupMap;
+    private AccumuloClient accumuloClient = null;
 
     // data processing/reuse
     private Multimap<String,String> dataMap;
@@ -187,10 +201,17 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         this.disableMetadataFrequencyCounts = config.getBoolean(METADATA_DISABLE_FREQUENCY_COUNTS, this.disableMetadataFrequencyCounts);
         this.generateMetadataFromFi = config.getBoolean(METADATA_GENERATE_FROM_FI, this.generateMetadataFromFi);
         this.generateMetadataFromTf = config.getBoolean(METADATA_GENERATE_FROM_TF, this.generateMetadataFromTf);
+        this.generateReverseIndexMetadataFromFi = config.getBoolean(METADATA_GENERATE_RI_FROM_FI, this.generateReverseIndexMetadataFromFi);
+        this.generateReverseIndexMetadataWithLookup = config.getBoolean(METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP, this.generateReverseIndexMetadataWithLookup);
 
         if (this.generateMetadataFromFi || this.generateMetadataFromTf) {
-            // create an EventMetadata to write data to
-            generatedEventMetadata = new EventMetadata(new Text(config.get(SHARD_TNAME)), new Text(config.get(METADATA_TABLE_NAME)), config.get(LOAD_DATES_TABLE_NAME_PROP) != null ? new Text(config.get(LOAD_DATES_TABLE_NAME_PROP)) : null, new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
+            // create an EventMetadata for metadata creation from non-event data
+            this.generatedEventMetadata = new EventMetadata(new Text(config.get(SHARD_TNAME)), new Text(config.get(METADATA_TABLE_NAME)), config.get(LOAD_DATES_TABLE_NAME_PROP) != null ? new Text(config.get(LOAD_DATES_TABLE_NAME_PROP)) : null, new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
+            if (this.generateReverseIndexMetadataFromFi && this.generateReverseIndexMetadataWithLookup) {
+                AccumuloHelper accumuloHelper = new AccumuloHelper();
+                accumuloHelper.setup(config);
+                accumuloHelper.newClient();
+            }
         }
 
         if (this.reprocessEvents) {
@@ -230,15 +251,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
             this.generateMetadata = config.getBoolean(GENERATE_METADATA, this.generateMetadata);
 
-            try {
-                this.event = new RawRecordContainerImpl();
-                if (eventOverride != null) {
-                    log.info("creating event override: " + this.eventOverride);
-                    this.event = (RawRecordContainer) ReflectionUtils.newInstance(Class.forName(this.eventOverride), config);
-                }
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Could not create event of type: " + this.eventOverride, e);
-            }
+            this.event = createEvent(config);
 
             this.enableReindexCounters = config.getBoolean(ENABLE_REINDEX_COUNTERS, this.enableReindexCounters);
             this.dumpCounters = config.getBoolean(DUMP_COUNTERS, this.dumpCounters);
@@ -268,6 +281,20 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             throw new IOException("Failed to initialize " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
+        }
+    }
+
+    private RawRecordContainer createEvent(Configuration config) {
+        try {
+            RawRecordContainer e = new RawRecordContainerImpl();
+            if (eventOverride != null) {
+                log.info("creating event override: " + this.eventOverride);
+                e = (RawRecordContainer) ReflectionUtils.newInstance(Class.forName(this.eventOverride), config);
+            }
+
+            return e;
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Could not create event of type: " + this.eventOverride, e);
         }
     }
 
@@ -367,18 +394,104 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         return cf.length() > 3 && WritableComparator.compareBytes(cf.getBackingArray(), 0, 3, FI_START_BYTES, 0, 3) == 0;
     }
 
+    private void processFiMetadata(Key key, ParsedKey parsedFi, Context context) {
+        parsedFi = parseFiCq(key, parsedFi);
+        final String dataType = parsedFi.getDataType();
+        // get the appropriate helper for the data type
+        IngestHelperInterface fieldHelper = getIngestHelper(key, context.getConfiguration(), dataType);
+
+        if (!this.generateReverseIndexMetadataFromFi) {
+            // if not generating the ri then wrap the helper to prevent the ri entry from being created
+            fieldHelper = new ForwardIndexOnlyIngestHelper(fieldHelper);
+        } else if (this.generateReverseIndexMetadataWithLookup) {
+            parsedFi = parseFiCf(key, parsedFi);
+            final String field = parsedFi.getField();
+
+            if (!field.equals(lastMetadataField)) {
+                // clear the data type lookup cache because it is a new field
+                this.dataTypeReverseMetadataLookupMap = new HashMap<>();
+                this.lastMetadataField = field;
+            }
+
+            // fi format is row fi\0field value\0datatype\0uid so build a cache of this field's decisions to at most query accumulo once per field/dataType combination
+            if (this.dataTypeReverseMetadataLookupMap.isEmpty() || !this.dataTypeReverseMetadataLookupMap.containsKey(dataType)) {
+
+                // is it a reverse index field?
+                if (fieldHelper.isReverseIndexedField(field)) {
+                    // do the lookup
+                    try (Scanner reverseIndexScanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_GRIDX_TNAME))) {
+                        // create a single key range that looks up the value in the reverse index table
+                        // global index key structure = value field shard\0dataType
+                        Key startKey = new Key(reverse(parsedFi.getValue().toString()), field, key.getRow().toString() + '\u0000' + dataType);
+                        Range r = new Range(startKey, true, startKey, true);
+                        reverseIndexScanner.setRange(r);
+                        // if there is a hit on this field value it is in the reverse index table
+                        this.dataTypeReverseMetadataLookupMap.put(dataType, reverseIndexScanner.iterator().hasNext());
+                    } catch (TableNotFoundException | AccumuloSecurityException | AccumuloException e) {
+                        throw new RuntimeException("failed to lookup reverse index field in accumulo", e);
+                    }
+                } else {
+                    // no mod to metadata necessary because it isn't reverse indexed anyway
+                    this.dataTypeReverseMetadataLookupMap.put(dataType, true);
+                }
+            } else {
+                // this field/datatype has already been looked up if not calculating frequency counts no reason to do any more work
+                if (this.disableMetadataFrequencyCounts) {
+                    return;
+                }
+            }
+
+            // if the field isn't valid wrap it up to prevent the reverse fi from being generated
+            if (!this.dataTypeReverseMetadataLookupMap.get(dataType)) {
+                fieldHelper = new ForwardIndexOnlyIngestHelper(fieldHelper);
+            }
+        }
+
+        // create an event for the metadata generation
+        RawRecordContainer metadataEvent = createEvent(context.getConfiguration());
+        metadataEvent.setId(HashUID.parse(parsedFi.getUid()));
+        metadataEvent.setDataType(fieldHelper.getType());
+        metadataEvent.setDate(key.getTimestamp());
+        metadataEvent.setVisibility(key.getColumnVisibilityParsed());
+
+        // create the normalized field
+        Multimap<String,String> fields = ArrayListMultimap.create(1,1);
+        fields.put(parsedFi.getField(), parsedFi.getValue().toString());
+        Multimap<String,NormalizedContentInterface> normalizedFields = fieldHelper.normalize(fields);
+
+        // use the existing metadata code to generate the metadata events
+        generatedEventMetadata.addEventWithoutLoadDates(fieldHelper, metadataEvent, normalizedFields);
+    }
+
     private void processFIKey(Key key, Value value, Context context) throws IOException, InterruptedException {
+        ParsedKey parsedFi = null;
         if (!this.reprocessEvents || (this.reprocessEvents && this.defaultHelper.isIndexOnlyField(getFieldFromFI(key)))) {
-            processFI(context, key);
+            parsedFi = processFI(context, key);
         }
 
         if (this.generateMetadataFromFi) {
-            // if not generating the ri then modify the helper to prevent the ri entry from being created
-            // if generating the ri but the lookup fails use a modified helper
-            generatedEventMetadata.addEvent();
-
-            // TODO if counts are disabled, and this is a metadata only job set flag to prevent reprocessing for fast skipping until the next field
+            processFiMetadata(key, parsedFi, context);
         }
+    }
+
+    /**
+     * Remove grouping notation from a field if it exists by finding the first .
+     * @param rawField the field that may or may not contain grouping notation
+     * @return the field stripped of grouping notation
+     */
+    private String stripGroupNotation(String rawField) {
+        int dotIndex = -1;
+        for (int i = 0; i < rawField.length(); i++) {
+            if (rawField.charAt(i) == '.') {
+                dotIndex = i;
+                break;
+            }
+        }
+        if (dotIndex != -1) {
+            return rawField.substring(0, dotIndex);
+        }
+
+        return rawField;
     }
 
     public static boolean isKeyEvent(ByteSequence cf) {
@@ -445,19 +558,13 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         context.progress();
     }
 
-    /**
-     * To process an FI by looking up the associated {@link IngestHelperInterface} and checking its indexed state. Index only fields will always have index
-     * entries generated. Indexed fields that are not index only will only be generated if {@link #reprocessEvents} is false. When {@link #cleanupShard} is true
-     * if the field is no longer indexed a delete key will be generated for the fi entry. When {@link #exportShard} is enabled the fi entry will be written as
-     * long as the field is still indexed
-     *
-     * @param context
-     * @param key
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    private void processFI(Context context, Key key) throws IOException, InterruptedException {
-        final byte[] cf = key.getColumnFamilyData().getBackingArray();
+    private ParsedKey parseFiCf(Key fi, ParsedKey parsedKey) {
+        // short circuit if already parsed
+        if (parsedKey != null && parsedKey.getField() != null) {
+            return parsedKey;
+        }
+
+        final byte[] cf = fi.getColumnFamilyData().getBackingArray();
 
         // check if it's the same target field as the last one
         final int fiBaseLength = FI_START_BYTES.length;
@@ -465,14 +572,29 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         // quickly compare the bytes against the last processed bytes to save on parse time if possible
         if (this.lastFiBytes == null || WritableComparator.compareBytes(cf, fiBaseOffset, cf.length - fiBaseOffset, this.lastFiBytes, fiBaseOffset,
-                        this.lastFiBytes.length - fiBaseOffset) != 0) {
+                this.lastFiBytes.length - fiBaseOffset) != 0) {
             // get the field from the cf
             this.normalizedFieldName = new String(cf, fiBaseLength, cf.length - fiBaseLength);
             this.lastFiBytes = cf;
         }
 
+        if (parsedKey == null) {
+            parsedKey = new ParsedKey();
+        }
+
+        parsedKey.setField(normalizedFieldName);
+
+        return parsedKey;
+    }
+
+    private ParsedKey parseFiCq(Key fi, ParsedKey parsedKey) {
+        // short circuit if the key is already parsed
+        if (parsedKey != null && parsedKey.getDataType() != null && parsedKey.getUid() != null && parsedKey.getValue() != null) {
+            return parsedKey;
+        }
+
         // parse the dataType from the cq
-        final byte[] cq = key.getColumnQualifierData().getBackingArray();
+        final byte[] cq = fi.getColumnQualifierData().getBackingArray();
         String uid = null;
         String dataType = null;
         ByteSequence fieldValue = null;
@@ -485,22 +607,52 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                     uidNull = i;
                 } else if (dataType == null) {
                     dataType = new String(cq, i + 1, uidNull - i - 1);
-                    fieldValue = key.getColumnQualifierData().subSequence(0, i);
+                    fieldValue = fi.getColumnQualifierData().subSequence(0, i);
                     break;
                 }
             }
         }
 
-        // get the type from the registry or create it if not already created. There is a cache inside the Type class
-        Configuration config = context.getConfiguration();
+        if (parsedKey == null) {
+            parsedKey = new ParsedKey();
+        }
+        parsedKey.setUid(uid);
+        parsedKey.setDataType(dataType);
+        parsedKey.setValue(fieldValue);
+
+        return parsedKey;
+    }
+
+    private IngestHelperInterface getIngestHelper(Key reference, Configuration config, String dataType) {
         IngestHelperInterface helper = getIngestHelper(dataType, config);
 
         if (helper == null) {
-            log.error("cannot find IngestHelperInterface for dataType: " + dataType + " key: " + key);
-            throw new IllegalStateException("cannot find IngestHelperInterface for dataType: " + dataType + " key: " + key);
+            log.error("cannot find IngestHelperInterface for dataType: " + dataType + " key: " + reference);
+            throw new IllegalStateException("cannot find IngestHelperInterface for dataType: " + dataType + " key: " + reference);
         }
 
-        incrementCounter("fi.dataTypes", dataType);
+        return helper;
+    }
+
+    /**
+     * To process an FI by looking up the associated {@link IngestHelperInterface} and checking its indexed state. Index only fields will always have index
+     * entries generated. Indexed fields that are not index only will only be generated if {@link #reprocessEvents} is false. When {@link #cleanupShard} is true
+     * if the field is no longer indexed a delete key will be generated for the fi entry. When {@link #exportShard} is enabled the fi entry will be written as
+     * long as the field is still indexed
+     *
+     * @param context
+     * @param key
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private ParsedKey processFI(Context context, Key key) throws IOException, InterruptedException {
+        ParsedKey parsedFi = parseFiCf(key, null);
+        parsedFi = parseFiCq(key, parsedFi);
+
+        // get the type from the registry or create it if not already created. There is a cache inside the Type class
+        IngestHelperInterface helper = getIngestHelper(key, context.getConfiguration(), parsedFi.getDataType());
+
+        incrementCounter("fi.dataTypes", parsedFi.getDataType());
         incrementCounter("fi.fields", this.normalizedFieldName);
 
         Text fieldValueText;
@@ -510,7 +662,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         if (key.isDeleted() && !this.propagateDeletes) {
             incrementCounter("deletes", "skipped");
-            return;
+            return parsedFi;
         } else if (key.isDeleted()) {
             incrementCounter("deletes", "propagated");
         }
@@ -518,11 +670,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         // if the field is indexed and index only or events aren't being reprocessed
         if (helper.isIndexedField(this.normalizedFieldName) && (!this.reprocessEvents || helper.isIndexOnlyField(this.normalizedFieldName))) {
             // generate the global index key and emit it
-            fieldValueText = new Text(fieldValue.toString());
+            fieldValueText = new Text(parsedFi.getValue().toString());
             fieldText = new Text(this.normalizedFieldName);
             StringBuilder docId = new StringBuilder();
             // shard \0 dataType
-            docId.append(key.getRowData()).append('\u0000').append(dataType);
+            docId.append(key.getRowData()).append('\u0000').append(parsedFi.getDataType());
             indexCq = new Text(docId.toString());
 
             Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), floorTimestamp(key.getTimestamp()));
@@ -536,12 +688,12 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         // if the field is reverse indexed and index only or events aren't being reprocessed
         if (helper.isReverseIndexedField(this.normalizedFieldName) && (!this.reprocessEvents || helper.isIndexOnlyField(this.normalizedFieldName))) {
             // reverse the field value
-            fieldValueText = new Text(reverse(fieldValue.toString()));
+            fieldValueText = new Text(reverse(parsedFi.getValue().toString()));
             if (fieldText == null) {
                 fieldText = new Text(this.normalizedFieldName);
                 StringBuilder docId = new StringBuilder();
                 // shard \0 dataType
-                docId.append(key.getRowData()).append('\u0000').append(dataType);
+                docId.append(key.getRowData()).append('\u0000').append(parsedFi.getDataType());
                 indexCq = new Text(docId.toString());
             }
 
@@ -567,6 +719,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             contextWriter.write(bik, EMPTY_VALUE, context);
             incrementCounter("export", "fi");
         }
+
+        return parsedFi;
     }
 
     /**
@@ -923,5 +1077,51 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
     public enum BatchMode {
         NONE, FIELD, EVENT
+    }
+
+    /**
+     * Simple pojo to hold parsed key data
+     */
+    private static class ParsedKey {
+        private String dataType;
+        private String uid;
+        private String field;
+        private ByteSequence value;
+
+        private ParsedKey() {
+            // no-op
+        }
+
+        public String getDataType() {
+            return dataType;
+        }
+
+        public void setDataType(String dataType) {
+            this.dataType = dataType;
+        }
+
+        public String getUid() {
+            return uid;
+        }
+
+        public void setUid(String uid) {
+            this.uid = uid;
+        }
+
+        public String getField() {
+            return field;
+        }
+
+        public void setField(String field) {
+            this.field = field;
+        }
+
+        public ByteSequence getValue() {
+            return value;
+        }
+
+        public void setValue(ByteSequence value) {
+            this.value = value;
+        }
     }
 }
