@@ -19,7 +19,6 @@ import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.util.TypedValue;
