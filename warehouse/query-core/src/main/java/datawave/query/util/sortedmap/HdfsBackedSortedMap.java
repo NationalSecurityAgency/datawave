@@ -75,37 +75,36 @@ public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
 
     protected HdfsBackedSortedMap(Builder builder) throws IOException {
         super(builder);
-        this.handlerFactories = createFileHandlerFactories(builder.ivaratorCacheDirs, builder.uniqueSubPath, builder.persistOptions);
+        List<SortedMapHdfsFileHandlerFactory> factories = createFileHandlerFactories(builder.ivaratorCacheDirs, builder.uniqueSubPath, builder.persistOptions);
+        // update the parent handler factories (list of SortedMapFileHandlerFactory)
+        this.handlerFactories = (List) factories;
         // for each of the handler factories, check to see if there are any existing files we should load
-        for (SortedMapFileHandlerFactory handlerFactory : handlerFactories) {
-            // Note: All of the file handler factories created by 'createFileHandlerFactories' are SortedMapHdfsFileHandlerFactories
-            if (handlerFactory instanceof SortedMapHdfsFileHandlerFactory) {
-                SortedMapHdfsFileHandlerFactory hdfsHandlerFactory = (SortedMapHdfsFileHandlerFactory) handlerFactory;
-                FileSystem fs = hdfsHandlerFactory.getFs();
-                int count = 0;
+        for (SortedMapHdfsFileHandlerFactory handlerFactory : factories) {
+            SortedMapHdfsFileHandlerFactory hdfsHandlerFactory = (SortedMapHdfsFileHandlerFactory) handlerFactory;
+            FileSystem fs = hdfsHandlerFactory.getFs();
+            int count = 0;
 
-                // if the directory already exists, load up this sorted map with any existing files
-                if (fs.exists(hdfsHandlerFactory.getUniqueDir())) {
-                    FileStatus[] files = fs.listStatus(hdfsHandlerFactory.getUniqueDir());
-                    if (files != null) {
-                        for (FileStatus file : files) {
-                            if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
-                                count++;
-                                addMap(mapFactory.newInstance(comparator, getRewriteStrategy(),
-                                                new SortedMapHdfsFileHandler(fs, file.getPath(), builder.persistOptions), true));
-                            }
+            // if the directory already exists, load up this sorted map with any existing files
+            if (fs.exists(hdfsHandlerFactory.getUniqueDir())) {
+                FileStatus[] files = fs.listStatus(hdfsHandlerFactory.getUniqueDir());
+                if (files != null) {
+                    for (FileStatus file : files) {
+                        if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
+                            count++;
+                            addMap(mapFactory.newInstance(comparator, getRewriteStrategy(),
+                                            new SortedMapHdfsFileHandler(fs, file.getPath(), builder.persistOptions), true));
                         }
                     }
-
-                    hdfsHandlerFactory.mapFileCount(count);
                 }
+
+                hdfsHandlerFactory.mapFileCount(count);
             }
         }
     }
 
-    private static List<SortedMapFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
+    private static List<SortedMapHdfsFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
                     FileSortedSet.PersistOptions persistOptions) {
-        List<SortedMapFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
+        List<SortedMapHdfsFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
         for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
             fileHandlerFactories.add(new SortedMapHdfsFileHandlerFactory(ivaratorCacheDir, uniqueSubPath, persistOptions));
         }
