@@ -690,6 +690,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
         if (o instanceof Document) {
             Document other = (Document) o;
+
             return _getDictionary().equals(other._getDictionary());
         }
 
