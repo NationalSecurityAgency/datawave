@@ -62,18 +62,13 @@ public class Content extends Attribute<Content> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, content);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
         out.writeBoolean(source != null);
         if (source != null) {
             WritableUtils.writeString(out, source.getClass().getCanonicalName());
-            source.write(out, reducedResponse);
+            source.write(out);
         }
     }
 
@@ -137,18 +132,13 @@ public class Content extends Attribute<Content> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.content);
         output.writeBoolean(this.toKeep);
         output.writeBoolean(this.source != null);
         if (source != null) {
             output.writeString(this.source.getClass().getCanonicalName());
-            source.write(kryo, output, reducedResponse);
+            source.write(kryo, output);
         }
     }
 
