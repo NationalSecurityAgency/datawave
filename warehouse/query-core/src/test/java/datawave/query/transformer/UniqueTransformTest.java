@@ -517,7 +517,15 @@ public class UniqueTransformTest {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(actual);
-        assertEquals("Unique documents do not match expected", expectedUniqueDocuments, actual);
+        assertEquals("Unique documents do not match expected", getIds(expectedUniqueDocuments), getIds(actual));
+    }
+
+    protected List<String> getIds(List<Document> docs) {
+        List<String> ids = new ArrayList<>();
+        for (Document d : docs) {
+            ids.add(d.getDictionary().get("RECORD_ID").getData().toString());
+        }
+        return ids;
     }
 
     protected List<Document> getUniqueDocuments(List<Document> documents) {

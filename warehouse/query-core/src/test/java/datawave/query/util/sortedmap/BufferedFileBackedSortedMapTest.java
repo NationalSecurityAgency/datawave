@@ -249,13 +249,41 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
     }
 
     @Test
+    public void testIteratorRemovePersisted() throws IOException {
+        int size = map.size();
+        int failCount = 0;
+
+        assertFalse(map.isPersisted());
+        map.persist();
+        assertTrue(map.isPersisted());
+
+        // calling iterator() will force persistence
+        for (Iterator<Map.Entry<K,V>> it = map.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<K,V> value = it.next();
+            assertTrue(map.containsKey(value.getKey()));
+            try {
+                it.remove();
+                fail("Expected iterator remove to fail with a persisted map");
+            } catch (Exception e) {
+                // expected that some of the underlying FileSortedMaps are persisted and hence the remove will fail
+                failCount++;
+                assertTrue(map.containsKey(value.getKey()));
+                assertEquals(size, map.size());
+            }
+        }
+        assertEquals(size, failCount);
+        assertFalse(map.isEmpty());
+    }
+
+    @Test
     public void testIteratorRemove() {
         int size = map.size();
         int failCount = 0;
+
         assertFalse(map.isPersisted());
+
         // calling iterator() will force persistence
         for (Iterator<Map.Entry<K,V>> it = map.entrySet().iterator(); it.hasNext();) {
-            assertTrue(map.isPersisted());
             Map.Entry<K,V> value = it.next();
             assertTrue(map.containsKey(value.getKey()));
             try {

@@ -55,10 +55,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
                     .withSubDirectory(logic.getConfig().getQuery().getId().toString())
                     .withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
                     .withNumRetries(logic.getIvaratorNumRetries())
-                    .withPersistOptions(new FileSortedSet.PersistOptions(
-                            logic.isIvaratorPersistVerify(),
-                            logic.isIvaratorPersistVerify(),
-                            logic.getIvaratorPersistVerifyCount()))
+                    .withPersistOptions(new FileSortedSet.PersistOptions(true, false, 0))
                     .build();
             // @formatter:on
         } catch (IOException e) {

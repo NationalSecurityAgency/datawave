@@ -123,6 +123,7 @@ import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 
 /**
@@ -1575,7 +1576,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             .withSubDirectory(getQueryId() + "-" + getScanId())
                             .withMaxOpenFiles(getIvaratorMaxOpenFiles())
                             .withNumRetries(getIvaratorNumRetries())
-                            .withPersistOptions(getIvaratorPersistOptions())
+                            .withPersistOptions(new FileSortedSet.PersistOptions(true, false, 0))
                             .build();
                     // @formatter:on
                 }

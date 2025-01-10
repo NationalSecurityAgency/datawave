@@ -35,6 +35,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
@@ -168,6 +169,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public Map.Entry<Key,Document> flush() {
         if (map != null) {
             synchronized (map) {
+                // persist the map so that we do not loose these results and we compact the files for the final iteration.
+                try {
+                    map.persist();
+                } catch (IOException ioe) {
+                    throw new DatawaveFatalQueryException("Unable to persist the most recent unique maps", ioe);
+                }
                 if (setIterator == null) {
                     setupIterator();
                 }
@@ -185,6 +192,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private void setupIterator() {
         for (Map.Entry<byte[],Document> entry : map.entrySet()) {
             returnSet.put(getDocKey(entry.getValue()), entry.getValue());
+        }
+        // now persist the return set so that we don't lose the results and compact the sets
+        try {
+            returnSet.persist();
+        } catch (IOException ioe) {
+            throw new DatawaveFatalQueryException("Could not persist unique document return set", ioe);
         }
         setIterator = returnSet.entrySet().iterator();
     }

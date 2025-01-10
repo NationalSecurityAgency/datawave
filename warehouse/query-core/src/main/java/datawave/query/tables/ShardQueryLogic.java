@@ -724,10 +724,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                                 .withSubDirectory(getConfig().getQuery().getId().toString())
                                 .withMaxOpenFiles(getIvaratorMaxOpenFiles())
                                 .withNumRetries(getIvaratorNumRetries())
-                                .withPersistOptions(new FileSortedSet.PersistOptions(
-                                        isIvaratorPersistVerify(),
-                                        isIvaratorPersistVerify(),
-                                        getIvaratorPersistVerifyCount()))
+                                .withPersistOptions(new FileSortedSet.PersistOptions(true, false, 0))
                                 .build());
                         // @formatter:on
                     } catch (IOException ioe) {

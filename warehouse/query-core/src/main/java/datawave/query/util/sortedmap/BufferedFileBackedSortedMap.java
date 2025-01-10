@@ -501,31 +501,16 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
 
     @Override
     public Set<K> keySet() {
-        persistIfMultipleMaps();
         return map.keySet();
     }
 
     @Override
     public Collection<V> values() {
-        persistIfMultipleMaps();
         return map.values();
-    }
-
-    protected void persistIfMultipleMaps() {
-        // compact down the sets if needed
-        try {
-            // if we have any persisted sets, then ensure we are persisted
-            if (map.getMaps().size() > 1) {
-                persist();
-            }
-        } catch (IOException ioe) {
-            throw new RuntimeException("Unable to persist or compact file backed sorted set", ioe);
-        }
     }
 
     @Override
     public Set<Entry<K,V>> entrySet() {
-        persistIfMultipleMaps();
         return map.entrySet();
     }
 
