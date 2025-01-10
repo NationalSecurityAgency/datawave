@@ -36,7 +36,7 @@ public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
 
         public Builder() {
             // change the default buffer persist threshold
-            withBufferPersistThreshold(10000);
+            withBufferPersistThreshold(10_000);
         }
 
         @Override
