@@ -1,7 +1,5 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +15,7 @@ import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.sortedset.ByteArrayComparator;
+import datawave.query.util.sortedmap.rfile.KeyValueByteDocumenTransformsTest;
 
 public class BufferedFileBackedKeyDocumentSortedMapTest extends BufferedFileBackedRewritableSortedMapTest<Key,Document> {
 
@@ -60,9 +58,9 @@ public class BufferedFileBackedKeyDocumentSortedMapTest extends BufferedFileBack
     }
 
     @Override
-    public void testFullEquality(Map.Entry<Key,Document> expected, Map.Entry<Key,Document> value) {
-        assertEquals(0, keyComparator.compare(expected.getKey(), value.getKey()));
-        assertEquals(expected.getValue().get(Document.DOCKEY_FIELD_NAME), value.getValue().get(Document.DOCKEY_FIELD_NAME));
+    protected void testEquality(Map.Entry<Key,Document> expected, Map.Entry<Key,Document> value) {
+        testEquality(expected.getKey(), value.getKey());
+        KeyValueByteDocumenTransformsTest.assertDocumentEquals(expected.getValue(), value.getValue());
     }
 
     @Override

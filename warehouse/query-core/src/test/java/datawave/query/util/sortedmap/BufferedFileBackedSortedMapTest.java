@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,6 +44,13 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
     public FileSortedMap.RewriteStrategy<K,V> getRewriteStrategy() {
         return null;
+    }
+
+    protected void testEquality(SortedMap<K,V> m1, SortedMap<K,V> m2) {
+        for (Map.Entry<K,V> e1 : m1.entrySet()) {
+            V v2 = m2.get(e1.getKey());
+            testEquality(e1, new UnmodifiableMapEntry(e1.getKey(), v2));
+        }
     }
 
     protected void testEquality(Map.Entry<K,V> expected, Map.Entry<K,V> value) {
@@ -327,7 +335,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
             for (int i = start; i < end; i++) {
                 expected.put(data[sortedOrder[i]].getKey(), data[sortedOrder[i]].getValue());
             }
-            assertEquals(expected, submap);
+            testEquality(expected, submap);
         } catch (Exception e) {
             // expected
         }
@@ -342,7 +350,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
             for (int i = 0; i < end; i++) {
                 expected.put(data[sortedOrder[i]].getKey(), data[sortedOrder[i]].getValue());
             }
-            assertEquals(expected, submap);
+            testEquality(expected, submap);
         } catch (Exception e) {
             // expected
         }
@@ -357,7 +365,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
             for (int i = start; i < sortedOrder.length; i++) {
                 expected.put(data[sortedOrder[i]].getKey(), data[sortedOrder[i]].getValue());
             }
-            assertEquals(expected, submap);
+            testEquality(expected, submap);
         } catch (Exception e) {
             // expected
         }

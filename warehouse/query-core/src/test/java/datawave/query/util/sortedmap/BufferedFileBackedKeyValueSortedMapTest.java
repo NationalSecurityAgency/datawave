@@ -40,7 +40,7 @@ public class BufferedFileBackedKeyValueSortedMapTest extends BufferedFileBackedR
     }
 
     @Override
-    public void testFullEquality(Map.Entry<Key,Value> expected, Map.Entry<Key,Value> value) {
+    public void testEquality(Map.Entry<Key,Value> expected, Map.Entry<Key,Value> value) {
         assertEquals(expected.getKey(), value.getKey());
         assertEquals(expected.getValue(), value.getValue());
     }

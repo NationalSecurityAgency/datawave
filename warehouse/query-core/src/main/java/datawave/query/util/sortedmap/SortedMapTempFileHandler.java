@@ -42,7 +42,7 @@ public class SortedMapTempFileHandler implements FileSortedMap.SortedMapFileHand
 
     @Override
     public FileSortedSet.PersistOptions getPersistOptions() {
-        return new FileSortedSet.PersistOptions();
+        return new FileSortedSet.PersistOptions(true, false);
     }
 
     @Override

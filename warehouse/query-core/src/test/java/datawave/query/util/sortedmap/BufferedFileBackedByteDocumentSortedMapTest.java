@@ -1,7 +1,5 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,6 +15,7 @@ import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedmap.rfile.KeyValueByteDocumenTransformsTest;
 import datawave.query.util.sortedset.ByteArrayComparator;
 
 public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBackedRewritableSortedMapTest<byte[],Document> {
@@ -31,6 +30,12 @@ public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBac
             return (ts2 > ts1);
         }
     };
+
+    @Override
+    protected void testEquality(Map.Entry<byte[],Document> expected, Map.Entry<byte[],Document> value) {
+        testEquality(expected.getKey(), value.getKey());
+        KeyValueByteDocumenTransformsTest.assertDocumentEquals(expected.getValue(), value.getValue());
+    }
 
     @Override
     public FileSortedMap.RewriteStrategy<byte[],Document> getRewriteStrategy() {
@@ -52,12 +57,6 @@ public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBac
                         new TypeMetadata().put("FIELD", "datatype", LcNoDiacriticsType.class.getName()), new CompositeMetadata(), true, true,
                         new EventDataQueryFieldFilter());
         return doc;
-    }
-
-    @Override
-    public void testFullEquality(Map.Entry<byte[],Document> expected, Map.Entry<byte[],Document> value) {
-        assertEquals(0, keyComparator.compare(expected.getKey(), value.getKey()));
-        assertEquals(expected.getValue().get(Document.DOCKEY_FIELD_NAME), value.getValue().get(Document.DOCKEY_FIELD_NAME));
     }
 
     @Override

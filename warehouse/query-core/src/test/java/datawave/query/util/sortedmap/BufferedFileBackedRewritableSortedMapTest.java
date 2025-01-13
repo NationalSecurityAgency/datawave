@@ -28,16 +28,6 @@ public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends Buf
     public abstract V createValue(byte[] values);
 
     /**
-     * Test whether the key and value match the expected key and value using junit assertions and hence will throw and exeption if they do not match.
-     *
-     * @param expected
-     *            The expected key, value
-     * @param value
-     *            The key, value being tested
-     */
-    public abstract void testFullEquality(Map.Entry<K,V> expected, Map.Entry<K,V> value);
-
-    /**
      * Get a rewrite strategy. This strategy should allow rewrites if the value is smaller.
      *
      * @return the rewrite strategy appropriate for key and value types
@@ -102,7 +92,7 @@ public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends Buf
             Map.Entry<K,V> value = it.next();
             int dataIndex = sortedOrder[index++];
             Map.Entry<K,V> expected = (dataIndex < template.length ? data2[dataIndex] : data[dataIndex]);
-            testFullEquality(expected, value);
+            testEquality(expected, value);
         }
     }
 }
