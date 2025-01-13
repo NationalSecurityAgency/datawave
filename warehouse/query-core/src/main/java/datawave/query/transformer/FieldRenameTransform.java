@@ -60,7 +60,7 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
                     for (String mappedField : mappedFields) {
                         if (!mappedField.equals(baseField)) {
                             String newField = field.replace(baseField, mappedField);
-                            document.put(newField, document.get(field), this.includeGroupingContext, this.reducedResponse);
+                            document.put(newField, document.get(field), this.includeGroupingContext);
                         }
                     }
                     if (!mappedFields.contains(baseField)) {
