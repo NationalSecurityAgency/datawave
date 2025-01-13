@@ -222,7 +222,7 @@ public class BaseTableCache implements Serializable, TableCache {
                 // the table will not exist the first time this is run
             }
             instanceClient.tableOperations().rename(tempTableName, tableName);
-            log.info("Cached {} k,v for table {}", count, tableName);
+            log.info("Cached {} k,v for table: {}", count, tableName);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;

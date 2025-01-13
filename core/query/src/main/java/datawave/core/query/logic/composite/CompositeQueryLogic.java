@@ -140,7 +140,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                                 // reset the page processing time to avoid getting spammed with these
                                 resetPageProcessingStartTime();
                                 // let the RunningQuery handle timeouts for long-running queries
-                                log.debug("{}: Received intermediate result", Thread.currentThread().getName());
+                                log.debug("{}: received intermediate result", Thread.currentThread().getName());
                             } else {
                                 results.add(last);
                                 resultCount++;

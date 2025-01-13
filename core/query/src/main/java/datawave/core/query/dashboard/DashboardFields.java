@@ -60,7 +60,7 @@ public final class DashboardFields {
                     try {
                         createCallTime = Long.parseLong(f.getValueString());
                     } catch (NumberFormatException ex) {
-                        log.warn("", ex);
+                        log.warn("NumberFormatException:", ex);
                         return;
                     }
                     break;
@@ -68,7 +68,7 @@ public final class DashboardFields {
                     try {
                         setupTime = Long.parseLong(f.getValueString());
                     } catch (NumberFormatException ex) {
-                        log.warn("", ex);
+                        log.warn("NumberFormatException:", ex);
                         return;
                     }
                     break;
@@ -79,7 +79,7 @@ public final class DashboardFields {
                     try {
                         results = Integer.parseInt(f.getValueString());
                     } catch (NumberFormatException ex) {
-                        log.warn("", ex);
+                        log.warn("NumberFormatException:", ex);
                         return;
                     }
                     break;
