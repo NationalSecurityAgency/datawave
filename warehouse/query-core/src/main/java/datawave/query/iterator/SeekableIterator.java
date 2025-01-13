@@ -7,7 +7,7 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 
 /**
- *
+ * See {@link NestedIterator#seek(Range, Collection, boolean)} for examples of how this interface was previously used.
  */
 @Deprecated(forRemoval = true, since = "7.13.0")
 public interface SeekableIterator {
