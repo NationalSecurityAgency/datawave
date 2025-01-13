@@ -61,9 +61,11 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -79,6 +81,7 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
@@ -86,6 +89,7 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.CardinalityVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -259,6 +263,10 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
+    public static final String SUMMARY_OPTIONS = "summary.options";
+
+    public static final String SUMMARY_ITERATOR = "summary.iterator.class";
+
     // field and next thresholds before a seek is issued
     public static final String FI_FIELD_SEEK = "fi.field.seek";
     public static final String FI_NEXT_SEEK = "fi.next.seek";
@@ -275,11 +283,13 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
+    public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
     protected Map<String,String> options;
 
     protected String scanId;
     protected String query;
+    private ASTJexlScript script;
     protected String queryId;
     protected boolean disableEvaluation = false;
     protected boolean disableFiEval = false;
@@ -431,6 +441,10 @@ public class QueryOptions implements OptionDescriber {
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
+    protected SummaryOptions summaryOptions;
+
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
+
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
     private int fiNextSeek = -1;
@@ -448,10 +462,13 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
+    private long cardinality = Long.MAX_VALUE;
+    private long cardinalityThreshold = Long.MIN_VALUE;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
+        this.script = other.script;
         this.queryId = other.queryId;
         this.scanId = other.scanId;
         this.disableEvaluation = other.disableEvaluation;
@@ -549,6 +566,8 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = other.excerptFields;
         this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
+        this.summaryOptions = other.summaryOptions;
+        this.summaryIterator = other.summaryIterator;
 
         this.fiFieldSeek = other.fiFieldSeek;
         this.fiNextSeek = other.fiNextSeek;
@@ -564,6 +583,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+        this.cardinality = other.cardinality;
     }
 
     public String getQuery() {
@@ -873,13 +893,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     private Set<String> getQueryFields() {
-        try {
-            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            return JexlASTHelper.getIdentifierNames(script);
-        } catch (ParseException e) {
-            // ignore
-            throw new FatalBeanException("Could not parse query");
-        }
+        return JexlASTHelper.getIdentifierNames(getScript());
     }
 
     public TimeFilter getTimeFilter() {
@@ -1267,6 +1281,22 @@ public class QueryOptions implements OptionDescriber {
         this.excerptIterator = excerptIterator;
     }
 
+    public SummaryOptions getSummaryOptions() {
+        return summaryOptions;
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        this.summaryOptions = summaryOptions;
+    }
+
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
+        return summaryIterator;
+    }
+
+    public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
+        this.summaryIterator = summaryIterator;
+    }
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1360,6 +1390,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_FIELDS, "excerpt fields");
         options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
+        options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
+        options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
@@ -1503,6 +1535,17 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TERM_COUNTS)) {
             String serializedMap = options.get(TERM_COUNTS);
             this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
+        }
+
+        // parse out cardinality threshold
+        if (options.containsKey(CARDINALITY_THRESHOLD)) {
+            String option = options.get(CARDINALITY_THRESHOLD);
+            this.cardinalityThreshold = Long.parseLong(option);
+        }
+
+        // cardinality requires term counts and a threshold
+        if (termCounts != null && !termCounts.isEmpty() && cardinalityThreshold > 0) {
+            cardinality = CardinalityVisitor.cardinality(getScript(), termCounts);
         }
 
         this.evaluationFilter = null;
@@ -1863,6 +1906,18 @@ public class QueryOptions implements OptionDescriber {
                 setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
+            }
+        }
+
+        if (options.containsKey(SUMMARY_OPTIONS)) {
+            setSummaryOptions(SummaryOptions.from(options.get(SUMMARY_OPTIONS)));
+        }
+
+        if (options.containsKey(SUMMARY_ITERATOR)) {
+            try {
+                setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(SUMMARY_ITERATOR)));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
             }
         }
 
@@ -2365,5 +2420,25 @@ public class QueryOptions implements OptionDescriber {
 
     public boolean isSeekingEventAggregation() {
         return seekingEventAggregation;
+    }
+
+    public ASTJexlScript getScript() {
+        if (script == null) {
+            try {
+                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            } catch (ParseException e) {
+                log.error("Failed to parse query", e);
+                throw new DatawaveFatalQueryException("Failed to parse query");
+            }
+        }
+        return script;
+    }
+
+    public long getCardinality() {
+        return cardinality;
+    }
+
+    public long getCardinalityThreshold() {
+        return cardinalityThreshold;
     }
 }

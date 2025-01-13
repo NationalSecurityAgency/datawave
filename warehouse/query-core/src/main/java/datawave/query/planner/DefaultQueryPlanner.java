@@ -622,6 +622,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         configureExcerpts(config, cfg);
 
+        configureSummaries(config, cfg);
+
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
@@ -652,6 +654,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
+        }
+    }
+
+    private void configureSummaries(ShardQueryConfiguration config, IteratorSetting cfg) {
+        if (config.getSummaryOptions().getSummarySize() != 0) {
+            addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
+            addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
         }
     }
 
@@ -2703,6 +2712,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
+
+        if (config.getCardinalityThreshold() > 0) { // only add option if it is set
+            addOption(cfg, QueryOptions.CARDINALITY_THRESHOLD, Integer.toString(config.getCardinalityThreshold()), false);
+        }
     }
 
     /**
@@ -2926,6 +2939,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            // TODO -- in practice the second half of this config is always false, so this check is pointless
             if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
@@ -2933,6 +2947,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             stopwatch.stop();
         }
+
+        // only requires a full table scan IFF it's only ivarators at the top level. single ivarators may be delayed.
         if (needsFullTable) {
             if (config.getFullTableScanEnabled()) {
                 ranges = this.getFullScanRange(config, queryTree);
