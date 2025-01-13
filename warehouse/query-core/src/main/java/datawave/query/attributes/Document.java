@@ -861,8 +861,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 // Get an instance of the concrete Attribute
                 try {
                     attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                         InvocationTargetException e) {
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
 

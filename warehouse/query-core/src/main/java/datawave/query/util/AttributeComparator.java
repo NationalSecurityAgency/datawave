@@ -156,7 +156,8 @@ public final class AttributeComparator {
         return combineMultipleAttributes(attrs, new Attributes(attrSet, attrs.isToKeep(), trackSizes));
     }
 
-    public static Set<Attribute<? extends Comparable<?>>> combineSingleAttributes(final Attribute<?> attr1, final Attribute<?> attr2, final boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineSingleAttributes(final Attribute<?> attr1, final Attribute<?> attr2,
+                    final boolean trackSizes) {
         HashSet<Attribute<? extends Comparable<?>>> attrSet1 = Sets.newHashSet();
         HashSet<Attribute<? extends Comparable<?>>> attrSet2 = Sets.newHashSet();
         attrSet1.add(attr1);
