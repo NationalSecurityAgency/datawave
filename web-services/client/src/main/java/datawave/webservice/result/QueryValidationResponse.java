@@ -1,5 +1,6 @@
 package datawave.webservice.result;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -90,7 +91,9 @@ public class QueryValidationResponse extends BaseResponse {
                         .add("queryId='" + queryId + "'").add("results=" + results).add("executedRules=" + executedRules).toString();
     }
 
-    public static class Result {
+    @XmlAccessorType(XmlAccessType.NONE)
+    @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
+    public static class Result implements Serializable {
 
         @XmlElement(name = "RuleName")
         private String ruleName;
@@ -100,6 +103,10 @@ public class QueryValidationResponse extends BaseResponse {
 
         @XmlElement(name = "Exception")
         private QueryExceptionType exception;
+
+        public Result() {
+
+        }
 
         public Result(String ruleName, List<String> messages, QueryExceptionType exception) {
             this.ruleName = ruleName;
