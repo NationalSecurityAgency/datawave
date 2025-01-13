@@ -21,7 +21,7 @@ import datawave.query.iterator.NestedIterator;
  * @param <T>
  *            the type of the array iterator
  */
-@Deprecated(forRemoval = true, since = "7.13.0")
+@Deprecated(since = "7.13.0")
 public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private static final Document doc = new Document();
 
@@ -66,7 +66,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        throw new UnsupportedOperationException("ArrayIterator does not support seek");
+        // no-op
     }
 
     public Collection<NestedIterator<T>> leaves() {
