@@ -27,12 +27,12 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -367,8 +367,8 @@ public class SharedCacheCoordinator implements Serializable {
     }
 
     /**
-     * Given the shared counter {@code counterName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}.
-     * If the value does not match, the local cached value is updated.
+     * Given the shared counter {@code counterName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}. If the
+     * value does not match, the local cached value is updated.
      *
      * @param counterName
      *            the name of the counter whose locally cached value is to be tested
@@ -474,8 +474,8 @@ public class SharedCacheCoordinator implements Serializable {
     }
 
     /**
-     * Given the shared boolean {@code booleanName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}.
-     * If the value does not match, the local cached value is updated.
+     * Given the shared boolean {@code booleanName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}. If the
+     * value does not match, the local cached value is updated.
      *
      * @param booleanName
      *            the name of the counter whose locally cached value is to be tested
@@ -581,8 +581,8 @@ public class SharedCacheCoordinator implements Serializable {
     }
 
     /**
-     * Given the shared TriState {@code triStateName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}
-     * . If the value does not match, the local cached value is updated.
+     * Given the shared TriState {@code triStateName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue} . If
+     * the value does not match, the local cached value is updated.
      *
      * @param triStateName
      *            the name of the state whose locally cached value is to be tested
@@ -667,8 +667,7 @@ public class SharedCacheCoordinator implements Serializable {
     /**
      * Watches the eviction path for new eviction messages. If a message is received, then {@code callback} is invoked, and then zookeeper is updated to
      * indicate this server has responded to the eviction request. Once all running servers have responded, then a cleanup thread running on each server will
-     * attempt to remove the eviction request marker so as not to overpopulate zookeeper. All servers may try, but only one will actually delete all the
-     * nodes.
+     * attempt to remove the eviction request marker so as not to overpopulate zookeeper. All servers may try, but only one will actually delete all the nodes.
      *
      * @param callback
      *            the callback to invoke
