@@ -1,12 +1,6 @@
 package datawave.query.jexl.functions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
@@ -63,7 +57,7 @@ public class GroupingRequiredFilterFunctions {
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'context' (.2) that I found above
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
-            if (!context.isEmpty()) {
+            if (!Objects.requireNonNull(context).isEmpty()) {
                 groups.add(context);
             }
             for (int i = 2; i < args.length; i++) {

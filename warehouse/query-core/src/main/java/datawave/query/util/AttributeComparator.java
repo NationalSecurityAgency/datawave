@@ -38,7 +38,7 @@ public final class AttributeComparator {
      *            Another Attribute against which we want to check for likeness
      * @return
      */
-    public static boolean singleToSingle(final Attribute attr1, final Attribute attr2) {
+    public static boolean singleToSingle(final Attribute<?> attr1, final Attribute<?> attr2) {
         //  @formatter:off
         return attr1.getData().equals(attr2.getData()) &&
                 attr1.getColumnVisibility().equals(attr2.getColumnVisibility()) &&
@@ -55,7 +55,7 @@ public final class AttributeComparator {
      *            An Attributes against which we want to check for any matches contained therein
      * @return
      */
-    public static boolean singleToMultiple(final Attribute attr, final Attributes attrs) {
+    public static boolean singleToMultiple(final Attribute<?> attr, final Attributes attrs) {
         return attrs.getAttributes().stream().anyMatch(existingAttribute -> singleToSingle(existingAttribute, attr));
     }
 
@@ -64,7 +64,7 @@ public final class AttributeComparator {
      *
      * @param attrs1
      *            An Attributes against which we want to compare
-     * @param attrs1
+     * @param attrs2
      *            An Attributes against which we want to check for any matches contained between the two sets
      * @return
      */
@@ -92,7 +92,7 @@ public final class AttributeComparator {
      */
     public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes attrs1, final Attributes attrs2) {
         Set<Attribute<? extends Comparable<?>>> combinedAttrSet = new HashSet<>();
-        Set<Attribute> previouslyMerged = new HashSet<Attribute>();
+        Set<Attribute<?>> previouslyMerged = new HashSet<>();
 
         //  @formatter:off
         attrs1.getAttributes().forEach(attr1 -> {
@@ -135,29 +135,28 @@ public final class AttributeComparator {
         // @formatter:on
 
         // remove any "unique" attribute previously added but has now been merged
-        Iterator<Attribute> previousItr = previouslyMerged.iterator();
-        while (previousItr.hasNext()) {
-            combinedAttrSet.remove(previousItr.next());
+        for (Attribute<?> attribute : previouslyMerged) {
+            combinedAttrSet.remove(attribute);
         }
 
         return combinedAttrSet;
     }
 
-    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attribute attr, final Attributes attrs, final boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attribute<?> attr, final Attributes attrs, final boolean trackSizes) {
         HashSet<Attribute<? extends Comparable<?>>> attrSet = Sets.newHashSet();
         attrSet.add(attr);
 
         return combineMultipleAttributes(new Attributes(attrSet, attrs.isToKeep(), trackSizes), attrs);
     }
 
-    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes attrs, final Attribute attr, final boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes attrs, final Attribute<?> attr, final boolean trackSizes) {
         HashSet<Attribute<? extends Comparable<?>>> attrSet = Sets.newHashSet();
         attrSet.add(attr);
 
         return combineMultipleAttributes(attrs, new Attributes(attrSet, attrs.isToKeep(), trackSizes));
     }
 
-    public static Set<Attribute<? extends Comparable<?>>> combineSingleAttributes(final Attribute attr1, final Attribute attr2, final boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineSingleAttributes(final Attribute<?> attr1, final Attribute<?> attr2, final boolean trackSizes) {
         HashSet<Attribute<? extends Comparable<?>>> attrSet1 = Sets.newHashSet();
         HashSet<Attribute<? extends Comparable<?>>> attrSet2 = Sets.newHashSet();
         attrSet1.add(attr1);
@@ -177,10 +176,10 @@ public final class AttributeComparator {
      *            An Attribute without a populated datatype and uid in the Column Family
      * @return
      */
-    private static Attribute mergeAttributes(final Attribute attrWithCF, final Attribute attrWithoutCF) {
-        Attribute mergedAttr = null;
+    private static Attribute<?> mergeAttributes(final Attribute<?> attrWithCF, final Attribute<?> attrWithoutCF) {
+        Attribute<?> mergedAttr = null;
 
-        mergedAttr = (Attribute) attrWithoutCF.copy();
+        mergedAttr = (Attribute<?>) attrWithoutCF.copy();
         mergedAttr.setColumnFamily(attrWithCF.getMetadata().getColumnFamily());
 
         return mergedAttr;

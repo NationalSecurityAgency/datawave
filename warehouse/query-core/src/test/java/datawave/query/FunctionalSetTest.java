@@ -218,7 +218,7 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO")
+                List.of("SOPRANO")
         };
         // @formatter:on
 
@@ -260,12 +260,12 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE", "TATTAGLIA"),
-                Arrays.asList(),
+                List.of(),
 
                 Arrays.asList("CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE"),
 
-                Arrays.asList("CAPONE"),
+                List.of("CAPONE"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
@@ -338,13 +338,13 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'female' == GENDER"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'FEMALE' == GENDER"
 
-                Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) == MAGIC",
-                Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
-                Arrays.asList("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
-                Arrays.asList("CAPONE"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
+                List.of("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) == MAGIC",
+                List.of("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
+                List.of("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
+                List.of("CAPONE"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
 
-                Arrays.asList("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
-                Arrays.asList() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
+                List.of("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
+                List.of() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
         };
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
@@ -367,7 +367,7 @@ public abstract class FunctionalSetTest {
                 "UUID == 'SOPRANO' && NAM.min().hashCode() != 0",
         };
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO"),
+                List.of("SOPRANO"),
         };
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
