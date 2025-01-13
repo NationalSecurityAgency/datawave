@@ -17,9 +17,10 @@ import datawave.ingest.data.config.NormalizedContentInterface;
  */
 public class VirtualFieldIngestHelper implements VirtualIngest {
 
-    private VirtualFieldNormalizer virtualFieldNormalizer = new VirtualFieldNormalizer();
+    protected VirtualFieldNormalizer virtualFieldNormalizer = new VirtualFieldNormalizer();
+    protected Multimap<String,NormalizedContentInterface> fields;
 
-    private Type type;
+    protected Type type;
 
     public VirtualFieldIngestHelper(Type type) {
         this.type = type;
@@ -52,6 +53,7 @@ public class VirtualFieldIngestHelper implements VirtualIngest {
 
     @Override
     public Multimap<String,NormalizedContentInterface> getVirtualFields(Multimap<String,NormalizedContentInterface> fields) {
+        this.fields = fields;
         return virtualFieldNormalizer.normalizeMap(fields);
     }
 
@@ -64,6 +66,22 @@ public class VirtualFieldIngestHelper implements VirtualIngest {
     @Override
     public Map<String,String[]> getVirtualNameAndIndex(String virtualFieldName) {
         return this.getVirtualFieldDefinitions();
+    }
+
+    public void setVirtualFieldNormalizer(VirtualFieldNormalizer virtualFieldNormalizer) {
+        this.virtualFieldNormalizer = virtualFieldNormalizer;
+    }
+
+    public VirtualFieldNormalizer getVirtualFieldNormalizer() {
+        return this.virtualFieldNormalizer;
+    }
+
+    public Multimap<String,NormalizedContentInterface> getFields() {
+        return fields;
+    }
+
+    public void setFields(Multimap<String,NormalizedContentInterface> fields) {
+        this.fields = fields;
     }
 
 }

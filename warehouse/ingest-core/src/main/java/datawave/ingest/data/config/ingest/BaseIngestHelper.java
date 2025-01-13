@@ -171,7 +171,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     // types
 
     private CompositeIngest compositeIngest;
-    private VirtualIngest virtualIngest;
+    protected VirtualIngest virtualIngest;
 
     protected boolean useMostPreciseFieldTypeRegex = false;
 
