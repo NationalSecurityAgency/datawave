@@ -597,8 +597,8 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
 
-        defaultValues.put("noExpansionIfCurrent", Collections.emptySet());
-        updatedValues.put("noExpansionIfCurrent", Collections.singleton("EVENT"));
+        defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
+        updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
 
         defaultValues.put("shardsAndDaysHintAllowed", true);
         updatedValues.put("shardsAndDaysHintAllowed", false);

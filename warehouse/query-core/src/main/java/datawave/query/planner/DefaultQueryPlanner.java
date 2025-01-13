@@ -2118,8 +2118,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Get the set of date types that should not be expanded if the end date is the current date.
         // @formatter:off
-        Set<String> noExpansionIfCurrent = config.getNoExpansionIfCurrent() == null ? Collections.emptySet() :
-                        config.getNoExpansionIfCurrent().stream()
+        Set<String> noExpansionIfCurrentDateTypes = config.getNoExpansionIfCurrentDateTypes() == null ? Collections.emptySet() :
+                        config.getNoExpansionIfCurrentDateTypes().stream()
                                         .map(String::trim)
                                         .map(String::toUpperCase)
                                         .collect(Collectors.toSet());
@@ -2127,7 +2127,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // If the date type is one marked for no expansion if current, and the query's end date is the current date, do not add any date filters, and do not
         // allow a SHARDS_AND_DAYS hint to be added later.
-        if (config.getNoExpansionIfCurrent().contains(dateType) && DateUtils.isSameDay(new Date(), config.getEndDate())) {
+        if (config.getNoExpansionIfCurrentDateTypes().contains(dateType) && DateUtils.isSameDay(new Date(), config.getEndDate())) {
             log.info("Query end date equals current date and date type " + dateType
                             + " is marked for no expansion if current. SHARDS_AND_DAYS hint will be forbidden.");
             config.setShardsAndDaysHintAllowed(false);

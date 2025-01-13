@@ -6,10 +6,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.commons.lang3.time.DateUtils;
-import org.easymock.EasyMock;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,7 +43,7 @@ class DefaultQueryPlannerTest {
         private ASTJexlScript queryTree;
 
         @BeforeEach
-        void setUp() throws ParseException {
+        void setUp() {
             planner = new DefaultQueryPlanner();
             config = new ShardQueryConfiguration();
             settings = new QueryImpl();
@@ -55,14 +51,14 @@ class DefaultQueryPlannerTest {
         }
 
         /**
-         * Verify that when the date type is the default date type, and is part of the {@link ShardQueryConfiguration#noExpansionIfCurrent} types, and the
-         * query's end date is the current date, that no date filters are added and SHARDS_AND_DAYS hints are forbidden.
+         * Verify that when the date type is the default date type, and is part of the noExpansionIfCurrentDateTypes types, and the query's end date is the
+         * current date, that no date filters are added and SHARDS_AND_DAYS hints are forbidden.
          */
         @Test
         void testDefaultDateTypeMarkedForNoExpansionAndEndDateIsCurrDate() throws Exception {
             queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
             config.setDefaultDateTypeName("EVENT");
-            config.setNoExpansionIfCurrent(Set.of("EVENT"));
+            config.setNoExpansionIfCurrentDateTypes(Set.of("EVENT"));
 
             Date beginDate = DateHelper.parse("20241001");
             config.setBeginDate(beginDate);
@@ -78,14 +74,14 @@ class DefaultQueryPlannerTest {
         }
 
         /**
-         * Verify that when a date type is given via parameters that is part of the {@link ShardQueryConfiguration#noExpansionIfCurrent} types, and the query's
-         * end date is the current date, that no date filters are added and SHARDS_AND_DAYS hints are forbidden.
+         * Verify that when a date type is given via parameters that is part of the noExpansionIfCurrentDateTypes types, and the query's end date is the current
+         * date, that no date filters are added and SHARDS_AND_DAYS hints are forbidden.
          */
         @Test
         void testParamDateTypeMarkedForNoExpansionAndEndDateIsCurrDate() throws Exception {
             queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
             config.setDefaultDateTypeName("EVENT");
-            config.setNoExpansionIfCurrent(Set.of("SPECIAL_EVENT"));
+            config.setNoExpansionIfCurrentDateTypes(Set.of("SPECIAL_EVENT"));
 
             Date beginDate = DateHelper.parse("20241001");
             config.setBeginDate(beginDate);
@@ -103,14 +99,14 @@ class DefaultQueryPlannerTest {
         }
 
         /**
-         * Verify that when the date type is the default date type, and is part of the {@link ShardQueryConfiguration#noExpansionIfCurrent} types, but the
-         * query's end date is not the current date, that no date filters are added and SHARDS_AND_DAYS hints are allowed.
+         * Verify that when the date type is the default date type, and is part of the noExpansionIfCurrentDateTypes types, but the query's end date is not the
+         * current date, that no date filters are added and SHARDS_AND_DAYS hints are allowed.
          */
         @Test
         void testDefaultDateTypeMarkedForNoExpansionAndEndDateIsNotCurrDate() throws Exception {
             queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
             config.setDefaultDateTypeName("EVENT");
-            config.setNoExpansionIfCurrent(Set.of("EVENT"));
+            config.setNoExpansionIfCurrentDateTypes(Set.of("EVENT"));
 
             Date beginDate = DateHelper.parse("20241001");
             config.setBeginDate(beginDate);
@@ -126,14 +122,14 @@ class DefaultQueryPlannerTest {
         }
 
         /**
-         * Verify that when a date type is given via parameters that is part of the {@link ShardQueryConfiguration#noExpansionIfCurrent} types, but the query's
-         * end date is not the current date, that date filters are added and SHARDS_AND_DAYS hints are allowed.
+         * Verify that when a date type is given via parameters that is part of the noExpansionIfCurrentDateTypes types, but the query's end date is not the
+         * current date, that date filters are added and SHARDS_AND_DAYS hints are allowed.
          */
         @Test
         void testParamDateTypeMarkedForNoExpansionAndEndDateIsNotCurrDate() throws Exception {
             queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
             config.setDefaultDateTypeName("EVENT");
-            config.setNoExpansionIfCurrent(Set.of("SPECIAL_EVENT"));
+            config.setNoExpansionIfCurrentDateTypes(Set.of("SPECIAL_EVENT"));
             Date beginDate = DateHelper.parse("20241009");
             config.setBeginDate(beginDate);
             Date endDate = DateHelper.parse("20241011");
@@ -151,14 +147,14 @@ class DefaultQueryPlannerTest {
         }
 
         /**
-         * Verify that when the date type is the default date type, and is not part of the {@link ShardQueryConfiguration#noExpansionIfCurrent} types, and the
-         * query's end date is the current date, that no date filters are added and SHARDS_AND_DAYS hints are allowed.
+         * Verify that when the date type is the default date type, and is not part of the noExpansionIfCurrentDateTypes types, and the query's end date is the
+         * current date, that no date filters are added and SHARDS_AND_DAYS hints are allowed.
          */
         @Test
         void testDefaultDateTypeIsNotMarkedForNoExpansionAndEndDateNotCurrDate() throws Exception {
             queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
             config.setDefaultDateTypeName("EVENT");
-            config.setNoExpansionIfCurrent(Set.of("OTHER_EVENT"));
+            config.setNoExpansionIfCurrentDateTypes(Set.of("OTHER_EVENT"));
 
             Date beginDate = DateHelper.parse("20241001");
             config.setBeginDate(beginDate);
@@ -174,14 +170,14 @@ class DefaultQueryPlannerTest {
         }
 
         /**
-         * Verify that when a date type is given via parameters that is not part of the {@link ShardQueryConfiguration#noExpansionIfCurrent} types, and the
-         * query's end date is the current date, that date filters are added and SHARDS_AND_DAYS hints are allowed.
+         * Verify that when a date type is given via parameters that is not part of the noExpansionIfCurrentDateTypes types, and the query's end date is the
+         * current date, that date filters are added and SHARDS_AND_DAYS hints are allowed.
          */
         @Test
         void testParamDateTypeIsNotMarkedForNoExpansionAndEndDateIsCurrDate() throws Exception {
             queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
             config.setDefaultDateTypeName("EVENT");
-            config.setNoExpansionIfCurrent(Set.of("OTHER_EVENT"));
+            config.setNoExpansionIfCurrentDateTypes(Set.of("OTHER_EVENT"));
             config.setBeginDate(DateHelper.parse("20241009"));
             Date beginDate = DateHelper.parse("20241001");
             config.setBeginDate(beginDate);

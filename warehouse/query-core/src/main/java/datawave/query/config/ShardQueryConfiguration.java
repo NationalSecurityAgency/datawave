@@ -519,11 +519,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
      * SHARDS_AND_DAYS hint.
      */
-    private Set<String> noExpansionIfCurrent = Collections.emptySet();
+    private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
 
     /**
      * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
-     * present in {@link #noExpansionIfCurrent}, and the query's end date is the current date.
+     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
      */
     private boolean shardsAndDaysHintAllowed = true;
 
@@ -765,7 +765,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
-        this.setNoExpansionIfCurrent(other.getNoExpansionIfCurrent() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrent()));
+        this.setNoExpansionIfCurrentDateTypes(
+                        other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
         this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
@@ -3013,7 +3014,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts() == isSortQueryPreIndexWithFieldCounts() &&
                 isSortQueryPostIndexWithTermCounts() == isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts() &&
-                Objects.equals(getNoExpansionIfCurrent(), that.getNoExpansionIfCurrent()) &&
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
                 isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
         // @formatter:on
     }
@@ -3219,7 +3220,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
-                getNoExpansionIfCurrent(),
+                getNoExpansionIfCurrentDateTypes(),
                 isShardsAndDaysHintAllowed()
         );
         // @formatter:on
@@ -3256,12 +3257,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
     }
 
-    public Set<String> getNoExpansionIfCurrent() {
-        return noExpansionIfCurrent;
+    public Set<String> getNoExpansionIfCurrentDateTypes() {
+        return noExpansionIfCurrentDateTypes;
     }
 
-    public void setNoExpansionIfCurrent(Set<String> noExpansionIfCurrent) {
-        this.noExpansionIfCurrent = noExpansionIfCurrent;
+    public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
+        this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
     }
 
     public boolean isShardsAndDaysHintAllowed() {
