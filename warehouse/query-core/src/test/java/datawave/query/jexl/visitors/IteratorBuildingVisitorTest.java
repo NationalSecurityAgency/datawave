@@ -59,6 +59,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
 
         Assert.assertEquals(null, node.jjtAccept(visitor, null));
+        Assert.assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
     /**
@@ -94,6 +95,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertNotEquals(null, nestedIterator);
         Assert.assertEquals(1, nestedIterator.leaves().size());
         Assert.assertTrue(nestedIterator.leaves().iterator().next().toString().contains("FOO"));
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     /**
@@ -110,6 +112,28 @@ public class IteratorBuildingVisitorTest {
 
         // this should never be reached
         Assert.assertFalse(true);
+    }
+
+    @Test
+    public void testIntersectionOfRepeatedTermsDoesNotProduceAdditionalSourceDeepCopies() throws Exception {
+        String query = "FIELD == 'value' && FIELD == 'value' && FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+    }
+
+    @Test
+    public void testUnionOfRepeatedTermsDoesNotProduceAdditionalSourceDeepCopies() throws Exception {
+        String query = "FIELD == 'value' || FIELD == 'value' || FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     @Test
