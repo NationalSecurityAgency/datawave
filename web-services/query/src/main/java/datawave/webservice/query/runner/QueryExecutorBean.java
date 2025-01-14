@@ -3018,7 +3018,8 @@ public class QueryExecutorBean implements QueryExecutor {
 
         QueryValidationResponse response = new QueryValidationResponse();
 
-        Query query;
+        Query query = null;
+        AccumuloClient client = null;
 
         try {
             // Do not persist the query.
@@ -3031,7 +3032,7 @@ public class QueryExecutorBean implements QueryExecutor {
             query.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(query.getId().toString(), queryData.userDn, trackingMap);
 
-            AccumuloClient client;
+            // Create an accumulo client.
             try {
                 client = connectionFactory.getClient(queryData.userDn, queryData.proxyServers, queryData.logic.getConnPoolName(), priority, trackingMap);
             } finally {
@@ -3059,14 +3060,34 @@ public class QueryExecutorBean implements QueryExecutor {
             response = responseTransformer.transform(validationResult);
             response.setQueryId(query.getId().toString());
             response.setLogicName(queryLogicName);
-        } catch (Throwable throwable) {
-            // Close the logic on exception.
-            try {
-                if (null != queryData.logic) {
-                    queryData.logic.close();
+        } catch (Exception e) {
+            // Add the exception to the response.
+            String queryId = (query != null ? query.getId().toString() : "<unknown>");
+            response.addMessage("Query validation failed for " + queryId);
+            log.error(queryId + ": " + e.getMessage(), e);
+
+            QueryException qe = new QueryException(DatawaveErrorCode.NOT_SPECIFIED, e);
+            response.addException(qe.getBottomQueryException());
+            int statusCode = qe.getBottomQueryException().getStatusCode();
+
+            throw new DatawaveWebApplicationException(qe, response, statusCode);
+        } finally {
+            // Return the accumulo client.
+            if (null != client) {
+                try {
+                    connectionFactory.returnClient(client);
+                } catch (Exception e) {
+                    log.error("Error returning accumulo connection", e);
                 }
-            } catch (Exception e) {
-                log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
+            }
+
+            // Release any resources held by the logic.
+            if (queryData.logic != null) {
+                try {
+                    queryData.logic.close();
+                } catch (Exception e) {
+                    log.error("Error closing query logic", e);
+                }
             }
         }
 
