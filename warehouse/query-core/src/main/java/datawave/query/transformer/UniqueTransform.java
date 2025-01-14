@@ -81,7 +81,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public UniqueTransform(UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.uniqueFields = uniqueFields;
-        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
         }
@@ -98,7 +97,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         if (!this.uniqueFields.equals(uniqueFields)) {
             this.uniqueFields = uniqueFields.clone();
             log.info("Resetting unique fields on the unique transform");
-            this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
+            if (map != null) {
+                map.clear();
+                returnSet.clear();
+            } else {
+                bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
+            }
             if (log.isTraceEnabled()) {
                 log.trace("unique fields: " + this.uniqueFields.getFields());
             }
@@ -553,6 +557,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withMapFactory(new FileKeyDocumentSortedMap.Factory())
                         .build();
                 // @formatter:on
+            } else {
+                transform.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
             }
 
             return transform;
