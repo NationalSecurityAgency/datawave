@@ -3066,7 +3066,7 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addMessage("Query validation failed for " + queryId);
             log.error(queryId + ": " + e.getMessage(), e);
 
-            QueryException qe = new QueryException(DatawaveErrorCode.NOT_SPECIFIED, e);
+            QueryException qe = new QueryException(DatawaveErrorCode.QUERY_VALIDATION_ERROR, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
 
