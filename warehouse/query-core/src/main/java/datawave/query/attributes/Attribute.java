@@ -160,7 +160,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         metadata = null;
     }
 
-    protected void writeMetadata(DataOutput out, Boolean reducedResponse) throws IOException {
+    protected void writeMetadata(DataOutput out) throws IOException {
         out.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
             byte[] cvBytes = getColumnVisibility().getExpression();
@@ -172,7 +172,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    protected void writeMetadata(Kryo kryo, Output output, Boolean reducedResponse) {
+    protected void writeMetadata(Kryo kryo, Output output) {
         output.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
             byte[] cvBytes = getColumnVisibility().getExpression();
@@ -324,9 +324,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    public abstract void write(DataOutput output, boolean reducedResponse) throws IOException;
+    public abstract void write(DataOutput output) throws IOException;
 
-    public abstract void write(Kryo kryo, Output output, Boolean reducedResponse);
+    public abstract void write(Kryo kryo, Output output);
 
     public abstract Object getData();
 
