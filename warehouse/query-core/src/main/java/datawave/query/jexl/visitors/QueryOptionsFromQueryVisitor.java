@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -20,9 +22,6 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
 
 import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
@@ -60,9 +59,7 @@ import datawave.query.jexl.functions.QueryFunctions;
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
 
-    private static final Joiner JOINER = Joiner.on(',').skipNulls();
-
-    private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
+    private static final Set<String> RESERVED = Set.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
                     QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
@@ -243,7 +240,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     // Get the list of declared fields and join them into a comma-delimited string.
                     List<String> fieldList = new ArrayList<>();
                     this.visit(node, fieldList);
-                    String fieldString = JOINER.join(fieldList);
+                    String fieldString = join(fieldList);
 
                     // Parse the unique fields.
                     UniqueFields uniqueFields = UniqueFields.from(fieldString);
@@ -277,7 +274,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.SUMMARY_FUNCTION: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.SUMMARY_OPTIONS, JOINER.join(options));
+                    optionsMap.put(QueryParameters.SUMMARY_OPTIONS, join(options));
                     return null;
                 }
                 case QueryFunctions.NO_EXPANSION: {
@@ -301,31 +298,31 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.SUM: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.SUM_FIELDS, JOINER.join(options));
+                    optionsMap.put(QueryParameters.SUM_FIELDS, join(options));
                     return null;
                 }
                 case QueryFunctions.MAX: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.MAX_FIELDS, JOINER.join(options));
+                    optionsMap.put(QueryParameters.MAX_FIELDS, join(options));
                     return null;
                 }
                 case QueryFunctions.MIN: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.MIN_FIELDS, JOINER.join(options));
+                    optionsMap.put(QueryParameters.MIN_FIELDS, join(options));
                     return null;
                 }
                 case QueryFunctions.AVERAGE: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.AVERAGE_FIELDS, JOINER.join(options));
+                    optionsMap.put(QueryParameters.AVERAGE_FIELDS, join(options));
                     return null;
                 }
                 case QueryFunctions.COUNT: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.COUNT_FIELDS, JOINER.join(options));
+                    optionsMap.put(QueryParameters.COUNT_FIELDS, join(options));
                     return null;
                 }
                 case QueryFunctions.RENAME_FUNCTION: {
@@ -343,7 +340,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
         node.jjtAccept(this, fields);
-        fields.forEach((field) -> uniqueFields.put(field, transformer));
+        fields.forEach(field -> uniqueFields.put(field, transformer));
     }
 
     // Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.
@@ -360,12 +357,15 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private void updateFieldsOption(Map<String,String> optionsMap, String option, List<String> fields) {
         // Combine with any previously found field lists
         if (optionsMap.containsKey(option)) {
-            List<String> fieldsUnion = new ArrayList<>();
-            fieldsUnion.addAll(fields);
+            List<String> fieldsUnion = new ArrayList<>(fields);
             fieldsUnion.add(optionsMap.get(option));
             fields = fieldsUnion;
         }
-        optionsMap.put(option, JOINER.join(fields));
+        optionsMap.put(option, join(fields));
+    }
+
+    private String join(List<String> list){
+        return list.stream().filter(Objects::nonNull).collect(Collectors.joining(","));
     }
 
     /**
