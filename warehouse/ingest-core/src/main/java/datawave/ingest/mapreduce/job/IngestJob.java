@@ -77,7 +77,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.log4j.PatternLayout;
 import org.springframework.util.StopWatch;
 
@@ -132,7 +133,7 @@ public class IngestJob implements Tool {
     public static final String REDUCE_TASKS_ARG_PREFIX = "-mapreduce.job.reduces=";
 
     protected boolean eventProcessingError = false;
-    protected Logger log = Logger.getLogger("datawave.ingest");
+    protected Logger log = LoggerFactory.getLogger("datawave.ingest");
     private ConsoleAppender ca = new ConsoleAppender();
 
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
@@ -256,12 +257,12 @@ public class IngestJob implements Tool {
         StopWatch sw = new StopWatch("Ingest Job");
         sw.start("local init");
 
-        Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
+//        LoggerFactory.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
         ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
-        log.addAppender(ca);
-        log.setLevel(Level.INFO);
+//        log.addAppender(ca);
+//        log.setLevel(Level.INFO);
 
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();
@@ -334,7 +335,7 @@ public class IngestJob implements Tool {
             try {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
-                log.error(e);
+                log.error("", e);
                 log.info("Deleting orphaned directory: " + workDirPath);
                 try {
                     outputFs.delete(workDirPath, true);
