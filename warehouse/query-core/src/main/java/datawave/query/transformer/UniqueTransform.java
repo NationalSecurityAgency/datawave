@@ -40,6 +40,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
+import datawave.query.util.sortedmap.FileByteIntegerSortedMap;
 import datawave.query.util.sortedmap.FileKeyDocumentSortedMap;
 import datawave.query.util.sortedmap.FileSortedMap;
 import datawave.query.util.sortedmap.HdfsBackedSortedMap;
@@ -99,6 +100,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             log.info("Resetting unique fields on the unique transform");
             if (documentMap != null) {
                 documentMap.clear();
+                if (countMap != null) {
+                    countMap.clear();
+                }
                 returnSet.clear();
             } else {
                 bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
@@ -149,7 +153,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                             // Increment the count by one in the count map.
                             Integer count = countMap.getOrDefault(signature, 0);
                             count++;
-                            countMap.put(signature, count);
                             synchronized (documentMap) {
                                 // If the count exceeds the max count, ensure the document is removed from the document map.
                                 if (count > uniqueFields.getMaxCount()) {
@@ -157,6 +160,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                                 } else {
                                     // Otherwise, update the document map.
                                     documentMap.put(signature, keyDocumentEntry.getValue());
+                                    // Update the count map only if we have not yet reached the max count. This will avoid overflowing past the max int.
+                                    countMap.put(signature, count);
                                 }
                             }
                         }
@@ -194,17 +199,36 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public Map.Entry<Key,Document> flush() {
         if (documentMap != null) {
             synchronized (documentMap) {
-                // persist the map so that we do not loose these results and we compact the files for the final iteration.
+                // persist the map so that we do not lose these results and we compact the files for the final iteration.
                 try {
                     documentMap.persist();
                 } catch (IOException ioe) {
                     throw new DatawaveFatalQueryException("Unable to persist the most recent unique maps", ioe);
                 }
-                if (setIterator == null) {
-                    setupIterator();
-                }
-                if (setIterator.hasNext()) {
-                    return setIterator.next();
+
+                if (countMap != null) {
+                    synchronized (countMap) {
+                        try {
+                            countMap.persist();
+                        } catch (IOException ioe) {
+                            throw new DatawaveFatalQueryException("Unable to persist the unique count maps", ioe);
+                        }
+                        // If countMap is not null, execute the following when both documentMap and countMap are synchronized.
+                        if (setIterator == null) {
+                            setupIterator();
+                        }
+                        if (setIterator.hasNext()) {
+                            return setIterator.next();
+                        }
+                    }
+                } else {
+                    // Otherwise, just synchronize on documentMap.
+                    if (setIterator == null) {
+                        setupIterator();
+                    }
+                    if (setIterator.hasNext()) {
+                        return setIterator.next();
+                    }
                 }
             }
         }
@@ -591,11 +615,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                                     .withComparator(keyComparator)
                                     .withBufferPersistThreshold(bufferPersistThreshold)
                                     .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
-                                    .withUniqueSubPath("byMaxUniqueKey")
+                                    .withUniqueSubPath("byUniqueCountKey")
                                     .withMaxOpenFiles(maxOpenFiles)
                                     .withNumRetries(numRetries)
                                     .withPersistOptions(persistOptions)
-                                    .withMapFactory(new FileByteDocumentSortedMap.Factory()).build();
+                                    .withMapFactory(new FileByteIntegerSortedMap.Factory()).build();
                     // @formatter:on
                 }
             } else {

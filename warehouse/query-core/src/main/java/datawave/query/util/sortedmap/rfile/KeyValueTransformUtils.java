@@ -1,20 +1,27 @@
 package datawave.query.util.sortedmap.rfile;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.ValueFormatException;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
+import org.apache.hadoop.io.WritableUtils;
 
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 
-public class KeyValueByteDocumentTransforms {
+public class KeyValueTransformUtils {
 
-    private static KryoDocumentSerializer serializer = new KryoDocumentSerializer(false, true);
-    private static KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
+    private static final KryoDocumentSerializer serializer = new KryoDocumentSerializer(false, true);
+    private static final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
     public static byte[] keyToByte(Key key) {
         if (key == null) {
@@ -50,6 +57,30 @@ public class KeyValueByteDocumentTransforms {
         }
     }
 
+    public static Value intToValue(Integer integer) {
+        if (integer == null) {
+            return null;
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        try {
+            WritableUtils.writeVInt(dos, integer);
+        } catch (IOException e) {
+            throw new NumberFormatException(e.getMessage());
+        }
+        return new Value(baos.toByteArray());
+    }
+
+    public static Integer valueToInt(Value value) {
+        byte[] bytes = value.get();
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes, 0, bytes.length));
+        try {
+            return WritableUtils.readVInt(dis);
+        } catch (IOException e) {
+            throw new ValueFormatException(e);
+        }
+    }
+
     public static Map.Entry<byte[],Document> keyValueToByteDocument(Map.Entry<Key,Value> keyValue) {
         if (keyValue == null) {
             return null;
@@ -76,5 +107,23 @@ public class KeyValueByteDocumentTransforms {
             return null;
         }
         return new UnmodifiableMapEntry(byteKey.getKey(), documentToValue(byteKey.getValue()));
+    }
+
+    public static Map.Entry<byte[],Integer> keyValueToByteInteger(Map.Entry<Key,Value> entry) {
+        if (entry == null) {
+            return null;
+        }
+        return new UnmodifiableMapEntry(keyToByte(entry.getKey()), valueToInt(entry.getValue()));
+    }
+
+    public static Map.Entry<Key,Value> byteIntegerTokeyValue(Map.Entry<byte[],Integer> entry) {
+        if (entry == null) {
+            return null;
+        }
+        return new UnmodifiableMapEntry(byteToKey(entry.getKey()), intToValue(entry.getValue()));
+    }
+
+    private KeyValueTransformUtils() {
+        throw new UnsupportedOperationException();
     }
 }

@@ -33,8 +33,8 @@ public class KeyValueByteDocumenTransformsTest {
     public void testDocumentTransforms() {
         List<Document> docs = createDocuments();
         for (Document d : docs) {
-            Value v = KeyValueByteDocumentTransforms.documentToValue(d);
-            Document d2 = KeyValueByteDocumentTransforms.valueToDocument(v);
+            Value v = KeyValueTransformUtils.documentToValue(d);
+            Document d2 = KeyValueTransformUtils.valueToDocument(v);
             assertDocumentEquals(d, d2);
         }
     }
@@ -43,8 +43,8 @@ public class KeyValueByteDocumenTransformsTest {
     public void testByteTransforms() {
         List<byte[]> docs = createByteArrays();
         for (byte[] d : docs) {
-            Key k = KeyValueByteDocumentTransforms.byteToKey(d);
-            byte[] d2 = KeyValueByteDocumentTransforms.keyToByte(k);
+            Key k = KeyValueTransformUtils.byteToKey(d);
+            byte[] d2 = KeyValueTransformUtils.keyToByte(k);
             assertArrayEquals(d, d2);
         }
     }
