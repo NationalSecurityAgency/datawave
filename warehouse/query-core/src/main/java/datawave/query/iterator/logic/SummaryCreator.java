@@ -56,9 +56,9 @@ public class SummaryCreator {
         Map<String,String> summaries = new HashMap<>();
         for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
             // first part is view, second part is if compressed still
-            String[] temp = entry.getKey().split(Constants.COLON);
-            if (temp[0].startsWith(currentViewName)) {
-                summaries.put(temp[0], getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(temp[1])));
+            String[] s = entry.getKey().split(Constants.COLON);
+            if (s[0].startsWith(currentViewName)) {
+                summaries.put(entry.getKey(), getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(s[1])));
             }
         }
         if (!summaries.isEmpty()) {
@@ -76,9 +76,9 @@ public class SummaryCreator {
     private static String getSimpleSummary(String currentViewName, Map<String,byte[]> foundContent, int summarySize) {
         for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
             // first part is view, second part is if compressed still
-            String[] temp = entry.getKey().split(Constants.COLON);
-            if (temp[0].equals(currentViewName)) {
-                return currentViewName + ": " + getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(temp[1]));
+            String[] s = entry.getKey().split(Constants.COLON);
+            if (s[0].equals(currentViewName)) {
+                return currentViewName + ": " + getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(s[1]));
             }
         }
         return null;
