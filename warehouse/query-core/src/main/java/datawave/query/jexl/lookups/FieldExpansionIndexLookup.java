@@ -149,7 +149,9 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
 
                         // We are only returning a mapping of field name to field value, no need to
                         // determine cardinality and such at this point.
-                        log.trace("put {}:{}", columnFamily, row);
+                        if (log.isTraceEnabled()) {
+                            log.trace("put {}:{}", columnFamily, row);
+                        }
                         indexLookupMap.put(columnFamily, row);
 
                         // if we passed the term expansion threshold, then simply return

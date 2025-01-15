@@ -67,7 +67,6 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         log.info("------  testNumericTerm  ------");
 
         String min = "115";
-        String iowa = "'indiana'";
         String query = "STATE == 'indiana' and NUM > 115";
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);

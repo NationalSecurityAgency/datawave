@@ -20,6 +20,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 
 import datawave.query.Constants;
@@ -165,6 +166,8 @@ public class FieldExpansionIterator extends SeekingFilter implements OptionDescr
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (!range.isStartKeyInclusive()) {
+            Preconditions.checkNotNull(range.getStartKey(), "FieldExpansionIterator expected a non-null start key");
+            Preconditions.checkNotNull(range.getStartKey().getColumnFamily(), "FieldExpansionIterator expected a non-null column qualifier");
             // need to skip to next column family
             Key skip = range.getStartKey().followingKey(PartialKey.ROW_COLFAM);
             if (skip.compareTo(range.getEndKey()) > 0) {

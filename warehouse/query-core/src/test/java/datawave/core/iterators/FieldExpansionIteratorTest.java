@@ -189,7 +189,6 @@ public class FieldExpansionIteratorTest {
     public void testDatatypeSortsAfterTopKey() throws Exception {
         withDate("20241023", "20241023");
         withDatatypes(Set.of("datatype-e"));
-        // withFields(Set.of("FIELD_E"));
         drive();
     }
 
