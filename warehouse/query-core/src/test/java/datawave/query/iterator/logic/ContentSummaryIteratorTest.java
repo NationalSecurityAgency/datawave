@@ -223,7 +223,8 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
         Key topKey = iterator.getTopKey();
         assertEquals(row, topKey.getRow());
         assertEquals(new Text("pdf" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
-        assertEquals(new Text("CONTENT31: test content wildcard matching one\nCONTENT32: test content wildcard matching two"), topKey.getColumnQualifier());
+        assertEquals(new Text("CONTENT31:true: test content wildcard matching one\nCONTENT32:true: test content wildcard matching two"),
+                        topKey.getColumnQualifier());
     }
 
     @Test
