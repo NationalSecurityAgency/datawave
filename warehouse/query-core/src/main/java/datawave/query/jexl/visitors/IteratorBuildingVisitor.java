@@ -1642,8 +1642,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
 
-    public IteratorBuildingVisitor setSource(SourceFactory sourceFactory, IteratorEnvironment env) {
-        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
+    public IteratorBuildingVisitor setSource(SourceFactory<Key,Value> sourceFactory, IteratorEnvironment env) {
+        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy("IBV");
         this.source = new SourceManager(skvi);
         this.env = env;
         Map<String,String> options = Maps.newHashMap();

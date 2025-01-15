@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -165,6 +166,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected SortedKeyValueIterator<Key,Value> source;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
+    protected int numberOfDeepCopies = 0;
+    protected List<String> deepCopyStages = new LinkedList<>();
+
     protected Map<String,String> documentOptions;
     protected NestedIterator<Key> initKeySource, seekKeySource;
     protected Iterator<Entry<Key,Document>> documentIterator;
@@ -256,7 +260,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         if (isDebugMultithreadedSources()) {
-            this.source = new SourceThreadTrackingIterator(this.source);
+            this.source = new SourceThreadTrackingIterator<>(this.source);
         }
 
         this.sourceForDeepCopies = this.source.deepCopy(this.myEnvironment);
@@ -431,9 +435,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // Create the pipeline iterator for document aggregation and
             // evaluation within a thread pool
+
+            SortedKeyValueIterator<Key,Value> pipelineSource = null;
+            if (getMaxEvaluationPipelines() > 1) {
+                // only need to create a source copy IFF more than one evaluation pipeline will be used
+                // else, the query iterator itself is passed in and the method call to createDocumentPipeline
+                // can use the proper method for requesting sources
+                pipelineSource = getSourceDeepCopy("pipeline source");
+            }
             PipelineIterator pipelineIter = PipelineFactory.createIterator(this.seekKeySource, getMaxEvaluationPipelines(), getMaxPipelineCachedResults(),
-                            getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment,
-                            yield, yieldThresholdMs, columnFamilies, inclusive);
+                            getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, pipelineSource, myEnvironment, yield, yieldThresholdMs,
+                            columnFamilies, inclusive);
 
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
@@ -657,12 +669,26 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *
      * @return the deep copy of the source
      */
+    @Override
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        SortedKeyValueIterator<Key,Value> sourceDeepCopy;
+        return getSourceDeepCopy(null);
+    }
+
+    /**
+     * A version of {@link #getSourceDeepCopy()} that tracks the number of deep copies made and optionally tracks which stages requested a source
+     *
+     * @param stage
+     *            the stage name, may be null
+     * @return a source deep copy
+     */
+    @Override
+    @SuppressWarnings("SynchronizeOnNonFinalField")
+    public SortedKeyValueIterator<Key,Value> getSourceDeepCopy(String stage) {
         synchronized (sourceForDeepCopies) {
-            sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
+            numberOfDeepCopies++;
+            deepCopyStages.add(stage);
+            return sourceForDeepCopies.deepCopy(this.myEnvironment);
         }
-        return sourceDeepCopy;
     }
 
     /**
@@ -759,7 +785,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             };
         } else {
             //  @formatter:off
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEventEvaluationFilter(), this.includeHierarchyFields,
+            SortedKeyValueIterator<Key, Value> docMapperSource = getSourceDeepCopy("document pipeline - key to document data");
+            docMapper = new KeyToDocumentData(docMapperSource, myEnvironment, documentOptions, getEquality(), getEventEvaluationFilter(), this.includeHierarchyFields,
                             this.includeHierarchyFields)
                             .withRangeProvider(getRangeProvider())
                             .withAggregationThreshold(getDocAggregationThresholdMs());
@@ -803,11 +830,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
 
+        SortedKeyValueIterator<Key,Value> evaluationSource = getSourceDeepCopy("document pipeline - evaluation");
+
         if (gatherTimingDetails()) {
-            documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, deepSourceCopy,
+            documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, evaluationSource,
                             documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies, inclusive));
         } else {
-            documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
+            documents = getEvaluation(documentSpecificSource, evaluationSource, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
                             inclusive);
         }
 
@@ -820,9 +849,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // query logics
         // or if the document was not aggregated in the first place because the
         // field index fields completely satisfied the query
-        documents = mapDocument(deepSourceCopy, documents, compositeMetadata);
+        // No source is passed, mapDocument() uses the correct method to request a source
+        documents = mapDocument(null, documents, compositeMetadata);
 
-        // apply any configured post processing
+        // apply any configured post-processing
         documents = getPostProcessingChain(documents);
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
@@ -929,9 +959,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             if (this.isTermFrequenciesRequired()) {
 
+                SortedKeyValueIterator<Key,Value> tfSource = getSourceDeepCopy("tf aggregation");
+
                 TermFrequencyConfig tfConfig = new TermFrequencyConfig();
                 tfConfig.setScript(getScript(documentSource));
-                tfConfig.setSource(sourceDeepCopy.deepCopy(myEnvironment));
+                tfConfig.setSource(tfSource);
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());
                 tfConfig.setTypeMetadata(getTypeMetadata());
@@ -1084,7 +1116,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             //  @formatter:off
-            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
+
+            SortedKeyValueIterator<Key, Value> docMapperSource = getSourceDeepCopy("map document - key to document");
+
+            final KeyToDocumentData docMapper = new KeyToDocumentData(docMapperSource, this.myEnvironment, this.documentOptions, getEquality(),
                             getEventEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields)
                             .withRangeProvider(getRangeProvider())
                             .withAggregationThreshold(getDocAggregationThresholdMs());
@@ -1150,6 +1185,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             this.key = null;
             this.value = null;
+
+            if (log.isTraceEnabled()) {
+                synchronized (this) {
+                    log.trace("=== produced " + numberOfDeepCopies + " source deep copies ===");
+                    for (String stage : deepCopyStages) {
+                        log.trace(stage);
+                    }
+                }
+            }
         }
     }
 
@@ -1465,7 +1509,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
             @Override
             public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
-                return sourceFactory.getSourceDeepCopy();
+                return sourceFactory.getSourceDeepCopy("ivarator");
             }
         };
     }
@@ -1613,7 +1657,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             synchronized (getExcerptFields()) {
                 if (excerptTransform == null) {
                     try {
-                        excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                        SortedKeyValueIterator<Key,Value> excerptSource = getSourceDeepCopy("excerpt transform");
+
+                        excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, excerptSource,
                                         excerptIterator.getDeclaredConstructor().newInstance());
                     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create excerpt transform", e);

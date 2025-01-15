@@ -976,7 +976,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class SourceFactory implements datawave.query.iterator.SourceFactory<Key,Value> {
-        private Iterator<Map.Entry<Key,Value>> iterator;
+        private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
             this.iterator = iterator;
@@ -984,6 +984,11 @@ public class IteratorBuildingVisitorTest {
 
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
+            return new SortedListKeyValueIterator(iterator);
+        }
+
+        @Override
+        public SortedKeyValueIterator<Key,Value> getSourceDeepCopy(String stage) {
             return new SortedListKeyValueIterator(iterator);
         }
     }
