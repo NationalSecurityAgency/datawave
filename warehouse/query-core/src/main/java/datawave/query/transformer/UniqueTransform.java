@@ -583,7 +583,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                                 .withMapFactory(new FileByteDocumentSortedMap.Factory())
                                 .build();
                 // @formatter:on
-                
+
                 if (transform.uniqueFields.getMaxCount() > 0) {
                     // @formatter:off
                     //noinspection unchecked
