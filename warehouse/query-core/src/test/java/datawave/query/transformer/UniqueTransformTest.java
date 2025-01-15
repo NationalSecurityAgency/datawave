@@ -598,7 +598,7 @@ public class UniqueTransformTest {
         }
 
         InputDocumentBuilder withKeyValue(String key, String value) {
-            document.put(key, new DiacriticContent(value, document.getMetadata(), true), true, false);
+            document.put(key, new DiacriticContent(value, document.getMetadata(), true), true);
             return this;
         }
 

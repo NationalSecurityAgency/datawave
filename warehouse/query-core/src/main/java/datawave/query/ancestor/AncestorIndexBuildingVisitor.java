@@ -50,14 +50,14 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (limitLookup && !negation) {
                 final String identifier = JexlASTHelper.getIdentifier(node);
                 if (!disableFiEval && fieldsToAggregate.contains(identifier)) {
-                    final SortedKeyValueIterator<Key,Value> baseIterator = source.deepCopy(env);
+                    final SortedKeyValueIterator<Key,Value> baseIterator = deepCopySource();
                     kvIter = new AncestorChildExpansionIterator(baseIterator, getMembers(), equality);
                     seekIndexOnlyDocument(kvIter, node);
                 } else {
                     kvIter = new IteratorToSortedKeyValueIterator(getNodeEntry(node).iterator());
                 }
             } else {
-                kvIter = source.deepCopy(env);
+                kvIter = deepCopySource();
                 seekIndexOnlyDocument(kvIter, node);
             }
 
@@ -105,7 +105,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         // use the cached tree if available
         if (members == null) {
-            SortedKeyValueIterator<Key,Value> kvIter = source.deepCopy(env);
+            SortedKeyValueIterator<Key,Value> kvIter = deepCopySource();
             members = getMembers(wholeDocRange.getStartKey().getRow().toString(), tld, dataType, kvIter);
 
             // set the members for later use
@@ -132,7 +132,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
 
         // use the cached tree if available
         if (members == null) {
-            SortedKeyValueIterator<Key,Value> kvIter = source.deepCopy(env);
+            SortedKeyValueIterator<Key,Value> kvIter = deepCopySource();
             members = getMembers(wholeDocRange.getStartKey().getRow().toString(), tld, dataType, kvIter);
 
             // set the members for later use
