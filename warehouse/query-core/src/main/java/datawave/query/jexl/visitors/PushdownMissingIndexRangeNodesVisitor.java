@@ -176,6 +176,8 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     }
 
     private boolean missingIndexRange(ASTERNode node) {
+        // TODO: need implementation for FieldIndexHole? Need field name, not values...
+        // why is FieldIndexHole not related to IndexHole?
         Object literal = JexlASTHelper.getLiteralValue(node);
         if (literal != null) {
             String strLiteral = String.valueOf(literal);
@@ -194,6 +196,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                     }
 
                     for (IndexHole hole : indexHoles) {
+                        // TODO: add overlaps method to FieldIndexHole...seriously what's up with the values
                         if (hole.overlaps(this.beginDate, this.endDate, leadingLiteral, endRange.toString())) {
                             return true;
                         } else if (hole.after(strLiteral)) {

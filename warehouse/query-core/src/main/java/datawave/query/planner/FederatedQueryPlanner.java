@@ -65,6 +65,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
+    private SortedSet<Pair<Date,Date>> relevantHoles;
 
     /**
      * Return a new {@link FederatedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
@@ -333,6 +334,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             configCopy.setBeginDate(dateRange.getLeft());
             configCopy.setEndDate(dateRange.getRight());
 
+            // TODO: Why are we not setting index holes / relevant holes on this config?
+
             // we want to make sure the same query id for tracking purposes and execution
             configCopy.getQuery().setId(queryId);
 
@@ -553,7 +556,9 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 subDateRanges.add(Pair.of(oneMsAfter(endOfPrevRange), config.getEndDate()));
             }
         }
-
+        // TODO: use relevantHoles to make FieldIndexHoles to pass to DefaultQueryPlanner
+        // TODO: rename IndexHole and FieldIndexHole to disambiguate and also not conflate with fi
+        this.relevantHoles = relevantHoles;
         return subDateRanges;
     }
 
@@ -650,7 +655,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
      * Return whether the given date falls within the start and end date of the original query's target date range, inclusively.
      */
     private boolean isInDateRange(Date beginDate, Date endDate, Date date) {
-        return beginDate.getTime() <= date.getTime() && date.getTime() <= endDate.getTime();
+        return (beginDate.getTime() <= date.getTime() && date.getTime() <= endDate.getTime())
+                        || (beginDate.getTime() >= date.getTime() && date.getTime() <= endDate.getTime()); // fully in a hole
     }
 
     /**

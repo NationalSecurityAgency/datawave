@@ -49,6 +49,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
@@ -670,6 +671,28 @@ public abstract class CompositeFunctionsTest {
         }
     }
 
+
+    @Test
+    public void testWithHoles(){
+        eventQueryLogic.setQueryPlanner(new FederatedQueryPlanner());
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        //TODO: why is HOLE not being pushed down with _Hole_ marker?!
+        String[] queryStrings = {
+                "UUID == 'CORLEONE' AND  HOLE == 'FOO'"
+        };
+
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
+        for (int i = 0; i < queryStrings.length; i++) {
+            try {
+                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20210103"), format.parse("20210103"), extraParameters);
+            } catch (Throwable t) {
+                log.error(t);
+                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
+            }
+        }
+    }
     @Test
     public void testTLDWithLuceneAndIdentifierToIdentifierJexl() throws Exception {
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());

@@ -389,6 +389,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
         setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
+
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -1005,6 +1006,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getIndexHoles().isEmpty()) {
             config.setQueryTree(timedMarkIndexHoles(timers, config.getQueryTree(), config, metadataHelper));
         }
+        // TODO: also check for FieldIndexHoles (please ffs rename)
 
         // lets precompute the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;

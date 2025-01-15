@@ -885,9 +885,22 @@ public class WiseGuysIngest {
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210103"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("HOLE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20130101"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20130102"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210103"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(30L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210104"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(30L)));
+
+            // just indexed 20130101
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), timeStamp, emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("UUID");
