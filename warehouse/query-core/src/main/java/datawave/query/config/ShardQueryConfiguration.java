@@ -47,13 +47,11 @@ import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -439,11 +437,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the excerpt iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
-    private SummaryOptions summaryOptions = new SummaryOptions();
-
-    // The class for the summary iterator
-    private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
-
     /**
      * A bloom filter to avoid duplicate results if needed
      */
@@ -527,6 +520,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private double fieldIndexHoleMinThreshold = 1.0d;
     private String fieldRuleClassName;
+
+    /**
+     * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
+     * SHARDS_AND_DAYS hint.
+     */
+    private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
+
+    /**
+     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
+     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
+     */
+    private boolean shardsAndDaysHintAllowed = true;
 
     /**
      * Default constructor
@@ -746,8 +751,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
-        this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
-        this.setSummaryIterator(other.getSummaryIterator());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
@@ -770,6 +773,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setNoExpansionIfCurrentDateTypes(
+                        other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
     /**
@@ -2626,24 +2632,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptIterator = excerptIterator;
     }
 
-    public SummaryOptions getSummaryOptions() {
-        return summaryOptions;
-    }
-
-    public void setSummaryOptions(SummaryOptions summaryOptions) {
-        if (summaryOptions != null) {
-            this.summaryOptions = summaryOptions;
-        }
-    }
-
-    public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
-        return summaryIterator;
-    }
-
-    public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
-        this.summaryIterator = summaryIterator;
-    }
-
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -2842,12 +2830,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-        if (!super.equals(o))
+        }
+        if (!super.equals(o)) {
             return false;
+        }
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
@@ -3031,7 +3022,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
-                Objects.equals(getSummaryOptions(), that.getSummaryOptions()) &&
                 getFiFieldSeek() == that.getFiFieldSeek() &&
                 getFiNextSeek() == that.getFiNextSeek() &&
                 getEventFieldSeek() == that.getEventFieldSeek() &&
@@ -3049,7 +3039,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
-                getCardinalityThreshold() == that.getCardinalityThreshold();
+                getCardinalityThreshold() == that.getCardinalityThreshold() &&
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+ isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+
         // @formatter:on
     }
 
@@ -3237,7 +3230,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getLenientFields(),
                 getStrictFields(),
                 getExcerptFields(),
-                getSummaryOptions(),
                 getFiFieldSeek(),
                 getFiNextSeek(),
                 getEventFieldSeek(),
@@ -3255,7 +3247,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
-                getCardinalityThreshold()
+                getCardinalityThreshold(),
+                getNoExpansionIfCurrentDateTypes(),
+                isShardsAndDaysHintAllowed()
         );
         // @formatter:on
     }
@@ -3289,5 +3283,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public Set<String> getNoExpansionIfCurrentDateTypes() {
+        return noExpansionIfCurrentDateTypes;
+    }
+
+    public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
+        this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
+    }
+
+    public boolean isShardsAndDaysHintAllowed() {
+        return shardsAndDaysHintAllowed;
+    }
+
+    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
+        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 }

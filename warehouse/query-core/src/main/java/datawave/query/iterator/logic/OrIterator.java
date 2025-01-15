@@ -1,5 +1,6 @@
 package datawave.query.iterator.logic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,6 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -221,6 +225,13 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         } else {
             includeHeads = Util.getEmpty();
             return null;
+        }
+    }
+
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        for (NestedIterator<T> child : children()) {
+            child.seek(range, columnFamilies, inclusive);
         }
     }
 
