@@ -17,17 +17,28 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.policy.IngestPolicyEnforcer;
 
-public class ForwardIndexOnlyIngestHelper implements IngestHelperInterface {
+public class RestrictedIngestHelper implements IngestHelperInterface {
     private final IngestHelperInterface delegate;
 
-    public ForwardIndexOnlyIngestHelper(IngestHelperInterface delegate) {
+    private final boolean restrictShard;
+    private final boolean restrictReverseIndex;
+
+    public RestrictedIngestHelper(IngestHelperInterface delegate, boolean restrictShard, boolean restrictReverseIndex) {
         this.delegate = delegate;
+
+        this.restrictShard = restrictShard;
+        this.restrictReverseIndex = restrictReverseIndex;
     }
 
-    // only non-delegated method
+    // non-delegated methods
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        return false;
+        return !this.restrictReverseIndex && delegate.isReverseIndexedField(fieldName);
+    }
+
+    @Override
+    public boolean isShardExcluded(String fieldName) {
+        return this.restrictShard || delegate.isShardExcluded(fieldName);
     }
 
     @Override

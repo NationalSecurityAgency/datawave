@@ -29,7 +29,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -58,28 +57,31 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.protobuf.Uid;
+import it.unimi.dsi.fastutil.Hash;
 
 public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
-    public static final String CLEANUP_SHARD = "ShardReindexMapper.cleanupShard";
-    public static final String PROPAGATE_DELETES = "ShardReindexMapper.propagateDeletes";
-    public static final String DEFAULT_DATA_TYPE = "ShardReindexMapper.defaultDataType";
-    public static final String REPROCESS_EVENTS = "ShardReindexMapper.reprocessEvents";
-    public static final String FLOOR_TIMESTAMPS = "ShardReindexMapper.floorTimestamps";
-    public static final String EVENT_OVERRIDE = "ShardReindexMapper.eventOverride";
-    public static final String EXPORT_SHARD = "ShardReindexMapper.exportShard";
-    public static final String GENERATE_TF = "ShardReindexMapper.generateTF";
-    public static final String DATA_TYPE_HANDLER = "ShardReindexMapper.dataTypeHandler";
-    public static final String ENABLE_REINDEX_COUNTERS = "ShardReindexMapper.enableReindexCounters";
-    public static final String DUMP_COUNTERS = "ShardReindexMapper.dumpCounters";
-    public static final String BATCH_MODE = "ShardReindexMapper.batchMode";
-    public static final String GENERATE_METADATA = "ShardReindexMapper.generateMetadata";
-    public static final String METADATA_ONLY = "ShardReindexMapper.metadataOnly";
-    public static final String METADATA_DISABLE_FREQUENCY_COUNTS = "ShardReindexMapper.metadata.disable.frequency.counts";
-    public static final String METADATA_GENERATE_FROM_FI = "ShardReindexMapper.metadata.generate.from.fi";
-    public static final String METADATA_GENERATE_RI_FROM_FI = "ShardReindexMapper.metadata.generate.ri.from.fi";
-    public static final String METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP = "ShardReindexMapper.metadata.generate.ri.from.fi.with.lookup";
-    public static final String METADATA_GENERATE_FROM_TF = "ShardReindexMapper.metadata.generate.from.tf";
-
+    private static final String CLASS_NAME = ShardReindexMapper.class.getName();
+    public static final String CLEANUP_SHARD = CLASS_NAME + ".cleanupShard";
+    public static final String PROPAGATE_DELETES = CLASS_NAME + ".propagateDeletes";
+    public static final String DEFAULT_DATA_TYPE = CLASS_NAME + ".defaultDataType";
+    public static final String REPROCESS_EVENTS = CLASS_NAME + ".reprocessEvents";
+    public static final String FLOOR_TIMESTAMPS = CLASS_NAME + ".floorTimestamps";
+    public static final String EVENT_OVERRIDE = CLASS_NAME + ".eventOverride";
+    public static final String EXPORT_SHARD = CLASS_NAME + ".exportShard";
+    public static final String GENERATE_TF = CLASS_NAME + ".generateTF";
+    public static final String DATA_TYPE_HANDLER = CLASS_NAME + ".dataTypeHandler";
+    public static final String ENABLE_REINDEX_COUNTERS = CLASS_NAME + ".enableReindexCounters";
+    public static final String DUMP_COUNTERS = CLASS_NAME + ".dumpCounters";
+    public static final String BATCH_MODE = CLASS_NAME + ".batchMode";
+    public static final String GENERATE_METADATA = CLASS_NAME + ".generateMetadata";
+    public static final String METADATA_ONLY = CLASS_NAME + ".metadataOnly";
+    public static final String METADATA_DISABLE_FREQUENCY_COUNTS = CLASS_NAME + ".metadata.disable.frequency.counts";
+    public static final String METADATA_GENERATE_FROM_FI = CLASS_NAME + ".metadata.generate.from.fi";
+    public static final String METADATA_GENERATE_RI_FROM_FI = CLASS_NAME + ".metadata.generate.ri.from.fi";
+    public static final String LOOKUP_EVENT_METADATA_FROM_FI = CLASS_NAME + ".lookup.event.metadata.from.fi";
+    public static final String LOOKUP_RI_METADATA_FROM_FI = CLASS_NAME + ".lookup.ri.metadata.from.fi";
+    public static final String METADATA_GENERATE_FROM_TF = CLASS_NAME + ".metadata.generate.from.tf";
+    public static final String METADATA_GENERATE_EVENT_FROM_FI = CLASS_NAME + ".metadata.generate.event.from.fi";
     private static final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
 
     private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
@@ -126,13 +128,16 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     // disable metadataFrequency entries from being written
     private boolean disableMetadataFrequencyCounts = false;
     private boolean generateMetadataFromFi = false;
-    private boolean generateMetadataFromTf = false;
     private boolean generateReverseIndexMetadataFromFi = false;
-    private boolean generateReverseIndexMetadataWithLookup = false;
+    private boolean generateEventMetadataFromFi = false;
+    private boolean lookupEventMetadataFromFi = false;
+    private boolean lookupReverseIndexMetadataFromFi = false;
+    private boolean generateMetadataFromTf = false;
 
     // generating metadata for fi/tf
     private EventMetadata generatedEventMetadata = null;
     private String lastMetadataField = null;
+    private Map<String,Boolean> dataTypeEventLookupMap;
     private Map<String,Boolean> dataTypeReverseMetadataLookupMap;
     private AccumuloClient accumuloClient = null;
 
@@ -206,19 +211,25 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         log.info("reprocessing events: " + this.reprocessEvents);
 
         this.floorTimestamps = config.getBoolean(FLOOR_TIMESTAMPS, this.floorTimestamps);
+
+        // config for DatawaveMetadata reprocessing
         this.metadataOnly = config.getBoolean(METADATA_ONLY, this.metadataOnly);
         this.disableMetadataFrequencyCounts = config.getBoolean(METADATA_DISABLE_FREQUENCY_COUNTS, this.disableMetadataFrequencyCounts);
         this.generateMetadataFromFi = config.getBoolean(METADATA_GENERATE_FROM_FI, this.generateMetadataFromFi);
         this.generateMetadataFromTf = config.getBoolean(METADATA_GENERATE_FROM_TF, this.generateMetadataFromTf);
         this.generateReverseIndexMetadataFromFi = config.getBoolean(METADATA_GENERATE_RI_FROM_FI, this.generateReverseIndexMetadataFromFi);
-        this.generateReverseIndexMetadataWithLookup = config.getBoolean(METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP, this.generateReverseIndexMetadataWithLookup);
+        this.lookupEventMetadataFromFi = config.getBoolean(LOOKUP_EVENT_METADATA_FROM_FI, this.lookupEventMetadataFromFi);
+        this.lookupReverseIndexMetadataFromFi = config.getBoolean(LOOKUP_RI_METADATA_FROM_FI, this.lookupReverseIndexMetadataFromFi);
+        this.generateEventMetadataFromFi = config.getBoolean(METADATA_GENERATE_EVENT_FROM_FI, this.generateEventMetadataFromFi);
 
         if (this.generateMetadataFromFi || this.generateMetadataFromTf) {
             // create an EventMetadata for metadata creation from non-event data
             this.generatedEventMetadata = new EventMetadata(new Text(config.get(SHARD_TNAME)), new Text(config.get(METADATA_TABLE_NAME)),
                             config.get(LOAD_DATES_TABLE_NAME_PROP) != null ? new Text(config.get(LOAD_DATES_TABLE_NAME_PROP)) : null,
                             new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
-            if (this.generateReverseIndexMetadataFromFi && this.generateReverseIndexMetadataWithLookup) {
+            // when generating metadata with lookups need an accumulo client to do the lookups
+            if ((this.generateReverseIndexMetadataFromFi && this.lookupReverseIndexMetadataFromFi)
+                            || (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi)) {
                 if (this.accumuloClient == null) {
                     AccumuloHelper accumuloHelper = new AccumuloHelper();
                     accumuloHelper.setup(config);
@@ -426,14 +437,59 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         // get the appropriate helper for the data type
         IngestHelperInterface fieldHelper = getIngestHelper(key, context.getConfiguration(), dataType);
 
-        if (!this.generateReverseIndexMetadataFromFi) {
-            // if not generating the ri then wrap the helper to prevent the ri entry from being created
-            fieldHelper = new ForwardIndexOnlyIngestHelper(fieldHelper);
-        } else if (this.generateReverseIndexMetadataWithLookup) {
-            parsedFi = parseFiCf(key, parsedFi);
-            final String field = parsedFi.getField();
+        // if the field isn't indexed anymore, do nothing
+        parsedFi = parseFiCf(key, parsedFi);
+        final String field = parsedFi.getField();
+        if (!fieldHelper.isIndexedField(field) && !fieldHelper.isReverseIndexedField(field)) {
+            return;
+        }
 
-            if (!field.equals(lastMetadataField)) {
+        if (!this.generateEventMetadataFromFi || !this.generateReverseIndexMetadataFromFi) {
+            // restrict the fieldHelper to prevent these metadata entries from being created
+            fieldHelper = new RestrictedIngestHelper(fieldHelper, !this.generateEventMetadataFromFi, !this.generateReverseIndexMetadataFromFi);
+        }
+
+        boolean restrictShard = false;
+        boolean restrictReverseIndex = false;
+
+        if (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi) {
+            if (!field.equals(this.lastMetadataField)) {
+                // clear the lookup cache since its a new field
+                this.dataTypeEventLookupMap = new HashMap<>();
+                this.lastMetadataField = field;
+            }
+
+            if (this.dataTypeEventLookupMap.isEmpty() || !this.dataTypeEventLookupMap.containsKey(dataType)) {
+                // is it an event field?
+                if (!fieldHelper.isShardExcluded(field)) {
+                    // do the lookup into the event
+                    try (Scanner eventScanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_TNAME))) {
+                        // create a single key range that looks up the value in the reverse index table
+                        // event key structure = shard_id dataType\0uid field\0value, but the value is normalized, so only look for the field
+                        Key startKey = new Key(key.getRow().toString(), dataType + '\u0000' + parsedFi.getUid(), field + '\u0000');
+                        // also don't know the field won't be in grouping notation, so have to allow for that in a potential event field name
+                        Key endKey = new Key(key.getRow().toString(), dataType + '\u0000' + parsedFi.getUid(), field + '.' + '\uFFFF');
+                        Range r = new Range(startKey, true, endKey, true);
+                        eventScanner.setRange(r);
+                        // if there is a hit on this field value it is in the event
+                        this.dataTypeEventLookupMap.put(dataType, eventScanner.iterator().hasNext());
+                    } catch (TableNotFoundException | AccumuloSecurityException | AccumuloException e) {
+                        throw new RuntimeException("failed to lookup reverse index field in accumulo", e);
+                    }
+                } else {
+                    // no mod to metadata necessary because it isn't an event field anyway
+                    this.dataTypeEventLookupMap.put(dataType, true);
+                }
+            }
+
+            if (!this.dataTypeEventLookupMap.get(dataType)) {
+                restrictShard = true;
+            }
+            // TODO refactor this some to handle the disabled count short cut in combintation with the potential fi lookup
+        }
+
+        if (this.generateReverseIndexMetadataFromFi && this.lookupReverseIndexMetadataFromFi) {
+            if (!field.equals(this.lastMetadataField)) {
                 // clear the data type lookup cache because it is a new field
                 this.dataTypeReverseMetadataLookupMap = new HashMap<>();
                 this.lastMetadataField = field;
@@ -468,10 +524,14 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 }
             }
 
-            // if the field isn't valid wrap it up to prevent the reverse fi from being generated
+            // prevent the fi from being generated even though the field is configured for it
             if (!this.dataTypeReverseMetadataLookupMap.get(dataType)) {
-                fieldHelper = new ForwardIndexOnlyIngestHelper(fieldHelper);
+                restrictReverseIndex = true;
             }
+        }
+
+        if (restrictShard || restrictReverseIndex) {
+            fieldHelper = new RestrictedIngestHelper(fieldHelper, restrictShard, restrictReverseIndex);
         }
 
         // create an event for the metadata generation
