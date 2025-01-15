@@ -69,8 +69,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_SECOND_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION,
-                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, QueryFunctions.GROUPBY_FUNCTION,
-                    QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.SUMMARY_FUNCTION, QueryFunctions.NO_EXPANSION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
+                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
                     QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX,
                     QueryFunctions.AVERAGE, QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
 
@@ -267,12 +267,6 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
                     updateFieldsOption(optionsMap, QueryParameters.EXCERPT_FIELDS, optionsList);
-                    return null;
-                }
-                case QueryFunctions.SUMMARY_FUNCTION: {
-                    List<String> options = new ArrayList<>();
-                    this.visit(node, options);
-                    optionsMap.put(QueryParameters.SUMMARY_OPTIONS, JOINER.join(options));
                     return null;
                 }
                 case QueryFunctions.NO_EXPANSION: {
