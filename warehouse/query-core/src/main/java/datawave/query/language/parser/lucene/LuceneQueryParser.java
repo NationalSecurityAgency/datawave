@@ -18,6 +18,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 
+import datawave.query.Constants;
 import datawave.query.language.builder.lucene.AccumuloQueryTreeBuilder;
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.language.parser.ParseException;
@@ -75,8 +76,8 @@ public class LuceneQueryParser implements LuceneSyntaxQueryParser {
 
     @Override
     public QueryNode parseToLuceneQueryNode(String query) throws QueryNodeParseException {
-        query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
-        query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_LEFT, Constants.QUOTE); // replace open smart quote 147
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_RIGHT, Constants.QUOTE); // replace close smart quote 148
 
         Locale.setDefault(Locale.US);
         AccumuloSyntaxParser parser = new AccumuloSyntaxParser();

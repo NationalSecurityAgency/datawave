@@ -16,6 +16,7 @@ import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfi
 import org.checkerframework.checker.units.qual.A;
 
 import datawave.ingest.data.tokenize.StandardAnalyzer;
+import datawave.query.Constants;
 import datawave.query.language.builder.jexl.JexlTreeBuilder;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.ParseException;
@@ -83,11 +84,11 @@ public class LuceneToJexlQueryParser implements LuceneSyntaxQueryParser {
 
     @Override
     public org.apache.lucene.queryparser.flexible.core.nodes.QueryNode parseToLuceneQueryNode(String query) throws QueryNodeParseException {
-        query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
-        query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_LEFT, Constants.QUOTE); // replace open smart quote 147
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_RIGHT, Constants.QUOTE); // replace close smart quote 148
 
-        query = query.replaceAll("\\u201c", "\""); // replace open left double quote
-        query = query.replaceAll("\\u201d", "\""); // replace close right double quote
+        query = query.replaceAll(Constants.UTF_16_DOUBLE_QUOTE_LEFT, Constants.QUOTE); // replace open left double quote
+        query = query.replaceAll(Constants.UTF_16_DOUBLE_QUOTE_RIGHT, Constants.QUOTE); // replace close right double quote
 
         Locale.setDefault(Locale.US);
         AccumuloSyntaxParser syntaxParser = new AccumuloSyntaxParser();
