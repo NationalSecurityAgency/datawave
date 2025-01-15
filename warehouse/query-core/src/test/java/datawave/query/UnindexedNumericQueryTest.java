@@ -67,8 +67,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         log.info("------  testNumericTerm  ------");
 
         String min = "115";
-        String iowa = "'indiana'";
-        String query = CityField.STATE.name() + EQ_OP + iowa + AND_OP + CityField.NUM.name() + GT_OP + min;
+        String query = "STATE == 'indiana' and NUM > 115";
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);
         // verify NUM is NumberType
