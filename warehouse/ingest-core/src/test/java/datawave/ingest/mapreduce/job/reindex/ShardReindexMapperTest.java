@@ -21,12 +21,19 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -85,21 +92,9 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.set(SHARD_GRIDX_TNAME, "shardReverseIndex");
         conf.set(METADATA_TABLE_NAME, "DatawaveMetadata");
 
-        // simple required config for a type with some indexed fields
-        conf.set("samplecsv" + DATA_HEADER, "a,b,c,d,e");
-        conf.set("samplecsv" + DATA_SEP, ",");
-        conf.set("samplecsv" + INDEX_FIELDS, "FIELDA,FIELDB,FIELDC,FIELDE,FIELDE_TOKEN,FIELDF,FIELDF_TOKEN,FIELDG,FIELDG_TOKEN");
-        conf.set("samplecsv" + REVERSE_INDEX_FIELDS, "FIELDB,FIELDD");
-        conf.set("samplecsv" + INDEX_ONLY_FIELDS, "FIELDE,FIELDE_TOKEN");
-        conf.set("samplecsv" + TOKEN_INDEX_ALLOWLIST, "FIELDE,FIELDF,FIELDG");
-
-        Type t = new Type("samplecsv", CSVIngestHelper.class, null, null, 0, null);
-        // this needs to be called each test to clear any static config that may be cached
-        t.clearIngestHelper();
-
         TypeRegistry.reset();
-        TypeRegistry registry = TypeRegistry.getInstance(conf);
-        registry.put(t.typeName(), t);
+        setupDataType("samplecsv", "FIELDA,FIELDB,FIELDC,FIELDE,FIELDE_TOKEN,FIELDF,FIELDF_TOKEN,FIELDG,FIELDG_TOKEN", "FIELDB,FIELDD", "FIELDE,FIELDE_TOKEN",
+                        "FIELDE,FIELDF,FIELDG");
 
         shardIdFactory = new ShardIdFactory(conf);
 
@@ -109,6 +104,23 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         // create contextWriter mock
         mockContextWriter = createMock(ContextWriter.class);
         context = createMock(Mapper.Context.class);
+    }
+
+    private void setupDataType(String name, String indexed, String reverseIndexed, String indexOnly, String tokenized) {
+        // simple required config for a type with some indexed fields
+        conf.set(name + DATA_HEADER, "a,b,c,d,e");
+        conf.set(name + DATA_SEP, ",");
+        conf.set(name + INDEX_FIELDS, indexed);
+        conf.set(name + REVERSE_INDEX_FIELDS, reverseIndexed);
+        conf.set(name + INDEX_ONLY_FIELDS, indexOnly);
+        conf.set(name + TOKEN_INDEX_ALLOWLIST, tokenized);
+
+        Type t = new Type(name, CSVIngestHelper.class, null, null, 0, null);
+        // this needs to be called each test to clear any static config that may be cached
+        t.clearIngestHelper();
+
+        TypeRegistry registry = TypeRegistry.getInstance(conf);
+        registry.put(t.typeName(), t);
     }
 
     @Test
@@ -1126,6 +1138,460 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mapper.setup(context);
         mapper.setContextWriter(mockContextWriter);
         mapper.map(event, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_deletedKey_metadataOnly_test() throws IOException, InterruptedException {
+        Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        fiKey.setDeleted(true);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexed_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+        fiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDA", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key fKey = new Key("FIELDA", "f", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
+        mockContextWriter.write(eq(fBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDA", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDA", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedNoFrequency_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+        fiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDA", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDA", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDA", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedAssumeReverse_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+        fiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDB", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key riKey = new Key("FIELDB", "ri", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey riBik = new BulkIngestKey(new Text("DatawaveMetadata"), riKey);
+        mockContextWriter.write(eq(riBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDB", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDB", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedNoReverse_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+        fiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDB", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDB", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDB", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedVerifyReverseFail_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        AccumuloClient mockClient = createMock(AccumuloClient.class);
+        Scanner mockScanner = createMock(Scanner.class);
+
+        Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+        fiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDB", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDB", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDB", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        expect(mockClient.createScanner("shardReverseIndex")).andReturn(mockScanner);
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        mockScanner.setRange(eq(new Range(riLookupKey, true, riLookupKey, true)));
+        expect(mockScanner.iterator()).andReturn(Collections.emptyIterator());
+        mockScanner.close();
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedVerifyReverse_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        AccumuloClient mockClient = createMock(AccumuloClient.class);
+        Scanner mockScanner = createMock(Scanner.class);
+
+        Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        // this key will not have a scanner created because this field/datatype has already been validated and no counts are being generated
+        Key anotherFiKey = new Key("row", FI_START + "FIELDB", "XYZ" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+        fiKey.setTimestamp(eventTime);
+        anotherFiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(2);
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDB", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key riKey = new Key("FIELDB", "ri", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey riBik = new BulkIngestKey(new Text("DatawaveMetadata"), riKey);
+        mockContextWriter.write(eq(riBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDB", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDB", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        expect(mockClient.createScanner("shardReverseIndex")).andReturn(mockScanner);
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        mockScanner.setRange(eq(new Range(riLookupKey, true, riLookupKey, true)));
+        List<Map.Entry<Key,Value>> riLookupEntries = new ArrayList<>(1);
+        riLookupEntries.add(new AbstractMap.SimpleImmutableEntry<>(new Key(), new Value()));
+        expect(mockScanner.iterator()).andReturn(riLookupEntries.iterator());
+        mockScanner.close();
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(anotherFiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedVerifyReverseCacheVerify_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        AccumuloClient mockClient = createMock(AccumuloClient.class);
+        Scanner mockScanner = createMock(Scanner.class);
+
+        setupDataType("samplecsv2", "FIELDB", "FIELDD", "FIELDE,FIELDE_TOKEN", "FIELDE,FIELDF,FIELDG");
+
+        Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        Key altFiKey = new Key("row", FI_START + "FIELDB", "DEF" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+
+        Key sample2FiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv2" + '\u0000' + "1.2.3");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+
+        fiKey.setTimestamp(eventTime);
+        altFiKey.setTimestamp(eventTime);
+        sample2FiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(3);
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDB", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key riKey = new Key("FIELDB", "ri", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey riBik = new BulkIngestKey(new Text("DatawaveMetadata"), riKey);
+        mockContextWriter.write(eq(riBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDB", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDB", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        iKey = new Key("FIELDB", "i", "samplecsv2" + '\u0000' + "20240216", fiKey.getTimestamp());
+        iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        eKey = new Key("FIELDB", "e", "samplecsv2", fiKey.getTimestamp());
+        eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        tKey = new Key("FIELDB", "t", "samplecsv2" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        expect(mockClient.createScanner("shardReverseIndex")).andReturn(mockScanner);
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        mockScanner.setRange(eq(new Range(riLookupKey, true, riLookupKey, true)));
+        List<Map.Entry<Key,Value>> riLookupEntries = new ArrayList<>(1);
+        riLookupEntries.add(new AbstractMap.SimpleImmutableEntry<>(new Key(), new Value()));
+        expect(mockScanner.iterator()).andReturn(riLookupEntries.iterator());
+        mockScanner.close();
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(altFiKey, new Value(), context);
+        mapper.map(sample2FiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_dataTypeVerify_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        AccumuloClient mockClient = createMock(AccumuloClient.class);
+        Scanner mockScanner = createMock(Scanner.class);
+
+        setupDataType("samplecsv2", "FIELDB", "FIELDD", "FIELDE,FIELDE_TOKEN", "FIELDE,FIELDF,FIELDG");
+
+        Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        Key sample2FiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv2" + '\u0000' + "1.2.3");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Date d = sdf.parse("20240216");
+        long eventTime = getTimestamp(d);
+
+        fiKey.setTimestamp(eventTime);
+        sample2FiKey.setTimestamp(eventTime);
+
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI_WITH_LOOKUP, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(2);
+        mockContextWriter.cleanup(context);
+
+        Key iKey = new Key("FIELDB", "i", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        Key riKey = new Key("FIELDB", "ri", "samplecsv" + '\u0000' + "20240216", fiKey.getTimestamp());
+        BulkIngestKey riBik = new BulkIngestKey(new Text("DatawaveMetadata"), riKey);
+        mockContextWriter.write(eq(riBik), EasyMock.isA(Value.class), eq(context));
+
+        Key eKey = new Key("FIELDB", "e", "samplecsv", fiKey.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        Key tKey = new Key("FIELDB", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        iKey = new Key("FIELDB", "i", "samplecsv2" + '\u0000' + "20240216", fiKey.getTimestamp());
+        iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+
+        eKey = new Key("FIELDB", "e", "samplecsv2", fiKey.getTimestamp());
+        eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        mockContextWriter.write(eq(eBik), EasyMock.isA(Value.class), eq(context));
+
+        tKey = new Key("FIELDB", "t", "samplecsv2" + '\u0000' + NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        mockContextWriter.write(eq(tBik), EasyMock.isA(Value.class), eq(context));
+
+        expect(mockClient.createScanner("shardReverseIndex")).andReturn(mockScanner);
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        mockScanner.setRange(eq(new Range(riLookupKey, true, riLookupKey, true)));
+        List<Map.Entry<Key,Value>> riLookupEntries = new ArrayList<>(1);
+        riLookupEntries.add(new AbstractMap.SimpleImmutableEntry<>(new Key(), new Value()));
+        expect(mockScanner.iterator()).andReturn(riLookupEntries.iterator());
+        mockScanner.close();
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(sample2FiKey, new Value(), context);
         mapper.cleanup(context);
 
         verifyAll();

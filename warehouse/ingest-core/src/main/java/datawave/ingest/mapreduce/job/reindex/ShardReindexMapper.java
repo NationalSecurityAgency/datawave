@@ -19,9 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ArrayListMultimap;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.metadata.EventMetadata;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -40,6 +37,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -49,6 +47,7 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
@@ -57,6 +56,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
+import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.protobuf.Uid;
 
 public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
@@ -162,6 +162,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     }
 
     /**
+     * Override for testing with accumulo client
+     *
+     * @param accumuloClient
+     */
+    public void setAccumuloClient(AccumuloClient accumuloClient) {
+        this.accumuloClient = accumuloClient;
+    }
+
+    /**
      * Setup the mapper and check for all required and inconsistent settings
      *
      * @param context
@@ -206,11 +215,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         if (this.generateMetadataFromFi || this.generateMetadataFromTf) {
             // create an EventMetadata for metadata creation from non-event data
-            this.generatedEventMetadata = new EventMetadata(new Text(config.get(SHARD_TNAME)), new Text(config.get(METADATA_TABLE_NAME)), config.get(LOAD_DATES_TABLE_NAME_PROP) != null ? new Text(config.get(LOAD_DATES_TABLE_NAME_PROP)) : null, new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
+            this.generatedEventMetadata = new EventMetadata(new Text(config.get(SHARD_TNAME)), new Text(config.get(METADATA_TABLE_NAME)),
+                            config.get(LOAD_DATES_TABLE_NAME_PROP) != null ? new Text(config.get(LOAD_DATES_TABLE_NAME_PROP)) : null,
+                            new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
             if (this.generateReverseIndexMetadataFromFi && this.generateReverseIndexMetadataWithLookup) {
-                AccumuloHelper accumuloHelper = new AccumuloHelper();
-                accumuloHelper.setup(config);
-                accumuloHelper.newClient();
+                if (this.accumuloClient == null) {
+                    AccumuloHelper accumuloHelper = new AccumuloHelper();
+                    accumuloHelper.setup(config);
+                    this.accumuloClient = accumuloHelper.newClient();
+                }
             }
         }
 
@@ -253,16 +266,16 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
             this.event = createEvent(config);
 
-            this.enableReindexCounters = config.getBoolean(ENABLE_REINDEX_COUNTERS, this.enableReindexCounters);
-            this.dumpCounters = config.getBoolean(DUMP_COUNTERS, this.dumpCounters);
-            if (this.enableReindexCounters) {
-                this.counters = new HashMap<>();
-            }
-
             this.batchMode = BatchMode.valueOf(config.get(BATCH_MODE, this.batchMode.toString()));
             if (this.batchMode != BatchMode.NONE) {
                 batchValues = new HashMap<>();
             }
+        }
+
+        this.enableReindexCounters = config.getBoolean(ENABLE_REINDEX_COUNTERS, this.enableReindexCounters);
+        this.dumpCounters = config.getBoolean(DUMP_COUNTERS, this.dumpCounters);
+        if (this.enableReindexCounters) {
+            this.counters = new HashMap<>();
         }
 
         // create a context
@@ -277,7 +290,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             }
 
             contextWriter.setup(config, config.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
-
 
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             throw new IOException("Failed to initialize " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
@@ -312,13 +324,22 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         if (this.generateMetadata && this.indexHandler.getMetadata() != null) {
             for (BulkIngestKey bik : this.indexHandler.getMetadata().getBulkMetadata().keySet()) {
                 for (Value v : this.indexHandler.getMetadata().getBulkMetadata().get(bik)) {
-                    contextWriter.write(bik, v, context);
+                    this.contextWriter.write(bik, v, context);
+                }
+            }
+        }
+
+        if (this.generatedEventMetadata != null) {
+            Multimap<BulkIngestKey,Value> bulkMetadata = this.generatedEventMetadata.getBulkMetadata();
+            for (BulkIngestKey bik : bulkMetadata.keySet()) {
+                for (Value v : bulkMetadata.get(bik)) {
+                    this.contextWriter.write(bik, v, context);
                 }
             }
         }
 
         // cleanup the context writer
-        contextWriter.cleanup(context);
+        this.contextWriter.cleanup(context);
 
         // output counters if used
         if (this.enableReindexCounters) {
@@ -395,6 +416,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     }
 
     private void processFiMetadata(Key key, ParsedKey parsedFi, Context context) {
+        // nothing to do for a deleted key
+        if (key.isDeleted()) {
+            return;
+        }
+
         parsedFi = parseFiCq(key, parsedFi);
         final String dataType = parsedFi.getDataType();
         // get the appropriate helper for the data type
@@ -413,7 +439,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 this.lastMetadataField = field;
             }
 
-            // fi format is row fi\0field value\0datatype\0uid so build a cache of this field's decisions to at most query accumulo once per field/dataType combination
+            // fi format is row fi\0field value\0datatype\0uid so build a cache of this field's decisions to at most query accumulo once per field/dataType
+            // combination
             if (this.dataTypeReverseMetadataLookupMap.isEmpty() || !this.dataTypeReverseMetadataLookupMap.containsKey(dataType)) {
 
                 // is it a reverse index field?
@@ -455,7 +482,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         metadataEvent.setVisibility(key.getColumnVisibilityParsed());
 
         // create the normalized field
-        Multimap<String,String> fields = ArrayListMultimap.create(1,1);
+        Multimap<String,String> fields = ArrayListMultimap.create(1, 1);
+        parsedFi = parseFiCf(key, parsedFi);
         fields.put(parsedFi.getField(), parsedFi.getValue().toString());
         Multimap<String,NormalizedContentInterface> normalizedFields = fieldHelper.normalize(fields);
 
@@ -465,7 +493,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
     private void processFIKey(Key key, Value value, Context context) throws IOException, InterruptedException {
         ParsedKey parsedFi = null;
-        if (!this.reprocessEvents || (this.reprocessEvents && this.defaultHelper.isIndexOnlyField(getFieldFromFI(key)))) {
+        if (!this.metadataOnly && (!this.reprocessEvents || (this.reprocessEvents && this.defaultHelper.isIndexOnlyField(getFieldFromFI(key))))) {
             parsedFi = processFI(context, key);
         }
 
@@ -476,7 +504,9 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
     /**
      * Remove grouping notation from a field if it exists by finding the first .
-     * @param rawField the field that may or may not contain grouping notation
+     *
+     * @param rawField
+     *            the field that may or may not contain grouping notation
      * @return the field stripped of grouping notation
      */
     private String stripGroupNotation(String rawField) {
@@ -572,7 +602,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         // quickly compare the bytes against the last processed bytes to save on parse time if possible
         if (this.lastFiBytes == null || WritableComparator.compareBytes(cf, fiBaseOffset, cf.length - fiBaseOffset, this.lastFiBytes, fiBaseOffset,
-                this.lastFiBytes.length - fiBaseOffset) != 0) {
+                        this.lastFiBytes.length - fiBaseOffset) != 0) {
             // get the field from the cf
             this.normalizedFieldName = new String(cf, fiBaseLength, cf.length - fiBaseLength);
             this.lastFiBytes = cf;

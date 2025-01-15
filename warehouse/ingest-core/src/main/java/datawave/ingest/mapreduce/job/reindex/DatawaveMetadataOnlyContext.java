@@ -1,9 +1,10 @@
 package datawave.ingest.mapreduce.job.reindex;
 
-import com.google.common.collect.Multimap;
-import datawave.data.ColumnFamilyConstants;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
+
+import java.io.IOException;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Value;
@@ -11,12 +12,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import java.io.IOException;
-import java.util.Map;
+import com.google.common.collect.Multimap;
 
-import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
+import datawave.data.ColumnFamilyConstants;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
-public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey, Value> {
+public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey,Value> {
     private final ContextWriter<BulkIngestKey,Value> delegate;
     private final boolean excludeFrequency;
 
@@ -61,14 +63,14 @@ public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey,
     }
 
     @Override
-    public void write(BulkIngestKey key, Value value, TaskInputOutputContext<?, ?, BulkIngestKey, Value> context) throws IOException, InterruptedException {
-        if (canWrite(key,value)) {
+    public void write(BulkIngestKey key, Value value, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException, InterruptedException {
+        if (canWrite(key, value)) {
             delegate.write(key, value, context);
         }
     }
 
     @Override
-    public void write(Multimap<BulkIngestKey, Value> entries, TaskInputOutputContext<?, ?, BulkIngestKey, Value> context) throws IOException, InterruptedException {
+    public void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException, InterruptedException {
         for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
             if (canWrite(entry.getKey(), entry.getValue())) {
                 delegate.write(entry.getKey(), entry.getValue(), context);
@@ -77,7 +79,7 @@ public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey,
     }
 
     @Override
-    public void commit(TaskInputOutputContext<?, ?, BulkIngestKey, Value> context) throws IOException, InterruptedException {
+    public void commit(TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException, InterruptedException {
         delegate.commit(context);
     }
 
@@ -87,7 +89,7 @@ public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey,
     }
 
     @Override
-    public void cleanup(TaskInputOutputContext<?, ?, BulkIngestKey, Value> context) throws IOException, InterruptedException {
+    public void cleanup(TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException, InterruptedException {
         delegate.cleanup(context);
     }
 }

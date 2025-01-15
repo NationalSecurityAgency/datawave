@@ -1,6 +1,14 @@
 package datawave.ingest.mapreduce.job.reindex;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.hadoop.conf.Configuration;
+
 import com.google.common.collect.Multimap;
+
 import datawave.data.type.Type;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.DataTypeHelperImpl;
@@ -8,12 +16,6 @@ import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.policy.IngestPolicyEnforcer;
-import org.apache.hadoop.conf.Configuration;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class ForwardIndexOnlyIngestHelper implements IngestHelperInterface {
     private final IngestHelperInterface delegate;
@@ -27,7 +29,6 @@ public class ForwardIndexOnlyIngestHelper implements IngestHelperInterface {
     public boolean isReverseIndexedField(String fieldName) {
         return false;
     }
-
 
     @Override
     public void setup(Configuration conf) {
@@ -50,17 +51,17 @@ public class ForwardIndexOnlyIngestHelper implements IngestHelperInterface {
     }
 
     @Override
-    public Multimap<String, NormalizedContentInterface> getEventFields(RawRecordContainer value) {
+    public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer value) {
         return delegate.getEventFields(value);
     }
 
     @Override
-    public Multimap<String, NormalizedContentInterface> normalizeMap(Multimap<String, NormalizedContentInterface> fields) {
+    public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields) {
         return delegate.normalizeMap(fields);
     }
 
     @Override
-    public Multimap<String, NormalizedContentInterface> normalize(Multimap<String, String> fields) {
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
         return delegate.normalize(fields);
     }
 
@@ -180,12 +181,12 @@ public class ForwardIndexOnlyIngestHelper implements IngestHelperInterface {
     }
 
     @Override
-    public Multimap<String, String> getCompositeFieldDefinitions() {
+    public Multimap<String,String> getCompositeFieldDefinitions() {
         return delegate.getCompositeFieldDefinitions();
     }
 
     @Override
-    public Map<String, String> getCompositeFieldSeparators() {
+    public Map<String,String> getCompositeFieldSeparators() {
         return delegate.getCompositeFieldSeparators();
     }
 
@@ -195,7 +196,7 @@ public class ForwardIndexOnlyIngestHelper implements IngestHelperInterface {
     }
 
     @Override
-    public Map<String, String[]> getVirtualNameAndIndex(String fieldName) {
+    public Map<String,String[]> getVirtualNameAndIndex(String fieldName) {
         return delegate.getVirtualNameAndIndex(fieldName);
     }
 
