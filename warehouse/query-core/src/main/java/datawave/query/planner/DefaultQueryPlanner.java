@@ -843,15 +843,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
         }
 
-        if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
-            config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
-        } else {
-            // look for the shards and days hint in the query settings
-            // the shards and days hint cannot always be specified in the query string when using certain query parsers
-            Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
-            if (StringUtils.isNotBlank(parameter.getParameterValue())) {
-                optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+        // Do not add a SHARDS_AND_DAYS hint if it is specifically not allowed. This was checked and updated when timedIncludeDateFilters was called.
+        if (config.isShardsAndDaysHintAllowed()) {
+            if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
                 config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+            } else {
+                // look for the shards and days hint in the query settings
+                // the shards and days hint cannot always be specified in the query string when using certain query parsers
+                Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
+                if (StringUtils.isNotBlank(parameter.getParameterValue())) {
+                    optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+                    config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+                }
             }
         }
 
@@ -2122,57 +2125,73 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // if we are using something other than the default of EVENT date
-        // time, then we need to modify the query
-        if (!dateType.equals(defaultDateType)) {
+        // Get the set of date types that should not be expanded if the end date is the current date.
+        // @formatter:off
+        Set<String> noExpansionIfCurrentDateTypes = config.getNoExpansionIfCurrentDateTypes() == null ? Collections.emptySet() :
+                        config.getNoExpansionIfCurrentDateTypes().stream()
+                                        .map(String::trim)
+                                        .map(String::toUpperCase)
+                                        .collect(Collectors.toSet());
+        // @formatter:on
 
-            log.info("Using the date index for " + dateType);
-            // if no date index helper configured, then we are in error
-            if (dateIndexHelper == null) {
-                throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
-            }
-            // get all of the fields used for this date type
-            DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
-                            config.getDatatypeFilter());
-            if (dateIndexData.getFields().isEmpty()) {
-                log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
-                // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired effect.
-                // Also it will be understandable from the plan as to why no results were returned.
-                dateIndexData.getFields().add(Constants.NO_FIELD);
-            }
-            log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
-            // now for each field, add an expression to filter that date
-            List<JexlNode> andChildren = new ArrayList<>();
-            for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
-                if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
-                    andChildren.add(queryTree.jjtGetChild(i));
-                } else {
-                    andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
-                }
-            }
-            List<JexlNode> orChildren = new ArrayList<>();
-            for (String field : dateIndexData.getFields()) {
-                orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
-            }
-            if (orChildren.size() > 1) {
-                andChildren.add(JexlNodeFactory.createOrNode(orChildren));
-            } else {
-                andChildren.addAll(orChildren);
-            }
-            JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
-            JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
-
-            // now lets update the query parameters with the correct start and
-            // end dates
-            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                            + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
-
-            // reset the dates in the configuration, no need to reset then in
-            // the Query settings object
-            config.setBeginDate(dateIndexData.getBeginDate());
-            config.setEndDate(dateIndexData.getEndDate());
+        // If the date type is one marked for no expansion if current, and the query's end date is the current date, do not add any date filters, and do not
+        // allow a SHARDS_AND_DAYS hint to be added later.
+        if (config.getNoExpansionIfCurrentDateTypes().contains(dateType) && DateUtils.isSameDay(new Date(), config.getEndDate())) {
+            log.info("Query end date equals current date and date type " + dateType
+                            + " is marked for no expansion if current. SHARDS_AND_DAYS hint will be forbidden.");
+            config.setShardsAndDaysHintAllowed(false);
         } else {
-            log.info("Date index not needed for this query");
+            // If we are using something other than the default of EVENT date time, then we need to modify the query.
+            if (!dateType.equals(defaultDateType)) {
+                log.info("Using the date index for " + dateType);
+                // if no date index helper configured, then we are in error
+                if (dateIndexHelper == null) {
+                    throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
+                }
+                // get all of the fields used for this date type
+                DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
+                                config.getDatatypeFilter());
+                if (dateIndexData.getFields().isEmpty()) {
+                    log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
+                    // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired
+                    // effect.
+                    // Also it will be understandable from the plan as to why no results were returned.
+                    dateIndexData.getFields().add(Constants.NO_FIELD);
+                }
+                log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
+                // now for each field, add an expression to filter that date
+                List<JexlNode> andChildren = new ArrayList<>();
+                for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
+                    if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
+                        andChildren.add(queryTree.jjtGetChild(i));
+                    } else {
+                        andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                    }
+                }
+                List<JexlNode> orChildren = new ArrayList<>();
+                for (String field : dateIndexData.getFields()) {
+                    orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
+                }
+                if (orChildren.size() > 1) {
+                    andChildren.add(JexlNodeFactory.createOrNode(orChildren));
+                } else {
+                    andChildren.addAll(orChildren);
+                }
+                JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
+                JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
+
+                // now lets update the query parameters with the correct start and
+                // end dates
+                log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+
+                // reset the dates in the configuration, no need to reset then in
+                // the Query settings object
+                config.setBeginDate(dateIndexData.getBeginDate());
+                config.setEndDate(dateIndexData.getEndDate());
+            } else {
+                log.info("Date index not needed for this query");
+            }
         }
 
         return queryTree;
@@ -2456,16 +2475,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
                     boolean isPreload) throws DatawaveQueryException {
-        if (null == settingFuture)
+        if (null == settingFuture) {
             settingFuture = loadQueryIterator(metadataHelper, config, isFullTable, isPreload);
-        if (settingFuture.isDone())
+        }
+        if (settingFuture.isDone()) {
             try {
                 return settingFuture.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
-        else
+        } else {
             return null;
+        }
     }
 
     public void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
