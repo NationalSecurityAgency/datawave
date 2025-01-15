@@ -33,7 +33,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
-import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
