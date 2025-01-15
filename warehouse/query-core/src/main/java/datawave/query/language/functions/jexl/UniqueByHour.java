@@ -1,16 +1,12 @@
 package datawave.query.language.functions.jexl;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 
-import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.language.functions.QueryFunction;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
- * Function to return a unique result for every hour of the day for a given list of fields. This function is equivalent to {@code #unique(field[DAY])}.
+ * Function to return a unique result for every hour of the day for a given list of fields. This function is equivalent to {@code #unique(field[HOUR])}.
  */
 public class UniqueByHour extends UniqueByFunction {
 
