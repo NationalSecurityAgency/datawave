@@ -99,6 +99,19 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
         return currentNest.move(minimum);
     }
 
+    /**
+     * Seeks the current nest using the provided range. Note: if the range is beyond the current nest it is up to the caller to advance to the next nest via a
+     * call to {@link #hasNext()}
+     *
+     * @param range
+     *            the seek range
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            true if range is inclusive
+     * @throws IOException
+     *             if the underlying source has a problem
+     */
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         currentNest.seek(range, columnFamilies, inclusive);
