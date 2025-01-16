@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.lucene.analysis.ngram.NGramTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.lucene.analysis.ngram.NGramTokenizer;
 
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;

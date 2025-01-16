@@ -1,8 +1,8 @@
 package datawave.ingest.util;
 
+import org.apache.lucene.analysis.ngram.NGramTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.lucene.analysis.ngram.NGramTokenizer;
 
 import com.google.common.hash.BloomFilter;
 

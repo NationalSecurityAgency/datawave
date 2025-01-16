@@ -5,6 +5,8 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
@@ -13,8 +15,6 @@ import datawave.data.type.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class can be used to help normalize the event field values akin to how the BaseIngestHelper can normalize the indexed field values. This was not cooked

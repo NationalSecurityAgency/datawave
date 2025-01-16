@@ -3,10 +3,10 @@ package datawave.ingest.data.tokenize;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.util.ObjectFactory;

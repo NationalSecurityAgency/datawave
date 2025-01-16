@@ -13,8 +13,8 @@ public class DataTypeDiscardFutureIntervalPredicate implements RawRecordPredicat
     private static final Logger log = LoggerFactory.getLogger(DataTypeDiscardFutureIntervalPredicate.class);
 
     /**
-     * number which will be used to evaluate whether an Event should be processed. If the Event.getEventDate() is less than (now + interval) then it will
-     * be processed.
+     * number which will be used to evaluate whether an Event should be processed. If the Event.getEventDate() is less than (now + interval) then it will be
+     * processed.
      */
     public static final String DISCARD_FUTURE_INTERVAL = "event.discard.future.interval";
 

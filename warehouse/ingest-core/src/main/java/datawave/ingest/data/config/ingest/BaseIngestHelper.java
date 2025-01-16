@@ -673,8 +673,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
             if (patternMatcher.reset(fieldName).matches()) {
                 if (bestMatch != null) {
-                    log.warn("Multiple regular expression patterns with the same length exist for matching field {}. " +
-                            "The pattern that sorts lexicographically last will be used. Please verify your configurations.", fieldName);
+                    log.warn("Multiple regular expression patterns with the same length exist for matching field {}. "
+                                    + "The pattern that sorts lexicographically last will be used. Please verify your configurations.", fieldName);
                     break;
                 } else {
                     bestMatch = patternMatcher;
@@ -783,8 +783,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // if it is indexed, set the index part,
         if (this.isIndexedField(eventFieldName) || this.isIndexedField(indexedFieldName)) {
-            log.debug("eventFieldName={}, indexedFieldName={} we have an indexed field here {}",
-                                eventFieldName, indexedFieldName, normalizedContent);
+            log.debug("eventFieldName={}, indexedFieldName={} we have an indexed field here {}", eventFieldName, indexedFieldName, normalizedContent);
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
@@ -800,8 +799,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // if it is normalized, set the field value part and the (unused)
         // indexed field value part
         if (this.isNormalizedField(eventFieldName) || this.isNormalizedField(indexedFieldName)) {
-            log.debug("eventFieldName={}, indexedFieldName={} we have a normalized field here {}",
-                                eventFieldName, indexedFieldName, normalizedContent);
+            log.debug("eventFieldName={}, indexedFieldName={} we have a normalized field here {}", eventFieldName, indexedFieldName, normalizedContent);
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
@@ -921,9 +919,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         for (Entry<String,String> e : fields.entries()) {
             if (e.getValue() != null) {
                 applyNormalizationAndAddToResults(results, new NormalizedFieldAndValue(e.getKey(), e.getValue()));
-            } else
-                if (log.isWarnEnabled()) {
-                    log.warn("{} has key {} with a null value.", this.getType().typeName(), e.getKey());
+            } else if (log.isWarnEnabled()) {
+                log.warn("{} has key {} with a null value.", this.getType().typeName(), e.getKey());
             }
         }
         return results;
@@ -941,10 +938,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
             if (e.getValue() != null) {
                 applyNormalizationAndAddToResults(results, e.getValue());
-            } else
-                if (log.isWarnEnabled()) {
-                    log.warn("{} has key {} with a null value.", this.getType().typeName(), e.getKey());
-                }
+            } else if (log.isWarnEnabled()) {
+                log.warn("{} has key {} with a null value.", this.getType().typeName(), e.getKey());
+            }
         }
         return results;
     }
