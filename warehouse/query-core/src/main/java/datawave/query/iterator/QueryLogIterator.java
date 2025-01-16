@@ -3,9 +3,12 @@ package datawave.query.iterator;
 import static datawave.query.iterator.QueryOptions.QUERY_ID;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -15,6 +18,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
 
 /**
  * An iterator used to log the start and end of each method run by the {@link SortedKeyValueIterator} above it in the iterator stack. Logs the QueryID
@@ -51,13 +55,21 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
 
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("init()");
-            this.queryID = options.get(QUERY_ID);
-            this.source = source;
-            this.env = env;
+            try {
+                logStartOf("init()");
+                this.queryID = options.get(QUERY_ID);
+                this.source = source;
+                this.env = env;
+            } finally {
+                logEndOf("init()");
+            }
         } finally {
-            logEndOf("init()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
     }
 
@@ -79,20 +91,33 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         }
     }
 
+    private void setThreadNameWhileExecuting(Method logic){
+
+    }
+
     /**
      * Wraps the hasTop() method of the iterator above it, logging the start and end of the method along with its query id.
      */
     @Override
     public boolean hasTop() {
-        boolean result;
-
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("hasTop()");
-            result = source.hasTop();
+            boolean result;
+
+            try {
+                logStartOf("hasTop()");
+                result = source.hasTop();
+            } finally {
+                logEndOf("hasTop()");
+            }
+            return result;
         } finally {
-            logEndOf("hasTop()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
-        return result;
+
     }
 
     /**
@@ -100,12 +125,21 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public void next() throws IOException {
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("next()");
-            source.next();
+            try {
+                logStartOf("next()");
+                source.next();
+            } finally {
+                logEndOf("next()");
+            }
         } finally {
-            logEndOf("next()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
+
     }
 
     /**
@@ -113,14 +147,23 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public Key getTopKey() {
-        Key k;
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("getTopKey()");
-            k = source.getTopKey();
+            Key k;
+            try {
+                logStartOf("getTopKey()");
+                k = source.getTopKey();
+            } finally {
+                logEndOf("getTopKey()");
+            }
+            return k;
         } finally {
-            logEndOf("getTopKey()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
-        return k;
+
     }
 
     /**
@@ -128,14 +171,23 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public Value getTopValue() {
-        Value v;
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("getTopValue()");
-            v = source.getTopValue();
+            Value v;
+            try {
+                logStartOf("getTopValue()");
+                v = source.getTopValue();
+            } finally {
+                logEndOf("getTopValue()");
+            }
+            return v;
         } finally {
-            logEndOf("getTopValue()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
-        return v;
+
     }
 
     /**
@@ -143,16 +195,24 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment iteratorEnvironment) {
-
-        QueryLogIterator copy;
-
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("deepCopy()");
-            copy = new QueryLogIterator(this, this.env);
+            QueryLogIterator copy;
+
+            try {
+                logStartOf("deepCopy()");
+                copy = new QueryLogIterator(this, this.env);
+            } finally {
+                logEndOf("deepCopy()");
+            }
+            return copy;
         } finally {
-            logEndOf("deepCopy()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
-        return copy;
+
     }
 
     /**
@@ -160,13 +220,21 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
-
+        String oldName = Thread.currentThread().getName();
+        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+        MDC.put("queryID", queryID);
         try {
-            logStartOf("seek()");
-            this.source.seek(range, collection, b);
+            try {
+                logStartOf("seek()");
+                this.source.seek(range, collection, b);
+            } finally {
+                logEndOf("seek()");
+            }
         } finally {
-            logEndOf("seek()");
+            Thread.currentThread().setName(oldName);
+            MDC.remove("queryID");
         }
+
     }
 
     /**
@@ -188,4 +256,5 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     public boolean validateOptions(Map<String,String> options) {
         return options.containsKey(QUERY_ID);
     }
+
 }
