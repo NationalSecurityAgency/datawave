@@ -4,16 +4,32 @@ import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlAr
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.LcType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.util.DateIndexHelper;
+import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.MockMetadataHelper;
 
 /**
  * Although most query functions are removed from the query by the {@link QueryOptionsFromQueryVisitor}, several functions will persist. These functions may
@@ -67,6 +83,25 @@ class QueryFunctionsDescriptorTest {
     private final String multiFieldStrict = "f:strict(FIELD_A, FIELD_B)";
 
     private final QueryFunctionsDescriptor descriptor = new QueryFunctionsDescriptor();
+
+    private ShardQueryConfiguration config;
+    private MockMetadataHelper helper;
+    private DateIndexHelper dateIndexHelper;
+
+    @BeforeEach
+    public void setup() {
+        config = new ShardQueryConfiguration();
+
+        Multimap<String,Type<?>> fieldToTypes = HashMultimap.create();
+        fieldToTypes.putAll("FIELD", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
+        fieldToTypes.putAll("FIELD_A", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
+        fieldToTypes.putAll("FIELD_B", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
+
+        helper = new MockMetadataHelper();
+        helper.setDataTypes(fieldToTypes);
+
+        dateIndexHelper = new MockDateIndexHelper();
+    }
 
     @Test
     void testFields() {
@@ -190,5 +225,30 @@ class QueryFunctionsDescriptorTest {
             fail("Could not parse query: " + query);
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void testIndexQuery() {
+        // test default functions
+        assertIndexQuery(include, "FIELD == 'baz'");
+        assertIndexQuery(includeAnd, "(FIELD_A == 'bar' && FIELD_B == 'baz')");
+        assertIndexQuery(includeOr, "(FIELD_A == 'bar' || FIELD_B == 'baz')");
+
+        // test fielded normalizations
+        assertIndexQuery("f:includeText(FIELD, 'abc')", "FIELD == 'abc'");
+        assertIndexQuery("f:includeText(FIELD_A, 'BaZ')", "(FIELD_A == 'BaZ' || FIELD_A == 'baz')");
+        assertIndexQuery("f:includeText(FIELD_B, '123')", "(FIELD_B == '123' || FIELD_B == '+cE1.23')");
+
+        // test non-fielded normalizations
+        assertIndexQuery("f:includeText(_ANYFIELD_, 'abc')", "_ANYFIELD_ == 'abc'");
+        assertIndexQuery("f:includeText(_ANYFIELD_, 'BaZ')", "(_ANYFIELD_ == 'BaZ' || _ANYFIELD_ == 'baz')");
+        assertIndexQuery("f:includeText(_ANYFIELD_, '123')", "(_ANYFIELD_ == '123' || _ANYFIELD_ == '+cE1.23')");
+    }
+
+    private void assertIndexQuery(String query, String expected) {
+        QueryJexlArgumentDescriptor argDescriptor = getDescriptor(query);
+        JexlNode expanded = argDescriptor.getIndexQuery(config, helper, dateIndexHelper, Collections.emptySet());
+        String result = JexlStringBuildingVisitor.buildQuery(expanded);
+        assertEquals(expected, result);
     }
 }
