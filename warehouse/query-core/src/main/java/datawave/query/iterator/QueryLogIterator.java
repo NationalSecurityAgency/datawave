@@ -60,12 +60,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         MDC.put("queryID", queryID);
         try {
             try {
-                logStartOf("init()");
                 this.queryID = options.get(QUERY_ID);
                 this.source = source;
                 this.env = env;
-            } finally {
-                logEndOf("init()");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         } finally {
             Thread.currentThread().setName(oldName);
@@ -91,10 +90,6 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         }
     }
 
-    private void setThreadNameWhileExecuting(Method logic){
-
-    }
-
     /**
      * Wraps the hasTop() method of the iterator above it, logging the start and end of the method along with its query id.
      */
@@ -107,10 +102,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
             boolean result;
 
             try {
-                logStartOf("hasTop()");
                 result = source.hasTop();
-            } finally {
-                logEndOf("hasTop()");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
             return result;
         } finally {
@@ -130,10 +124,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         MDC.put("queryID", queryID);
         try {
             try {
-                logStartOf("next()");
                 source.next();
-            } finally {
-                logEndOf("next()");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         } finally {
             Thread.currentThread().setName(oldName);
@@ -153,10 +146,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         try {
             Key k;
             try {
-                logStartOf("getTopKey()");
                 k = source.getTopKey();
-            } finally {
-                logEndOf("getTopKey()");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
             return k;
         } finally {
@@ -177,10 +169,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         try {
             Value v;
             try {
-                logStartOf("getTopValue()");
                 v = source.getTopValue();
-            } finally {
-                logEndOf("getTopValue()");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
             return v;
         } finally {
@@ -202,10 +193,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
             QueryLogIterator copy;
 
             try {
-                logStartOf("deepCopy()");
                 copy = new QueryLogIterator(this, this.env);
-            } finally {
-                logEndOf("deepCopy()");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
             return copy;
         } finally {
