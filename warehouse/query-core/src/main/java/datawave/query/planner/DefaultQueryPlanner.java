@@ -622,13 +622,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         configureExcerpts(config, cfg);
 
-        configureSummaries(config, cfg);
-
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+        if (config.getUniqueFields().isMostRecent()) {
+            // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -654,13 +657,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
-        }
-    }
-
-    private void configureSummaries(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.getSummaryOptions().getSummarySize() != 0) {
-            addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
-            addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
         }
     }
 
@@ -843,15 +839,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
         }
 
-        if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
-            config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
-        } else {
-            // look for the shards and days hint in the query settings
-            // the shards and days hint cannot always be specified in the query string when using certain query parsers
-            Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
-            if (StringUtils.isNotBlank(parameter.getParameterValue())) {
-                optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+        // Do not add a SHARDS_AND_DAYS hint if it is specifically not allowed. This was checked and updated when timedIncludeDateFilters was called.
+        if (config.isShardsAndDaysHintAllowed()) {
+            if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
                 config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+            } else {
+                // look for the shards and days hint in the query settings
+                // the shards and days hint cannot always be specified in the query string when using certain query parsers
+                Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
+                if (StringUtils.isNotBlank(parameter.getParameterValue())) {
+                    optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+                    config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+                }
             }
         }
 
@@ -955,6 +954,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         TraceStopwatch stopwatch = null;
 
+        // need to fetch field to datatype map first
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
             config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
@@ -967,8 +969,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
+        // need to run this before normalization expansion otherwise nasty regexes could slip through
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Unfielded Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
+
+        // must expand multi-normalized terms after index queries but before index expansion
+        // for example, f:includeText(_ANYFIELD_, 'value') would get missed by the multi normalizer visitor, but expanding it first allows the EQ node to get
+        // expanded
+        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
@@ -995,11 +1003,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Regex/Range Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
 
-        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
-
         config.setQueryTree(timedFixUnindexedNumerics(timers, config.getQueryTree(), config));
-
-        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // if we have any index holes, then mark em
         if (!config.getIndexHoles().isEmpty()) {
@@ -1110,6 +1114,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.debug("Bounded range and regex conversion has been disabled");
             }
         }
+
+        // fields may have been added or removed from the query, need to update the field to type map
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
         return config.getQueryTree();
     }
@@ -2122,57 +2129,73 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // if we are using something other than the default of EVENT date
-        // time, then we need to modify the query
-        if (!dateType.equals(defaultDateType)) {
+        // Get the set of date types that should not be expanded if the end date is the current date.
+        // @formatter:off
+        Set<String> noExpansionIfCurrentDateTypes = config.getNoExpansionIfCurrentDateTypes() == null ? Collections.emptySet() :
+                        config.getNoExpansionIfCurrentDateTypes().stream()
+                                        .map(String::trim)
+                                        .map(String::toUpperCase)
+                                        .collect(Collectors.toSet());
+        // @formatter:on
 
-            log.info("Using the date index for " + dateType);
-            // if no date index helper configured, then we are in error
-            if (dateIndexHelper == null) {
-                throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
-            }
-            // get all of the fields used for this date type
-            DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
-                            config.getDatatypeFilter());
-            if (dateIndexData.getFields().isEmpty()) {
-                log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
-                // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired effect.
-                // Also it will be understandable from the plan as to why no results were returned.
-                dateIndexData.getFields().add(Constants.NO_FIELD);
-            }
-            log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
-            // now for each field, add an expression to filter that date
-            List<JexlNode> andChildren = new ArrayList<>();
-            for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
-                if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
-                    andChildren.add(queryTree.jjtGetChild(i));
-                } else {
-                    andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
-                }
-            }
-            List<JexlNode> orChildren = new ArrayList<>();
-            for (String field : dateIndexData.getFields()) {
-                orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
-            }
-            if (orChildren.size() > 1) {
-                andChildren.add(JexlNodeFactory.createOrNode(orChildren));
-            } else {
-                andChildren.addAll(orChildren);
-            }
-            JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
-            JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
-
-            // now lets update the query parameters with the correct start and
-            // end dates
-            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                            + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
-
-            // reset the dates in the configuration, no need to reset then in
-            // the Query settings object
-            config.setBeginDate(dateIndexData.getBeginDate());
-            config.setEndDate(dateIndexData.getEndDate());
+        // If the date type is one marked for no expansion if current, and the query's end date is the current date, do not add any date filters, and do not
+        // allow a SHARDS_AND_DAYS hint to be added later.
+        if (config.getNoExpansionIfCurrentDateTypes().contains(dateType) && DateUtils.isSameDay(new Date(), config.getEndDate())) {
+            log.info("Query end date equals current date and date type " + dateType
+                            + " is marked for no expansion if current. SHARDS_AND_DAYS hint will be forbidden.");
+            config.setShardsAndDaysHintAllowed(false);
         } else {
-            log.info("Date index not needed for this query");
+            // If we are using something other than the default of EVENT date time, then we need to modify the query.
+            if (!dateType.equals(defaultDateType)) {
+                log.info("Using the date index for " + dateType);
+                // if no date index helper configured, then we are in error
+                if (dateIndexHelper == null) {
+                    throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
+                }
+                // get all of the fields used for this date type
+                DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
+                                config.getDatatypeFilter());
+                if (dateIndexData.getFields().isEmpty()) {
+                    log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
+                    // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired
+                    // effect.
+                    // Also it will be understandable from the plan as to why no results were returned.
+                    dateIndexData.getFields().add(Constants.NO_FIELD);
+                }
+                log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
+                // now for each field, add an expression to filter that date
+                List<JexlNode> andChildren = new ArrayList<>();
+                for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
+                    if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
+                        andChildren.add(queryTree.jjtGetChild(i));
+                    } else {
+                        andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                    }
+                }
+                List<JexlNode> orChildren = new ArrayList<>();
+                for (String field : dateIndexData.getFields()) {
+                    orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
+                }
+                if (orChildren.size() > 1) {
+                    andChildren.add(JexlNodeFactory.createOrNode(orChildren));
+                } else {
+                    andChildren.addAll(orChildren);
+                }
+                JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
+                JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
+
+                // now lets update the query parameters with the correct start and
+                // end dates
+                log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+
+                // reset the dates in the configuration, no need to reset then in
+                // the Query settings object
+                config.setBeginDate(dateIndexData.getBeginDate());
+                config.setEndDate(dateIndexData.getEndDate());
+            } else {
+                log.info("Date index not needed for this query");
+            }
         }
 
         return queryTree;
@@ -2456,16 +2479,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
                     boolean isPreload) throws DatawaveQueryException {
-        if (null == settingFuture)
+        if (null == settingFuture) {
             settingFuture = loadQueryIterator(metadataHelper, config, isFullTable, isPreload);
-        if (settingFuture.isDone())
+        }
+        if (settingFuture.isDone()) {
             try {
                 return settingFuture.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
-        else
+        } else {
             return null;
+        }
     }
 
     public void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
@@ -3155,7 +3180,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     Multimap<String,Type<?>> normalizedFieldMap, ShardQueryConfiguration config) {
         config.setIndexedFields(indexedFields);
         config.setReverseIndexedFields(reverseIndexedFields);
-        config.setQueryFieldsDatatypes(queryFieldMap);
+        updateQueryFieldsDatatypes(config, queryFieldMap);
         config.setNormalizedFieldsDatatypes(normalizedFieldMap);
     }
 
@@ -3170,7 +3195,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         log.debug("normalizedFields = " + normalizedFields);
 
-        config.setQueryFieldsDatatypes(HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !normalizedFields.contains(input))));
+        Multimap<String,Type<?>> queryFieldToDatatypeMap = HashMultimap
+                        .create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !normalizedFields.contains(input)));
+        updateQueryFieldsDatatypes(config, queryFieldToDatatypeMap);
         log.debug("IndexedFields Datatypes: " + config.getQueryFieldsDatatypes());
 
         config.setNormalizedFieldsDatatypes(HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, normalizedFields::contains)));
@@ -3183,7 +3210,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return fieldToDatatypeMap;
+    }
 
+    protected void updateQueryFieldsDatatypes(ShardQueryConfiguration config, Multimap<String,Type<?>> queryFieldMap) {
+        Multimap<String,Type<?>> queryFieldToDatatypeMap = config.getQueryFieldsDatatypes();
+        queryFieldToDatatypeMap.putAll(queryFieldMap);
+        config.setQueryFieldsDatatypes(queryFieldToDatatypeMap);
     }
 
     public void setDisableTestNonExistentFields(boolean disableTestNonExistentFields) {

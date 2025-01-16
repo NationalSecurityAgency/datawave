@@ -1,5 +1,6 @@
 package datawave.query.jexl.lookups;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -82,7 +83,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
 
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
-        } catch (TimeoutException e) {
+        } catch (TimeoutException | CancellationException e) {
             future.cancel(true);
 
             try {
