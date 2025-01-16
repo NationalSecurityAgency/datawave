@@ -28,6 +28,9 @@ public class SummaryOptions implements Serializable {
     private static final String VIEWS_PARAMETER = "VIEWS";
     private static final String ONLY_PARAMETER = "ONLY";
 
+    //TODO: until it works without arguments
+    private static final String TRUE = "TRUE";
+
     public static final int DEFAULT_SIZE = 150;
 
     private int summarySize;
