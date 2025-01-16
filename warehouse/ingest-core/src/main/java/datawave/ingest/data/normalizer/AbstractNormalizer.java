@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -17,7 +18,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public abstract class AbstractNormalizer implements TextNormalizer {
-    private static final Logger log = Logger.getLogger(AbstractNormalizer.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractNormalizer.class);
 
     @Override
     public void setup(Type type, String instance, Configuration config) {}
@@ -33,7 +34,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      *            configuration to use
      * @param normalizerClass
      *            the normalizerClass to set up
-     * @return An configured instance of the normalizerClass
+     * @return A configured instance of the normalizerClass
      */
     public static TextNormalizer createNormalizer(Type type, String instance, Configuration config, String normalizerClass) {
         Class<?> c;
@@ -50,7 +51,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
             throw new IllegalArgumentException("Error creating instance of class " + normalizerClass + ':' + e.getLocalizedMessage(), e);
         }
         if (o instanceof TextNormalizer) {
-            // setup the normalizer
+            // set up the normalizer
             ((TextNormalizer) o).setup(type, instance, config);
         } else {
             throw new IllegalArgumentException(normalizerClass + " is not an instance of " + TextNormalizer.class.getName());
@@ -223,7 +224,9 @@ public abstract class AbstractNormalizer implements TextNormalizer {
             if (field.getEventFieldName().equals("IP_GEO_FM_COORDINATES") && field.getEventFieldValue().equals("-99.999/-999.999")) {
                 log.warn("Found know bad default value: IP_GEO_FM_COORDINATES=-99.999/-999.999");
             } else {
-                log.error("Failed to normalize " + field.getEventFieldName() + '=' + field.getEventFieldValue(), e);
+                if (log.isErrorEnabled()) {
+                    log.error("Failed to normalize {}={}", field.getEventFieldName(), field.getEventFieldValue(), e);
+                }
             }
             n.setError(e);
         }
@@ -240,7 +243,9 @@ public abstract class AbstractNormalizer implements TextNormalizer {
                 try {
                     normalizedContent = normalize(new NormalizedFieldAndValue(field.getKey(), field.getValue()));
                 } catch (Exception e) {
-                    log.error("Failed to normalize " + field.getKey() + '=' + field.getValue(), e);
+                    if (log.isErrorEnabled()) {
+                        log.error("Failed to normalize {}={}", field.getKey(), field.getValue(), e);
+                    }
                     normalizedContent = new NormalizedFieldAndValue(field.getKey(), field.getValue());
                     normalizedContent.setError(e);
                 }
@@ -260,7 +265,9 @@ public abstract class AbstractNormalizer implements TextNormalizer {
                 try {
                     normalizedContent = normalize(field.getValue());
                 } catch (Exception e) {
-                    log.error("Failed to normalize " + field.getValue().getIndexedFieldName() + '=' + field.getValue().getIndexedFieldValue(), e);
+                    if (log.isErrorEnabled()) {
+                        log.error("Failed to normalize {}={}", field.getValue().getIndexedFieldName(), field.getValue().getIndexedFieldValue(), e);
+                    }
                     normalizedContent.setError(e);
                 }
                 results.put(normalizedContent.getIndexedFieldName(), normalizedContent);

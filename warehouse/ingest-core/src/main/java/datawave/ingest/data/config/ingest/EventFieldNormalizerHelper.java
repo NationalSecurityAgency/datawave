@@ -5,7 +5,6 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
@@ -14,6 +13,8 @@ import datawave.data.type.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class can be used to help normalize the event field values akin to how the BaseIngestHelper can normalize the indexed field values. This was not cooked
@@ -25,7 +26,7 @@ import datawave.ingest.data.config.DataTypeHelper;
  *
  * public void setup(Configuration config) { ... eventFieldNormalizerHelper = new EventFieldNormalizerHelper(config); ... }
  *
- * then override the normalize(NormalizedContentInterface) as follows:
+ * then override the method normalize(NormalizedContentInterface) as follows:
  *
  * public NormalizedContentInterface normalize(NormalizedContentInterface nci) {
  *
@@ -46,7 +47,7 @@ public class EventFieldNormalizerHelper {
     private Map<Pattern,Type<?>> typeCompiledPatternMap = null;
     private static final Type<?> NO_OP_TYPE = new NoOpType();
 
-    private static final Logger log = Logger.getLogger(EventFieldNormalizerHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(EventFieldNormalizerHelper.class);
 
     /**
      *
@@ -85,7 +86,9 @@ public class EventFieldNormalizerHelper {
                 } else {
                     typeFieldMap.put(fieldName, normalizer);
                 }
-                log.debug("Registered a " + normalizerClass + " for type[" + this.getType().typeName() + "], EVENT (not index) field[" + fieldName + "]");
+                if (log.isDebugEnabled()) {
+                    log.debug("Registered a {} for type [{}], EVENT (not index) field[{}]", normalizerClass, this.getType().typeName(), fieldName);
+                }
             }
         }
     }
@@ -151,7 +154,7 @@ public class EventFieldNormalizerHelper {
         if (fieldName.indexOf('.') >= 0) {
             // if this type already has a '.', then we have a malformed property name
             if (this.getType().typeName().indexOf('.') >= 0) {
-                log.error(propertyPattern + " property malformed: " + property);
+                log.error("{} property malformed: {}", propertyPattern, property);
                 throw new IllegalArgumentException(propertyPattern + " property malformed: " + property);
             }
             fieldName = null;
