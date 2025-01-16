@@ -22,12 +22,15 @@ import java.util.Map;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -46,6 +49,7 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
@@ -57,7 +61,6 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.protobuf.Uid;
-import it.unimi.dsi.fastutil.Hash;
 
 public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private static final String CLASS_NAME = ShardReindexMapper.class.getName();
@@ -78,8 +81,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     public static final String METADATA_DISABLE_FREQUENCY_COUNTS = CLASS_NAME + ".metadata.disable.frequency.counts";
     public static final String METADATA_GENERATE_FROM_FI = CLASS_NAME + ".metadata.generate.from.fi";
     public static final String METADATA_GENERATE_RI_FROM_FI = CLASS_NAME + ".metadata.generate.ri.from.fi";
+    public static final String METADATA_GENEREATE_TF_FROM_FI = CLASS_NAME + ".metadata.generate.tf.from.fi";
     public static final String LOOKUP_EVENT_METADATA_FROM_FI = CLASS_NAME + ".lookup.event.metadata.from.fi";
     public static final String LOOKUP_RI_METADATA_FROM_FI = CLASS_NAME + ".lookup.ri.metadata.from.fi";
+    public static final String LOOKUP_TF_METADATA_FROM_FI = CLASS_NAME + ".lookup.tf.metadata.from.fi";
     public static final String METADATA_GENERATE_FROM_TF = CLASS_NAME + ".metadata.generate.from.tf";
     public static final String METADATA_GENERATE_EVENT_FROM_FI = CLASS_NAME + ".metadata.generate.event.from.fi";
     private static final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
@@ -130,8 +135,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private boolean generateMetadataFromFi = false;
     private boolean generateReverseIndexMetadataFromFi = false;
     private boolean generateEventMetadataFromFi = false;
+    private boolean generateTermFrequencyMetadataFromFi = false;
     private boolean lookupEventMetadataFromFi = false;
     private boolean lookupReverseIndexMetadataFromFi = false;
+    private boolean lookupTermFrequencyMetadataFromFi = false;
     private boolean generateMetadataFromTf = false;
 
     // generating metadata for fi/tf
@@ -139,6 +146,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private String lastMetadataField = null;
     private Map<String,Boolean> dataTypeEventLookupMap;
     private Map<String,Boolean> dataTypeReverseMetadataLookupMap;
+    private Map<String,Boolean> dataTypeTermFrequencyLookupMap;
     private AccumuloClient accumuloClient = null;
 
     // data processing/reuse
@@ -221,6 +229,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         this.lookupEventMetadataFromFi = config.getBoolean(LOOKUP_EVENT_METADATA_FROM_FI, this.lookupEventMetadataFromFi);
         this.lookupReverseIndexMetadataFromFi = config.getBoolean(LOOKUP_RI_METADATA_FROM_FI, this.lookupReverseIndexMetadataFromFi);
         this.generateEventMetadataFromFi = config.getBoolean(METADATA_GENERATE_EVENT_FROM_FI, this.generateEventMetadataFromFi);
+        this.generateTermFrequencyMetadataFromFi = config.getBoolean(METADATA_GENEREATE_TF_FROM_FI, this.generateTermFrequencyMetadataFromFi);
+        this.lookupTermFrequencyMetadataFromFi = config.getBoolean(LOOKUP_TF_METADATA_FROM_FI, this.lookupTermFrequencyMetadataFromFi);
 
         if (this.generateMetadataFromFi || this.generateMetadataFromTf) {
             // create an EventMetadata for metadata creation from non-event data
@@ -229,7 +239,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                             new Text(SHARD_GIDX_TNAME), new Text(config.get(SHARD_GRIDX_TNAME)), !disableMetadataFrequencyCounts);
             // when generating metadata with lookups need an accumulo client to do the lookups
             if ((this.generateReverseIndexMetadataFromFi && this.lookupReverseIndexMetadataFromFi)
-                            || (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi)) {
+                            || (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi)
+                            || (this.generateTermFrequencyMetadataFromFi && this.lookupTermFrequencyMetadataFromFi)) {
                 if (this.accumuloClient == null) {
                     AccumuloHelper accumuloHelper = new AccumuloHelper();
                     accumuloHelper.setup(config);
@@ -444,13 +455,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             return;
         }
 
-        if (!this.generateEventMetadataFromFi || !this.generateReverseIndexMetadataFromFi) {
+        if (!this.generateEventMetadataFromFi || !this.generateReverseIndexMetadataFromFi || !this.generateTermFrequencyMetadataFromFi) {
             // restrict the fieldHelper to prevent these metadata entries from being created
-            fieldHelper = new RestrictedIngestHelper(fieldHelper, !this.generateEventMetadataFromFi, !this.generateReverseIndexMetadataFromFi);
+            fieldHelper = new RestrictedIngestHelper(fieldHelper, !this.generateEventMetadataFromFi, !this.generateReverseIndexMetadataFromFi,
+                            !this.generateTermFrequencyMetadataFromFi);
         }
 
         boolean restrictShard = false;
         boolean restrictReverseIndex = false;
+        boolean restrictTf = false;
 
         if (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi) {
             if (!field.equals(this.lastMetadataField)) {
@@ -474,7 +487,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                         // if there is a hit on this field value it is in the event
                         this.dataTypeEventLookupMap.put(dataType, eventScanner.iterator().hasNext());
                     } catch (TableNotFoundException | AccumuloSecurityException | AccumuloException e) {
-                        throw new RuntimeException("failed to lookup reverse index field in accumulo", e);
+                        throw new RuntimeException("failed to lookup event field in accumulo", e);
                     }
                 } else {
                     // no mod to metadata necessary because it isn't an event field anyway
@@ -485,7 +498,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             if (!this.dataTypeEventLookupMap.get(dataType)) {
                 restrictShard = true;
             }
-            // TODO refactor this some to handle the disabled count short cut in combintation with the potential fi lookup
         }
 
         if (this.generateReverseIndexMetadataFromFi && this.lookupReverseIndexMetadataFromFi) {
@@ -517,11 +529,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                     // no mod to metadata necessary because it isn't reverse indexed anyway
                     this.dataTypeReverseMetadataLookupMap.put(dataType, true);
                 }
-            } else {
-                // this field/datatype has already been looked up if not calculating frequency counts no reason to do any more work
-                if (this.disableMetadataFrequencyCounts) {
-                    return;
-                }
             }
 
             // prevent the fi from being generated even though the field is configured for it
@@ -530,8 +537,55 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             }
         }
 
-        if (restrictShard || restrictReverseIndex) {
-            fieldHelper = new RestrictedIngestHelper(fieldHelper, restrictShard, restrictReverseIndex);
+        if (this.generateTermFrequencyMetadataFromFi && this.lookupTermFrequencyMetadataFromFi && fieldHelper instanceof AbstractContentIngestHelper) {
+            AbstractContentIngestHelper tfFieldHelper = (AbstractContentIngestHelper) fieldHelper;
+            if (!field.equals(lastMetadataField)) {
+                // clear the cache for the tf lookups
+                dataTypeTermFrequencyLookupMap = new HashMap<>();
+                lastMetadataField = field;
+            }
+
+            if (this.dataTypeTermFrequencyLookupMap.isEmpty() || !this.dataTypeTermFrequencyLookupMap.containsKey(dataType)) {
+                // it isn't enough to directly check the field name against the helper to see if its tokenized
+                // a field that will be tokenized will return true
+                // a field that has been tokenized will return false
+
+                // if the field doesn't end with the designator, it can't have been tokenized
+
+                if (tfFieldHelper.isContentIndexField(field) || tfFieldHelper.isReverseContentIndexField(field)) {
+                    // do the lookup
+                    try (Scanner scanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_TNAME))) {
+                        // tf key structure row tf datatype\0uid\0fieldValue\0fieldName
+                        // the tf came from a dataType/uid but the fieldValue may not match so worst case
+                        // iterate over all the tf keys for a document to find that the target field isn't there
+                        Key startKey = new Key(key.getRow().toString(), "tf", parsedFi.getDataType() + '\u0000' + parsedFi.getUid() + '\u0000');
+                        Key endKey = new Key(key.getRow().toString(), "tf", parsedFi.getDataType() + '\u0000' + parsedFi.getUid() + '\u0001');
+                        Range r = new Range(startKey, true, endKey, false);
+                        // add an iterator to only match keys that end in \0FIELD
+                        Map<String,String> options = new HashMap<>();
+                        options.put("colqRegex", '\u0000' + field + "$");
+                        options.put("matchSubstring", "true");
+                        IteratorSetting regexIteratorSettings = new IteratorSetting(1000, RegExFilter.class, options);
+                        scanner.addScanIterator(regexIteratorSettings);
+                        scanner.setRange(r);
+                        // if there is at least one result the field/dataType is tokenized
+                        this.dataTypeTermFrequencyLookupMap.put(dataType, scanner.iterator().hasNext());
+                    } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+                        throw new RuntimeException("failed to lookup tf in accumulo", e);
+                    }
+                } else {
+                    // never going to be a token since it wasn't a tokenized field no restrictions necessary
+                    this.dataTypeTermFrequencyLookupMap.put(dataType, true);
+                }
+            }
+
+            if (!this.dataTypeTermFrequencyLookupMap.get(dataType)) {
+                restrictTf = true;
+            }
+        }
+
+        if (restrictShard || restrictReverseIndex || restrictTf) {
+            fieldHelper = new RestrictedIngestHelper(fieldHelper, restrictShard, restrictReverseIndex, restrictTf);
         }
 
         // create an event for the metadata generation

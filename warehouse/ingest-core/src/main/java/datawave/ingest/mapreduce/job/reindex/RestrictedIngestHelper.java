@@ -14,20 +14,26 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.policy.IngestPolicyEnforcer;
 
-public class RestrictedIngestHelper implements IngestHelperInterface {
+/**
+ * Special class used to restrict how metadata is used when generating EventMetadata from fi/tf keys.
+ */
+public class RestrictedIngestHelper extends AbstractContentIngestHelper implements IngestHelperInterface {
     private final IngestHelperInterface delegate;
 
     private final boolean restrictShard;
     private final boolean restrictReverseIndex;
+    private final boolean restrictTf;
 
-    public RestrictedIngestHelper(IngestHelperInterface delegate, boolean restrictShard, boolean restrictReverseIndex) {
+    public RestrictedIngestHelper(IngestHelperInterface delegate, boolean restrictShard, boolean restrictReverseIndex, boolean restrictTf) {
         this.delegate = delegate;
 
         this.restrictShard = restrictShard;
         this.restrictReverseIndex = restrictReverseIndex;
+        this.restrictTf = restrictTf;
     }
 
     // non-delegated methods
@@ -39,6 +45,53 @@ public class RestrictedIngestHelper implements IngestHelperInterface {
     @Override
     public boolean isShardExcluded(String fieldName) {
         return this.restrictShard || delegate.isShardExcluded(fieldName);
+    }
+
+    // this is a bit funny for tf keys
+    // the field list will set the tf flag on the field that WILL be tokenized
+    // the field list will NOT set the tf flag on that WAS tokenized
+    // the metadata will set the tf flag on a field that WAS tokenized
+    // the metadata will NOT set the tf flag on a field that will be tokenized
+
+    @Override
+    public boolean isContentIndexField(String field) {
+        validateTypeAbstractIngestHelper();
+        String tokenDesignator = ((AbstractContentIngestHelper) delegate).getTokenFieldNameDesignator();
+
+        if (!field.endsWith(tokenDesignator)) {
+            return false;
+        }
+
+        // strip the token designator
+        field = field.substring(0, field.length() - tokenDesignator.length());
+
+        return !this.restrictTf && ((AbstractContentIngestHelper) delegate).isContentIndexField(field);
+    }
+
+    @Override
+    public boolean isReverseContentIndexField(String field) {
+        validateTypeAbstractIngestHelper();
+        String tokenDesignator = ((AbstractContentIngestHelper) delegate).getTokenFieldNameDesignator();
+
+        if (!field.endsWith(tokenDesignator)) {
+            return false;
+        }
+
+        // strip the token designator
+        field = field.substring(0, field.length() - tokenDesignator.length());
+
+        return !this.restrictTf && ((AbstractContentIngestHelper) delegate).isReverseContentIndexField(field);
+    }
+
+    // normally at ingest time the designator is used to create datawave metadata for the tokenized fields
+    // in this case, we only want to create datawave metadata for the actual field seen. So never apply a
+    // designator for the sake of reindexing
+    @Override
+    public String getTokenFieldNameDesignator() {
+        validateTypeAbstractIngestHelper();
+
+        // always strip this value
+        return "";
     }
 
     @Override
@@ -124,6 +177,42 @@ public class RestrictedIngestHelper implements IngestHelperInterface {
     @Override
     public DataTypeHelperImpl getEmbeddedHelper() {
         return delegate.getEmbeddedHelper();
+    }
+
+    private void validateTypeAbstractIngestHelper() {
+        if (!(delegate instanceof AbstractContentIngestHelper)) {
+            throw new UnsupportedOperationException("cannot call method not defined by delegate");
+        }
+    }
+
+    @Override
+    public boolean isIndexListField(String field) {
+        validateTypeAbstractIngestHelper();
+        return ((AbstractContentIngestHelper) delegate).isIndexListField(field);
+    }
+
+    @Override
+    public boolean isReverseIndexListField(String field) {
+        validateTypeAbstractIngestHelper();
+        return ((AbstractContentIngestHelper) delegate).isReverseIndexListField(field);
+    }
+
+    @Override
+    public String getListDelimiter() {
+        validateTypeAbstractIngestHelper();
+        return ((AbstractContentIngestHelper) delegate).getListDelimiter();
+    }
+
+    @Override
+    public boolean getSaveRawDataOption() {
+        validateTypeAbstractIngestHelper();
+        return ((AbstractContentIngestHelper) delegate).getSaveRawDataOption();
+    }
+
+    @Override
+    public String getRawDocumentViewName() {
+        validateTypeAbstractIngestHelper();
+        return ((AbstractContentIngestHelper) delegate).getRawDocumentViewName();
     }
 
     @Override
