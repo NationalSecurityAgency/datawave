@@ -155,7 +155,7 @@ public class EdgeKey {
             String tempSinkData = this.sinkData;
             try {
                 log.trace("Attempting escape sequencing isEscape? {}  isUnescape? {}", escape, unescape);
-                log.trace("Values before attempt source data {}, sink data {}",tempSourceData, tempSinkData);
+                log.trace("Values before attempt source data {}, sink data {}", tempSourceData, tempSinkData);
                 if (escape && !unescape) {
                     tempSourceData = StringEscapeUtils.escapeJava(sourceData);
                     tempSinkData = StringEscapeUtils.escapeJava(sinkData);

@@ -9,10 +9,10 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.RandomStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 

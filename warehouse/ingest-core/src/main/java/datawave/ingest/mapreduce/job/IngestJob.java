@@ -77,9 +77,9 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.PatternLayout;
 import org.springframework.util.StopWatch;
 
 import datawave.ingest.config.TableConfigCache;
@@ -257,12 +257,12 @@ public class IngestJob implements Tool {
         StopWatch sw = new StopWatch("Ingest Job");
         sw.start("local init");
 
-//        LoggerFactory.getLogger(TypeRegistry.class).setLevel(Level.ALL);
+        // LoggerFactory.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
         ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
-//        log.addAppender(ca);
-//        log.setLevel(Level.INFO);
+        // log.addAppender(ca);
+        // log.setLevel(Level.INFO);
 
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();

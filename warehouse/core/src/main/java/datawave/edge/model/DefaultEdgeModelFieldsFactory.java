@@ -49,8 +49,8 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
             fields.setTransformFieldMap((Map<String,String>) context.getBean(TRANSFORM_MODEL_BEAN));
         } catch (Throwable t) {
             log.error(fatal, "Edge model configuration not loaded!! Edge queries will fail until this issue is corrected.");
-            log.error(fatal, "Ensure that the Spring config file {} is on the classpath and contains bean names {}, {}, and {}",
-                    EDGE_MODEL_CONTEXT, BASE_MODEL_BEAN, KEYUTIL_MODEL_BEAN, TRANSFORM_MODEL_BEAN, t);
+            log.error(fatal, "Ensure that the Spring config file {} is on the classpath and contains bean names {}, {}, and {}", EDGE_MODEL_CONTEXT,
+                            BASE_MODEL_BEAN, KEYUTIL_MODEL_BEAN, TRANSFORM_MODEL_BEAN, t);
         } finally {
             if (context != null) {
                 context.close();
