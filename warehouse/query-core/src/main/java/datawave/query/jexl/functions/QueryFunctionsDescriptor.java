@@ -36,6 +36,7 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.util.StringUtils;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -207,6 +208,15 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.NO_EXPANSION:
                 case QueryFunctions.LENIENT_FIELDS_FUNCTION:
                 case QueryFunctions.STRICT_FIELDS_FUNCTION:
+                case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_DAY_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_HOUR_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION:
                     // In practice each of these functions should be parsed from the query
                     // almost immediately. This implementation is added for consistency
                     for (JexlNode arg : args) {
@@ -236,6 +246,12 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.RENAME_FUNCTION:
+                    for (JexlNode arg : args) {
+                        String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
+                        String[] parts = StringUtils.split(value, Constants.EQUALS);
+                        fields.add(parts[0]);
+                    }
                 case QueryFunctions.MATCH_REGEX:
                 case BETWEEN:
                 case LENGTH:

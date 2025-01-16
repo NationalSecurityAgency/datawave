@@ -159,6 +159,7 @@ import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
+import datawave.query.language.functions.jexl.Unique;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.async.AbstractQueryPlannerCallable;
 import datawave.query.planner.async.FetchCompositeMetadata;
@@ -182,6 +183,7 @@ import datawave.query.tables.async.event.ReduceFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
@@ -1393,7 +1395,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedUpperCaseIdentifiers(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (upperCaseIdentifiers(metadataHelper, config, script)));
+        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (ShardQueryUtils.upperCaseIdentifiers(metadataHelper, config, script)));
     }
 
     protected ASTJexlScript timedRewriteNegations(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -1850,135 +1852,22 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    protected Set<String> upcase(Set<String> fields) {
-        return fields.stream().map(s -> s.toUpperCase()).collect(Collectors.toSet());
-    }
-
-    protected ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
-        GroupFields groupFields = config.getGroupFields();
-        if (groupFields != null && groupFields.hasGroupByFields()) {
-            groupFields.setMaxFields(upcase(groupFields.getMaxFields()));
-            groupFields.setSumFields(upcase(groupFields.getSumFields()));
-            groupFields.setGroupByFields(upcase(groupFields.getGroupByFields()));
-            groupFields.setAverageFields(upcase(groupFields.getAverageFields()));
-            groupFields.setCountFields(upcase(groupFields.getCountFields()));
-            groupFields.setMinFields(upcase(groupFields.getMinFields()));
-
-            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
-            config.setProjectFields(groupFields.getProjectionFields());
-        } else {
-            Set<String> projectFields = config.getProjectFields();
-
-            if (projectFields != null && !projectFields.isEmpty()) {
-                config.setProjectFields(upcase(projectFields));
-            }
-        }
-
-        UniqueFields uniqueFields = config.getUniqueFields();
-        if (uniqueFields != null && !uniqueFields.isEmpty()) {
-            Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
-        }
-
-        ExcerptFields excerptFields = config.getExcerptFields();
-        if (excerptFields != null && !excerptFields.isEmpty()) {
-            Sets.newHashSet(excerptFields.getFields()).stream().forEach(s -> excerptFields.replace(s, s.toUpperCase()));
-        }
-
-        Set<String> userProjection = config.getRenameFields();
-        if (userProjection != null && !userProjection.isEmpty()) {
-            config.setRenameFields(upcase(userProjection));
-        }
-
-        Set<String> disallowlistedFields = config.getDisallowlistedFields();
-        if (disallowlistedFields != null && !disallowlistedFields.isEmpty()) {
-            config.setDisallowlistedFields(upcase(disallowlistedFields));
-        }
-
-        Set<String> limitFields = config.getLimitFields();
-        if (limitFields != null && !limitFields.isEmpty()) {
-            config.setLimitFields(upcase(limitFields));
-        }
-
-        return (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script));
-    }
-
-    // Overwrite projection and disallowlist properties if the query model is
-    // being used
+    /**
+     * Apply the query model to the given query script and query configuration, using the set of all fields cached in allFieldTypeMap if cacheDataTypes is true,
+     * or from {@link MetadataHelper#getAllFields(Set)} otherwise.
+     *
+     * @param metadataHelper
+     *            the metadata helper
+     * @param config
+     *            the query config
+     * @param script
+     *            the query script
+     * @param queryModel
+     *            the query model
+     * @return
+     */
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
-        // generate the inverse of the reverse mapping; {display field name
-        // => db field name}
-        // a reverse mapping is always many to one, therefore the inverted
-        // reverse mapping
-        // can be one to many
-        Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
-
-        inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), disallowlistedFields = config.getDisallowlistedFields(),
-                        limitFields = config.getLimitFields();
-
-        if (projectFields != null && !projectFields.isEmpty()) {
-            projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated projection set using query model to: " + projectFields);
-            }
-            config.setProjectFields(Sets.newHashSet(projectFields));
-        }
-
-        GroupFields groupFields = config.getGroupFields();
-        if (groupFields != null && groupFields.hasGroupByFields()) {
-            groupFields.remapFields(inverseReverseModel, queryModel.getReverseQueryMapping());
-            if (log.isTraceEnabled()) {
-                log.trace("Updating group-by fields using query model to " + groupFields);
-            }
-            config.setGroupFields(groupFields);
-
-            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
-            config.setProjectFields(groupFields.getProjectionFields());
-        }
-
-        UniqueFields uniqueFields = config.getUniqueFields();
-        if (uniqueFields != null && !uniqueFields.isEmpty()) {
-            uniqueFields.remapFields(inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated unique set using query model to: " + uniqueFields.getFields());
-            }
-            config.setUniqueFields(uniqueFields);
-        }
-
-        ExcerptFields excerptFields = config.getExcerptFields();
-        if (excerptFields != null && !excerptFields.isEmpty()) {
-            excerptFields.expandFields(inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated excerpt fields using query model to " + excerptFields.getFields());
-            }
-            config.setExcerptFields(excerptFields);
-        }
-
-        Set<String> userProjection = config.getRenameFields();
-        if (userProjection != null && !userProjection.isEmpty()) {
-            userProjection = Sets.newHashSet(queryModel.remapParameterEquation(userProjection, inverseReverseModel));
-            if (log.isTraceEnabled()) {
-                log.trace("Updated user projection fields using query model to " + userProjection);
-            }
-            config.setRenameFields(userProjection);
-        }
-
-        if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
-            disallowlistedFields = queryModel.remapParameter(disallowlistedFields, inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated disallowlist set using query model to: " + disallowlistedFields);
-            }
-            config.setDisallowlistedFields(Sets.newHashSet(disallowlistedFields));
-        }
-
-        if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
-            limitFields = queryModel.remapParameterEquation(limitFields, inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated limitFields set using query model to: " + limitFields);
-            }
-            config.setLimitFields(Sets.newHashSet(limitFields));
-        }
-
+        // Establish the set of all fields to use when applying the query model.
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields = null;
         try {
@@ -1988,8 +1877,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             if (null == allFields) {
                 allFields = metadataHelper.getAllFields(dataTypes);
-                if (cacheDataTypes)
+                if (cacheDataTypes) {
                     allFieldTypeMap.put(dataTypeHash, allFields);
+                }
             }
 
             if (log.isTraceEnabled()) {
@@ -2017,8 +1907,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        return (QueryModelVisitor.applyModel(script, queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
-                        config.getStrictFields()));
+        return ShardQueryUtils.applyQueryModel(script, config, allFields, queryModel);
     }
 
     /**

@@ -63,7 +63,7 @@
         <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
         <version.datawave.dictionary-api>4.0.1</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
@@ -1584,7 +1584,7 @@
                     <dependencies>
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
+                            <artifactId>junit-jupiter</artifactId>
                             <version>${version.junit.bom}</version>
                         </dependency>
                         <dependency>
@@ -1694,7 +1694,7 @@
                     <dependencies>
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
+                            <artifactId>junit-jupiter</artifactId>
                             <version>${version.junit.bom}</version>
                         </dependency>
                         <dependency>

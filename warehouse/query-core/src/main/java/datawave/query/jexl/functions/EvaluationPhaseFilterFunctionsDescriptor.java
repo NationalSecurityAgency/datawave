@@ -198,7 +198,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            Set<String> fields = Sets.newHashSet();
+            // Maintain insertion order.
+            Set<String> fields = Sets.newLinkedHashSet();
 
             List<JexlNode> arguments = functionMetadata.args();
             if (MATCHCOUNTOF.equals(functionMetadata.name())) {
