@@ -4,6 +4,8 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -36,9 +38,35 @@ public class GenerateShardSplits {
 
     private static void printUsageAndExit() {
         System.out.println(
-                        "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
+                "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> <numberOfSplitsPerBatch> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
+
+    protected static List<Text> sortSplitsByMidpoints(List<Text> unsorted)
+    {
+        // Sort files by date and number
+        List<Text> sortedFiles = new ArrayList<>(unsorted);
+        sortedFiles.sort(new Comparator<>() {
+            @Override
+            public int compare(Text a, Text b) {
+                String[] partsA = a.toString().split("_");
+                String[] partsB = b.toString().split("_");
+
+                int dateComparison = partsA[0].compareTo(partsB[0]);
+                if (dateComparison != 0) {
+                    return dateComparison;
+                }
+
+                int numberA = Integer.parseInt(partsA[1]);
+                int numberB = Integer.parseInt(partsB[1]);
+                return Integer.compare(numberA, numberB);
+            }
+        });
+
+        // Call recursive function to calculate midpoints
+        return calculateMidpoints(sortedFiles);
+    }
+
 
     public static void main(String[] args) throws Exception {
 
@@ -52,6 +80,7 @@ public class GenerateShardSplits {
         int splitStep = 1;
         boolean addSplits = true;
         boolean addShardMarkers = false;
+        int splitsPerBatch = 100;
         String[] shardMarkerTypes = null;
         String username = null;
         byte[] password = null;
@@ -87,7 +116,14 @@ public class GenerateShardSplits {
                     System.out.println("Split Step argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
-            } else if (args[i].equals("-markersOnly")) {
+            } else if (i == 4) {
+                try {
+                    splitsPerBatch = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Splits Per Batch argument is not an integer:" + e.getMessage());
+                    System.exit(-2);
+                }
+            }else if (args[i].equals("-markersOnly")) {
                 addSplits = false;
             } else if (args[i].equals("-addShardMarkers")) {
                 addShardMarkers = true;
@@ -121,7 +157,7 @@ public class GenerateShardSplits {
             }
         }
 
-        SortedSet<Text> splits = new TreeSet<>();
+        List<Text> splits = new ArrayList<>();
         List<Mutation> mutations = new ArrayList<>();
         for (int x = 0; x < DAYS_TO_GENERATE; x++) {
 
@@ -154,12 +190,29 @@ public class GenerateShardSplits {
             startDate = DateUtils.addDays(startDate, 1);
         }
 
+        splits = sortSplitsByMidpoints(splits);
+
         if (username != null) {
             // Connect to accumulo
             try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build()) {
                 // add the splits
                 if (addSplits) {
-                    client.tableOperations().addSplits(tableName, splits);
+                    int batchSize = splitsPerBatch; // Make splits in batches,
+                    // as the addSplits command takes a sortedset, but we intentionally do not want the order to be
+                    // lexicographically sorted.
+                    while (!splits.isEmpty()) {
+                        // Determine the end index for the batch
+                        int endIndex = Math.min(batchSize, splits.size());
+
+                        // Extract a batch of splits from the front of the list
+                        SortedSet<Text> batch = new TreeSet<>(splits.subList(0, endIndex));
+
+                        // Remove the processed batch from the list
+                        splits.subList(0, endIndex).clear();
+
+                        // Perform the operation on the current batch
+                        client.tableOperations().addSplits(tableName, batch);
+                    }
                 }
 
                 // add the markers
@@ -173,9 +226,10 @@ public class GenerateShardSplits {
         } else {
             if (addSplits) {
                 for (Text t : splits) {
-                    System.out.println(t);
+                    System.out.println(t.toString());
                 }
             }
+
             for (Mutation m : mutations) {
                 for (ColumnUpdate update : m.getUpdates()) {
                     System.out.println(new String(m.getRow()) + ' ' + new String(update.getColumnFamily()) + ':' + new String(update.getColumnQualifier())
@@ -186,4 +240,33 @@ public class GenerateShardSplits {
 
         }
     }
+
+
+    private static List<Text> calculateMidpoints(List<Text> splits) {
+        if (splits.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Text> midpoints = new ArrayList<>();
+        int n = splits.size();
+
+
+        if (n % 2 == 0) {
+            // Even case: Add the two middle elements
+            midpoints.add(splits.get(n / 2 - 1));
+            midpoints.add(splits.get(n / 2));
+
+            midpoints.addAll(calculateMidpoints(splits.subList(0, (n / 2) - 1)));
+            midpoints.addAll(calculateMidpoints(splits.subList(((n  / 2) + 1), n)));
+        } else {
+            // odd case: Add the single middle element
+            midpoints.add(splits.get(n / 2));
+
+            midpoints.addAll(calculateMidpoints(splits.subList(0, n / 2)));
+            midpoints.addAll(calculateMidpoints(splits.subList((n + 1) / 2, n)));
+        }
+
+        return midpoints;
+    }
+
 }
