@@ -71,7 +71,6 @@ import datawave.util.StringUtils;
  */
 public class StatsJob extends IngestJob {
 
-
     // default values used by both mapper and reducer
     // constants for hyperloglogplus
     static final int HYPERLOG_SPARSE_DEFAULT_VALUE = 24;

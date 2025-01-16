@@ -88,13 +88,13 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
             if (options.size() < 4) {
                 uidType = HashUID.class.getSimpleName();
                 LOGGER.warn("Unable to configure UID type {}", SnowflakeUID.class.getSimpleName(),
-                        new IllegalArgumentException("Insufficient number of 'Snowflake' options: " + options));
+                                new IllegalArgumentException("Insufficient number of 'Snowflake' options: " + options));
             }
         } else if (!HashUID.class.getSimpleName().equals(uidType)) {
             final String invalidType = uidType;
             uidType = HashUID.class.getSimpleName();
             LOGGER.warn("Defaulting configuration to UID type {} due to unspecified value", HashUID.class.getSimpleName(),
-                    new IllegalArgumentException("Unrecognized UID type: " + invalidType));
+                            new IllegalArgumentException("Unrecognized UID type: " + invalidType));
         }
         config.set(CONFIG_UID_TYPE_KEY, uidType, this.getClass().getName());
 
@@ -102,12 +102,12 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
         if (SnowflakeUID.class.getSimpleName().equals(uidType)) {
             int machineId = SnowflakeUIDBuilder.newMachineId(options);
             if (machineId >= 0) {
-                LOGGER.debug("Setting configuration {} to use {} based on UID type {} and machine ID {}",
-                        config.hashCode(), SnowflakeUIDBuilder.class.getSimpleName(), uidType, machineId);
+                LOGGER.debug("Setting configuration {} to use {} based on UID type {} and machine ID {}", config.hashCode(),
+                                SnowflakeUIDBuilder.class.getSimpleName(), uidType, machineId);
                 config.setInt(CONFIG_MACHINE_ID_KEY, machineId);
             } else if (LOGGER.isDebugEnabled()) {
-                LOGGER.warn("Unable to set configuration to use {} based on UID type {} with machine ID {}",
-                        SnowflakeUIDBuilder.class.getSimpleName(), uidType, machineId);
+                LOGGER.warn("Unable to set configuration to use {} based on UID type {} with machine ID {}", SnowflakeUIDBuilder.class.getSimpleName(), uidType,
+                                machineId);
                 config.set(CONFIG_UID_TYPE_KEY, HashUID.class.getSimpleName(), this.getClass().getName());
             }
         }
