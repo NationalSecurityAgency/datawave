@@ -9,6 +9,7 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
@@ -228,6 +229,20 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         return fromIndex;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Attribute)) {
+            return false;
+        }
+        Attribute other = (Attribute) o;
+        EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
+        if (this.isMetadataSet()) {
+            equals.append(this.getMetadata(), other.getMetadata());
+        }
+        return equals.isEquals();
+    }
+
+    @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(145, 11);
         hcb.append(this.isMetadataSet());
