@@ -317,7 +317,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             configProperty = DISALLOWLIST_REVERSE_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Reverse Index specified.for: {}", this.getType().typeName() + REVERSE_INDEX_FIELDS);
+                log.debug("Reverse Index specified for: {}", this.getType().typeName() + REVERSE_INDEX_FIELDS);
             }
             this.setHasReverseIndexDisallowlist(false);
             configProperty = REVERSE_INDEX_FIELDS;
@@ -1215,7 +1215,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 typeFieldMap.put(fieldName, datawaveType);
             }
             if (log.isDebugEnabled()) {
-                log.debug("Registered a {} for type[{}], field[{}}]", typeClass, this.getType().typeName(), fieldName);
+                log.debug("Registered a {} for type[{}], field[{}]", typeClass, this.getType().typeName(), fieldName);
             }
         }
     }
