@@ -1025,7 +1025,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
-        return ivaratorConfig.getIvaratorCacheDirConfigs();
+        return getIvaratorConfig().getIvaratorCacheDirConfigs();
     }
 
     public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
@@ -1033,7 +1033,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getIvaratorCacheBufferSize() {
-        return ivaratorConfig.getIvaratorCacheBufferSize();
+        return getIvaratorConfig().getIvaratorCacheBufferSize();
     }
 
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
@@ -1041,7 +1041,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public long getIvaratorCacheScanPersistThreshold() {
-        return ivaratorConfig.getIvaratorCacheScanPersistThreshold();
+        return getIvaratorConfig().getIvaratorCacheScanPersistThreshold();
     }
 
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
@@ -1049,7 +1049,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public long getIvaratorCacheScanTimeout() {
-        return ivaratorConfig.getIvaratorCacheScanTimeout();
+        return getIvaratorConfig().getIvaratorCacheScanTimeout();
     }
 
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
@@ -1061,7 +1061,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getMaxFieldIndexRangeSplit() {
-        return ivaratorConfig.getMaxFieldIndexRangeSplit();
+        return getIvaratorConfig().getMaxFieldIndexRangeSplit();
     }
 
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
@@ -1069,7 +1069,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getIvaratorMaxOpenFiles() {
-        return ivaratorConfig.getIvaratorMaxOpenFiles();
+        return getIvaratorConfig().getIvaratorMaxOpenFiles();
     }
 
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
@@ -1077,7 +1077,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getIvaratorNumRetries() {
-        return ivaratorConfig.getIvaratorNumRetries();
+        return getIvaratorConfig().getIvaratorNumRetries();
     }
 
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
@@ -1101,7 +1101,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public long getMaxIvaratorSourceWait() {
-        return ivaratorConfig.getMaxIvaratorSourceWait();
+        return getIvaratorConfig().getMaxIvaratorSourceWait();
     }
 
     public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
@@ -1109,7 +1109,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public long getMaxIvaratorResults() {
-        return ivaratorConfig.getMaxIvaratorResults();
+        return getIvaratorConfig().getMaxIvaratorResults();
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
@@ -1120,8 +1120,12 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorConfig = ivaratorConfig;
     }
 
-    public IvaratorConfig getIvaratorConfig() {
-        return this.ivaratorConfig;
+    public IvaratorConfig getIvaratorConfig(){
+        if (ivaratorConfig == null) {
+            // create a fresh config with default values
+            ivaratorConfig = new IvaratorConfig();
+        }
+        return ivaratorConfig;
     }
 
     public boolean isCompressResults() {

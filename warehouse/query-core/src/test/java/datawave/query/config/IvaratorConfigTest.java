@@ -12,7 +12,7 @@ class IvaratorConfigTest {
     @Test
     public void testSerializeDeserializeEquivalence() throws JsonProcessingException {
         IvaratorConfig conf1 = new IvaratorConfig();
-        conf1.setIvaratorFstHdfsBaseURIs("hdfs://example.com/ivarator");
+        conf1.setIvaratorFstHdfsBaseURIs("file://tmp/ivarator");
         conf1.setIvaratorCacheBufferSize(1024);
         conf1.setIvaratorCacheScanPersistThreshold(5000L);
         conf1.setIvaratorCacheScanTimeout(10000L);
@@ -39,7 +39,7 @@ class IvaratorConfigTest {
     public void testSettersGetters() throws JsonProcessingException {
 
         IvaratorConfig conf1 = new IvaratorConfig();
-        conf1.setIvaratorFstHdfsBaseURIs("hdfs://example.com/ivarator");
+        conf1.setIvaratorFstHdfsBaseURIs("file://tmp/ivarator");
         conf1.setIvaratorCacheBufferSize(1024);
         conf1.setIvaratorCacheScanPersistThreshold(5000L);
         conf1.setIvaratorCacheScanTimeout(10000L);
