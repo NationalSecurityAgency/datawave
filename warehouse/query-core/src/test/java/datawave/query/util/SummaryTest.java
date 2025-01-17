@@ -243,7 +243,7 @@ public abstract class SummaryTest {
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = new HashSet<>(Set.of(
-                "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
+                        "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false"));
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults, true);
     }
