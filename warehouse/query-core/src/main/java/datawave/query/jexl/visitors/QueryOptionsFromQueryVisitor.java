@@ -51,6 +51,11 @@ import datawave.query.jexl.functions.QueryFunctions;
  * <li>{@code f:most_recent_unique...} Adding most_recent_ before any unique function will set the most.recent.unique flag to true, e.g.
  * {@code most_recent_unique_by_day('field1','field2')}</li>
  * <li>{@code f:rename}: Expects a comma-delimited list field/field mappings e.g. {@code f:rename('field1=field2','field3=field4')}</li>
+ * <li>{@code f:sum}: Expects a comma-delimited list of fields to sum the values of in a grouping.</li>
+ * <li>{@code f:min}: Expects a comma-delimited list of fields to find the minimum value of in a grouping.</li>
+ * <li>{@code f:max}: Expects a comma-delimited list of fields to find the maximum value of in a grouping.</li>
+ * <li>{@code f:average}: Expects a comma-delimited list of fields to find the average value of in a grouping.</li>
+ * <li>{@code f:count}: Expects a comma-delimited list of fields to count the occurrences of in a grouping.</li>
  * </ul>
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
