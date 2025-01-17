@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,15 +13,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -44,8 +47,6 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.RebuildingScannerTestHelper;
-import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -131,7 +132,8 @@ public abstract class FederatedQueryTest {
     protected ShardQueryLogic logic;
     protected KryoDocumentDeserializer deserializer;
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+    private final DateFormat formatDate = new SimpleDateFormat("yyyyMMdd");
+    private final DateFormat formatDateTime = new SimpleDateFormat("yyyyMMdd HHmmss");
     private final List<FieldIndexHoleDataIngest.EventConfig> eventConfigs = new ArrayList<>();
     private final Map<String,String> queryParameters = new HashMap<>();
     private final Set<Event> expectedEvents = new HashSet<>();
@@ -192,11 +194,19 @@ public abstract class FederatedQueryTest {
     }
 
     private void givenStartDate(String date) throws ParseException {
-        this.startDate = format.parse(date);
+        if (date.length() == 8) {
+            this.startDate = formatDate.parse(date);
+        } else {
+            this.startDate = formatDateTime.parse(date);
+        }
     }
 
     private void givenEndDate(String date) throws ParseException {
-        this.endDate = format.parse(date);
+        if (date.length() == 8) {
+            this.endDate = formatDate.parse(date);
+        } else {
+            this.endDate = formatDateTime.parse(date);
+        }
     }
 
     private void givenFieldIndexMinThreshold(double threshold) {
@@ -216,6 +226,90 @@ public abstract class FederatedQueryTest {
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         return client;
+    }
+
+    private Date addDays(Date date, int days) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date(date.getTime()));
+        calendar.add(Calendar.DATE, days);
+        return calendar.getTime();
+    }
+
+    private Date midnight(Date date) {
+        Calendar midnight = Calendar.getInstance();
+        midnight.setTime(date);
+        midnight.set(Calendar.HOUR, 0);
+        midnight.set(Calendar.MINUTE, 0);
+        midnight.set(Calendar.SECOND, 0);
+        midnight.set(Calendar.MILLISECOND, 0);
+        return midnight.getTime();
+    }
+
+    /*
+     * ensure that each subRange has all days with holes or all days with no holes ensure that all milliseconds in the original date range are covered
+     */
+    private void assertSubrangesCorrect() throws Exception {
+        FederatedQueryPlanner queryPlanner = (FederatedQueryPlanner) logic.getQueryPlanner();
+
+        // Ensure that each subRange has all days with holes or all days with no holes
+        Set<String> fieldsInQuery = queryPlanner.getFieldsForQuery(this.logic.getConfig(), this.query, logic.getScannerFactory());
+        Set<Date> datesWithHoles = new HashSet<>();
+        Set<Date> datesWithoutHoles = new HashSet<>();
+        this.eventConfigs.forEach(config -> {
+            if (config.getTime() >= this.startDate.getTime() && config.getTime() <= this.endDate.getTime()) {
+                // field has to be in the query and fieldIndexHoleMinThreshold != null and index / frequency < fieldIndexHoleMinThreshold
+                boolean hasHoles = config.getMetadataCounts().entrySet().stream().filter(e -> fieldsInQuery.contains(e.getKey()))
+                                .anyMatch(e -> this.fieldIndexHoleMinThreshold != null && ((double) (e.getValue().getValue1())
+                                                / ((double) e.getValue().getValue0())) < this.fieldIndexHoleMinThreshold);
+                if (hasHoles) {
+                    datesWithHoles.add(new Date(config.getTime()));
+                } else {
+                    datesWithoutHoles.add(new Date(config.getTime()));
+                }
+            }
+        });
+
+        SortedSet<Pair<Date,Date>> subRanges = queryPlanner.getSubQueryDateRanges(logic.getConfig(), this.query, logic.getScannerFactory());
+        // Subranges are sorted and should begin with the query beginDate and end with the query endDate
+        Pair<Date,Date> firstSubRange = subRanges.stream().findFirst().get();
+        Assert.assertNotNull("firstSubRange should not be null", firstSubRange);
+        Assert.assertEquals("begin of lastSubRange should equal query beginDate", this.startDate.getTime(), firstSubRange.getLeft().getTime());
+        Pair<Date,Date> lastSubRange = subRanges.stream().reduce((first, second) -> second).get();
+        Assert.assertNotNull("lastSubRange should not be null", lastSubRange);
+        Assert.assertEquals("end of lastSubRange should equal query endDate", this.endDate.getTime(), lastSubRange.getRight().getTime());
+
+        Pair<Date,Date> previousPair = null;
+        for (Pair<Date,Date> range : subRanges) {
+            Set<String> datesWithHolesInRange = new TreeSet<>();
+            Set<String> datesWithoutHolesInRange = new TreeSet<>();
+            // adding 24 hours to b is guaranteed to fall on the next sequential date until we are outside the range
+            for (Date b = new Date(range.getLeft().getTime()); b.getTime() <= range.getRight().getTime(); b = addDays(b, 1)) {
+                if (datesWithHoles.contains(midnight(b))) {
+                    datesWithHolesInRange.add(formatDate.format(b));
+                }
+                if (datesWithoutHoles.contains(midnight(b))) {
+                    datesWithoutHolesInRange.add(formatDate.format(b));
+                }
+            }
+            // adding 24 hours to b is guaranteed to fall on the next sequential date, but this might miss
+            // the range end date so perform the same check on the range end date here
+            if (datesWithHoles.contains(midnight(range.getRight()))) {
+                datesWithHolesInRange.add(formatDate.format(range.getRight()));
+            }
+            if (datesWithoutHoles.contains(midnight(range.getRight()))) {
+                datesWithoutHolesInRange.add(formatDate.format(range.getRight()));
+            }
+
+            Assert.assertFalse("Subrange " + range + " must have all days with holes or all days with no holes: hasHoles:" + datesWithHolesInRange
+                            + " hasNoHoles:" + datesWithoutHolesInRange, !datesWithHolesInRange.isEmpty() && !datesWithoutHolesInRange.isEmpty());
+
+            // check that there is one millisecond difference between the end of one range and the beginning of the next
+            if (previousPair != null) {
+                long difference = range.getLeft().getTime() - previousPair.getRight().getTime();
+                Assert.assertEquals("Expected difference of 1ms, got " + difference, 1, difference);
+            }
+            previousPair = range;
+        }
     }
 
     private void assertQueryResults() throws Exception {
@@ -298,6 +392,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -321,6 +416,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -345,6 +441,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -368,6 +465,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -392,6 +490,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -416,6 +515,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -440,6 +540,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -464,6 +565,29 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
+    }
+
+    @Test
+    public void testFieldIndexHolesAtEndOfRange() throws Exception {
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 10L, 1L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 1L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 1L));
+
+        givenQuery("UUID =~ '^[CS].*'");
+        givenStartDate("20120101");
+        givenEndDate("20130105 120000");
+
+        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+
+        assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -489,6 +613,7 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 
     /**
@@ -514,5 +639,6 @@ public abstract class FederatedQueryTest {
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
         assertQueryResults();
+        assertSubrangesCorrect();
     }
 }

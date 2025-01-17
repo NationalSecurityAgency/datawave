@@ -16,7 +16,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -28,7 +29,7 @@ import datawave.core.common.result.TableCacheDescription;
  * Object that caches data from Accumulo tables.
  */
 public class AccumuloTableCacheImpl implements AccumuloTableCache {
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final ExecutorService executorService;
     private final AccumuloTableCacheProperties accumuloTableCacheProperties;
@@ -38,7 +39,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
     private boolean connectionFactoryProvided = false;
 
     public AccumuloTableCacheImpl(ExecutorService executorService, AccumuloTableCacheProperties accumuloTableCacheProperties) {
-        log.debug("Called AccumuloTableCacheImpl with accumuloTableCacheConfiguration = " + accumuloTableCacheProperties);
+        log.debug("Called AccumuloTableCacheImpl with accumuloTableCacheConfiguration = {}", accumuloTableCacheProperties);
         this.executorService = executorService;
         this.accumuloTableCacheProperties = accumuloTableCacheProperties;
         setup();
@@ -55,7 +56,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
     }
 
     public void setup() {
-        log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheProperties);
+        log.debug("accumuloTableCacheConfiguration was setup as: {}", accumuloTableCacheProperties);
         instance = new InMemoryInstance();
         details = new HashMap<>();
         cacheCoordinators = new ArrayList<>();
@@ -85,19 +86,19 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
                     @Override
                     public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
                         if (log.isTraceEnabled()) {
-                            log.trace("table:" + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
+                            log.trace("table: {} stateHasChanged( {}, {} ). This listener does nothing", tableName, reader, value);
                         }
                     }
 
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
                         if (log.isTraceEnabled()) {
-                            log.trace("table:" + tableName + " stateChanged(" + client + ", " + newState + "). This listener does nothing");
+                            log.trace("table: {} stateChanged( {}, {} ). This listener does nothing", tableName, client, newState);
                         }
                     }
                 });
             } catch (Exception e) {
-                log.debug("Failure registering a triState for " + tableName, e);
+                log.debug("Failure registering a triState for {}", tableName, e);
             }
 
             try {
@@ -146,7 +147,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         for (Entry<String,TableCache> entry : details.entrySet()) {
             Future<Boolean> ref = entry.getValue().getReference();
             if (null != ref && (ref.isCancelled() || ref.isDone())) {
-                log.info("Reloading complete for table: " + entry.getKey());
+                log.info("Reloading complete for table: {}", entry.getKey());
                 entry.getValue().setReference(null);
             }
 
@@ -159,12 +160,12 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             }
             long last = entry.getValue().getLastRefresh().getTime();
             if ((now - last) > entry.getValue().getReloadInterval()) {
-                log.info("Reloading " + entry.getKey());
+                log.info("Reloading {}", entry.getKey());
                 try {
                     Future<Boolean> result = executorService.submit(entry.getValue());
                     entry.getValue().setReference(result);
                 } catch (Exception e) {
-                    log.error("Error reloading table: " + entry.getKey(), e);
+                    log.error("Error reloading table: {}", entry.getKey(), e);
                 }
             }
         }
@@ -193,7 +194,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         if (null == details.get(tableName)) {
             return;
         }
-        log.debug("Reloading table cache for " + tableName);
+        log.debug("Reloading table cache for {}", tableName);
         // send an eviction notice to the cluster
         try {
             details.get(tableName).getWatcher().incrementCounter(tableName);
@@ -207,13 +208,13 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
     private void handleReloadTypeMetadata(String tableName) {
         String triStateName = tableName + ":needsUpdate";
         try {
-            log.debug(triStateName + " handleReloadTypeMetadata(" + tableName + ")");
+            log.debug("{} handleReloadTypeMetadata( {} )", triStateName, tableName);
             SharedCacheCoordinator watcher = details.get(tableName).getWatcher();
             if (!watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
                 watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
             }
         } catch (Throwable e) {
-            log.debug("table:" + tableName + " could not update the triState '" + triStateName + " on watcher for table " + tableName, e);
+            log.debug("table: {} could not update the triState {} on watcher for table {}", tableName, triStateName, tableName, e);
         }
     }
 

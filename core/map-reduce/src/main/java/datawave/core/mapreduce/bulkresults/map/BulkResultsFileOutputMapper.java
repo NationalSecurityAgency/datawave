@@ -21,7 +21,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import datawave.core.query.cache.ResultsPage;
@@ -35,7 +36,7 @@ import datawave.webservice.util.ProtostuffMessageBodyWriter;
 
 public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<Key,Value,Key,Value> {
 
-    private static Logger log = Logger.getLogger(BulkResultsFileOutputMapper.class);
+    private static Logger log = LoggerFactory.getLogger(BulkResultsFileOutputMapper.class);
     /**
      * Parameter to store Base64 encoded serialized Query settings
      */
@@ -82,6 +83,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
 
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
+
         Assert.notNull(logic.getMarkingFunctions());
         Assert.notNull(logic.getResponseObjectFactory());
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));
