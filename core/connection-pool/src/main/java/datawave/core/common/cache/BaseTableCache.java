@@ -27,7 +27,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -40,7 +41,7 @@ public class BaseTableCache implements Serializable, TableCache {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient Logger log = Logger.getLogger(this.getClass());
+    private final transient Logger log = LoggerFactory.getLogger(this.getClass());
 
     /** should be set by configuration **/
     private String tableName = null;
@@ -221,7 +222,7 @@ public class BaseTableCache implements Serializable, TableCache {
                 // the table will not exist the first time this is run
             }
             instanceClient.tableOperations().rename(tempTableName, tableName);
-            log.info("Cached " + count + " k,v for table: " + tableName);
+            log.info("Cached {} k,v for table: {}", count, tableName);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
@@ -238,7 +239,7 @@ public class BaseTableCache implements Serializable, TableCache {
                 if (null != writer)
                     writer.close();
             } catch (Exception e) {
-                log.warn("Error closing batch writer for table: " + tempTableName, e);
+                log.warn("Error closing batch writer for table: {}", tempTableName, e);
             }
             lock.unlock();
         }
@@ -269,7 +270,7 @@ public class BaseTableCache implements Serializable, TableCache {
                 }
             } catch (NamespaceExistsException e) {
                 // in this case, somebody else must have created the namespace after our existence check
-                log.info("Tried to create Accumulo namespace," + namespace + ", but it already exists");
+                log.info("Tried to create Accumulo namespace, {}, but it already exists", namespace);
             }
         }
     }
