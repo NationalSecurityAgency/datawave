@@ -4,7 +4,8 @@ import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
 
@@ -13,7 +14,7 @@ import datawave.core.query.exception.EmptyObjectException;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
 
-    protected static final Logger log = Logger.getLogger(CompositeQueryLogicResultsIterator.class);
+    protected static final Logger log = LoggerFactory.getLogger(CompositeQueryLogicResultsIterator.class);
 
     private final CompositeQueryLogic logic;
 
@@ -32,23 +33,26 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
     public boolean hasNext() {
         synchronized (lock) {
             if (failure != null) {
-                Throwables.propagate(failure);
+                Throwables.throwIfUnchecked(failure);
+                throw new RuntimeException(failure);
             }
             while (nextEntry == null) {
                 try {
                     if (failure != null) {
-                        Throwables.propagate(failure);
+                        Throwables.throwIfUnchecked(failure);
+                        throw new RuntimeException(failure);
                     }
                     while (nextEntry == null && failure == null && (!results.isEmpty() || logic.getCompletionLatch().getCount() > 0)) {
                         nextEntry = results.poll(1, TimeUnit.SECONDS);
                     }
                     if (failure != null) {
-                        Throwables.propagate(failure);
+                        Throwables.throwIfUnchecked(failure);
+                        throw new RuntimeException(failure);
                     }
                     if (nextEntry == null) {
-                        // if the current execution threads are complete
-                        // and we are in the sequential execution mode
-                        // and we have not seen an result yet
+                        // if the current execution threads are complete,
+                        // and we are in the sequential execution mode,
+                        // and we have not seen a result yet,
                         // and we have more logics to initialize
                         // then initialize the next logic and continue.
                         if (logic.getCompletionLatch().getCount() == 0 && logic.isShortCircuitExecution() && !seenEntries
@@ -58,7 +62,8 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                                                 logic.getConfig().getAuthorizations());
                                 logic.setupQuery(config);
                             } catch (Exception e) {
-                                Throwables.propagate(e);
+                                Throwables.throwIfUnchecked(e);
+                                throw new RuntimeException(e);
                             }
                         } else {
                             break;
@@ -66,7 +71,8 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                     }
                 } catch (InterruptedException e) {
                     if (failure != null) {
-                        Throwables.propagate(failure);
+                        Throwables.throwIfUnchecked(failure);
+                        throw new RuntimeException(failure);
                     }
                     throw new RuntimeException(e);
                 }
@@ -85,14 +91,16 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
 
         synchronized (lock) {
             if (failure != null) {
-                Throwables.propagate(failure);
+                Throwables.throwIfUnchecked(failure);
+                throw new RuntimeException(failure);
             }
             if (hasNext()) {
                 current = nextEntry;
                 nextEntry = null;
             }
             if (failure != null) {
-                Throwables.propagate(failure);
+                Throwables.throwIfUnchecked(failure);
+                throw new RuntimeException(failure);
             }
         }
         return current;
