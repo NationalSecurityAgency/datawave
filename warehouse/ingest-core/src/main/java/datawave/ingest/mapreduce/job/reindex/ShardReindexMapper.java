@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -144,6 +146,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     // generating metadata for fi/tf
     private EventMetadata generatedEventMetadata = null;
     private String lastMetadataField = null;
+    private Set<String> metadataDataTypesSeen;
     private Map<String,Boolean> dataTypeEventLookupMap;
     private Map<String,Boolean> dataTypeReverseMetadataLookupMap;
     private Map<String,Boolean> dataTypeTermFrequencyLookupMap;
@@ -474,6 +477,14 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             return;
         }
 
+        validateCaches(field);
+
+        // if counts are not enabled and this combination of field and datatype has been processed already, skip all processing
+        if (this.disableMetadataFrequencyCounts && this.metadataDataTypesSeen.contains(dataType)) {
+            // if not processing frequency counts, all data for a field/dataType combo has already been extracted for this field, skip processing
+            return;
+        }
+
         // restrict the fieldHelper as well as rewiring the tf lookups to make sense from the perspective of the key already written rather than the key about
         // to be written
         fieldHelper = new RestrictedIngestHelper(fieldHelper, !this.generateEventMetadataFromFi, !this.generateReverseIndexMetadataFromFi,
@@ -484,12 +495,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         boolean restrictTf = false;
 
         if (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi) {
-            if (!field.equals(this.lastMetadataField)) {
-                // clear the lookup cache since it's a new field
-                this.dataTypeEventLookupMap = new HashMap<>();
-                this.lastMetadataField = field;
-            }
-
             if (this.dataTypeEventLookupMap.isEmpty() || !this.dataTypeEventLookupMap.containsKey(dataType)) {
                 // is it an event field?
                 if (!fieldHelper.isShardExcluded(field)) {
@@ -519,12 +524,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         }
 
         if (this.generateReverseIndexMetadataFromFi && this.lookupReverseIndexMetadataFromFi) {
-            if (!field.equals(this.lastMetadataField)) {
-                // clear the data type lookup cache because it is a new field
-                this.dataTypeReverseMetadataLookupMap = new HashMap<>();
-                this.lastMetadataField = field;
-            }
-
             // fi format is row fi\0field value\0datatype\0uid so build a cache of this field's decisions to at most query accumulo once per field/dataType
             // combination
             if (this.dataTypeReverseMetadataLookupMap.isEmpty() || !this.dataTypeReverseMetadataLookupMap.containsKey(dataType)) {
@@ -554,14 +553,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             }
         }
 
-        if (this.generateTermFrequencyMetadataFromFi && this.lookupTermFrequencyMetadataFromFi && fieldHelper instanceof AbstractContentIngestHelper) {
+        if (this.generateTermFrequencyMetadataFromFi && this.lookupTermFrequencyMetadataFromFi) {
             AbstractContentIngestHelper tfFieldHelper = (AbstractContentIngestHelper) fieldHelper;
-            if (!field.equals(lastMetadataField)) {
-                // clear the cache for the tf lookups
-                dataTypeTermFrequencyLookupMap = new HashMap<>();
-                lastMetadataField = field;
-            }
-
             if (this.dataTypeTermFrequencyLookupMap.isEmpty() || !this.dataTypeTermFrequencyLookupMap.containsKey(dataType)) {
                 // it isn't enough to directly check the field name against the helper to see if its tokenized
                 // a field that will be tokenized will return true
@@ -601,6 +594,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             }
         }
 
+        // if lookups were done and failed add restrictions by wrapping the field helper again
         if (restrictShard || restrictReverseIndex || restrictTf) {
             fieldHelper = new RestrictedIngestHelper(fieldHelper, restrictShard, restrictReverseIndex, restrictTf);
         }
@@ -618,8 +612,51 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         fields.put(parsedFi.getField(), parsedFi.getValue().toString());
         Multimap<String,NormalizedContentInterface> normalizedFields = fieldHelper.normalize(fields);
 
+        // if tracking dataTypes for frequency skipping add the dataType to the list
+        if (this.metadataDataTypesSeen != null) {
+            this.metadataDataTypesSeen.add(dataType);
+        }
+
         // use the existing metadata code to generate the metadata events
-        generatedEventMetadata.addEventWithoutLoadDates(fieldHelper, metadataEvent, normalizedFields);
+        this.generatedEventMetadata.addEventWithoutLoadDates(fieldHelper, metadataEvent, normalizedFields);
+    }
+
+    /**
+     * Every time a new field is seen, clear any field based caches in use for metadata generation
+     *
+     * @param field
+     *            the field from the fi key to process
+     */
+    private void validateCaches(String field) {
+        if (this.disableMetadataFrequencyCounts) {
+            if (this.metadataDataTypesSeen == null || !field.equals(this.lastMetadataField)) {
+                // clear the dataType cache for frequency counts
+                this.metadataDataTypesSeen = new HashSet<>();
+            }
+        }
+
+        if (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi) {
+            if (!field.equals(this.lastMetadataField)) {
+                // clear the data type cache for event lookups
+                this.dataTypeEventLookupMap = new HashMap<>();
+            }
+        }
+
+        if (this.generateReverseIndexMetadataFromFi && this.lookupReverseIndexMetadataFromFi) {
+            if (!field.equals(this.lastMetadataField)) {
+                // clear the data type cache for ri lookups
+                this.dataTypeReverseMetadataLookupMap = new HashMap<>();
+            }
+        }
+
+        if (this.generateTermFrequencyMetadataFromFi && this.lookupTermFrequencyMetadataFromFi) {
+            if (!field.equals(this.lastMetadataField)) {
+                // clear the data type cache for the tf lookups
+                this.dataTypeTermFrequencyLookupMap = new HashMap<>();
+            }
+        }
+
+        this.lastMetadataField = field;
     }
 
     private void processFIKey(Key key, Value value, Context context) throws IOException, InterruptedException {

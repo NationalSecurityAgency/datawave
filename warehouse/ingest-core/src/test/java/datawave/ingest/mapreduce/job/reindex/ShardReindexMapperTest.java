@@ -1909,6 +1909,94 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
+    public void FI_metadataOnly_disableFrequency_test() throws ParseException, IOException, InterruptedException {
+        setupDataType("samplecsv2", "FIELDA,FIELDB", "", "FIELDB", "");
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key dupDataType = createFiKey("row", "FIELDA", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key nextDataType = createFiKey("row", "FIELDA", "ABC", "samplecsv2", "1.2.3", "20240216");
+        Key nextField = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nextFieldDataType = createFiKey("row", "FIELDB", "DEF", "samplecsv2", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(5);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv2", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(dupDataType, new Value(), context);
+        mapper.map(nextDataType, new Value(), context);
+        mapper.map(nextField, new Value(), context);
+        mapper.map(nextFieldDataType, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_generateTf_test() throws ParseException, IOException, InterruptedException {
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nextFiKey = createFiKey("row", "FIELDE_TOKEN", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key fFiKey = createFiKey("row", "FIELDF_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nonTokenFiKey = createFiKey("row", "FIELDF", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, false);
+
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(4);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDF", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(nextFiKey, new Value(), context);
+        mapper.map(fFiKey, new Value(), context);
+        mapper.map(nonTokenFiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
     public void createAndVerifyTest() throws IOException, ClassNotFoundException, InterruptedException {
         conf.setBoolean(ShardReindexMapper.ENABLE_REINDEX_COUNTERS, true);
         conf.setBoolean(ShardReindexMapper.DUMP_COUNTERS, true);
