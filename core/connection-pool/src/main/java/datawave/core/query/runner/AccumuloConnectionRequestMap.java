@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.util.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 
@@ -16,7 +17,7 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
  */
 public class AccumuloConnectionRequestMap {
 
-    private static Logger log = Logger.getLogger(AccumuloConnectionRequestMap.class);
+    private static Logger log = LoggerFactory.getLogger(AccumuloConnectionRequestMap.class);
 
     /**
      * This maps the query-id to a pair containing the tracking map (see the AccumuloConnectionFactory) and the thread handling the request

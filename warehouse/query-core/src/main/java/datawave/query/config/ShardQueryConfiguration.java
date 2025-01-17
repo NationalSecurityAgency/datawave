@@ -357,6 +357,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
+
+    private int uniqueCacheBufferSize = 100;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
@@ -519,6 +521,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
     private double fieldIndexHoleMinThreshold = 1.0d;
+
+    /**
+     * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
+     * SHARDS_AND_DAYS hint.
+     */
+    private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
+
+    /**
+     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
+     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
+     */
+    private boolean shardsAndDaysHintAllowed = true;
 
     /**
      * Default constructor
@@ -719,7 +733,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
+        this.setUniqueFields(other.getUniqueFields());
+        log.info("Checkpointing with " + getUniqueFields());
+        this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -759,6 +775,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setNoExpansionIfCurrentDateTypes(
+                        other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
     /**
@@ -1520,6 +1539,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
@@ -1875,11 +1902,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
-        // If unique fields are present, make sure they are deconstructed by this point.
-        if (uniqueFields != null) {
-            uniqueFields.deconstructIdentifierFields();
-        }
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public boolean isHitList() {
@@ -2805,12 +2828,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-        if (!super.equals(o))
+        }
+        if (!super.equals(o)) {
             return false;
+        }
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
@@ -2920,6 +2946,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() &&
                 getAccrueStats() == that.getAccrueStats() &&
                 Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
+                getUniqueCacheBufferSize() == that.getUniqueCacheBufferSize() &&
                 getCacheModel() == that.getCacheModel() &&
                 isTrackSizes() == that.isTrackSizes() &&
                 getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression() &&
@@ -3010,7 +3037,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
-                getCardinalityThreshold() == that.getCardinalityThreshold();
+                getCardinalityThreshold() == that.getCardinalityThreshold() &&
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+ isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+
         // @formatter:on
     }
 
@@ -3187,6 +3217,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getAccrueStats(),
                 getGroupFields(),
                 getUniqueFields(),
+                getUniqueCacheBufferSize(),
                 getCacheModel(),
                 isTrackSizes(),
                 getContentFieldNames(),
@@ -3215,7 +3246,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
-                getCardinalityThreshold()
+                getCardinalityThreshold(),
+                getNoExpansionIfCurrentDateTypes(),
+                isShardsAndDaysHintAllowed()
         );
         // @formatter:on
     }
@@ -3249,5 +3282,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public Set<String> getNoExpansionIfCurrentDateTypes() {
+        return noExpansionIfCurrentDateTypes;
+    }
+
+    public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
+        this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
+    }
+
+    public boolean isShardsAndDaysHintAllowed() {
+        return shardsAndDaysHintAllowed;
+    }
+
+    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
+        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 }

@@ -219,6 +219,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Set<JexlNode> delayedEqNodes = Sets.newHashSet();
 
     protected Map<String,Object> exceededOrEvaluationCache;
+    private int deepCopiesCalled = 0;
 
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
@@ -235,7 +236,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         if (limitLookup) {
-            limitedSource = source.deepCopy(env);
+            limitedSource = deepCopySource();
             limitedMap = Maps.newHashMap();
         }
         Object obj = super.visit(node, data);
@@ -467,10 +468,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(sourceNode, attrFilter);
-            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier,
-                            new AttributeFactory(this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
+            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, deepCopySource(), identifier, new AttributeFactory(this.typeMetadata),
+                            getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
-            builder.setSource(source.deepCopy(env));
+            builder.setSource(deepCopySource());
             builder.setTypeMetadata(typeMetadata);
             builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
@@ -608,26 +609,20 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // We don't support querying only on a negation
             throw new IllegalStateException("Root node cannot be a negation");
         }
-        IndexIteratorBuilder builder = null;
-        try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-        builder.setQueryId(queryId);
-        builder.setSource(source.deepCopy(env));
-        builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
-        builder.setTimeFilter(timeFilter);
-        builder.setDatatypeFilter(getDatatypeFilter());
-        builder.setKeyTransform(getFiAggregator());
-        builder.setEnv(env);
-        builder.setNode(node);
+
+        IndexIteratorBuilder builder = getIteratorBuilder();
         node.childrenAccept(this, builder);
 
-        // A EQNode may be of the form FIELD == null. The evaluation can
-        // handle this, so we should just not build an IndexIterator for it.
-        if (null == builder.getValue()) {
+        // verify that the field exists and is indexed
+        if (builder.getField() == null || isUnindexed(builder.getField())) {
+            if (isQueryFullySatisfied) {
+                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            }
+            return null;
+        }
+
+        // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
+        if (builder.getValue() == null) {
             if (this.indexOnlyFields.contains(builder.getField())) {
                 QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
                                 MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
@@ -636,6 +631,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
             // SatisfactionVisitor should have already initialized this to false
             if (isQueryFullySatisfied) {
+                // note: this is different from the ASTEQ method...
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
@@ -645,6 +641,18 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
         if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
                         && !excludeReferences.contains(builder.getField())) {
+
+            // do not perform a deep copy of the source if this iterator has not been seen yet
+            builder.setQueryId(queryId);
+            builder.setSource(deepCopySource());
+            builder.setTypeMetadata(typeMetadata);
+            builder.setFieldsToAggregate(fieldsToAggregate);
+            builder.setTimeFilter(timeFilter);
+            builder.setDatatypeFilter(getDatatypeFilter());
+            builder.setKeyTransform(getFiAggregator());
+            builder.setEnv(env);
+            builder.setNode(node);
+
             iterators.addExclude(builder.build());
         } else {
             // SatisfactionVisitor should have already initialized this to false
@@ -664,22 +672,77 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        IndexIteratorBuilder builder = null;
-        try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        // visit children first to populate the field and value
+        IndexIteratorBuilder builder = getIteratorBuilder();
+        node.childrenAccept(this, builder);
 
-        /**
-         * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
-         */
-        if (isUnindexed(node)) {
+        // verify that field exists and is indexed
+        if (builder.getField() == null || isUnindexed(builder.getField())) {
             if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
         }
+
+        // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
+        if (builder.getValue() == null) {
+            if (indexOnlyFields.contains(builder.getField())) {
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
+                throw new DatawaveFatalQueryException(qe);
+            }
+            return null;
+        }
+
+        // check to see if there is a mismatch between included and exclude references.
+        // note: this is a lift and shift of old code and probably doesn't work as intended..
+        if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
+            throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
+        }
+
+        // We have no parent already defined
+        if (data == null) {
+            // Make this EQNode the root
+            // load the builder just in time and make it the root of the query (query is a single EQ node)
+            loadBuilder(builder, data, node);
+            root = builder.build();
+
+            if (log.isTraceEnabled()) {
+                log.trace("Build IndexIterator: " + root);
+            }
+        } else {
+            AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+            // Add this IndexIterator to the parent
+            final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
+            final boolean inclusionReference = includeReferences.contains(builder.getField());
+            final boolean notExcluded = !excludeReferences.contains(builder.getField());
+
+            if (isNew && inclusionReference && notExcluded) {
+                loadBuilder(builder, data, node);
+                iterators.addInclude(builder.build());
+            } else {
+                if (isQueryFullySatisfied) {
+                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Load an {@link IndexIteratorBuilder} with all requisite components.
+     * <p>
+     * Note: at this point the method call to {@link #getSourceIterator(ASTEQNode, boolean)} WILL deep copy the source
+     *
+     * @param builder
+     *            an IndexIteratorBuilder
+     * @param data
+     *            an existing AbstractIteratorBuilder, or null if this term is the root of the query
+     * @param node
+     *            the equality term
+     */
+    protected void loadBuilder(IndexIteratorBuilder builder, Object data, ASTEQNode node) {
         // boolean to tell us if we've overridden our subtree due to
         // a negation or
         boolean isNegation = false;
@@ -697,48 +760,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setEnv(env);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         builder.setNode(node);
-        node.childrenAccept(this, builder);
-
-        // A EQNode may be of the form FIELD == null. The evaluation can
-        // handle this, so we should just not build an IndexIterator for it.
-        if (null == builder.getValue()) {
-            if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
-            }
-            return null;
-        }
-
-        // We have no parent already defined
-        if (data == null) {
-            // Make this EQNode the root
-            if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
-            } else if (builder.getField() != null) {
-                root = builder.build();
-
-                if (log.isTraceEnabled()) {
-                    log.trace("Build IndexIterator: " + root);
-                }
-            }
-        } else {
-            AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
-            // Add this IndexIterator to the parent
-            final boolean isNew = !iterators.hasSeen(builder.getField(), builder.getValue());
-            final boolean inclusionReference = includeReferences.contains(builder.getField());
-            final boolean notExcluded = !excludeReferences.contains(builder.getField());
-
-            if (isNew && inclusionReference && notExcluded) {
-                iterators.addInclude(builder.build());
-            } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
-            }
-        }
-
-        return null;
     }
 
     protected TimeFilter getTimeFilter(ASTEQNode node) {
@@ -746,9 +767,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (limitLookup && !limitOverride && !fieldsToAggregate.contains(identifier)) {
             return TimeFilter.alwaysTrue();
         }
-
         return timeFilter;
-
     }
 
     protected SortedKeyValueIterator<Key,Value> getSourceIterator(final ASTEQNode node, boolean negation) {
@@ -759,7 +778,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (limitLookup && !negation) {
 
                 if (!disableFiEval && fieldsToAggregate.contains(identifier)) {
-                    kvIter = source.deepCopy(env);
+                    kvIter = deepCopySource();
                     seekIndexOnlyDocument(kvIter, node);
                 } else if (disableFiEval && fieldsToAggregate.contains(identifier)) {
                     kvIter = createIndexOnlyKey(node);
@@ -770,7 +789,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
 
             } else {
-                kvIter = source.deepCopy(env);
+                kvIter = deepCopySource();
                 seekIndexOnlyDocument(kvIter, node);
             }
 
@@ -787,7 +806,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (null == op || null == op.getLiteralValue()) {
             // deep copy since this is likely a null literal
-            return source.deepCopy(env);
+            return deepCopySource();
         }
 
         String fn = op.deconstructIdentifier();
@@ -804,7 +823,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             SortedKeyValueIterator<Key,Value> mySource = limitedSource;
             // if source size > 0, we are free to use up to that number for this query
             if (source.getSourceSize() > 0)
-                mySource = source.deepCopy(env);
+                mySource = deepCopySource();
 
             mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
 
@@ -827,11 +846,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
-
             Key newStartKey = getKey(node);
-
             kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
-
         }
     }
 
@@ -843,7 +859,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Collection<Entry<Key,Value>> getNodeEntry(ASTEQNode node) {
         Key key = getKey(node);
         return Collections.singleton(Maps.immutableEntry(key, Constants.NULL_VALUE));
-
     }
 
     /**
@@ -854,7 +869,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @return a collection of entries
      */
     protected Collection<Entry<Key,Value>> getExceededEntry(String identifier, LiteralRange<?> range) {
-
         Key key = getIvaratorKey(identifier, range);
         return Collections.singleton(Maps.immutableEntry(key, Constants.NULL_VALUE));
 
@@ -910,12 +924,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @return a key iterator
      */
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode rootNode) {
-        IndexIteratorBuilder builder = null;
-        try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        IndexIteratorBuilder builder = getIteratorBuilder();
 
         IteratorToSortedKeyValueIterator kvIter = new IteratorToSortedKeyValueIterator(getExceededEntry(identifier, range).iterator());
         builder.setQueryId(queryId);
@@ -934,12 +943,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     protected Object visitDelayedIndexOnly(ASTEQNode node, Object data) {
-        IndexIteratorBuilder builder = null;
-        try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        IndexIteratorBuilder builder = getIteratorBuilder();
 
         /**
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
@@ -1299,7 +1303,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     private void contextRequiredRegex(ASTAndNode and, JexlNode source, Object data) {
 
-        SortedKeyValueIterator<Key,Value> sourceCopy = this.source.deepCopy(env);
+        SortedKeyValueIterator<Key,Value> sourceCopy = deepCopySource();
         String field = JexlASTHelper.getIdentifier(source);
         String literal = String.valueOf(JexlASTHelper.getLiteralValue(source));
 
@@ -1331,7 +1335,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     private void contextRequiredRange(ASTAndNode and, JexlNode source, Object data) {
 
-        SortedKeyValueIterator<Key,Value> sourceCopy = this.source.deepCopy(env);
+        SortedKeyValueIterator<Key,Value> sourceCopy = deepCopySource();
         LiteralRange<?> range = JexlASTHelper.findRange().getRange(source);
 
         RangeFilterIterator include = new RangeFilterIterator();
@@ -1510,6 +1514,23 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
     }
 
+    public IndexIteratorBuilder getIteratorBuilder() {
+        try {
+            return iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected SortedKeyValueIterator<Key,Value> deepCopySource() {
+        deepCopiesCalled++;
+        return source.deepCopy(env);
+    }
+
+    public int getDeepCopiesCalled() {
+        return deepCopiesCalled;
+    }
+
     /**
      * Get the DatatypeFilter
      *
@@ -1589,6 +1610,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected boolean isUnindexed(ASTIdentifier node) {
         final String fieldName = JexlASTHelper.deconstructIdentifier(node.getName());
+        return unindexedFields.contains(fieldName);
+    }
+
+    protected boolean isUnindexed(String fieldName) {
         return unindexedFields.contains(fieldName);
     }
 

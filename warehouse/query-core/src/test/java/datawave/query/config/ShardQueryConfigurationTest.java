@@ -443,6 +443,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("uniqueCacheBufferSize", 100);
+        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -598,6 +600,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
+        updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
+
+        defaultValues.put("shardsAndDaysHintAllowed", true);
+        updatedValues.put("shardsAndDaysHintAllowed", false);
     }
 
     private Query createQuery(String query) {
