@@ -12,6 +12,7 @@ THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
 . ../ingest/ingest-env.sh
+. ../ingest/ingest-libs.sh
 . ../ingest/job-cache-env.sh
 
 # Check that there are no other instances of this script running
@@ -97,6 +98,25 @@ if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
    [[ "$WAREHOUSE_HDFS_NAME_NODE" == "hdfs://"* ]] && $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
 else
    echo "Warehouse and ingest are one in the same. Assuming the warehouse job cache loading is sufficient"
+fi
+
+# Update Zookeeper if we have an active job cache path
+if [[ -n "${ACTIVE_JOB_CACHE_PATH}" ]]; then
+  if ! java -cp ${CLASSPATH} datawave.ingest.jobcache.SetActiveCommand \
+    --zookeepers ${INGEST_ZOOKEEPERS} \
+    --path ${ACTIVE_JOB_CACHE_PATH} \
+    --job-cache "${INGEST_HDFS_NAME_NODE}${JOB_CACHE_DIR}"; then
+      echo "[ERROR] Failed to set active ingest job cache"
+  fi
+
+  if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
+    if ! java -cp ${CLASSPATH} datawave.ingest.jobcache.SetActiveCommand \
+      --zookeepers ${WAREHOUSE_ZOOKEEPERS} \
+      --path ${ACTIVE_JOB_CACHE_PATH} \
+      --job-cache "${WAREHOUSE_HDFS_NAME_NODE}${JOB_CACHE_DIR}"; then
+        echo "[ERROR] Failed to set active warehouse job cache"
+    fi
+  fi
 fi
 
 # Remove the prepared directory
