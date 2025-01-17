@@ -54,7 +54,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     public ColumnVisibility getColumnVisibility() {
         if (isMetadataSet()) {
             Text colVisTxt = metadata.getColumnVisibility();
-            return visibilityCache.get(colVisTxt).deepCopy();
+            return new ColumnVisibility(visibilityCache.get(colVisTxt));
         }
         return Constants.EMPTY_VISIBILITY;
     }
