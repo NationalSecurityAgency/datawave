@@ -128,7 +128,6 @@ public class PushdownScheduler extends Scheduler {
         }
 
         try {
-
             return concatIterators();
         } catch (AccumuloException | ParseException | TableNotFoundException | AccumuloSecurityException e) {
             throw new RuntimeException(e);

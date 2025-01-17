@@ -17,6 +17,7 @@ class CountMapSerDeTest {
         map.put("FIELD_B", 23L);
 
         byte[] data = serDe.serialize(map);
+        assertEquals(18, data.length); // 35 without optimizing integers/longs
         CountMap deserialized = serDe.deserialize(data);
 
         assertMap(map, deserialized);
@@ -29,6 +30,7 @@ class CountMapSerDeTest {
         map.put("FIELD_B", 23L);
 
         String s = serDe.serializeToString(map);
+        assertEquals(18, s.length()); // 35 without optimizing integers/longs
         CountMap deserialized = serDe.deserializeFromString(s);
 
         assertMap(map, deserialized);

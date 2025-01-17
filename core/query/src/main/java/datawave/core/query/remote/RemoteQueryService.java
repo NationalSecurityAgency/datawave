@@ -29,6 +29,14 @@ public interface RemoteQueryService {
     GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) throws QueryException;
 
     /**
+     * Set the class for the next response. The default is to use the event query response but to make this useful for other query services we need to be able
+     * to override.
+     *
+     * @param nextQueryResponseClass
+     */
+    void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass);
+
+    /**
      * Call next on a remote query service
      *
      * @param id

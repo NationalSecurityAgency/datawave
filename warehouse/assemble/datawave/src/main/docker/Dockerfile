@@ -1,4 +1,4 @@
-FROM ${docker.image.prefix}datawave-stack-accumulo:2.1.3
+FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
 USER root
 COPY --from=${docker.image.prefix}datawave-stack-hadoop:3.3.6  /usr/local/hadoop/  /usr/local/hadoop/
 

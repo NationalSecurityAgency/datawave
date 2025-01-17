@@ -4,14 +4,15 @@ import java.util.Iterator;
 
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.Flushable;
 
 public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
 
-    private Logger log = Logger.getLogger(DatawaveTransformIterator.class);
+    private Logger log = LoggerFactory.getLogger(DatawaveTransformIterator.class);
     private O next = null;
 
     public DatawaveTransformIterator() {

@@ -104,7 +104,132 @@ public class QueryFieldsVisitorTest {
         test(query, Sets.newHashSet("FOO", "FOO2", "FOO3", "FOO4"));
     }
 
-    // Some functions
+    // Query functions
+
+    @Test
+    public void testGroupByFunction() throws ParseException {
+        String query = "f:groupby(FOO,BAR)";
+        test(query, Sets.newHashSet("FOO", "BAR"));
+    }
+
+    @Test
+    public void testNoExpansionFunction() throws ParseException {
+        String query = "f:noExpansion(FOO,BAR)";
+        test(query, Sets.newHashSet("FOO", "BAR"));
+    }
+
+    @Test
+    public void testLenientFunction() throws ParseException {
+        String query = "f:lenient(FOO,BAR)";
+        test(query, Sets.newHashSet("FOO", "BAR"));
+    }
+
+    @Test
+    public void testStrictFunction() throws ParseException {
+        String query = "f:strict(FOO,BAR)";
+        test(query, Sets.newHashSet("FOO", "BAR"));
+    }
+
+    @Test
+    public void testExcerptFieldsFunction() throws ParseException {
+        String query = "f:excerpt_fields(FOO,BAR)";
+        test(query, Sets.newHashSet("FOO", "BAR"));
+    }
+
+    @Test
+    public void testUniqueFunction() throws ParseException {
+        String query = "f:unique(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+
+        query = "f:unique('FOO[ALL]','BAR[DAY]','BAT[MINUTE,SECOND]')";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByYearFunction() throws ParseException {
+        String query = "f:unique_by_year(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByMonthFunction() throws ParseException {
+        String query = "f:unique_by_month(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByDayFunction() throws ParseException {
+        String query = "f:unique_by_day(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByHourFunction() throws ParseException {
+        String query = "f:unique_by_hour(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByTenthOfHourFunction() throws ParseException {
+        String query = "f:unique_by_tenth_of_hour(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByMinuteFunction() throws ParseException {
+        String query = "f:unique_by_minute(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueBySecondFunction() throws ParseException {
+        String query = "f:unique_by_second(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testUniqueByMillisecondFunction() throws ParseException {
+        String query = "f:unique_by_millisecond(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testRenameFunction() throws ParseException {
+        String query = "f:rename('FOO=FOO2','BAR=BAR2')";
+        test(query, Sets.newHashSet("FOO", "BAR"));
+    }
+
+    @Test
+    public void testSumFunction() throws ParseException {
+        String query = "f:sum(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testMinFunction() throws ParseException {
+        String query = "f:min(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testMaxFunction() throws ParseException {
+        String query = "f:max(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testAverageFunction() throws ParseException {
+        String query = "f:average(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    @Test
+    public void testCountFunction() throws ParseException {
+        String query = "f:count(FOO,BAR,BAT)";
+        test(query, Sets.newHashSet("FOO", "BAR", "BAT"));
+    }
+
+    // Content functions
 
     @Test
     public void testContentFunction_phrase() throws ParseException {
@@ -117,6 +242,20 @@ public class QueryFieldsVisitorTest {
 
         // Fields within intersection
         query = "(content:phrase(termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testContentFunction_scoredPhrase() throws ParseException {
+        String query = "content:scoredPhrase(FOO, -1.5, termOffsetMap, 'bar', 'baz')";
+        test(query, Collections.singleton("FOO"));
+
+        // Multi-fielded
+        query = "content:scoredPhrase((FOO|FOO2), -1.5, termOffsetMap, 'bar', 'baz')";
+        test(query, Sets.newHashSet("FOO", "FOO2"));
+
+        // Fields within intersection
+        query = "(content:scoredPhrase(-1.5, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz')";
         test(query, Collections.singleton("FOO"));
     }
 
@@ -154,6 +293,60 @@ public class QueryFieldsVisitorTest {
         test(query, Collections.singleton("FOO"));
     }
 
+    @Test
+    public void testFilterTimeFunction() throws ParseException {
+        String query = "filter:timeFunction(DEATH_DATE,BIRTH_DATE,'-','>',2522880000000L)";
+        test(query, Sets.newHashSet("DEATH_DATE", "BIRTH_DATE"));
+    }
+
+    @Test
+    public void testFilterIsNullFunction() throws ParseException {
+        String query = "filter:isNull(FOO)";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterOccurrenceFunction() throws ParseException {
+        String query = "filter:occurrence(FOO,'>',3)";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterBetweenDatesFunction() throws ParseException {
+        String query = "filter:betweenDates(FOO, '20140101', '20140102')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterAfterDateFunction() throws ParseException {
+        String query = "filter:afterDate(FOO, '20140101')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterBeforeDateFunction() throws ParseException {
+        String query = "filter:beforeDate(FOO, '20140101')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterBetweenLoadDatesFunction() throws ParseException {
+        String query = "filter:betweenLoadDates(FOO, '20140101', '20140102')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterAfterLoadDateFunction() throws ParseException {
+        String query = "filter:afterLoadDate(FOO, '20140101')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testFilterBeforeLoadDateFunction() throws ParseException {
+        String query = "filter:beforeLoadDate(FOO, '20140101')";
+        test(query, Collections.singleton("FOO"));
+    }
+
     // Geowave functions
     @Test
     public void testGeoWaveFunction_intersects() throws ParseException {
@@ -173,8 +366,37 @@ public class QueryFieldsVisitorTest {
         test(query, Collections.singleton("FOO"));
     }
 
-    // Misc. tests
+    @Test
+    public void testGeoWaveFunction_contains() throws ParseException {
+        String query = "geowave:contains(FOO, 'POINT(5 5)')";
+        test(query, Collections.singleton("FOO"));
+    }
 
+    @Test
+    public void testGeoWaveFunction_covers() throws ParseException {
+        String query = "geowave:covers(FOO, 'POINT(5 5)')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testGeoWaveFunction_covered_by() throws ParseException {
+        String query = "geowave:covered_by(FOO, 'POINT(5 5)')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testGeoWaveFunction_crosses() throws ParseException {
+        String query = "geowave:crosses(FOO, 'POINT(5 5)')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    @Test
+    public void testGeoWaveFunction_within() throws ParseException {
+        String query = "geowave:within(FOO, 'POINT(5 5)')";
+        test(query, Collections.singleton("FOO"));
+    }
+
+    // Misc. tests
     @Test
     public void testAnyFieldAndNoField() throws ParseException {
         String query = "_ANYFIELD_ == 'bar' && _NOFIELD_ == 'baz'";

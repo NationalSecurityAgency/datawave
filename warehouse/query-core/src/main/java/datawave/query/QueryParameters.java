@@ -134,6 +134,11 @@ public class QueryParameters {
     public static final String CONTENT_VIEW_ALL = "content.view.all";
 
     /**
+     * Used by the ContentQueryLogic to determine if views should be decoded from base64
+     */
+    public static final String DECODE_VIEW = "content.view.decode";
+
+    /**
      * Used to specify the class used to perform visibility interpretations into markings.
      */
     public static final String VISIBILITY_INTERPRETER = "visibility.interpreter";
@@ -179,6 +184,7 @@ public class QueryParameters {
 
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
 
     /**
      * Used to specify fields which are excluded from QueryModel expansion

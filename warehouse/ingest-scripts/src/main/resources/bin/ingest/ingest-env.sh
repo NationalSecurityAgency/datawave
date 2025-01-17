@@ -195,6 +195,8 @@ HDFS_BASE_DIR="${HDFS_BASE_DIR}"
 BASE_WORK_DIR="${BASE_WORK_DIR}"
 BASE_WORK_DIR="${BASE_WORK_DIR:-/datawave/ingest/work}"
 
+ACTIVE_JOB_CACHE_PATH="${ACTIVE_JOB_CACHE_PATH}"
+
 HDFS_MONITOR_ARGS="${HDFS_MONITOR_ARGS}"
 
 MONITOR_SERVER_HOST="${MONITOR_SERVER_HOST}"
@@ -327,4 +329,15 @@ flagBasename() {
   f=$1
   BASENAME=${f%%.flag*}
   echo $BASENAME
+}
+
+# Source script containing lock file acquisition logic
+. ../util/file_locker.sh
+
+# Call the function to acquire the lock on a lock file with the program name
+# for CRON mutual exclusiveness.
+# This function should be called in this way: `acquire_lock_file $(basename "$0")`
+function acquire_lock_file() {
+  lock $1
+  return $?
 }

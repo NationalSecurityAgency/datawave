@@ -2,7 +2,6 @@ package datawave.query.planner;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -281,7 +280,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), iterClazz);
             newSetting.addOptions(setting.getOptions());
 
-            if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
+            if (plan.getFieldCounts() != null && !plan.getFieldCounts().isEmpty()) {
                 newSetting.addOption(QueryOptions.FIELD_COUNTS, getMapSerDe().serializeToString(plan.getFieldCounts()));
             }
 

@@ -238,7 +238,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, helper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getDate(), helper.getDeleteMode());
+        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         values.put(bKey, NULL_VALUE);
     }
@@ -294,7 +294,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     termPosition = 0;
                     lastFieldName = indexedFieldName;
                 } else {
-                    termPosition = tokenHelper.getInterFieldPositionIncrement();
+                    termPosition += tokenHelper.getInterFieldPositionIncrement();
                 }
 
                 boolean indexField = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
@@ -598,7 +598,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
                         new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
-                                        event.getDate(), helper.getDeleteMode()));
+                                        event.getTimestamp(), helper.getDeleteMode()));
+
         values.put(bKey, value);
     }
 

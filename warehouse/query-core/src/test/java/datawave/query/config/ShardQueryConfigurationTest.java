@@ -46,6 +46,7 @@ import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
@@ -153,6 +154,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("allTermsIndexOnly", true);
         defaultValues.put("maxIndexScanTimeMillis", Long.MAX_VALUE);
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
+        defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
+        updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
         defaultValues.put("ignoreNonExistentFields", false);
@@ -175,8 +178,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
-        defaultValues.put("sequentialScheduler", false);
-        updatedValues.put("sequentialScheduler", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);
@@ -442,6 +443,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("uniqueCacheBufferSize", 100);
+        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -478,6 +481,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfFieldSeek", 14);
         defaultValues.put("tfNextSeek", -1);
         updatedValues.put("tfNextSeek", 15);
+        defaultValues.put("seekingEventAggregation", false);
+        updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
         defaultValues.put("lazySetMechanismEnabled", false);
@@ -532,6 +537,9 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 
+        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
+        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
+
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
         defaultValues.put("disallowlistedFieldsAsString", "");
@@ -573,18 +581,31 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("groupFields", new GroupFields());
         updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
 
-        defaultValues.put("useFieldCounts", false);
-        updatedValues.put("useFieldCounts", true);
-        defaultValues.put("useTermCounts", false);
-        updatedValues.put("useTermCounts", true);
-        defaultValues.put("sortQueryBeforeGlobalIndex", false);
-        updatedValues.put("sortQueryBeforeGlobalIndex", true);
-        defaultValues.put("sortQueryByCounts", false);
-        updatedValues.put("sortQueryByCounts", true);
+        defaultValues.put("sortQueryPreIndexWithImpliedCounts", false);
+        updatedValues.put("sortQueryPreIndexWithImpliedCounts", true);
+        defaultValues.put("sortQueryPreIndexWithFieldCounts", false);
+        updatedValues.put("sortQueryPreIndexWithFieldCounts", true);
+        defaultValues.put("sortQueryPostIndexWithTermCounts", false);
+        updatedValues.put("sortQueryPostIndexWithTermCounts", true);
+        defaultValues.put("sortQueryPostIndexWithFieldCounts", false);
+        updatedValues.put("sortQueryPostIndexWithFieldCounts", true);
+        defaultValues.put("cardinalityThreshold", 0);
+        updatedValues.put("cardinalityThreshold", 25);
         defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.emptyMap());
+
+        defaultValues.put("useQueryTreeScanHintRules", false);
+        updatedValues.put("useQueryTreeScanHintRules", true);
+        defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
+        updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
+        updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
+
+        defaultValues.put("shardsAndDaysHintAllowed", true);
+        updatedValues.put("shardsAndDaysHintAllowed", false);
     }
 
     private Query createQuery(String query) {
