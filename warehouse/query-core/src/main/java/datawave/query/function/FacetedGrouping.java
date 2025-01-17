@@ -142,7 +142,7 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
         if (log.isTraceEnabled())
             log.trace("entries" + newDocumentAttributes.entries());
         for (Entry<String,Attribute<?>> newAttr : newDocumentAttributes.entries()) {
-            currentDoc.replace(newAttr.getKey(), newAttr.getValue(), false, false);
+            currentDoc.replace(newAttr.getKey(), newAttr.getValue(), false);
         }
         if (log.isTraceEnabled())
             log.trace("currentDoc" + currentDoc);

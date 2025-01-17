@@ -61,7 +61,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
@@ -81,7 +80,6 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
@@ -150,6 +148,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -262,10 +263,6 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
-    public static final String SUMMARY_OPTIONS = "summary.options";
-
-    public static final String SUMMARY_ITERATOR = "summary.iterator.class";
-
     // field and next thresholds before a seek is issued
     public static final String FI_FIELD_SEEK = "fi.field.seek";
     public static final String FI_NEXT_SEEK = "fi.next.seek";
@@ -318,6 +315,7 @@ public class QueryOptions implements OptionDescriber {
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
+    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -440,10 +438,6 @@ public class QueryOptions implements OptionDescriber {
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
-    protected SummaryOptions summaryOptions;
-
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
-
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
     private int fiNextSeek = -1;
@@ -527,6 +521,7 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
@@ -565,8 +560,6 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = other.excerptFields;
         this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
-        this.summaryOptions = other.summaryOptions;
-        this.summaryIterator = other.summaryIterator;
 
         this.fiFieldSeek = other.fiFieldSeek;
         this.fiNextSeek = other.fiNextSeek;
@@ -1068,6 +1061,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
@@ -1213,7 +1214,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public Set<String> getHitsOnlySet() {
@@ -1278,22 +1279,6 @@ public class QueryOptions implements OptionDescriber {
 
     public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
         this.excerptIterator = excerptIterator;
-    }
-
-    public SummaryOptions getSummaryOptions() {
-        return summaryOptions;
-    }
-
-    public void setSummaryOptions(SummaryOptions summaryOptions) {
-        this.summaryOptions = summaryOptions;
-    }
-
-    public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
-        return summaryIterator;
-    }
-
-    public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
-        this.summaryIterator = summaryIterator;
     }
 
     @Override
@@ -1389,8 +1374,6 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_FIELDS, "excerpt fields");
         options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
-        options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
-        options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
@@ -1746,6 +1729,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
+            if (options.containsKey(MOST_RECENT_UNIQUE)) {
+                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
+                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
+                }
+            }
         }
 
         if (options.containsKey(HIT_LIST)) {
@@ -1928,18 +1917,6 @@ public class QueryOptions implements OptionDescriber {
                 setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
-            }
-        }
-
-        if (options.containsKey(SUMMARY_OPTIONS)) {
-            setSummaryOptions(SummaryOptions.from(options.get(SUMMARY_OPTIONS)));
-        }
-
-        if (options.containsKey(SUMMARY_ITERATOR)) {
-            try {
-                setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(SUMMARY_ITERATOR)));
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
             }
         }
 

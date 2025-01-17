@@ -38,7 +38,7 @@ import datawave.query.jexl.DelayedNonEventIndexContext;
  * <p>
  * <code>row fi\x00FIELD : value\x00datatype\x00uid</code>
  */
-public class RangeFilterIterator implements SeekableIterator, NestedIterator<Key>, Comparable<IndexIteratorBridge> {
+public class RangeFilterIterator implements NestedIterator<Key>, Comparable<IndexIteratorBridge> {
 
     private static final Logger log = LoggerFactory.getLogger(RangeFilterIterator.class);
 
