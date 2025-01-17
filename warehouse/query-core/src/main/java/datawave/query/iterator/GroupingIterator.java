@@ -91,7 +91,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 break;
             } else {
                 // in.hasNext() was false and there was no yield
-                log.debug("GroupingIterator saw {} documents producing {} groups", documentCount, groups.getGroups().size());
+                log.trace("GroupingIterator saw {} documents producing {} groups", documentCount, groups.getGroups().size());
                 break;
             }
         }
