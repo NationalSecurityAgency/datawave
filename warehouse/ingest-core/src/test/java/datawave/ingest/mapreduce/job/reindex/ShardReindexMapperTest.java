@@ -1538,6 +1538,41 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
+    public void FI_metadataOnly_unrestrictedIngestHelperTf_test()
+                    throws ParseException, IOException, InterruptedException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        configureMetadataOnly(true, true, true, true, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, true);
+
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
+        Key end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
+        Range r = new Range(start, true, end, false);
+        expectScanner("shard", r, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        Capture<IteratorSetting> fieldECapture = Capture.newInstance();
+        mockScanner.addScanIterator(capture(fieldECapture));
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
     public void FI_metadataOnly_tfLookupFail_test()
                     throws ParseException, IOException, InterruptedException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
         Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");

@@ -437,6 +437,25 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         return cf.length() > 3 && WritableComparator.compareBytes(cf.getBackingArray(), 0, 3, FI_START_BYTES, 0, 3) == 0;
     }
 
+    /**
+     * Generate DatawaveMetadata for an fi key in the following way.
+     * <ol>
+     * <li>a deleted key adds no metadata</li>
+     * <li>fetch the ingest helper for the data type of the key</li>
+     * <li>apply any configuration restrictions to prevent generating ri/tf/event keys to the ingest helper</li>
+     * <li>if looking up generated ri/tf/event keys lookup at most once per field/dataType combination, applying restrictions if a lookup fails for that
+     * field/dataType combination</li>
+     * </ol>
+     *
+     * Since the fi keys will always be sorted order and the field name is part of the columnFamily, caching for lookups can be managed per field.
+     *
+     * @param key
+     *            the fi key to generate datawaveMetadata from
+     * @param parsedFi
+     *            any previous parsing of the key
+     * @param context
+     *            the map context
+     */
     private void processFiMetadata(Key key, ParsedKey parsedFi, Context context) {
         // nothing to do for a deleted key
         if (key.isDeleted()) {
@@ -455,11 +474,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             return;
         }
 
-        if (!this.generateEventMetadataFromFi || !this.generateReverseIndexMetadataFromFi || !this.generateTermFrequencyMetadataFromFi) {
-            // restrict the fieldHelper to prevent these metadata entries from being created
-            fieldHelper = new RestrictedIngestHelper(fieldHelper, !this.generateEventMetadataFromFi, !this.generateReverseIndexMetadataFromFi,
-                            !this.generateTermFrequencyMetadataFromFi);
-        }
+        // restrict the fieldHelper as well as rewiring the tf lookups to make sense from the perspective of the key already written rather than the key about
+        // to be written
+        fieldHelper = new RestrictedIngestHelper(fieldHelper, !this.generateEventMetadataFromFi, !this.generateReverseIndexMetadataFromFi,
+                        !this.generateTermFrequencyMetadataFromFi);
 
         boolean restrictShard = false;
         boolean restrictReverseIndex = false;
@@ -467,7 +485,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         if (this.generateEventMetadataFromFi && this.lookupEventMetadataFromFi) {
             if (!field.equals(this.lastMetadataField)) {
-                // clear the lookup cache since its a new field
+                // clear the lookup cache since it's a new field
                 this.dataTypeEventLookupMap = new HashMap<>();
                 this.lastMetadataField = field;
             }
@@ -510,7 +528,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             // fi format is row fi\0field value\0datatype\0uid so build a cache of this field's decisions to at most query accumulo once per field/dataType
             // combination
             if (this.dataTypeReverseMetadataLookupMap.isEmpty() || !this.dataTypeReverseMetadataLookupMap.containsKey(dataType)) {
-
                 // is it a reverse index field?
                 if (fieldHelper.isReverseIndexedField(field)) {
                     // do the lookup
@@ -551,7 +568,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 // a field that has been tokenized will return false
 
                 // if the field doesn't end with the designator, it can't have been tokenized
-
+                // this idea has been implemented into the RestrictedIngestHelper
                 if (tfFieldHelper.isContentIndexField(field) || tfFieldHelper.isReverseContentIndexField(field)) {
                     // do the lookup
                     try (Scanner scanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_TNAME))) {
