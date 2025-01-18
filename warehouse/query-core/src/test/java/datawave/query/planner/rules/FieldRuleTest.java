@@ -200,6 +200,15 @@ public abstract class FieldRuleTest {
     }
 
     @Test
+    public void testNegatedSoup() throws Exception {
+        // allow it because the query is self-enforcing a rule
+        givenQuery("COLOR == 'blue' && FOOD != 'soup'");
+        givenExpectedPlan("(COLOR == 'blue' || HUE == 'blue') && !(FOOD == 'soup')");
+
+        runTestQuery();
+    }
+
+    @Test
     public void testNoSoupForYouAND() throws Exception {
         givenQuery("COLOR == 'blue' && SOUP == 'chicken noodle'");
         givenExpectedPlan("false");
@@ -231,6 +240,7 @@ public abstract class FieldRuleTest {
         @Override
         public boolean shouldPrune(JexlNode node, MetadataHelper helper) {
             try {
+                boolean isNegated = JexlASTHelper.isDescendantOfNot(node);
                 if (node instanceof ASTFunctionNode) {
                     JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) node);
                     Set<String> fields = desc.fields(helper, null);
@@ -244,7 +254,8 @@ public abstract class FieldRuleTest {
                     String identifier = JexlASTHelper.getIdentifier(node);
                     String value = String.valueOf(JexlASTHelper.getLiteralValue(node));
 
-                    return pruneFields.contains(identifier) || (pruneFVPairs.containsKey(identifier) && pruneFVPairs.get(identifier).contains(value));
+                    return pruneFields.contains(identifier)
+                                    || (pruneFVPairs.containsKey(identifier) && (pruneFVPairs.get(identifier).contains(value) && !isNegated));
 
                 }
             } catch (NoSuchElementException e) {
