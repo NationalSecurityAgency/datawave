@@ -1148,6 +1148,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
                         TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
                         tl.invalidateCache();
+
+                        context.close();
                     }
 
                     clipRanges(binnedRanges);
@@ -1160,7 +1162,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         ArrayList<InputSplit> splits = new ArrayList<>(ranges.size());
 
         HashMap<String,String> hostNameCache = new HashMap<>();
-        LocationStrategy strategy = null;
+        LocationStrategy strategy;
 
         strategy = getLocationStrategy(job.getConfiguration());
 
