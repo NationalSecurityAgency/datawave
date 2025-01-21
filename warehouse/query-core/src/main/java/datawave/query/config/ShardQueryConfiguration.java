@@ -520,7 +520,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int cardinalityThreshold;
 
-
     /**
      * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
      * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}

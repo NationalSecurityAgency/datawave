@@ -1145,7 +1145,7 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorConfig = ivaratorConfig;
     }
 
-    public IvaratorConfig getIvaratorConfig(){
+    public IvaratorConfig getIvaratorConfig() {
         if (ivaratorConfig == null) {
             // create a fresh config with default values
             ivaratorConfig = new IvaratorConfig();
