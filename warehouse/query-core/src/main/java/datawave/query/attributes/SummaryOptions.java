@@ -110,7 +110,8 @@ public class SummaryOptions implements Serializable {
                     }
                 }
             }
-            // this part also happens to make it so if people put anything random in the function and don't set any options, it will still return a summary of default size
+            // this part also happens to make it so if people put anything random in the function and don't set any options, it will still return a summary of
+            // default size
             // if size was not specified, make it DEFAULT_SIZE
             if (summaryOptions.summarySize == 0) {
                 summaryOptions.summarySize = DEFAULT_SIZE;
