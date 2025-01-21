@@ -624,6 +624,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         configureExcerpts(config, cfg);
 
+        configureSummaries(config, cfg);
+
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
@@ -659,6 +661,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
+        }
+    }
+
+    private void configureSummaries(ShardQueryConfiguration config, IteratorSetting cfg) {
+        if (config.getSummaryOptions().getSummarySize() != 0) {
+            addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
+            addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
         }
     }
 
