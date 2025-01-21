@@ -2,10 +2,10 @@ package datawave.ingest.util;
 
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -38,12 +38,11 @@ public class GenerateShardSplits {
 
     private static void printUsageAndExit() {
         System.out.println(
-                "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> <numberOfSplitsPerBatch> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
+                        "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> <numberOfSplitsPerBatch> <delayBetweenBatches> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
 
-    protected static List<Text> sortSplitsByMidpoints(List<Text> unsorted)
-    {
+    protected static List<Text> sortSplitsByMidpoints(List<Text> unsorted) {
         // Sort files by date and number
         List<Text> sortedFiles = new ArrayList<>(unsorted);
         sortedFiles.sort(new Comparator<>() {
@@ -67,7 +66,6 @@ public class GenerateShardSplits {
         return calculateMidpoints(sortedFiles);
     }
 
-
     public static void main(String[] args) throws Exception {
 
         if (args.length < 3) {
@@ -78,6 +76,7 @@ public class GenerateShardSplits {
         int DAYS_TO_GENERATE = -1;
         int SHARDS = -1;
         int splitStep = 1;
+        int balancerDelay = 5000; // 5 seconds
         boolean addSplits = true;
         boolean addShardMarkers = false;
         int splitsPerBatch = 100;
@@ -123,7 +122,14 @@ public class GenerateShardSplits {
                     System.out.println("Splits Per Batch argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
-            }else if (args[i].equals("-markersOnly")) {
+            } else if (i == 5) {
+                try {
+                    balancerDelay = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Balancer delay is not an integer:" + e.getMessage());
+                    System.exit(-2);
+                }
+            } else if (args[i].equals("-markersOnly")) {
                 addSplits = false;
             } else if (args[i].equals("-addShardMarkers")) {
                 addShardMarkers = true;
@@ -212,6 +218,8 @@ public class GenerateShardSplits {
 
                         // Perform the operation on the current batch
                         client.tableOperations().addSplits(tableName, batch);
+
+                        Thread.sleep(balancerDelay);
                     }
                 }
 
@@ -241,7 +249,6 @@ public class GenerateShardSplits {
         }
     }
 
-
     private static List<Text> calculateMidpoints(List<Text> splits) {
         if (splits.isEmpty()) {
             return Collections.emptyList();
@@ -250,14 +257,13 @@ public class GenerateShardSplits {
         List<Text> midpoints = new ArrayList<>();
         int n = splits.size();
 
-
         if (n % 2 == 0) {
             // Even case: Add the two middle elements
             midpoints.add(splits.get(n / 2 - 1));
             midpoints.add(splits.get(n / 2));
 
             midpoints.addAll(calculateMidpoints(splits.subList(0, (n / 2) - 1)));
-            midpoints.addAll(calculateMidpoints(splits.subList(((n  / 2) + 1), n)));
+            midpoints.addAll(calculateMidpoints(splits.subList(((n / 2) + 1), n)));
         } else {
             // odd case: Add the single middle element
             midpoints.add(splits.get(n / 2));
