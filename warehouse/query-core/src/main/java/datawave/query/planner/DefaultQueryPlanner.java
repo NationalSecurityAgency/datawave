@@ -103,9 +103,9 @@ import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
-import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
+import datawave.query.jexl.visitors.DisableEvaluationForGroupingVisitor;
 import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
@@ -135,7 +135,6 @@ import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
-import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
@@ -156,7 +155,6 @@ import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
-import datawave.query.language.functions.jexl.Unique;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.async.AbstractQueryPlannerCallable;
 import datawave.query.planner.async.FetchCompositeMetadata;
@@ -350,6 +348,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * performance impact.
      */
     protected boolean showReducedQueryPrune = true;
+    /**
+     * Feature flag to attempt disabling evaluation under certain circumstances when a query contains a grouping function
+     */
+    protected boolean disableGroupByEvaluation = false;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -559,6 +561,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 cfg = getQueryIterator(metadataHelper, config, "", false, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
+
+            // check for the case where evaluation can be disabled due to the presence of Grouping functions
+            // but only if query functions and content functions are absent as well
+            if (!config.getFullTableScanEnabled() && config.getGroupFields().hasGroupByFields()) {
+                boolean canDisable = DisableEvaluationForGroupingVisitor.canDisableEvaluation(config.getQueryTree(), getIndexedFields(), getIndexOnlyFields());
+                if (canDisable) {
+                    config.setDisableEvaluation(true);
+                    addOption(cfg, QueryOptions.DISABLE_EVALUATION, "true", false);
+                }
+            }
         }
 
         final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
@@ -3454,5 +3466,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public void setConcurrentTimeoutMillis(int concurrentTimeoutMillis) {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
+    }
+
+    public boolean getDisableGroupByEvaluation() {
+        return disableGroupByEvaluation;
+    }
+
+    public void setDisableGroupByEvaluation(boolean disableGroupByEvaluation) {
+        this.disableGroupByEvaluation = disableGroupByEvaluation;
     }
 }
