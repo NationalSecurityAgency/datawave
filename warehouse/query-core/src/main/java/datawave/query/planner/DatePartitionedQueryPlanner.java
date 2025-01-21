@@ -55,9 +55,9 @@ import datawave.webservice.query.exception.QueryException;
  *
  * @see #process(GenericQueryConfiguration, String, Query, ScannerFactory)
  */
-public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
+public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneable {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
+    private static final Logger log = ThreadConfigurableLogger.getLogger(DatePartitionedQueryPlanner.class);
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 
@@ -68,29 +68,29 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     private SortedSet<Pair<Date,Date>> relevantHoles;
 
     /**
-     * Return a new {@link FederatedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
+     * Return a new {@link DatePartitionedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
      */
-    public FederatedQueryPlanner() {
+    public DatePartitionedQueryPlanner() {
         this(new DefaultQueryPlanner());
     }
 
     /**
-     * Return a new {@link FederatedQueryPlanner} instance with the given inner query planner.
+     * Return a new {@link DatePartitionedQueryPlanner} instance with the given inner query planner.
      *
      * @param queryPlanner
      *            the inner query planner
      */
-    public FederatedQueryPlanner(DefaultQueryPlanner queryPlanner) {
+    public DatePartitionedQueryPlanner(DefaultQueryPlanner queryPlanner) {
         this.queryPlanner = queryPlanner;
     }
 
     /**
-     * Return a copy of the given {@link FederatedQueryPlanner} instance.
+     * Return a copy of the given {@link DatePartitionedQueryPlanner} instance.
      *
      * @param other
      *            the instance to copy
      */
-    public FederatedQueryPlanner(FederatedQueryPlanner other) {
+    public DatePartitionedQueryPlanner(DatePartitionedQueryPlanner other) {
         this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
         this.plannedScript = other.plannedScript;
     }
@@ -116,7 +116,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
 
     /**
      * Return the planned script resulting from the latest call to
-     * {@link FederatedQueryPlanner#process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
+     * {@link DatePartitionedQueryPlanner#process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
      *
      * @return the planned script
      */
@@ -131,8 +131,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
      * @return the copy
      */
     @Override
-    public FederatedQueryPlanner clone() {
-        return new FederatedQueryPlanner(this);
+    public DatePartitionedQueryPlanner clone() {
+        return new DatePartitionedQueryPlanner(this);
     }
 
     /**
@@ -243,7 +243,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Not supported for {@link FederatedQueryPlanner} and will result in an {@link UnsupportedOperationException}.
+     * Not supported for {@link DatePartitionedQueryPlanner} and will result in an {@link UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException
      *             always

@@ -58,7 +58,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 /**
- * Tests usage of {@link FederatedQueryPlanner} in queries.
+ * Tests usage of {@link DatePartitionedQueryPlanner} in queries.
  */
 public abstract class FederatedQueryTest {
 
@@ -165,7 +165,7 @@ public abstract class FederatedQueryTest {
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         this.deserializer = new KryoDocumentDeserializer();
     }
 
@@ -249,7 +249,7 @@ public abstract class FederatedQueryTest {
      * ensure that each subRange has all days with holes or all days with no holes ensure that all milliseconds in the original date range are covered
      */
     private void assertSubrangesCorrect() throws Exception {
-        FederatedQueryPlanner queryPlanner = (FederatedQueryPlanner) logic.getQueryPlanner();
+        DatePartitionedQueryPlanner queryPlanner = (DatePartitionedQueryPlanner) logic.getQueryPlanner();
 
         // Ensure that each subRange has all days with holes or all days with no holes
         Set<String> fieldsInQuery = queryPlanner.getFieldsForQuery(this.logic.getConfig(), this.query, logic.getScannerFactory());

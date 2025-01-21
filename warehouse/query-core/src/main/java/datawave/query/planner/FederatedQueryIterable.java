@@ -9,7 +9,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 
 /**
- * Implementation of {@link CloseableIterable} intended to be used by {@link FederatedQueryPlanner}. This iterable
+ * Implementation of {@link CloseableIterable} intended to be used by {@link DatePartitionedQueryPlanner}. This iterable
  */
 public class FederatedQueryIterable implements CloseableIterable<QueryData> {
 

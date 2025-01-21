@@ -49,7 +49,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
@@ -674,7 +674,7 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testWithHoles(){
-        eventQueryLogic.setQueryPlanner(new FederatedQueryPlanner());
+        eventQueryLogic.setQueryPlanner(new DatePartitionedQueryPlanner());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         //TODO: why is HOLE not being pushed down with _Hole_ marker?!

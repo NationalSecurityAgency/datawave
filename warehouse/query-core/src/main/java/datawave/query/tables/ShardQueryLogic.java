@@ -84,7 +84,7 @@ import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
@@ -425,8 +425,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         DefaultQueryPlanner defaultQueryPlanner = null;
         if (queryPlanner instanceof DefaultQueryPlanner) {
             defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-        } else if (queryPlanner instanceof FederatedQueryPlanner) {
-            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        } else if (queryPlanner instanceof DatePartitionedQueryPlanner) {
+            defaultQueryPlanner = ((DatePartitionedQueryPlanner) queryPlanner).getQueryPlanner();
         }
 
         if (defaultQueryPlanner != null) {
@@ -2180,7 +2180,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new FederatedQueryPlanner();
+            planner = new DatePartitionedQueryPlanner();
         }
         return planner;
     }
