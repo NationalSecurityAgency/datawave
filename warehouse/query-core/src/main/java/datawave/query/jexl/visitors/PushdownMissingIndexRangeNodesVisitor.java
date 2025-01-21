@@ -17,7 +17,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
-import datawave.query.config.ValueIndexHole;
+import datawave.query.config.IndexValueGap;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -41,7 +41,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     // datatype filter
     protected Set<String> dataTypeFilter;
     // the set of holes known to exist in the index
-    protected SortedSet<ValueIndexHole> indexHoles = new TreeSet<>();
+    protected SortedSet<IndexValueGap> indexHoles = new TreeSet<>();
 
     /**
      * Construct the visitor
@@ -57,7 +57,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         this.beginDate = format.format(config.getBeginDate());
         this.endDate = format.format(config.getEndDate());
         this.dataTypeFilter = config.getDatatypeFilter();
-        this.indexHoles.addAll(config.getValueIndexHoles());
+        this.indexHoles.addAll(config.getIndexValueGaps());
     }
 
     /**
@@ -164,7 +164,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         Object literal = JexlASTHelper.getLiteralValue(node);
         if (literal != null) {
             String strLiteral = String.valueOf(literal);
-            for (ValueIndexHole hole : this.indexHoles) {
+            for (IndexValueGap hole : this.indexHoles) {
                 if (hole.overlaps(this.beginDate, this.endDate, strLiteral)) {
                     return true;
                 } else if (hole.after(strLiteral)) {
@@ -195,7 +195,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                         endRange.append((char) 0);
                     }
 
-                    for (ValueIndexHole hole : indexHoles) {
+                    for (IndexValueGap hole : indexHoles) {
                         // TODO: add overlaps method to FieldIndexHole...seriously what's up with the values
                         if (hole.overlaps(this.beginDate, this.endDate, leadingLiteral, endRange.toString())) {
                             return true;
@@ -215,7 +215,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     private boolean missingIndexRange(LiteralRange range) {
         String strUpper = String.valueOf(range.getUpper());
         String strLower = String.valueOf(range.getLower());
-        for (ValueIndexHole hole : indexHoles) {
+        for (IndexValueGap hole : indexHoles) {
             if (hole.overlaps(this.beginDate, this.endDate, strLower, strUpper)) {
                 return true;
             } else if (hole.after(strLower)) {

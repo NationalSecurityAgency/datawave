@@ -67,7 +67,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.ValueIndexHole;
+import datawave.query.config.IndexValueGap;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
@@ -2607,12 +2607,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setCacheModel(cacheModel);
     }
 
-    public List<ValueIndexHole> getValueIndexHoles() {
-        return getConfig().getValueIndexHoles();
+    public List<IndexValueGap> getIndexValueGaps() {
+        return getConfig().getIndexValueGaps();
     }
 
-    public void setValueIndexHoles(List<ValueIndexHole> indexHoles) {
-        getConfig().setValueIndexHoles(indexHoles);
+    public void setIndexValueGaps(List<IndexValueGap> indexValueGaps) {
+        getConfig().setIndexValueGaps(indexValueGaps);
     }
 
     public CardinalityConfiguration getCardinalityConfiguration() {
@@ -3020,11 +3020,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
     }
 
-    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
-        getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
+    public void setIndexFieldGapMinThreshold(double indexFieldGapMinThreshold) {
+        getConfig().setIndexFieldGapMinThreshold(indexFieldGapMinThreshold);
     }
 
-    public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
-        return getConfig().getFieldIndexHoleMinThreshold();
+    public double getIndexFieldGapMinThreshold() {
+        return getConfig().getIndexFieldGapMinThreshold();
     }
 }

@@ -3,9 +3,10 @@ package datawave.query.config;
 import java.io.Serializable;
 
 /**
- * This class represents a hole in the global index. Used by the PushdownMissingIndexRangeNodesVisitor.
+ * This class represents a hole in the global index for a set of values in a specified date range.
+ * Used by the PushdownMissingIndexRangeNodesVisitor.
  */
-public class ValueIndexHole implements Serializable, Comparable<ValueIndexHole> {
+public class IndexValueGap implements Serializable, Comparable<IndexValueGap> {
     private static final long serialVersionUID = -6778479621810682281L;
 
     private String startValue;
@@ -13,7 +14,7 @@ public class ValueIndexHole implements Serializable, Comparable<ValueIndexHole> 
     private String startDate;
     private String endDate;
 
-    public ValueIndexHole() {}
+    public IndexValueGap() {}
 
     /**
      * Create an index with a date range and value range.
@@ -23,7 +24,7 @@ public class ValueIndexHole implements Serializable, Comparable<ValueIndexHole> 
      * @param valueRange
      *            the start and end values of the known hole
      */
-    public ValueIndexHole(String[] dateRange, String[] valueRange) {
+    public IndexValueGap(String[] dateRange, String[] valueRange) {
         setStartValue(valueRange[0]);
         setEndValue(valueRange[1]);
         setStartDate(dateRange[0]);
@@ -106,8 +107,8 @@ public class ValueIndexHole implements Serializable, Comparable<ValueIndexHole> 
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ValueIndexHole) {
-            ValueIndexHole hole = (ValueIndexHole) o;
+        if (o instanceof IndexValueGap) {
+            IndexValueGap hole = (IndexValueGap) o;
             return startValue.equals(hole.startValue) && endValue.equals(hole.endValue) && startDate.equals(hole.startDate) && endDate.equals(hole.endDate);
         }
         return false;
@@ -129,7 +130,7 @@ public class ValueIndexHole implements Serializable, Comparable<ValueIndexHole> 
      *            the index hole
      * @return the comparison
      */
-    public int compareTo(ValueIndexHole hole) {
+    public int compareTo(IndexValueGap hole) {
         int comparison = startValue.compareTo(hole.startValue);
         if (comparison == 0) {
             comparison = endValue.compareTo(hole.endValue);

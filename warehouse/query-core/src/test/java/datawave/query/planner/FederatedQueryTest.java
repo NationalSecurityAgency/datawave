@@ -328,7 +328,7 @@ public abstract class FederatedQueryTest {
 
         // Initialize the query logic.
         if (fieldIndexHoleMinThreshold != null) {
-            logic.setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
+            logic.setIndexFieldGapMinThreshold(fieldIndexHoleMinThreshold);
         }
         AccumuloClient client = createClient();
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);

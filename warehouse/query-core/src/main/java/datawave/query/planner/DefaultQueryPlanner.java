@@ -1003,8 +1003,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // if we have any index holes, then mark em
-        if (!config.getValueIndexHoles().isEmpty()) {
-            config.setQueryTree(timedMarkIndexHoles(timers, config.getQueryTree(), config, metadataHelper));
+        if (!config.getIndexValueGaps().isEmpty()) {
+            config.setQueryTree(timedMarkIndexValueGaps(timers, config.getQueryTree(), config, metadataHelper));
         }
         // TODO: also check for FieldIndexHoles or simply remove the index holes from the set of indexed fields
 
@@ -1569,9 +1569,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         () -> (ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script)));
     }
 
-    protected ASTJexlScript timedMarkIndexHoles(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Mark Index Holes",
+    protected ASTJexlScript timedMarkIndexValueGaps(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
+                                                    MetadataHelper metadataHelper) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Mark Index Value Holes/Gaps",
                         () -> (PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, metadataHelper)));
     }
 

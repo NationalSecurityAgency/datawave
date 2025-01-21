@@ -36,7 +36,7 @@ import datawave.query.exceptions.NoResultsException;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
-import datawave.query.model.FieldIndexHole;
+import datawave.query.model.IndexFieldGap;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
@@ -440,7 +440,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                     throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
-        Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
+        Map<String,Map<String, IndexFieldGap>> fieldIndexHoles;
         try {
             Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
             if (log.isDebugEnabled()) {
@@ -450,7 +450,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             if (fields.isEmpty()) {
                 fieldIndexHoles = Collections.emptyMap();
             } else {
-                fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getFieldIndexHoleMinThreshold());
+                fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getIndexFieldGapMinThreshold());
             }
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
@@ -471,8 +471,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // Collect all field index holes that fall within the original query's target date range.
         SortedSet<Pair<Date,Date>> relevantHoles = new TreeSet<>();
         for (String field : fieldIndexHoles.keySet()) {
-            Map<String,FieldIndexHole> holes = fieldIndexHoles.get(field);
-            for (FieldIndexHole indexHole : holes.values()) {
+            Map<String, IndexFieldGap> holes = fieldIndexHoles.get(field);
+            for (IndexFieldGap indexHole : holes.values()) {
                 relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(config.getBeginDate(), config.getEndDate(), indexHole));
             }
         }
@@ -629,7 +629,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     /**
      * Return the set of any field index hole date ranges that fall within the original query's target date range.
      */
-    private SortedSet<Pair<Date,Date>> getHolesWithinOriginalQueryDateRange(Date beginDate, Date endDate, FieldIndexHole fieldIndexHole) {
+    private SortedSet<Pair<Date,Date>> getHolesWithinOriginalQueryDateRange(Date beginDate, Date endDate, IndexFieldGap fieldIndexHole) {
         SortedSet<Pair<Date,Date>> holes = fieldIndexHole.getDateRanges();
         // If the earliest date range falls after the original query date range, or the latest date range falls before the original query range, then none of
         // the holes fall within the date range.

@@ -269,7 +269,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
         defaultValues.put("indexHoles", Lists.newArrayList());
-        updatedValues.put("indexHoles", Lists.newArrayList(new ValueIndexHole()));
+        updatedValues.put("indexHoles", Lists.newArrayList(new IndexValueGap()));
         defaultValues.put("indexedFields", Sets.newHashSet());
         updatedValues.put("indexedFields", Sets.newHashSet("FIELD_C", "FIELD_D"));
         defaultValues.put("reverseIndexedFields", Sets.newHashSet());
