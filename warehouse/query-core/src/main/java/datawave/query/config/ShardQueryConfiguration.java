@@ -509,6 +509,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean sortQueryPostIndexWithTermCounts = false;
 
     /**
+     * If a query's cardinality is under this threshold, ivarators will be run as context required filter iterators.
+     */
+    private int cardinalityThreshold;
+
+
+    /**
      * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
      * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
      */
