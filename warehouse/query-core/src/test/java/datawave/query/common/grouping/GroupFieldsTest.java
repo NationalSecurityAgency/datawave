@@ -14,6 +14,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.query.attributes.TemporalGranularity;
+
 public class GroupFieldsTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -44,20 +46,26 @@ public class GroupFieldsTest {
     @Test
     public void testGroupFieldsToString() {
         GroupFields groupFields = new GroupFields();
-        groupFields.setGroupByFields(Sets.newHashSet("A", "1"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("A", TemporalGranularity.ALL);
+        map.put("1", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        groupFields.setGroupByFieldMap(map);
         groupFields.setSumFields(Sets.newHashSet("B", "2"));
         groupFields.setCountFields(Sets.newHashSet("C", "3"));
         groupFields.setAverageFields(Sets.newHashSet("D", "4"));
         groupFields.setMinFields(Sets.newHashSet("E", "5"));
         groupFields.setMaxFields(Sets.newHashSet("F", "6"));
 
-        assertThat(groupFields.toString()).isEqualTo("GROUP(A,1)|SUM(B,2)|COUNT(C,3)|AVERAGE(D,4)|MIN(E,5)|MAX(F,6)");
+        assertThat(groupFields.toString()).isEqualTo("GROUP(1[DAY],A[ALL])|SUM(B,2)|COUNT(C,3)|AVERAGE(D,4)|MIN(E,5)|MAX(F,6)");
     }
 
     @Test
     public void testRemappedGroupFieldsToString() {
         GroupFields groupFields = new GroupFields();
-        groupFields.setGroupByFields(Sets.newHashSet("AG", "GEN"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AG", TemporalGranularity.ALL);
+        map.put("GEN", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        groupFields.setGroupByFieldMap(map);
         groupFields.setSumFields(Sets.newHashSet("AG"));
         groupFields.setCountFields(Sets.newHashSet("NOME"));
         groupFields.setAverageFields(Sets.newHashSet("AG"));
@@ -67,7 +75,7 @@ public class GroupFieldsTest {
         groupFields.remapFields(inverseReverseModel, reverseModel);
 
         assertThat(groupFields.toString()).isEqualTo(
-                        "GROUP(GEN,AG)|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)");
+                        "GROUP(AG[ALL],GEN[DAY])|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)");
     }
 
     @Test
@@ -88,7 +96,10 @@ public class GroupFieldsTest {
     @Test
     public void testParsingGroupFieldsWithGroupByFieldsOnly() {
         GroupFields expected = new GroupFields();
-        expected.setGroupByFields(Sets.newHashSet("AGE", "GENDER"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AGE", TemporalGranularity.ALL);
+        map.put("GENDER", TemporalGranularity.ALL);
+        expected.setGroupByFieldMap(map);
 
         GroupFields actual = GroupFields.from("GROUP(AGE,GENDER)");
 
@@ -98,7 +109,10 @@ public class GroupFieldsTest {
     @Test
     public void testParsingGroupFieldsWithSomeAggregationFields() {
         GroupFields expected = new GroupFields();
-        expected.setGroupByFields(Sets.newHashSet("AGE", "GENDER"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AGE", TemporalGranularity.ALL);
+        map.put("GENDER", TemporalGranularity.ALL);
+        expected.setGroupByFieldMap(map);
         expected.setSumFields(Sets.newHashSet("AGE"));
         expected.setMaxFields(Sets.newHashSet("NAME"));
 
@@ -110,14 +124,17 @@ public class GroupFieldsTest {
     @Test
     public void testParsingGroupFieldsWithAllAggregationFields() {
         GroupFields expected = new GroupFields();
-        expected.setGroupByFields(Sets.newHashSet("AGE", "GENDER"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AGE", TemporalGranularity.ALL);
+        map.put("GENDER", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.setGroupByFieldMap(map);
         expected.setSumFields(Sets.newHashSet("BAT"));
         expected.setCountFields(Sets.newHashSet("FOO"));
         expected.setAverageFields(Sets.newHashSet("BAR"));
         expected.setMinFields(Sets.newHashSet("HAT"));
         expected.setMaxFields(Sets.newHashSet("BAH"));
 
-        GroupFields actual = GroupFields.from("GROUP(AGE,GENDER)|SUM(BAT)|COUNT(FOO)|AVERAGE(BAR)|MIN(HAT)|MAX(BAH)");
+        GroupFields actual = GroupFields.from("GROUP(AGE,GENDER[DAY])|SUM(BAT)|COUNT(FOO)|AVERAGE(BAR)|MIN(HAT)|MAX(BAH)");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -125,7 +142,9 @@ public class GroupFieldsTest {
     @Test
     public void testParsingRemappedGroupFields() {
         GroupFields expected = new GroupFields();
-        expected.setGroupByFields(Sets.newHashSet("AG"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AG", TemporalGranularity.ALL);
+        expected.setGroupByFieldMap(map);
         expected.setSumFields(Sets.newHashSet("AG"));
         expected.setCountFields(Sets.newHashSet("NOME"));
         expected.setAverageFields(Sets.newHashSet("BAR"));
@@ -141,7 +160,11 @@ public class GroupFieldsTest {
     @Test
     public void testParsingLegacyFormat() {
         GroupFields expected = new GroupFields();
-        expected.setGroupByFields(Sets.newHashSet("AGE", "GENDER", "NAME"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AGE", TemporalGranularity.ALL);
+        map.put("GENDER", TemporalGranularity.ALL);
+        map.put("NAME", TemporalGranularity.ALL);
+        expected.setGroupByFieldMap(map);
 
         GroupFields actual = GroupFields.from("AGE,GENDER,NAME");
 
@@ -151,7 +174,10 @@ public class GroupFieldsTest {
     @Test
     public void testDeconstructIdentifiers() {
         GroupFields groupFields = new GroupFields();
-        groupFields.setGroupByFields(Sets.newHashSet("$AGE", "$GENDER"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("$AGE", TemporalGranularity.ALL);
+        map.put("$GENDER", TemporalGranularity.ALL);
+        groupFields.setGroupByFieldMap(map);
         groupFields.setSumFields(Sets.newHashSet("$AGE", "$GENDER"));
         groupFields.setCountFields(Sets.newHashSet("$AGE", "$GENDER"));
         groupFields.setAverageFields(Sets.newHashSet("$AGE", "$GENDER"));
@@ -171,7 +197,10 @@ public class GroupFieldsTest {
     @Test
     public void testRemapFields() {
         GroupFields groupFields = new GroupFields();
-        groupFields.setGroupByFields(Sets.newHashSet("AG", "GEN"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AG", TemporalGranularity.ALL);
+        map.put("GEN", TemporalGranularity.ALL);
+        groupFields.setGroupByFieldMap(map);
         groupFields.setSumFields(Sets.newHashSet("AG"));
         groupFields.setCountFields(Sets.newHashSet("NOME"));
         groupFields.setAverageFields(Sets.newHashSet("AG"));
@@ -193,7 +222,10 @@ public class GroupFieldsTest {
     @Test
     public void testSerialization() throws JsonProcessingException {
         GroupFields groupFields = new GroupFields();
-        groupFields.setGroupByFields(Sets.newHashSet("AG", "GEN"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AG", TemporalGranularity.ALL);
+        map.put("GEN", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        groupFields.setGroupByFieldMap(map);
         groupFields.setSumFields(Sets.newHashSet("AG"));
         groupFields.setCountFields(Sets.newHashSet("NOME"));
         groupFields.setAverageFields(Sets.newHashSet("AG"));
@@ -204,13 +236,16 @@ public class GroupFieldsTest {
 
         String json = objectMapper.writeValueAsString(groupFields);
         assertThat(json).isEqualTo(
-                        "\"GROUP(GEN,AG)|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"");
+                        "\"GROUP(AG[ALL],GEN[DAY])|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"");
     }
 
     @Test
     public void testDeserialization() throws JsonProcessingException {
         GroupFields expected = new GroupFields();
-        expected.setGroupByFields(Sets.newHashSet("AG", "GEN"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AG", TemporalGranularity.ALL);
+        map.put("GEN", TemporalGranularity.ALL);
+        expected.setGroupByFieldMap(map);
         expected.setSumFields(Sets.newHashSet("AG"));
         expected.setCountFields(Sets.newHashSet("NOME"));
         expected.setAverageFields(Sets.newHashSet("AG"));
@@ -218,7 +253,7 @@ public class GroupFieldsTest {
         expected.setMaxFields(Sets.newHashSet("NOME"));
         expected.remapFields(inverseReverseModel, reverseModel);
 
-        String json = "\"GROUP(GEN,AG)|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"";
+        String json = "\"GROUP(GEN[ALL],AG[ALL])|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"";
         GroupFields actual = objectMapper.readValue(json, GroupFields.class);
 
         assertThat(actual).isEqualTo(expected);
@@ -227,7 +262,10 @@ public class GroupFieldsTest {
     @Test
     public void testGetFieldAggregatorFactory() {
         GroupFields groupFields = new GroupFields();
-        groupFields.setGroupByFields(Sets.newHashSet("AGE", "GENDER"));
+        Multimap<String,TemporalGranularity> map = HashMultimap.create();
+        map.put("AGE", TemporalGranularity.ALL);
+        map.put("GENDER", TemporalGranularity.ALL);
+        groupFields.setGroupByFieldMap(map);
         groupFields.setSumFields(Sets.newHashSet("AGE"));
         groupFields.setCountFields(Sets.newHashSet("NAME"));
         groupFields.setAverageFields(Sets.newHashSet("HEIGHT"));

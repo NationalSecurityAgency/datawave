@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import com.google.common.base.Preconditions;
 
 import datawave.data.type.NumberType;
+import datawave.data.type.StringType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
@@ -103,7 +104,18 @@ public class GroupingUtils {
         for (GroupingAttribute<?> attribute : group.getGrouping()) {
             // Update the visibility to the combined visibilities of each visibility seen for this attribute in a grouping.
             attribute.setColumnVisibility(combineVisibilities(group.getVisibilitiesForAttribute(attribute), markingFunctions, false));
-            document.put(attribute.getMetadata().getRow().toString(), attribute);
+            String attributeKey = attribute.getMetadata().getRow().toString();
+            document.put(attributeKey, attribute);
+            // If the attribute has an overriding value, add an attribute for it so that we may fetch it later if we have subsequent groupings to perform.
+            if (attribute.hasOverridingValue()) {
+                // Write the overriding value.
+                StringType overridingValueType = new StringType();
+                overridingValueType.setDelegate(attribute.getOverridingValue());
+                TypeAttribute<String> overridingValueAttribute = new TypeAttribute<>(overridingValueType,
+                                new Key(attributeKey + DocumentGrouper.FIELD_VALUE_OVERRIDE), true);
+                overridingValueAttribute.setColumnVisibility(attribute.getColumnVisibility());
+                document.put(attributeKey + DocumentGrouper.FIELD_VALUE_OVERRIDE, overridingValueAttribute);
+            }
         }
 
         // Add an attribute for the count.
@@ -120,10 +132,8 @@ public class GroupingUtils {
                 for (Aggregator<?> aggregator : entry.getValue().values()) {
                     String field = aggregator.getField();
                     // Do not include an entry for the aggregation if it is null (indicating that no entries were found to be aggregated). The exception to this
-                    // is
-                    // the #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the
-                    // final
-                    // output.
+                    // is the #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the
+                    // final output.
                     if (aggregator.getAggregation() != null) {
                         switch (aggregator.getOperation()) {
                             case SUM:
