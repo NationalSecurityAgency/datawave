@@ -97,7 +97,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
@@ -122,6 +121,7 @@ import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 
 /**
@@ -453,8 +453,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                // pipelineDocuments = uniquify;
-                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
+                pipelineDocuments = uniquify.getIterator(pipelineDocuments);
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
@@ -636,7 +635,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // Seek() the boolean logic stuff
-        ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
+        docIter.seek(range, columnFamilies, inclusive);
 
         // now lets start off the nested iterator
         docIter.initialize();
@@ -1554,11 +1553,23 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new ValueComparator(from.second().getMetadata());
     }
 
-    protected UniqueTransform getUniqueTransform() {
+    protected UniqueTransform getUniqueTransform() throws IOException {
         if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
-                    uniqueTransform = new UniqueTransform(getUniqueFields(), getIvaratorCacheScanTimeout());
+                    // @formatter:off
+                    uniqueTransform = new UniqueTransform.Builder()
+                            .withUniqueFields(getUniqueFields())
+                            .withQueryExecutionForPageTimeout(getResultTimeout())
+                            .withBufferPersistThreshold(getUniqueCacheBufferSize())
+                            .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                            .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
+                            .withSubDirectory(getQueryId() + "-" + getScanId())
+                            .withMaxOpenFiles(getIvaratorMaxOpenFiles())
+                            .withNumRetries(getIvaratorNumRetries())
+                            .withPersistOptions(new FileSortedSet.PersistOptions(true, false, 0))
+                            .build();
+                    // @formatter:on
                 }
             }
         }
