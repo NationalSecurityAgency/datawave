@@ -1,13 +1,20 @@
 package datawave.query.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.AbstractMap;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -30,6 +37,7 @@ import datawave.ingest.mapreduce.handler.shard.content.OffsetQueue;
 import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
 
@@ -792,6 +800,10 @@ public class WiseGuysIngest {
             addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
                             caponeTimeStampDelta);
 
+            addDColumn(datatype, corleoneUID, "CONTENT", "Im gonna make him an offer he cant refuse", bw);
+            addDColumn(datatype, sopranoUID, "CONTENT", "If you can quote the rules then you can obey them", bw);
+            addDColumn(datatype, caponeUID, "CONTENT", "You can get much farther with a kind word and a gun than you can with a kind word alone", bw);
+            addDColumn(datatype, caponeUID, "CONTENT2", "A lawyer and his briefcase can steal more than ten men with guns.", bw);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -1133,5 +1145,22 @@ public class WiseGuysIngest {
                             columnVisibility, timeStamp + timeStampDelta, value);
         }
         bw.addMutation(fi);
+    }
+
+    private static void addDColumn(String datatype, String uid, String contentName, String content, BatchWriter bw)
+                    throws IOException, MutationsRejectedException {
+        Mutation d = new Mutation(shard);
+
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream(Math.max(content.getBytes().length / 2, 1024));
+        final OutputStream b64s = Base64.getEncoder().wrap(bos);
+        final GZIPOutputStream gzip = new GZIPOutputStream(b64s);
+        gzip.write(content.getBytes());
+        gzip.close();
+        b64s.close();
+        bos.close();
+        Value value = new Value(bos.toByteArray());
+
+        d.put("d", datatype + "\u0000" + uid + "\u0000" + contentName, columnVisibility, timeStamp, value);
+        bw.addMutation(d);
     }
 }
