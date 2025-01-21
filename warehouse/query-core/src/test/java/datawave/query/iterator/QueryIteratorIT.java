@@ -265,6 +265,38 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     @Test
+    public void indexOnly_documentSpecific_intersection_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple' && INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_shardRange_intersection_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple' && INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_documentSpecific_union_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple' || INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_shardRange_union_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a shard
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple' || INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
     public void indexOnly_documentSpecific_hitTerm_test() throws IOException {
         options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
@@ -276,7 +308,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     @Test
     public void indexOnly_shardRange_hitTerm_test() throws IOException {
         options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
-        // build the seek range for a document specific pull
+        // build the seek range for a shard
         Range seekRange = getShardRange();
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
         indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);

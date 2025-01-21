@@ -29,7 +29,7 @@ public class DataTypeAsField implements Function<Entry<Key,Document>,Entry<Key,D
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> from) {
         Content dataType = extractDataType(from.getKey(), from.getValue().isToKeep());
-        from.getValue().put(key, dataType, false, false);
+        from.getValue().put(key, dataType, false);
         return from;
     }
 

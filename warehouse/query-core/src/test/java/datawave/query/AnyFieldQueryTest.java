@@ -9,14 +9,12 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.fail;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -31,7 +29,6 @@ import org.apache.accumulo.core.client.ConditionalWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
@@ -45,7 +42,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -53,22 +49,14 @@ import org.junit.Test;
 
 import com.google.common.collect.Multimap;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.microservice.query.Query;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
-import datawave.query.tables.AnyFieldScanner;
-import datawave.query.tables.ResourceQueue;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ScannerSession;
-import datawave.query.tables.SessionOptions;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -78,7 +66,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import datawave.query.testframework.RawDataManager;
 
 public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
@@ -445,6 +432,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String anyState = this.dataManager.convertAnyField(statePhrase);
             String anyCont = this.dataManager.convertAnyField(contPhrase);
             anyQuery = anyCity + AND_OP + anyState + AND_OP + anyCont;
+
             runTest(query, anyQuery);
         }
     }

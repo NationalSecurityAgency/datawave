@@ -40,7 +40,7 @@ import datawave.query.parser.JavaRegexAnalyzer;
  * <p>
  * <code>row fi\x00FIELD : value\x00datatype\x00uid</code>
  */
-public class RegexFilterIterator implements SeekableIterator, NestedIterator<Key>, Comparable<IndexIteratorBridge> {
+public class RegexFilterIterator implements NestedIterator<Key>, Comparable<IndexIteratorBridge> {
 
     private static final Logger log = LoggerFactory.getLogger(RegexFilterIterator.class);
 
