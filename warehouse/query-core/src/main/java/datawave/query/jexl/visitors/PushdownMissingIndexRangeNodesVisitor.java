@@ -57,7 +57,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         this.beginDate = format.format(config.getBeginDate());
         this.endDate = format.format(config.getEndDate());
         this.dataTypeFilter = config.getDatatypeFilter();
-        this.indexHoles.addAll(config.getIndexHoles());
+        this.indexHoles.addAll(config.getValueIndexHoles());
     }
 
     /**

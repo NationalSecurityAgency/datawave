@@ -55,7 +55,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO == 'ca1')) || UNINDEXED == 'ca1')", result);
@@ -66,7 +66,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca11' || UNINDEXED == 'ca11')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO == 'ca11')) || UNINDEXED == 'ca11')", result);
@@ -77,7 +77,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca2' || UNINDEXED == 'ca2')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO == 'ca2')) || UNINDEXED == 'ca2')", result);
@@ -88,7 +88,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')", result);
@@ -99,7 +99,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100102", "20100103"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')", result);
@@ -110,7 +110,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO =~ 'ca.*' || UNINDEXED =~ 'ca.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO =~ 'ca.*')) || UNINDEXED =~ 'ca.*')", result);
@@ -121,7 +121,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO =~ 'ca1.*' || UNINDEXED =~ 'ca1.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO =~ 'ca1.*')) || UNINDEXED =~ 'ca1.*')", result);
@@ -132,7 +132,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO =~ 'ca11.*' || UNINDEXED =~ 'ca11.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO =~ 'ca11.*')) || UNINDEXED =~ 'ca11.*')", result);
@@ -143,7 +143,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO =~ 'ca2.*' || UNINDEXED =~ 'ca2.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO =~ 'ca2.*')) || UNINDEXED =~ 'ca2.*')", result);
@@ -154,7 +154,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO =~ 'ca21.*' || UNINDEXED =~ 'ca21.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (FOO =~ 'ca21.*' || UNINDEXED =~ 'ca21.*')", result);
@@ -165,7 +165,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO =~ 'ca.*' || UNINDEXED =~ 'ca.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Hole_ = true) && (FOO =~ 'ca.*')) || UNINDEXED =~ 'ca.*')", result);
@@ -177,7 +177,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
                         "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
@@ -191,7 +191,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
                         "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca1' && FOO <= 'ca11')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca1' && UNINDEXED <= 'ca11'))");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
@@ -205,7 +205,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
                         "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca11' && FOO <= 'ca111')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca11' && UNINDEXED <= 'ca111'))");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
@@ -219,7 +219,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
                         "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca2' && FOO <= 'ca21')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca2' && UNINDEXED <= 'ca21'))");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
@@ -233,7 +233,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
                         "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca21' && FOO <= 'ca211')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca21' && UNINDEXED <= 'ca211'))");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
@@ -247,7 +247,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
                         "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100102", "20100103"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
@@ -260,7 +260,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (((_Value_ = true) && (FOO =~ 'ca.*')) || UNINDEXED =~ 'ca.*')");
         List<ValueIndexHole> holes = new ArrayList<>();
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
 
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Value_ = true) && (FOO =~ 'ca.*')) || UNINDEXED =~ 'ca.*')", result);
@@ -278,7 +278,7 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         holes.add(new ValueIndexHole(new String[] {"20100101", "20100102"}, new String[] {"aba", "abc"}));
         holes.add(new ValueIndexHole(new String[] {"20100102", "20100103"}, new String[] {"ca2", "ca21"}));
 
-        config.setIndexHoles(holes);
+        config.setValueIndexHoles(holes);
         String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
         Assert.assertEquals(
                         "FOO == 'jsub' && (((_Hole_ = true) && (FOO == 'ca1')) || FOO == 'ca2' || ((_Hole_ = true) && (FOO == 'ca3')) || FOO == 'ca4' || UNINDEXED == 'ca1')",

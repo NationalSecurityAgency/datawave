@@ -238,7 +238,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Filter results on datatypes. Default to having no filters
     private Set<String> datatypeFilter = UniversalSet.instance();
     // A set of sorted index holes
-    private List<ValueIndexHole> indexHoles = new ArrayList<>();
+    private List<ValueIndexHole> valueIndexHoles = new ArrayList<>();
     // a set of user specified mappings
     private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
@@ -632,7 +632,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
                         : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
-        this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
+        this.setValueIndexHoles(null == other.getValueIndexHoles() ? null : Lists.newArrayList(other.getValueIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
         this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
@@ -2312,12 +2312,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
-    public List<ValueIndexHole> getIndexHoles() {
-        return indexHoles;
+    public List<ValueIndexHole> getValueIndexHoles() {
+        return valueIndexHoles;
     }
 
-    public void setIndexHoles(List<ValueIndexHole> indexHoles) {
-        this.indexHoles = indexHoles;
+    public void setValueIndexHoles(List<ValueIndexHole> valueIndexHoles) {
+        this.valueIndexHoles = valueIndexHoles;
     }
 
     public boolean getCollectTimingDetails() {
@@ -2977,7 +2977,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
                 Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
                 Objects.equals(getDatatypeFilter(), that.getDatatypeFilter()) &&
-                Objects.equals(getIndexHoles(), that.getIndexHoles()) &&
+                Objects.equals(getValueIndexHoles(), that.getValueIndexHoles()) &&
                 Objects.equals(getProjectFields(), that.getProjectFields()) &&
                 Objects.equals(getRenameFields(), that.getRenameFields()) &&
                 Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields()) &&
@@ -3117,7 +3117,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getNonEventKeyPrefixes(),
                 getUnevaluatedFields(),
                 getDatatypeFilter(),
-                getIndexHoles(),
+                getValueIndexHoles(),
                 getProjectFields(),
                 getRenameFields(),
                 getDisallowlistedFields(),

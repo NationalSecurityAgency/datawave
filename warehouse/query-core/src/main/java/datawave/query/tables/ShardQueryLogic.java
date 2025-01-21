@@ -2607,12 +2607,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setCacheModel(cacheModel);
     }
 
-    public List<ValueIndexHole> getIndexHoles() {
-        return getConfig().getIndexHoles();
+    public List<ValueIndexHole> getValueIndexHoles() {
+        return getConfig().getValueIndexHoles();
     }
 
-    public void setIndexHoles(List<ValueIndexHole> indexHoles) {
-        getConfig().setIndexHoles(indexHoles);
+    public void setValueIndexHoles(List<ValueIndexHole> indexHoles) {
+        getConfig().setValueIndexHoles(indexHoles);
     }
 
     public CardinalityConfiguration getCardinalityConfiguration() {
