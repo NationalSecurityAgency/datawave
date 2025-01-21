@@ -293,6 +293,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
         }
 
+        // TODO: Need to apply date type so that we know the true date range
+
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
 
@@ -334,7 +336,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             configCopy.setBeginDate(dateRange.getLeft());
             configCopy.setEndDate(dateRange.getRight());
 
-            // TODO: Why are we not setting index holes / relevant holes on this config?
+            // TODO: Should we set the relevant field index holes in the config for the delegated planners to use
+            //       or should the metadata helper return indexed fields based on the date range?
 
             // we want to make sure the same query id for tracking purposes and execution
             configCopy.getQuery().setId(queryId);
@@ -556,8 +559,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 subDateRanges.add(Pair.of(oneMsAfter(endOfPrevRange), config.getEndDate()));
             }
         }
-        // TODO: use relevantHoles to make FieldIndexHoles to pass to DefaultQueryPlanner
-        // TODO: rename IndexHole and FieldIndexHole to disambiguate and also not conflate with fi
+        // TODO: use relevantHoles to make FieldIndexHoles to pass to DefaultQueryPlanner?
         this.relevantHoles = relevantHoles;
         return subDateRanges;
     }
@@ -606,6 +608,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             try {
                 configCopy.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
                 configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
+
+                // TODO: Can we preserve this tree to avoid having to do it all over again in the federated planners.
                 queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);

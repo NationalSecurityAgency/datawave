@@ -238,7 +238,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Filter results on datatypes. Default to having no filters
     private Set<String> datatypeFilter = UniversalSet.instance();
     // A set of sorted index holes
-    private List<IndexHole> indexHoles = new ArrayList<>();
+    private List<ValueIndexHole> indexHoles = new ArrayList<>();
     // a set of user specified mappings
     private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
@@ -768,7 +768,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
-        // this.setIndexHoles(other.getIndexHoles());
     }
 
     /**
@@ -2313,11 +2312,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
-    public List<IndexHole> getIndexHoles() {
+    public List<ValueIndexHole> getIndexHoles() {
         return indexHoles;
     }
 
-    public void setIndexHoles(List<IndexHole> indexHoles) {
+    public void setIndexHoles(List<ValueIndexHole> indexHoles) {
         this.indexHoles = indexHoles;
     }
 

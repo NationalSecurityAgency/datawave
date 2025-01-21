@@ -15,7 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.config.IndexHole;
+import datawave.query.config.ValueIndexHole;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
@@ -39,10 +39,10 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
 
     private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
 
-    private static final List<IndexHole> INDEX_HOLE = new ArrayList<>();
+    private static final List<ValueIndexHole> INDEX_HOLE = new ArrayList<>();
     static {
         String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0505.getDateStr()};
-        IndexHole hole = new IndexHole(dateHole, new String[] {"us", "ut"});
+        ValueIndexHole hole = new ValueIndexHole(dateHole, new String[] {"us", "ut"});
         INDEX_HOLE.add(hole);
     }
 

@@ -67,7 +67,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.IndexHole;
+import datawave.query.config.ValueIndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
@@ -2607,11 +2607,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setCacheModel(cacheModel);
     }
 
-    public List<IndexHole> getIndexHoles() {
+    public List<ValueIndexHole> getIndexHoles() {
         return getConfig().getIndexHoles();
     }
 
-    public void setIndexHoles(List<IndexHole> indexHoles) {
+    public void setIndexHoles(List<ValueIndexHole> indexHoles) {
         getConfig().setIndexHoles(indexHoles);
     }
 
