@@ -218,6 +218,11 @@ public class QueryParameters {
     public static final String EXCERPT_FIELDS = "excerpt.fields";
 
     /**
+     * Used to specify summaries that should be returned.
+     */
+    public static final String SUMMARY_OPTIONS = "summary.options";
+
+    /**
      * Used to specify model or DB fields that should be treated as lenient (can be skipped if normalization fails)
      */
     public static final String LENIENT_FIELDS = "lenient.fields";

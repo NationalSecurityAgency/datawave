@@ -114,6 +114,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
+import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -202,6 +203,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected ActiveQueryLog activeQueryLog;
 
     protected ExcerptTransform excerptTransform = null;
+
+    protected SummaryTransform summaryTransform = null;
 
     protected RangeProvider rangeProvider;
 
@@ -843,6 +846,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         ExcerptTransform excerptTransform = getExcerptTransform();
         if (excerptTransform != null) {
             documents = excerptTransform.getIterator(documents);
+        }
+
+        SummaryTransform summaryTransform = getSummaryTransform();
+        if (summaryTransform != null) {
+            documents = summaryTransform.getIterator(documents);
         }
 
         // a hook to allow mapping the document such as with the TLD or Parent
@@ -1668,6 +1676,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
         return excerptTransform;
+    }
+
+    protected SummaryTransform getSummaryTransform() {
+        if (summaryTransform == null && getSummaryOptions() != null && getSummaryOptions().getSummarySize() != 0) {
+            synchronized (getSummaryOptions()) {
+                if (summaryTransform == null) {
+                    try {
+                        summaryTransform = new SummaryTransform(summaryOptions, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                                        summaryIterator.getDeclaredConstructor().newInstance());
+                    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException("Could not create summary transform", e);
+                    }
+                }
+            }
+        }
+        return summaryTransform;
     }
 
     /**
