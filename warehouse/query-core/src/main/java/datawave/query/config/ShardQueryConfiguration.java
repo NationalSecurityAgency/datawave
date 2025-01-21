@@ -3308,4 +3308,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
         this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
+
+    public int getCardinalityThreshold() {
+        return cardinalityThreshold;
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        this.cardinalityThreshold = cardinalityThreshold;
+    }
 }
