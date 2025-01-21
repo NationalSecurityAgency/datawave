@@ -6,126 +6,123 @@ package datawave.ingest.protobuf;
 public final class TermWeight {
     private TermWeight() {}
 
-    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {}
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
 
-    public interface InfoOrBuilder extends com.google.protobuf.MessageOrBuilder {
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
+        registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
+    }
 
-        // repeated uint32 termOffset = 3;
+    public interface InfoOrBuilder extends
+                    // @@protoc_insertion_point(interface_extends:datawave.ingest.protobuf.Info)
+                    com.google.protobuf.MessageOrBuilder {
+
         /**
          * <code>repeated uint32 termOffset = 3;</code>
-         *
-         * @return list of term offsets
          */
         java.util.List<java.lang.Integer> getTermOffsetList();
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
-         *
-         * @return the number of term offsets in the list
          */
         int getTermOffsetCount();
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the term offset at the provided index
          */
         int getTermOffset(int index);
 
-        // repeated uint32 prevSkips = 4;
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
-         *
-         * @return list of previous skips
          */
         java.util.List<java.lang.Integer> getPrevSkipsList();
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
-         *
-         * @return the prev skips count
          */
         int getPrevSkipsCount();
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the prev skip at the provided index
          */
         int getPrevSkips(int index);
 
-        // repeated uint32 score = 5;
         /**
          * <code>repeated uint32 score = 5;</code>
-         *
-         * @return list of scores
          */
         java.util.List<java.lang.Integer> getScoreList();
 
         /**
          * <code>repeated uint32 score = 5;</code>
-         *
-         * @return the number of scores in the list
          */
         int getScoreCount();
 
         /**
          * <code>repeated uint32 score = 5;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the score at the provided index
          */
         int getScore(int index);
 
-        // optional bool zeroOffsetMatch = 6 [default = true];
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-         *
-         * @return if it has a zero offset
          */
         boolean hasZeroOffsetMatch();
 
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-         *
-         * @return the zero offset match
          */
         boolean getZeroOffsetMatch();
+
+        /**
+         * <code>repeated float leftBound = 7;</code>
+         */
+        java.util.List<java.lang.Float> getLeftBoundList();
+
+        /**
+         * <code>repeated float leftBound = 7;</code>
+         */
+        int getLeftBoundCount();
+
+        /**
+         * <code>repeated float leftBound = 7;</code>
+         */
+        float getLeftBound(int index);
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        java.util.List<java.lang.Float> getRightBoundList();
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        int getRightBoundCount();
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        float getRightBound(int index);
     }
 
     /**
      * Protobuf type {@code datawave.ingest.protobuf.Info}
      */
-    public static final class Info extends com.google.protobuf.GeneratedMessage implements InfoOrBuilder {
+    public static final class Info extends com.google.protobuf.GeneratedMessageV3 implements
+                    // @@protoc_insertion_point(message_implements:datawave.ingest.protobuf.Info)
+                    InfoOrBuilder {
+        private static final long serialVersionUID = 0L;
+
         // Use Info.newBuilder() to construct.
-        private Info(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+        private Info(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
-            this.unknownFields = builder.getUnknownFields();
         }
 
-        private Info(boolean noInit) {
-            this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+        private Info() {
+            termOffset_ = java.util.Collections.emptyList();
+            prevSkips_ = java.util.Collections.emptyList();
+            score_ = java.util.Collections.emptyList();
+            zeroOffsetMatch_ = true;
+            leftBound_ = java.util.Collections.emptyList();
+            rightBound_ = java.util.Collections.emptyList();
         }
-
-        private static final Info defaultInstance;
-
-        public static Info getDefaultInstance() {
-            return defaultInstance;
-        }
-
-        public Info getDefaultInstanceForType() {
-            return defaultInstance;
-        }
-
-        private final com.google.protobuf.UnknownFieldSet unknownFields;
 
         @java.lang.Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
@@ -134,7 +131,10 @@ public final class TermWeight {
 
         private Info(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
             int mutable_bitField0_ = 0;
             com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
             try {
@@ -153,7 +153,7 @@ public final class TermWeight {
                         }
                         case 24: {
                             if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                                termOffset_ = new java.util.ArrayList<>();
+                                termOffset_ = new java.util.ArrayList<java.lang.Integer>();
                                 mutable_bitField0_ |= 0x00000001;
                             }
                             termOffset_.add(input.readUInt32());
@@ -163,7 +163,7 @@ public final class TermWeight {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000001) == 0x00000001) && input.getBytesUntilLimit() > 0) {
-                                termOffset_ = new java.util.ArrayList<>();
+                                termOffset_ = new java.util.ArrayList<java.lang.Integer>();
                                 mutable_bitField0_ |= 0x00000001;
                             }
                             while (input.getBytesUntilLimit() > 0) {
@@ -174,7 +174,7 @@ public final class TermWeight {
                         }
                         case 32: {
                             if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                                prevSkips_ = new java.util.ArrayList<>();
+                                prevSkips_ = new java.util.ArrayList<java.lang.Integer>();
                                 mutable_bitField0_ |= 0x00000002;
                             }
                             prevSkips_.add(input.readUInt32());
@@ -184,7 +184,7 @@ public final class TermWeight {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
-                                prevSkips_ = new java.util.ArrayList<>();
+                                prevSkips_ = new java.util.ArrayList<java.lang.Integer>();
                                 mutable_bitField0_ |= 0x00000002;
                             }
                             while (input.getBytesUntilLimit() > 0) {
@@ -195,7 +195,7 @@ public final class TermWeight {
                         }
                         case 40: {
                             if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                                score_ = new java.util.ArrayList<>();
+                                score_ = new java.util.ArrayList<java.lang.Integer>();
                                 mutable_bitField0_ |= 0x00000004;
                             }
                             score_.add(input.readUInt32());
@@ -205,7 +205,7 @@ public final class TermWeight {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000004) == 0x00000004) && input.getBytesUntilLimit() > 0) {
-                                score_ = new java.util.ArrayList<>();
+                                score_ = new java.util.ArrayList<java.lang.Integer>();
                                 mutable_bitField0_ |= 0x00000004;
                             }
                             while (input.getBytesUntilLimit() > 0) {
@@ -219,12 +219,54 @@ public final class TermWeight {
                             zeroOffsetMatch_ = input.readBool();
                             break;
                         }
+                        case 61: {
+                            if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+                                leftBound_ = new java.util.ArrayList<java.lang.Float>();
+                                mutable_bitField0_ |= 0x00000010;
+                            }
+                            leftBound_.add(input.readFloat());
+                            break;
+                        }
+                        case 58: {
+                            int length = input.readRawVarint32();
+                            int limit = input.pushLimit(length);
+                            if (!((mutable_bitField0_ & 0x00000010) == 0x00000010) && input.getBytesUntilLimit() > 0) {
+                                leftBound_ = new java.util.ArrayList<java.lang.Float>();
+                                mutable_bitField0_ |= 0x00000010;
+                            }
+                            while (input.getBytesUntilLimit() > 0) {
+                                leftBound_.add(input.readFloat());
+                            }
+                            input.popLimit(limit);
+                            break;
+                        }
+                        case 69: {
+                            if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                                rightBound_ = new java.util.ArrayList<java.lang.Float>();
+                                mutable_bitField0_ |= 0x00000020;
+                            }
+                            rightBound_.add(input.readFloat());
+                            break;
+                        }
+                        case 66: {
+                            int length = input.readRawVarint32();
+                            int limit = input.pushLimit(length);
+                            if (!((mutable_bitField0_ & 0x00000020) == 0x00000020) && input.getBytesUntilLimit() > 0) {
+                                rightBound_ = new java.util.ArrayList<java.lang.Float>();
+                                mutable_bitField0_ |= 0x00000020;
+                            }
+                            while (input.getBytesUntilLimit() > 0) {
+                                rightBound_.add(input.readFloat());
+                            }
+                            input.popLimit(limit);
+                            break;
+                        }
                     }
                 }
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                 throw e.setUnfinishedMessage(this);
             } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
             } finally {
                 if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
                     termOffset_ = java.util.Collections.unmodifiableList(termOffset_);
@@ -235,6 +277,12 @@ public final class TermWeight {
                 if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
                     score_ = java.util.Collections.unmodifiableList(score_);
                 }
+                if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+                    leftBound_ = java.util.Collections.unmodifiableList(leftBound_);
+                }
+                if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                    rightBound_ = java.util.Collections.unmodifiableList(rightBound_);
+                }
                 this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
@@ -244,32 +292,17 @@ public final class TermWeight {
             return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
         }
 
-        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
             return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(
                             datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
         }
 
-        public static com.google.protobuf.Parser<Info> PARSER = new com.google.protobuf.AbstractParser<Info>() {
-            public Info parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new Info(input, extensionRegistry);
-            }
-        };
-
-        @java.lang.Override
-        public com.google.protobuf.Parser<Info> getParserForType() {
-            return PARSER;
-        }
-
         private int bitField0_;
-        // repeated uint32 termOffset = 3;
         public static final int TERMOFFSET_FIELD_NUMBER = 3;
         private java.util.List<java.lang.Integer> termOffset_;
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
-         *
-         * @return list of term offsets
          */
         public java.util.List<java.lang.Integer> getTermOffsetList() {
             return termOffset_;
@@ -277,8 +310,6 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
-         *
-         * @return the term offset count
          */
         public int getTermOffsetCount() {
             return termOffset_.size();
@@ -286,24 +317,16 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the term offset at the provided index
          */
         public int getTermOffset(int index) {
             return termOffset_.get(index);
         }
 
-        // repeated uint32 prevSkips = 4;
         public static final int PREVSKIPS_FIELD_NUMBER = 4;
         private java.util.List<java.lang.Integer> prevSkips_;
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
-         *
-         * @return the prev skips list
          */
         public java.util.List<java.lang.Integer> getPrevSkipsList() {
             return prevSkips_;
@@ -311,8 +334,6 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
-         *
-         * @return the prev scips count
          */
         public int getPrevSkipsCount() {
             return prevSkips_.size();
@@ -320,17 +341,11 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the prev skip at the provided index
          */
         public int getPrevSkips(int index) {
             return prevSkips_.get(index);
         }
 
-        // repeated uint32 score = 5;
         public static final int SCORE_FIELD_NUMBER = 5;
         private java.util.List<java.lang.Integer> score_;
 
@@ -343,8 +358,6 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 score = 5;</code>
-         *
-         * @return the size of the score list
          */
         public int getScoreCount() {
             return score_.size();
@@ -352,24 +365,16 @@ public final class TermWeight {
 
         /**
          * <code>repeated uint32 score = 5;</code>
-         *
-         * @param index
-         *            the index
-         *
-         * @return the score at the provided index
          */
         public int getScore(int index) {
             return score_.get(index);
         }
 
-        // optional bool zeroOffsetMatch = 6 [default = true];
         public static final int ZEROOFFSETMATCH_FIELD_NUMBER = 6;
         private boolean zeroOffsetMatch_;
 
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-         *
-         * @return if it has a zero offset
          */
         public boolean hasZeroOffsetMatch() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -377,33 +382,73 @@ public final class TermWeight {
 
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-         *
-         * @return the zero offset match
          */
         public boolean getZeroOffsetMatch() {
             return zeroOffsetMatch_;
         }
 
-        private void initFields() {
-            termOffset_ = java.util.Collections.emptyList();
-            prevSkips_ = java.util.Collections.emptyList();
-            score_ = java.util.Collections.emptyList();
-            zeroOffsetMatch_ = true;
+        public static final int LEFTBOUND_FIELD_NUMBER = 7;
+        private java.util.List<java.lang.Float> leftBound_;
+
+        /**
+         * <code>repeated float leftBound = 7;</code>
+         */
+        public java.util.List<java.lang.Float> getLeftBoundList() {
+            return leftBound_;
+        }
+
+        /**
+         * <code>repeated float leftBound = 7;</code>
+         */
+        public int getLeftBoundCount() {
+            return leftBound_.size();
+        }
+
+        /**
+         * <code>repeated float leftBound = 7;</code>
+         */
+        public float getLeftBound(int index) {
+            return leftBound_.get(index);
+        }
+
+        public static final int RIGHTBOUND_FIELD_NUMBER = 8;
+        private java.util.List<java.lang.Float> rightBound_;
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        public java.util.List<java.lang.Float> getRightBoundList() {
+            return rightBound_;
+        }
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        public int getRightBoundCount() {
+            return rightBound_.size();
+        }
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        public float getRightBound(int index) {
+            return rightBound_.get(index);
         }
 
         private byte memoizedIsInitialized = -1;
 
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
 
             memoizedIsInitialized = 1;
             return true;
         }
 
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
             for (int i = 0; i < termOffset_.size(); i++) {
                 output.writeUInt32(3, termOffset_.get(i));
             }
@@ -416,13 +461,17 @@ public final class TermWeight {
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
                 output.writeBool(6, zeroOffsetMatch_);
             }
-            getUnknownFields().writeTo(output);
+            for (int i = 0; i < leftBound_.size(); i++) {
+                output.writeFloat(7, leftBound_.get(i));
+            }
+            for (int i = 0; i < rightBound_.size(); i++) {
+                output.writeFloat(8, rightBound_.get(i));
+            }
+            unknownFields.writeTo(output);
         }
 
-        private int memoizedSerializedSize = -1;
-
         public int getSerializedSize() {
-            int size = memoizedSerializedSize;
+            int size = memoizedSize;
             if (size != -1)
                 return size;
 
@@ -454,16 +503,90 @@ public final class TermWeight {
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
                 size += com.google.protobuf.CodedOutputStream.computeBoolSize(6, zeroOffsetMatch_);
             }
-            size += getUnknownFields().getSerializedSize();
-            memoizedSerializedSize = size;
+            {
+                int dataSize = 0;
+                dataSize = 4 * getLeftBoundList().size();
+                size += dataSize;
+                size += 1 * getLeftBoundList().size();
+            }
+            {
+                int dataSize = 0;
+                dataSize = 4 * getRightBoundList().size();
+                size += dataSize;
+                size += 1 * getRightBoundList().size();
+            }
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.ingest.protobuf.TermWeight.Info)) {
+                return super.equals(obj);
+            }
+            datawave.ingest.protobuf.TermWeight.Info other = (datawave.ingest.protobuf.TermWeight.Info) obj;
+
+            boolean result = true;
+            result = result && getTermOffsetList().equals(other.getTermOffsetList());
+            result = result && getPrevSkipsList().equals(other.getPrevSkipsList());
+            result = result && getScoreList().equals(other.getScoreList());
+            result = result && (hasZeroOffsetMatch() == other.hasZeroOffsetMatch());
+            if (hasZeroOffsetMatch()) {
+                result = result && (getZeroOffsetMatch() == other.getZeroOffsetMatch());
+            }
+            result = result && getLeftBoundList().equals(other.getLeftBoundList());
+            result = result && getRightBoundList().equals(other.getRightBoundList());
+            result = result && unknownFields.equals(other.unknownFields);
+            return result;
+        }
 
         @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (getTermOffsetCount() > 0) {
+                hash = (37 * hash) + TERMOFFSET_FIELD_NUMBER;
+                hash = (53 * hash) + getTermOffsetList().hashCode();
+            }
+            if (getPrevSkipsCount() > 0) {
+                hash = (37 * hash) + PREVSKIPS_FIELD_NUMBER;
+                hash = (53 * hash) + getPrevSkipsList().hashCode();
+            }
+            if (getScoreCount() > 0) {
+                hash = (37 * hash) + SCORE_FIELD_NUMBER;
+                hash = (53 * hash) + getScoreList().hashCode();
+            }
+            if (hasZeroOffsetMatch()) {
+                hash = (37 * hash) + ZEROOFFSETMATCH_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getZeroOffsetMatch());
+            }
+            if (getLeftBoundCount() > 0) {
+                hash = (37 * hash) + LEFTBOUND_FIELD_NUMBER;
+                hash = (53 * hash) + getLeftBoundList().hashCode();
+            }
+            if (getRightBoundCount() > 0) {
+                hash = (37 * hash) + RIGHTBOUND_FIELD_NUMBER;
+                hash = (53 * hash) + getRightBoundList().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+
+        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.ByteString data)
@@ -486,63 +609,65 @@ public final class TermWeight {
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
-        }
-
-        public static Builder newBuilder() {
-            return Builder.create();
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
         public Builder newBuilderForType() {
             return newBuilder();
         }
 
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
+        }
+
         public static Builder newBuilder(datawave.ingest.protobuf.TermWeight.Info prototype) {
-            return newBuilder().mergeFrom(prototype);
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
         }
 
         public Builder toBuilder() {
-            return newBuilder(this);
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
         }
 
         @java.lang.Override
-        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-            return new Builder(parent);
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
         }
 
         /**
          * Protobuf type {@code datawave.ingest.protobuf.Info}
          */
-        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder>
-                        implements datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                        // @@protoc_insertion_point(builder_implements:datawave.ingest.protobuf.Info)
+                        datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
             }
 
-            protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
                 return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(
                                 datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
             }
@@ -552,17 +677,13 @@ public final class TermWeight {
                 maybeForceBuilderInitialization();
             }
 
-            private Builder(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
                 super(parent);
                 maybeForceBuilderInitialization();
             }
 
             private void maybeForceBuilderInitialization() {
-                if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {}
-            }
-
-            private static Builder create() {
-                return new Builder();
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
             }
 
             public Builder clear() {
@@ -575,11 +696,11 @@ public final class TermWeight {
                 bitField0_ = (bitField0_ & ~0x00000004);
                 zeroOffsetMatch_ = true;
                 bitField0_ = (bitField0_ & ~0x00000008);
+                leftBound_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000010);
+                rightBound_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000020);
                 return this;
-            }
-
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
             }
 
             public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
@@ -621,9 +742,43 @@ public final class TermWeight {
                     to_bitField0_ |= 0x00000001;
                 }
                 result.zeroOffsetMatch_ = zeroOffsetMatch_;
+                if (((bitField0_ & 0x00000010) == 0x00000010)) {
+                    leftBound_ = java.util.Collections.unmodifiableList(leftBound_);
+                    bitField0_ = (bitField0_ & ~0x00000010);
+                }
+                result.leftBound_ = leftBound_;
+                if (((bitField0_ & 0x00000020) == 0x00000020)) {
+                    rightBound_ = java.util.Collections.unmodifiableList(rightBound_);
+                    bitField0_ = (bitField0_ & ~0x00000020);
+                }
+                result.rightBound_ = rightBound_;
                 result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
+            }
+
+            public Builder clone() {
+                return (Builder) super.clone();
+            }
+
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return (Builder) super.setField(field, value);
+            }
+
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return (Builder) super.clearField(field);
+            }
+
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return (Builder) super.clearOneof(oneof);
+            }
+
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return (Builder) super.setRepeatedField(field, index, value);
+            }
+
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return (Builder) super.addRepeatedField(field, value);
             }
 
             public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -671,7 +826,28 @@ public final class TermWeight {
                 if (other.hasZeroOffsetMatch()) {
                     setZeroOffsetMatch(other.getZeroOffsetMatch());
                 }
-                this.mergeUnknownFields(other.getUnknownFields());
+                if (!other.leftBound_.isEmpty()) {
+                    if (leftBound_.isEmpty()) {
+                        leftBound_ = other.leftBound_;
+                        bitField0_ = (bitField0_ & ~0x00000010);
+                    } else {
+                        ensureLeftBoundIsMutable();
+                        leftBound_.addAll(other.leftBound_);
+                    }
+                    onChanged();
+                }
+                if (!other.rightBound_.isEmpty()) {
+                    if (rightBound_.isEmpty()) {
+                        rightBound_ = other.rightBound_;
+                        bitField0_ = (bitField0_ & ~0x00000020);
+                    } else {
+                        ensureRightBoundIsMutable();
+                        rightBound_.addAll(other.rightBound_);
+                    }
+                    onChanged();
+                }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
                 return this;
             }
 
@@ -686,7 +862,7 @@ public final class TermWeight {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     parsedMessage = (datawave.ingest.protobuf.TermWeight.Info) e.getUnfinishedMessage();
-                    throw e;
+                    throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
                         mergeFrom(parsedMessage);
@@ -697,20 +873,17 @@ public final class TermWeight {
 
             private int bitField0_;
 
-            // repeated uint32 termOffset = 3;
             private java.util.List<java.lang.Integer> termOffset_ = java.util.Collections.emptyList();
 
             private void ensureTermOffsetIsMutable() {
                 if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-                    termOffset_ = new java.util.ArrayList<>(termOffset_);
+                    termOffset_ = new java.util.ArrayList<java.lang.Integer>(termOffset_);
                     bitField0_ |= 0x00000001;
                 }
             }
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @return list of term offsets
              */
             public java.util.List<java.lang.Integer> getTermOffsetList() {
                 return java.util.Collections.unmodifiableList(termOffset_);
@@ -718,8 +891,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @return the number of term offsets in the least
              */
             public int getTermOffsetCount() {
                 return termOffset_.size();
@@ -727,11 +898,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return the term offset at the provided index
              */
             public int getTermOffset(int index) {
                 return termOffset_.get(index);
@@ -739,13 +905,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            the new term offset
-             *
-             * @return builder to set term offset at provided index
              */
             public Builder setTermOffset(int index, int value) {
                 ensureTermOffsetIsMutable();
@@ -756,11 +915,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @param value
-             *            the new term offset
-             *
-             * @return builder to add new term offset provided
              */
             public Builder addTermOffset(int value) {
                 ensureTermOffsetIsMutable();
@@ -771,23 +925,16 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @param values
-             *            iterable of term offsets to add to the list
-             *
-             * @return builder to add term offsets provided
              */
             public Builder addAllTermOffset(java.lang.Iterable<? extends java.lang.Integer> values) {
                 ensureTermOffsetIsMutable();
-                super.addAll(values, termOffset_);
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, termOffset_);
                 onChanged();
                 return this;
             }
 
             /**
              * <code>repeated uint32 termOffset = 3;</code>
-             *
-             * @return builder to clear term offsets
              */
             public Builder clearTermOffset() {
                 termOffset_ = java.util.Collections.emptyList();
@@ -796,20 +943,17 @@ public final class TermWeight {
                 return this;
             }
 
-            // repeated uint32 prevSkips = 4;
             private java.util.List<java.lang.Integer> prevSkips_ = java.util.Collections.emptyList();
 
             private void ensurePrevSkipsIsMutable() {
                 if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-                    prevSkips_ = new java.util.ArrayList<>(prevSkips_);
+                    prevSkips_ = new java.util.ArrayList<java.lang.Integer>(prevSkips_);
                     bitField0_ |= 0x00000002;
                 }
             }
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @return the prev skip list
              */
             public java.util.List<java.lang.Integer> getPrevSkipsList() {
                 return java.util.Collections.unmodifiableList(prevSkips_);
@@ -817,8 +961,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @return the number of items in the prev skip list
              */
             public int getPrevSkipsCount() {
                 return prevSkips_.size();
@@ -826,11 +968,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return the prev skip at the provided index
              */
             public int getPrevSkips(int index) {
                 return prevSkips_.get(index);
@@ -838,13 +975,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            new prev skip value
-             *
-             * @return builder to set the prev skips value at the provided index
              */
             public Builder setPrevSkips(int index, int value) {
                 ensurePrevSkipsIsMutable();
@@ -855,11 +985,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @param value
-             *            new prev skips value to add
-             *
-             * @return builder to add a prev skips value
              */
             public Builder addPrevSkips(int value) {
                 ensurePrevSkipsIsMutable();
@@ -870,23 +995,16 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @param values
-             *            iterable of perv skips to add
-             *
-             * @return builder to add iterable of values
              */
             public Builder addAllPrevSkips(java.lang.Iterable<? extends java.lang.Integer> values) {
                 ensurePrevSkipsIsMutable();
-                super.addAll(values, prevSkips_);
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, prevSkips_);
                 onChanged();
                 return this;
             }
 
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
-             *
-             * @return builder to clear prev skips
              */
             public Builder clearPrevSkips() {
                 prevSkips_ = java.util.Collections.emptyList();
@@ -895,20 +1013,17 @@ public final class TermWeight {
                 return this;
             }
 
-            // repeated uint32 score = 5;
             private java.util.List<java.lang.Integer> score_ = java.util.Collections.emptyList();
 
             private void ensureScoreIsMutable() {
                 if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-                    score_ = new java.util.ArrayList<>(score_);
+                    score_ = new java.util.ArrayList<java.lang.Integer>(score_);
                     bitField0_ |= 0x00000004;
                 }
             }
 
             /**
              * <code>repeated uint32 score = 5;</code>
-             *
-             * @return list of scores
              */
             public java.util.List<java.lang.Integer> getScoreList() {
                 return java.util.Collections.unmodifiableList(score_);
@@ -923,11 +1038,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
-             *
-             * @param index
-             *            the index
-             *
-             * @return the score at the provided index
              */
             public int getScore(int index) {
                 return score_.get(index);
@@ -935,13 +1045,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
-             *
-             * @param index
-             *            the index
-             * @param value
-             *            the new score value
-             *
-             * @return builder to set the score at the provided index
              */
             public Builder setScore(int index, int value) {
                 ensureScoreIsMutable();
@@ -952,11 +1055,6 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
-             *
-             * @param value
-             *            the score to add
-             *
-             * @return return a builder to add the provided score
              */
             public Builder addScore(int value) {
                 ensureScoreIsMutable();
@@ -967,23 +1065,16 @@ public final class TermWeight {
 
             /**
              * <code>repeated uint32 score = 5;</code>
-             *
-             * @param values
-             *            iterable of scores to add
-             *
-             * @return builder to add the iterable of scores provided
              */
             public Builder addAllScore(java.lang.Iterable<? extends java.lang.Integer> values) {
                 ensureScoreIsMutable();
-                super.addAll(values, score_);
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, score_);
                 onChanged();
                 return this;
             }
 
             /**
              * <code>repeated uint32 score = 5;</code>
-             *
-             * @return builder to clear the scores
              */
             public Builder clearScore() {
                 score_ = java.util.Collections.emptyList();
@@ -992,13 +1083,10 @@ public final class TermWeight {
                 return this;
             }
 
-            // optional bool zeroOffsetMatch = 6 [default = true];
             private boolean zeroOffsetMatch_ = true;
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-             *
-             * @return if it has zero offset match
              */
             public boolean hasZeroOffsetMatch() {
                 return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -1006,8 +1094,6 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-             *
-             * @return the zero offset match
              */
             public boolean getZeroOffsetMatch() {
                 return zeroOffsetMatch_;
@@ -1015,11 +1101,6 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-             *
-             * @param value
-             *            zero offset match value
-             *
-             * @return builder to set the zero offset match
              */
             public Builder setZeroOffsetMatch(boolean value) {
                 bitField0_ |= 0x00000008;
@@ -1030,8 +1111,6 @@ public final class TermWeight {
 
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
-             *
-             * @return builder to clear zero offset match
              */
             public Builder clearZeroOffsetMatch() {
                 bitField0_ = (bitField0_ & ~0x00000008);
@@ -1040,19 +1119,192 @@ public final class TermWeight {
                 return this;
             }
 
+            private java.util.List<java.lang.Float> leftBound_ = java.util.Collections.emptyList();
+
+            private void ensureLeftBoundIsMutable() {
+                if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+                    leftBound_ = new java.util.ArrayList<java.lang.Float>(leftBound_);
+                    bitField0_ |= 0x00000010;
+                }
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public java.util.List<java.lang.Float> getLeftBoundList() {
+                return java.util.Collections.unmodifiableList(leftBound_);
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public int getLeftBoundCount() {
+                return leftBound_.size();
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public float getLeftBound(int index) {
+                return leftBound_.get(index);
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public Builder setLeftBound(int index, float value) {
+                ensureLeftBoundIsMutable();
+                leftBound_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public Builder addLeftBound(float value) {
+                ensureLeftBoundIsMutable();
+                leftBound_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public Builder addAllLeftBound(java.lang.Iterable<? extends java.lang.Float> values) {
+                ensureLeftBoundIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, leftBound_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float leftBound = 7;</code>
+             */
+            public Builder clearLeftBound() {
+                leftBound_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000010);
+                onChanged();
+                return this;
+            }
+
+            private java.util.List<java.lang.Float> rightBound_ = java.util.Collections.emptyList();
+
+            private void ensureRightBoundIsMutable() {
+                if (!((bitField0_ & 0x00000020) == 0x00000020)) {
+                    rightBound_ = new java.util.ArrayList<java.lang.Float>(rightBound_);
+                    bitField0_ |= 0x00000020;
+                }
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public java.util.List<java.lang.Float> getRightBoundList() {
+                return java.util.Collections.unmodifiableList(rightBound_);
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public int getRightBoundCount() {
+                return rightBound_.size();
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public float getRightBound(int index) {
+                return rightBound_.get(index);
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder setRightBound(int index, float value) {
+                ensureRightBoundIsMutable();
+                rightBound_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder addRightBound(float value) {
+                ensureRightBoundIsMutable();
+                rightBound_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder addAllRightBound(java.lang.Iterable<? extends java.lang.Float> values) {
+                ensureRightBoundIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, rightBound_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder clearRightBound() {
+                rightBound_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000020);
+                onChanged();
+                return this;
+            }
+
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
+            }
+
             // @@protoc_insertion_point(builder_scope:datawave.ingest.protobuf.Info)
         }
 
+        // @@protoc_insertion_point(class_scope:datawave.ingest.protobuf.Info)
+        private static final datawave.ingest.protobuf.TermWeight.Info DEFAULT_INSTANCE;
         static {
-            defaultInstance = new Info(true);
-            defaultInstance.initFields();
+            DEFAULT_INSTANCE = new datawave.ingest.protobuf.TermWeight.Info();
         }
 
-        // @@protoc_insertion_point(class_scope:datawave.ingest.protobuf.Info)
+        public static datawave.ingest.protobuf.TermWeight.Info getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<Info> PARSER = new com.google.protobuf.AbstractParser<Info>() {
+            public Info parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return new Info(input, extensionRegistry);
+            }
+        };
+
+        public static com.google.protobuf.Parser<Info> parser() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<Info> getParserForType() {
+            return PARSER;
+        }
+
+        public datawave.ingest.protobuf.TermWeight.Info getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
     }
 
-    private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_ingest_protobuf_Info_descriptor;
-    private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_ingest_protobuf_Info_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable;
 
     public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
         return descriptor;
@@ -1061,21 +1313,22 @@ public final class TermWeight {
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
         java.lang.String[] descriptorData = {
-                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"[\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
-                                + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
-                                + "Match\030\006 \001(\010:\004trueB\034\n\030datawave.ingest.pro" + "tobufH\001"};
+                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"\202\001\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tpre"
+                                + "vSkips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffse"
+                                + "tMatch\030\006 \001(\010:\004true\022\021\n\tleftBound\030\007 \003(\002\022\022\n"
+                                + "\nrightBound\030\010 \003(\002B\034\n\030datawave.ingest.pro" + "tobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
-                internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
-                internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_ingest_protobuf_Info_descriptor,
-                                new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch",});
                 return null;
             }
         };
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {},
                         assigner);
+        internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
+        internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_ingest_protobuf_Info_descriptor,
+                        new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch", "LeftBound", "RightBound",});
     }
 
     // @@protoc_insertion_point(outer_class_scope)

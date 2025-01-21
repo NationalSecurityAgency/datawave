@@ -12,4 +12,6 @@ message Info {
   repeated uint32 prevSkips = 4;
   repeated uint32 score = 5;
   optional bool zeroOffsetMatch = 6 [default = true];
+  repeated float leftBound = 7;
+  repeated float rightBound = 8;
 }

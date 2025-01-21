@@ -1,17 +1,17 @@
 package datawave.ingest.protobuf;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-
 public class TermWeightPositionTest {
 
-    private List<TermWeightPosition> termWeightPositionList = Lists.newArrayList();
+    private List<TermWeightPosition> termWeightPositionList = new ArrayList<>();
 
     @Before
     public void setup() {
@@ -42,7 +42,7 @@ public class TermWeightPositionTest {
 
     @Test
     public void testMaxOffsetComparator() {
-        List<TermWeightPosition> listExpected = Lists.newArrayList();
+        List<TermWeightPosition> listExpected = new ArrayList<>();
         TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
         TermWeightPosition twp;
 
@@ -66,15 +66,15 @@ public class TermWeightPositionTest {
         twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
         listExpected.add(twp);
 
-        List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
-        Collections.sort(result, new TermWeightPosition.MaxOffsetComparator());
-        Assert.assertEquals(listExpected, result);
+        List<TermWeightPosition> result = new ArrayList<>(termWeightPositionList);
+        result.sort(new TermWeightPosition.MaxOffsetComparator());
+        assertEquals(listExpected, result);
 
     }
 
     @Test
     public void testComparator() {
-        List<TermWeightPosition> listExpected = Lists.newArrayList();
+        List<TermWeightPosition> listExpected = new ArrayList<>();
         TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
         TermWeightPosition twp;
 
@@ -98,9 +98,9 @@ public class TermWeightPositionTest {
         twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
         listExpected.add(twp);
 
-        List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
+        List<TermWeightPosition> result = new ArrayList<>(termWeightPositionList);
         Collections.sort(result);
-        Assert.assertEquals(listExpected, result);
+        assertEquals(listExpected, result);
     }
 
     @Test
@@ -108,25 +108,25 @@ public class TermWeightPositionTest {
         TermWeightPosition.Builder builder = new TermWeightPosition.Builder();
         TermWeightPosition expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
         TermWeightPosition position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
-        Assert.assertEquals(expected, position);
+        assertEquals(expected, position);
 
         expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
         builder.reset();
         position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
-        Assert.assertEquals(expected, position);
+        assertEquals(expected, position);
 
         expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
         builder.reset();
         position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
-        Assert.assertEquals(expected, position);
+        assertEquals(expected, position);
     }
 
     @Test
     public void testPositionScoreToTermWeightScore() {
-        Float positionScore = new Float(-.0552721);
-        Integer twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
-        Float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
+        float positionScore = (float) -.0552721;
+        int twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
+        float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
 
-        Assert.assertEquals(result + "!=" + positionScore, positionScore, result);
+        assertEquals(result + "!=" + positionScore, positionScore, result, 0);
     }
 }
