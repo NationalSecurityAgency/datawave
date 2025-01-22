@@ -248,6 +248,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.SUMMARY_FUNCTION:
+                    break;
                 case QueryFunctions.RENAME_FUNCTION:
                     for (JexlNode arg : args) {
                         String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
@@ -368,6 +370,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                                     "Expected at least one argument to the " + name + " function");
                     throw new IllegalArgumentException(qe);
                 }
+                break;
+            case QueryFunctions.SUMMARY_FUNCTION:
                 break;
             default:
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, "Unknown Query function: " + name);
