@@ -54,6 +54,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         this.maxNextCount = other.maxNextCount;
         this.fields = other.fields;
         this.parser = other.parser;
+        this.parser.clearState();
         // do not copy nextCount or currentField because that is internal state
         this.nextCount = 0;
         this.currentField = null;
