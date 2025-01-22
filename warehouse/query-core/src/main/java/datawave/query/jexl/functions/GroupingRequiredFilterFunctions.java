@@ -1,6 +1,12 @@
 package datawave.query.jexl.functions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
@@ -32,8 +38,7 @@ public class GroupingRequiredFilterFunctions {
      * If the return of the getGroupsForMatchesInGroup call was [0, 1, 5] then the values for AGE.0, AGE.1, AGE.5] will be returned
      * </pre>
      *
-     * @param args
-     *            set of arguments
+     * @param args set of arguments
      * @return a collection of the groups that matched.
      */
     public static Collection<?> getGroupsForMatchesInGroup(Object... args) {
@@ -57,7 +62,7 @@ public class GroupingRequiredFilterFunctions {
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'context' (.2) that I found above
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
-            if (!Objects.requireNonNull(context).isEmpty()) {
+            if (context.isEmpty()) {
                 groups.add(context);
             }
             for (int i = 2; i < args.length; i++) {
@@ -97,20 +102,15 @@ public class GroupingRequiredFilterFunctions {
     /**
      * helper function for getGroupsForMatchesInGroup.
      *
-     * @param fieldValue
-     *            the field value
-     * @param regex
-     *            regex string
-     * @param context
-     *            current context
-     * @param allMatches
-     *            group of matches
-     * @param currentMatch
-     *            a current match
+     * @param fieldValue   the field value
+     * @param regex        regex string
+     * @param context      current context
+     * @param allMatches   group of matches
+     * @param currentMatch a current match
      * @return if the context has a match or not
      */
     private static boolean manageGroupsForMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
-                    ValueTuple currentMatch) {
+                                                                      ValueTuple currentMatch) {
         if (fieldValue != null) {
             String fieldName = ValueTuple.getFieldName(fieldValue);
             String subgroup = getSubgroup(fieldName);
@@ -150,8 +150,7 @@ public class GroupingRequiredFilterFunctions {
      * <li>{@code FOO.BLAH.ZIP.0} with an index of 2 will split off {@code 'BLAH.ZIP.0'}.</li>
      * </ul>
      *
-     * @param args
-     *            alternating field/regex pairs with an optional index as the last arg
+     * @param args alternating field/regex pairs with an optional index as the last arg
      * @return a collection of matches
      */
     public static Collection<?> matchesInGroup(Object... args) {
@@ -203,19 +202,14 @@ public class GroupingRequiredFilterFunctions {
     /**
      * helper function for matchesInGroup
      *
-     * @param fieldValue
-     *            the field value
-     * @param regex
-     *            regex string
-     * @param context
-     *            current context
-     * @param allMatches
-     *            group of matches
-     * @param currentMatch
-     *            a current match
+     * @param fieldValue   the field value
+     * @param regex        regex string
+     * @param context      current context
+     * @param allMatches   group of matches
+     * @param currentMatch a current match
      */
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
-                    ValueTuple currentMatch) {
+                                                          ValueTuple currentMatch) {
         String fieldName = ValueTuple.getFieldName(fieldValue);
         String subgroup = getSubgroup(fieldName);
         if (subgroup != null && subgroup.equals(context)) {
@@ -238,8 +232,7 @@ public class GroupingRequiredFilterFunctions {
      * If no index is supplied, the default is 0
      * </pre>
      *
-     * @param args
-     *            matched set of field/regex pairs
+     * @param args matched set of field/regex pairs
      * @return a collection of matches
      */
     public static Collection<?> matchesInGroupLeft(Object... args) {
@@ -325,7 +318,7 @@ public class GroupingRequiredFilterFunctions {
     }
 
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
-                    String theNextMatch, ValueTuple currentMatch) {
+                                                              String theNextMatch, ValueTuple currentMatch) {
 
         if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
             if (log.isTraceEnabled()) {
@@ -339,8 +332,7 @@ public class GroupingRequiredFilterFunctions {
     /**
      * Delegates to {@link #atomValuesMatch(Iterable[])} after converting any non-iterable args to a singleton collection containing the original arg.
      *
-     * @param fields
-     *            the fields to match on
+     * @param fields the fields to match on
      * @return the matches
      */
     public static Collection<ValueTuple> atomValuesMatch(Object... fields) {
@@ -358,8 +350,7 @@ public class GroupingRequiredFilterFunctions {
      * Examines and returns any matches across each of the given iterable args. A match is considered such for a field if that field is found in each iterable
      * with the same value and the same grouping context. To optimize matching performance, the first argument should be the smallest iterable.
      *
-     * @param fields
-     *            the vararg iterables of fields
+     * @param fields the vararg iterables of fields
      * @return the matches
      */
     public static Collection<ValueTuple> atomValuesMatch(Iterable<?>... fields) {
