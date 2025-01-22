@@ -1267,7 +1267,7 @@ public class EvaluationPhaseFilterFunctionsTest {
 
         @Test
         public void testInvalidDate() {
-            assertThatExceptionOfType(ParseException.class).isThrownBy(() -> nextTime("notavaliddate"))
+            assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> nextTime("notavaliddate"))
                             .withMessage("Unable to parse value using known date formats: notavaliddate");
         }
 
