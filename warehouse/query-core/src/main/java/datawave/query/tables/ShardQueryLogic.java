@@ -67,7 +67,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.IndexValueGap;
+import datawave.query.config.IndexValueHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
@@ -2607,12 +2607,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setCacheModel(cacheModel);
     }
 
-    public List<IndexValueGap> getIndexValueGaps() {
-        return getConfig().getIndexValueGaps();
+    public List<IndexValueHole> getIndexValueHoles() {
+        return getConfig().getIndexValueHoles();
     }
 
-    public void setIndexValueGaps(List<IndexValueGap> indexValueGaps) {
-        getConfig().setIndexValueGaps(indexValueGaps);
+    public void setIndexValueHoles(List<IndexValueHole> indexValueHoles) {
+        getConfig().setIndexValueHoles(indexValueHoles);
+    }
+
+    @Deprecated
+    public void setIndexHoles(List<IndexValueHole> indexHoles) {
+        setIndexValueHoles(indexHoles);
     }
 
     public CardinalityConfiguration getCardinalityConfiguration() {
@@ -3020,11 +3025,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
     }
 
-    public void setIndexFieldGapMinThreshold(double indexFieldGapMinThreshold) {
-        getConfig().setIndexFieldGapMinThreshold(indexFieldGapMinThreshold);
+    public void setIndexFieldHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        getConfig().setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 
-    public double getIndexFieldGapMinThreshold() {
-        return getConfig().getIndexFieldGapMinThreshold();
+    public double getIndexFieldHoleMinThreshold(int fieldIndexHoleMinThreshold) {
+        return getConfig().getIndexFieldHoleMinThreshold();
+    }
+
+    @Deprecated
+    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 }

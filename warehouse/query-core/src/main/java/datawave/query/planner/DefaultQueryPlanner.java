@@ -1003,7 +1003,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // if we have any index holes, then mark em
-        if (!config.getIndexValueGaps().isEmpty()) {
+        if (!config.getIndexValueHoles().isEmpty()) {
             config.setQueryTree(timedMarkIndexValueGaps(timers, config.getQueryTree(), config, metadataHelper));
         }
         // TODO: also check for FieldIndexHoles or simply remove the index holes from the set of indexed fields

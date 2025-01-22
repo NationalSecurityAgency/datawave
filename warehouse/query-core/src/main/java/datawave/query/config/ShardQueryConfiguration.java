@@ -238,7 +238,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Filter results on datatypes. Default to having no filters
     private Set<String> datatypeFilter = UniversalSet.instance();
     // A set of sorted index holes
-    private List<IndexValueGap> indexValueGaps = new ArrayList<>();
+    private List<IndexValueHole> indexValueHoles = new ArrayList<>();
     // a set of user specified mappings
     private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
@@ -525,7 +525,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
-    private double indexFieldGapMinThreshold = 1.0d;
+    private double indexFieldHoleMinThreshold = 1.0d;
 
     /**
      * Default constructor
@@ -632,7 +632,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
                         : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
-        this.setIndexValueGaps(null == other.getIndexValueGaps() ? null : Lists.newArrayList(other.getIndexValueGaps()));
+        this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : Lists.newArrayList(other.getIndexValueHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
         this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
@@ -767,7 +767,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCardinalityThreshold(other.getCardinalityThreshold());
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
-        this.setIndexFieldGapMinThreshold(other.getIndexFieldGapMinThreshold());
+        this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
     }
 
     /**
@@ -2312,12 +2312,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
-    public List<IndexValueGap> getIndexValueGaps() {
-        return indexValueGaps;
+    public List<IndexValueHole> getIndexValueHoles() {
+        return indexValueHoles;
     }
 
-    public void setIndexValueGaps(List<IndexValueGap> indexValueGaps) {
-        this.indexValueGaps = indexValueGaps;
+    public void setIndexValueHoles(List<IndexValueHole> indexValueHoles) {
+        this.indexValueHoles = indexValueHoles;
     }
 
     public boolean getCollectTimingDetails() {
@@ -2766,12 +2766,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rebuildDatatypeFilterPerShard = rebuildDatatypeFilterPerShard;
     }
 
-    public double getIndexFieldGapMinThreshold() {
-        return indexFieldGapMinThreshold;
+    public double getIndexFieldHoleMinThreshold() {
+        return indexFieldHoleMinThreshold;
     }
 
-    public void setIndexFieldGapMinThreshold(double indexFieldGapMinThreshold) {
-        this.indexFieldGapMinThreshold = indexFieldGapMinThreshold;
+    public void setIndexFieldHoleMinThreshold(double indexFieldHoleMinThreshold) {
+        this.indexFieldHoleMinThreshold = indexFieldHoleMinThreshold;
     }
 
     public boolean getReduceIngestTypes() {
@@ -2977,7 +2977,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
                 Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
                 Objects.equals(getDatatypeFilter(), that.getDatatypeFilter()) &&
-                Objects.equals(getIndexValueGaps(), that.getIndexValueGaps()) &&
+                Objects.equals(getIndexValueHoles(), that.getIndexValueHoles()) &&
                 Objects.equals(getProjectFields(), that.getProjectFields()) &&
                 Objects.equals(getRenameFields(), that.getRenameFields()) &&
                 Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields()) &&
@@ -3117,7 +3117,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getNonEventKeyPrefixes(),
                 getUnevaluatedFields(),
                 getDatatypeFilter(),
-                getIndexValueGaps(),
+                getIndexValueHoles(),
                 getProjectFields(),
                 getRenameFields(),
                 getDisallowlistedFields(),

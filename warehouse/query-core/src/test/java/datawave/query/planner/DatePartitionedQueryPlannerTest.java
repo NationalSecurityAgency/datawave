@@ -60,12 +60,12 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 /**
  * Tests usage of {@link DatePartitionedQueryPlanner} in queries.
  */
-public abstract class FederatedQueryTest {
+public abstract class DatePartitionedQueryPlannerTest {
 
-    private static final Logger log = Logger.getLogger(FederatedQueryTest.class);
+    private static final Logger log = Logger.getLogger(DatePartitionedQueryPlannerTest.class);
 
     @RunWith(Arquillian.class)
-    public static class ShardRange extends FederatedQueryTest {
+    public static class ShardRange extends DatePartitionedQueryPlannerTest {
 
         @Override
         protected FieldIndexHoleDataIngest.Range getRange() {
@@ -74,7 +74,7 @@ public abstract class FederatedQueryTest {
     }
 
     @RunWith(Arquillian.class)
-    public static class DocumentRange extends FederatedQueryTest {
+    public static class DocumentRange extends DatePartitionedQueryPlannerTest {
 
         @Override
         protected FieldIndexHoleDataIngest.Range getRange() {
@@ -252,7 +252,7 @@ public abstract class FederatedQueryTest {
         DatePartitionedQueryPlanner queryPlanner = (DatePartitionedQueryPlanner) logic.getQueryPlanner();
 
         // Ensure that each subRange has all days with holes or all days with no holes
-        Set<String> fieldsInQuery = queryPlanner.getFieldsForQuery(this.logic.getConfig(), this.query, logic.getScannerFactory());
+        Set<String> fieldsInQuery = queryPlanner.getFieldsForQuery(this.logic.getConfig(), this.logic.getMetadataHelperFactory().createMetadataHelper());
         Set<Date> datesWithHoles = new HashSet<>();
         Set<Date> datesWithoutHoles = new HashSet<>();
         this.eventConfigs.forEach(config -> {

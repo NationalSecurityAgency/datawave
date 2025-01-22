@@ -6,11 +6,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,6 +23,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.compare.ComparableUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
@@ -29,22 +35,16 @@ import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
-import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
-import datawave.query.exceptions.NoResultsException;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
-import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
-import datawave.query.model.IndexFieldGap;
-import datawave.query.model.QueryModel;
+import datawave.query.model.IndexFieldHole;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import org.springframework.security.core.parameters.P;
 
 /**
  * Executes a query over a time range while handling the case where a field may be both indexed and not indexed in the time range. A period of time in which a
@@ -293,10 +293,13 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
         }
 
-        // TODO: Need to apply date type so that we know the true date range
+        // Let's do the planning with the delegate planner first to ensure we have a final date range
+        // and appropriately expanded unfielded terms etc.
+        DefaultQueryPlanner initialPlan = this.queryPlanner.clone();
+        CloseableIterable<QueryData> iterator = initialPlan.process(originalConfig, query, settings, scannerFactory);
 
-        // Get the relevant date ranges.
-        SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
+        // Get the relevant date ranges and the sets of fields that have gaps in those ranges
+        SortedMap<Pair<Date,Date>, Set<String>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
 
         // If debug is enabled, log the date ranges to be queried over in formatted form.
         if (log.isDebugEnabled()) {
@@ -305,10 +308,11 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                                 + dateFormat.format(originalConfig.getEndDate()));
             } else {
                 StringBuilder sb = new StringBuilder();
-                Iterator<Pair<Date,Date>> it = dateRanges.iterator();
+                Iterator<Map.Entry<Pair<Date,Date>,Set<String>[]>> it = dateRanges.entrySet().iterator();
                 while (it.hasNext()) {
-                    Pair<Date,Date> range = it.next();
-                    sb.append(dateFormat.format(range.getLeft())).append("-").append(dateFormat.format(range.getRight()));
+                    Map.Entry<Pair<Date,Date>,Set<String>[]> range = it.next();
+                    Pair<Date,Date> dateRange = range.getKey();
+                    sb.append(dateFormat.format(dateRange.getLeft())).append("-").append(dateFormat.format(dateRange.getRight()));
                     if (it.hasNext()) {
                         sb.append(", ");
                     }
@@ -317,12 +321,11 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             }
         }
 
-        // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
         int totalProcessed = 1;
         ShardQueryConfiguration firstConfigCopy = null;
         UUID queryId = originalConfig.getQuery().getId();
-        for (Pair<Date,Date> dateRange : dateRanges) {
+        for (Pair<Date,Date> dateRange : dateRanges.keySet()) {
             // Format the beginDate and endDate of the current sub-query to execute.
             String subBeginDate = dateFormat.format(dateRange.getLeft());
             String subEndDate = dateFormat.format(dateRange.getRight());
@@ -346,9 +349,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             DefaultQueryPlanner subPlan = this.queryPlanner.clone();
 
             try {
-
-                CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
-                results.addIterable(queryData);
+                //CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, query, settings, scannerFactory, unindexFields);
+                //results.addIterable(queryData);
             } catch (Exception e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subBeginDate
                                 + "-" + subEndDate + ")", e);
@@ -436,13 +438,13 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
      * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
      */
-    protected SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
+    protected SortedMap<Pair<Date,Date>, Set<String>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
-        Map<String,Map<String, IndexFieldGap>> fieldIndexHoles;
+        Map<String,Map<String, IndexFieldHole>> fieldIndexHoles;
         try {
-            Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
+            Set<String> fields = getFieldsForQuery(config.getQueryTree(), metadataHelper);
             if (log.isDebugEnabled()) {
                 log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
             }
@@ -450,7 +452,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             if (fields.isEmpty()) {
                 fieldIndexHoles = Collections.emptyMap();
             } else {
-                fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getIndexFieldGapMinThreshold());
+                fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getIndexFieldHoleMinThreshold());
             }
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
@@ -458,22 +460,48 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
         // If no field index holes were found, we can return early with the original query date range.
         if (fieldIndexHoles.isEmpty()) {
-            log.debug("No field index holes found");
-            SortedSet<Pair<Date,Date>> ranges = new TreeSet<>();
-            ranges.add(Pair.of(config.getBeginDate(), config.getEndDate()));
+            log.debug("No field index holes found for query fields");
+            SortedMap<Pair<Date,Date>,Set<String>> ranges = new TreeMap<>();
+            ranges.put(Pair.of(config.getBeginDate(), config.getEndDate()), new HashSet<>());
             return ranges;
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Field index holes found for fields " + fieldIndexHoles.keySet());
+                log.debug("Field index holes found for query fields " + fieldIndexHoles.keySet());
             }
         }
 
-        // Collect all field index holes that fall within the original query's target date range.
-        SortedSet<Pair<Date,Date>> relevantHoles = new TreeSet<>();
+        // We want to create a timeline of index hole begin and end dates
+        // that overlap the query's target date range
+        // and map to the fields for which holes are beginning and ending
+        SortedSet<IndexFieldHoleBoundary> timeline = new TreeSet<>();
         for (String field : fieldIndexHoles.keySet()) {
-            Map<String, IndexFieldGap> holes = fieldIndexHoles.get(field);
-            for (IndexFieldGap indexHole : holes.values()) {
-                relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(config.getBeginDate(), config.getEndDate(), indexHole));
+            Map<String, IndexFieldHole> holes = fieldIndexHoles.get(field);
+            for (IndexFieldHole indexHole : holes.values()) {
+                for (Pair<Date,Date> range : getHolesOverlappingOriginalQueryDateRange(config.getBeginDate(), config.getEndDate(), indexHole)) {
+                    timeline.add(new IndexFieldHoleBoundary(range.getLeft(), true, field));
+                    timeline.add(new IndexFieldHoleBoundary(range.getRight(), false, field));
+                }
+            }
+        }
+
+        // if we found no holes that overlapped our date range, then we are done
+        if (timeline.isEmpty()) {
+            log.debug("No field index holes overlapping query range found");
+            SortedMap<Pair<Date,Date>,Set<String>> ranges = new TreeMap<>();
+            ranges.put(Pair.of(config.getBeginDate(), config.getEndDate()), new HashSet<>());
+            return ranges;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Timeline contains " + timeline.size() + " boundaries to be examined");
+            }
+        }
+
+        // now scan through the timeline building ranges and the set of fields that are unindexed for each one
+        Set<String> unindexedFields = new HashSet<>();
+        IndexFieldHoleBoundary last;
+        for (IndexFieldHoleBoundary boundary : timeline) {
+            if (boundary.isStart()) {
+                unindexedFields.addAll(boundary.getFields());
             }
         }
 
@@ -589,39 +617,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     /**
      * Return the set of fields in the query.
      */
-    protected Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) throws NoResultsException {
-        // Parse the query.
-        ASTJexlScript queryTree = queryPlanner.parseQueryAndValidatePattern(query, null);
-
-        // Apply the query model.
-        MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
-        QueryModel queryModel = queryPlanner.loadQueryModel(config);
-        if (queryModel != null) {
-            queryTree = queryPlanner.applyQueryModel(metadataHelper, config, queryTree, queryModel);
-        } else {
-            log.warn("Query model was null, will not apply to query tree.");
-        }
-
-        // Expand unfielded terms unless explicitly disabled
-        if (!queryPlanner.disableAnyFieldLookup) {
-            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(config);
-            try {
-                configCopy.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
-                configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
-
-                // TODO: Can we preserve this tree to avoid having to do it all over again in the federated planners.
-                queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (IllegalAccessException | InstantiationException e) {
-                throw new DatawaveFatalQueryException(e);
-            } catch (EmptyUnfieldedTermExpansionException e) {
-                // in this case the planner will simply return an empty iterator, so ignore and keep going
-                log.warn("Empty query", e);
-            }
-        }
-
+    protected Set<String> getFieldsForQuery(ASTJexlScript queryTree, MetadataHelper metadataHelper){
         // Extract and return the fields from the query.
         return QueryFieldsVisitor.parseQueryFields(queryTree, metadataHelper);
     }
@@ -629,7 +625,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     /**
      * Return the set of any field index hole date ranges that fall within the original query's target date range.
      */
-    private SortedSet<Pair<Date,Date>> getHolesWithinOriginalQueryDateRange(Date beginDate, Date endDate, IndexFieldGap fieldIndexHole) {
+    private SortedSet<Pair<Date,Date>> getHolesOverlappingOriginalQueryDateRange(Date beginDate, Date endDate, IndexFieldHole fieldIndexHole) {
         SortedSet<Pair<Date,Date>> holes = fieldIndexHole.getDateRanges();
         // If the earliest date range falls after the original query date range, or the latest date range falls before the original query range, then none of
         // the holes fall within the date range.
@@ -638,7 +634,14 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         }
 
         // There is at least one index hole that falls within the original query date range. Collect and return them.
-        return holes.stream().filter((range) -> isInDateRange(beginDate, endDate, range)).collect(Collectors.toCollection(TreeSet::new));
+        return holes.stream().filter((range) -> isOverlappingDateRange(beginDate, endDate, range)).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
+     * Return whether the given date ranges overlap
+     */
+    private boolean isOverlappingDateRange(Date beginDate, Date endDate, Pair<Date,Date> range) {
+        return range.getLeft().getTime() <= endDate.getTime() && range.getRight().getTime() >= beginDate.getTime();
     }
 
     /**
@@ -659,8 +662,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      * Return whether the given date falls within the start and end date of the original query's target date range, inclusively.
      */
     private boolean isInDateRange(Date beginDate, Date endDate, Date date) {
-        return (beginDate.getTime() <= date.getTime() && date.getTime() <= endDate.getTime())
-                        || (beginDate.getTime() >= date.getTime() && date.getTime() <= endDate.getTime()); // fully in a hole
+        return (beginDate.getTime() <= date.getTime() && date.getTime() <= endDate.getTime());
     }
 
     /**
@@ -739,4 +741,59 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         calendar.add(Calendar.DATE, daysToAdd);
         return calendar.getTime();
     }
+
+    public static class IndexFieldHoleBoundary implements Comparable<IndexFieldHoleBoundary> {
+        private final Date date;
+        private final boolean indexFieldHoleStart;
+        private final String field;
+        public IndexFieldHoleBoundary(Date date, boolean start, Set<String> fields) {
+            this.date = date;
+            this.indexFieldHoleStart = start;
+            this.fields.addAll(fields);
+        }
+        public IndexFieldHoleBoundary(Date date, boolean start, String field) {
+            this.date = date;
+            this.indexFieldHoleStart = start;
+            this.fields.add(field);
+        }
+        public Date getBoundary() {
+            return date;
+        }
+        public boolean isStart() {
+            return indexFieldHoleStart;
+        }
+        public void addFields(Collection<String> fields) {
+            fields.addAll(fields);
+        }
+        public Set<String> getFields() {
+            return fields;
+        }
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder().append(date).append(indexFieldHoleStart).append(fields).toHashCode();
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof IndexFieldHoleBoundary) {
+                IndexFieldHoleBoundary other = (IndexFieldHoleBoundary) o;
+                return new EqualsBuilder().append(date, other.date)
+                        .append(indexFieldHoleStart, other.indexFieldHoleStart)
+                        .append(fields, other.fields).isEquals();
+            }
+            return false;
+        }
+
+        @Override
+        public int compareTo(IndexFieldHoleBoundary other) {
+            int comparison = date.compareTo(other.date);
+            if (comparison == 0) {
+                comparison = Boolean.valueOf(other.indexFieldHoleStart).compareTo(Boolean.valueOf(indexFieldHoleStart));
+            }
+            if (comparison == 0) {
+                comparison = fields.toString().compareTo(other.fields.toString());
+            }
+            return comparison;
+        }
+    }
+
 }

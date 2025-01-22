@@ -6,7 +6,7 @@ import java.io.Serializable;
  * This class represents a hole in the global index for a set of values in a specified date range.
  * Used by the PushdownMissingIndexRangeNodesVisitor.
  */
-public class IndexValueGap implements Serializable, Comparable<IndexValueGap> {
+public class IndexValueHole implements Serializable, Comparable<IndexValueHole> {
     private static final long serialVersionUID = -6778479621810682281L;
 
     private String startValue;
@@ -14,7 +14,7 @@ public class IndexValueGap implements Serializable, Comparable<IndexValueGap> {
     private String startDate;
     private String endDate;
 
-    public IndexValueGap() {}
+    public IndexValueHole() {}
 
     /**
      * Create an index with a date range and value range.
@@ -24,7 +24,7 @@ public class IndexValueGap implements Serializable, Comparable<IndexValueGap> {
      * @param valueRange
      *            the start and end values of the known hole
      */
-    public IndexValueGap(String[] dateRange, String[] valueRange) {
+    public IndexValueHole(String[] dateRange, String[] valueRange) {
         setStartValue(valueRange[0]);
         setEndValue(valueRange[1]);
         setStartDate(dateRange[0]);
@@ -107,8 +107,8 @@ public class IndexValueGap implements Serializable, Comparable<IndexValueGap> {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof IndexValueGap) {
-            IndexValueGap hole = (IndexValueGap) o;
+        if (o instanceof IndexValueHole) {
+            IndexValueHole hole = (IndexValueHole) o;
             return startValue.equals(hole.startValue) && endValue.equals(hole.endValue) && startDate.equals(hole.startDate) && endDate.equals(hole.endDate);
         }
         return false;
@@ -130,7 +130,7 @@ public class IndexValueGap implements Serializable, Comparable<IndexValueGap> {
      *            the index hole
      * @return the comparison
      */
-    public int compareTo(IndexValueGap hole) {
+    public int compareTo(IndexValueHole hole) {
         int comparison = startValue.compareTo(hole.startValue);
         if (comparison == 0) {
             comparison = endValue.compareTo(hole.endValue);
