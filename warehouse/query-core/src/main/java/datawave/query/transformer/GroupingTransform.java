@@ -2,10 +2,7 @@ package datawave.query.transformer;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
@@ -47,9 +44,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private final LinkedList<Document> documents = new LinkedList<>();
 
     /**
-     * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
+     * The last key seen, used to build documents
      */
-    private final List<Key> keys = new ArrayList<>();
+    private Key mostRecentKey = null;
+
+    /**
+     * Track the number of documents seen by this transform
+     */
+    private long documentCount = 0L;
 
     /**
      * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
@@ -87,6 +89,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
 
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                log.debug("GroupingTransform saw {} documents producing {} groups", documentCount, groups.getGroups().size());
                 return keyDocumentEntry;
             }
 
@@ -94,7 +97,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 return keyDocumentEntry;
             }
 
-            keys.add(keyDocumentEntry.getKey());
+            documentCount++;
+            mostRecentKey = keyDocumentEntry.getKey();
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             DocumentGrouper.group(keyDocumentEntry, groupFields, groups);
         }
@@ -122,7 +126,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         Document document = null;
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
+                documents.add(GroupingUtils.createDocument(group, mostRecentKey, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
             }
         }
 
