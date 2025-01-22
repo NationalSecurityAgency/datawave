@@ -57,10 +57,8 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.apache.hadoop.util.ToolRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
@@ -75,8 +73,7 @@ import datawave.util.cli.PasswordConverter;
  * various tablet servers.
  */
 public final class BulkIngestMapFileLoader implements Runnable {
-    private static Logger log = LoggerFactory.getLogger(BulkIngestMapFileLoader.class);
-    private static Marker fatal = MarkerFactory.getMarker("fatal");
+    private static Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
     private static int MAX_DIRECTORIES = 1;
@@ -291,48 +288,48 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     try {
                         String[] classes = jobObserverClasses.split(",");
                         for (String jobObserverClass : classes) {
-                            log.info("Adding job observer: {}", jobObserverClass);
+                            log.info("Adding job observer: " + jobObserverClass);
                             Class clazz = Class.forName(jobObserverClass);
                             Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
                             jobObservers.add(o);
                         }
                     } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                        log.error("cannot instantiate job observer class {}", jobObserverClasses, e);
+                        log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
                         System.exit(-2);
                     } catch (ClassCastException e) {
-                        log.error("cannot cast {} to Observer", jobObserverClasses, e);
+                        log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
                         System.exit(-2);
                     }
                 } else if (args[i].startsWith("-")) {
                     int index = args[i].indexOf('=', 1);
                     if (index < 0) {
-                        log.error("WARN: skipping bad property configuration {}", args[i]);
+                        log.error("WARN: skipping bad property configuration " + args[i]);
                     } else {
                         String[] strArr = new String[] {args[i].substring(1, index), args[i].substring(index + 1)};
-                        log.info("Setting {} =  {}", strArr[0], strArr[1]);
+                        log.info("Setting " + strArr[0] + " = \"" + strArr[1] + '"');
                         properties.add(strArr);
                     }
                 } else {
-                    log.info("Adding resource {}", args[i]);
+                    log.info("Adding resource " + args[i]);
                     conf.addResource(args[i]);
                 }
             }
         }
 
-        log.info("Set sleep time to {}ms", SLEEP_TIME);
-        log.info("Will wait to bring map files online if there are more than {} running or queued major compactions.", MAJC_THRESHOLD);
-        log.info("Will not bring map files online unless at least {}ms have passed since last time.", MAJC_WAIT_TIMEOUT);
-        log.info("Will check the majcThreshold and majcDelay every {} bulk loads.", MAJC_CHECK_INTERVAL);
-        log.info("Processing a max of {} directories", MAX_DIRECTORIES);
-        log.info("Using {} bulk load threads", numBulkThreads);
-        log.info("Using {} HDFS operation threads", numHdfsThreads);
-        log.info("Using {} bulk assign threads", numBulkAssignThreads);
-        log.info("Using {} as the file system containing the original sequence files", seqFileHdfs);
-        log.info("Using {} as the source file system", srcHdfs);
-        log.info("Using {} as the destination file system", destHdfs);
-        log.info("Using {} as the jobtracker", jobtracker);
-        log.info("Using {} as the shutdown port", SHUTDOWN_PORT);
-        log.info("Using {} processing order", (FIFO ? "FIFO" : "LIFO"));
+        log.info("Set sleep time to " + SLEEP_TIME + "ms");
+        log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
+        log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
+        log.info("Will check the majcThreshold and majcDelay every " + MAJC_CHECK_INTERVAL + " bulk loads.");
+        log.info("Processing a max of " + MAX_DIRECTORIES + " directories");
+        log.info("Using " + numBulkThreads + " bulk load threads");
+        log.info("Using " + numHdfsThreads + " HDFS operation threads");
+        log.info("Using " + numBulkAssignThreads + " bulk assign threads");
+        log.info("Using " + seqFileHdfs + " as the file system containing the original sequence files");
+        log.info("Using " + srcHdfs + " as the source file system");
+        log.info("Using " + destHdfs + " as the destination file system");
+        log.info("Using " + jobtracker + " as the jobtracker");
+        log.info("Using " + SHUTDOWN_PORT + " as the shutdown port");
+        log.info("Using " + (FIFO ? "FIFO" : "LIFO") + " processing order");
 
         for (String[] s : properties) {
             conf.set(s[0], s[1]);
@@ -350,7 +347,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             log.error("Configured tables for configured data types is empty");
             System.exit(-2);
         }
-        log.info("Found table priorities: {}", tablePriorities);
+        log.info("Found table priorities: " + tablePriorities);
 
         String workDir = args[0];
         String jobDirPattern = args[1].replaceAll("'", "");
@@ -434,7 +431,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         try {
             cleanJobDirectoriesOnStartup();
         } catch (IOException e) {
-            log.error("Error Cleaning Up Directories.  Manually check for orphans: {}", e.getMessage(), e);
+            log.error("Error Cleaning Up Directories.  Manually check for orphans: " + e.getMessage(), e);
         }
 
         try {
@@ -478,7 +475,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 URI workingHdfs = srcHdfs;
 
                                 try {
-                                    log.info("Started processing {}", mapFilesDir);
+                                    log.info("Started processing " + mapFilesDir);
                                     long start = System.currentTimeMillis();
 
                                     // copy the data if needed
@@ -496,12 +493,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
                                     cleanUpJobDirectory(mapFilesDir);
                                     long end = System.currentTimeMillis();
-                                    log.info("Finished processing {}, duration (sec): {}", mapFilesDir, ((end - start) / 1000));
+                                    log.info("Finished processing " + mapFilesDir + ", duration (sec): " + ((end - start) / 1000));
 
                                     // now that we actually processed something, reset the last load message time to force a message on the next round
                                     lastLoadMessageTime = 0;
                                 } catch (Exception e) {
-                                    log.error("Failed to process {}", mapFilesDir, e);
+                                    log.error("Failed to process " + mapFilesDir, e);
                                     boolean marked = markJobDirectoryFailed(workingHdfs, dstJobDirectory);
                                     if (!marked) {
                                         ++fsAccessFailures;
@@ -509,7 +506,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                             log.error("Too many failures updating marker files.  Exiting...");
                                             shutdown();
                                         } else {
-                                            log.warn("Failed to mark {} as failed. Sleeping in case this was a transient failure.", dstJobDirectory);
+                                            log.warn("Failed to mark " + dstJobDirectory + " as failed. Sleeping in case this was a transient failure.");
                                             try {
                                                 Thread.sleep(FAILURE_SLEEP_TIME);
                                             } catch (InterruptedException ie) {
@@ -531,7 +528,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         }
                     }
                 } catch (Exception e) {
-                    log.error("Error: {}", e.getMessage(), e);
+                    log.error("Error: " + e.getMessage(), e);
                 }
             }
 
@@ -551,7 +548,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             try {
                 getFileSystem(destHdfs).delete(cleanupDirectories[i], true);
             } catch (IOException e) {
-                log.warn("Unable to delete directory {}", cleanupDirectories[i], e);
+                log.warn("Unable to delete directory " + cleanupDirectories[i], e);
             }
 
         }
@@ -570,13 +567,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
      *            the server socket
      */
     protected void listenForShutdownCommand(ServerSocket serverSocket) {
-        log.info("Listening for shutdown commands on port {}", serverSocket.getLocalPort());
+        log.info("Listening for shutdown commands on port " + serverSocket.getLocalPort());
         while (true) {
             try {
                 Socket s = serverSocket.accept();
                 SocketAddress remoteAddress = s.getRemoteSocketAddress();
                 try {
-                    log.info("{} connected to the shutdown port", remoteAddress);
+                    log.info(remoteAddress + " connected to the shutdown port");
                     s.setSoTimeout(30000);
                     InputStream is = s.getInputStream();
                     BufferedReader rdr = new BufferedReader(new InputStreamReader(is));
@@ -589,13 +586,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         serverSocket.close();
                         break;
                     } else {
-                        log.info("Unknown command [{}] received from {}.  Ignoring.", line, remoteAddress);
+                        log.info("Unkown command [" + line + "] received from " + remoteAddress + ".  Ignoring.");
                     }
                 } catch (SocketTimeoutException e) {
-                    log.info("Timed out waiting for input from {}", remoteAddress);
+                    log.info("Timed out waiting for input from " + remoteAddress);
                 }
             } catch (IOException e) {
-                log.error("Error waiting for shutdown connection: {}", e.getMessage(), e);
+                log.error("Error waiting for shutdown connection: " + e.getMessage(), e);
             }
         }
     }
@@ -613,7 +610,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             Path destPath = dest.makeQualified(new Path(jobDirectory.toUri().getPath()));
             Path logPath = new Path(destPath, "logs");
 
-            log.info("Copying (using distcp) {} to {}", srcPath, destPath);
+            log.info("Copying (using distcp) " + srcPath + " to " + destPath);
 
             // Make sure the destination path doesn't already exist, so that distcp won't
             // complain. We could add -i to the distcp command, but we don't want to hide
@@ -638,7 +635,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             String[] args = (jobtracker == null) ? new String[0] : new String[] {"-jt", jobtracker};
             int res = ToolRunner.run(conf, new DistCp(conf, options), args);
             if (res != 0) {
-                log.error("The toolrunner failed to execute.  Returned with exit code of {}", res);
+                log.error("The toolrunner failed to execute.  Returned with exit code of " + res);
                 throw new RuntimeException("Failed to DistCp: " + res);
             } else {
                 // verify the data was copied
@@ -650,7 +647,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 for (FileStatus srcFile : src.listStatus(srcPath)) {
                     FileStatus destFile = destFiles.get(srcFile.getPath().getName());
                     if (destFile == null || destFile.getLen() != srcFile.getLen()) {
-                        log.error("The DistCp failed to copy {}", srcFile.getPath());
+                        log.error("The DistCp failed to copy " + srcFile.getPath());
                         throw new RuntimeException("Failed to DistCp " + srcFile.getPath());
                     }
                 }
@@ -675,15 +672,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
      * @return boolean flag
      */
     public boolean canBringMapFilesOnline(long lastOnlineTime, boolean logInfo) {
+        Level level = (logInfo ? Level.INFO : Level.DEBUG);
         int majC = getMajorCompactionCount();
+        log.log(level, "There are " + majC + " compactions currently running or queued.");
+
         long delta = System.currentTimeMillis() - lastOnlineTime;
-        if (logInfo) {
-            log.info("There are {} compactions currently running or queued.", majC);
-            log.info("Time since map files last brought online: {}s", delta / 1000);
-        } else {
-            log.debug("There are {} compactions currently running or queued.", majC);
-            log.debug("Time since map files last brought online: {}s", delta / 1000);
-        }
+        log.log(level, "Time since map files last brought online: " + (delta / 1000) + "s");
 
         return (delta > MAJC_WAIT_TIMEOUT) && (majC < MAJC_THRESHOLD);
     }
@@ -705,7 +699,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         } catch (Exception e) {
             // Accumulo API changed, catch exception for now until we redeploy
             // accumulo on lightning.
-            log.error("Unable to retrieve major compaction stats: {}", e.getMessage());
+            log.error("Unable to retrieve major compaction stats: " + e.getMessage());
         } finally {
             if (client != null) {
                 ThriftUtil.close(client, context);
@@ -745,7 +739,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         } else {
             jobDirectories = new Path[0];
         }
-        log.debug("Completed job directories: {}", Arrays.toString(jobDirectories));
+        log.debug("Completed job directories: " + Arrays.toString(jobDirectories));
         return jobDirectories;
     }
 
@@ -765,7 +759,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
      *             if the table is not found
      */
     public void bringMapFilesOnline(Path mapFilesDir) throws IOException, AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        log.info("Bringing all mapFiles under {} online.", mapFilesDir);
+        log.info("Bringing all mapFiles under " + mapFilesDir + " online.");
 
         // By now the map files should be on the local filesystem
         FileSystem fs = getFileSystem(destHdfs);
@@ -801,16 +795,16 @@ public final class BulkIngestMapFileLoader implements Runnable {
             String tableName = tableDir.getName();
 
             if (!tableIds.containsKey(tableName)) {
-                log.debug("Skipping {} since it is not a accumulo table directory.", tableDir);
+                log.debug("Skipping " + tableDir + " since it is not a accumulo table directory.");
                 continue;
             }
 
             if (tableNames.containsKey(tableName)) {
                 if (tableNames.get(tableName).equals(tableDir)) {
-                    log.warn("Skipping {} since we already processed {} under {}", tableDir, tableName, tableNames.get(tableName));
+                    log.warn("Skipping " + tableDir + " since we already processed " + tableName + " under " + tableNames.get(tableName));
                     continue;
                 } else {
-                    log.error("We got two different paths for {}: {} and {}", tableName, tableNames.get(tableName), tableDir);
+                    log.error("We got two different paths for " + tableName + ": " + tableNames.get(tableName) + " and " + tableDir);
                     throw new IOException("We got two different paths for " + tableName + ": " + tableNames.get(tableName) + " and " + tableDir);
                 }
             }
@@ -910,7 +904,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         public void run() {
             try {
-                // Ensure all the files put just under tableDir....
+                // Ensure all of the files put just under tableDir....
                 collapseDirectory();
 
                 // create the failures directory
@@ -918,18 +912,18 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 Path failuresPath = new Path(failuresDir);
                 FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
                 if (fileSystem.exists(failuresPath)) {
-                    log.error(fatal, "Cannot bring map files online because a failures directory already exists: {}", failuresDir);
+                    log.fatal("Cannot bring map files online because a failures directory already exists: " + failuresDir);
                     throw new IOException("Cannot bring map files online because a failures directory already exists: " + failuresDir);
                 }
                 fileSystem.mkdirs(failuresPath);
 
                 // import the directory
-                log.info("Bringing Map Files online for {}", tableName);
+                log.info("Bringing Map Files online for " + tableName);
                 accumuloClient.tableOperations().importDirectory(tableName, tableDir.toString(), failuresDir, false);
-                log.info("Completed bringing map files online for {}", tableName);
+                log.info("Completed bringing map files online for " + tableName);
                 validateComplete();
             } catch (Exception e) {
-                log.error("Error importing files into table {} from directory {}", tableName, mapFilesDir, e);
+                log.error("Error importing files into table " + tableName + " from directory " + mapFilesDir, e);
                 this.exception = e;
             } finally {
                 this.complete = true;
@@ -949,7 +943,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             for (FileStatus file : fileSystem.listStatus(dir)) {
                 if (file.isDirectory()) {
                     Path filePath = file.getPath();
-                    log.warn("Found an unexpected subdirectory {}.  Collapsing into {}.", filePath, tableDir);
+                    log.warn("Found an unexpected subdirectory " + filePath + ".  Collapsing into " + tableDir + ".");
                     collapseDirectory(filePath);
                     for (FileStatus subFile : fileSystem.listStatus(filePath)) {
                         Path subFilePath = subFile.getPath();
@@ -959,7 +953,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             FileChecksum subFileCheckSum = fileSystem.getFileChecksum(subFilePath);
                             FileChecksum destFileCheckSum = fileSystem.getFileChecksum(destFilePath);
                             if (subFileCheckSum.equals(destFileCheckSum)) {
-                                log.info("{} and {} are identical, removing the former", subFilePath, destFilePath);
+                                log.info(subFilePath + " and " + destFilePath + " are identical, removing the former");
                                 fileSystem.delete(subFilePath, false);
                             } else {
                                 // Attempt to rename the file instead of failing
@@ -967,17 +961,17 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 while (fileSystem.exists(destFilePath)) {
                                     destFilePath = new Path(tableDir, getNextName(destFilePath.getName()));
                                 }
-                                log.info("Renaming {} to {}", subFilePath, destFilePath);
+                                log.info("Renaming " + subFilePath + " to " + destFilePath);
                                 fileSystem.rename(subFilePath, destFilePath);
                             }
                         } else {
-                            log.info("Renaming {} to {}", subFilePath, destFilePath);
+                            log.info("Renaming " + subFilePath + " to " + destFilePath);
                             fileSystem.rename(subFilePath, destFilePath);
                         }
                     }
                     // verify the directory is empty
                     if (fileSystem.listStatus(filePath).length > 0) {
-                        log.error(fatal, "Failed to collapse subdirectory {}", filePath);
+                        log.fatal("Failed to collapse subdirectory " + filePath);
                         throw new IOException("Failed to collapse subdirectory " + filePath);
                     }
                     fileSystem.delete(filePath, false);
@@ -1004,7 +998,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         private void validateComplete() throws IOException {
             FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
             if (fileSystem.listStatus(tableDir).length > 0) {
-                log.error(fatal, "Failed to completely import {}", tableDir);
+                log.fatal("Failed to completely import " + tableDir);
                 throw new IOException("Failed to completely import " + tableDir);
             }
         }
@@ -1055,17 +1049,19 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // delete the successfully loaded map files directory and its parent directory
             destFs.delete(jobDirectory, true);
         } else {
-            log.error("There were failures bringing map files online.  See: failed. {} failures/* for details", mapFilesDir.getName());
+            log.error("There were failures bringing map files online.  See: failed." + mapFilesDir.getName() + "failures/* for details");
+
             // rename the map files directory
             boolean success = destFs.rename(mapFilesDir, new Path(mapFilesDir.getParent(), "failed." + mapFilesDir.getName()));
             if (!success)
-                log.error("Unable to rename map files directory {} {} to failed. {}", destFs.getUri(), mapFilesDir, mapFilesDir.getName());
+                log.error("Unable to rename map files directory " + destFs.getUri() + " " + mapFilesDir + " to failed." + mapFilesDir.getName());
+
             // create the job.failed file (renamed from job.loading if possible)
             success = destFs.rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, FAILED_FILE_MARKER));
             if (!success) {
                 success = destFs.createNewFile(new Path(jobDirectory, FAILED_FILE_MARKER));
                 if (!success)
-                    log.error("Unable to create {} file in {}", FAILED_FILE_MARKER, jobDirectory);
+                    log.error("Unable to create " + FAILED_FILE_MARKER + " file in " + jobDirectory);
             }
         }
 
@@ -1085,44 +1081,44 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
             try {
                 success = fs.rename(new Path(jobDirectory, COMPLETE_FILE_MARKER), new Path(jobDirectory, LOADING_FILE_MARKER));
-                log.info("Renamed {}/{} to {}", jobDirectory, COMPLETE_FILE_MARKER, LOADING_FILE_MARKER);
+                log.info("Renamed " + jobDirectory + '/' + COMPLETE_FILE_MARKER + " to " + LOADING_FILE_MARKER);
             } catch (IOException e2) {
-                log.error("Exception while marking {} for loading: {}", jobDirectory, e2.getMessage(), e2);
+                log.error("Exception while marking " + jobDirectory + " for loading: " + e2.getMessage(), e2);
             }
 
             // if not successful, see if we can provide a reason
             if (!success) {
                 if (fs.exists(new Path(jobDirectory, LOADING_FILE_MARKER))) {
-                    log.info("Another process already took ownership of {} for loading", jobDirectory);
+                    log.info("Another process already took ownership of " + jobDirectory + " for loading");
                 } else {
-                    log.error("Unable to take ownership of {} for loading", jobDirectory);
+                    log.error("Unable to take ownership of " + jobDirectory + " for loading");
                 }
             } else {
                 if (!fs.exists(new Path(jobDirectory, LOADING_FILE_MARKER))) {
                     // if the loading file marker does not exist, then we did not really succeed....hadoop strangeness?
-                    log.error("Rename returned success but yet we did not take ownership of {} ({} does not exist)", jobDirectory, LOADING_FILE_MARKER);
+                    log.error("Rename returned success but yet we did not take ownership of " + jobDirectory + " (" + LOADING_FILE_MARKER + " does not exist)");
                     success = false;
                 } else if (fs.exists(new Path(jobDirectory, COMPLETE_FILE_MARKER))) {
                     // if the complete file still exists, then perhaps the IngestJob received a create failure and subsequently reattempted.
-                    log.error("Rename returned success but yet we did not fully take ownership of {} ({} moved to {} but {} still exists)", jobDirectory,
-                                    COMPLETE_FILE_MARKER, LOADING_FILE_MARKER, COMPLETE_FILE_MARKER);
+                    log.error("Rename returned success but yet we did not fully take ownership of " + jobDirectory + " (" + COMPLETE_FILE_MARKER + " moved to "
+                                    + LOADING_FILE_MARKER + " but " + COMPLETE_FILE_MARKER + " still exists)");
                     success = false;
                     // move the job.loading out of the way. I don't want to delete any files just in case hadoop is getting confused
-                    // and a delete might result in both files deleted, and then we might think this is simply a failed distcp finally
+                    // and a delete might result in both files deleted and then we might think this is simply a failed distcp finally
                     // resulting in lost data.
                     int count = 0;
                     boolean done = false;
                     while (!done && fs.exists(new Path(jobDirectory, COMPLETE_FILE_MARKER)) && count < 10) {
                         count++;
                         if (fs.rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, ATTEMPT_FILE_MARKER + '.' + count))) {
-                            log.error("Moved {} to {}. {}", LOADING_FILE_MARKER, ATTEMPT_FILE_MARKER, count);
+                            log.error("Moved " + LOADING_FILE_MARKER + " to " + ATTEMPT_FILE_MARKER + '.' + count);
                             done = true;
                         }
                     }
                 }
             }
         } catch (IOException e) {
-            log.error("Exception while marking {} for loading: {}", jobDirectory, e.getMessage(), e);
+            log.error("Exception while marking " + jobDirectory + " for loading: " + e.getMessage(), e);
         }
         return success;
     }
@@ -1145,10 +1141,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
             if (!success) {
                 success = fs.createNewFile(new Path(jobDirectory, FAILED_FILE_MARKER));
                 if (!success)
-                    log.error("Unable to create {} file in {}", FAILED_FILE_MARKER, jobDirectory);
+                    log.error("Unable to create " + FAILED_FILE_MARKER + " file in " + jobDirectory);
             }
         } catch (IOException e) {
-            log.error("Exception while marking {} as failed: {}", jobDirectory, e.getMessage(), e);
+            log.error("Exception while marking " + jobDirectory + " as failed: " + e.getMessage(), e);
         }
         return success;
     }
@@ -1179,7 +1175,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         try {
                             renamed = sourceFs.rename(new Path(file), dst);
                         } catch (Exception e) {
-                            log.warn("Exception renaming {} to {}", file, dst, e);
+                            log.warn("Exception renaming " + file + " to " + dst, e);
                             renamed = false;
                         }
                         if (!renamed) {
@@ -1191,7 +1187,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 throw new IOException(
                                                 "Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists + ")");
                             } else {
-                                log.warn("File was already moved to loaded: {}", dst);
+                                log.warn("File was already moved to loaded: " + dst);
                                 renamed = true;
                             }
                         }
@@ -1205,9 +1201,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             });
         }
         try {
-            if (log.isInfoEnabled()) {
-                log.info("Marking {} sequence files from flagged to loaded", renameCallables.size());
-            }
+            log.info("Marking " + renameCallables.size() + " sequence files from flagged to loaded");
 
             if (!renameCallables.isEmpty()) {
                 List<Future<Boolean>> execResults = executor.invokeAll(renameCallables);
@@ -1233,12 +1227,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     }
 
                     if (jobFile != null) {
-                        if (log.isInfoEnabled()) {
-                            log.info("Notifying observers for job: {} from work dir: {}", jobFile.getName(), jobDirectory);
-                        }
+                        log.info("Notifying observers for job: " + jobFile.getName() + " from work dir: " + jobDirectory);
                         jobObservable.setJobId(jobFile.getName());
                     } else {
-                        log.warn("no job file found for: {}", jobDirectory);
+                        log.warn("no job file found for: " + jobDirectory);
                     }
                 }
             }
@@ -1260,9 +1252,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
         boolean success = false;
         try {
             success = getFileSystem(destFs).rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, CLEANUP_FILE_MARKER));
-            log.info("Renamed {}/{} to {}", jobDirectory, LOADING_FILE_MARKER, CLEANUP_FILE_MARKER);
+            log.info("Renamed " + jobDirectory + '/' + LOADING_FILE_MARKER + " to " + CLEANUP_FILE_MARKER);
         } catch (IOException e2) {
-            log.error("Exception while marking {} for Cleanup: {}", jobDirectory, e2.getMessage(), e2);
+            log.error("Exception while marking " + jobDirectory + " for Cleanup: " + e2.getMessage(), e2);
         }
 
         return success;
@@ -1300,7 +1292,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     if (!fs.exists(mDir))
                         fs.mkdirs(mDir);
                     Path dst = new Path(mDir, src.getName());
-                    log.info("Copying file {} to {}", src, dst);
+                    log.info("Copying file " + src + " to " + dst);
                     fs.copyFromLocalFile(false, true, src, dst);
                     // If this worked, then remove the local file
                     rawFS.delete(src, false);
