@@ -74,15 +74,26 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     }
 
     /**
-     * We want timestamps in the global index to be combined separately. Normally all of the timestamps on the global index are the day at 00:00:00. However we
-     * could have a composite timestamp (@see CompositeTimestamp) in which case we want separate entries.
+     * Normally this class will return the most recent key associated with the combined values. We need this key to have a truncated timestamp.
+     *
+     * @return The top key with a truncated timestamp.
+     */
+    @Override
+    public Key getTopKey() {
+        return TruncatingTimestampIterator.getTruncatedTimestampKey(super.getTopKey());
+    }
+
+    /**
+     * We want timestamps in the global index to be combined separately. Normally all of the timestamps on the global index are truncated to the day at
+     * 00:00:00. However we could have a composite timestamp (@see CompositeTimestamp) in which case we want separate entries. A TruncatingTimestampIterator was
+     * added in-case entries are added that are not truncated to the beginning of the day.
      *
      * @param iterator
      * @return an iterator of values
      */
     @Override
     public Iterator<Value> getValues(SortedKeyValueIterator<Key,Value> iterator) {
-        return new ValueCombiner(iterator, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
+        return new ValueCombiner(new TruncatingTimestampIterator(iterator), PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
     }
 
     @Override
