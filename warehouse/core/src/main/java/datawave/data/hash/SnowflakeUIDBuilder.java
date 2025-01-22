@@ -376,8 +376,8 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         }
 
         if (timestamp <= this.previousTid) {
-            LOGGER.warn("Current tid is less than the previous. This could cause uid collisions.\nMid: {}, Timestamp: {}, Previous: {}, System Time: {}",
-                    mid, timestamp, previousTid, System.currentTimeMillis());
+            LOGGER.warn("Current tid is less than the previous. This could cause uid collisions.\nMid: {}, Timestamp: {}, Previous: {}, System Time: {}", mid,
+                            timestamp, previousTid, System.currentTimeMillis());
             timestamp = this.previousTid + 1;
         }
 

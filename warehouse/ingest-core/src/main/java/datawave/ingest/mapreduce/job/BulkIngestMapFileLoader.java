@@ -1104,8 +1104,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     success = false;
                 } else if (fs.exists(new Path(jobDirectory, COMPLETE_FILE_MARKER))) {
                     // if the complete file still exists, then perhaps the IngestJob received a create failure and subsequently reattempted.
-                    log.error("Rename returned success but yet we did not fully take ownership of {} ({} moved to {} but {} still exists)",
-                            jobDirectory, COMPLETE_FILE_MARKER, LOADING_FILE_MARKER, COMPLETE_FILE_MARKER);
+                    log.error("Rename returned success but yet we did not fully take ownership of {} ({} moved to {} but {} still exists)", jobDirectory,
+                                    COMPLETE_FILE_MARKER, LOADING_FILE_MARKER, COMPLETE_FILE_MARKER);
                     success = false;
                     // move the job.loading out of the way. I don't want to delete any files just in case hadoop is getting confused
                     // and a delete might result in both files deleted, and then we might think this is simply a failed distcp finally

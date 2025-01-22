@@ -60,8 +60,8 @@ public class ThreadUtil {
         long time = 0;
         while (((qSize > 0) || (active > 0) || (compl < workUnits)) && !executor.isTerminated()) {
             if (log != null && (time < (System.currentTimeMillis() - (1000L * 10L)))) {
-                log.info("{} running, T: {}/{}, Completed: {}/{}, Remaining: {}, {} ms elapsed",
-                        type, active, poolSize, compl, workUnits, qSize, (cur - start));
+                log.info("{} running, T: {}/{}, Completed: {}/{}, Remaining: {}, {} ms elapsed", type, active, poolSize, compl, workUnits, qSize,
+                                (cur - start));
                 time = System.currentTimeMillis();
             }
             cur = System.currentTimeMillis();
@@ -70,8 +70,8 @@ public class ThreadUtil {
             compl = executor.getCompletedTaskCount();
         }
         if (log != null) {
-            log.info("Finished Waiting for {} running, T: {}/{}, Completed: {}/{}, Remaining: {}, {} ms elapsed",
-                    type, active, poolSize, compl, workUnits, qSize, (cur - start));
+            log.info("Finished Waiting for {} running, T: {}/{}, Completed: {}/{}, Remaining: {}, {} ms elapsed", type, active, poolSize, compl, workUnits,
+                            qSize, (cur - start));
         }
 
         long stop = System.currentTimeMillis();

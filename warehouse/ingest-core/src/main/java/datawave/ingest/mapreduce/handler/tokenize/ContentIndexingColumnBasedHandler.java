@@ -16,15 +16,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
@@ -391,8 +391,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     if (elapsedEstimateMsec > tokenHelper.getTokenizerTimeWarnThresholdMsec() && !tokenizerTimeWarned) {
                         long realDelta = System.currentTimeMillis() - start;
                         counters.incrementValue(ContentIndexCounters.TOKENIZER_TIME_WARNINGS, 1, reporter);
-                        log.warn("Tokenization of field {} has exceeded warning threshold {}ms ({}ms)",
-                                modifiedFieldName, tokenHelper.getTokenizerTimeErrorThresholdMsec(), realDelta);
+                        log.warn("Tokenization of field {} has exceeded warning threshold {}ms ({}ms)", modifiedFieldName,
+                                        tokenHelper.getTokenizerTimeErrorThresholdMsec(), realDelta);
                         tokenizerTimeWarned = true;
                     }
 

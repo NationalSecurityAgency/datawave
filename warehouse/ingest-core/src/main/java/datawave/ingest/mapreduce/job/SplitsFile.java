@@ -17,7 +17,8 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Table;
 
@@ -26,7 +27,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.time.DateHelper;
 
 public class SplitsFile {
-    private static final Logger log = Logger.getLogger(SplitsFile.class);
+    private static final Logger log = LoggerFactory.getLogger(SplitsFile.class);
 
     public static final String SPLIT_WORK_DIR = "split.work.dir";
     public static final String MAX_SHARDS_PER_TSERVER = "shardedMap.max.shards.per.tserver";
@@ -45,11 +46,11 @@ public class SplitsFile {
         boolean doValidation = conf.getBoolean(SHARD_VALIDATION_ENABLED, false);
 
         try {
-            log.info("Base splits: " + baseSplitsPath);
+            log.info("Base splits: {}", baseSplitsPath);
 
             Path destSplits = new Path(
                             conf.get(SPLIT_WORK_DIR) + "/" + conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
-            log.info("Dest splits: " + destSplits);
+            log.info("Dest splits: {}", destSplits);
 
             FileUtil.copy(sourceFs, baseSplitsPath, destFs, destSplits, false, conf);
             conf.set(TableSplitsCache.SPLITS_CACHE_DIR, conf.get(SPLIT_WORK_DIR));
@@ -66,7 +67,7 @@ public class SplitsFile {
             }
 
         } catch (Exception e) {
-            log.error("Unable to use splits file because " + e.getMessage());
+            log.error("Unable to use splits file because {}", e.getMessage());
             throw e;
         }
     }
@@ -93,13 +94,13 @@ public class SplitsFile {
             int expectedNumberOfShards = shardIdFactory.getNumShards(datePrefix);
             boolean shardsExist = shardsExistForDate(shardIdToLocation, datePrefix, expectedNumberOfShards);
             if (!shardsExist) {
-                log.error("Shards for " + datePrefix + " for table " + tableName + " do not exist!");
+                log.error("Shards for {} for table {} do not exist!", datePrefix, tableName);
                 isValid = false;
                 continue;
             }
             boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix, maxShardsPerTserver);
             if (!shardsAreBalanced) {
-                log.error("Shards for " + datePrefix + " for table " + tableName + " are not balanced!");
+                log.error("Shards for {} for table {} are not balanced!", datePrefix, tableName);
                 isValid = false;
             }
         }
@@ -175,7 +176,7 @@ public class SplitsFile {
 
                 // if shard is assigned to more tservers than allowed, then the shards are not balanced
                 if (cnt.intValue() > maxShardsPerTserver) {
-                    log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);
+                    log.warn("{} Shards for {} assigned to tablet {}", cnt.toInteger(), datePrefix, value);
                     dateIsBalanced = false;
                 }
 
