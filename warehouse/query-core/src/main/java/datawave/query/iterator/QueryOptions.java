@@ -798,6 +798,11 @@ public class QueryOptions implements OptionDescriber {
             // allows standard event queries to perform a seeking aggregation with field filtering
             evaluationFilter = getEventFilter();
         }
+
+        if (evaluationFilter != null) {
+            eventEvaluationFilter = evaluationFilter.clone();
+        }
+
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
 
