@@ -4,7 +4,8 @@ import java.util.Collection;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -14,7 +15,7 @@ import com.google.common.collect.Multimap;
  */
 public class ConstraintChecker {
 
-    private static final Logger log = Logger.getLogger(ConstraintChecker.class);
+    private static final Logger log = LoggerFactory.getLogger(ConstraintChecker.class);
 
     public static final String INITIALIZERS = "visibility.constraint.initializers";
 
@@ -42,7 +43,7 @@ public class ConstraintChecker {
                     initializer.addConstraints(conf, constraints);
 
                 } catch (Exception e) {
-                    log.error("Could invoke ConstraintInitializer: " + initializerClass, e);
+                    log.error("Could invoke ConstraintInitializer: {}", initializerClass, e);
                     throw new RuntimeException("Could invoke ConstraintInitializer: " + initializerClass, e);
                 }
             }

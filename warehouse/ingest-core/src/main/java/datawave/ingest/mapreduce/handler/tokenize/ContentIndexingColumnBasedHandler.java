@@ -16,7 +16,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -62,7 +65,9 @@ import datawave.util.TextUtil;
  */
 public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractColumnBasedHandler<KEYIN> implements TermFrequencyIngestHelperInterface {
 
-    private static final Logger log = Logger.getLogger(ContentIndexingColumnBasedHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentIndexingColumnBasedHandler.class);
+
+    private static Marker fatal = MarkerFactory.getMarker("FATAL");
 
     public abstract AbstractContentIngestHelper getContentIndexingDataTypeHelper();
 
@@ -192,7 +197,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     createEventColumn(event, tokenMap, values, this.shardId, fieldVisibility, nfav);
                 }
             } catch (IOException ex) {
-                log.fatal("IOException", ex);
+                log.error(fatal, "IOException", ex);
             } catch (InterruptedException ex) {
                 log.warn("Interrupted!", ex);
                 Thread.interrupted();
@@ -386,8 +391,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     if (elapsedEstimateMsec > tokenHelper.getTokenizerTimeWarnThresholdMsec() && !tokenizerTimeWarned) {
                         long realDelta = System.currentTimeMillis() - start;
                         counters.incrementValue(ContentIndexCounters.TOKENIZER_TIME_WARNINGS, 1, reporter);
-                        log.warn("Tokenization of field " + modifiedFieldName + " has exceeded warning threshold "
-                                        + tokenHelper.getTokenizerTimeWarnThresholdMsec() + "ms (" + realDelta + "ms)");
+                        log.warn("Tokenization of field {} has exceeded warning threshold {}ms ({}ms)",
+                                modifiedFieldName, tokenHelper.getTokenizerTimeErrorThresholdMsec(), realDelta);
                         tokenizerTimeWarned = true;
                     }
 
@@ -423,30 +428,26 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 // Make sure the term length is greater than the minimum allowed length
                 int tlen = token.length();
                 if (tlen < tokenHelper.getTermLengthMinimum()) {
-                    log.debug("Ignoring token of length " + token.length() + " because it is too short");
+                    log.debug("Ignoring token of length {} because it is too short", token.length());
                     counters.increment(ContentIndexCounters.TOO_SHORT_COUNTER, reporter);
                     continue;
                 }
 
                 // skip the term if it is over the length limit unless it is a FILE, URL or HTTP_REQUEST
                 if (tlen > tokenHelper.getTermLengthLimit() && (!(type.equals("FILE") || type.equals("URL") || type.equals("HTTP_REQUEST")))) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Ignoring " + type + " token due to excessive length");
-                    }
+                    log.debug("Ignoring {} token due to excessive length", type);
 
                     counters.increment(ContentIndexCounters.EXCESSIVE_LENGTH_COUNTER, reporter);
                     continue;
                 }
 
                 if (tlen > tokenHelper.getTermLengthWarningLimit()) {
-                    log.warn("Encountered long term: " + tlen + " characters, '" + token + "'");
+                    log.warn("Encountered long term: {} characters, {}", tlen, token);
                     counters.increment(ContentIndexCounters.LENGTH_WARNING_COUNTER, reporter);
                 }
 
                 if (truncAtt.isTruncated()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Encountered truncated term: " + tlen + " characters, '" + token + "'");
-                    }
+                    log.debug("Encountered truncated term: {} characters, {}", tlen, token);
                     counters.increment(ContentIndexCounters.TRUNCATION_COUNTER, reporter);
                 }
 
@@ -674,7 +675,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
             final String message = "Unable to create factory for N-grams. ContentIngestHelperInterface is null.";
             ;
-            Logger.getLogger(BloomFilterUtil.class).warn(message, new IllegalStateException());
+            LoggerFactory.getLogger(BloomFilterUtil.class).warn(message, new IllegalStateException());
         }
 
         return util;

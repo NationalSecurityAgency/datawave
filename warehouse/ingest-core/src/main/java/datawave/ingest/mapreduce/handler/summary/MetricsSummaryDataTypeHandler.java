@@ -14,7 +14,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -39,7 +40,7 @@ import datawave.util.StringUtils;
  */
 public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler<KEYIN> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(MetricsSummaryDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(MetricsSummaryDataTypeHandler.class);
 
     // configuration keys
     public static final String METRICS_SUMMARY_PROP_PREFIX = "metrics-";
@@ -142,7 +143,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
         public void setTableName(Configuration conf) {
             String tableName = conf.get(METRICS_SUMMARY_TABLE_NAME);
             if (tableName == null) {
-                log.warn(METRICS_SUMMARY_TABLE_NAME + " not specified, no summary data will be created.");
+                log.warn("{} not specified, no summary data will be created.", METRICS_SUMMARY_TABLE_NAME);
             } else {
                 this.metricsSummaryTableName = new Text(tableName);
             }
@@ -199,7 +200,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             Set<Text> colQs = Sets.newHashSet(metricsSummaryFormatter.getSummaryValuesRegex(colQualFieldsRegexList, fields));
 
             if (log.isTraceEnabled()) {
-                log.trace("Creating Keys for...rowIds.size() [" + rowIds.size() + "] colFs.size() [" + colFs.size() + "] colQs.size() [" + colQs.size() + "]");
+                log.trace("Creating Keys for...rowIds.size() [{}] colFs.size() [{}] colQs.size() [{}]", rowIds.size(), colFs.size(), colQs.size());
             }
 
             ColumnVisibility vis = new ColumnVisibility(origVis.flatten());
@@ -220,7 +221,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             }
 
             if (log.isTraceEnabled()) {
-                log.trace("Created [" + values.size() + "] keys for ingest");
+                log.trace("Created [{}] keys for ingest", values.size());
             }
 
             return values;

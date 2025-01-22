@@ -21,7 +21,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.geotools.feature.type.DateUtil;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
@@ -51,7 +52,7 @@ import datawave.util.time.DateHelper;
 
 public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT>, FacetedEstimator<RawRecordContainer> {
 
-    private static final Logger log = Logger.getLogger(FacetHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(FacetHandler.class);
 
     /* Global configuration properties */
 
@@ -272,10 +273,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                 results.put(pivotIngestKey, sharedValue);
 
                 if (log.isTraceEnabled()) {
-                    log.trace("created BulkIngestKey (pivot): " + pivotIngestKey.getKey() +
-                            " for " + event.getId().toString() +
-                            " in " + event.getRawFileName() +
-                            " event " + eventId);
+                    log.trace("created BulkIngestKey (pivot): {} for {} in {} event {}",
+                            pivotIngestKey.getKey(), event.getId().toString(), event.getRawFileName(), eventId);
                 }
                 // @formatter:on
 
@@ -308,10 +307,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                         results.put(facetIngestKey, sharedValue);
 
                         if (log.isDebugEnabled()) {
-                            log.debug("created BulkIngestKey (facet): " + facetIngestKey.getKey() +
-                                    " for " + event.getId().toString() +
-                                    " in " + event.getRawFileName() +
-                                    " event " + eventId);
+                            log.debug("created BulkIngestKey (facet): {} for {} in {} event {}",
+                                    facetIngestKey.getKey(), event.getId().toString(), event.getRawFileName(), eventId);
                         }
                         // @formatter:on
 

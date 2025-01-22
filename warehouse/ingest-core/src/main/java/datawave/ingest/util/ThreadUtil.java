@@ -3,14 +3,15 @@ package datawave.ingest.util;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utilities for working with ThreadPools.
  */
 public class ThreadUtil {
 
-    private static final Logger logger = Logger.getLogger(ThreadUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(ThreadUtil.class);
 
     /**
      * Shuts down the executor and gives tasks that are still in progress the given amount of time before continuing.
@@ -59,8 +60,8 @@ public class ThreadUtil {
         long time = 0;
         while (((qSize > 0) || (active > 0) || (compl < workUnits)) && !executor.isTerminated()) {
             if (log != null && (time < (System.currentTimeMillis() - (1000L * 10L)))) {
-                log.info(type + " running, T: " + active + "/" + poolSize + ", Completed: " + compl + "/" + workUnits + ", " + ", Remaining: " + qSize + ", "
-                                + (cur - start) + " ms elapsed");
+                log.info("{} running, T: {}/{}, Completed: {}/{}, Remaining: {}, {} ms elapsed",
+                        type, active, poolSize, compl, workUnits, qSize, (cur - start));
                 time = System.currentTimeMillis();
             }
             cur = System.currentTimeMillis();
@@ -69,8 +70,8 @@ public class ThreadUtil {
             compl = executor.getCompletedTaskCount();
         }
         if (log != null) {
-            log.info("Finished Waiting for " + type + " running, T: " + active + "/" + poolSize + ", Completed: " + compl + "/" + workUnits + ", "
-                            + ", Remaining: " + qSize + ", " + (cur - start) + " ms elapsed");
+            log.info("Finished Waiting for {} running, T: {}/{}, Completed: {}/{}, Remaining: {}, {} ms elapsed",
+                    type, active, poolSize, compl, workUnits, qSize, (cur - start));
         }
 
         long stop = System.currentTimeMillis();

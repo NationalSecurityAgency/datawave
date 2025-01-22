@@ -12,7 +12,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TableConfigCache extends BaseHdfsFileCacheUtil {
 
@@ -27,7 +28,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
 
     private static final Object lock = new Object();
 
-    protected static final Logger log = Logger.getLogger("datawave.ingest");
+    protected static final Logger log = LoggerFactory.getLogger("datawave.ingest");
 
     private TableConfigCache(Configuration conf) {
         super(conf);
@@ -58,7 +59,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     public void writeCacheFile(FileSystem fs, Path tmpCacheFile) throws IOException {
         Map<String,Map<String,String>> tempValidationMap = configMap;
 
-        log.info("Writing to temp file " + tmpCacheFile.getName());
+        log.info("Writing to temp file {}", tmpCacheFile.getName());
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpCacheFile)), false, "UTF-8")) {
             for (Map.Entry<String,Map<String,String>> table : configMap.entrySet()) {
                 for (Map.Entry tableProp : table.getValue().entrySet()) {
@@ -66,16 +67,16 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
                 }
             }
         } catch (IOException e) {
-            log.error("Unable to write cache file " + tmpCacheFile, e);
+            log.error("Unable to write cache file {}", tmpCacheFile, e);
             throw e;
         }
 
         // validate temp file
-        log.info("Validating file: " + tmpCacheFile.getName());
+        log.info("Validating file: {}", tmpCacheFile.getName());
         try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(tmpCacheFile.toUri(), conf).open(tmpCacheFile)))) {
             readCache(in);
         } catch (IOException ex) {
-            log.error("Error reading cache temp file: " + tmpCacheFile, ex);
+            log.error("Error reading cache temp file: {}", tmpCacheFile, ex);
             throw ex;
         }
 
@@ -138,7 +139,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
             read();
         }
         if (null == this.configMap.get(tableName) || this.configMap.get(tableName).isEmpty()) {
-            log.error("No accumulo config cache for " + tableName + ".  Please generate the accumulo config cache after ensuring the table exists.");
+            log.error("No accumulo config cache for {}.  Please generate the accumulo config cache after ensuring the table exists.", tableName);
         }
         return this.configMap.get(tableName);
 

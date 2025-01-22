@@ -16,7 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
@@ -121,7 +122,7 @@ import datawave.util.TextUtil;
  */
 public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ShardedDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardedDataTypeHandler.class);
 
     public static final String NUM_SHARDS = ShardIdFactory.NUM_SHARDS;
     public static final String SHARD_TNAME = "shard.table.name";
@@ -227,13 +228,13 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         String tableName = conf.get(SHARD_TNAME, null);
         if (null == tableName)
-            log.error(SHARD_TNAME + " not specified, no events will be created, and the global index will be useless");
+            log.error("{} not specified, no events will be created, and the global index will be useless", SHARD_TNAME);
         else
             setShardTableName(new Text(tableName));
 
         tableName = conf.get(SHARD_STATS_TNAME, null);
         if (null == tableName)
-            log.warn(SHARD_STATS_TNAME + " not specified, no global index mutations will be created.");
+            log.warn("{} not specified, no global index mutations will be created.", SHARD_STATS_TNAME);
         else {
             setIndexStatsTableName(new Text(tableName));
             setProduceStats(true);
@@ -241,25 +242,25 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         tableName = conf.get(SHARD_GIDX_TNAME, null);
         if (null == tableName)
-            log.warn(SHARD_GIDX_TNAME + " not specified, no global index mutations will be created.");
+            log.warn("{} not specified, no global index mutations will be created.", SHARD_GIDX_TNAME);
         else
             setShardIndexTableName(new Text(tableName));
 
         tableName = conf.get(SHARD_GRIDX_TNAME, null);
         if (null == tableName)
-            log.warn(SHARD_GRIDX_TNAME + " not specified, no global reverse index mutations will be created.");
+            log.warn("{} not specified, no global reverse index mutations will be created.", SHARD_GRIDX_TNAME);
         else
             setShardReverseIndexTableName(new Text(tableName));
 
         tableName = conf.get(METADATA_TABLE_NAME, null);
         if (null == tableName)
-            log.warn(METADATA_TABLE_NAME + " not specified, no metadata will be created, I hope nothing requires normalizers.");
+            log.warn("{} not specified, no metadata will be created, I hope nothing requires normalizers.", METADATA_TABLE_NAME);
         else
             setMetadataTableName(new Text(tableName));
 
         tableName = (LoadDateTableConfigHelper.isLoadDatesEnabled(conf) ? LoadDateTableConfigHelper.getLoadDatesTableName(conf) : null);
         if (null == tableName)
-            log.warn(LoadDateTableConfigHelper.LOAD_DATES_TABLE_NAME_PROP + " not specified, no load dates will be created");
+            log.warn("{} not specified, no load dates will be created", LoadDateTableConfigHelper.LOAD_DATES_TABLE_NAME_PROP);
         else
             setLoadDatesTableName(new Text(tableName));
 
@@ -270,7 +271,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         tableName = conf.get(SHARD_DINDX_NAME, null);
         if (null == tableName) {
-            log.warn(SHARD_DINDX_NAME + " not specified, no term dictionary will be created.");
+            log.warn("{} not specified, no term dictionary will be created.", SHARD_DINDX_NAME);
         } else {
             setShardDictionaryIndexTableName(new Text(tableName));
             this.setupDictionaryCache(conf.getInt(SHARD_DICTIONARY_CACHE_ENTRIES, SHARD_DINDEX_CACHE_DEFAULT_SIZE));
@@ -299,21 +300,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     private void setupToReindexIfEnabled(Configuration conf) {
         this.isReindexEnabled = conf.getBoolean(IS_REINDEX_ENABLED, false);
-        log.info("isReindexEnabled: " + this.isReindexEnabled);
+        log.info("isReindexEnabled: {}", this.isReindexEnabled);
         if (this.isReindexEnabled) {
             String commaSeparatedFieldNames = conf.get(FIELDS_TO_REINDEX);
-            if (log.isDebugEnabled()) {
-                log.debug("configured reindex fields: " + commaSeparatedFieldNames);
-            }
+            log.debug("configured reindex fields: {}", commaSeparatedFieldNames);
             if (null != commaSeparatedFieldNames) {
                 this.requestedFieldsForReindex = Arrays.asList(commaSeparatedFieldNames.split(","));
             }
             if (null == this.requestedFieldsForReindex || this.requestedFieldsForReindex.isEmpty()) {
                 throw new RuntimeException("Missing or empty " + FIELDS_TO_REINDEX + " from configuration: " + conf);
             }
-            if (log.isDebugEnabled()) {
-                log.debug("list of fields to reindex: " + requestedFieldsForReindex);
-            }
+            log.debug("list of fields to reindex: {}", requestedFieldsForReindex);
         }
     }
 
@@ -469,7 +466,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 NormalizedContentInterface value = e.getValue();
                 byte[] visibility = getVisibility(event, value);
                 if (log.isTraceEnabled()) {
-                    log.trace("Is " + e.getKey() + " indexed? " + hasIndexTerm(e.getKey()) + " " + helper.isIndexedField(e.getKey()));
+                    log.trace("Is {} indexed? {} {}", e.getKey(), hasIndexTerm(e.getKey()), helper.isIndexedField(e.getKey()));
                 }
 
                 values.putAll(createForwardIndices(helper, event, fields, value, visibility, maskedVisibility, maskedFieldHelper, shardId, indexedValue,
@@ -714,9 +711,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         Multimap<BulkIngestKey,Value> values = ArrayListMultimap.create();
 
-        if (log.isTraceEnabled()) {
-            log.trace("Create index column " + tableName);
-        }
+        log.trace("Create index column {}", tableName);
         if (null == tableName) {
             return values;
         }
@@ -738,9 +733,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 if (direction == Direction.REVERSE) {
                     normalizedMaskedValue = new StringBuilder(normalizedMaskedValue).reverse().toString();
-                    if (log.isTraceEnabled()) {
-                        log.trace("normalizedMaskedValue is reversed to: " + normalizedMaskedValue);
-                    }
+                    log.trace("normalizedMaskedValue is reversed to: {}", normalizedMaskedValue);
                 }
                 // Create a key for the masked field value with the masked visibility.
                 Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
@@ -981,8 +974,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Else create one key for the field with the original value and the masked visiblity
             Key cbKey = createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
-            if (log.isTraceEnabled())
-                log.trace("Creating bulk ingest Key " + bKey);
+            log.trace("Creating bulk ingest Key {}", bKey);
             values.put(bKey, NULL_VALUE);
         }
 
@@ -1033,8 +1025,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     protected Multimap<BulkIngestKey,Value> createShardFieldIndexColumn(RawRecordContainer event, String fieldName, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value value) {
-        if (log.isTraceEnabled())
-            log.trace("Field value is " + fieldValue);
+        log.trace("Field value is {}", fieldValue);
 
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());

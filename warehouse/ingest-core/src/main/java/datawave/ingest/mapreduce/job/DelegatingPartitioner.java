@@ -11,7 +11,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This partitioner delegates the partitioning logic to other partitioners based on table name. * The table may have its own dedicated partitioner or may share
@@ -21,7 +22,7 @@ import org.apache.log4j.Logger;
  * partitioners each limit their output to 10 partitioners. The first will go to 0-9 and the other to 10-19. See DelegatePartitioner's getNumPartitions
  */
 public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable {
-    protected static final Logger log = Logger.getLogger(DelegatingPartitioner.class);
+    protected static final Logger log = LoggerFactory.getLogger(DelegatingPartitioner.class);
 
     // this gets populated with the table names that have non-default partitioners defined
     static final String TABLE_NAMES_WITH_CUSTOM_PARTITIONERS = "DelegatingPartitioner.custom.delegate._tablenames";
@@ -101,7 +102,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
         try {
             createDelegatesForTables();
         } catch (ClassNotFoundException e) {
-            log.error(e);
+            log.error("ClassNotFoundException:", e);
             // the validation step during the job set up identifies missing classes, so fail the mapper
             throw new RuntimeException(e);
         }

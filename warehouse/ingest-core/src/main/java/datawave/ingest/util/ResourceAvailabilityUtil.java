@@ -4,7 +4,8 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility for checking resource availability, such as disk space and memory.
@@ -66,7 +67,7 @@ public class ResourceAvailabilityUtil {
         } catch (final Throwable e) {
             final String toString = e.toString();
             if (!LOGGED_EXCEPTIONS.contains(toString)) {
-                Logger.getLogger(ResourceAvailabilityUtil.class).warn("Unable to check disk space availability based on path " + path, e);
+                LoggerFactory.getLogger(ResourceAvailabilityUtil.class).warn("Unable to check disk space availability based on path " + path, e);
                 LOGGED_EXCEPTIONS.add(toString);
             }
         }

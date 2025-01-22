@@ -20,7 +20,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -78,7 +79,7 @@ import datawave.util.StringUtils;
  */
 public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, RawRecordMetadata {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(DateIndexDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(DateIndexDataTypeHandler.class);
 
     public static final String DATEINDEX_TNAME = "date.index.table.name";
     public static final String DATEINDEX_LPRIORITY = "date.index.table.loader.priority";
@@ -152,7 +153,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
 
         String tableName = conf.get(DATEINDEX_TNAME, null);
         if (null == tableName) {
-            log.error(DATEINDEX_TNAME + " not specified, no date index will be created");
+            log.error("{} not specified, no date index will be created", DATEINDEX_TNAME);
         } else {
             setDateIndexTableName(new Text(tableName));
         }
@@ -176,7 +177,9 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
                 }
                 typeToFields.put(parts[0], parts[1]);
             }
-            log.info(this.getClass().getSimpleName() + " configured for " + dataType.typeName() + ": " + typeToFields);
+            if (log.isInfoEnabled()) {
+                log.info("{} configured for {}: {}", this.getClass().getSimpleName(), dataType.typeName(), typeToFields);
+            }
             dataTypeToTypeToFields.put(dataType.typeName(), typeToFields);
         }
     }
@@ -243,7 +246,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
 
                     if (keyValue != null) {
                         if (log.isDebugEnabled()) {
-                            log.debug("Outputting " + keyValue + " to " + getDateIndexTableName());
+                            log.debug("Outputting {} to {}", keyValue, getDateIndexTableName());
                         }
 
                         BulkIngestKey bulkIngestKey = new BulkIngestKey(getDateIndexTableName(), keyValue.getKey());
@@ -285,7 +288,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
             // get the date to be indexed
             date = dateNormalizer.denormalize(dateValue);
         } catch (Exception e) {
-            log.error("Failed to normalize date value (skipping): " + dateValue, e);
+            log.error("Failed to normalize date value (skipping): {}", dateValue, e);
             return null;
         }
 
@@ -312,9 +315,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         // create the key
         Key key = new Key(row, type, colq, biased, date.getTime());
 
-        if (log.isTraceEnabled()) {
-            log.trace("Dateate index key: " + key + " for shardId " + shardId);
-        }
+        log.trace("Date index key: {} for shardId {}", key, shardId);
 
         return new KeyValue(key, shardList);
     }
