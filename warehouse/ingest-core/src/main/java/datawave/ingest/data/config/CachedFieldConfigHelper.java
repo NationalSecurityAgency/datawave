@@ -1,70 +1,65 @@
 package datawave.ingest.data.config;
 
-import static java.lang.Thread.NORM_PRIORITY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class CachedFieldConfigHelper implements FieldConfigHelper {
     private final static Logger log = LoggerFactory.getLogger(CachedFieldConfigHelper.class);
 
     private final static float DEFAULT_LRU_LF = 0.75f;
-    private final static int DEFAULT_DEBUG_STATE_SECS = 30;
+    private final static int DEFAULT_DIAGNOSTIC_SECS = 30;
 
     private final FieldConfigHelper underlyingHelper;
     private final LruCache<String,CachedEntry> resultCache;
-    private final boolean debugLimitsEnabled;
     private final int limit;
-    private final Set<String> debugFieldUnique;
-    private final ScheduledExecutorService debugStateExecutor;
-    private final AtomicLong debugFieldComputes;
+    private final boolean diagnosticEnabled;
+    private final Set<String> diagnosticUniqueFields;
+    private Clock clock;
+    private boolean limitMessageEmitted;
+    private long diagnosticFieldCompute;
+    private long diagnosticEmitIntervalMillis;
+    private long diagnosticEmitNextMillis;
+    private boolean diagnosticEmitted;
 
     enum AttributeType {
         INDEXED_FIELD, REVERSE_INDEXED_FIELD, TOKENIZED_FIELD, REVERSE_TOKENIZED_FIELD, STORED_FIELD, INDEX_ONLY_FIELD
+    }
+
+    interface Clock {
+        default long epochMillis() {
+            return System.currentTimeMillis();
+        }
+
+        static Clock defaultClock() {
+            return new Clock() {};
+        }
     }
 
     public CachedFieldConfigHelper(FieldConfigHelper helper, int limit) {
         this(helper, limit, false);
     }
 
-    public CachedFieldConfigHelper(FieldConfigHelper helper, int limit, boolean debugLimitEnabled) {
+    public CachedFieldConfigHelper(FieldConfigHelper helper, int limit, boolean diagnosticEnabled) {
         if (limit < 1) {
             throw new IllegalArgumentException("Limit must be a positive integer");
         }
+        this.clock = Clock.defaultClock();
         this.underlyingHelper = helper;
         this.resultCache = new LruCache<>(limit);
         this.limit = limit;
-        this.debugLimitsEnabled = debugLimitEnabled;
-        this.debugFieldUnique = new HashSet<>();
-        this.debugFieldComputes = new AtomicLong();
-
-        if (debugLimitEnabled) {
-            this.debugStateExecutor = Executors.newSingleThreadScheduledExecutor(
-            // @formatter:off
-                new ThreadFactoryBuilder()
-                    .setPriority(NORM_PRIORITY)
-                    .setDaemon(true)
-                    .setNameFormat("CachedFieldConfigHelper.DebugState")
-                    .build()
-                // formatter:off
-            );
-            this.debugStateExecutor.scheduleAtFixedRate(this::debugLogState, DEFAULT_DEBUG_STATE_SECS, DEFAULT_DEBUG_STATE_SECS, SECONDS);
-        } else {
-            this.debugStateExecutor = null;
-        }
+        this.diagnosticEnabled = diagnosticEnabled;
+        this.diagnosticUniqueFields = new HashSet<>();
+        this.diagnosticEmitIntervalMillis = SECONDS.toMillis(DEFAULT_DIAGNOSTIC_SECS);
     }
 
     @Override
@@ -99,10 +94,28 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
 
     @VisibleForTesting
     boolean getFieldResult(AttributeType attributeType, String fieldName, Predicate<String> fn) {
-        CachedEntry ce = !debugLimitsEnabled ?
-            resultCache.computeIfAbsent(fieldName, CachedEntry::new) :
-            resultCache.computeIfAbsent(fieldName, this::debugCachedEntryCreation);
-        return ce.get(attributeType).getResultOrEvaluate(fn);
+        CachedEntry cachedEntry = resultCache.computeIfAbsent(fieldName, (key) -> {
+            if (diagnosticEnabled) {
+                diagnosticFieldCompute++;
+                diagnosticUniqueFields.add(key);
+            }
+            return new CachedEntry(key);
+        });
+
+        CachedEntry.MemoizedResult memoizedResult = cachedEntry.get(attributeType);
+
+        // when trace state is enabled - emit a message if the field limit has been exceeded
+        // the intent is to help adjust the size required for the cache
+        if (diagnosticEnabled && clock.epochMillis() > diagnosticEmitNextMillis) {
+            diagnosticEmitted = true;
+            diagnosticEmitNextMillis = clock.epochMillis() + diagnosticEmitIntervalMillis;
+            log.info("Field cache LRU [limit={}, computed={}, size={}, uniq={}]", limit, diagnosticFieldCompute, diagnosticUniqueFields.size(),
+                            diagnosticUniqueFields);
+        } else if (resultCache.hasLimitExceeded() && !limitMessageEmitted) {
+            log.info("Field cache LRU limit exceeded: [limit={}, field={}]", limit, fieldName);
+            limitMessageEmitted = true;
+        }
+        return memoizedResult.getResultOrEvaluate(fn);
     }
 
     @VisibleForTesting
@@ -110,30 +123,51 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
         return resultCache.hasLimitExceeded();
     }
 
-    private CachedEntry debugCachedEntryCreation(String fieldName) {
-        debugFieldComputes.incrementAndGet();
-        debugFieldUnique.add(fieldName);
-        return new CachedEntry(fieldName);
+    @VisibleForTesting
+    Set<String> getCachedFields() {
+        return resultCache.keySet();
     }
 
-    private void debugLogState() {
-        if (resultCache.hasLimitExceeded()) {
-            log.info("Field cache LRU limit exceeded [limit={}, debug={}, size={}, uniq={}]",
-                limit, debugFieldComputes.get(), debugFieldUnique.size(), debugLimitsEnabled);
-        }
+    @VisibleForTesting
+    boolean getDiagnosticEmitted() {
+        return diagnosticEmitted;
+    }
+
+    @VisibleForTesting
+    Set<String> getDiagnosticUniqueFields() {
+        return diagnosticUniqueFields;
+    }
+
+    @VisibleForTesting
+    long getDiagnosticFieldCompute() {
+        return diagnosticFieldCompute;
+    }
+
+    @VisibleForTesting
+    long getDiagnosticEmitNextMillis() {
+        return diagnosticEmitNextMillis;
+    }
+
+    @VisibleForTesting
+    void setDiagnosticEmitIntervalMillis(long intervalMillis) {
+        this.diagnosticEmitIntervalMillis = intervalMillis;
+    }
+
+    @VisibleForTesting
+    void setClock(Clock clock) {
+        this.clock = clock;
     }
 
     private static class LruCache<K,V> extends LinkedHashMap<K,V> {
         private final int maxSize;
-        private volatile boolean limitExceeded;
+        private boolean limitExceeded;
 
         LruCache(int maxSize) {
-            super((int)(maxSize / DEFAULT_LRU_LF) + 1, DEFAULT_LRU_LF, true);
+            super((int) (maxSize / DEFAULT_LRU_LF) + 1, DEFAULT_LRU_LF, true);
             this.maxSize = maxSize;
         }
 
         boolean hasLimitExceeded() {
-            // thread-safe
             return limitExceeded;
         }
 

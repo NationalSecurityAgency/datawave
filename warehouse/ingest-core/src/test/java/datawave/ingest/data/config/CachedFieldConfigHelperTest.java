@@ -1,5 +1,7 @@
 package datawave.ingest.data.config;
 
+import static datawave.ingest.data.config.CachedFieldConfigHelper.AttributeType.INDEXED_FIELD;
+import static datawave.ingest.data.config.CachedFieldConfigHelper.AttributeType.STORED_FIELD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Test;
@@ -82,36 +85,66 @@ public class CachedFieldConfigHelperTest {
         // 3. limit blocks results to return if exceeded
         // 4. limit functions across attribute-types
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field1", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field1", innerHelper::isStoredField);
         assertEquals(1, storedCounter.get(), "field1 should compute result (new field)");
+        assertEquals(Set.of("field1"), helper.getCachedFields());
         assertFalse(helper.hasLimitExceeded());
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field1", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field1", innerHelper::isStoredField);
         assertEquals(1, storedCounter.get(), "field1 repeated (existing field)");
+        assertEquals(Set.of("field1"), helper.getCachedFields());
         assertFalse(helper.hasLimitExceeded());
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field2", innerHelper::isStoredField);
         assertEquals(2, storedCounter.get(), "field2 should compute result (new field)");
+        assertEquals(Set.of("field1", "field2"), helper.getCachedFields());
         assertFalse(helper.hasLimitExceeded());
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field2", innerHelper::isStoredField);
         assertEquals(2, storedCounter.get(), "field2 repeated (existing)");
+        assertEquals(Set.of("field1", "field2"), helper.getCachedFields());
         assertFalse(helper.hasLimitExceeded());
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.INDEXED_FIELD, "field1", innerHelper::isIndexedField);
+        helper.getFieldResult(INDEXED_FIELD, "field1", innerHelper::isIndexedField);
         assertEquals(1, indexCounter.get(), "field1 should compute result (new attribute)");
+        assertEquals(Set.of("field1", "field2"), helper.getCachedFields());
         assertFalse(helper.hasLimitExceeded());
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field3", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field3", innerHelper::isStoredField);
         assertEquals(3, storedCounter.get(), "field3 exceeded limit (new field)");
+        assertEquals(Set.of("field1", "field3"), helper.getCachedFields());
         assertTrue(helper.hasLimitExceeded());
 
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field3", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field3", innerHelper::isStoredField);
         assertEquals(3, storedCounter.get(), "field3 exceeded limit (existing field)");
+        assertEquals(Set.of("field1", "field3"), helper.getCachedFields());
 
         // LRU map should evict field #2
         // we access field #1 above which has more accesses over field #2
-        helper.getFieldResult(CachedFieldConfigHelper.AttributeType.STORED_FIELD, "field2", innerHelper::isStoredField);
+        helper.getFieldResult(STORED_FIELD, "field2", innerHelper::isStoredField);
+        assertEquals(Set.of("field2", "field3"), helper.getCachedFields());
         assertEquals(4, storedCounter.get(), "field1 exceeded limit (new field/eviction)");
+    }
+
+    @Test
+    public void testCacheHelperDiagnosticMessage() {
+        CachedFieldConfigHelper.Clock clock = mock(CachedFieldConfigHelper.Clock.class);
+        FieldConfigHelper innerHelper = mock(FieldConfigHelper.class);
+        CachedFieldConfigHelper helper = new CachedFieldConfigHelper(innerHelper, 2, true);
+
+        // set the clock so that the trace emit
+        // should fire as soon as the limit is exceeded
+        // expected below by the very last test-case
+        when(clock.epochMillis()).thenReturn(1L);
+        helper.setDiagnosticEmitIntervalMillis(1);
+        helper.setClock(clock);
+
+        assertEquals(0, helper.getDiagnosticEmitNextMillis(), "expected trace interval to be zero");
+
+        helper.isStoredField("field1");
+        assertEquals(1, helper.getDiagnosticFieldCompute());
+        assertEquals(Set.of("field1"), helper.getDiagnosticUniqueFields(), "field1 uniq fields");
+        assertTrue(helper.getDiagnosticEmitted(), "field1 should have caused a trace emit");
+        assertEquals(2, helper.getDiagnosticEmitNextMillis(), "expected trace emit interval to increase");
     }
 }

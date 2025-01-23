@@ -140,8 +140,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
     public static final String FIELD_CONFIG_CACHE_ENABLED = ".data.category.field.config.cache.enabled";
-    public static final String FIELD_CONFIG_CACHE_KEY_LIMIT = ".data.category.field.config.cache.limit";
-    public static final String FIELD_CONFIG_CACHE_KEY_LIMIT_DEBUG = ".data.category.field.config.cache.limit.debug";
+    public static final String FIELD_CONFIG_CACHE_LIMIT = ".data.category.field.config.cache.limit";
+    public static final String FIELD_CONFIG_CACHE_DIAGNOSTIC = ".data.category.field.config.cache.diagnostic";
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
 
@@ -260,19 +260,19 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         final String fieldConfigFile = config.get(this.getType().typeName() + FIELD_CONFIG_FILE);
         if (fieldConfigFile != null) {
             final boolean fieldConfigCacheEnabled = config.getBoolean(this.getType().typeName() + FIELD_CONFIG_CACHE_ENABLED, false);
-            final boolean fieldConfigCacheLimitDebug = config.getBoolean(this.getType().typeName() + FIELD_CONFIG_CACHE_KEY_LIMIT_DEBUG, false);
-            final int fieldConfigCacheLimit = config.getInt(this.getType().typeName() + FIELD_CONFIG_CACHE_KEY_LIMIT, 100);
+            final boolean fieldConfigCacheLimitDiagnostic = config.getBoolean(this.getType().typeName() + FIELD_CONFIG_CACHE_DIAGNOSTIC, false);
+            final int fieldConfigCacheLimit = config.getInt(this.getType().typeName() + FIELD_CONFIG_CACHE_LIMIT, 100);
             if (log.isDebugEnabled()) {
                 log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
             }
             log.info("Field config cache enabled: " + fieldConfigCacheEnabled);
             if (fieldConfigCacheEnabled) {
                 log.info("Field config cache limit: " + fieldConfigCacheLimit);
-                log.info("Field config cache limit debug: " + fieldConfigCacheLimitDebug);
+                log.info("Field config cache limit diagnostic: " + fieldConfigCacheLimitDiagnostic);
             }
             fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
             if (fieldConfigCacheEnabled) {
-                fieldConfigHelper = new CachedFieldConfigHelper(fieldConfigHelper, fieldConfigCacheLimit, fieldConfigCacheLimitDebug);
+                fieldConfigHelper = new CachedFieldConfigHelper(fieldConfigHelper, fieldConfigCacheLimit, fieldConfigCacheLimitDiagnostic);
             }
         }
 
