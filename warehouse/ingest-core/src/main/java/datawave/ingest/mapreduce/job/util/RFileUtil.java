@@ -37,26 +37,6 @@ public class RFileUtil {
         this.config = config;
     }
 
-    public Scanner getRFileScanner(String... paths) {
-        return getRFileScanner(config, paths);
-    }
-
-    public RFile.Reader getRFileReader(Path rfile) throws IOException {
-        return getRFileReader(config, rfile);
-    }
-
-    public List<Range> getRangeSplits(String paths, Key start, Key end, int indexBlocksPerSplit) throws IOException {
-        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit);
-    }
-
-    public List<Range> getRangeSplits(String paths, Key start, Key end, int indexBlocksPerSplit, Function<Key,Key> rangeAdjuster) throws IOException {
-        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit, rangeAdjuster);
-    }
-
-    public List<Range> getRangeSplits(String[] paths, Key start, Key end, int indexBlocksPerSplit, Function<Key,Key> rangeAdjuster) throws IOException {
-        return getRangeSplits(config, paths, start, end, indexBlocksPerSplit, rangeAdjuster);
-    }
-
     public List<Range> getRangeSplits(Collection<String> paths, Key start, Key end, int indexBlocksPerSplit, Function<Key,Key> rangeAdjuster)
                     throws IOException {
         return getRangeSplits(config, paths, start, end, indexBlocksPerSplit, rangeAdjuster);
@@ -117,11 +97,12 @@ public class RFileUtil {
             Key startKey = null;
             for (String rfile : paths) {
                 RFile.Reader reader = getRFileReader(config, new Path(rfile));
-                if (lastKey == null || reader.getLastKey().compareTo(lastKey) > 0) {
-                    lastKey = reader.getLastKey();
+                if (lastKey == null || reader.getLastRow().compareTo(lastKey.getRow()) > 0) {
+                    lastKey = reader.getLastRow() == null ? null : new Key(reader.getLastRow());
                 }
-                if (startKey == null || reader.getFirstKey().compareTo(startKey) < 0) {
-                    startKey = reader.getFirstKey();
+                if (startKey == null || reader.getFirstRow().compareTo(startKey.getRow()) < 0) {
+                    startKey = reader.getFirstRow() == null ? null : new Key(reader.getFirstRow());
+                    ;
                 }
                 readers.add(reader);
                 // get the index iterator from the reader
