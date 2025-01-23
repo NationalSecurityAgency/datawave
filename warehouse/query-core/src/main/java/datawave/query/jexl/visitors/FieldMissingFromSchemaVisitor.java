@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -66,7 +67,8 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     @SuppressWarnings("unchecked")
     public static Set<String> getNonExistentFields(MetadataHelper helper, ASTJexlScript script, Set<String> datatypes, Set<String> specialFields) {
         FieldMissingFromSchemaVisitor visitor = new FieldMissingFromSchemaVisitor(helper, datatypes, specialFields);
-        return (Set<String>) script.jjtAccept(visitor, new HashSet<>());
+        // Maintain insertion order.
+        return (Set<String>) script.jjtAccept(visitor, new LinkedHashSet<>());
     }
 
     /**
