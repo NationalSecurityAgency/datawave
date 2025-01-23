@@ -30,8 +30,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 
 public class ShardReindexVerificationMapperTest extends EasyMockSupport {
@@ -42,7 +42,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
     private ShardReindexVerificationMapper mapper;
     private Mapper.Context context;
     private Configuration config;
-    private InMemoryInstance instance;
+    private InMemoryAccumulo instance;
     private InMemoryAccumuloClient accumuloClient;
 
     private List<String> dataOptions;
@@ -56,7 +56,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config = new Configuration();
         context = createMock(Mapper.Context.class);
 
-        instance = new InMemoryInstance(this.getClass().toString());
+        instance = new InMemoryAccumulo(this.getClass().toString());
         accumuloClient = new InMemoryAccumuloClient("root", instance);
 
         expect(context.getConfiguration()).andReturn(config).anyTimes();
@@ -387,10 +387,12 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         accumuloClient.tableOperations().create("myTable1");
         File tmp1 = folder.newFolder("tmp1");
-        accumuloClient.tableOperations().importDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
+        accumuloClient.tableOperations().importOldDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
+        // accumuloClient.tableOperations().importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").tableTime(false).load();
         accumuloClient.tableOperations().create("myTable2");
         File tmp2 = folder.newFolder("tmp2");
-        accumuloClient.tableOperations().importDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
+        accumuloClient.tableOperations().importOldDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
+        // accumuloClient.tableOperations().importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").tableTime(false).load();
 
         replayAll();
 

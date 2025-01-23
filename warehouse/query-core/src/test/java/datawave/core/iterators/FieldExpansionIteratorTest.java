@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.util.TableName;
 
 public class FieldExpansionIteratorTest {
@@ -42,7 +42,7 @@ public class FieldExpansionIteratorTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         client = new InMemoryAccumuloClient("user", instance);
         client.tableOperations().create(TableName.SHARD_INDEX);
         writeData();
