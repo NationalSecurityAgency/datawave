@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +13,7 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
@@ -73,6 +73,10 @@ public class QueryOptionsSwitch {
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);
                     config.setExcerptFields(excerptFields);
+                    break;
+                case QueryParameters.SUMMARY_OPTIONS:
+                    SummaryOptions summaryOptions = SummaryOptions.from(value);
+                    config.setSummaryOptions(summaryOptions);
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
                     config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
