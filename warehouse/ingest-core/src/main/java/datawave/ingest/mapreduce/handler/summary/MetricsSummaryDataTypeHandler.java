@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -202,7 +203,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
                 log.trace("Creating Keys for...rowIds.size() [" + rowIds.size() + "] colFs.size() [" + colFs.size() + "] colQs.size() [" + colQs.size() + "]");
             }
 
-            ColumnVisibility vis = new ColumnVisibility(origVis.flatten());
+            ColumnVisibility vis = new ColumnVisibility(AccessExpression.of(origVis.getExpression(), true));
 
             @SuppressWarnings("unchecked")
             Set<List<Text>> cartesianProduct = Sets.cartesianProduct(rowIds, colFs, colQs);

@@ -128,7 +128,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
                     fc.setField(v.getFieldName());
                     fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), auths)); // reduces colvis based on
                                                                                                                                // visibility
-                    fc.setColumnVisibility(new String(markingFunctions.translateToColumnVisibility(fc.getMarkings()).flatten()));
+                    fc.setColumnVisibility(new String(markingFunctions.translateToColumnVisibility(fc.getMarkings()).getExpression()));
                     fc.setLower(v.getFloorValue());
                     fc.setUpper(v.getCeilingValue());
                     fc.setCardinality(v.getEstimate().cardinality());

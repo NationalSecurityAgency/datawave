@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.handler.facet;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +15,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -192,10 +195,6 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         return null;
     }
 
-    protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
-    }
-
     @Override
     public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
@@ -207,7 +206,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         final Date shardDate = DateHelper.parse(shardDateString);
         final long timestamp = shardDate.getTime();
 
-        Text cv = new Text(flatten(event.getVisibility()));
+        Text cv = new Text(markingFunctions.flatten(event.getVisibility()));
 
         // filter out event fields that are generated as the result of tokenization.
         Stream<String> fieldKeyStream = fields.keySet().stream().filter(fieldSelectionPredicate);

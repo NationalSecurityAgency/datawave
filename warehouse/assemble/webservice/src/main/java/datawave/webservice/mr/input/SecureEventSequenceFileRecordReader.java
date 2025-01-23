@@ -1,11 +1,13 @@
 package datawave.webservice.mr.input;
 
 import java.io.IOException;
+import java.util.Set;
 
-import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.access.AccessEvaluator;
+import org.apache.accumulo.access.AccessExpression;
+import org.apache.accumulo.access.Authorizations;
+import org.apache.accumulo.access.InvalidAccessExpressionException;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.security.VisibilityEvaluator;
-import org.apache.accumulo.core.security.VisibilityParseException;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
@@ -21,7 +23,7 @@ import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
  */
 public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRecordReader<K> {
 
-    private VisibilityEvaluator filter = null;
+    private AccessEvaluator filter = null;
     public static final String AUTHS = "SecureEventSequenceFileRecordReader.authorizations";
     private static final String SPLIT = ",";
 
@@ -33,8 +35,8 @@ public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRec
         if (null == auths || auths.isEmpty())
             throw new IOException("Authorizations not specified, expected configuration property to be set: " + AUTHS);
         // Create the VisibilityFilter with no default visibility. We expect that all Events will have a column visibility set
-        Authorizations a = new Authorizations(auths.split(SPLIT));
-        filter = new VisibilityEvaluator(a);
+        Authorizations a = Authorizations.of(Set.of(auths.split(SPLIT)));
+        filter = AccessEvaluator.of(a);
     }
 
     @Override
@@ -48,10 +50,10 @@ public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRec
             RawRecordContainerImpl e = (RawRecordContainerImpl) this.getCurrentValue();
             if (null != e) {
                 ColumnVisibility colviz = e.getVisibility();
-                if (null != colviz && colviz.getParseTree() != null) {
+                if (colviz != null) {
                     try {
-                        result = filter.evaluate(colviz);
-                    } catch (VisibilityParseException e1) {
+                        result = filter.canAccess(AccessExpression.of(colviz.getExpression()));
+                    } catch (InvalidAccessExpressionException e1) {
                         throw new IOException("Error evaluating column visibility: " + colviz, e1);
                     }
                 } else {

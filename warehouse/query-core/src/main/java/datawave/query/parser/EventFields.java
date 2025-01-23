@@ -1,10 +1,14 @@
 package datawave.query.parser;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -75,8 +79,9 @@ public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializ
 
         public int size() {
             byte[] exp = visibility.getExpression();
-            return (exp == null || exp.length == 0 ? 0 : visibility.flatten().length) + value.length
-                            + (context == null ? 0 : context.length() + (hit == null ? 0 : 1));
+            return (exp == null || exp.length == 0 ? 0
+                            : AccessExpression.of(exp, true).getExpression().length() + value.length
+                                            + (context == null ? 0 : context.length() + (hit == null ? 0 : 1)));
         }
 
         @Override
@@ -84,7 +89,8 @@ public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializ
             StringBuilder buf = new StringBuilder();
             if (null != visibility) {
                 byte[] expr = visibility.getExpression();
-                buf.append(" visibility: ").append(new String(expr == null || expr.length == 0 ? new byte[0] : visibility.flatten()));
+                buf.append(" visibility: ").append(
+                                new String(expr == null || expr.length == 0 ? new byte[0] : AccessExpression.of(expr, true).getExpression().getBytes(UTF_8)));
             }
             if (null != value)
                 buf.append(" value size: ").append(value.length);

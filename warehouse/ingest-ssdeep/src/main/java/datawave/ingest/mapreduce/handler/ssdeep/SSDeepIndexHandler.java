@@ -72,8 +72,6 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     protected Text ssdeepIndexTableName;
 
-    protected MarkingFunctions markingFunctions;
-
     protected TaskAttemptContext taskAttemptContext;
 
     protected Set<String> ssdeepFieldNames;
@@ -83,7 +81,6 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     @Override
     public void setup(TaskAttemptContext context) {
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         taskAttemptContext = context;
 
         Configuration conf = context.getConfiguration();
@@ -135,10 +132,6 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
     @Override
     public RawRecordMetadata getMetadata() {
         return null;
-    }
-
-    protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
     }
 
     @Override

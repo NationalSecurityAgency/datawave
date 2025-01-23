@@ -346,7 +346,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         byte[] visibility;
         if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
             try {
-                visibility = flatten(markingFunctions.translateToColumnVisibility(value.getMarkings()));
+                visibility = markingFunctions.translateToColumnVisibility(value.getMarkings()).getExpression();
             } catch (MarkingFunctions.Exception e) {
                 log.error("Failed to create visibility from markings, using default", e);
                 visibility = defaultVisibility;

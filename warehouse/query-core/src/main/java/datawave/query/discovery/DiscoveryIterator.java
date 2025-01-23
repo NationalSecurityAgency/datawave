@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -140,7 +141,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                     visibilities.add(termEntry.getVisibility());
                     // If counts by visibility should be tracked, do so.
                     if (this.separateCountsByColVis) {
-                        String visibility = new String(termEntry.getVisibility().flatten());
+                        String visibility = new String(AccessExpression.of(termEntry.getVisibility().getExpression(), true).getExpression());
                         visibilityToCounts.compute(visibility, (k, v) -> v == null ? currentCount : v + currentCount);
                     }
                 } catch (Exception e) {
@@ -165,7 +166,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                     ColumnVisibility visibility = markingFunctions.combine(visibilities);
                     MapWritable countsByVis = new MapWritable();
                     visibilityToCounts.forEach((key, value) -> countsByVis.put(new Text(key), new LongWritable(value)));
-                    return new DiscoveredThing(term, first.getField(), first.getDatatype(), date, new String(visibility.flatten()), count, countsByVis);
+                    return new DiscoveredThing(term, first.getField(), first.getDatatype(), date, new String(visibility.getExpression()), count, countsByVis);
                 } catch (Exception e) {
                     if (log.isTraceEnabled()) {
                         log.warn("Invalid column visibilities after combining " + visibilities);

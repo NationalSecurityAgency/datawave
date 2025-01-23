@@ -13,10 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.access.AccessEvaluator;
+import org.apache.accumulo.access.AccessExpression;
+import org.apache.accumulo.access.InvalidAccessExpressionException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.security.VisibilityEvaluator;
-import org.apache.accumulo.core.security.VisibilityParseException;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -153,13 +154,13 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
     private static class VisibilityChecker implements QueryLogicTestHarness.DocumentChecker {
 
         private final String[] validVisibilities;
-        private final Authorizations auths;
-        private final VisibilityEvaluator filter;
+        private final org.apache.accumulo.access.Authorizations auths;
+        private final AccessEvaluator filter;
 
         public VisibilityChecker(String... visibilities) {
             this.validVisibilities = visibilities;
-            this.auths = new Authorizations(validVisibilities);
-            this.filter = new VisibilityEvaluator(this.auths);
+            this.auths = org.apache.accumulo.access.Authorizations.of(Set.of(validVisibilities));
+            this.filter = AccessEvaluator.of(this.auths);
         }
 
         @Override
@@ -209,9 +210,9 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
             }
 
             try {
-                assertTrue("Should not filter visibility: " + cv.toString(), filter.evaluate(cv));
-            } catch (VisibilityParseException vpe) {
-                fail("Could not parse visibility for field: " + fieldName + " visibility: " + cv.toString() + " exception: " + vpe.getMessage());
+                assertTrue("Should not filter visibility: " + cv.toString(), filter.canAccess(AccessExpression.of(cv.getExpression())));
+            } catch (InvalidAccessExpressionException ape) {
+                fail("Could not parse visibility expression for field: " + fieldName + " visibility: " + cv + " exception: " + ape.getMessage());
             }
         }
     }
