@@ -211,15 +211,15 @@
             <version>${version.accumulo}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- ACCUMULO4_TODO this was added to get CBMutationOutputFormatterTest to pass, should it be added at a higher level? -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
