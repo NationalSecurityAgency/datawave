@@ -104,7 +104,7 @@ public class CachedFieldConfigHelper implements FieldConfigHelper {
 
         CachedEntry.MemoizedResult memoizedResult = cachedEntry.get(attributeType);
 
-        // when trace state is enabled - emit a message if the field limit has been exceeded
+        // when diagnostic is enabled - emit a message if the field limit has been exceeded
         // the intent is to help adjust the size required for the cache
         if (diagnosticEnabled && clock.epochMillis() > diagnosticEmitNextMillis) {
             diagnosticEmitted = true;
