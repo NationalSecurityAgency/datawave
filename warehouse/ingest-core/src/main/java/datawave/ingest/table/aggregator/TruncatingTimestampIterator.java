@@ -1,10 +1,10 @@
 package datawave.ingest.table.aggregator;
 
 import java.io.IOException;
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -17,7 +17,6 @@ import datawave.util.CompositeTimestamp;
 
 public class TruncatingTimestampIterator implements SortedKeyValueIterator<Key,Value> {
 
-    private final static ThreadLocal<Calendar> calendar = ThreadLocal.withInitial(() -> Calendar.getInstance(TimeZone.getTimeZone("GMT")));
     private final SortedKeyValueIterator<Key,Value> delegate;
 
     public TruncatingTimestampIterator(SortedKeyValueIterator<Key,Value> delegate) {
@@ -106,13 +105,8 @@ public class TruncatingTimestampIterator implements SortedKeyValueIterator<Key,V
      * @return beginning of the day
      */
     public static long beginningOfDay(long timestamp) {
-        Calendar c = calendar.get();
-        c.setTimeInMillis(timestamp);
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTimeInMillis();
+        Instant truncated = Instant.ofEpochMilli(timestamp).truncatedTo(ChronoUnit.DAYS);
+        return truncated.toEpochMilli();
     }
 
 }
