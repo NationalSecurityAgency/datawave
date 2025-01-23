@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 
 import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.util.CompositeTimestamp;
 
 /**
  * Data type age off filter. Traverses through indexed tables
@@ -209,11 +210,11 @@ public class DataTypeAgeOffFilter extends AppliedRule {
         if (dataTypeCutoff == null) {
             if (defaultCutoffTime >= 0) {
                 ruleApplied = true;
-                accept = k.getTimestamp() > defaultCutoffTime;
+                accept = CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > defaultCutoffTime;
             }
         } else {
             ruleApplied = true;
-            accept = k.getTimestamp() > dataTypeCutoff;
+            accept = CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > dataTypeCutoff;
         }
         // after age-off is applied check, if we are accepting this KeyValue and this is a Scan on a dataType which only accepts on timestamp
         // only continue to accept the KeyValue if the timestamp for the dataType matches what is configured

@@ -58,7 +58,7 @@
 						</property>
 						<property name="jobConfigurationProperties">
 							<map key-type="java.lang.String" value-type="java.lang.Object">
-								<entry key="mapred.map.tasks.speculative.execution" value="false" />
+								<entry key="mapreduce.map.speculative" value="false" />
 							</map>
 						</property>
 						<property name="jobSystemProperties">

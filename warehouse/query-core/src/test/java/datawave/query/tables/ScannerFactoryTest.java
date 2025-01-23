@@ -33,6 +33,8 @@ class ScannerFactoryTest {
     private static ScannerFactory scannerFactory;
     private static final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
+    private static final String ALT_INDEX = "altIndex";
+
     @BeforeAll
     public static void before() throws Exception {
         AccumuloClient client = new MyAccumuloClient("", instance);
@@ -40,6 +42,8 @@ class ScannerFactoryTest {
         scannerFactory = new ScannerFactory(config);
 
         client.tableOperations().create(TableName.SHARD);
+        client.tableOperations().create(TableName.SHARD_INDEX);
+        client.tableOperations().create(ALT_INDEX);
         client.instanceOperations().setProperty("accumulo.instance.name", "required-for-tests");
     }
 
@@ -169,6 +173,72 @@ class ScannerFactoryTest {
         setEventualConsistency();
         scanner = scannerFactory.newRfileScanner(TableName.SHARD, getAuths(), getQuery());
         assertEventualConsistency(scanner);
+    }
+
+    @Test
+    public void testSingleScannerWithAbsentTableName() throws Exception {
+        Scanner scanner = scannerFactory.newSingleScanner(ALT_INDEX, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
+    }
+
+    @Test
+    public void testScannerWithAbsentTableName() throws Exception {
+        BatchScanner scanner = scannerFactory.newScanner(ALT_INDEX, getQuery());
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newScanner(ALT_INDEX, getAuths(), 1, getQuery(), "ALT_HINT");
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newScanner(ALT_INDEX, getAuths(), 1, getQuery(), null);
+        assertImmediateConsistency(scanner);
+    }
+
+    @Test
+    public void testQueryScannerWithAbsentTableName() throws Exception {
+        BatchScannerSession scanner = scannerFactory.newQueryScanner(ALT_INDEX, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newQueryScanner(ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newQueryScanner(ALT_INDEX, getAuths(), getQuery(), null);
+        assertImmediateConsistency(scanner);
+    }
+
+    @Test
+    public void testLimitedAnyFieldScannerWithAbsentTableName() throws Exception {
+        AnyFieldScanner scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, ALT_INDEX, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newLimitedScanner(AnyFieldScanner.class, ALT_INDEX, getAuths(), getQuery(), null);
+        assertImmediateConsistency(scanner);
+    }
+
+    @Test
+    public void testLimitedRangeStreamScannerWithAbsentTableName() throws Exception {
+        RangeStreamScanner scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, ALT_INDEX, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newLimitedScanner(RangeStreamScanner.class, ALT_INDEX, getAuths(), getQuery(), null);
+        assertImmediateConsistency(scanner);
+    }
+
+    @Test
+    public void testLimitedBatchScannerSessionWithAbsentTableName() throws Exception {
+        BatchScannerSession scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, ALT_INDEX, getAuths(), getQuery());
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, ALT_INDEX, getAuths(), getQuery(), "ALT_HINT");
+        assertImmediateConsistency(scanner);
+
+        scanner = scannerFactory.newLimitedScanner(BatchScannerSession.class, ALT_INDEX, getAuths(), getQuery(), null);
+        assertImmediateConsistency(scanner);
     }
 
     private void setEventualConsistency() {

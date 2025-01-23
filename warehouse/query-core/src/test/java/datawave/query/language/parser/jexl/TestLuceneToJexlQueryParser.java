@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
@@ -19,9 +20,11 @@ import datawave.ingest.data.tokenize.StandardAnalyzer;
 import datawave.ingest.data.tokenize.TokenSearch;
 import datawave.query.Constants;
 import datawave.query.language.parser.ParseException;
+import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
+import datawave.query.lucene.visitors.PrintingVisitor;
 
 public class TestLuceneToJexlQueryParser {
 
@@ -642,12 +645,34 @@ public class TestLuceneToJexlQueryParser {
         TokenSearch searchUtil = TokenSearch.Factory.newInstance();
         Analyzer analyzer = new StandardAnalyzer(searchUtil);
         parser.setAnalyzer(analyzer);
-        // this isn't the most realistic test, but it does verify that we don't lose the rest of the token stream
-        // when the first token emitted is the same as the input token.
-        Assert.assertEquals(
-                        "(TOKFIELD == '/home/datawave/README.md' || "
-                                        + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
-                                        + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))",
-                        parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
+        // @formatter:off
+        String expected = "("
+                + "TOKFIELD == '/home/datawave/README.md' || "
+                + "TOKFIELD == 'datawave' || "
+                + "TOKFIELD == 'datawave/readme.md' || "
+                + "TOKFIELD == 'home' || "
+                + "TOKFIELD == 'home/datawave/readme.md' || "
+                + "TOKFIELD == 'md' || "
+                + "TOKFIELD == 'readme' || "
+                + "TOKFIELD == 'readme.md'"
+                + ")";
+        // @formatter:on
+        Assert.assertEquals(expected, parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
+    }
+
+    @Test
+    public void testEqAndTextFunction() {
+        test("CONTINENT == 'europe'", "CONTINENT:europe");
+        test("f:includeText(_ANYFIELD_, 'Value')", "#TEXT(Value)");
+        test("CONTINENT == 'europe' && f:includeText(_ANYFIELD_, 'Value')", "CONTINENT:europe and #TEXT(Value)");
+    }
+
+    private void test(String expected, String query) {
+        try {
+            String result = parseQuery(query);
+            assertEquals(expected, result);
+        } catch (Exception e) {
+            fail("Failed for query: " + query);
+        }
     }
 }

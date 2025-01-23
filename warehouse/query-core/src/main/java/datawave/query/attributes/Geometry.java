@@ -75,12 +75,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeCompressedByteArray(out, write());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -154,12 +149,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        writeMetadata(kryo, output, reducedResponse);
+        writeMetadata(kryo, output);
         output.writeBoolean(this.toKeep);
         byte[] wellKnownBinary = write();
         output.writeInt(wellKnownBinary.length);
