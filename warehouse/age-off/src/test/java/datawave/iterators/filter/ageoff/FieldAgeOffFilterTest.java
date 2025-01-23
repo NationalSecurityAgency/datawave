@@ -198,9 +198,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testCompositeTimestamp() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        conf.put("table.custom.isindextable", "true");
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of("table.custom.isindextable", "true")));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
         long tomorrow = System.currentTimeMillis() + CompositeTimestamp.MILLIS_PER_DAY;
