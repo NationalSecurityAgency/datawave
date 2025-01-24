@@ -2857,6 +2857,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
+
     public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
         this.ivaratorConfig = ivaratorConfig;
     }
@@ -2864,6 +2865,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public IvaratorConfig getIvaratorConfig() {
         return this.ivaratorConfig;
     }
+
     public int getCardinalityThreshold() {
         return cardinalityThreshold;
     }
