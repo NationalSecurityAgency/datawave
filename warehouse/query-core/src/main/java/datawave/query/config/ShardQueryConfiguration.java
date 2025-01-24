@@ -124,6 +124,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
+    private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -356,6 +357,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
+
+    private IvaratorConfig ivaratorConfig = new IvaratorConfig();
+
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
@@ -593,6 +597,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
+        this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -929,7 +934,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @return if we can handle the exceeded value
      */
     public boolean canHandleExceededValueThreshold() {
-        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
+        return this.hdfsSiteConfigURLs != null && (null != this.getIvaratorCacheDirConfigs() && !this.getIvaratorCacheDirConfigs().isEmpty());
     }
 
     /**
@@ -1533,19 +1538,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
-        return ivaratorCacheDirConfigs;
+        return ivaratorConfig.getIvaratorCacheDirConfigs();
     }
 
     public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
-        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
+        ivaratorConfig.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
 
     public String getIvaratorFstHdfsBaseURIs() {
-        return ivaratorFstHdfsBaseURIs;
+        return ivaratorConfig.getIvaratorFstHdfsBaseURIs();
     }
 
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
-        this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
+        ivaratorConfig.setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
     }
 
     public int getUniqueCacheBufferSize() {
@@ -1557,91 +1562,91 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public int getIvaratorCacheBufferSize() {
-        return ivaratorCacheBufferSize;
+        return ivaratorConfig.getIvaratorCacheBufferSize();
     }
 
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
-        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+        ivaratorConfig.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
     }
 
     public long getIvaratorCacheScanPersistThreshold() {
-        return ivaratorCacheScanPersistThreshold;
+        return ivaratorConfig.getIvaratorCacheScanPersistThreshold();
     }
 
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
-        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+        ivaratorConfig.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
     }
 
     public long getIvaratorCacheScanTimeout() {
-        return ivaratorCacheScanTimeout;
+        return ivaratorConfig.getIvaratorCacheScanTimeout();
     }
 
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
-        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+        ivaratorConfig.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
     }
 
     public int getMaxFieldIndexRangeSplit() {
-        return maxFieldIndexRangeSplit;
+        return ivaratorConfig.getMaxFieldIndexRangeSplit();
     }
 
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
-        this.maxFieldIndexRangeSplit = maxFieldIndexRangeSplit;
+        ivaratorConfig.setMaxFieldIndexRangeSplit(maxFieldIndexRangeSplit);
     }
 
     public int getIvaratorMaxOpenFiles() {
-        return ivaratorMaxOpenFiles;
+        return ivaratorConfig.getIvaratorMaxOpenFiles();
     }
 
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
-        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        ivaratorConfig.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
     }
 
     public int getIvaratorNumRetries() {
-        return ivaratorNumRetries;
+        return ivaratorConfig.getIvaratorNumRetries();
     }
 
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
-        this.ivaratorNumRetries = ivaratorNumRetries;
+        ivaratorConfig.setIvaratorNumRetries(ivaratorNumRetries);
     }
 
     public boolean isIvaratorPersistVerify() {
-        return ivaratorPersistVerify;
+        return ivaratorConfig.isIvaratorPersistVerify();
     }
 
     public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
-        this.ivaratorPersistVerify = ivaratorPersistVerify;
+        ivaratorConfig.setIvaratorPersistVerify(ivaratorPersistVerify);
     }
 
     public int getIvaratorPersistVerifyCount() {
-        return ivaratorPersistVerifyCount;
+        return ivaratorConfig.getIvaratorPersistVerifyCount();
     }
 
     public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
-        this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
+        ivaratorConfig.setIvaratorPersistVerifyCount(ivaratorPersistVerifyCount);
     }
 
     public int getMaxIvaratorSources() {
-        return maxIvaratorSources;
+        return (int) ivaratorConfig.getMaxIvaratorSources();
     }
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
-        this.maxIvaratorSources = maxIvaratorSources;
+        ivaratorConfig.setMaxIvaratorSources(maxIvaratorSources);
     }
 
     public long getMaxIvaratorSourceWait() {
-        return maxIvaratorSourceWait;
+        return ivaratorConfig.getMaxIvaratorSourceWait();
     }
 
     public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
-        this.maxIvaratorSourceWait = maxIvaratorSourceWait;
+        ivaratorConfig.setMaxIvaratorSourceWait(maxIvaratorSourceWait);
     }
 
     public long getMaxIvaratorResults() {
-        return maxIvaratorResults;
+        return ivaratorConfig.getMaxIvaratorResults();
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
-        this.maxIvaratorResults = maxIvaratorResults;
+        ivaratorConfig.setMaxIvaratorResults(maxIvaratorResults);
     }
 
     public int getMaxIvaratorTerms() {
@@ -2310,6 +2315,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
+    public boolean getSequentialScheduler() {
+        return sequentialScheduler;
+    }
+
+    public void setSequentialScheduler(boolean sequentialScheduler) {
+        this.sequentialScheduler = sequentialScheduler;
+    }
+
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2844,7 +2857,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
+    public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
+        this.ivaratorConfig = ivaratorConfig;
+    }
 
+    public IvaratorConfig getIvaratorConfig() {
+        return this.ivaratorConfig;
+    }
     public int getCardinalityThreshold() {
         return cardinalityThreshold;
     }
@@ -2885,6 +2904,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
+                getSequentialScheduler() == that.getSequentialScheduler() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
                 getLogTimingDetails() == that.getLogTimingDetails() &&
                 getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
@@ -3098,6 +3118,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
+                getSequentialScheduler(),
                 getCollectTimingDetails(),
                 getLogTimingDetails(),
                 getSendTimingToStatsd(),
@@ -3328,4 +3349,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
         this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
+
 }

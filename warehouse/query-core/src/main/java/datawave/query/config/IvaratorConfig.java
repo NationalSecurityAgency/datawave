@@ -194,24 +194,24 @@ public class IvaratorConfig implements Serializable {
         }
         IvaratorConfig other = (IvaratorConfig) obj;
         return getIvaratorCacheBufferSize() == other.getIvaratorCacheBufferSize()
-                && getIvaratorCacheScanPersistThreshold() == other.getIvaratorCacheScanPersistThreshold()
-                && getIvaratorCacheScanTimeout() == other.getIvaratorCacheScanTimeout()
-                && getMaxFieldIndexRangeSplit() == other.getMaxFieldIndexRangeSplit() && getIvaratorMaxOpenFiles() == other.getIvaratorMaxOpenFiles()
-                && getIvaratorNumRetries() == other.getIvaratorNumRetries() && isIvaratorPersistVerify() == other.isIvaratorPersistVerify()
-                && getIvaratorPersistVerifyCount() == other.getIvaratorPersistVerifyCount() && getMaxIvaratorSources() == other.getMaxIvaratorSources()
-                && getMaxIvaratorSourceWait() == other.getMaxIvaratorSourceWait() && getMaxIvaratorResults() == other.getMaxIvaratorResults()
-                && (getIvaratorCacheDirConfigs() == null ? other.getIvaratorCacheDirConfigs() == null
-                : getIvaratorCacheDirConfigs().equals(other.getIvaratorCacheDirConfigs()))
-                && (getIvaratorFstHdfsBaseURIs() == null ? other.getIvaratorFstHdfsBaseURIs() == null
-                : getIvaratorFstHdfsBaseURIs().equals(other.getIvaratorFstHdfsBaseURIs()));
+                        && getIvaratorCacheScanPersistThreshold() == other.getIvaratorCacheScanPersistThreshold()
+                        && getIvaratorCacheScanTimeout() == other.getIvaratorCacheScanTimeout()
+                        && getMaxFieldIndexRangeSplit() == other.getMaxFieldIndexRangeSplit() && getIvaratorMaxOpenFiles() == other.getIvaratorMaxOpenFiles()
+                        && getIvaratorNumRetries() == other.getIvaratorNumRetries() && isIvaratorPersistVerify() == other.isIvaratorPersistVerify()
+                        && getIvaratorPersistVerifyCount() == other.getIvaratorPersistVerifyCount() && getMaxIvaratorSources() == other.getMaxIvaratorSources()
+                        && getMaxIvaratorSourceWait() == other.getMaxIvaratorSourceWait() && getMaxIvaratorResults() == other.getMaxIvaratorResults()
+                        && (getIvaratorCacheDirConfigs() == null ? other.getIvaratorCacheDirConfigs() == null
+                                        : getIvaratorCacheDirConfigs().equals(other.getIvaratorCacheDirConfigs()))
+                        && (getIvaratorFstHdfsBaseURIs() == null ? other.getIvaratorFstHdfsBaseURIs() == null
+                                        : getIvaratorFstHdfsBaseURIs().equals(other.getIvaratorFstHdfsBaseURIs()));
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(getIvaratorCacheDirConfigs(), getIvaratorFstHdfsBaseURIs(), getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(),
-                getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(), getIvaratorMaxOpenFiles(), getIvaratorNumRetries(),
-                isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(), getMaxIvaratorSources(), getMaxIvaratorSourceWait(),
-                getMaxIvaratorResults());
+                        getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(), getIvaratorMaxOpenFiles(), getIvaratorNumRetries(),
+                        isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(), getMaxIvaratorSources(), getMaxIvaratorSourceWait(),
+                        getMaxIvaratorResults());
     }
 
 }
