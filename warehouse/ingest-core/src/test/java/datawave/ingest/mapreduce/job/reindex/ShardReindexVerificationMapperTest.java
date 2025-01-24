@@ -386,13 +386,9 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         FileUtils.copyDirectory(shardDir, sourceDir2);
 
         accumuloClient.tableOperations().create("myTable1");
-        File tmp1 = folder.newFolder("tmp1");
-        accumuloClient.tableOperations().importOldDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
-        // accumuloClient.tableOperations().importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").tableTime(false).load();
+        accumuloClient.tableOperations().importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").tableTime(false).load();
         accumuloClient.tableOperations().create("myTable2");
-        File tmp2 = folder.newFolder("tmp2");
-        accumuloClient.tableOperations().importOldDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
-        // accumuloClient.tableOperations().importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").tableTime(false).load();
+        accumuloClient.tableOperations().importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").tableTime(false).load();
 
         replayAll();
 
