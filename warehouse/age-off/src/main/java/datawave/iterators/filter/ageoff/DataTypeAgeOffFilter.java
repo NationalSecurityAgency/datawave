@@ -269,7 +269,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
 
         isIndextable = false;
         if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
-            if (iterEnv != null && iterEnv.getPluginEnv() != null) {
+            if (iterEnv != null && iterEnv.getPluginEnv() != null && iterEnv.getPluginEnv().getConfiguration() != null) {
                 isIndextable = Boolean.parseBoolean(iterEnv.getPluginEnv().getConfiguration().get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
             }
         } else { // legacy
