@@ -785,6 +785,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSortQueryPreIndexWithFieldCounts(other.isSortQueryPreIndexWithFieldCounts());
         this.setSortQueryPostIndexWithTermCounts(other.isSortQueryPostIndexWithTermCounts());
         this.setSortQueryPostIndexWithFieldCounts(other.isSortQueryPostIndexWithFieldCounts());
+        this.setCardinalityThreshold(other.getCardinalityThreshold());
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
@@ -2856,13 +2857,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
-
     public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
         this.ivaratorConfig = ivaratorConfig;
     }
 
     public IvaratorConfig getIvaratorConfig() {
         return this.ivaratorConfig;
+    }
+    public int getCardinalityThreshold() {
+        return cardinalityThreshold;
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        this.cardinalityThreshold = cardinalityThreshold;
     }
 
     @Override
@@ -3343,11 +3350,4 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 
-    public int getCardinalityThreshold() {
-        return cardinalityThreshold;
-    }
-
-    public void setCardinalityThreshold(int cardinalityThreshold) {
-        this.cardinalityThreshold = cardinalityThreshold;
-    }
 }
