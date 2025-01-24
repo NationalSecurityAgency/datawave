@@ -379,7 +379,7 @@ public class QueryOptions implements OptionDescriber {
     protected String zookeeperConfig = null;
 
     protected IvaratorConfig ivaratorConfig = new IvaratorConfig();
-
+    protected long resultTimeout = 1000L * 60 * 60;
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
@@ -1305,6 +1305,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
         this.summaryIterator = summaryIterator;
+    }
+
+    public long getResultTimeout() {
+        return resultTimeout;
+    }
+
+    public void setResultTimeout(long resultTimeout) {
+        this.resultTimeout = resultTimeout;
     }
 
     @Override
