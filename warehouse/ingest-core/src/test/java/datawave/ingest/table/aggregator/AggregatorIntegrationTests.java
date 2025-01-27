@@ -136,12 +136,6 @@ public class AggregatorIntegrationTests {
 
         client.tableOperations().setProperty(COUNT_ONLY_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
         client.tableOperations().setProperty(COUNT_ONLY_AGGREGATOR, opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
-
-        for (Map.Entry<String,String> entry : client.tableOperations().getConfiguration(UID_AGGREGATOR).entrySet()) {
-            if (entry.getKey().startsWith("table.iterator")) {
-                System.out.println(entry);
-            }
-        }
     }
 
     @Test
@@ -300,7 +294,7 @@ public class AggregatorIntegrationTests {
 
     @Test
     public void testRemoveThenAddSameTimeStamp() {
-        String row = "test_case_eight";
+        String row = getRandomRow();
         writeRemoval(row, 10L, "uid");
         writeUid(row, 10L, "uid");
 
