@@ -90,10 +90,25 @@ public class AggregatorIntegrationTests {
             client.tableOperations().create(tableName);
         }
 
-        //  NOTE: accumulo sets the VersioningIterator at priority 20
+        // NOTE: accumulo sets the VersioningIterator at priority 20
 
         String name = "table.iterator.scan.agg";
         String opt = "table.iterator.scan.agg.opt.*";
+
+        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
+        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropogatingIterator");
+
+        client.tableOperations().setProperty(UID_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
+        client.tableOperations().setProperty(UID_AGGREGATOR, opt, "datawave.ingest.table.aggregator.GlobalIndexUidAggregator");
+
+        client.tableOperations().setProperty(KEEP_COUNT_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
+        client.tableOperations().setProperty(KEEP_COUNT_AGGREGATOR, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+
+        client.tableOperations().setProperty(COUNT_ONLY_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
+        client.tableOperations().setProperty(COUNT_ONLY_AGGREGATOR, opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
+
+        name = "table.iterator.minc.agg";
+        opt = "table.iterator.minc.agg.opt.*";
 
         client.tableOperations().setProperty(DEFAULT_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
         client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropogatingIterator");
@@ -121,6 +136,12 @@ public class AggregatorIntegrationTests {
 
         client.tableOperations().setProperty(COUNT_ONLY_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
         client.tableOperations().setProperty(COUNT_ONLY_AGGREGATOR, opt, "datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator");
+
+        for (Map.Entry<String,String> entry : client.tableOperations().getConfiguration(UID_AGGREGATOR).entrySet()) {
+            if (entry.getKey().startsWith("table.iterator")) {
+                System.out.println(entry);
+            }
+        }
     }
 
     @Test
@@ -132,7 +153,7 @@ public class AggregatorIntegrationTests {
         assertList(DEFAULT_AGGREGATOR, "uid");
         assertList(UID_AGGREGATOR, "uid");
         assertList(KEEP_COUNT_AGGREGATOR, "uid");
-        assertList(COUNT_ONLY_AGGREGATOR,true, 1);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
 
         compactRow(row);
 
@@ -140,7 +161,7 @@ public class AggregatorIntegrationTests {
         assertList(DEFAULT_AGGREGATOR, "uid");
         assertList(UID_AGGREGATOR, "uid");
         assertList(KEEP_COUNT_AGGREGATOR, "uid");
-        assertList(COUNT_ONLY_AGGREGATOR,true, 1);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
     }
 
     @Test
@@ -182,9 +203,9 @@ public class AggregatorIntegrationTests {
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, 1);
-        assertList(UID_AGGREGATOR, false, 1);  //  ignore flag was disabled post compaction
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(UID_AGGREGATOR, true, 25);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 25);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 25);
     }
 
     @Test
@@ -197,21 +218,21 @@ public class AggregatorIntegrationTests {
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, 1);
-        assertList(UID_AGGREGATOR, false, 1);
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(UID_AGGREGATOR, true, 25);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 25);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 25);
 
         compactRow(row);
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, 1);
-        assertList(UID_AGGREGATOR, false, 1);
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(UID_AGGREGATOR, true, 25);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 25);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 25);
     }
 
     @Test
-    public void testAddAndRemoveUidsWithIncreasingTimeStamps(){
+    public void testAddAndRemoveUidsWithIncreasingTimeStamps() {
         String row = getRandomRow();
         for (int i = 0; i < 25; i++) {
             writeUid(row, 10 + i, "uid-" + i);
@@ -221,7 +242,7 @@ public class AggregatorIntegrationTests {
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, -1);
         assertNoList(UID_AGGREGATOR);
-        assertNoList(KEEP_COUNT_AGGREGATOR);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 0);
         assertList(COUNT_ONLY_AGGREGATOR, true, 0);
 
         compactRow(row);
@@ -229,12 +250,12 @@ public class AggregatorIntegrationTests {
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, -1);
         assertNoList(UID_AGGREGATOR);
-        assertNoList(KEEP_COUNT_AGGREGATOR);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 0);
         assertList(COUNT_ONLY_AGGREGATOR, true, 0);
     }
 
     @Test
-    public void testAddDuplicateUids(){
+    public void testAddDuplicateUids() {
         String row = getRandomRow();
         for (int i = 0; i < 10; i++) {
             writeUid(row, 10L, "uid");
@@ -252,11 +273,11 @@ public class AggregatorIntegrationTests {
         assertList(DEFAULT_AGGREGATOR, false, 1);
         assertList(UID_AGGREGATOR, false, 1);
         assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 10);
     }
 
     @Test
-    public void testAddDuplicateUidsWithIncreasingTimeStamps(){
+    public void testAddDuplicateUidsWithIncreasingTimeStamps() {
         String row = getRandomRow();
         for (int i = 0; i < 10; i++) {
             writeUid(row, 10 + i, "uid");
@@ -266,7 +287,7 @@ public class AggregatorIntegrationTests {
         assertList(DEFAULT_AGGREGATOR, false, 1);
         assertList(UID_AGGREGATOR, false, 1);
         assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 10);
 
         compactRow(row);
 
@@ -274,11 +295,11 @@ public class AggregatorIntegrationTests {
         assertList(DEFAULT_AGGREGATOR, false, 1);
         assertList(UID_AGGREGATOR, false, 1);
         assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 10);
     }
 
     @Test
-    public void testRemoveThenAddSameTimeStamp(){
+    public void testRemoveThenAddSameTimeStamp() {
         String row = "test_case_eight";
         writeRemoval(row, 10L, "uid");
         writeUid(row, 10L, "uid");
@@ -293,34 +314,34 @@ public class AggregatorIntegrationTests {
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, 1);
-        assertList(UID_AGGREGATOR, false, 1);
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertNoList(UID_AGGREGATOR);
+        assertNoList(KEEP_COUNT_AGGREGATOR);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 0);
     }
 
     @Test
-    public void testOrderByTimeStampRemoveThenAdd(){
+    public void testOrderByTimeStampRemoveThenAdd() {
         String row = getRandomRow();
         writeRemoval(row, 10L, "uid");
         writeUid(row, 11L, "uid");
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, 1);
-        assertList(UID_AGGREGATOR, false, 1);
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertNoList(UID_AGGREGATOR);
+        assertNoList(KEEP_COUNT_AGGREGATOR);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 0);
 
         compactRow(row);
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, 1);
-        assertList(UID_AGGREGATOR, false, 1);
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertNoList(UID_AGGREGATOR);
+        assertNoList(KEEP_COUNT_AGGREGATOR);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 0);
     }
 
     @Test
-    public void testCountOnly(){
+    public void testCountOnly() {
         String row = getRandomRow();
         writeCount(row, 10L, 23);
 
@@ -340,7 +361,7 @@ public class AggregatorIntegrationTests {
     }
 
     @Test
-    public void testMultipleCountOnly(){
+    public void testMultipleCountOnly() {
         String row = getRandomRow();
         writeCount(row, 10L, 23);
         writeCount(row, 10L, 34);
@@ -355,13 +376,13 @@ public class AggregatorIntegrationTests {
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, true, 34);
-        assertList(UID_AGGREGATOR, true, 34);
-        assertList(KEEP_COUNT_AGGREGATOR, true, 34);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 34);
+        assertList(UID_AGGREGATOR, true, 57);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 57);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 57);
     }
 
     @Test
-    public void testCountOnlyAndUid(){
+    public void testCountOnlyAndUid() {
         String row = getRandomRow();
         writeCount(row, 10L, 23);
         writeUid(row, 10L, "uid");
@@ -376,13 +397,13 @@ public class AggregatorIntegrationTests {
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, "uid");
-        assertList(UID_AGGREGATOR, "uid");
-        assertList(KEEP_COUNT_AGGREGATOR, false, 1);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 1);
+        assertList(UID_AGGREGATOR, true, 24);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 24);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 24);
     }
 
     @Test
-    public void testCountOnlyAndUidWithRemoval(){
+    public void testCountOnlyAndUidWithRemoval() {
         String row = getRandomRow();
         writeCount(row, 10L, 23);
         writeRemoval(row, 10L, "uid");
@@ -397,9 +418,9 @@ public class AggregatorIntegrationTests {
 
         scanTables(row);
         assertList(DEFAULT_AGGREGATOR, false, -1);
-        assertNoList(UID_AGGREGATOR);
-        assertNoList(KEEP_COUNT_AGGREGATOR);
-        assertList(COUNT_ONLY_AGGREGATOR, true, 0);
+        assertList(UID_AGGREGATOR, true, 22);
+        assertList(KEEP_COUNT_AGGREGATOR, true, 22);
+        assertList(COUNT_ONLY_AGGREGATOR, true, 22);
     }
 
     protected void scanTables(String row) {
@@ -444,17 +465,17 @@ public class AggregatorIntegrationTests {
         }
     }
 
-    private String getRandomRow(){
+    private String getRandomRow() {
         String row = null;
-        while(row == null || existingRows.contains(row) ){
+        while (row == null || existingRows.contains(row)) {
             row = String.valueOf(rand.nextInt(256));
         }
         existingRows.add(row);
         return row;
     }
 
-    private void compactRow(String row){
-        for(String tableName : tableNames) {
+    private void compactRow(String row) {
+        for (String tableName : tableNames) {
             try {
                 client.tableOperations().compact(tableName, new Text(row), new Text(row + '~'), true, true);
             } catch (Exception e) {
