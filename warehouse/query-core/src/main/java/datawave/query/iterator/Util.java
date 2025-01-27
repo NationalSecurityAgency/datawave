@@ -125,7 +125,7 @@ public class Util {
     }
 
     public static int prefixDiff(Text prefix, Text text) {
-        int textEnd = (prefix.getLength() > text.getLength()) ? text.getLength() : prefix.getLength();
+        int textEnd = Math.min(prefix.getLength(), text.getLength());
 
         return WritableComparator.compareBytes(prefix.getBytes(), 0, prefix.getLength(), text.getBytes(), 0, textEnd);
     }
