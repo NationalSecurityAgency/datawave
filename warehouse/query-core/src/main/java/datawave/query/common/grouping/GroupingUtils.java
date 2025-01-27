@@ -1,7 +1,5 @@
 package datawave.query.common.grouping;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
@@ -11,6 +9,7 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -28,7 +27,7 @@ public class GroupingUtils {
         AVERAGE, NUMERATOR_AND_DIVISOR
     }
 
-    private static final Logger log = getLogger(GroupingUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupingUtils.class);
 
     /**
      * Returns a column visibility that results from the combination of all given visibilities using the given {@link MarkingFunctions}.

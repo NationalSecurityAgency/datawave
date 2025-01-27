@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.15.0-SNAPSHOT</version>
+    <version>7.15.0-accumulo4</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -62,7 +62,7 @@
         <version.datawave.accumulo-api>4.0.1-datawave-1</version.datawave.accumulo-api>
         <version.datawave.accumulo-utils>5.1.0-accumulo4</version.datawave.accumulo-utils>
         <version.datawave.audit-api>4.0.2-accumulo4</version.datawave.audit-api>
-        <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
+        <version.datawave.authorization-api>4.0.2-accumulo4</version.datawave.authorization-api>
         <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
         <version.datawave.dictionary-api>4.0.1</version.datawave.dictionary-api>
