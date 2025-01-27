@@ -314,6 +314,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
             // if we are not limiting the lookup, or not allowing term frequency lookup,
             // or the field is index only but not in the term frequencies, then we must ivarate
+            // TODO: this logic is wrong, it will allow an ivarator against a TF field
             if (!limitLookup || !allowTermFrequencyLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
                 if (source instanceof ASTAndNode) {
                     try {
