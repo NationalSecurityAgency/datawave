@@ -564,7 +564,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // check for the case where evaluation can be disabled due to the presence of Grouping functions
             // but only if query functions and content functions are absent as well
-            if (!config.getFullTableScanEnabled() && config.getGroupFields().hasGroupByFields()) {
+            if (!config.getFullTableScanEnabled() && getDisableGroupByEvaluation() && config.getGroupFields().hasGroupByFields()) {
                 boolean canDisable = DisableEvaluationForGroupingVisitor.canDisableEvaluation(config.getQueryTree(), getIndexedFields(), getIndexOnlyFields());
                 if (canDisable) {
                     config.setDisableEvaluation(true);
