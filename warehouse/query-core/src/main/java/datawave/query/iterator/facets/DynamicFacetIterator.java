@@ -134,12 +134,13 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
                     throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
-
-        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(CardinalityIteratorBuilder.class)
-                        .setFieldsToAggregate(configuration.getFacetedFields());
+        //  @formatter:off
+        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs)
+                .setIteratorBuilder(CardinalityIteratorBuilder.class)
+                .setFieldsToAggregate(configuration.getFacetedFields());
+        //  @formatter:on
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
