@@ -58,6 +58,7 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.SummaryOptions"/>
         <bean class="datawave.query.language.functions.jexl.Sum"/>
         <bean class="datawave.query.language.functions.jexl.Min"/>
         <bean class="datawave.query.language.functions.jexl.Max"/>

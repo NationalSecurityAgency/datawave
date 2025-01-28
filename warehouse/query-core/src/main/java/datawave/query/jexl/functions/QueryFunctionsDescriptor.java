@@ -246,6 +246,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.SUMMARY_FUNCTION:
+                    break;
                 case QueryFunctions.RENAME_FUNCTION:
                     for (JexlNode arg : args) {
                         String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
@@ -355,6 +357,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }
+                break;
+            case QueryFunctions.SUMMARY_FUNCTION:
                 break;
             default:
                 throw new IllegalArgumentException("Unknown Query function: " + name);
