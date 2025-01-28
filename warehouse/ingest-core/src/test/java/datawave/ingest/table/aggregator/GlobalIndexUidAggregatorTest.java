@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -899,18 +900,19 @@ public class GlobalIndexUidAggregatorTest {
 
     @Test
     public void testCompositeTimestampsMatter() throws IOException {
+        agg.reset();
         TreeMultimap<Key,Value> keyValues = TreeMultimap.create();
 
-        long eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("1960-01-01T00:00:00Z")).toEpochMilli();
-        long ageOff = eventDate + (131071L * CompositeTimestamp.MILLIS_PER_DAY);
-        long negativeCompositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+        long eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("1960-01-01T10:00:00Z")).toEpochMilli();
+        int ageOffDays = 131071;
+        long negativeCompositeTS = CompositeTimestamp.getCompositeDeltaTimeStamp(eventDate, ageOffDays);
 
         eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:00:00Z")).toEpochMilli();
-        ageOff = eventDate + CompositeTimestamp.MILLIS_PER_DAY;
-        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+        ageOffDays = 1;
+        long compositeTS = CompositeTimestamp.getCompositeDeltaTimeStamp(eventDate, ageOffDays);
 
-        ageOff = eventDate + (CompositeTimestamp.MILLIS_PER_DAY * 10);
-        long largerCompositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+        ageOffDays = 10;
+        long largerCompositeTS = CompositeTimestamp.getCompositeDeltaTimeStamp(eventDate, ageOffDays);
 
         List<Value> values = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
@@ -938,6 +940,92 @@ public class GlobalIndexUidAggregatorTest {
         while (keys.hasNext()) {
             Key key = keys.next();
             Set<Value> expected = Sets.newHashSet(keyValues.get(key));
+            // ensure each call to getValues() returns all of the values for the next key where only the timestamp differs
+            Set<Value> actual = Sets.newHashSet(agg.getValues(iterator));
+            assertEquals(expected, actual);
+        }
+        assertFalse(iterator.hasTop());
+    }
+
+    @Test
+    public void testNonTruncatedTimestampsDontMatter() throws IOException {
+        agg.reset();
+        TreeMultimap<Key,Value> keyValues = TreeMultimap.create();
+        TreeMultimap<Key,Value> expectedKeyValues = TreeMultimap.create();
+
+        long eventDate1 = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2020-01-01T00:00:00Z")).toEpochMilli();
+        long eventDate2 = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2020-01-01T10:00:00Z")).toEpochMilli();
+        long eventDate3 = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2020-01-01T23:59:59Z")).toEpochMilli();
+        long composite1 = CompositeTimestamp.getCompositeDeltaTimeStamp(eventDate1, 10);
+        long composite2 = CompositeTimestamp.getCompositeDeltaTimeStamp(eventDate2, 10);
+        long composite3 = CompositeTimestamp.getCompositeDeltaTimeStamp(eventDate3, 10);
+
+        List<Value> values = new ArrayList<>();
+        for (int i = 0; i < 21; i++) {
+            String uuid = UUID.randomUUID().toString();
+            values.add(toValue(createNewUidList(uuid)));
+        }
+
+        Key key1 = new Key("key", "cf", "cq", "PUBLIC", eventDate1);
+        Key key2 = new Key("key", "cf", "cq", "PUBLIC", eventDate2);
+        Key key3 = new Key("key", "cf", "cq", "PUBLIC", eventDate3);
+        Key key4 = new Key("key", "cf", "cq", "PUBLIC", composite1);
+        Key key5 = new Key("key", "cf", "cq", "PUBLIC", composite2);
+        Key key6 = new Key("key", "cf", "cq", "PUBLIC", composite3);
+
+        keyValues.put(key1, values.get(0));
+        keyValues.put(key2, values.get(1));
+        keyValues.put(key2, values.get(2));
+        keyValues.put(key3, values.get(3));
+        keyValues.put(key3, values.get(4));
+        keyValues.put(key3, values.get(5));
+        keyValues.put(key4, values.get(6));
+        keyValues.put(key4, values.get(7));
+        keyValues.put(key4, values.get(8));
+        keyValues.put(key4, values.get(9));
+        keyValues.put(key5, values.get(10));
+        keyValues.put(key5, values.get(11));
+        keyValues.put(key5, values.get(12));
+        keyValues.put(key5, values.get(13));
+        keyValues.put(key5, values.get(14));
+        keyValues.put(key6, values.get(15));
+        keyValues.put(key6, values.get(16));
+        keyValues.put(key6, values.get(17));
+        keyValues.put(key6, values.get(18));
+        keyValues.put(key6, values.get(19));
+        keyValues.put(key6, values.get(20));
+
+        expectedKeyValues.put(key1, values.get(0));
+        expectedKeyValues.put(key1, values.get(1));
+        expectedKeyValues.put(key1, values.get(2));
+        expectedKeyValues.put(key1, values.get(3));
+        expectedKeyValues.put(key1, values.get(4));
+        expectedKeyValues.put(key1, values.get(5));
+        expectedKeyValues.put(key4, values.get(6));
+        expectedKeyValues.put(key4, values.get(7));
+        expectedKeyValues.put(key4, values.get(8));
+        expectedKeyValues.put(key4, values.get(9));
+        expectedKeyValues.put(key4, values.get(10));
+        expectedKeyValues.put(key4, values.get(11));
+        expectedKeyValues.put(key4, values.get(12));
+        expectedKeyValues.put(key4, values.get(13));
+        expectedKeyValues.put(key4, values.get(14));
+        expectedKeyValues.put(key4, values.get(15));
+        expectedKeyValues.put(key4, values.get(16));
+        expectedKeyValues.put(key4, values.get(17));
+        expectedKeyValues.put(key4, values.get(18));
+        expectedKeyValues.put(key4, values.get(19));
+        expectedKeyValues.put(key4, values.get(20));
+
+        // get an iterator of these key/value pairs (sorted)
+        SortedKeyValueIterator<Key,Value> iterator = new SortedMultiMapIterator(keyValues);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+
+        // get a unique list of the keys (sorted)
+        Iterator<Key> keys = expectedKeyValues.keySet().iterator();
+        while (keys.hasNext()) {
+            Key key = keys.next();
+            Set<Value> expected = Sets.newHashSet(expectedKeyValues.get(key));
             // ensure each call to getValues() returns all of the values for the next key where only the timestamp differs
             Set<Value> actual = Sets.newHashSet(agg.getValues(iterator));
             assertEquals(expected, actual);
