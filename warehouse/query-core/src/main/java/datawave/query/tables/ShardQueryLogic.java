@@ -65,6 +65,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
@@ -1074,6 +1075,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
+        // Get the SUMMARY parameter if given
+        String summaryParam = settings.findParameter(QueryParameters.SUMMARY_OPTIONS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(summaryParam)) {
+            SummaryOptions summaryOptions = SummaryOptions.from(summaryParam);
+            this.setSummaryOptions(summaryOptions);
+            config.setSummaryOptions(summaryOptions);
+        }
+
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (StringUtils.isNotBlank(hitListString)) {
@@ -1829,6 +1838,26 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
         } catch (Exception e) {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
+        }
+    }
+
+    public SummaryOptions getSummaryOptions() {
+        return getConfig().getSummaryOptions();
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        getConfig().setSummaryOptions(summaryOptions);
+    }
+
+    public String getSummaryIterator() {
+        return getConfig().getSummaryIterator().getName();
+    }
+
+    public void setSummaryIterator(String iteratorClass) {
+        try {
+            getConfig().setSummaryIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException("Illegal content summary iterator class", e);
         }
     }
 

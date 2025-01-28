@@ -113,6 +113,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
+import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -198,6 +199,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected ActiveQueryLog activeQueryLog;
 
     protected ExcerptTransform excerptTransform = null;
+
+    protected SummaryTransform summaryTransform = null;
 
     protected RangeProvider rangeProvider;
 
@@ -816,6 +819,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             documents = excerptTransform.getIterator(documents);
         }
 
+        SummaryTransform summaryTransform = getSummaryTransform();
+        if (summaryTransform != null) {
+            documents = summaryTransform.getIterator(documents);
+        }
+
         // a hook to allow mapping the document such as with the TLD or Parent
         // query logics
         // or if the document was not aggregated in the first place because the
@@ -927,6 +935,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
+            // TODO: this should be dynamic based on the query fields, not a flag passed to the iterator
             if (this.isTermFrequenciesRequired()) {
 
                 TermFrequencyConfig tfConfig = new TermFrequencyConfig();
@@ -1622,6 +1631,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
         return excerptTransform;
+    }
+
+    protected SummaryTransform getSummaryTransform() {
+        if (summaryTransform == null && getSummaryOptions() != null && getSummaryOptions().getSummarySize() != 0) {
+            synchronized (getSummaryOptions()) {
+                if (summaryTransform == null) {
+                    try {
+                        summaryTransform = new SummaryTransform(summaryOptions, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                                        summaryIterator.getDeclaredConstructor().newInstance());
+                    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException("Could not create summary transform", e);
+                    }
+                }
+            }
+        }
+        return summaryTransform;
     }
 
     /**
