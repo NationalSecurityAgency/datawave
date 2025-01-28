@@ -105,7 +105,7 @@ import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
-import datawave.query.jexl.visitors.DisableEvaluationForGroupingVisitor;
+import datawave.query.jexl.visitors.DisableEvaluationVisitor;
 import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
@@ -349,9 +349,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
     /**
-     * Feature flag to attempt disabling evaluation under certain circumstances when a query contains a grouping function
+     * Feature flag to attempt disabling evaluation under certain circumstances, i.e. when a query contains a groupby function or if the query does not require
+     * hit terms
      */
-    protected boolean disableGroupByEvaluation = false;
+    protected boolean allowedToDisableEvaluation = false;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
@@ -564,8 +565,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // check for the case where evaluation can be disabled due to the presence of Grouping functions
             // but only if query functions and content functions are absent as well
-            if (!config.getFullTableScanEnabled() && getDisableGroupByEvaluation() && config.getGroupFields().hasGroupByFields()) {
-                boolean canDisable = DisableEvaluationForGroupingVisitor.canDisableEvaluation(config.getQueryTree(), getIndexedFields(), getIndexOnlyFields());
+            if (!config.getFullTableScanEnabled() && getAllowedToDisableEvaluation() && config.getGroupFields().hasGroupByFields()) {
+                boolean canDisable = DisableEvaluationVisitor.canDisableEvaluation(config.getQueryTree(), getIndexedFields(), getIndexOnlyFields());
                 if (canDisable) {
                     config.setDisableEvaluation(true);
                     addOption(cfg, QueryOptions.DISABLE_EVALUATION, "true", false);
@@ -3468,11 +3469,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         this.concurrentTimeoutMillis = concurrentTimeoutMillis;
     }
 
-    public boolean getDisableGroupByEvaluation() {
-        return disableGroupByEvaluation;
+    public boolean getAllowedToDisableEvaluation() {
+        return allowedToDisableEvaluation;
     }
 
-    public void setDisableGroupByEvaluation(boolean disableGroupByEvaluation) {
-        this.disableGroupByEvaluation = disableGroupByEvaluation;
+    public void setAllowedToDisableEvaluation(boolean allowedToDisableEvaluation) {
+        this.allowedToDisableEvaluation = allowedToDisableEvaluation;
     }
 }

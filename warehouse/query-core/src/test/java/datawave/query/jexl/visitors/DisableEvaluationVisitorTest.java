@@ -3,6 +3,7 @@ package datawave.query.jexl.visitors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -11,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
-public class DisableEvaluationForGroupingVisitorTest {
+public class DisableEvaluationVisitorTest {
 
     private final Set<String> indexedFields = Set.of("INDEXED_FIELD", "INDEXED_FIELD2");
     private final Set<String> indexOnlyFields = Set.of("INDEX_ONLY", "INDEX_ONLY2");
@@ -32,8 +33,8 @@ public class DisableEvaluationForGroupingVisitorTest {
     @Test
     public void testNE() {
         // not equals
-        test("INDEXED_FIELD != 'value'", true);
-        test("INDEX_ONLY != 'value'", true);
+        test("INDEXED_FIELD != 'value'", false);
+        test("INDEX_ONLY != 'value'", false);
         test("NON_INDEXED_FIELD != 'value'", false);
 
         // not equals with null literal
@@ -45,40 +46,40 @@ public class DisableEvaluationForGroupingVisitorTest {
     @Test
     public void testNotEQ() {
         // not equals
-        test("!(INDEXED_FIELD == 'value')", true);
-        test("!(INDEX_ONLY == 'value')", true);
+        test("!(INDEXED_FIELD == 'value')", false);
+        test("!(INDEX_ONLY == 'value')", false);
         test("!(NON_INDEXED_FIELD == 'value')", false);
     }
 
     @Test
     public void testLt() {
         // less than, not part of a bounded range
-        test("INDEXED_FIELD < 'value'", true);
-        test("INDEX_ONLY < 'value'", true);
+        test("INDEXED_FIELD < 'value'", false);
+        test("INDEX_ONLY < 'value'", false);
         test("NON_INDEXED_FIELD < 'value'", false);
     }
 
     @Test
     public void testGt() {
         // greater than, not part of a bounded range
-        test("INDEXED_FIELD > 'value'", true);
-        test("INDEX_ONLY > 'value'", true);
+        test("INDEXED_FIELD > 'value'", false);
+        test("INDEX_ONLY > 'value'", false);
         test("NON_INDEXED_FIELD > 'value'", false);
     }
 
     @Test
     public void testLe() {
         // less than equals, not part of a bounded range
-        test("INDEXED_FIELD <= 'value'", true);
-        test("INDEX_ONLY <= 'value'", true);
+        test("INDEXED_FIELD <= 'value'", false);
+        test("INDEX_ONLY <= 'value'", false);
         test("NON_INDEXED_FIELD <= 'value'", false);
     }
 
     @Test
     public void testGe() {
         // less than, not part of a bounded range
-        test("INDEXED_FIELD >= 'value'", true);
-        test("INDEX_ONLY >= 'value'", true);
+        test("INDEXED_FIELD >= 'value'", false);
+        test("INDEX_ONLY >= 'value'", false);
         test("NON_INDEXED_FIELD >= 'value'", false);
     }
 
@@ -101,8 +102,8 @@ public class DisableEvaluationForGroupingVisitorTest {
     @Test
     public void testTermExceededMarker() {
         // exceeded term marker
-        test("((_Term_ = true) && (INDEXED_FIELD =~ 'ba.*'))", true);
-        test("((_Term_ = true) && (INDEX_ONLY =~ 'ba.*'))", true);
+        test("((_Term_ = true) && (INDEXED_FIELD =~ 'ba.*'))", false);
+        test("((_Term_ = true) && (INDEX_ONLY =~ 'ba.*'))", false);
         test("((_Term_ = true) && (NON_INDEXED_FIELD =~ 'ba.*'))", false);
     }
 
@@ -126,9 +127,45 @@ public class DisableEvaluationForGroupingVisitorTest {
         test("((_Eval_ = true) && (NON_INDEXED_FIELD =~ 'ba.*'))", false);
     }
 
+    @Test
+    public void testEqAndNotEq() {
+        // EQ and !EQ
+        test("INDEXED_FIELD == 'a' && !(INDEXED_FIELD == 'b')", true);
+        test("INDEXED_FIELD == 'a' && !(INDEX_ONLY == 'b')", true);
+        test("INDEXED_FIELD == 'a' && !(NON_INDEXED_FIELD == 'b')", false);
+
+        test("INDEX_ONLY == 'a' && !(INDEXED_FIELD == 'b')", true);
+        test("INDEX_ONLY == 'a' && !(INDEX_ONLY == 'b')", true);
+        test("INDEX_ONLY == 'a' && !(NON_INDEXED_FIELD == 'b')", false);
+
+        test("NON_INDEXED_FIELD == 'a' && !(INDEXED_FIELD == 'b')", false);
+        test("NON_INDEXED_FIELD == 'a' && !(INDEX_ONLY == 'b')", false);
+        test("NON_INDEXED_FIELD == 'a' && !(NON_INDEXED_FIELD == 'b')", false);
+    }
+
+    @Test
+    public void testEqOrNotEq() {
+        // EQ or !EQ, verifies that negations as part of a top level union are correctly identified as 'root negations'
+        test("INDEXED_FIELD == 'a' || !(INDEXED_FIELD == 'b')", true);
+        test("INDEXED_FIELD == 'a' || !(INDEX_ONLY == 'b')", true);
+        test("INDEXED_FIELD == 'a' || !(NON_INDEXED_FIELD == 'b')", false);
+
+        test("INDEX_ONLY == 'a' || !(INDEXED_FIELD == 'b')", true);
+        test("INDEX_ONLY == 'a' || !(INDEX_ONLY == 'b')", true);
+        test("INDEX_ONLY == 'a' || !(NON_INDEXED_FIELD == 'b')", false);
+
+        test("NON_INDEXED_FIELD == 'a' || !(INDEXED_FIELD == 'b')", false);
+        test("NON_INDEXED_FIELD == 'a' || !(INDEX_ONLY == 'b')", false);
+        test("NON_INDEXED_FIELD == 'a' || !(NON_INDEXED_FIELD == 'b')", false);
+    }
+
     private void test(String query, boolean expected) {
+        Set<String> allIndexedFields = new HashSet<>();
+        allIndexedFields.addAll(indexedFields);
+        allIndexedFields.addAll(indexOnlyFields);
+
         ASTJexlScript script = parse(query);
-        boolean result = DisableEvaluationForGroupingVisitor.canDisableEvaluation(script, indexedFields, indexOnlyFields);
+        boolean result = DisableEvaluationVisitor.canDisableEvaluation(script, allIndexedFields, indexOnlyFields);
         assertEquals(expected, result);
     }
 

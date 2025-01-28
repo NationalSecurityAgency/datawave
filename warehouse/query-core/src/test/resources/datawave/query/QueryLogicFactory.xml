@@ -489,7 +489,7 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
         <property name="visitorManager" ref="TimedVisitorManager"/>
-        <property name="disableGroupByEvaluation" value="true"/>
+        <property name="allowedToDisableEvaluation" value="true"/>
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
