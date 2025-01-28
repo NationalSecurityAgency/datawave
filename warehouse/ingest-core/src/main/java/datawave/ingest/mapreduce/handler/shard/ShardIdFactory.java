@@ -14,14 +14,14 @@ import datawave.util.time.DateHelper;
 public class ShardIdFactory {
 
     public static final String NUM_SHARDS = "num.shards";
-    public static final String SHARD_ID_GENERATORS = "shardIdFactory.generator";
+    public static final String SHARD_ID_GENERATOR = "shardIdFactory.generator";
 
     private NumShards numShards = null;
     private final List<ShardIdGenerator> generators;
 
     public ShardIdFactory(Configuration conf) {
         this.numShards = new NumShards(conf);
-        this.generators = ConfigurationHelper.getIndexedInstances(conf, SHARD_ID_GENERATORS, ShardIdGenerator.class, 1);
+        this.generators = ConfigurationHelper.getIndexedInstances(conf, SHARD_ID_GENERATOR, ShardIdGenerator.class, 1);
     }
 
     /**

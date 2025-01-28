@@ -48,13 +48,13 @@ class ShardIdFactoryTest {
      */
     @Test
     void testGetShardIdWithNoApplicableGenerators() {
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1", ConstantPartition.class.getName());
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1.typeName", "wiki");
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1.partition", "20");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1", ConstantPartition.class.getName());
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1.typeName", "wiki");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1.partition", "20");
 
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2", ConstantPartition.class.getName());
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2.typeName", "text");
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2.partition", "10");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2", ConstantPartition.class.getName());
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.typeName", "text");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.partition", "10");
 
         RawRecordContainer event = createEvent("1.2.3", DateHelper.parse("20240115"), "csva");
         String shardId = new ShardIdFactory(conf).getShardId(event);
@@ -67,13 +67,13 @@ class ShardIdFactoryTest {
      */
     @Test
     void testGetShardIdWithSingleApplicableGenerators() {
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1", ConstantPartition.class.getName());
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1.typeName", "wiki");
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1.partition", "20");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1", ConstantPartition.class.getName());
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1.typeName", "wiki");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1.partition", "20");
 
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2", ConstantPartition.class.getName());
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2.typeName", "csva");
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2.partition", "10");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2", ConstantPartition.class.getName());
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.typeName", "csva");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.partition", "10");
 
         RawRecordContainer event = createEvent("1.2.3", DateHelper.parse("20240115"), "csva");
         String shardId = new ShardIdFactory(conf).getShardId(event);
@@ -86,13 +86,13 @@ class ShardIdFactoryTest {
      */
     @Test
     void testGetShardIdWithMultipleApplicableGenerators() {
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1", ConstantPartition.class.getName());
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1.typeName", "csva");
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".1.partition", "20");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1", ConstantPartition.class.getName());
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1.typeName", "csva");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".1.partition", "20");
 
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2", ConstantPartition.class.getName());
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2.typeName", "csva");
-        conf.set(ShardIdFactory.SHARD_ID_GENERATORS + ".2.partition", "10");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2", ConstantPartition.class.getName());
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.typeName", "csva");
+        conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.partition", "10");
 
         RawRecordContainer event = createEvent("1.2.3", DateHelper.parse("20240115"), "csva");
         String shardId = new ShardIdFactory(conf).getShardId(event);
