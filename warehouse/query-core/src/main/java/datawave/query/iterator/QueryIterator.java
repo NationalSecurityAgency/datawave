@@ -935,6 +935,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
+            // TODO: this should be dynamic based on the query fields, not a flag passed to the iterator
             if (this.isTermFrequenciesRequired()) {
 
                 TermFrequencyConfig tfConfig = new TermFrequencyConfig();
