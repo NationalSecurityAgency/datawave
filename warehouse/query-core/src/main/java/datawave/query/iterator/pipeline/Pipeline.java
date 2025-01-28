@@ -21,10 +21,10 @@ public class Pipeline implements Runnable {
 
     private static final Logger log = Logger.getLogger(Pipeline.class);
     /**
-     * A source list for which the iterator will automatically reset to the beginning upon comodification. This allows us to have an iterator that will always
+     * A source list for which the iterator will automatically reset to the beginning upon co-modification. This allows us to have an iterator that will always
      * return results as long as elements are added to the list.
      */
-    private DocumentSpecificNestedIterator documentSpecificSource = new DocumentSpecificNestedIterator(null);
+    private final DocumentSpecificNestedIterator documentSpecificSource = new DocumentSpecificNestedIterator(null);
 
     // the result
     private Entry<Key,Document> result = null;
