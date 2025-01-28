@@ -1098,7 +1098,7 @@ public class WiseGuysIngest {
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        builder.setCOUNT(50); // better not be zero!!!!
+        builder.setCOUNT(0); // Setting to zero to ensure we still find these hits in case this happens
         builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());
     }
