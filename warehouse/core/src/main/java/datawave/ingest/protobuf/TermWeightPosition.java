@@ -14,17 +14,20 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
     public static final int DEFAULT_PREV_SKIPS = -1;
     public static final int DEFAULT_SCORE = -1;
     public static final boolean DEFAULT_ZERO_OFFSET_MATCH = true;
+    public static final float DEFAULT_TIME = -1;
 
     private final int offset;
     private final int prevSkips;
     private final int score;
     private final boolean zeroOffsetMatch;
+    private final float time;
 
     public TermWeightPosition(Builder builder) {
         offset = builder.offset;
         prevSkips = builder.prevSkips;
         score = builder.score;
         zeroOffsetMatch = builder.zeroOffsetMatch;
+        time = builder.time;
     }
 
     public TermWeightPosition(TermWeightPosition other) {
@@ -32,6 +35,7 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
         prevSkips = other.prevSkips;
         score = other.score;
         zeroOffsetMatch = other.zeroOffsetMatch;
+        time = other.time;
     }
 
     public TermWeightPosition clone() {
@@ -134,11 +138,16 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
         return zeroOffsetMatch;
     }
 
+    public float getTime() {
+        return time;
+    }
+
     public static class Builder {
         private int offset = DEFAULT_OFFSET;
         private int prevSkips = DEFAULT_PREV_SKIPS;
         private int score = DEFAULT_SCORE;
         private boolean zeroOffsetMatch = DEFAULT_ZERO_OFFSET_MATCH;
+        private float time = DEFAULT_TIME;
 
         public Builder setOffset(int offset) {
             this.offset = offset;
@@ -160,6 +169,11 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
             return this;
         }
 
+        public Builder setTime(float time) {
+            this.time = time;
+            return this;
+        }
+
         public Builder setTermWeightOffsetInfo(TermWeight.Info info, int i) {
             setOffset(info.getTermOffset(i));
 
@@ -172,6 +186,11 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
             // Only pull the scores if the counts match the offsets
             if (info.getTermOffsetCount() == info.getScoreCount()) {
                 setScore(info.getScore(i));
+            }
+
+            // Only pull the times if the counts match the offsets
+            if (info.getTermOffsetCount() == info.getTimeCount()) {
+                setTime(info.getTime(i));
             }
 
             setZeroOffsetMatch(info.getZeroOffsetMatch());
@@ -188,6 +207,7 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
             prevSkips = DEFAULT_PREV_SKIPS;
             score = DEFAULT_SCORE;
             zeroOffsetMatch = DEFAULT_ZERO_OFFSET_MATCH;
+            time = DEFAULT_TIME;
         }
 
     }
