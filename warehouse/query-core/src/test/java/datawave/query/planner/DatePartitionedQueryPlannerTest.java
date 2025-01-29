@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
+import java.util.SortedMap;
 import java.util.StringJoiner;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -52,6 +52,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.FieldIndexHoleDataIngest;
+import datawave.query.util.MetadataHelper;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
@@ -161,7 +162,7 @@ public abstract class DatePartitionedQueryPlannerTest {
     }
 
     @Before
-    public void setup() throws ParseException {
+    public void setup() throws Exception {
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
@@ -248,11 +249,12 @@ public abstract class DatePartitionedQueryPlannerTest {
     /*
      * ensure that each subRange has all days with holes or all days with no holes ensure that all milliseconds in the original date range are covered
      */
-    private void assertSubrangesCorrect() throws Exception {
+    private void assertSubrangesCorrect(AccumuloClient client) throws Exception {
         DatePartitionedQueryPlanner queryPlanner = (DatePartitionedQueryPlanner) logic.getQueryPlanner();
 
         // Ensure that each subRange has all days with holes or all days with no holes
-        Set<String> fieldsInQuery = queryPlanner.getFieldsForQuery(this.logic.getConfig(), this.logic.getMetadataHelperFactory().createMetadataHelper());
+        MetadataHelper helper = this.logic.getMetadataHelperFactory().createMetadataHelper(client, logic.getMetadataTableName(), authSet);
+        Set<String> fieldsInQuery = queryPlanner.getFieldsForQuery(this.logic.getConfig().getQueryTree(), helper);
         Set<Date> datesWithHoles = new HashSet<>();
         Set<Date> datesWithoutHoles = new HashSet<>();
         this.eventConfigs.forEach(config -> {
@@ -269,17 +271,17 @@ public abstract class DatePartitionedQueryPlannerTest {
             }
         });
 
-        SortedSet<Pair<Date,Date>> subRanges = queryPlanner.getSubQueryDateRanges(logic.getConfig(), this.query, logic.getScannerFactory());
+        SortedMap<Pair<Date,Date>,Set<String>> subRanges = queryPlanner.getSubQueryDateRanges(logic.getConfig());
         // Subranges are sorted and should begin with the query beginDate and end with the query endDate
-        Pair<Date,Date> firstSubRange = subRanges.stream().findFirst().get();
+        Pair<Date,Date> firstSubRange = subRanges.keySet().stream().findFirst().get();
         Assert.assertNotNull("firstSubRange should not be null", firstSubRange);
         Assert.assertEquals("begin of lastSubRange should equal query beginDate", this.startDate.getTime(), firstSubRange.getLeft().getTime());
-        Pair<Date,Date> lastSubRange = subRanges.stream().reduce((first, second) -> second).get();
+        Pair<Date,Date> lastSubRange = subRanges.keySet().stream().reduce((first, second) -> second).get();
         Assert.assertNotNull("lastSubRange should not be null", lastSubRange);
         Assert.assertEquals("end of lastSubRange should equal query endDate", this.endDate.getTime(), lastSubRange.getRight().getTime());
 
         Pair<Date,Date> previousPair = null;
-        for (Pair<Date,Date> range : subRanges) {
+        for (Pair<Date,Date> range : subRanges.keySet()) {
             Set<String> datesWithHolesInRange = new TreeSet<>();
             Set<String> datesWithoutHolesInRange = new TreeSet<>();
             // adding 24 hours to b is guaranteed to fall on the next sequential date until we are outside the range
@@ -312,7 +314,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
     }
 
-    private void assertQueryResults() throws Exception {
+    private AccumuloClient assertQueryResults() throws Exception {
         // Initialize the query settings.
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(this.startDate);
@@ -328,7 +330,7 @@ public abstract class DatePartitionedQueryPlannerTest {
 
         // Initialize the query logic.
         if (fieldIndexHoleMinThreshold != null) {
-            logic.setIndexFieldGapMinThreshold(fieldIndexHoleMinThreshold);
+            logic.setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
         }
         AccumuloClient client = createClient();
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
@@ -348,6 +350,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
 
         Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
+        return client;
     }
 
     private String getDiffs(Set<Event> expectedEvents, Set<Event> actualEvents) {
@@ -391,8 +394,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -415,8 +417,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -440,8 +441,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -464,8 +464,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -489,8 +488,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -514,8 +512,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -539,8 +536,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -564,8 +560,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     @Test
@@ -586,8 +581,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -612,8 +606,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 
     /**
@@ -638,7 +631,6 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertQueryResults();
-        assertSubrangesCorrect();
+        assertSubrangesCorrect(assertQueryResults());
     }
 }

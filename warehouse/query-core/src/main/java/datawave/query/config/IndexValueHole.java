@@ -3,8 +3,7 @@ package datawave.query.config;
 import java.io.Serializable;
 
 /**
- * This class represents a hole in the global index for a set of values in a specified date range.
- * Used by the PushdownMissingIndexRangeNodesVisitor.
+ * This class represents a hole in the global index for a set of values in a specified date range. Used by the PushdownMissingIndexRangeNodesVisitor.
  */
 public class IndexValueHole implements Serializable, Comparable<IndexValueHole> {
     private static final long serialVersionUID = -6778479621810682281L;

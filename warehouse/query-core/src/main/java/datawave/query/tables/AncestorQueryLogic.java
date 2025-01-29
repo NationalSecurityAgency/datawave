@@ -5,8 +5,8 @@ import datawave.query.ancestor.AncestorQueryPlanner;
 import datawave.query.ancestor.AncestorRangeStream;
 import datawave.query.ancestor.AncestorUidIntersector;
 import datawave.query.index.lookup.AncestorCreateUidsIterator;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.DatePartitionedQueryPlanner;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 
 /**

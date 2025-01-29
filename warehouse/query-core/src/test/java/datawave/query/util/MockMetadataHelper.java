@@ -57,7 +57,7 @@ public class MockMetadataHelper extends MetadataHelper {
     protected Map<Map.Entry<String,String>,Map<String,Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
 
     private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
-    protected Map<String,Map<String, IndexFieldHole>> fieldIndexHoles = Collections.emptyMap();
+    protected Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = Collections.emptyMap();
 
     Function<Type<?>,String> function = new Function<Type<?>,String>() {
         @Override
@@ -407,11 +407,11 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Map<String,Map<String, IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold) {
+    public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold) {
         return fieldIndexHoles;
     }
 
-    public void setFieldIndexHoles(Map<String,Map<String, IndexFieldHole>> fieldIndexHoles) {
+    public void setFieldIndexHoles(Map<String,Map<String,IndexFieldHole>> fieldIndexHoles) {
         this.fieldIndexHoles = fieldIndexHoles;
     }
 }

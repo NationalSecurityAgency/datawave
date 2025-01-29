@@ -83,7 +83,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'uSa'";
         String query = CityField.CODE.name() + EQ_OP + usa;
         // setting the index hole creates an invalid query
-        this.logic.setIndexValueGaps(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         runTest(query, query);
     }
 
@@ -93,7 +93,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'uSa'";
         String rome = "'rOme'";
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
-        this.logic.setIndexValueGaps(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         // set the date range to cover just the index hole
         Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
@@ -106,7 +106,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'usA'";
         String rome = "'rOme'";
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
-        this.logic.setIndexValueGaps(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         // set the date range to exclude the index hole
         Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
@@ -120,7 +120,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'usA'";
         String rome = "'roMe'";
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
-        this.logic.setIndexValueGaps(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         // results should consist of entries from non-indexed for hole datatype and indexed entries from generic datatype
         Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());

@@ -20,8 +20,8 @@ import org.junit.Test;
 
 import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.FullTableScansDisallowedException;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.DatePartitionedQueryPlanner;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;

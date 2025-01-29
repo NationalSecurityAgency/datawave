@@ -2,10 +2,10 @@ package datawave.query.planner;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -25,7 +25,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang3.compare.ComparableUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
@@ -35,6 +34,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
@@ -44,7 +44,6 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
-import org.springframework.security.core.parameters.P;
 
 /**
  * Executes a query over a time range while handling the case where a field may be both indexed and not indexed in the time range. A period of time in which a
@@ -299,101 +298,90 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         CloseableIterable<QueryData> iterator = initialPlan.process(originalConfig, query, settings, scannerFactory);
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
-        SortedMap<Pair<Date,Date>, Set<String>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
+        SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(originalConfig);
 
-        // If debug is enabled, log the date ranges to be queried over in formatted form.
-        if (log.isDebugEnabled()) {
-            if (dateRanges.size() == 1) {
-                log.debug("One query will be executed over original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-"
-                                + dateFormat.format(originalConfig.getEndDate()));
-            } else {
-                StringBuilder sb = new StringBuilder();
-                Iterator<Map.Entry<Pair<Date,Date>,Set<String>[]>> it = dateRanges.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<Pair<Date,Date>,Set<String>[]> range = it.next();
-                    Pair<Date,Date> dateRange = range.getKey();
-                    sb.append(dateFormat.format(dateRange.getLeft())).append("-").append(dateFormat.format(dateRange.getRight()));
-                    if (it.hasNext()) {
-                        sb.append(", ");
+        // if no holes were found, then leave the iterator as is and used the initial planned script
+        dateRanges = null;
+        if (dateRanges == null) {
+            this.plannedScript = initialPlan.plannedScript;
+        } else {
+            FederatedQueryIterable results = new FederatedQueryIterable();
+            // reset the iterator to be our federated iterator
+            iterator = results;
+
+            ShardQueryConfiguration firstConfigCopy = null;
+            int totalProcessed = 1;
+            UUID queryId = originalConfig.getQuery().getId();
+            for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
+                // Format the beginDate and endDate of the current sub-query to execute.
+                String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
+                String subEndDate = dateFormat.format(dateRange.getKey().getRight());
+
+                // Start a new stopwatch.
+                TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed
+                                + " of " + dateRanges.size() + "] against date range (" + subBeginDate + "-" + subEndDate + ")");
+
+                // Set the new date range in a copy of the config.
+                ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
+                configCopy.setBeginDate(dateRange.getKey().getLeft());
+                configCopy.setEndDate(dateRange.getKey().getRight());
+
+                // we want to make sure the same query id for tracking purposes and execution
+                configCopy.getQuery().setId(queryId);
+
+                // Create a copy of the original default query planner, and process the query with the new date range.
+                DefaultQueryPlanner subPlan = this.queryPlanner.clone();
+
+                try {
+                    // TODO: subplan reprocessing
+                    Set<String> unindexedFields = dateRange.getValue();
+
+                    // CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, query, settings, scannerFactory, unindexedFields);
+                    // results.addIterable(queryData);
+                } catch (Exception e) {
+                    log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range ("
+                                    + subBeginDate + "-" + subEndDate + ")", e);
+                    // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
+                    plans.add(subPlan.plannedScript);
+                    updatePlannedScript();
+
+                    // Copy over any changes in the sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
+                    // config.
+                    copySubConfigPropertiesToOriginal(originalConfig, configCopy);
+                    throw e;
+                } finally {
+                    // Append the timers from the config copy to the original config for logging later.
+                    originalConfig.appendTimers(configCopy.getTimers());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
                     }
                 }
-                log.debug(dateRanges.size() + " sub-queries will be executed over date ranges: " + sb);
-            }
-        }
 
-        FederatedQueryIterable results = new FederatedQueryIterable();
-        int totalProcessed = 1;
-        ShardQueryConfiguration firstConfigCopy = null;
-        UUID queryId = originalConfig.getQuery().getId();
-        for (Pair<Date,Date> dateRange : dateRanges.keySet()) {
-            // Format the beginDate and endDate of the current sub-query to execute.
-            String subBeginDate = dateFormat.format(dateRange.getLeft());
-            String subEndDate = dateFormat.format(dateRange.getRight());
+                // Ensure we're tracking the planned script from the sub-plan.
+                plans.add(subPlan.getPlannedScript());
 
-            // Start a new stopwatch.
-            TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
-                            + dateRanges.size() + "] against date range (" + subBeginDate + "-" + subEndDate + ")");
-
-            // Set the new date range in a copy of the config.
-            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
-            configCopy.setBeginDate(dateRange.getLeft());
-            configCopy.setEndDate(dateRange.getRight());
-
-            // TODO: Should we set the relevant field index holes in the config for the delegated planners to use
-            //       or should the metadata helper return indexed fields based on the date range?
-
-            // we want to make sure the same query id for tracking purposes and execution
-            configCopy.getQuery().setId(queryId);
-
-            // Create a copy of the original default query planner, and process the query with the new date range.
-            DefaultQueryPlanner subPlan = this.queryPlanner.clone();
-
-            try {
-                //CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, query, settings, scannerFactory, unindexFields);
-                //results.addIterable(queryData);
-            } catch (Exception e) {
-                log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subBeginDate
-                                + "-" + subEndDate + ")", e);
-                // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
-                plans.add(subPlan.plannedScript);
-                updatePlannedScript();
-
-                // Copy over any changes in the sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
-                // config.
-                copySubConfigPropertiesToOriginal(originalConfig, configCopy);
-                throw e;
-            } finally {
-                // Append the timers from the config copy to the original config for logging later.
-                originalConfig.appendTimers(configCopy.getTimers());
-                if (log.isDebugEnabled()) {
-                    log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
+                // <></>rack the first sub-config.
+                if (firstConfigCopy == null) {
+                    firstConfigCopy = configCopy;
+                    if (log.isDebugEnabled()) {
+                        log.debug("Federated first config query string: " + firstConfigCopy.getQueryString());
+                    }
                 }
+
+                stopwatch.stop();
+                totalProcessed++;
             }
 
-            // Ensure we're tracking the planned script from the sub-plan.
-            plans.add(subPlan.getPlannedScript());
+            // Update the planned script.
+            updatePlannedScript();
 
-            // Track the first sub-config.
-            if (firstConfigCopy == null) {
-                firstConfigCopy = configCopy;
-                if (log.isDebugEnabled()) {
-                    log.debug("Federated first config query string: " + firstConfigCopy.getQueryString());
-                }
-            }
-
-            stopwatch.stop();
-            totalProcessed++;
+            // Copy over any changes from the first sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
+            // config.
+            copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
         }
-
-        // Update the planned script.
-        updatePlannedScript();
-
-        // Copy over any changes from the first sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
-        // config.
-        copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
 
         // Return the collected results.
-        return results;
+        return iterator;
     }
 
     /**
@@ -436,60 +424,33 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
     /**
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
-     * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
+     * range there will be zero or more fields that are completely indexed in that range. Also it is expected that the date ranges will complete cover the query
+     * date range without gaps or overlaps.
      */
-    protected SortedMap<Pair<Date,Date>, Set<String>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
-                    throws DatawaveQueryException {
+    protected SortedMap<Pair<Date,Date>,Set<String>> getSubQueryDateRanges(ShardQueryConfiguration config) throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
-        MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
-        Map<String,Map<String, IndexFieldHole>> fieldIndexHoles;
-        try {
-            Set<String> fields = getFieldsForQuery(config.getQueryTree(), metadataHelper);
-            if (log.isDebugEnabled()) {
-                log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
-            }
-            // if we found no fields in the query, then we have no index holes
-            if (fields.isEmpty()) {
-                fieldIndexHoles = Collections.emptyMap();
-            } else {
-                fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getIndexFieldHoleMinThreshold());
-            }
-        } catch (TableNotFoundException | IOException e) {
-            throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
-        }
+        Map<String,Map<String,IndexFieldHole>> fieldIndexHolesByDatatype = getFieldIndexHoles(config);
 
         // If no field index holes were found, we can return early with the original query date range.
-        if (fieldIndexHoles.isEmpty()) {
+        if (fieldIndexHolesByDatatype.isEmpty()) {
             log.debug("No field index holes found for query fields");
-            SortedMap<Pair<Date,Date>,Set<String>> ranges = new TreeMap<>();
-            ranges.put(Pair.of(config.getBeginDate(), config.getEndDate()), new HashSet<>());
-            return ranges;
+            return noHoles(config);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Field index holes found for query fields " + fieldIndexHoles.keySet());
+                log.debug("Field index holes found for query fields " + fieldIndexHolesByDatatype.keySet());
             }
         }
 
-        // We want to create a timeline of index hole begin and end dates
-        // that overlap the query's target date range
-        // and map to the fields for which holes are beginning and ending
-        SortedSet<IndexFieldHoleBoundary> timeline = new TreeSet<>();
-        for (String field : fieldIndexHoles.keySet()) {
-            Map<String, IndexFieldHole> holes = fieldIndexHoles.get(field);
-            for (IndexFieldHole indexHole : holes.values()) {
-                for (Pair<Date,Date> range : getHolesOverlappingOriginalQueryDateRange(config.getBeginDate(), config.getEndDate(), indexHole)) {
-                    timeline.add(new IndexFieldHoleBoundary(range.getLeft(), true, field));
-                    timeline.add(new IndexFieldHoleBoundary(range.getRight(), false, field));
-                }
-            }
-        }
+        // first lets merge the datatypes in this list. If one datatype has a hole for a field, then consider it a hole for all datatypes
+        Map<String,IndexFieldHole> fieldIndexHoles = collapseDatatypes(fieldIndexHolesByDatatype);
+
+        // Now create a timeline of index segments from begin date to end date
+        SortedSet<IndexFieldHoleBoundary> timeline = createTimeline(fieldIndexHoles, config.getBeginDate(), config.getEndDate());
 
         // if we found no holes that overlapped our date range, then we are done
         if (timeline.isEmpty()) {
             log.debug("No field index holes overlapping query range found");
-            SortedMap<Pair<Date,Date>,Set<String>> ranges = new TreeMap<>();
-            ranges.put(Pair.of(config.getBeginDate(), config.getEndDate()), new HashSet<>());
-            return ranges;
+            return noHoles(config);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Timeline contains " + timeline.size() + " boundaries to be examined");
@@ -497,127 +458,242 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         }
 
         // now scan through the timeline building ranges and the set of fields that are unindexed for each one
+        SortedMap<Pair<Date,Date>,Set<String>> reducedTimeline = new TreeMap<>();
         Set<String> unindexedFields = new HashSet<>();
-        IndexFieldHoleBoundary last;
-        for (IndexFieldHoleBoundary boundary : timeline) {
-            if (boundary.isStart()) {
-                unindexedFields.addAll(boundary.getFields());
+        IndexFieldHoleBoundary last = null;
+        for (IndexFieldHoleBoundary next : timeline) {
+            if (last != null) {
+                Date start = last.getBoundary();
+                if (!last.isStart()) {
+                    start = oneMsAfter(start);
+                }
+                Date end = next.getBoundary();
+                if (next.isStart()) {
+                    end = oneMsBefore(end);
+                }
+                // if we had one index hole that butted up against another index hole,
+                // then we may find ourselves with a zero length range
+                if (start.compareTo(end) <= 0) {
+                    Pair<Date,Date> range = Pair.of(start, end);
+                    reducedTimeline.put(range, new HashSet<>(unindexedFields));
+                }
             }
-        }
-
-        // Establish the date ranges we can query on.
-        SortedSet<Pair<Date,Date>> subDateRanges = new TreeSet<>();
-        if (relevantHoles.isEmpty()) {
-            // If we found no index holes, we can default to the original target date range.
-            subDateRanges.add(Pair.of(config.getBeginDate(), config.getEndDate()));
-        } else {
-            // Otherwise, get the valid date ranges. First, Merge any overlaps.
-            SortedSet<Pair<Date,Date>> mergedHoles = mergeRanges(relevantHoles);
-            // Adjust the index holes so that they span from 00:00:00.000 on the first day to 23:59:59.999 on the last day
-            mergedHoles = spanEntireDays(mergedHoles);
-            Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
-
-            // If the start of the first index hole occurs after the configured start date, add a range spanning from
-            // the beginDate to one millisecond before the start of the first index hole.
-            Pair<Date,Date> firstHole = it.next();
-            // Track the end of the previous range.
-            Date endOfPrevRange;
-            if (firstHole.getLeft().getTime() >= config.getBeginDate().getTime()) {
-                if (firstHole.getLeft().getTime() > config.getBeginDate().getTime()) {
-                    // Add a range from the configured beginDate to just before
-                    // the start of the first index hole. This date range is indexed
-                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), oneMsBefore(firstHole.getLeft())));
-                }
-
-                // the start of the first index hole is on or after the configured beginDate
-                if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
-                    // If the end of the first index hole occurs before or on the configured endDate,
-                    // add the entire span for the first index hole. This date range is not indexed
-                    subDateRanges.add(firstHole);
-                    endOfPrevRange = firstHole.getRight();
-                } else {
-                    // Otherwise, add a range from the start of the first index hole to
-                    // the configured endDate. This date range is not indexed
-                    subDateRanges.add(Pair.of(firstHole.getLeft(), new Date(config.getEndDate().getTime())));
-                    endOfPrevRange = config.getEndDate();
-                }
+            // update the set of unindexed fields depending on whether we are starting or ending a hole
+            if (next.isStart()) {
+                unindexedFields.addAll(next.getFields());
             } else {
-                // the start of the first index hole is before the configured beginDate
-                if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
-                    // If the end of the first index hole occurs before or on the configured endDate, add a range spanning
-                    // from the configured beginDate to the end of the first index hole. This date range is not indexed
-                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), firstHole.getRight()));
-                    endOfPrevRange = firstHole.getRight();
-                } else {
-                    // Otherwise, the first index hole spans over the query's date range. This date range is not indexed
-                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), new Date(config.getEndDate().getTime())));
-                    endOfPrevRange = config.getEndDate();
+                unindexedFields.removeAll(next.getFields());
+            }
+            last = next;
+        }
+
+        // If debug is enabled, log the date ranges to be queried over in formatted form.
+        if (log.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            Iterator<Map.Entry<Pair<Date,Date>,Set<String>>> it = reducedTimeline.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Pair<Date,Date>,Set<String>> range = it.next();
+                Pair<Date,Date> dateRange = range.getKey();
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(dateFormat.format(dateRange.getLeft())).append("-").append(dateFormat.format(dateRange.getRight())).append(':')
+                                .append(range.getValue());
+            }
+            log.debug(reducedTimeline.size() + " sub-queries will be executed over date ranges: " + sb);
+        }
+
+        ensureConsistency(reducedTimeline, config.getBeginDate(), config.getEndDate());
+
+        return reducedTimeline;
+    }
+
+    /**
+     * This method is intended to ensure some fault tolerance in out production of the timeline. The date range from beginDate to endDate should be completely
+     * covered, there should be no gaps, no overlapping date ranges, no negative length date ranges, and every date range should have a different set of
+     * unindexed fields.
+     *
+     * @param timeline
+     *            The timeline to verify
+     * @param beginDate
+     *            The begin date
+     * @param endDate
+     *            The end date
+     */
+    private void ensureConsistency(SortedMap<Pair<Date,Date>,Set<String>> timeline, Date beginDate, Date endDate) throws DatawaveFatalQueryException {
+        boolean beginDateValidated = timeline.firstKey().getLeft().equals(beginDate);
+        boolean endDateValidated = timeline.lastKey().getRight().equals(endDate);
+
+        boolean unsortedRangesFound = false;
+        boolean gapsFound = false;
+        boolean overlapsFound = false;
+        boolean matchingFieldSetsFound = false;
+
+        Map.Entry<Pair<Date,Date>,Set<String>> last = null;
+        for (Map.Entry<Pair<Date,Date>,Set<String>> next : timeline.entrySet()) {
+            Date begin = next.getKey().getLeft();
+            Date end = next.getKey().getRight();
+            if (begin.after(end)) {
+                unsortedRangesFound = true;
+            }
+            if (last != null) {
+                Date lastEnd = last.getKey().getRight();
+                Date expectedBegin = oneMsAfter(lastEnd);
+                if (begin.before(expectedBegin)) {
+                    overlapsFound = true;
+                } else if (begin.after(expectedBegin)) {
+                    gapsFound = true;
+                }
+                if (last.getValue().equals(next.getValue())) {
+                    matchingFieldSetsFound = true;
                 }
             }
+            last = next;
+        }
 
-            while (it.hasNext() && (endOfPrevRange.getTime() < config.getEndDate().getTime())) {
-                // The start of the next index hole is guaranteed to fall within the original query's target date range. Add a date range from
-                // one millisecond after the end of the previous index hole to one millisecond before the start of the next index hole.
-                // This date range is between index holes and is indexed
-                Pair<Date,Date> currentHole = it.next();
-                subDateRanges.add(Pair.of(oneMsAfter(endOfPrevRange), oneMsBefore(currentHole.getLeft())));
+        if (!beginDateValidated || !endDateValidated || unsortedRangesFound || gapsFound || overlapsFound || matchingFieldSetsFound) {
+            StringBuilder msg = new StringBuilder();
+            msg.append("Ranges inconsistent for date range ").append(beginDate).append(", ").append(endDate);
+            msg.append("; begin:").append(beginDateValidated);
+            msg.append("; end:").append(endDateValidated);
+            msg.append("; unsorted:").append(unsortedRangesFound);
+            msg.append("; gaps:").append(gapsFound);
+            msg.append("; overlaps:").append(overlapsFound);
+            msg.append("; matching:").append(matchingFieldSetsFound);
+            msg.append("; ").append(timeline);
+            log.error(msg);
+            throw new DatawaveFatalQueryException(msg.toString());
+        }
 
-                if (it.hasNext()) {
-                    // If there is another index hole, the current index hole is guaranteed to fall within the original
-                    // target's date range. Add it to the sub ranges. This date range is not indexed
-                    subDateRanges.add(currentHole);
-                    endOfPrevRange = currentHole.getRight();
-                } else {
-                    // If this is the last hole, it is possible that the endDate falls outside the original query's target date range.
-                    // If so, shorten it to end at the original query endDate. This date range is not indexed
-                    if (currentHole.getRight().getTime() > config.getEndDate().getTime()) {
-                        subDateRanges.add(Pair.of(currentHole.getLeft(), config.getEndDate()));
-                        endOfPrevRange = config.getEndDate();
-                    } else {
-                        // If it does not fall outside the target date range, include it as is.
-                        subDateRanges.add(currentHole);
-                        endOfPrevRange = currentHole.getRight();
+    }
+
+    /**
+     * Return ranges with no unindexed fields
+     *
+     * @param config
+     * @return query range with no field holes
+     */
+    private SortedMap<Pair<Date,Date>,Set<String>> noHoles(ShardQueryConfiguration config) {
+        SortedMap<Pair<Date,Date>,Set<String>> ranges = new TreeMap<>();
+        ranges.put(Pair.of(config.getBeginDate(), config.getEndDate()), new HashSet<>());
+        return ranges;
+    }
+
+    /**
+     * Collapse the datatypes such that if one datatype is unindexed for a field, then consider them all unindexed
+     *
+     * @param fieldIndexHolesByDatatype
+     * @return The map of fields to their index holes (datatype agnostic)
+     */
+    private Map<String,IndexFieldHole> collapseDatatypes(Map<String,Map<String,IndexFieldHole>> fieldIndexHolesByDatatype) {
+        Map<String,IndexFieldHole> collapsedDatatypes = new HashMap<>();
+
+        // to do this, create a timeline of boundaries and then collapse consecutive begins and consecutive ends for each field
+        for (Map.Entry<String,Map<String,IndexFieldHole>> holes : fieldIndexHolesByDatatype.entrySet()) {
+            String field = holes.getKey();
+            SortedSet<IndexFieldHoleBoundary> boundaries = new TreeSet<>();
+            for (IndexFieldHole hole : holes.getValue().values()) {
+                for (Pair<Date,Date> range : hole.getDateRanges()) {
+                    boundaries.add(new IndexFieldHoleBoundary(range.getLeft(), true, field));
+                    boundaries.add(new IndexFieldHoleBoundary(range.getRight(), false, field));
+                }
+            }
+            SortedSet<Pair<Date,Date>> collapsedRanges = new TreeSet<>();
+            Date lastStart = null;
+            Date lastEnd = null;
+            for (IndexFieldHoleBoundary next : boundaries) {
+                if (next.isStart()) {
+                    if (lastEnd != null) {
+                        collapsedRanges.add(Pair.of(lastStart, lastEnd));
+                        lastStart = null;
+                        lastEnd = null;
                     }
+                    // retain only the first date in a series of starts
+                    if (lastStart == null) {
+                        lastStart = next.getBoundary();
+                    }
+                } else {
+                    // retain the last date in a series of ends
+                    lastEnd = next.getBoundary();
                 }
             }
+            if (lastEnd != null) {
+                collapsedRanges.add(Pair.of(lastStart, lastEnd));
+            }
+            collapsedDatatypes.put(field, new IndexFieldHole(field, null, collapsedRanges));
+        }
 
-            // If the last hole we saw ended before the end of the original query's target date range, add date range from one
-            // millisecond after the end of the last index hole to the original query endDate.
-            if (endOfPrevRange.getTime() < config.getEndDate().getTime()) {
-                subDateRanges.add(Pair.of(oneMsAfter(endOfPrevRange), config.getEndDate()));
+        return collapsedDatatypes;
+    }
+
+    /**
+     * Get the field index holes for the fields in the query
+     *
+     * @param config
+     * @return field to datatype to index field holes
+     * @throws DatawaveQueryException
+     */
+    private Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(ShardQueryConfiguration config) throws DatawaveQueryException {
+        MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
+        Map<String,Map<String,IndexFieldHole>> fieldIndexHolesByDatatype;
+        try {
+            Set<String> fields = getFieldsForQuery(config.getQueryTree(), metadataHelper);
+            if (log.isDebugEnabled()) {
+                log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
+            }
+            // if we found no fields in the query, then we have no index holes
+            if (fields.isEmpty()) {
+                fieldIndexHolesByDatatype = Collections.emptyMap();
+            } else {
+                fieldIndexHolesByDatatype = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getIndexFieldHoleMinThreshold());
+            }
+        } catch (TableNotFoundException | IOException e) {
+            throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
+        }
+        return fieldIndexHolesByDatatype;
+    }
+
+    /**
+     * Take a map of field to index field holes (datatype agnostic), and return a sorted timeline of boundaries which are the start and end of the index holes
+     *
+     * @param fieldIndexHoles
+     * @param beginDate
+     * @param endDate
+     * @return a timeline of index field hole boundaries
+     */
+    private SortedSet<IndexFieldHoleBoundary> createTimeline(Map<String,IndexFieldHole> fieldIndexHoles, Date beginDate, Date endDate) {
+        // We want to create a timeline of index hole begin and end dates
+        // that overlap the query's target date range
+        // and map to the fields for which holes are beginning and ending
+        SortedSet<IndexFieldHoleBoundary> timeline = new TreeSet<>();
+        for (Map.Entry<String,IndexFieldHole> hole : fieldIndexHoles.entrySet()) {
+            String field = hole.getKey();
+            IndexFieldHole indexHole = hole.getValue();
+            for (Pair<Date,Date> range : getHolesOverlappingOriginalQueryDateRange(beginDate, endDate, indexHole)) {
+                timeline.add(new IndexFieldHoleBoundary(range.getLeft(), true, field));
+                timeline.add(new IndexFieldHoleBoundary(range.getRight(), false, field));
             }
         }
-        // TODO: use relevantHoles to make FieldIndexHoles to pass to DefaultQueryPlanner?
-        this.relevantHoles = relevantHoles;
-        return subDateRanges;
-    }
-
-    private SortedSet<Pair<Date,Date>> spanEntireDays(Collection<Pair<Date,Date>> holes) {
-        SortedSet<Pair<Date,Date>> holesThatSpanEntireDays = new TreeSet<>();
-        holes.stream().forEach(p -> holesThatSpanEntireDays.add(spanEntireDays(p)));
-        return holesThatSpanEntireDays;
-    }
-
-    private Pair<Date,Date> spanEntireDays(Pair<Date,Date> hole) {
-        Calendar begin = Calendar.getInstance();
-        begin.setTime(hole.getLeft());
-        begin.set(Calendar.HOUR, 0);
-        begin.set(Calendar.MINUTE, 0);
-        begin.set(Calendar.SECOND, 0);
-        begin.set(Calendar.MILLISECOND, 0);
-        Calendar end = Calendar.getInstance();
-        end.setTime(hole.getRight());
-        end.set(Calendar.HOUR, 23);
-        end.set(Calendar.MINUTE, 59);
-        end.set(Calendar.SECOND, 59);
-        end.set(Calendar.MILLISECOND, 999);
-        return Pair.of(begin.getTime(), end.getTime());
+        if (timeline.isEmpty()) {
+            timeline.add(new IndexFieldHoleBoundary(beginDate, true));
+            timeline.add(new IndexFieldHoleBoundary(endDate, false));
+        } else {
+            if (timeline.first().getBoundary().after(beginDate)) {
+                // start with and beginning boundary that starts at the beginDate with no unindex field
+                timeline.add(new IndexFieldHoleBoundary(beginDate, true));
+            }
+            // add an artificial end boundary if the end date of the query is not covered
+            if (timeline.last().getBoundary().before(endDate)) {
+                timeline.add(new IndexFieldHoleBoundary(endDate, false));
+            }
+        }
+        return timeline;
     }
 
     /**
      * Return the set of fields in the query.
      */
-    protected Set<String> getFieldsForQuery(ASTJexlScript queryTree, MetadataHelper metadataHelper){
+    protected Set<String> getFieldsForQuery(ASTJexlScript queryTree, MetadataHelper metadataHelper) {
         // Extract and return the fields from the query.
         return QueryFieldsVisitor.parseQueryFields(queryTree, metadataHelper);
     }
@@ -634,7 +710,16 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         }
 
         // There is at least one index hole that falls within the original query date range. Collect and return them.
-        return holes.stream().filter((range) -> isOverlappingDateRange(beginDate, endDate, range)).collect(Collectors.toCollection(TreeSet::new));
+        return holes.stream().filter((range) -> isOverlappingDateRange(beginDate, endDate, range))
+                        .map(range -> Pair.of(max(beginDate, range.getLeft()), min(endDate, range.getRight()))).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    private Date max(Date d1, Date d2) {
+        return (d1.compareTo(d2) >= 0 ? d1 : d2);
+    }
+
+    private Date min(Date d1, Date d2) {
+        return d1.compareTo(d2) <= 0 ? d1 : d2;
     }
 
     /**
@@ -652,133 +737,68 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     }
 
     /**
-     * Return whether any dates in the given date range fall within the original query's target date range, inclusively.
-     */
-    private boolean isInDateRange(Date beginDate, Date endDate, Pair<Date,Date> dateRange) {
-        return isInDateRange(beginDate, endDate, dateRange.getLeft()) || isInDateRange(beginDate, endDate, dateRange.getRight());
-    }
-
-    /**
-     * Return whether the given date falls within the start and end date of the original query's target date range, inclusively.
-     */
-    private boolean isInDateRange(Date beginDate, Date endDate, Date date) {
-        return (beginDate.getTime() <= date.getTime() && date.getTime() <= endDate.getTime());
-    }
-
-    /**
-     * Merge all consecutive/overlapping date ranges in the given set and return them.
-     */
-    private SortedSet<Pair<Date,Date>> mergeRanges(SortedSet<Pair<Date,Date>> ranges) {
-        // No merging needs to occur if there is only one date range.
-        if (ranges.size() == 1) {
-            return ranges;
-        }
-
-        SortedSet<Pair<Date,Date>> merged = new TreeSet<>();
-
-        // Scan over each date range and merge overlapping ones.
-        Iterator<Pair<Date,Date>> it = ranges.iterator();
-        Pair<Date,Date> prev = it.next();
-        while (it.hasNext()) {
-            Pair<Date,Date> curr = it.next();
-            if (curr.getLeft().getTime() <= prev.getRight().getTime() || curr.getLeft().getTime() == oneDayAfter(prev.getRight()).getTime()) {
-                // If the current date range's start date is equal to or before the end date of the previous date range, or is directly consecutive to the
-                // previous date range, replace the previous date range with a new date range that spans both date ranges.
-                prev = Pair.of(prev.getLeft(), curr.getRight());
-            } else {
-                // The previous and current date ranges do not overlap. Add the previous date range as a fully-merged range, and replace it with the current
-                // date range.
-                merged.add(prev);
-                prev = curr;
-            }
-        }
-        // Add the last date range.
-        merged.add(prev);
-
-        return merged;
-    }
-
-    /**
-     * Return one day after the given date.
-     */
-    private Date oneDayAfter(Date date) {
-        return addDays(date, 1);
-    }
-
-    /**
-     * Return one day before the given date.
-     */
-    private Date oneDayBefore(Date date) {
-        return addDays(date, -1);
-    }
-
-    /**
      * Return one millisecond after the given date.
      */
     private Date oneMsAfter(Date date) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(new Date(date.getTime()));
-        calendar.add(Calendar.MILLISECOND, 1);
-        return calendar.getTime();
+        return new Date(date.getTime() + 1);
     }
 
     /**
      * Return one millisecond before the given date.
      */
     private Date oneMsBefore(Date date) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(new Date(date.getTime()));
-        calendar.add(Calendar.MILLISECOND, -1);
-        return calendar.getTime();
-    }
-
-    /**
-     * Return the given date with the number of dates added to it.
-     */
-    private Date addDays(Date date, int daysToAdd) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(new Date(date.getTime()));
-        calendar.add(Calendar.DATE, daysToAdd);
-        return calendar.getTime();
+        return new Date(date.getTime() - 1);
     }
 
     public static class IndexFieldHoleBoundary implements Comparable<IndexFieldHoleBoundary> {
         private final Date date;
         private final boolean indexFieldHoleStart;
-        private final String field;
+        private final Set<String> fields = new HashSet<>();
+
         public IndexFieldHoleBoundary(Date date, boolean start, Set<String> fields) {
             this.date = date;
             this.indexFieldHoleStart = start;
             this.fields.addAll(fields);
         }
+
         public IndexFieldHoleBoundary(Date date, boolean start, String field) {
             this.date = date;
             this.indexFieldHoleStart = start;
             this.fields.add(field);
         }
+
+        public IndexFieldHoleBoundary(Date date, boolean start) {
+            this.date = date;
+            this.indexFieldHoleStart = start;
+        }
+
         public Date getBoundary() {
             return date;
         }
+
         public boolean isStart() {
             return indexFieldHoleStart;
         }
+
         public void addFields(Collection<String> fields) {
             fields.addAll(fields);
         }
+
         public Set<String> getFields() {
             return fields;
         }
+
         @Override
         public int hashCode() {
             return new HashCodeBuilder().append(date).append(indexFieldHoleStart).append(fields).toHashCode();
         }
+
         @Override
         public boolean equals(Object o) {
             if (o instanceof IndexFieldHoleBoundary) {
                 IndexFieldHoleBoundary other = (IndexFieldHoleBoundary) o;
-                return new EqualsBuilder().append(date, other.date)
-                        .append(indexFieldHoleStart, other.indexFieldHoleStart)
-                        .append(fields, other.fields).isEquals();
+                return new EqualsBuilder().append(date, other.date).append(indexFieldHoleStart, other.indexFieldHoleStart).append(fields, other.fields)
+                                .isEquals();
             }
             return false;
         }
