@@ -86,7 +86,7 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
 
     @Override
     public String toString() {
-        return "{zeroMatch=" + zeroOffsetMatch + ", offset=" + offset + ", prevSkips=" + prevSkips + ", score=" + score + '}';
+        return "{zeroMatch=" + zeroOffsetMatch + ", offset=" + offset + ", prevSkips=" + prevSkips + ", score=" + score + ", time=" + time + '}';
     }
 
     @Override
