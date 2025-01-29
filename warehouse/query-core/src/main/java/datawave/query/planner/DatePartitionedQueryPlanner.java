@@ -37,6 +37,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
+import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.planner.pushdown.rules.PushDownRule;
@@ -301,7 +302,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(originalConfig);
 
         // if no holes were found, then leave the iterator as is and used the initial planned script
-        dateRanges = null;
         if (dateRanges == null) {
             this.plannedScript = initialPlan.plannedScript;
         } else {
@@ -333,11 +333,17 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                 DefaultQueryPlanner subPlan = this.queryPlanner.clone();
 
                 try {
-                    // TODO: subplan reprocessing
                     Set<String> unindexedFields = dateRange.getValue();
 
-                    // CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, query, settings, scannerFactory, unindexedFields);
-                    // results.addIterable(queryData);
+                    if (!unindexedFields.isEmpty()) {
+                        ASTJexlScript queryTree = configCopy.getQueryTree();
+                        queryTree = PushdownUnindexedFieldsVisitor.pushdownPredicates(queryTree, configCopy, unindexedFields, queryPlanner.getMetadataHelper(),
+                                        configCopy.getDatatypeFilter());
+                        configCopy.setQueryTree(queryTree);
+                    }
+
+                    CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, settings, scannerFactory);
+                    results.addIterable(queryData);
                 } catch (Exception e) {
                     log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range ("
                                     + subBeginDate + "-" + subEndDate + ")", e);
@@ -434,7 +440,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // If no field index holes were found, we can return early with the original query date range.
         if (fieldIndexHolesByDatatype.isEmpty()) {
             log.debug("No field index holes found for query fields");
-            return noHoles(config);
+            return null;
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Field index holes found for query fields " + fieldIndexHolesByDatatype.keySet());
@@ -450,7 +456,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // if we found no holes that overlapped our date range, then we are done
         if (timeline.isEmpty()) {
             log.debug("No field index holes overlapping query range found");
-            return noHoles(config);
+            return null;
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Timeline contains " + timeline.size() + " boundaries to be examined");
@@ -565,18 +571,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             throw new DatawaveFatalQueryException(msg.toString());
         }
 
-    }
-
-    /**
-     * Return ranges with no unindexed fields
-     *
-     * @param config
-     * @return query range with no field holes
-     */
-    private SortedMap<Pair<Date,Date>,Set<String>> noHoles(ShardQueryConfiguration config) {
-        SortedMap<Pair<Date,Date>,Set<String>> ranges = new TreeMap<>();
-        ranges.put(Pair.of(config.getBeginDate(), config.getEndDate()), new HashSet<>());
-        return ranges;
     }
 
     /**
