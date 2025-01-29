@@ -90,14 +90,20 @@ public class SatisfactionVisitor extends BaseVisitor {
             isQueryFullySatisfied = false;
             return null;
         }
-        String field = JexlASTHelper.getIdentifier(node);
-        final boolean included = includeReferences.contains(field);
-        final boolean excluded = excludeReferences.contains(field);
 
-        if (excluded || !included) {
-            isQueryFullySatisfied = false;
-            return null;
+        String field = JexlASTHelper.getIdentifier(node);
+        // some queries will not have a field, as in the case of
+        // FIELD.max() == 1
+        if (field != null) {
+            final boolean included = includeReferences.contains(field);
+            final boolean excluded = excludeReferences.contains(field);
+
+            if (excluded || !included) {
+                isQueryFullySatisfied = false;
+                return null;
+            }
         }
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             // visit the kids in case there is a surprise there (like a Method node)
             node.jjtGetChild(i).jjtAccept(this, data);
