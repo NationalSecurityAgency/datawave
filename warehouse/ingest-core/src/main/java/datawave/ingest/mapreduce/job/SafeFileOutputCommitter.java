@@ -196,11 +196,10 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
                             FileStatus[] status = fs.listStatus(file.getPath());
                             Collections.addAll(files, status);
                         } catch (IOException e) {
-                            if( e instanceof FileNotFoundException)
-                            {
-                                LOG.debug("File was not found for listStatus call. This typically happens when " +
-                                        "a speculative execution file output was observed above, but has been cleaned" +
-                                        " up before reaching this line. File: {}", file.getPath());
+                            if (e instanceof FileNotFoundException) {
+                                LOG.debug("File was not found for listStatus call. This typically happens when "
+                                                + "a speculative execution file output was observed above, but has been cleaned"
+                                                + " up before reaching this line. File: {}", file.getPath());
                             } else {
                                 throw new RuntimeException(e);
                             }
