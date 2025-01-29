@@ -17,7 +17,8 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -109,7 +110,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         public void run() {
             long resultCount = 0L;
 
-            log.debug("Starting thread: " + this.getName());
+            log.debug("Starting thread: {}", this.getName());
 
             if (!started) {
                 startLatch.countDown();
@@ -132,21 +133,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                     try {
                         last = transformIterator.next();
                         if (null != last) {
-                            log.debug(Thread.currentThread().getName() + ": Got result");
+                            log.debug("{}: Got result", Thread.currentThread().getName());
 
                             // special logic to deal with intermediate results
                             if (last instanceof EventBase && ((EventBase) last).isIntermediateResult()) {
                                 // reset the page processing time to avoid getting spammed with these
                                 resetPageProcessingStartTime();
                                 // let the RunningQuery handle timeouts for long-running queries
-                                log.debug(Thread.currentThread().getName() + ": received intermediate result");
+                                log.debug("{}: received intermediate result", Thread.currentThread().getName());
                             } else {
                                 results.add(last);
                                 resultCount++;
-                                log.debug(Thread.currentThread().getName() + ": Added result to queue");
+                                log.debug("{}: Added result to queue", Thread.currentThread().getName());
                             }
                         } else {
-                            log.debug(Thread.currentThread().getName() + ": Got null result");
+                            log.debug("{}: Got null result", Thread.currentThread().getName());
                         }
                     } catch (InterruptedException e) {
                         // if this was on purpose, then just log and the loop will naturally exit
@@ -168,7 +169,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 if (success) {
                     completionLatch.countDown();
                 }
-                log.debug("Finished thread: " + this.getName() + " with success = " + success);
+                log.debug("Finished thread: {} with success = {}", this.getName(), success);
             }
         }
 
@@ -177,7 +178,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
     }
 
-    protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
+    protected static final Logger log = LoggerFactory.getLogger(CompositeQueryLogic.class);
 
     private CompositeQueryConfiguration config;
 
@@ -235,10 +236,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
         Set<Authorizations> downgradedAuths = AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, currentUser, queryUser);
         if (log.isTraceEnabled()) {
-            log.trace("Principal auths for user " + currentUser.getPrimaryUser().getCommonName() + " are " + currentUser.getPrimaryUser().getAuths());
-            log.trace("Query principal auths for " + logic.getLogicName() + " are " + validAuths);
-            log.trace("Requested auths were " + requestedAuths + " of which the valid query auths are " + validQueryAuthorizations);
-            log.trace("Downgraded auths are " + downgradedAuths);
+            log.trace("Principal auths for user {} are {}", currentUser.getPrimaryUser().getCommonName(), currentUser.getPrimaryUser().getAuths());
+            log.trace("Query principal auths for {} are {}", logic.getLogicName(), validAuths);
+            log.trace("Requested auths were {} of which the valid query auths are {}", requestedAuths, validQueryAuthorizations);
+            log.trace("Downgraded auths are {}", downgradedAuths);
         }
         return downgradedAuths;
     }
@@ -281,7 +282,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
                     // only add this query logic to the initialized logic states if it was not simply filtered out
                     if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
-                        log.info("Dropping " + logic.getLogicName() + " as it was filtered out");
+                        log.info("Dropping {} as it was filtered out", logic.getLogicName());
                         logicQueryStringBuilder.append(" && ").append("( filtered = true )");
                     } else {
                         logicQueryStringBuilder.append(" && ").append(config.getQueryString());
@@ -299,7 +300,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
-                    log.error("Failed to initialize " + logic.getClass().getName(), e);
+                    log.error("Failed to initialize {}", logic.getClass().getName(), e);
                     logicQueryStringBuilder.append(" && ").append("( failure = '").append(e.getMessage()).append("' )");
                     failedQueryLogics.put(logicName, logic);
                 } finally {
@@ -331,11 +332,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             if (log.isDebugEnabled()) {
                 log.debug("CompositeQuery initialized with the following queryLogics: ");
                 for (Entry<String,QueryLogic<?>> entry : getInitializedLogics().entrySet()) {
-                    log.debug("LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                    log.debug("LogicName: {}, tableName: {}", entry.getKey(), entry.getValue().getTableName());
                 }
                 if (isShortCircuitExecution()) {
                     for (Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
-                        log.debug("Pending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                        log.debug("Pending LogicName: {}, tableName: {}", entry.getKey(), entry.getValue().getTableName());
                     }
                 }
             }

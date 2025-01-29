@@ -29,7 +29,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
-import org.geotools.data.Join;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -415,7 +414,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            an {@link IteratorSetting}
      */
     protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
-        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+        if (script != null && !settings.getOptions().containsKey(QueryOptions.MOST_RECENT_UNIQUE) && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
             settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
             settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
             settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
