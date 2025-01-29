@@ -468,29 +468,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
 
-        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
-        QueryPlanner queryPlanner = getQueryPlanner();
-        DefaultQueryPlanner defaultQueryPlanner = null;
-        if (queryPlanner instanceof DefaultQueryPlanner) {
-            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-        } else if (queryPlanner instanceof DatePartitionedQueryPlanner) {
-            defaultQueryPlanner = ((DatePartitionedQueryPlanner) queryPlanner).getQueryPlanner();
-        }
-
-        if (defaultQueryPlanner != null) {
-            defaultQueryPlanner.setMetadataHelper(metadataHelper);
-            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
-
-            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
-            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
-            }
-
-            if (null != queryModelProvider.getQueryModel()) {
-                queryModel = queryModelProvider.getQueryModel();
-            }
-        }
+        initializeQueryModel(config, metadataHelper, dateIndexHelper);
 
         if (this.queryModel == null) {
             loadQueryModel(metadataHelper, config);
@@ -544,8 +522,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         DefaultQueryPlanner defaultQueryPlanner = null;
         if (queryPlanner instanceof DefaultQueryPlanner) {
             defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-        } else if (queryPlanner instanceof FederatedQueryPlanner) {
-            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        } else if (queryPlanner instanceof DatePartitionedQueryPlanner) {
+            defaultQueryPlanner = ((DatePartitionedQueryPlanner) queryPlanner).getQueryPlanner();
         }
 
         if (defaultQueryPlanner != null) {
