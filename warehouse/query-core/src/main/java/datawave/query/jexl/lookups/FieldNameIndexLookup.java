@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -180,6 +179,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                                 continue;
                             }
                         }
+
                         // We are only returning a mapping of field name to field value, no need to
                         // determine cardinality and such at this point.
                         indexLookupMap.put(colfam, row);

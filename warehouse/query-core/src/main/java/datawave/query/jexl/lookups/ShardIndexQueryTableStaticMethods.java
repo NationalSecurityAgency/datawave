@@ -54,6 +54,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -67,6 +68,9 @@ public class ShardIndexQueryTableStaticMethods {
     private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
+
+    // name reserved for executor pools
+    public static final String EXPANSION_HINT_KEY = "expansion";
 
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
@@ -222,7 +226,9 @@ public class ShardIndexQueryTableStaticMethods {
             return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
-            throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                            "Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
+            throw new IllegalArgumentException(qe);
         }
     }
 
@@ -440,9 +446,13 @@ public class ShardIndexQueryTableStaticMethods {
      *            check for limiting unique terms
      * @return the scanner session
      * @throws InvocationTargetException
+     *             if no target exists
      * @throws NoSuchMethodException
+     *             if no method exists
      * @throws InstantiationException
+     *             if there is a problem initializing
      * @throws IllegalAccessException
+     *             if there is an illegal access
      * @throws IOException
      *             dates can't be formatted
      */
@@ -455,7 +465,9 @@ public class ShardIndexQueryTableStaticMethods {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
@@ -483,7 +495,9 @@ public class ShardIndexQueryTableStaticMethods {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : tableName;
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
@@ -511,6 +525,13 @@ public class ShardIndexQueryTableStaticMethods {
         }
         IteratorSetting cfg = configureGlobalIndexDateRangeFilter(config, dateRange);
         bs.addScanIterator(cfg);
+
+        // unused method, but we'll still configure execution hints if possible
+        String executionHintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        if (config.getTableHints().containsKey(executionHintKey)) {
+            bs.setExecutionHints(config.getTableHints().get(executionHintKey));
+        }
     }
 
     public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
@@ -579,6 +600,16 @@ public class ShardIndexQueryTableStaticMethods {
         IteratorSetting cfg = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
 
         bs.addScanIterator(cfg);
+
+        // unused method, but we'll still configure execution hints if possible
+        if (!reverseIndex) {
+            // only apply hints to the global index
+            String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+            if (config.getTableHints().containsKey(hintKey)) {
+                bs.setExecutionHints(config.getTableHints().get(hintKey));
+            }
+        }
 
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }

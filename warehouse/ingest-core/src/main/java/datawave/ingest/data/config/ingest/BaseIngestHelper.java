@@ -47,6 +47,7 @@ import datawave.util.StringUtils;
  * fields values from the datatypes that they represent.
  */
 public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
+
     /**
      * Configuration parameter to specify that data should be marked for delete on ingest.
      */

@@ -72,6 +72,7 @@ import javax.xml.bind.Marshaller;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -166,6 +167,7 @@ import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
+import datawave.webservice.result.QueryValidationResponse;
 import datawave.webservice.result.VoidResponse;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.Message;
@@ -455,7 +457,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the logic name
      * @return QueryData
      */
-    private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+    private QueryData validateQueryParameters(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
 
         // Parameter 'logicName' is required and passed in prior to this call. Add to the queryParameters now.
         if (!queryParameters.containsKey(QueryParameters.QUERY_LOGIC_NAME)) {
@@ -623,7 +625,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQuery(queryLogicName, queryParameters, httpHeaders);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -687,7 +689,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQuery(queryLogicName, queryParameters, httpHeaders);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, httpHeaders);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -850,7 +852,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.planQuery", absolute = true)
     public GenericResponse<String> planQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters) {
-        QueryData qd = validateQuery(queryLogicName, queryParameters, null);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -1000,7 +1002,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        QueryData qd = validateQuery(queryLogicName, queryParameters, null);
+        QueryData qd = validateQueryParameters(queryLogicName, queryParameters, null);
 
         GenericResponse<String> response = new GenericResponse<>();
 
@@ -2995,6 +2997,101 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             q.setParameters(params);
         }
+    }
+
+    /**
+     * @param queryLogicName
+     *            the logic name
+     * @param queryParameters
+     *            the query parameters
+     * @return the generic response
+     */
+    @POST
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff"})
+    @Path("/{logicName}/validate")
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    @Timed(name = "dw.query.validateQuery", absolute = true)
+    public QueryValidationResponse validateQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+                    MultivaluedMap<String,String> queryParameters) {
+        QueryData queryData = validateQueryParameters(queryLogicName, queryParameters, null);
+
+        QueryValidationResponse response = new QueryValidationResponse();
+
+        Query query = null;
+        AccumuloClient client = null;
+
+        try {
+            // Do not persist the query.
+            qp.setPersistenceMode(QueryPersistence.TRANSIENT);
+            Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultivaluedMap(queryParameters));
+            query = persister.create(queryData.userDn, queryData.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
+
+            AccumuloConnectionFactory.Priority priority = queryData.logic.getConnectionPriority();
+            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            query.populateTrackingMap(trackingMap);
+            accumuloConnectionRequestBean.requestBegin(query.getId().toString(), queryData.userDn, trackingMap);
+
+            // Create an accumulo client.
+            try {
+                client = connectionFactory.getClient(queryData.userDn, queryData.proxyServers, queryData.logic.getConnPoolName(), priority, trackingMap);
+            } finally {
+                accumuloConnectionRequestBean.requestEnd(query.getId().toString());
+            }
+
+            // The query principal is our local principal unless the query logic has a different user operations.
+            if (qp.getAuths() != null) {
+                queryData.logic.preInitialize(query,
+                                WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
+            } else {
+                queryData.logic.preInitialize(query, WSAuthorizationsUtil.buildAuthorizations(null));
+            }
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((queryData.logic.getUserOperations() == null) ? queryData.p
+                            : queryData.logic.getUserOperations().getRemoteUser((DatawavePrincipal) queryData.p));
+            // The overall principal (the one with combined auths across remote user operations) is our own user operations bean.
+            DatawavePrincipal overallPrincipal = userOperationsBean.getRemoteUser((DatawavePrincipal) queryData.p);
+            Set<Authorizations> calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
+
+            // Validate the query.
+            Object validationResult = queryData.logic.validateQuery(client, query, calculatedAuths);
+
+            // Convert the validation results to a response.
+            Transformer<Object,QueryValidationResponse> responseTransformer = queryData.logic.getQueryValidationResponseTransformer();
+            response = responseTransformer.transform(validationResult);
+            response.setQueryId(query.getId().toString());
+            response.setLogicName(queryLogicName);
+        } catch (Exception e) {
+            // Add the exception to the response.
+            String queryId = (query != null ? query.getId().toString() : "<unknown>");
+            response.addMessage("Query validation failed for " + queryId);
+            log.error(queryId + ": " + e.getMessage(), e);
+
+            QueryException qe = new QueryException(DatawaveErrorCode.QUERY_VALIDATION_ERROR, e);
+            response.addException(qe.getBottomQueryException());
+            int statusCode = qe.getBottomQueryException().getStatusCode();
+
+            throw new DatawaveWebApplicationException(qe, response, statusCode);
+        } finally {
+            // Return the accumulo client.
+            if (null != client) {
+                try {
+                    connectionFactory.returnClient(client);
+                } catch (Exception e) {
+                    log.error("Error returning accumulo connection", e);
+                }
+            }
+
+            // Release any resources held by the logic.
+            if (queryData.logic != null) {
+                try {
+                    queryData.logic.close();
+                } catch (Exception e) {
+                    log.error("Error closing query logic", e);
+                }
+            }
+        }
+
+        return response;
     }
 
     /**

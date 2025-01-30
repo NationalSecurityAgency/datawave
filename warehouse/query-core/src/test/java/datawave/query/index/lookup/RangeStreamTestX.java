@@ -343,6 +343,44 @@ public class RangeStreamTestX {
         m.put(new Text("F4"), new Text("20200101_13\0datatype1"), valueForShard);
         bw.addMutation(m);
 
+        // --------------- some entries for post-index sorting via field or term counts
+
+        m = new Mutation("23");
+        m.put(new Text("FIELD_A"), new Text("20200101_10\0sort-type"), createValue(23L));
+        m.put(new Text("FIELD_B"), new Text("20200101_10\0sort-type"), createValue(23L));
+        m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(23L));
+        bw.addMutation(m);
+
+        m = new Mutation("34");
+        m.put(new Text("FIELD_A"), new Text("20200101_10\0sort-type"), createValue(34L));
+        m.put(new Text("FIELD_B"), new Text("20200101_10\0sort-type"), createValue(34L));
+        m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(34L));
+        bw.addMutation(m);
+
+        m = new Mutation("45");
+        m.put(new Text("FIELD_A"), new Text("20200101_10\0sort-type"), createValue(45L));
+        m.put(new Text("FIELD_B"), new Text("20200101_10\0sort-type"), createValue(45L));
+        m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(45L));
+        bw.addMutation(m);
+
+        // --------------- some entries to verify that proper merges happen when the count hits zero or below
+
+        m = new Mutation("negative one");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(-1));
+        bw.addMutation(m);
+
+        m = new Mutation("zero");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(0));
+        bw.addMutation(m);
+
+        m = new Mutation("one");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), buildValueForShard());
+        bw.addMutation(m);
+
+        m = new Mutation("one billion");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(1_000_000_000L));
+        bw.addMutation(m);
+
         // ---------------
 
         bw.flush();
@@ -354,6 +392,21 @@ public class RangeStreamTestX {
         builder.addUID("a.b.c");
         builder.setIGNORE(false);
         builder.setCOUNT(1);
+        Uid.List list = builder.build();
+        return new Value(list.toByteArray());
+    }
+
+    /**
+     * Create a value with a count
+     *
+     * @param count
+     *            the count
+     * @return a value
+     */
+    private static Value createValue(long count) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setIGNORE(true);
+        builder.setCOUNT(count);
         Uid.List list = builder.build();
         return new Value(list.toByteArray());
     }
@@ -371,6 +424,10 @@ public class RangeStreamTestX {
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setClient(client);
+
+        // disable all post-index sort options by default
+        config.setSortQueryPostIndexWithFieldCounts(false);
+        config.setSortQueryPostIndexWithTermCounts(false);
     }
 
     // A && B
@@ -3400,6 +3457,72 @@ public class RangeStreamTestX {
         runTest(query, expectedRanges, expectedQueries);
     }
 
+    @Test
+    public void testSortingByFieldCardinality() {
+        String query = "FIELD_A == '45' || FIELD_B == '34' || FIELD_C == '23'";
+        String expected = "(FIELD_C == '23' || FIELD_B == '34' || FIELD_A == '45')";
+
+        config.setSortQueryPostIndexWithFieldCounts(true);
+        drive(query, expected);
+    }
+
+    @Test
+    public void testSortingByTermCardinality() {
+        String query = "FIELD_A == '45' || FIELD_B == '34' || FIELD_C == '23'";
+        String expected = "(FIELD_C == '23' || FIELD_B == '34' || FIELD_A == '45')";
+
+        config.setSortQueryPostIndexWithTermCounts(true);
+        drive(query, expected);
+    }
+
+    @Test
+    public void testIntersectionsOfVariousCounts() {
+        String query = "(F1 == 'negative one' && F1 == 'negative one')";
+        drive(query, "F1 == 'negative one'");
+
+        query = "(F1 == 'negative one' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'negative one')";
+        drive(query, query);
+
+        query = "(F1 == 'negative one' && F1 == 'one billion')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one billion' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'one billion')";
+        drive(query, query);
+    }
+
+    @Test
+    public void testUnionsOfVariousCounts() {
+        String query = "(F1 == 'negative one' || F1 == 'negative one')";
+        drive(query, "(F1 == 'negative one')");
+
+        query = "(F1 == 'negative one' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'negative one')";
+        drive(query, query);
+
+        query = "(F1 == 'negative one' || F1 == 'one billion')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one billion' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'one billion')";
+        drive(query, query);
+    }
+
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
 
         assertEquals("Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size(),
@@ -3484,5 +3607,55 @@ public class RangeStreamTestX {
             fail("Expected ranges still exist after test: " + shardIter.next());
         if (queryIter.hasNext())
             fail("Expected queries still exist after test: " + queryIter.next());
+    }
+
+    /**
+     * Drives a query against a subset of the index data to verify post-index sorting options
+     *
+     * @param query
+     *            the input query
+     * @param expected
+     *            the expected query
+     */
+    private void drive(String query, String expected) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            config.setBeginDate(sdf.parse("20200101"));
+            config.setEndDate(sdf.parse("20200105"));
+
+            config.setDatatypeFilter(Sets.newHashSet("sort-type", "datatype1"));
+
+            Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+            dataTypes.putAll("FIELD_A", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("FIELD_B", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("FIELD_C", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("F1", Sets.newHashSet(new LcNoDiacriticsType()));
+
+            config.setQueryFieldsDatatypes(dataTypes);
+            config.setIndexedFields(dataTypes);
+
+            MockMetadataHelper helper = new MockMetadataHelper();
+            helper.setIndexedFields(dataTypes.keySet());
+
+            // Run a standard limited-scanner range stream.
+            ScannerFactory scannerFactory = new ScannerFactory(config);
+            try (RangeStream rangeStream = new RangeStream(config, scannerFactory, helper)) {
+                rangeStream.setLimitScanners(true);
+
+                Iterator<QueryPlan> plans = rangeStream.streamPlans(script).iterator();
+
+                assertTrue(plans.hasNext());
+                QueryPlan plan = plans.next();
+
+                String plannedQuery = plan.getQueryString();
+                assertEquals(expected, plannedQuery);
+
+                assertFalse(plans.hasNext());
+            }
+        } catch (Exception e) {
+            fail("test failed: " + e.getMessage());
+        }
     }
 }

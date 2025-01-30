@@ -38,7 +38,7 @@ public class ContentTransform extends DocumentTransform.DefaultDocumentTransform
                     Attribute<?> contentField = document.remove(contentFieldName);
                     if (contentField.getData().toString().equalsIgnoreCase("true")) {
                         Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
-                        document.put(contentFieldName, c, false, this.reducedResponse);
+                        document.put(contentFieldName, c, false);
                     }
                 }
             }
