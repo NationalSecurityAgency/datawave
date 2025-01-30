@@ -66,7 +66,8 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, new ShardQueryLogic()); // temp CHANGE THIS JUST FOR TESTING
+        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, new ShardQueryLogic()); // temp CHANGE THIS JUST
+                                                                                                                                        // FOR TESTING
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
     }
