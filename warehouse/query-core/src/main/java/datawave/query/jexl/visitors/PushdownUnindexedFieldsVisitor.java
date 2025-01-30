@@ -56,7 +56,8 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
      *
      * @param config
      *            a config
-     * @Param unindexedFields the fields considered unindexed
+     * @param unindexedFields
+     *            the fields considered unindexed
      * @param queryTree
      *            the query tree
      * @param helper
