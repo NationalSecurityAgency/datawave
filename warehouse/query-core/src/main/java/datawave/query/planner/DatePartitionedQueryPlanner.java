@@ -37,6 +37,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.model.IndexFieldHole;
@@ -66,6 +67,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
     private SortedSet<Pair<Date,Date>> relevantHoles;
+
+    // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
+    private TimedVisitorManager visitorManager = new TimedVisitorManager();
 
     /**
      * Return a new {@link DatePartitionedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
@@ -275,6 +279,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
+        visitorManager.setDebugEnabled(log.isDebugEnabled());
+
         // Validate the config type.
         if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
@@ -292,6 +298,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         if (log.isDebugEnabled()) {
             log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
         }
+
+        final QueryStopwatch timers = originalConfig.getTimers();
 
         // Let's do the planning with the delegate planner first to ensure we have a final date range
         // and appropriately expanded unfielded terms etc.
@@ -318,8 +326,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                 String subEndDate = dateFormat.format(dateRange.getKey().getRight());
 
                 // Start a new stopwatch.
-                TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed
-                                + " of " + dateRanges.size() + "] against date range (" + subBeginDate + "-" + subEndDate + ")");
+                TraceStopwatch stopwatch = timers.newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
+                                + dateRanges.size() + "] against date range (" + subBeginDate + "-" + subEndDate + ")");
 
                 // Set the new date range in a copy of the config.
                 ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
@@ -336,10 +344,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                     Set<String> unindexedFields = dateRange.getValue();
 
                     if (!unindexedFields.isEmpty()) {
-                        ASTJexlScript queryTree = configCopy.getQueryTree();
-                        queryTree = PushdownUnindexedFieldsVisitor.pushdownPredicates(queryTree, configCopy, unindexedFields, queryPlanner.getMetadataHelper(),
-                                        configCopy.getDatatypeFilter());
-                        configCopy.setQueryTree(queryTree);
+                        configCopy.setQueryTree(visitorManager.timedVisit(timers, "Push down indexed field holes",
+                                        () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), configCopy, unindexedFields,
+                                                        queryPlanner.getMetadataHelper(), configCopy.getDatatypeFilter()))));
                     }
 
                     CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, settings, scannerFactory);

@@ -272,6 +272,10 @@ public abstract class DatePartitionedQueryPlannerTest {
         });
 
         SortedMap<Pair<Date,Date>,Set<String>> subRanges = queryPlanner.getSubQueryDateRanges(logic.getConfig());
+        // if the subRanges is null, then this implies no holes
+        if (subRanges == null) {
+            return;
+        }
         // Subranges are sorted and should begin with the query beginDate and end with the query endDate
         Pair<Date,Date> firstSubRange = subRanges.keySet().stream().findFirst().get();
         Assert.assertNotNull("firstSubRange should not be null", firstSubRange);

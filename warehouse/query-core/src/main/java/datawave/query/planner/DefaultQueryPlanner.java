@@ -388,7 +388,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
         setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
-
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -614,16 +613,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
+
+        startConcurrentExecution(config);
+
         settingFuture = null;
-
         IteratorSetting cfg = null;
-
         if (preloadOptions) {
             cfg = getQueryIterator(metadataHelper, config, "", false, true);
         }
 
         try {
-            config.setQueryTree(reprocessTree(config, metadataHelper, config.getTimers()));
+            config.setQueryTree(reprocessTree(config, metadataHelper, config.getTimers(), scannerFactory));
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
@@ -1247,7 +1247,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return config.getQueryTree();
     }
 
-    protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers) throws DatawaveQueryException {
+    protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers, ScannerFactory scannerFactory)
+                    throws DatawaveQueryException {
+
+        TraceStopwatch stopwatch = null;
 
         // lets precompute the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
@@ -1264,26 +1267,44 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             debugOutput = new LinkedList<>();
         }
 
-        // Unless config.isExpandAllTerms is true, this may set some of
-        // the terms to be delayed.
-        if (!ExecutableDeterminationVisitor.isExecutable(config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
-                        metadataHelper)) {
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pull, Expand, Push (reprocess)");
 
-            // if we now have an unexecutable tree because of delayed
-            // predicates, then remove delayed predicates as needed
-            config.setQueryTree((ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(config.getQueryTree(), false, config, indexedFields,
-                            indexOnlyFields, nonEventFields, metadataHelper));
+        try {
+            // Unless config.isExpandAllTerms is true, this may set some of
+            // the terms to be delayed.
+            if (!ExecutableDeterminationVisitor.isExecutable(config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
+                            metadataHelper)) {
+
+                Map<String,IndexLookup> indexLookupMap = new HashMap<>();
+                // if we now have an unexecutable tree because of delayed
+                // predicates, then remove delayed predicates as needed and
+                // reexpand
+                config.setQueryTree(timedRemoveDelayedPredicates(timers, "Remove Delayed Predicates", config.getQueryTree(), config, metadataHelper,
+                                indexedFields, indexOnlyFields, nonEventFields, indexLookupMap, scannerFactory, metadataHelper, debugOutput));
+            }
+
+            // if we now have an unexecutable tree because of missing
+            // delayed predicates, then add delayed predicates where
+            // possible
+            config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
+                            indexOnlyFields, nonEventFields, debugOutput));
+        } catch (TableNotFoundException e) {
+            stopwatch.stop();
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (CannotExpandUnfieldedTermFatalException e) {
+            if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException) {
+                throw (DoNotPerformOptimizedQueryException) e.getCause();
+            }
+            QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
+            throw new DatawaveFatalQueryException(qe);
         }
-
-        // if we now have an unexecutable tree because of missing
-        // delayed predicates, then add delayed predicates where
-        // possible
-        config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
-                        indexOnlyFields, nonEventFields, debugOutput));
 
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
         }
+
+        stopwatch.stop();
 
         return config.getQueryTree();
     }
