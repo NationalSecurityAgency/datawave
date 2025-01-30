@@ -71,18 +71,17 @@ public class PipelinePool {
                 NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
                 if (null != nestedQuery) {
                     nq.setCurrentQuery(nestedQuery);
-                    pipeline.setSourceIterator(
-                                    sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
+                    pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(getSource(), nq, columnFamilies, inclusive, querySpanCollector));
                 }
             }
         } else if (checkedIn.size() + checkedOut.size() < maxPipelines) {
-            pipeline = new Pipeline(this.querySpanCollector, sourceForDeepCopy.deepCopy(env));
+            // this pipeline constructor doesn't actually use any of the objects passed in, so don't even bother
+            pipeline = new Pipeline(this.querySpanCollector, null);
             NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
             if (null != nestedQuery) {
                 nq.setCurrentQuery(nestedQuery);
             }
-            pipeline.setSourceIterator(
-                            sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
+            pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(getSource(), nq, columnFamilies, inclusive, querySpanCollector));
         }
         if (pipeline != null) {
             checkedOut.add(pipeline);
@@ -101,5 +100,15 @@ public class PipelinePool {
         pipeline.clear();
         checkedOut.remove(pipeline);
         checkedIn.add(pipeline);
+    }
+
+    private SortedKeyValueIterator<Key,Value> getSource() {
+        if (maxPipelines == 1) {
+            // if the pipeline pool services a serial iterator do not deep copy the source
+            return sourceForDeepCopy;
+        }
+
+        // if more than one pipeline is allowed to run at once, assume a fresh copy of the source is a required
+        return sourceForDeepCopy.deepCopy(env);
     }
 }
