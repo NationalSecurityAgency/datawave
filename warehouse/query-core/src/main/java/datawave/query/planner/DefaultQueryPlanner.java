@@ -2195,6 +2195,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected void configureAdditionalOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
         // no-op
     }
+
     private static final int QUERY_ITERATOR_PRIORITY_ADDEND = 40;
 
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
