@@ -3,12 +3,14 @@ package datawave.ingest.mapreduce.job;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
@@ -18,6 +20,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.ImmutableSortedSet;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -195,5 +199,15 @@ public class SplitsFile {
 
     public static List<Text> getSplits(Configuration conf, String tableName) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplits(tableName);
+    }
+
+    /**
+     * Creates a SplitResolver for splits returned from {@link #getSplits(Configuration)} or {@link #getSplits(Configuration, String)}
+     */
+    public static LoadPlan.SplitResolver createSplitResolver(Collection<Text> splits) {
+        // Using ImmutableSortedSet.copyOf instead of TreeSet because the implementation of ImmutableSortedSet will create a sorted array internally which is
+        // more memory efficient than a tree of node objects. Also if the collection is already an ImmutableSortedSet then no copy or sort will be done.
+        var sortedSplits = ImmutableSortedSet.copyOf(splits);
+        return LoadPlan.SplitResolver.from(sortedSplits);
     }
 }

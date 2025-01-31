@@ -1106,6 +1106,10 @@
                         <groupId>ch.qos.logback</groupId>
                         <artifactId>logback-classic</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-core</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1325,11 +1329,6 @@
                 <groupId>org.locationtech.jts</groupId>
                 <artifactId>jts-core</artifactId>
                 <version>${version.jts}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>${version.slf4j}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1880,6 +1879,10 @@
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
                                             <exclude>joda-time:joda-time</exclude>
                                         </excludes>
+                                        <includes>
+                                            <!-- only allow API jar for slf4j, but no other slf4j implementations -->
+                                            <include>org.slf4j:slf4j-api</include>
+                                        </includes>
                                     </bannedDependencies>
                                 </rules>
                                 <fail>true</fail>
