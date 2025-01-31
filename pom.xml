@@ -893,6 +893,10 @@
                         <groupId>ch.qos.logback</groupId>
                         <artifactId>logback-classic</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-core</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1088,11 +1092,6 @@
                 <groupId>org.locationtech.jts</groupId>
                 <artifactId>jts-core</artifactId>
                 <version>${version.jts}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>${version.slf4j}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1613,10 +1612,20 @@
                                 <rules>
                                     <bannedDependencies>
                                         <excludes>
-                                            <exclude>log4j:log4j</exclude>
-                                            <exclude>org.slf4j:slf4j-log4j12</exclude>
-                                            <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <!-- we redirect logging to log4j2, so we should have those bridges instead -->
+                                            <!-- commons-logging is allowed because it natively sends to log4j2 or slf4j -->
+                                            <exclude>ch.qos.logback:*</exclude>
+                                            <exclude>ch.qos.reload4j:*</exclude>
+                                            <exclude>log4j:*</exclude>
+                                            <!-- exclude log4j-slf4j-impl to prefer log4j-slf4j2-impl -->
+                                            <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+                                            <exclude>org.apache.logging.log4j:log4j-to-slf4j</exclude>
+                                            <exclude>org.slf4j:*</exclude>
                                         </excludes>
+                                        <includes>
+                                            <!-- only allow API jar for slf4j, but no other slf4j implementations -->
+                                            <include>org.slf4j:slf4j-api</include>
+                                        </includes>
                                     </bannedDependencies>
                                 </rules>
                                 <fail>true</fail>

@@ -275,7 +275,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if(this.loadPlanningEnabled) {
             var splits = SplitsFile.getSplits(conf, table);
             if(splits != null && !splits.isEmpty()) {
-                LoadPlan.SplitResolver splitResolver = row->findContainingSplits(row, splits);
+                LoadPlan.SplitResolver splitResolver = SplitsFile.createSplitResolver(splits);
                 builder = builder.withSplitResolver(splitResolver);
             }
         }
@@ -360,27 +360,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             }
         });
         log.debug("Finished writing bulk load plans to disk");
-    }
-
-    /**
-     * Finds two contiguous table splits that contain the specified row should reside
-     *
-     * @param lookupRow
-     *            Row value to be mapped
-     * @param tableSplits
-     *            Splits for the table in question
-     * @return KeyExtent mapping for the given row
-     */
-    static LoadPlan.TableSplits findContainingSplits(Text lookupRow, List<Text> tableSplits) {
-        int position = Collections.binarySearch(tableSplits, lookupRow);
-        if (position < 0) {
-            position = -1 * (position + 1);
-        }
-
-        Text prevRow = position == 0 ? null : tableSplits.get(position - 1);
-        Text endRow = position == tableSplits.size() ? null : tableSplits.get(position);
-
-        return new LoadPlan.TableSplits(prevRow, endRow);
     }
 
     public static class SizeTrackingWriter {

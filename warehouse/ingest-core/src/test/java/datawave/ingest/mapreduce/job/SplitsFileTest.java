@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.job;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -10,11 +11,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -196,6 +204,85 @@ public class SplitsFileTest {
         Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // this should NOT cause an exception
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
+    }
+
+    @Test
+    public void testPlanning() {
+        SortedSet<Text> rfileRows = new TreeSet<>();
+        rfileRows.add(new Text("20160602_0"));
+        rfileRows.add(new Text("20170601_0"));
+        rfileRows.add(new Text("20170601_1"));
+        rfileRows.add(new Text("20170602_1"));
+        rfileRows.add(new Text("20170602_0a1"));
+        rfileRows.add(new Text("20170602_0a11"));
+        rfileRows.add(new Text("20170602_0a111"));
+        rfileRows.add(new Text("20170602_0b1"));
+        rfileRows.add(new Text("20170602_0c1"));
+        rfileRows.add(new Text("20170603_0"));
+        rfileRows.add(new Text("20170603_0a11"));
+        rfileRows.add(new Text("20170603_0a12"));
+        rfileRows.add(new Text("20170603_0b"));
+        rfileRows.add(new Text("20170603_0c"));
+        rfileRows.add(new Text("20170603_0d"));
+        rfileRows.add(new Text("20170601_9"));
+        rfileRows.add(new Text("20200601_9"));
+
+        Set<LoadPlan.TableSplits> expectedExtents = new HashSet<>();
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170601_0"), new Text("20170601_1")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170601_8"), new Text("20170601_9")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170602_0"), new Text("20170602_1")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_9"), null));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0c"), new Text("20170603_1")));
+        expectedExtents.add(new LoadPlan.TableSplits(null, new Text("20170601_0")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170602_9c"), new Text("20170603_0")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0a"), new Text("20170603_0b")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0b"), new Text("20170603_0c")));
+
+        var splitResolver = SplitsFile.createSplitResolver(getSplits());
+        Set<LoadPlan.TableSplits> extents = rfileRows.stream().map(splitResolver).collect(Collectors.toCollection(HashSet::new));
+
+        assertEquals(expectedExtents, extents);
+    }
+
+    private ArrayList<Text> getSplits() {
+        var arr = new ArrayList<Text>();
+        arr.add(new Text("20170601_0")); // 0
+        arr.add(new Text("20170601_1")); // 1
+        arr.add(new Text("20170601_2")); // 2
+        arr.add(new Text("20170601_3")); // 3
+        arr.add(new Text("20170601_4")); // 4
+        arr.add(new Text("20170601_5")); // 5
+        arr.add(new Text("20170601_6")); // 6
+        arr.add(new Text("20170601_7")); // 7
+        arr.add(new Text("20170601_8")); // 8
+        arr.add(new Text("20170601_9")); // 9
+        arr.add(new Text("20170602_0")); // 10
+        arr.add(new Text("20170602_1")); // 11
+        arr.add(new Text("20170602_2")); // 12
+        arr.add(new Text("20170602_3")); // 13
+        arr.add(new Text("20170602_4")); // 14
+        arr.add(new Text("20170602_5")); // 15
+        arr.add(new Text("20170602_6")); // 16
+        arr.add(new Text("20170602_7")); // 17
+        arr.add(new Text("20170602_8")); // 18
+        arr.add(new Text("20170602_9")); // 19
+        arr.add(new Text("20170602_9a")); // 20
+        arr.add(new Text("20170602_9b")); // 21
+        arr.add(new Text("20170602_9c")); // 22
+        arr.add(new Text("20170603_0")); // 23
+        arr.add(new Text("20170603_0a")); // 24
+        arr.add(new Text("20170603_0b")); // 25
+        arr.add(new Text("20170603_0c")); // 26
+        arr.add(new Text("20170603_1")); // 27
+        arr.add(new Text("20170603_2")); // 28
+        arr.add(new Text("20170603_3")); // 29
+        arr.add(new Text("20170603_4")); // 30
+        arr.add(new Text("20170603_5")); // 31
+        arr.add(new Text("20170603_6")); // 32
+        arr.add(new Text("20170603_7")); // 34
+        arr.add(new Text("20170603_8")); // 35
+        arr.add(new Text("20170603_9")); // 36
+        return arr;
     }
 
     private SortedMap<Text,String> simulateUnbalancedSplitsForDay(int daysAgo, String tableName) throws IOException {
