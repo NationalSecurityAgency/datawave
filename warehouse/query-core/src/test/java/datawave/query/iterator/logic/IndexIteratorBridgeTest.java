@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlNodeFactory;
 
-class IndexIteratorBridgeTest {
+public class IndexIteratorBridgeTest {
 
     private final SortedSet<String> uids = new TreeSet<>(Arrays.asList("a", "b", "c", "d", "e"));
 
@@ -73,7 +73,7 @@ class IndexIteratorBridgeTest {
 
     // === helper methods ===
 
-    protected static IndexIteratorBridge createIndexIteratorBridge(String field, SortedSet<String> uids) {
+    public static IndexIteratorBridge createIndexIteratorBridge(String field, SortedSet<String> uids) {
         return createIndexIteratorBridge(field, uids, false, -1);
     }
 

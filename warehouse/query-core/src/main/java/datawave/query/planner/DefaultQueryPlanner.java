@@ -419,7 +419,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         IteratorSetting logCfg = null;
 
         if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
             if (config.isTserverLoggingActive()) {
                 logCfg = getQueryLogIterator(config, settings);
             }
@@ -478,7 +478,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, settings, "", false, false);
+                cfg = getQueryIterator(metadataHelper, config, "", false, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
 
@@ -2219,8 +2219,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     private static final int QUERY_ITERATOR_PRIORITY_ADDEND = 40;
 
-    protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
-                    final String queryString, final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final String queryString,
+                    final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
 
         return builderThread.submit(() -> {
 
@@ -2434,8 +2434,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the {@link MetadataHelper}
      * @param config
      *            the {@link ShardQueryConfiguration}
-     * @param settings
-     *            the {@link Query}
      * @param queryString
      *            the raw query string
      * @param isFullTable
@@ -2446,10 +2444,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @throws DatawaveQueryException
      *             if something goes wrong
      */
-    protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
+                    boolean isPreload) throws DatawaveQueryException {
         if (null == settingFuture) {
-            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
+            settingFuture = loadQueryIterator(metadataHelper, config, queryString, isFullTable, isPreload);
         }
         if (settingFuture.isDone()) {
             try {
@@ -2712,9 +2710,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         //  @formatter:off
         QueryPlan queryPlan = new QueryPlan()
-                        .withTableName(config.getShardTableName())
-                        .withQueryTree(queryTree)
-                        .withRanges(Collections.singleton(range));
+                .withTableName(config.getShardTableName())
+                .withQueryTree(queryTree)
+                .withRanges(Collections.singleton(range));
         //  @formatter:on
 
         return new CloseableListIterable<>(Collections.singletonList(queryPlan));

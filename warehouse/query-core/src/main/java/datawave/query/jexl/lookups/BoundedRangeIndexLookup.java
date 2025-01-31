@@ -179,8 +179,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                                 MessageFormat.format("Table: {0}", config.getIndexTableName()));
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
-
             }
+            // Note: scanners should never be closed here in a 'finally' block. The lookup()
+            // method will close the scanner via scannerFactory.close(scanner)
         }
     }
 
@@ -226,7 +227,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                         Key k = entry.getKey();
 
-                        log.info("tk: " + k.toStringNoTime());
                         if (log.isTraceEnabled()) {
                             log.trace("Forward Index entry: " + entry.getKey());
                         }

@@ -678,6 +678,37 @@ public abstract class GroupingTest {
     }
 
     /**
+     * Verify that specifying a single field via the lucene function works correctly.
+     */
+    @Test
+    public void testGroupBySingleField() throws Exception {
+        givenNonModelData();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY(AGE)");
+        givenQueryParameter(QueryParameters.RETURN_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.HIT_LIST, "true");
+        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=100");
+        givenQueryParameter(QueryOptions.REDUCED_RESPONSE, "true");
+        logic.setCollectTimingDetails(true);
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("16").withCount(1));
+        expectGroup(Group.of("18").withCount(2));
+        expectGroup(Group.of("20").withCount(2));
+        expectGroup(Group.of("22").withCount(2));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("30").withCount(1));
+        expectGroup(Group.of("34").withCount(1));
+        expectGroup(Group.of("40").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
      * Verify that specifying group fields via a LUCENE function works correctly.
      */
     @Test

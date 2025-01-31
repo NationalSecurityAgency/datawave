@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -17,6 +17,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.iterators.ValueCombiner;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
@@ -24,7 +25,6 @@ import datawave.ingest.protobuf.Uid.List.Builder;
  */
 public class GlobalIndexUidAggregator extends PropogatingCombiner {
     private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
-    private static final String TIMESTAMPS_IGNORED = "timestampsIgnored";
 
     /**
      * Using a set instead of a list so that duplicate UIDs are filtered out of the list. This might happen in the case of rows with masked fields that share a
@@ -57,11 +57,6 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      */
     private long count = 0;
 
-    /**
-     * Indicates whether timestamps are "ignored" where it is assumed all keys aggregated by this class share the same timestamp value.
-     */
-    private boolean timestampsIgnored = true;
-
     public GlobalIndexUidAggregator(int max) {
         this.maxUids = max;
     }
@@ -77,6 +72,30 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         return seenIgnore;
     }
 
+    /**
+     * Normally this class will return the most recent key associated with the combined values. We need this key to have a truncated timestamp.
+     *
+     * @return The top key with a truncated timestamp.
+     */
+    @Override
+    public Key getTopKey() {
+        return TruncatingTimestampIterator.getTruncatedTimestampKey(super.getTopKey());
+    }
+
+    /**
+     * We want timestamps in the global index to be combined separately. Normally all of the timestamps on the global index are truncated to the day at
+     * 00:00:00. However we could have a composite timestamp (@see CompositeTimestamp) in which case we want separate entries. A TruncatingTimestampIterator was
+     * added in-case entries are added that are not truncated to the beginning of the day.
+     *
+     * @param iterator
+     * @return an iterator of values
+     */
+    @Override
+    public Iterator<Value> getValues(SortedKeyValueIterator<Key,Value> iterator) {
+        return new ValueCombiner(new TruncatingTimestampIterator(iterator), PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
+    }
+
+    @Override
     public Value aggregate() {
 
         Builder builder = Uid.List.newBuilder();
@@ -229,27 +248,14 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      */
     private boolean processRemovalUids(Uid.List value) {
         for (String uid : value.getREMOVEDUIDList()) {
-            // Don't remove the UID if it's in the UID list since that means a newer key
-            // (larger timestamp value) added the UID and we don't want to undo that add.
-            // If timestampsIgnored is set, then we are presuming lots of collisions on
-            // timestamp and the order of incoming values is non-deterministic. In that case
+            // The order of incoming values for the same timestamp is non-deterministic. In that case
             // we give precedence to a removal over an add and mark this UID as removed even
             // if it was in the UID list.
-            //
-            // If we're not propagating changes then don't bother adding UIDs to the
-            // REMOVEDUID list. This happens if either we're doing a scan or a full major
-            // compaction. In those cases, we're guaranteed that we'll see all of the values
-            // for a given key and therefore there's no need to include removed UIDs in the
-            // output protocol buffer since the remove have already been applied.
-            if (timestampsIgnored) {
-                uids.remove(uid);
-                // Even if propagate is false, the removal UID should persist until all PB lists
-                // in the current iteration have been seen, in case a subsequent PB has the UID
-                // marked for removal.
-                uidsToRemove.add(uid);
-            } else if (propogate && !uids.contains(uid)) {
-                uidsToRemove.add(uid);
-            }
+            uids.remove(uid);
+            // Even if propagate is false, the removal UID should persist until all PB lists
+            // in the current iteration have been seen, in case a subsequent PB has the UID
+            // marked for removal.
+            uidsToRemove.add(uid);
             // Avoid exceeding maxUids in the uidToRemove list, even when propogating.
             // Check for this condition after adding each of the remove UID entries to uidsToRemove,
             // which also de-duplicates uids in that Set.
@@ -326,18 +332,12 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = super.validateOptions(options);
-        if (valid) {
-            if (options.containsKey(TIMESTAMPS_IGNORED)) {
-                timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
-            }
-        }
         return valid;
     }
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         GlobalIndexUidAggregator copy = (GlobalIndexUidAggregator) super.deepCopy(env);
-        copy.timestampsIgnored = timestampsIgnored;
         copy.propogate = propogate;
         // Not copying other fields that are all cleared in the reset() method.
         return copy;
@@ -346,12 +346,5 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        if (options.containsKey(TIMESTAMPS_IGNORED)) {
-            timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
-        }
-    }
-
-    public static void setTimestampsIgnoredOpt(IteratorSetting is, boolean timestampsIgnored) {
-        is.addOption(TIMESTAMPS_IGNORED, Boolean.toString(timestampsIgnored));
     }
 }

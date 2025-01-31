@@ -32,7 +32,7 @@ public class IvaratorRequiredVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
         if (instance.isType(EVALUATION_ONLY)) {
             return data;
-        } else if (instance.isAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE)) {
+        } else if (instance.isIvarator()) {
             ivaratorRequired = true;
         } else if (!instance.isAnyTypeOf()) {
             super.visit(and, data);
