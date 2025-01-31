@@ -2289,7 +2289,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private static final int QUERY_LOG_ITERATOR_PRIORITY_ADDEND = QUERY_ITERATOR_PRIORITY_ADDEND + 1;
 
     protected Future<IteratorSetting> loadQueryLogIterator(final ShardQueryConfiguration config, final Query settings) {
-        return builderThread.submit(() -> {
+        return executor.submit(() -> {
             // Create the query log iterator only if tserver logging should be active.
             if (config.isTserverLoggingActive()) {
                 // VersioningIterator is typically set at 20 on the table
