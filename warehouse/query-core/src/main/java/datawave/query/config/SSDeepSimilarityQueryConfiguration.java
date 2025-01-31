@@ -42,12 +42,32 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         setQuery(new QueryImpl());
     }
 
+    public SSDeepSimilarityQueryConfiguration(SSDeepSimilarityQueryConfiguration other) {
+        copyFrom(other);
+    }
+
     public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
         super(configuredLogic);
     }
 
     public static SSDeepSimilarityQueryConfiguration create() {
         return new SSDeepSimilarityQueryConfiguration();
+    }
+
+    public void copyFrom(SSDeepSimilarityQueryConfiguration other) {
+        super.copyFrom(other);
+
+        this.bucketEncoder = other.bucketEncoder;
+        this.chunkSizeEncoder = other.chunkSizeEncoder;
+        setBucketEncodingBase(other.getBucketEncodingBase());
+        setBucketEncodingLength(other.getBucketEncodingLength());
+        setIndexBuckets(other.getIndexBuckets());
+        setMaxRepeatedCharacters(other.getMaxRepeatedCharacters());
+        setMinHashSize(other.getMinHashSize());
+        setNGramSize(other.getNGramSize());
+        setQueryMap(other.getQueryMap());
+        setQueryThreads(other.getQueryThreads());
+        setRanges(other.getRanges());
     }
 
     public Collection<Range> getRanges() {

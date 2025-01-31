@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -59,7 +60,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
-        final SSDeepSimilarityQueryConfiguration config = getConfig();
+        final SSDeepSimilarityQueryConfiguration config = new SSDeepSimilarityQueryConfiguration(getConfig());
         config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
@@ -74,7 +75,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             throw new QueryException("Did not receive a SSDeepSimilarityQueryConfiguration instance!!");
         }
 
-        this.config = (SSDeepSimilarityQueryConfiguration) genericConfig;
+        final SSDeepSimilarityQueryConfiguration config = (SSDeepSimilarityQueryConfiguration) genericConfig;
 
         try {
             final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), config.getQueryThreads(),
@@ -85,7 +86,9 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             // must be called after setRanges so that we get the query map from the config.
             final SSDeepScoringFunction scoringFunction = new SSDeepScoringFunction(config);
 
-            this.iterator = scanner.stream().flatMap(scoringFunction).distinct().iterator();
+            Stream<ScoredSSDeepPair> stream = scanner.stream().flatMap(scoringFunction);
+
+            this.iterator = stream.iterator();
             this.scanner = scanner;
 
         } catch (TableNotFoundException e) {
