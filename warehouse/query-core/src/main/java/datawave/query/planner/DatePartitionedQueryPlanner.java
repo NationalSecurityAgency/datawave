@@ -15,7 +15,6 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -37,7 +36,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.UidIntersector;
-import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.model.IndexFieldHole;
@@ -299,8 +297,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
         }
 
-        final QueryStopwatch timers = originalConfig.getTimers();
-
         // Let's do the planning with the delegate planner first to ensure we have a final date range
         // and appropriately expanded unfielded terms etc.
         DefaultQueryPlanner initialPlan = this.queryPlanner.clone();
@@ -314,83 +310,43 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             this.plannedScript = initialPlan.plannedScript;
         } else {
             FederatedQueryIterable results = new FederatedQueryIterable();
-            // reset the iterator to be our federated iterator
-            iterator = results;
 
-            ShardQueryConfiguration firstConfigCopy = null;
-            int totalProcessed = 1;
-            UUID queryId = originalConfig.getQuery().getId();
             for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
-                // Format the beginDate and endDate of the current sub-query to execute.
                 String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
                 String subEndDate = dateFormat.format(dateRange.getKey().getRight());
 
-                // Start a new stopwatch.
-                TraceStopwatch stopwatch = timers.newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
-                                + dateRanges.size() + "] against date range (" + subBeginDate + "-" + subEndDate + ")");
-
-                // Set the new date range in a copy of the config.
-                ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
-                configCopy.setBeginDate(dateRange.getKey().getLeft());
-                configCopy.setEndDate(dateRange.getKey().getRight());
-
-                // we want to make sure the same query id for tracking purposes and execution
-                configCopy.getQuery().setId(queryId);
-
-                // Create a copy of the original default query planner, and process the query with the new date range.
-                DefaultQueryPlanner subPlan = this.queryPlanner.clone();
+                // Get the configuration with an updated query (pushed down unindexed fields)
+                ShardQueryConfiguration configCopy = getUpdatedConfig(originalConfig, dateRange.getKey(), dateRange.getValue());
 
                 try {
-                    Set<String> unindexedFields = dateRange.getValue();
+                    // Create a copy of the original default query planner, and process the query with the new date range.
+                    DefaultQueryPlanner subPlan = this.queryPlanner.clone();
 
-                    if (!unindexedFields.isEmpty()) {
-                        configCopy.setQueryTree(visitorManager.timedVisit(timers, "Push down indexed field holes",
-                                        () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), configCopy, unindexedFields,
-                                                        queryPlanner.getMetadataHelper(), configCopy.getDatatypeFilter()))));
+                    // Get the range stream for the new date range and query
+                    results.addIterable(subPlan.reprocess(configCopy, configCopy.getQuery(), scannerFactory));
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Query string for config of sub-plan against date range (" + subBeginDate + "-" + subEndDate + ") with unindexed fields "
+                                        + dateRange.getValue() + ": " + configCopy.getQueryString());
                     }
+                } catch (DatawaveQueryException e) {
+                    log.warn("Exception occured when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")", e);
 
-                    CloseableIterable<QueryData> queryData = subPlan.reprocess(configCopy, settings, scannerFactory);
-                    results.addIterable(queryData);
-                } catch (Exception e) {
-                    log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range ("
-                                    + subBeginDate + "-" + subEndDate + ")", e);
-                    // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
-                    plans.add(subPlan.plannedScript);
-                    updatePlannedScript();
-
-                    // Copy over any changes in the sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
-                    // config.
-                    copySubConfigPropertiesToOriginal(originalConfig, configCopy);
                     throw e;
                 } finally {
-                    // Append the timers from the config copy to the original config for logging later.
+                    // append the new timers for logging at the end
                     originalConfig.appendTimers(configCopy.getTimers());
-                    if (log.isDebugEnabled()) {
-                        log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
-                    }
+
+                    // Add to the set of plans
+                    plans.add(configCopy.getQueryString());
+
+                    // Update the planned script.
+                    updatePlannedScript();
                 }
-
-                // Ensure we're tracking the planned script from the sub-plan.
-                plans.add(subPlan.getPlannedScript());
-
-                // <></>rack the first sub-config.
-                if (firstConfigCopy == null) {
-                    firstConfigCopy = configCopy;
-                    if (log.isDebugEnabled()) {
-                        log.debug("Federated first config query string: " + firstConfigCopy.getQueryString());
-                    }
-                }
-
-                stopwatch.stop();
-                totalProcessed++;
             }
 
-            // Update the planned script.
-            updatePlannedScript();
-
-            // Copy over any changes from the first sub-config to the original config. This will not affect the beginDate, endDate, or timers of the original
-            // config.
-            copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
+            // reset the iterator to be our federated iterator
+            iterator = results;
         }
 
         // Return the collected results.
@@ -421,18 +377,44 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     }
 
     /**
-     * Copy over all changes from the sub config to the original config, while preserving the start date, end date, and timers of the original config.
+     * Get a configuration object configured with an updated query date range, and a plan with pushed down unindexed fields.
+     *
+     * @param originalConfig
+     * @param dateRange
+     * @param unindexedFields
+     * @return The new configuration
+     * @throws DatawaveQueryException
      */
-    private void copySubConfigPropertiesToOriginal(ShardQueryConfiguration original, ShardQueryConfiguration subConfig) {
-        Date originalBeginDate = original.getBeginDate();
-        Date originalEndDate = original.getEndDate();
-        QueryStopwatch originalTimers = original.getTimers();
-        // Copy over all properties from the sub-config.
-        original.copyFrom(subConfig);
-        // Ensure the original begin date, end date, and timers are restored after copying over all changes from the sub-config.
-        original.setBeginDate(originalBeginDate);
-        original.setEndDate(originalEndDate);
-        original.setTimers(originalTimers);
+    private ShardQueryConfiguration getUpdatedConfig(ShardQueryConfiguration originalConfig, Pair<Date,Date> dateRange, Set<String> unindexedFields)
+                    throws DatawaveQueryException {
+        // Format the beginDate and endDate of the current sub-query to execute.
+        String subBeginDate = dateFormat.format(dateRange.getLeft());
+        String subEndDate = dateFormat.format(dateRange.getRight());
+
+        // Start a new stopwatch.
+        final QueryStopwatch timers = originalConfig.getTimers();
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan against date range (" + subBeginDate + "-"
+                        + subEndDate + ") with unindexed fields " + unindexedFields);
+
+        try {
+            // Set the new date range in a copy of the config.
+            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
+            configCopy.setBeginDate(dateRange.getLeft());
+            configCopy.setEndDate(dateRange.getRight());
+
+            // we want to make sure the same query id for tracking purposes and execution
+            configCopy.getQuery().setId(originalConfig.getQuery().getId());
+
+            if (!unindexedFields.isEmpty()) {
+                configCopy.setQueryTree(visitorManager.timedVisit(timers, "Push down indexed field holes",
+                                () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), configCopy, unindexedFields,
+                                                queryPlanner.getMetadataHelper(), configCopy.getDatatypeFilter()))));
+            }
+
+            return configCopy;
+        } finally {
+            stopwatch.stop();
+        }
     }
 
     /**
