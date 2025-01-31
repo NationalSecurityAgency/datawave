@@ -166,7 +166,6 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         Set<String> expected = new TreeSet<>();
         expected.add("null; paris -- paris//1");
         expected.add("null; rome -- rome//2");
-        expected.add("null; italy -- italy//10");
 
         String query = CityField.COUNTRY.name() + " == 'Italy'";
 

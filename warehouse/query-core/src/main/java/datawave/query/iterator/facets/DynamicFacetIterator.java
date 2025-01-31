@@ -137,7 +137,12 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         //  @formatter:off
         return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs)
                 .setIteratorBuilder(CardinalityIteratorBuilder.class)
-                .setFieldsToAggregate(configuration.getFacetedFields());
+                .setFieldsToAggregate(configuration.getFacetedFields())
+                //  note: setting query fully satisfied to false kicks the document building decision
+                //  to the set of fields to aggregate, which is the set of facet fields configured
+                //  for this query. The FacetLogic should not rely on arbitrary decisions from
+                //  the SatisfactionVisitor.
+                .setIsQueryFullySatisfied(false);
         //  @formatter:on
     }
 
