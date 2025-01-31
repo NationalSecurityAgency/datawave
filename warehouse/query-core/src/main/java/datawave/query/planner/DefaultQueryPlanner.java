@@ -612,6 +612,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
+    /**
+     * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
+     *
+     * @see DatePartitionedQueryPlanner
+     * @param config
+     * @param settings
+     * @param scannerFactory
+     * @return a range stream
+     * @throws DatawaveQueryException
+     */
     public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
 
         startConcurrentExecution(config);
@@ -1247,6 +1257,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return config.getQueryTree();
     }
 
+    /**
+     * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
+     *
+     * @see DatePartitionedQueryPlanner
+     * @param config
+     * @param metadataHelper
+     * @param timers
+     * @param scannerFactory
+     * @return An adjusted query tree.
+     * @throws DatawaveQueryException
+     */
     protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
 
