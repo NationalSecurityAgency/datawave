@@ -789,6 +789,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setNoExpansionIfCurrentDateTypes(
+                        other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
         this.setTserverLoggingActive(other.isTserverLoggingActive());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
@@ -2851,20 +2854,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
 
-    public boolean isTserverLoggingActive() {
-        return this.tserverLoggingActive;
-    }
-
-    public void setTserverLoggingActive(boolean tserverLoggingActive) {
-        this.tserverLoggingActive = tserverLoggingActive;
-    }
-
     public int getCardinalityThreshold() {
         return cardinalityThreshold;
     }
 
     public void setCardinalityThreshold(int cardinalityThreshold) {
         this.cardinalityThreshold = cardinalityThreshold;
+    }
+
+    public boolean isTserverLoggingActive() {
+        return this.tserverLoggingActive;
+    }
+
+    public void setTserverLoggingActive(boolean tserverLoggingActive) {
+        this.tserverLoggingActive = tserverLoggingActive;
     }
 
     @Override
@@ -3075,14 +3078,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
-                isSortQueryPreIndexWithImpliedCounts() == isSortQueryPreIndexWithImpliedCounts() &&
-                isSortQueryPreIndexWithFieldCounts() == isSortQueryPreIndexWithFieldCounts() &&
-                isSortQueryPostIndexWithTermCounts() == isSortQueryPostIndexWithTermCounts() &&
-                isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts() &&
-                isTserverLoggingActive() == that.isTserverLoggingActive() &&
+                isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
+                isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
+                isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
+                isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
                 Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
- isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+ isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed() &&
+                isTserverLoggingActive() == that.isTserverLoggingActive();
         // @formatter:on
     }
 
@@ -3288,6 +3291,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithImpliedCounts(),
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
+                isSortQueryPostIndexWithFieldCounts(),
+                getCardinalityThreshold(),
+                getNoExpansionIfCurrentDateTypes(),
+                isShardsAndDaysHintAllowed(),
                 isSortQueryPostIndexWithFieldCounts(),
                 isTserverLoggingActive(),
                 getCardinalityThreshold(),
