@@ -21,6 +21,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -266,7 +267,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // update ActiveQueryLog with (potentially) updated config
         if (env != null) {
-            ActiveQueryLog.setConfig(env.getPluginEnv().getConfiguration());
+            PluginEnvironment pluginEnvironment = env.getPluginEnv();
+            PluginEnvironment.Configuration conf = pluginEnvironment.getConfiguration();
+            ActiveQueryLog.setConfig(conf);
         }
 
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());

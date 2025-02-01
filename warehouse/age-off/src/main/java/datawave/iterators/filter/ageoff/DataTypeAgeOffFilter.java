@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -269,8 +270,13 @@ public class DataTypeAgeOffFilter extends AppliedRule {
 
         isIndextable = false;
         if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
-            if (iterEnv != null && iterEnv.getPluginEnv() != null && iterEnv.getPluginEnv().getConfiguration() != null) {
-                isIndextable = Boolean.parseBoolean(iterEnv.getPluginEnv().getConfiguration().get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
+
+            if (iterEnv != null) {
+                PluginEnvironment pluginEnv = iterEnv.getPluginEnv();
+                if (pluginEnv != null) {
+                    PluginEnvironment.Configuration conf = pluginEnv.getConfiguration();
+                    isIndextable = Boolean.parseBoolean(conf.get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
+                }
             }
         } else { // legacy
             isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
@@ -298,12 +304,16 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                 final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
                 if (Boolean.parseBoolean(dataTypeHasScanTime)) {
                     if (iterEnv != null) {
-                        final String scanTime = iterEnv.getPluginEnv().getConfiguration().get("table.custom.timestamp.current." + dataType);
-                        try {
-                            dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
-                        } catch (final NumberFormatException e) {
-                            throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
-                                            + " is invalid: " + scanTime);
+                        PluginEnvironment pluginEnv = iterEnv.getPluginEnv();
+                        if (pluginEnv != null) {
+                            PluginEnvironment.Configuration conf = pluginEnv.getConfiguration();
+                            final String scanTime = conf.get("table.custom.timestamp.current." + dataType);
+                            try {
+                                dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
+                            } catch (final NumberFormatException e) {
+                                throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
+                                                + " is invalid: " + scanTime);
+                            }
                         }
                     } else {
                         throw new NullPointerException("IteratorEnvironment is null");
