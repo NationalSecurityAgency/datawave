@@ -256,9 +256,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (subNode instanceof ASTEQNode) {
                     delayedEqNodes.add(subNode);
                 }
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
                 log.trace("Will not process ASTDelayedPredicate.");
             }
             return null;
@@ -372,9 +370,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         iterators.addInclude(nested);
                     }
                 } else {
-                    if (isQueryFullySatisfied) {
-                        log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                    }
+                    checkForSatisfactionError();
                     // if there is no parent
                     if (root == null && data == null) {
                         // make this nested the root node
@@ -616,9 +612,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // verify that the field exists and is indexed
         if (builder.getField() == null || isUnindexed(builder.getField())) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -630,11 +624,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 throw new DatawaveFatalQueryException(qe);
             }
 
-            // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied) {
-                // note: this is different from the ASTEQ method...
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            // FIELD != null should have set satisfied to false
+            checkForSatisfactionError();
             return null;
         }
 
@@ -656,9 +647,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             iterators.addExclude(builder.build());
         } else {
             // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
         }
 
         return null;
@@ -678,9 +667,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // verify that field exists and is indexed
         if (builder.getField() == null || isUnindexed(builder.getField())) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -721,9 +708,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 loadBuilder(builder, data, node);
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
 
@@ -947,9 +932,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -970,9 +953,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -997,9 +978,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
 
@@ -1023,9 +1002,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
         }
 
         return null;
@@ -1504,9 +1481,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
     }
@@ -1529,6 +1504,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // historically this check was a fail-safe
         return fieldsToAggregate != null && fieldsToAggregate.contains(field);
+    }
+
+    protected void checkForSatisfactionError() {
+        if (isQueryFullySatisfied) {
+            log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+        }
     }
 
     public IndexIteratorBuilder getIteratorBuilder() {
