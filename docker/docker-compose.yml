@@ -375,7 +375,7 @@ services:
       test: curl -f http://localhost:8080/querymetric/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 45s
+      start_period: 105s
       retries: 3
     depends_on:
       authorization:
@@ -412,6 +412,25 @@ services:
     depends_on:
       authorization:
         condition: service_healthy
+
+  file-provider:
+    profiles:
+      - file-provider
+      - full
+    image: datawave/file-provider-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "8580:8080"
+      - "8943:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
 
   # If you want to test cached results, enable the cachedresults profile
   mysql:

@@ -1267,8 +1267,8 @@ public class EvaluationPhaseFilterFunctionsTest {
 
         @Test
         public void testInvalidDate() {
-            assertThatExceptionOfType(ParseException.class).isThrownBy(() -> nextTime("notavaliddate"))
-                            .withMessage("Unable to parse value using known date formats: notavaliddate");
+            assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> nextTime("notavaliddate")).withMessage(
+                            "datawave.webservice.query.exception.BadRequestQueryException: Could not parse JEXL query. Unable to parse value using known date formats: notavaliddate [Error offset: 0]");
         }
 
         private void givenExpectedTime(long expectedTime) {

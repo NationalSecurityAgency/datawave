@@ -3,6 +3,7 @@ package datawave.query.language.parser.jexl;
 import java.util.ArrayList;
 import java.util.List;
 
+import datawave.query.Constants;
 import datawave.query.data.UUIDType;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.lucene.LuceneQueryParser;
@@ -18,8 +19,8 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
 
     @Override
     public QueryNode parse(String query) throws ParseException {
-        query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
-        query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_LEFT, Constants.QUOTE); // replace open smart quote 147
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_RIGHT, Constants.QUOTE); // replace close smart quote 148
 
         QueryNode parsedQuery = null;
 

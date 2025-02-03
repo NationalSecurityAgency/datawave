@@ -18,7 +18,8 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.common.cache.AccumuloTableCache;
@@ -33,7 +34,7 @@ import datawave.webservice.common.connection.WrappedAccumuloClient;
  */
 public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final AccumuloTableCache cache;
     private final ConnectionPoolsProperties connectionPoolsConfiguration;
@@ -58,7 +59,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
     private AccumuloConnectionFactoryImpl(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         this.cache = cache;
         this.connectionPoolsConfiguration = config;
-        log.info("Initializing AccumuloConnectionFactoryImpl with " + config.getDefaultPool() + " and " + config.getPoolNames());
+        log.info("Initializing AccumuloConnectionFactoryImpl with {} and {}", config.getDefaultPool(), config.getPoolNames());
         init();
     }
 
@@ -91,7 +92,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             try {
                 appName = System.getProperty("app", "datawave_ws");
             } catch (SecurityException e) {
-                log.warn("Unable to retrieve system property \"app\": " + e.getMessage());
+                log.warn("Unable to retrieve system property \"app\": {}", e.getMessage());
             }
         }
 
@@ -162,7 +163,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
                     try {
                         poolEntry.getValue().close();
                     } catch (Exception e) {
-                        log.error("Error closing Accumulo Connection Pool: " + e);
+                        log.error("Error closing Accumulo Connection Pool: ", e);
                     }
                 }
             }
@@ -209,9 +210,9 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             if (proxyServers != null)
                 trackingMap.put(PROXY_SERVERS, StringUtils.join(proxyServers, " -> "));
         }
-        log.info("Getting pool from " + poolName + " for priority " + priority);
-        log.info("Pools = " + pools);
-        log.info("Pools.get(poolName) = " + pools.get(poolName));
+        log.info("Getting pool from {} for priority {}", poolName, priority);
+        log.info("Pools = {}", pools);
+        log.info("Pools.get(poolName) = {}", pools.get(poolName));
         AccumuloClientPool pool = pools.get(poolName).get(priority);
         AccumuloClient c = pool.borrowObject(trackingMap);
         AccumuloClient mock = new InMemoryAccumuloClient(pool.getFactory().getUsername(), cache.getInstance());
@@ -248,7 +249,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             for (Entry<Priority,AccumuloClientPool> poolEntry : entry.getValue().entrySet()) {
                 if (poolEntry.getValue().connectorCameFromHere(client)) {
                     poolEntry.getValue().returnObject(client);
-                    log.info("Returning connection to pool " + entry.getKey() + " for priority " + poolEntry.getKey());
+                    log.info("Returning connection to pool {} for priority {}", entry.getKey(), poolEntry.getKey());
                     return;
                 }
             }

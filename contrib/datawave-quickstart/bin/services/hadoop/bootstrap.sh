@@ -45,8 +45,8 @@ dfs.replication 1"
 
 DW_HADOOP_MR_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 # mapred-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://${DW_BIND_HOST}:8020
-mapreduce.jobhistory.webapp.address http://${DW_BIND_HOST}:8021
+DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address ${DW_BIND_HOST}:8020
+mapreduce.jobhistory.webapp.address ${DW_BIND_HOST}:8021
 mapreduce.jobhistory.intermediate-done-dir ${DW_HADOOP_MR_INTER_DIR}
 mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
 mapreduce.map.memory.mb 2048
@@ -72,7 +72,7 @@ yarn.nodemanager.pmem-check-enabled false
 yarn.nodemanager.vmem-check-enabled false
 yarn.nodemanager.resource.memory-mb 6144
 yarn.app.mapreduce.am.resource.mb 1024
-yarn.log.server.url http://localhost:8070/jobhistory/logs"
+yarn.log.server.url http://localhost:8021/jobhistory/logs"
 
 # capacity-scheduler.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_CAPACITY_SCHEDULER_CONF="yarn.scheduler.capacity.maximum-applications 10000
