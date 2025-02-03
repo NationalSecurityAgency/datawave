@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 import java.util.Set;
 
@@ -115,7 +115,7 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
 
         if (missingIndexRange(range)) {
-            return QueryPropertyMarker.create(currentNode, INDEX_HOLE);
+            return QueryPropertyMarker.create(currentNode, EVALUATION_ONLY);
         } else {
             return currentNode;
         }
@@ -134,7 +134,7 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (isIndexed(node) && missingIndexRange(node)) {
-            return QueryPropertyMarker.create(node, INDEX_HOLE);
+            return QueryPropertyMarker.create(node, EVALUATION_ONLY);
         }
         return node;
     }
@@ -142,7 +142,7 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTERNode node, Object data) {
         if (isIndexed(node) && missingIndexRange(node)) {
-            return QueryPropertyMarker.create(node, INDEX_HOLE);
+            return QueryPropertyMarker.create(node, EVALUATION_ONLY);
         }
         return node;
     }

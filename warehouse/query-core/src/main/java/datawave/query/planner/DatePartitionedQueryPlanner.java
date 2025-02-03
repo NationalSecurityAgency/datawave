@@ -419,8 +419,8 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
     /**
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
-     * range there will be zero or more fields that are completely indexed in that range. Also it is expected that the date ranges will complete cover the query
-     * date range without gaps or overlaps.
+     * range all query fields are either indexed or not-indexed across the entire range. It is expected that the date ranges will complete cover the original
+     * query date range without gaps or overlaps.
      */
     protected SortedMap<Pair<Date,Date>,Set<String>> getSubQueryDateRanges(ShardQueryConfiguration config) throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.

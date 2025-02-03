@@ -32,12 +32,12 @@ import datawave.query.testframework.ShardIdValues;
 /**
  * The index hole provides the means of using the entries in the event when indexes are missing for a range.
  */
-public class IndexHoleQueryTest extends AbstractFunctionalQuery {
+public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
 
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
+    private static final Logger log = Logger.getLogger(IndexValueHoleQueryTest.class);
 
     private static final List<IndexValueHole> INDEX_HOLE = new ArrayList<>();
     static {
@@ -62,7 +62,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         client = accumuloSetup.loadTables(log);
     }
 
-    public IndexHoleQueryTest() {
+    public IndexValueHoleQueryTest() {
         super(CitiesDataType.getManager());
     }
 
