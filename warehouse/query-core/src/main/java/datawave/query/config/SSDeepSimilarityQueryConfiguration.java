@@ -37,6 +37,8 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
+    private boolean dedupe = true;
+
     public SSDeepSimilarityQueryConfiguration() {
         super();
         setQuery(new QueryImpl());
@@ -68,6 +70,7 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         setQueryMap(other.getQueryMap());
         setQueryThreads(other.getQueryThreads());
         setRanges(other.getRanges());
+        setDedupe(other.isDedupe());
     }
 
     public Collection<Range> getRanges() {
@@ -140,5 +143,13 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public void setBucketEncodingLength(int bucketEncodingLength) {
         this.bucketEncodingLength = bucketEncodingLength;
+    }
+
+    public boolean isDedupe() {
+        return this.dedupe;
+    }
+
+    public void setDedupe(boolean dedupe) {
+        this.dedupe = dedupe;
     }
 }

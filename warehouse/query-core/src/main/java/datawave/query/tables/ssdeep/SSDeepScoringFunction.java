@@ -1,6 +1,7 @@
 package datawave.query.tables.ssdeep;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -61,6 +62,8 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
     private final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer;
 
+    private HashSet<Integer> seenHashes;
+
     public SSDeepScoringFunction(SSDeepSimilarityQueryConfiguration config) {
         this.queryMap = config.getQueryMap();
         this.maxRepeatedCharacters = config.getMaxRepeatedCharacters();
@@ -75,6 +78,10 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
         this.editDistanceScorer = new SSDeepHashEditDistanceScorer(maxRepeatedCharacters);
         this.ngramOverlapScorer = new SSDeepNGramOverlapScorer(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
+
+        if (config.isDedupe()) {
+            seenHashes = new HashSet<>();
+        }
     }
 
     /**
@@ -134,6 +141,14 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
         // extract the matching ssdeep hash from the column qualifier
         final String matchingHashString = k.getColumnQualifier().toString();
         final SSDeepHash matchingHash = SSDeepHash.parse(matchingHashString);
+
+        if (seenHashes != null) {
+            int hashcode = matchingHash.hashCode();
+            if (seenHashes.contains(hashcode)) {
+                return Stream.empty();
+            }
+            seenHashes.add(hashcode);
+        }
 
         // extract the query ssdeeps that contained this ngram from the query map.
         final NGramTuple matchingNgram = new NGramTuple(chunkSize, ngram);
