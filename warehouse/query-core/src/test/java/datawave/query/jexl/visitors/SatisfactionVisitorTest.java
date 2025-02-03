@@ -420,17 +420,15 @@ public class SatisfactionVisitorTest {
 
     @Test
     public void testAndNot() {
-        // this should be true
-        test(false, "INDEXED_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
-        // this should be true
-        test(false, "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
+        // negations can be handled by the field index
+        test(true, "INDEXED_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
+        test(true, "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
         // this is technically satisfiable if we run an iterator against the event column
         test(false, "INDEXED_FIELD == 'a' && !(EVENT_ONLY_FIELD == 'b')");
 
-        // this should be true
-        test(false, "INDEX_ONLY_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
-        // this should be true
-        test(false, "INDEX_ONLY_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
+        // negations can be handled by the field index
+        test(true, "INDEX_ONLY_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
+        test(true, "INDEX_ONLY_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
         // this is technically satisfiable if we run an iterator against the event column
         test(false, "INDEX_ONLY_FIELD == 'a' && !(EVENT_ONLY_FIELD == 'b')");
 
@@ -438,6 +436,33 @@ public class SatisfactionVisitorTest {
         test(false, "EVENT_ONLY_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
         test(false, "EVENT_ONLY_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
         test(false, "EVENT_ONLY_FIELD == 'a' && !(EVENT_ONLY_FIELD == 'b')");
+
+        // alternate type of negated term that is not satisfiable against the field index
+        test(false, "INDEXED_FIELD == 'a' && !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "INDEX_ONLY_FIELD == 'a' && !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "EVENT_ONLY_FIELD == 'a' && !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+    }
+
+    @Test
+    public void testOrNot() {
+        // any negated term within a top level union is considered a top level negation
+
+        test(false, "INDEXED_FIELD == 'a' || !(INDEXED_FIELD == 'b')");
+        test(false, "INDEXED_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b')");
+        test(false, "INDEXED_FIELD == 'a' || !(EVENT_ONLY_FIELD == 'b')");
+
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(INDEXED_FIELD == 'b')");
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b')");
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(EVENT_ONLY_FIELD == 'b')");
+
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(INDEXED_FIELD == 'b')");
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b')");
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(EVENT_ONLY_FIELD == 'b')");
+
+        // alternate type of negated term that is not satisfiable against the field index
+        test(false, "INDEXED_FIELD == 'a' || !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
     }
 
     /**
