@@ -56,7 +56,8 @@ public class IvaratorConfig implements Serializable {
         this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
         this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
-
+        this.setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
+        this.setMaxIvaratorResults(other.getMaxIvaratorResults());
     }
 
     public static String toJson(IvaratorConfig IvaratorConfig) throws JsonProcessingException {

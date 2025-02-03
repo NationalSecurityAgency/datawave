@@ -359,21 +359,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     private IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
-    private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
-    private String ivaratorFstHdfsBaseURIs = null;
-    private int ivaratorCacheBufferSize = 10000;
-
     private int uniqueCacheBufferSize = 100;
-    private long ivaratorCacheScanPersistThreshold = 100000L;
-    private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
-    private int maxFieldIndexRangeSplit = 11;
-    private int ivaratorMaxOpenFiles = 100;
-    private int ivaratorNumRetries = 2;
-    private boolean ivaratorPersistVerify = true;
-    private int ivaratorPersistVerifyCount = 100;
-    private int maxIvaratorSources = 33;
-    private long maxIvaratorSourceWait = 1000L * 60 * 30;
-    private long maxIvaratorResults = -1;
+
     private int maxIvaratorTerms = -1;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;

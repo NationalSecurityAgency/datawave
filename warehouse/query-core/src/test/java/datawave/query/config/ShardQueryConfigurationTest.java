@@ -394,34 +394,34 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hdfsFileCompressionCodec", "sunny");
         defaultValues.put("zookeeperConfig", null);
         updatedValues.put("zookeeperConfig", "file://etc/zookeeper/conf");
-        defaultValues.put("ivaratorCacheDirConfigs", Collections.emptyList());
-        updatedValues.put("ivaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")));
-        defaultValues.put("ivaratorFstHdfsBaseURIs", null);
-        updatedValues.put("ivaratorFstHdfsBaseURIs", "hdfs://instance-a/fsts");
-        defaultValues.put("ivaratorCacheBufferSize", 10000);
-        updatedValues.put("ivaratorCacheBufferSize", 1040);
-        defaultValues.put("ivaratorCacheScanPersistThreshold", 100000L);
-        updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
-        defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
-        updatedValues.put("ivaratorCacheScanTimeout", 3600L);
+//        defaultValues.put("ivaratorCacheDirConfigs", Collections.emptyList());
+//        updatedValues.put("ivaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")));
+//        defaultValues.put("ivaratorFstHdfsBaseURIs", null);
+//        updatedValues.put("ivaratorFstHdfsBaseURIs", "hdfs://instance-a/fsts");
+//        defaultValues.put("ivaratorCacheBufferSize", 10000);
+//        updatedValues.put("ivaratorCacheBufferSize", 1040);
+//        defaultValues.put("ivaratorCacheScanPersistThreshold", 100000L);
+//        updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
+//        defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
+//        updatedValues.put("ivaratorCacheScanTimeout", 3600L);
         defaultValues.put("maxFieldIndexRangeSplit", 11);
         updatedValues.put("maxFieldIndexRangeSplit", 20);
-        defaultValues.put("ivaratorMaxOpenFiles", 100);
-        updatedValues.put("ivaratorMaxOpenFiles", 103);
-        defaultValues.put("ivaratorNumRetries", 2);
-        updatedValues.put("ivaratorNumRetries", 3);
-        defaultValues.put("ivaratorPersistVerify", true);
-        updatedValues.put("ivaratorPersistVerify", false);
-        defaultValues.put("ivaratorPersistVerifyCount", 100);
-        updatedValues.put("ivaratorPersistVerifyCount", 101);
-        defaultValues.put("maxIvaratorSources", 33);
-        updatedValues.put("maxIvaratorSources", 16);
-        defaultValues.put("maxIvaratorResults", -1L);
-        updatedValues.put("maxIvaratorResults", 10000L);
+//        defaultValues.put("ivaratorMaxOpenFiles", 100);
+//        updatedValues.put("ivaratorMaxOpenFiles", 103);
+//        defaultValues.put("ivaratorNumRetries", 2);
+//        updatedValues.put("ivaratorNumRetries", 3);
+//        defaultValues.put("ivaratorPersistVerify", true);
+//        updatedValues.put("ivaratorPersistVerify", false);
+//        defaultValues.put("ivaratorPersistVerifyCount", 100);
+//        updatedValues.put("ivaratorPersistVerifyCount", 101);
+//        defaultValues.put("maxIvaratorSources", 33);
+//        updatedValues.put("maxIvaratorSources", 16);
+//        defaultValues.put("maxIvaratorResults", -1L);
+//        updatedValues.put("maxIvaratorResults", 10000L);
         defaultValues.put("maxIvaratorTerms", -1);
         updatedValues.put("maxIvaratorTerms", 50);
-        defaultValues.put("maxIvaratorSourceWait", 1000L * 60 * 30);
-        updatedValues.put("maxIvaratorSourceWait", 1000L * 60 * 10);
+//        defaultValues.put("maxIvaratorSourceWait", 1000L * 60 * 30);
+//        updatedValues.put("maxIvaratorSourceWait", 1000L * 60 * 10);
         defaultValues.put("maxEvaluationPipelines", 25);
         updatedValues.put("maxEvaluationPipelines", 24);
         defaultValues.put("maxPipelineCachedResults", 25);
@@ -607,7 +607,20 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
         defaultValues.put("ivaratorConfig", new IvaratorConfig());
-        updatedValues.put("ivaratorConfig", new IvaratorConfig().setIvaratorCacheBufferSize(123));
+        updatedValues.put("ivaratorConfig", new IvaratorConfig()
+                .setIvaratorCacheDirConfigs(Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")))
+                .setIvaratorFstHdfsBaseURIs("hdfs://instance-a/fsts")
+                .setIvaratorCacheBufferSize(1040)
+                .setIvaratorCacheScanPersistThreshold(1040L)
+                .setIvaratorCacheScanTimeout(3600L)
+                .setIvaratorMaxOpenFiles(103)
+                .setIvaratorNumRetries(3)
+                .setIvaratorPersistVerify(false)
+                .setIvaratorPersistVerifyCount(101)
+                .setMaxIvaratorSources(16)
+                .setMaxIvaratorResults(10000L)
+                .setMaxIvaratorSourceWait(1000L * 60 * 10)
+        );
 
         defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
         updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
