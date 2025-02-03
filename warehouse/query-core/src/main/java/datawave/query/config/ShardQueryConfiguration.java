@@ -24,6 +24,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.shaded.javax.xml.bind.annotation.XmlTransient;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -357,6 +358,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
 
+    @XmlTransient
     private IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
     private int uniqueCacheBufferSize = 100;
@@ -2839,6 +2841,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorConfig = ivaratorConfig;
     }
 
+    @XmlTransient
     public IvaratorConfig getIvaratorConfig() {
         return this.ivaratorConfig;
     }
