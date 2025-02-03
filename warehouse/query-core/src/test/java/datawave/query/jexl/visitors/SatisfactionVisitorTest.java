@@ -146,11 +146,11 @@ public class SatisfactionVisitorTest {
 
     @Test
     public void testBoundedRangeMarker() {
-        // this is absolutely executable against the field index
-        test(false, "((_Bounded_ = true) && (INDEXED_FIELD > '1' && INDEXED_FIELD < '2'))");
-        // this is absolutely executable against the field index
-        test(false, "((_Bounded_ = true) && (INDEX_ONLY_FIELD > '1' && INDEX_ONLY_FIELD < '2'))");
-        test(false, "((_Bounded_ = true) && (EVENT_ONLY_FIELD > '1' && EVENT_ONLY_FIELD < '2'))");
+        test(true, "((_Bounded_ = true) && (INDEXED_FIELD > '1' && INDEXED_FIELD < '2'))");
+        test(true, "((_Bounded_ = true) && (INDEX_ONLY_FIELD > '1' && INDEX_ONLY_FIELD < '2'))");
+        // this is not executable against the field index and should be wrapped with a delayed or eval marker
+        // leave this test case in to document behavior when the fields for the source node are not visited
+        test(true, "((_Bounded_ = true) && (EVENT_ONLY_FIELD > '1' && EVENT_ONLY_FIELD < '2'))");
     }
 
     @Test
