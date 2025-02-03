@@ -1,18 +1,5 @@
 package datawave.query.tables.ssdeep;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import datawave.core.query.logic.QueryLogic;
-import datawave.microservice.query.Query;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.discovery.DiscoveredThing;
-import datawave.query.tables.chained.strategy.FullChainStrategy;
-import it.unimi.dsi.fastutil.Hash;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -22,6 +9,19 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+
+import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.query.discovery.DiscoveredThing;
+import datawave.query.tables.chained.strategy.FullChainStrategy;
 
 public class StatefulSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSSDeepPair,DiscoveredSSDeep> {
     private static final Logger log = Logger.getLogger(StatefulSSDeepDiscoveryChainStrategy.class);
@@ -56,15 +56,15 @@ public class StatefulSSDeepDiscoveryChainStrategy extends FullChainStrategy<Scor
 
     @Override
     public Iterator<DiscoveredSSDeep> runChainedQuery(AccumuloClient client, Query initialQuery, Set<Authorizations> auths,
-                                                      Iterator<ScoredSSDeepPair> initialQueryResults, QueryLogic<DiscoveredSSDeep> latterQueryLogic) throws Exception {
+                    Iterator<ScoredSSDeepPair> initialQueryResults, QueryLogic<DiscoveredSSDeep> latterQueryLogic) throws Exception {
         Iterator<DiscoveredSSDeep> itr = super.runChainedQuery(client, initialQuery, auths, initialQueryResults, latterQueryLogic);
         itr = getEnrichedDiscoveredSSDeepIterator(itr, scoredMatches);
 
         return itr;
     }
 
-    public String captureScoredMatchesAndBuildQuery(Iterator<ScoredSSDeepPair> initialQueryResults,
-                                                           final Multimap<String,ScoredSSDeepPair> scoredMatches, int batchSize) {
+    public String captureScoredMatchesAndBuildQuery(Iterator<ScoredSSDeepPair> initialQueryResults, final Multimap<String,ScoredSSDeepPair> scoredMatches,
+                    int batchSize) {
         int count = 0;
         Set<String> hashes = new HashSet<>();
         while (initialQueryResults.hasNext() && (batchSize == -1 || count < batchSize)) {
@@ -100,9 +100,9 @@ public class StatefulSSDeepDiscoveryChainStrategy extends FullChainStrategy<Scor
      * @return an iterator of DiscoveredSSDeep's enriched with the queries that returned them.
      */
     public Iterator<DiscoveredSSDeep> getEnrichedDiscoveredSSDeepIterator(Iterator<DiscoveredSSDeep> resultsIterator,
-                                                                                 final Multimap<String,ScoredSSDeepPair> scoredMatches) {
+                    final Multimap<String,ScoredSSDeepPair> scoredMatches) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultsIterator, Spliterator.ORDERED), false)
-                .flatMap(discoveredSSdeep -> enrichDiscoveredSSDeep(discoveredSSdeep, scoredMatches)).iterator();
+                        .flatMap(discoveredSSdeep -> enrichDiscoveredSSDeep(discoveredSSdeep, scoredMatches)).iterator();
     }
 
     /**

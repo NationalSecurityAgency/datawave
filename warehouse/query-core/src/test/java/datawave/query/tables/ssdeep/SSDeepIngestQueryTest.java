@@ -140,6 +140,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     @SuppressWarnings("rawtypes")
     @Test
     public void testSSDeepSimilarity() throws Exception {
+        similarityQueryLogic.getConfig().setDedupe(false);
         log.info("------ testSSDeepSimilarity ------");
         @SuppressWarnings("SpellCheckingInspection")
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
@@ -149,9 +150,19 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
         List<EventBase> events = response.getEvents();
         Assert.assertEquals(40, events.size());
-        // TODO show how this is deduped later
 
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
+
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "40", expectedOverlaps, "100", observedEvents);
+
+        // now repeat with dedupe true
+        similarityQueryLogic.getConfig().setDedupe(true);
+        response = runSSDeepQuery(query, similarityQueryLogic, 0);
+
+        events = response.getEvents();
+        Assert.assertEquals(1, events.size());
+
+        observedEvents = extractObservedEvents(events);
 
         SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "40", expectedOverlaps, "100", observedEvents);
     }
@@ -184,7 +195,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testChainedSSDeepDiscovery() throws Exception {
-        ((FullSSDeepDiscoveryChainStrategy)this.similarityDiscoveryQueryLogic.getChainStrategy()).setBatchSize(1);
+        ((FullSSDeepDiscoveryChainStrategy) this.similarityDiscoveryQueryLogic.getChainStrategy()).setBatchSize(1);
 
         log.info("------ testChainedSSDeepDiscovery ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";

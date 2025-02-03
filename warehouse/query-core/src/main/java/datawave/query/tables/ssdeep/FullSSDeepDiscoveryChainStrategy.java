@@ -1,30 +1,16 @@
 package datawave.query.tables.ssdeep;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.discovery.DiscoveredThing;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
 
 /**
@@ -61,21 +47,19 @@ public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSS
 
             @Override
             public boolean hasNext() {
-                if (batchIterator == null || !batchIterator.hasNext()) {
+                while (batchIterator == null || (!batchIterator.hasNext() && initialQueryResults.hasNext())) {
                     try {
                         StatefulSSDeepDiscoveryChainStrategy statefulChainStrategy = new StatefulSSDeepDiscoveryChainStrategy();
                         statefulChainStrategy.setBatchSize(batchSize);
                         statefulChainStrategy.setSeenHashes(seenHashes);
                         batchIterator = statefulChainStrategy.runChainedQuery(client, initialQuery, auths, initialQueryResults, latterQueryLogic);
-
-                        return batchIterator.hasNext();
                     } catch (Exception e) {
                         throw new DatawaveFatalQueryException("Failed to create next chained query", e);
                     }
                 }
 
                 // the iterator exists and has more, so always true
-                return true;
+                return batchIterator.hasNext();
             }
 
             @Override
