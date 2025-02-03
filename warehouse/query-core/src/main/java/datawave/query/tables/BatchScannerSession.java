@@ -118,6 +118,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     protected Set<ResultContext> runningQueries = Collections.synchronizedSet(new HashSet<>());
 
+    protected Set<Scan> runningScans = Collections.synchronizedSet(new HashSet<>());
+
     protected boolean backoffEnabled = false;
 
     protected boolean speculativeScanning = false;
@@ -512,6 +514,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         if (increment) {
             runnableCount.incrementAndGet();
             runningQueries.add((scan.getScannerChunk().getContext()));
+            runningScans.add(scan);
         }
         Futures.addCallback(future, this, MoreExecutors.newDirectExecutorService());
     }
@@ -571,6 +574,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
             // otherwise we still need it for checkpointing
             if (finishedScan.getScannerChunk().getContext().isFinished()) {
                 runningQueries.remove(finishedScan.getScannerChunk().getContext());
+                runningScans.remove(finishedScan);
             }
 
             finishedScan.close();
@@ -725,6 +729,12 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     @Override
     public void close() {
+
+        for (Scan scan : runningScans) {
+            scan.close();
+        }
+        runningScans.clear();
+
         stopAsync();
         try {
             awaitTerminated();
