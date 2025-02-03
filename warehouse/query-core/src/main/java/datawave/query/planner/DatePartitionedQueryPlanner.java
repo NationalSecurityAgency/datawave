@@ -407,8 +407,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
             if (!unindexedFields.isEmpty()) {
                 configCopy.setQueryTree(visitorManager.timedVisit(timers, "Push down indexed field holes",
-                                () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), configCopy, unindexedFields,
-                                                queryPlanner.getMetadataHelper(), configCopy.getDatatypeFilter()))));
+                                () -> (PushdownUnindexedFieldsVisitor.pushdownPredicates(configCopy.getQueryTree(), unindexedFields))));
             }
 
             return configCopy;
