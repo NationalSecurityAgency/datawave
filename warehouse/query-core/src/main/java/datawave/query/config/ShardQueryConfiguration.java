@@ -1524,18 +1524,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.zookeeperConfig = zookeeperConfig;
     }
 
+    @XmlTransient
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
         return ivaratorConfig.getIvaratorCacheDirConfigs();
     }
 
+    @XmlTransient
     public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
         ivaratorConfig.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
 
+    @XmlTransient
     public String getIvaratorFstHdfsBaseURIs() {
         return ivaratorConfig.getIvaratorFstHdfsBaseURIs();
     }
 
+    @XmlTransient
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
         ivaratorConfig.setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
     }
@@ -1548,117 +1552,146 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.uniqueCacheBufferSize = uniqueCacheBufferSize;
     }
 
+    @XmlTransient
     public int getIvaratorCacheBufferSize() {
         return ivaratorConfig.getIvaratorCacheBufferSize();
     }
 
+    @XmlTransient
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         ivaratorConfig.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
     }
 
+    @XmlTransient
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorConfig.getIvaratorCacheScanPersistThreshold();
     }
 
+    @XmlTransient
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
         ivaratorConfig.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
     }
 
+    @XmlTransient
     public long getIvaratorCacheScanTimeout() {
         return ivaratorConfig.getIvaratorCacheScanTimeout();
     }
 
+    @XmlTransient
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         ivaratorConfig.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
     }
 
+    @XmlTransient
     public int getMaxFieldIndexRangeSplit() {
         return ivaratorConfig.getMaxFieldIndexRangeSplit();
     }
 
+    @XmlTransient
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
         ivaratorConfig.setMaxFieldIndexRangeSplit(maxFieldIndexRangeSplit);
     }
 
+    @XmlTransient
     public int getIvaratorMaxOpenFiles() {
         return ivaratorConfig.getIvaratorMaxOpenFiles();
     }
 
+    @XmlTransient
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         ivaratorConfig.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
     }
 
+    @XmlTransient
     public int getIvaratorNumRetries() {
         return ivaratorConfig.getIvaratorNumRetries();
     }
 
+    @XmlTransient
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         ivaratorConfig.setIvaratorNumRetries(ivaratorNumRetries);
     }
 
+    @XmlTransient
     public boolean isIvaratorPersistVerify() {
         return ivaratorConfig.isIvaratorPersistVerify();
     }
 
+    @XmlTransient
     public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
         ivaratorConfig.setIvaratorPersistVerify(ivaratorPersistVerify);
     }
 
+    @XmlTransient
     public int getIvaratorPersistVerifyCount() {
         return ivaratorConfig.getIvaratorPersistVerifyCount();
     }
 
+    @XmlTransient
     public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
         ivaratorConfig.setIvaratorPersistVerifyCount(ivaratorPersistVerifyCount);
     }
 
+    @XmlTransient
     public int getMaxIvaratorSources() {
         return (int) ivaratorConfig.getMaxIvaratorSources();
     }
 
+    @XmlTransient
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         ivaratorConfig.setMaxIvaratorSources(maxIvaratorSources);
     }
 
+    @XmlTransient
     public long getMaxIvaratorSourceWait() {
         return ivaratorConfig.getMaxIvaratorSourceWait();
     }
 
+    @XmlTransient
     public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
         ivaratorConfig.setMaxIvaratorSourceWait(maxIvaratorSourceWait);
     }
 
+    @XmlTransient
     public long getMaxIvaratorResults() {
         return ivaratorConfig.getMaxIvaratorResults();
     }
 
+    @XmlTransient
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         ivaratorConfig.setMaxIvaratorResults(maxIvaratorResults);
     }
 
+    @XmlTransient
     public int getMaxIvaratorTerms() {
         return maxIvaratorTerms;
     }
 
+    @XmlTransient
     public void setMaxIvaratorTerms(int maxIvaratorTerms) {
         this.maxIvaratorTerms = maxIvaratorTerms;
     }
 
+    @XmlTransient
     public int getMaxEvaluationPipelines() {
         return maxEvaluationPipelines;
     }
 
+    @XmlTransient
     public void setMaxEvaluationPipelines(int maxEvaluationPipelines) {
         this.maxEvaluationPipelines = maxEvaluationPipelines;
     }
 
+    @XmlTransient
     public int getMaxPipelineCachedResults() {
         return maxPipelineCachedResults;
     }
 
+    @XmlTransient
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         this.maxPipelineCachedResults = maxCachedResults;
     }
+
 
     public boolean isExpandAllTerms() {
         return expandAllTerms;
@@ -2840,8 +2873,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
         this.ivaratorConfig = ivaratorConfig;
     }
-
-    @XmlTransient
     public IvaratorConfig getIvaratorConfig() {
         return this.ivaratorConfig;
     }
