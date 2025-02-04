@@ -1290,6 +1290,32 @@ public abstract class ShapesTest {
     }
 
     @Test
+    public void testNestedUnionOfContextRequiredTrailingRegex() throws Exception {
+        try {
+            saveIndexExpansionConfigs();
+            forceIvarators();
+            // TODO -- IvaratorRequired visitor needs to be more dynamic
+            // before configs can be wiped out to ensure test integrity
+            // disableIvaratorConfigs();
+
+            // term cardinality is a prerequisite for regex filtering
+            logic.setSortQueryPostIndexWithTermCounts(true);
+            logic.setCardinalityThreshold(25);
+
+            // right hand exceeded value marker does not have any backing data
+            withQuery("SHAPE == 'triangle' && (((_Value_ = true) && (SHAPE =~ 'tr.*?')) || ((_Value_ = true) && (SHAPE =~ 'zz.*?')))");
+            withExpected(new HashSet<>(triangleUids));
+            withRequiredHitTerms("SHAPE:triangle");
+
+            planAndExecuteQuery();
+            assertPlannedQuery("SHAPE == 'triangle' && (((_Value_ = true) && (SHAPE =~ 'tr.*?')) || ((_Value_ = true) && (SHAPE =~ 'zz.*?')))");
+
+        } finally {
+            reloadIndexExpansionConfigs();
+        }
+    }
+
+    @Test
     public void testBoundedRangeIvarator() throws Exception {
         try {
             saveIndexExpansionConfigs();
