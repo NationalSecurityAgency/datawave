@@ -33,6 +33,7 @@ import org.apache.accumulo.core.manager.balancer.TServerStatusImpl;
 import org.apache.accumulo.core.manager.balancer.TabletServerIdImpl;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.metadata.TServerInstance;
+import org.apache.accumulo.core.metadata.schema.Ample;
 import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
 import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
 import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
@@ -257,7 +258,7 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(TNAME, new Text("2"), new Text("1"))));
         //@formatter:on
-        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut));
+        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut, Ample.DataLevel.USER));
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         assertTrue("Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]", migrationsOut.isEmpty());
 
@@ -267,7 +268,7 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(foo, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))));
         //@formatter:on
-        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut));
+        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut, Ample.DataLevel.USER));
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         ensureUniqueMigrations(migrationsOut);
         testTServers.applyMigrations(migrationsOut);
@@ -547,7 +548,7 @@ public class ShardedTableTabletBalancerTest {
         ArrayList<TabletMigration> migrationsOut = new ArrayList<>();
         for (int i = 1; i <= numPasses; i++) {
             migrationsOut.clear();
-            testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut));
+            testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut, Ample.DataLevel.USER));
             ensureUniqueMigrations(migrationsOut);
             testTServers.applyMigrations(migrationsOut);
 
@@ -556,7 +557,7 @@ public class ShardedTableTabletBalancerTest {
         }
         // Then balance one more time to make sure no migrations are returned.
         migrationsOut.clear();
-        testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut));
+        testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut, Ample.DataLevel.USER));
         assertEquals("Left with " + migrationsOut.size() + " migrations after " + numPasses + " balance attempts.", 0, migrationsOut.size());
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
