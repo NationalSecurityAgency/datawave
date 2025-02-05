@@ -412,7 +412,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         shardExclusions.clear();
         String exclusionsList = config.get(this.getType().typeName() + SHARD_FIELD_EXCLUSIONS);
         if (exclusionsList != null) {
-            String[] exclusions = StringUtils.split(exclusionsList, ',');
+            String[] exclusions = exclusionsList.split(",");
             if (exclusions != null && exclusions.length > 0) {
                 for (String exclusionFieldName : exclusions) {
 
