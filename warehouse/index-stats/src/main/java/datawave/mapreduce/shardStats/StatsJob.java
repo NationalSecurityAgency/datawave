@@ -196,7 +196,7 @@ public class StatsJob extends IngestJob {
 
     private Set<Range> calculateRanges(Configuration conf) {
         final Set<Range> ranges = new HashSet<>();
-        String[] shardsAndDays = StringUtils.split(this.inputPaths, ',');
+        String[] shardsAndDays = this.inputPaths.split(",");
         this.inputPaths = "";
 
         // for each datatype of interest

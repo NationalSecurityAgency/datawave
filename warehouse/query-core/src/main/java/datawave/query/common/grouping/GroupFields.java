@@ -108,7 +108,7 @@ public class GroupFields implements Serializable {
                 }
             } else {
                 // Otherwise, the string may be in the legacy format of a comma-delimited string with group-fields only.
-                String[] groupByFields = StringUtils.split(string, Constants.PARAM_VALUE_SEP);
+                String[] groupByFields = string.split(Constants.PARAM_VALUE_SEP);
                 groupFields.setGroupByFields(Sets.newHashSet(groupByFields));
             }
         }

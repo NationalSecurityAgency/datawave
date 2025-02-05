@@ -46,6 +46,7 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     static final int DEFAULT_OUTPUT_INTERVAL = 100;
 
     private static final char NULL_CHAR = '\0';
+    private static final String NULL_STR = "\0";
 
     // ===========================
     // instance members
@@ -139,7 +140,7 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         }
 
         // range should find all field index rows
-        String[] colf = StringUtils.split(key.getColumnFamily().toString(), NULL_CHAR);
+        String[] colf = key.getColumnFamily().toString().split(NULL_STR);
         if ("fi".equals(colf[0])) {
             this.total++;
             if (0 == this.total % this.logInputInterval) {

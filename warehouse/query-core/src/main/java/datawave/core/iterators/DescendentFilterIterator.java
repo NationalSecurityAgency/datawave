@@ -102,7 +102,7 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
         this.parentUids = parentUids;
         // now parse the parentUids into the map
         this.parentUidMap.clear();
-        for (String shardTypeUid : StringUtils.split(parentUids, ' ')) {
+        for (String shardTypeUid : parentUids.split(" ")) {
             String[] parts = StringUtils.split(shardTypeUid, '/');
             Map<String,Set<String>> dataTypes = this.parentUidMap.get(parts[0]);
             if (dataTypes == null) {

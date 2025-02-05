@@ -81,7 +81,7 @@ import datawave.util.UniversalSet;
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
 
-    public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
+    public static final String PARAM_VALUE_SEP_STR = Constants.PARAM_VALUE_SEP;
     public static final String TABLE_NAME_SOURCE = "tableName";
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 

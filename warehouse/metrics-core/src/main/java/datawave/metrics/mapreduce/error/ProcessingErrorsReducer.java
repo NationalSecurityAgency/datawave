@@ -123,7 +123,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         jobName = keySplit[1];
         m = new Mutation(new Text(jobName));
 
-        String[] jobNameSplit = StringUtils.split(jobName, "_");
+        String[] jobNameSplit = jobName.split("_");
 
         String jobTime = StringUtils.split(jobNameSplit[1], '.')[0];
 

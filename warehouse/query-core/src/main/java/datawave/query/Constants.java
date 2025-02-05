@@ -98,7 +98,7 @@ public class Constants {
     public static final String RETURN_TYPE = "return.type";
 
     // From RefactoredShardQueryConfig
-    public static final char PARAM_VALUE_SEP = ',';
+    public static final String PARAM_VALUE_SEP = ",";
 
     // From ingest
     public static final Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");

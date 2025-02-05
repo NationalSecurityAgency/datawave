@@ -248,7 +248,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      */
     private Set<String> getOrDefaultSet(Query settings, String parameterName, Set<String> defaultValue) {
         String value = getTrimmedParameter(settings, parameterName);
-        return StringUtils.isBlank(value) ? defaultValue : new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+        return StringUtils.isBlank(value) ? defaultValue : new HashSet<>(Arrays.asList(value.split(Constants.PARAM_VALUE_SEP)));
     }
 
     /**
