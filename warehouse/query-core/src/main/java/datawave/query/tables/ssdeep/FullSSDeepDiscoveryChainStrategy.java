@@ -43,7 +43,7 @@ public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSS
             /**
              * Keep track of what has already come off the Similarity query and prevent duplicate hashes from being used
              */
-            private final HashSet<Integer> seenHashes = dedupe ? new HashSet<>() : null;
+            private final Set<Integer> seenHashes = dedupe ? new HashSet<>() : null;
 
             @Override
             public boolean hasNext() {

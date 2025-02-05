@@ -1,6 +1,10 @@
 package datawave.query.config;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Range;
 
@@ -8,7 +12,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.ChunkSizeEncoding;
@@ -33,11 +36,35 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private ChunkSizeEncoding chunkSizeEncoder;
 
+    /**
+     * The number of hashes the query logic will accept, -1 indicates unlimited
+     */
+    private int maxHashes = -1;
+
+    /**
+     * Dedupe matching hashes matched inside the SSDeepScoringFunction. When true only process a matching hash one regardless of how many times an ngram may
+     * match it
+     */
+    private boolean dedupeSimilarityHashes = true;
+
+    /**
+     * The max number of hashes to be retrieved per ngram, -1 indicates unlimited
+     */
+    private int maxHashesPerNGram = -1;
+
+    // start of query state objections
     private Collection<Range> ranges;
 
+    /**
+     * The query map, which relates SSDeep hash ngrams with the original query hashes, so that the SSDeep hashes from Accumulo can be married up with the
+     * original queries that caused them to be retrieved.
+     */
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
-    private boolean dedupe = true;
+    private Set<Integer> seenHashes = new HashSet<>();
+
+    private Map<String,Long> ngramCountMap = new HashMap<>();
+    // end of query state objects
 
     public SSDeepSimilarityQueryConfiguration() {
         super();
@@ -70,7 +97,11 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         setQueryMap(other.getQueryMap());
         setQueryThreads(other.getQueryThreads());
         setRanges(other.getRanges());
-        setDedupe(other.isDedupe());
+        setDedupeSimilarityHashes(other.isDedupeSimilarityHashes());
+        setMaxHashes(other.getMaxHashes());
+        setMaxHashesPerNGram(other.getMaxHashesPerNGram());
+        setSeenHashes(other.getSeenHashes());
+        setNgramCountMap(other.getNgramCountMap());
     }
 
     public Collection<Range> getRanges() {
@@ -145,11 +176,43 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         this.bucketEncodingLength = bucketEncodingLength;
     }
 
-    public boolean isDedupe() {
-        return this.dedupe;
+    public boolean isDedupeSimilarityHashes() {
+        return this.dedupeSimilarityHashes;
     }
 
-    public void setDedupe(boolean dedupe) {
-        this.dedupe = dedupe;
+    public void setDedupeSimilarityHashes(boolean dedupeSimilarityHashes) {
+        this.dedupeSimilarityHashes = dedupeSimilarityHashes;
+    }
+
+    public int getMaxHashes() {
+        return maxHashes;
+    }
+
+    public void setMaxHashes(int maxHashes) {
+        this.maxHashes = maxHashes;
+    }
+
+    public int getMaxHashesPerNGram() {
+        return maxHashesPerNGram;
+    }
+
+    public void setMaxHashesPerNGram(int maxHashesPerNGram) {
+        this.maxHashesPerNGram = maxHashesPerNGram;
+    }
+
+    public Set<Integer> getSeenHashes() {
+        return seenHashes;
+    }
+
+    public void setSeenHashes(Set<Integer> seenHashes) {
+        this.seenHashes = seenHashes;
+    }
+
+    public Map<String,Long> getNgramCountMap() {
+        return ngramCountMap;
+    }
+
+    public void setNgramCountMap(Map<String,Long> ngramCountMap) {
+        this.ngramCountMap = ngramCountMap;
     }
 }

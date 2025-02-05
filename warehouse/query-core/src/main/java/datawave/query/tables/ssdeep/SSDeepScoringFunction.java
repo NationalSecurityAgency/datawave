@@ -49,12 +49,6 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
     /** The maximum number of repeated characters allowed in a ssdeep hash - used to perform normalization for scoring */
     private final int maxRepeatedCharacters;
 
-    /**
-     * The query map, which relates SSDeep hash ngrams with the original query hashes, so that the SSDeep hashes from Accumulo can be married up with the
-     * original queries that caused them to be retrieved.
-     */
-    private final Multimap<NGramTuple,SSDeepHash> queryMap;
-
     /** We'll toss out any matches that have scores less than this value. If set to 0 or less we'll keep all hashes */
     private final int minScoreThreshold;
 
@@ -62,10 +56,10 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
     private final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer;
 
-    private HashSet<Integer> seenHashes;
+    private final SSDeepSimilarityQueryConfiguration config;
 
     public SSDeepScoringFunction(SSDeepSimilarityQueryConfiguration config) {
-        this.queryMap = config.getQueryMap();
+        this.config = config;
         this.maxRepeatedCharacters = config.getMaxRepeatedCharacters();
 
         this.bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
@@ -78,10 +72,6 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
         this.editDistanceScorer = new SSDeepHashEditDistanceScorer(maxRepeatedCharacters);
         this.ngramOverlapScorer = new SSDeepNGramOverlapScorer(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
-
-        if (config.isDedupe()) {
-            seenHashes = new HashSet<>();
-        }
     }
 
     /**
@@ -142,17 +132,38 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
         final String matchingHashString = k.getColumnQualifier().toString();
         final SSDeepHash matchingHash = SSDeepHash.parse(matchingHashString);
 
-        if (seenHashes != null) {
+        if (config.isDedupeSimilarityHashes()) {
             int hashcode = matchingHash.hashCode();
-            if (seenHashes.contains(hashcode)) {
+            if (config.getSeenHashes().contains(hashcode)) {
                 return Stream.empty();
             }
-            seenHashes.add(hashcode);
+            config.getSeenHashes().add(hashcode);
+        }
+
+        if (config.getMaxHashesPerNGram() != -1) {
+            Long count = config.getNgramCountMap().get(ngram);
+            if (count == null) {
+                // first seen
+                count = 0L;
+            }
+
+            if (count + 1 > config.getMaxHashesPerNGram()) {
+                // exceeded count the first time
+                log.warn("Exceeded " + config.getMaxHashesPerNGram() + " hashes for " + ngram + " ignoring remaining hashes");
+                config.getNgramCountMap().put(ngram, -1L);
+                return Stream.empty();
+            } else if (count < 0) {
+                // exceeded count beyond the first time, go negative for tracking purposes
+                config.getNgramCountMap().put(ngram, count - 1);
+                return Stream.empty();
+            }
+            // increment count
+            config.getNgramCountMap().put(ngram, count + 1);
         }
 
         // extract the query ssdeeps that contained this ngram from the query map.
         final NGramTuple matchingNgram = new NGramTuple(chunkSize, ngram);
-        Collection<SSDeepHash> queryHashes = queryMap.get(matchingNgram);
+        Collection<SSDeepHash> queryHashes = config.getQueryMap().get(matchingNgram);
 
         // score the match between each query ssdeep and matching hash, keep those that exceed the match
         // threshold.
