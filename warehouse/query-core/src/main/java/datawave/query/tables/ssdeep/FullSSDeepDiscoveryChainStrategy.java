@@ -29,7 +29,7 @@ import datawave.query.tables.chained.strategy.FullChainStrategy;
 public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSSDeepPair,DiscoveredSSDeep> {
     private static final Logger log = Logger.getLogger(FullSSDeepDiscoveryChainStrategy.class);
 
-    private final ThreadLocal<Multimap<String,ScoredSSDeepPair>> scoredMatches = new ThreadLocal<>();
+    private Multimap<String,ScoredSSDeepPair> scoredMatches;
 
     @Override
     protected Query buildLatterQuery(Query initialQuery, Iterator<ScoredSSDeepPair> initialQueryResults, String latterLogicName) {
@@ -37,11 +37,11 @@ public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSS
 
         // track the scored matches we've seen while traversing the initial query results.
         // this has to be case-insensitive because the CHECKSUM_SSDEEP index entries are most likely downcased.
-        scoredMatches.set(TreeMultimap.create(String.CASE_INSENSITIVE_ORDER, ScoredSSDeepPair.NATURAL_ORDER));
+        scoredMatches = TreeMultimap.create(String.CASE_INSENSITIVE_ORDER, ScoredSSDeepPair.NATURAL_ORDER);
 
-        String queryString = captureScoredMatchesAndBuildQuery(initialQueryResults, scoredMatches.get());
+        String queryString = captureScoredMatchesAndBuildQuery(initialQueryResults, scoredMatches);
 
-        if (scoredMatches.get().isEmpty()) {
+        if (scoredMatches.isEmpty()) {
             log.info("Did not receive scored matches from initial query, returning null latter query");
             return null;
         }
@@ -60,7 +60,11 @@ public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSS
                     Iterator<ScoredSSDeepPair> initialQueryResults, QueryLogic<DiscoveredSSDeep> latterQueryLogic) throws Exception {
         final Iterator<DiscoveredSSDeep> it = super.runChainedQuery(client, initialQuery, auths, initialQueryResults, latterQueryLogic);
 
-        return getEnrichedDiscoveredSSDeepIterator(it, scoredMatches.get());
+        // Create a defensive copy of the score map because stream evaluation may be delayed.
+        final Multimap<String,ScoredSSDeepPair> localScoredMatches = TreeMultimap.create(String.CASE_INSENSITIVE_ORDER, ScoredSSDeepPair.NATURAL_ORDER);
+        localScoredMatches.putAll(scoredMatches);
+
+        return getEnrichedDiscoveredSSDeepIterator(it, localScoredMatches);
     }
 
     /**

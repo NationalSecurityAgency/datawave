@@ -2,7 +2,6 @@ package datawave.query.tables.ssdeep;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -24,7 +23,6 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
@@ -61,8 +59,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
-        final SSDeepSimilarityQueryConfiguration config = SSDeepSimilarityQueryConfiguration.create(getConfig());
-        config.clearState();
+        final SSDeepSimilarityQueryConfiguration config = getConfig();
         config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
@@ -77,7 +74,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             throw new QueryException("Did not receive a SSDeepSimilarityQueryConfiguration instance!!");
         }
 
-        final SSDeepSimilarityQueryConfiguration config = (SSDeepSimilarityQueryConfiguration) genericConfig;
+        this.config = (SSDeepSimilarityQueryConfiguration) genericConfig;
 
         try {
             final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), config.getQueryThreads(),
@@ -86,7 +83,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             scanner.setRanges(config.getRanges());
 
             // must be called after setRanges so that we get the query map from the config.
-            final SSDeepScoringFunction scoringFunction = new SSDeepScoringFunction(config, getMaxResults(), getMaxHashesPerNGram());
+            final SSDeepScoringFunction scoringFunction = new SSDeepScoringFunction(config);
 
             this.iterator = scanner.stream().flatMap(scoringFunction).distinct().iterator();
             this.scanner = scanner;
@@ -118,11 +115,6 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
         if (maxRepeatedCharacters > 0) {
             log.info("Normalizing SSDeepHashes to remove long runs of consecutive characters");
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());
-        }
-
-        if (config.getMaxHashes() != -1 && config.getMaxHashes() < queries.size()) {
-            log.error("Query exceeds max hash limit of " + config.getMaxHashes() + " count: " + queries.size());
-            throw new DatawaveFatalQueryException("Query exceeds max hash limit of " + config.getMaxHashes() + " count: " + queries.size());
         }
 
         final Multimap<NGramTuple,SSDeepHash> queryMap = nGramEngine.preprocessQueries(queries);
@@ -225,21 +217,5 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
     public void setBucketEncodingLength(int bucketEncodingLength) {
         getConfig().setBucketEncodingLength(bucketEncodingLength);
-    }
-
-    public void setMaxHashes(int maxHashes) {
-        getConfig().setMaxHashes(maxHashes);
-    }
-
-    public int getMaxHashes() {
-        return getConfig().getMaxHashes();
-    }
-
-    public void setMaxHashesPerNGram(int maxHashesPerNGram) {
-        getConfig().setMaxHashesPerNGram(maxHashesPerNGram);
-    }
-
-    public int getMaxHashesPerNGram() {
-        return getConfig().getMaxHashesPerNGram();
     }
 }

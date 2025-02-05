@@ -1,7 +1,6 @@
 package datawave.query.tables.ssdeep;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -16,7 +15,6 @@ import com.google.common.collect.Multimap;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramTuple;
@@ -63,15 +61,7 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
     private final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer;
 
-    private final long maxResults;
-    private long totalResults = 0;
-
-    private final int maxHashesPerNGram;
-    private Map<String,Long> ngramCountMap;
-
-    public SSDeepScoringFunction(SSDeepSimilarityQueryConfiguration config, long maxResults, int maxHashesPerNGram) {
-        this.maxResults = maxResults;
-        this.maxHashesPerNGram = maxHashesPerNGram;
+    public SSDeepScoringFunction(SSDeepSimilarityQueryConfiguration config) {
         this.queryMap = config.getQueryMap();
         this.maxRepeatedCharacters = config.getMaxRepeatedCharacters();
 
@@ -85,8 +75,6 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
         this.editDistanceScorer = new SSDeepHashEditDistanceScorer(maxRepeatedCharacters);
         this.ngramOverlapScorer = new SSDeepNGramOverlapScorer(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
-
-        this.ngramCountMap = new HashMap<>();
     }
 
     /**
@@ -143,24 +131,6 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
         int chunkSize = chunkSizeEncoding.decode(row.substring(chunkStart, chunkEnd));
         String ngram = row.substring(chunkEnd);
 
-        if (maxHashesPerNGram > -1) {
-            Long count = ngramCountMap.get(ngram);
-            if (count == null) {
-                count = 0L;
-            }
-
-            if (count + 1 > maxHashesPerNGram) {
-                log.warn("Exceeded " + maxHashesPerNGram + " hashes for " + ngram + " ignoring remaining hashes");
-                ngramCountMap.put(ngram, -1L);
-                return Stream.empty();
-            } else if (count < 0) {
-                ngramCountMap.put(ngram, count - 1);
-                // no need to warn again, but keep a count for stats
-                return Stream.empty();
-            }
-            ngramCountMap.put(ngram, count + 1);
-        }
-
         // extract the matching ssdeep hash from the column qualifier
         final String matchingHashString = k.getColumnQualifier().toString();
         final SSDeepHash matchingHash = SSDeepHash.parse(matchingHashString);
@@ -168,13 +138,6 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
         // extract the query ssdeeps that contained this ngram from the query map.
         final NGramTuple matchingNgram = new NGramTuple(chunkSize, ngram);
         Collection<SSDeepHash> queryHashes = queryMap.get(matchingNgram);
-
-        if (maxResults != -1) {
-            totalResults += queryHashes.size();
-            if (totalResults > maxResults) {
-                throw new DatawaveFatalQueryException("Total similarity results exceeded max of " + maxResults);
-            }
-        }
 
         // score the match between each query ssdeep and matching hash, keep those that exceed the match
         // threshold.
@@ -189,7 +152,4 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
         });
     }
 
-    public Map<String,Long> getNgramCountMap() {
-        return ngramCountMap;
-    }
 }
