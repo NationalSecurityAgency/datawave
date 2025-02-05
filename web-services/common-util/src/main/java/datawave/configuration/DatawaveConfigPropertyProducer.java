@@ -92,7 +92,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<String> produceStringListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = StringUtils.split(propertyValue, ",");
+        String[] values = propertyValue.split(",");
         return values == null ? Collections.emptyList() : Arrays.asList(values);
     }
 
@@ -102,7 +102,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public Set<String> produceStringSetConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = StringUtils.split(propertyValue, ",");
+        String[] values = propertyValue.split(",");
         return values == null ? Collections.emptySet() : new HashSet<>(Arrays.asList(values));
     }
 
@@ -184,7 +184,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Double> produceDoubleListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = StringUtils.split(propertyValue, ",");
+        String[] values = propertyValue.split(",");
 
         ArrayList<Double> list = new ArrayList<>();
         if (values != null) {
@@ -213,7 +213,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
         Map<String,String> map = new LinkedHashMap<>();
         if (pairs != null) {
             for (String pair : pairs) {
-                String[] keyValue = StringUtils.split(pair, ";");
+                String[] keyValue = pair.split(";");
                 if (keyValue != null && (keyValue.length == 1 || keyValue.length == 2)) {
                     map.put(keyValue[0], keyValue.length == 1 ? "" : keyValue[1]);
                 } else {

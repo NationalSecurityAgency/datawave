@@ -173,7 +173,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             client = connectionFactory.getClient(null, null, Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
-            connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
+            connectorAuthorizationCollection = Lists.newArrayList(connectorAuthorizations.split(","));
             reload();
 
             if (tablesChecked.compareAndSet(false, true))
@@ -613,7 +613,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("HOST")) {
                         m.setHost(fieldValue);
                     } else if (fieldName.equals("PROXY_SERVERS")) {
-                        m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
+                        m.setProxyServers(Arrays.asList(fieldValue.split(",")));
                     } else if (fieldName.equals("AUTHORIZATIONS")) {
                         m.setQueryAuthorizations(fieldValue);
                     } else if (fieldName.equals("QUERY_TYPE")) {
