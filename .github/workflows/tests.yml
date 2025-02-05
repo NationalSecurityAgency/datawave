@@ -62,8 +62,8 @@ jobs:
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
   check-code-formatting:
-    needs: check-branch
-    if: github.event_name != 'merge_group' || needs.check-branch.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    needs: check-should-run
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -102,8 +102,8 @@ jobs:
         
   # Build the code and run the unit/integration tests.
   build-and-test:
-    needs: check-branch
-    if: github.event_name != 'merge_group' || needs.check-branch.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    needs: check-should-run
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -170,8 +170,8 @@ jobs:
   #           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
 
   quickstart-build-and-test:
-    needs: check-branch
-    if: github.event_name != 'merge_group' || needs.check-branch.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    needs: check-should-run
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -205,8 +205,8 @@ jobs:
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
   compose-build-and-test-latest-snapshots:
-    needs: check-branch
-    if: github.event_name != 'merge_group' || needs.check-branch.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    needs: check-should-run
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
@@ -276,8 +276,8 @@ jobs:
           docker compose logs
 
   compose-build-and-test:
-    needs: check-branch
-    if: github.event_name != 'merge_group' || needs.check-branch.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    needs: check-should-run
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
