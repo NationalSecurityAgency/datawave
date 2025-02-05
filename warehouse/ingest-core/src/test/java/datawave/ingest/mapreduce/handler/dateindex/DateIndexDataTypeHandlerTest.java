@@ -203,7 +203,7 @@ public class DateIndexDataTypeHandlerTest {
     }
 
     private static String getIndexedValue(String dataStr, int index) {
-        String[] data = StringUtils.split(dataStr, ',');
+        String[] data = dataStr.split(",");
         return (data.length > index ? data[index] : null);
     }
 

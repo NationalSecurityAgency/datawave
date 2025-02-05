@@ -129,7 +129,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                 final String[] fieldArray = StringUtils.split(fields, categoryDelimiter.charAt(0));
                 Preconditions.checkArgument(fieldArray.length == 2);
                 final String pivot = fieldArray[0];
-                final String[] facets = StringUtils.split(fieldArray[1], ',');
+                final String[] facets = fieldArray[1].split(",");
                 pivotMap.putAll(pivot, ImmutableList.copyOf(facets));
             }
         } else {

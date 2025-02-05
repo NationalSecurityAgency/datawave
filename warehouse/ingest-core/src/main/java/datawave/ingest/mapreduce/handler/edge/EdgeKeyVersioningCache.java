@@ -117,7 +117,7 @@ public class EdgeKeyVersioningCache {
                 for (Map.Entry<Key,Value> entry : scanner) {
                     String cq = entry.getKey().getColumnQualifier().toString();
 
-                    String parts[] = StringUtils.split(cq, '/');
+                    String parts[] = cq.split("/");
 
                     Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
 
