@@ -57,7 +57,7 @@ jobs:
               }
             }' -f owner=${{ github.repository_owner }} -f name=${{ github.event.repository.name }} --jq '.data.repository.mergeQueue.entries.totalCount')
           
-          if [ "$MERGE_BASE" != "$integration_HEAD" ] && [ "$QUEUE_SIZE" -le 1 ]; then
+          if [ "$MERGE_BASE" != "$integration_HEAD" ] || [ "$QUEUE_SIZE" -gt 1 ]; then
             echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
           else
             echo "SHOULD_RUN=false" >> $GITHUB_OUTPUT
