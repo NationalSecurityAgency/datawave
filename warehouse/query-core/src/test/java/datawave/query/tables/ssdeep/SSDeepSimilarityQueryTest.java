@@ -98,13 +98,11 @@ public class SSDeepSimilarityQueryTest {
 
     @Test
     public void testSingleQueryNoMinScore() throws Exception {
-        // TODO now returns duplicates
         runSingleQuery(false);
     }
 
     @Test
     public void testSingleQueryMinScore() throws Exception {
-        // TODO now returns duplicates
         runSingleQuery(true);
     }
 
