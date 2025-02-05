@@ -18,10 +18,9 @@ env:
 
 jobs:
   check-should-run:
-    if: github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     outputs:
-      SHOULD_RUN_FOR_MERGE_QUEUE: ${{ steps.check.outputs.SHOULD_RUN_FOR_MERGE_QUEUE }}
+      SHOULD_RUN: ${{ steps.check.outputs.SHOULD_RUN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -36,6 +35,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ github.event_name }}" != "merge_group" ]; then
+            echo "Event is not merge_group, exiting successfully."
+            echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           # Get the merge base between current branch and integration
           MERGE_BASE=$(git merge-base HEAD integration)
           # Get the current commit of integration
@@ -54,16 +58,16 @@ jobs:
             }' -f owner=${{ github.repository_owner }} -f name=${{ github.event.repository.name }} --jq '.data.repository.mergeQueue.entries.totalCount')
           
           if [ "$MERGE_BASE" != "$integration_HEAD" ] && [ "$QUEUE_SIZE" -le 1 ]; then
-            echo "SHOULD_RUN_FOR_MERGE_QUEUE=true" >> $GITHUB_OUTPUT
+            echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
           else
-            echo "SHOULD_RUN_FOR_MERGE_QUEUE=false" >> $GITHUB_OUTPUT
+            echo "SHOULD_RUN=false" >> $GITHUB_OUTPUT
           fi
   # Runs the pom sorter and code formatter to ensure that the code
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
   check-code-formatting:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -103,7 +107,7 @@ jobs:
   # Build the code and run the unit/integration tests.
   build-and-test:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -171,7 +175,7 @@ jobs:
 
   quickstart-build-and-test:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -206,7 +210,7 @@ jobs:
 
   compose-build-and-test-latest-snapshots:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
@@ -277,7 +281,7 @@ jobs:
 
   compose-build-and-test:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
