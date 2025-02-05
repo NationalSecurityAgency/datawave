@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -24,7 +25,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.shaded.javax.xml.bind.annotation.XmlTransient;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -358,7 +358,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
 
-    @XmlTransient
+
     private IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
     private int uniqueCacheBufferSize = 100;
@@ -1524,22 +1524,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.zookeeperConfig = zookeeperConfig;
     }
 
-    @XmlTransient
+    @JsonIgnore
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
         return ivaratorConfig.getIvaratorCacheDirConfigs();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
         ivaratorConfig.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public String getIvaratorFstHdfsBaseURIs() {
         return ivaratorConfig.getIvaratorFstHdfsBaseURIs();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
         ivaratorConfig.setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
     }
@@ -1552,142 +1552,142 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.uniqueCacheBufferSize = uniqueCacheBufferSize;
     }
 
-    @XmlTransient
+    @JsonIgnore
     public int getIvaratorCacheBufferSize() {
         return ivaratorConfig.getIvaratorCacheBufferSize();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         ivaratorConfig.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorConfig.getIvaratorCacheScanPersistThreshold();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
         ivaratorConfig.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public long getIvaratorCacheScanTimeout() {
         return ivaratorConfig.getIvaratorCacheScanTimeout();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         ivaratorConfig.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public int getMaxFieldIndexRangeSplit() {
         return ivaratorConfig.getMaxFieldIndexRangeSplit();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
         ivaratorConfig.setMaxFieldIndexRangeSplit(maxFieldIndexRangeSplit);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public int getIvaratorMaxOpenFiles() {
         return ivaratorConfig.getIvaratorMaxOpenFiles();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         ivaratorConfig.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public int getIvaratorNumRetries() {
         return ivaratorConfig.getIvaratorNumRetries();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         ivaratorConfig.setIvaratorNumRetries(ivaratorNumRetries);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public boolean isIvaratorPersistVerify() {
         return ivaratorConfig.isIvaratorPersistVerify();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
         ivaratorConfig.setIvaratorPersistVerify(ivaratorPersistVerify);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public int getIvaratorPersistVerifyCount() {
         return ivaratorConfig.getIvaratorPersistVerifyCount();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
         ivaratorConfig.setIvaratorPersistVerifyCount(ivaratorPersistVerifyCount);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public int getMaxIvaratorSources() {
         return (int) ivaratorConfig.getMaxIvaratorSources();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         ivaratorConfig.setMaxIvaratorSources(maxIvaratorSources);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public long getMaxIvaratorSourceWait() {
         return ivaratorConfig.getMaxIvaratorSourceWait();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
         ivaratorConfig.setMaxIvaratorSourceWait(maxIvaratorSourceWait);
     }
 
-    @XmlTransient
+    @JsonIgnore
     public long getMaxIvaratorResults() {
         return ivaratorConfig.getMaxIvaratorResults();
     }
 
-    @XmlTransient
+    @JsonIgnore
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         ivaratorConfig.setMaxIvaratorResults(maxIvaratorResults);
     }
 
-    @XmlTransient
+
     public int getMaxIvaratorTerms() {
         return maxIvaratorTerms;
     }
 
-    @XmlTransient
+
     public void setMaxIvaratorTerms(int maxIvaratorTerms) {
         this.maxIvaratorTerms = maxIvaratorTerms;
     }
 
-    @XmlTransient
+
     public int getMaxEvaluationPipelines() {
         return maxEvaluationPipelines;
     }
 
-    @XmlTransient
+
     public void setMaxEvaluationPipelines(int maxEvaluationPipelines) {
         this.maxEvaluationPipelines = maxEvaluationPipelines;
     }
 
-    @XmlTransient
+
     public int getMaxPipelineCachedResults() {
         return maxPipelineCachedResults;
     }
 
-    @XmlTransient
+
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         this.maxPipelineCachedResults = maxCachedResults;
     }
