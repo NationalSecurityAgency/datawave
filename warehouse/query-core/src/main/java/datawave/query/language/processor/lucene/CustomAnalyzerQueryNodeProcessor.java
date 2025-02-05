@@ -366,8 +366,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      *            the text of the original query.
      * @param positionsObserved
      *            the number of positions observed in the tokenized text.
-     * @return the amount of slop we need to add to our new query clauses, Integer.MIN_VALUE if there should be no changes to the
-     *   original node.
+     * @return the amount of slop we need to add to our new query clauses, Integer.MIN_VALUE if there should be no changes to the original node.
      */
     private int calculateSlopNeeded(QueryNode node, String text, int positionsObserved) {
         int slopNeeded = positionsObserved;
