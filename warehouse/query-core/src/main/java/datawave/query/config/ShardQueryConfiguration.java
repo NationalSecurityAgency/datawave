@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -27,6 +26,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -357,7 +357,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
-
 
     private IvaratorConfig ivaratorConfig = new IvaratorConfig();
 
@@ -1662,36 +1661,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         ivaratorConfig.setMaxIvaratorResults(maxIvaratorResults);
     }
 
-
     public int getMaxIvaratorTerms() {
         return maxIvaratorTerms;
     }
-
 
     public void setMaxIvaratorTerms(int maxIvaratorTerms) {
         this.maxIvaratorTerms = maxIvaratorTerms;
     }
 
-
     public int getMaxEvaluationPipelines() {
         return maxEvaluationPipelines;
     }
-
 
     public void setMaxEvaluationPipelines(int maxEvaluationPipelines) {
         this.maxEvaluationPipelines = maxEvaluationPipelines;
     }
 
-
     public int getMaxPipelineCachedResults() {
         return maxPipelineCachedResults;
     }
 
-
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         this.maxPipelineCachedResults = maxCachedResults;
     }
-
 
     public boolean isExpandAllTerms() {
         return expandAllTerms;
@@ -2873,6 +2865,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setIvaratorConfig(IvaratorConfig ivaratorConfig) {
         this.ivaratorConfig = ivaratorConfig;
     }
+
     public IvaratorConfig getIvaratorConfig() {
         return this.ivaratorConfig;
     }
