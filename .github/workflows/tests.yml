@@ -63,7 +63,7 @@ jobs:
   # they are committed back to the branch
   check-code-formatting:
     needs: check-should-run
-    if: github.event_name == 'merge_group' && needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -103,7 +103,7 @@ jobs:
   # Build the code and run the unit/integration tests.
   build-and-test:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -171,7 +171,7 @@ jobs:
 
   quickstart-build-and-test:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -206,7 +206,7 @@ jobs:
 
   compose-build-and-test-latest-snapshots:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
@@ -277,7 +277,7 @@ jobs:
 
   compose-build-and-test:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
