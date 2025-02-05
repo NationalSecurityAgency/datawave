@@ -63,7 +63,7 @@ jobs:
   # they are committed back to the branch
   check-code-formatting:
     needs: check-should-run
-    if: github.event_name != 'merge_group' || needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'false'
+    if: github.event_name == 'merge_group' && needs.check-should-run.outputs.SHOULD_RUN_FOR_MERGE_QUEUE == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
