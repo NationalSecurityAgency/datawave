@@ -23,11 +23,15 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
 
+/**
+ * Converts batches of ScoredSSDeepPair into the latterQueryLogic in batches. Maintain batch scored state to enrich discovered results for each batch. A batch
+ * size of -1 will force a single batch. When seenHashes is set ScoredSSDeepPair matchingHash will be deduped.
+ */
 public class StatefulSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSSDeepPair,DiscoveredSSDeep> {
     private static final Logger log = Logger.getLogger(StatefulSSDeepDiscoveryChainStrategy.class);
 
     private int batchSize = -1;
-    private HashSet<Integer> seenHashes;
+    private Set<Integer> seenHashes;
     private Multimap<String,ScoredSSDeepPair> scoredMatches;
 
     @Override
@@ -125,7 +129,7 @@ public class StatefulSSDeepDiscoveryChainStrategy extends FullChainStrategy<Scor
         this.batchSize = batchSize;
     }
 
-    public void setSeenHashes(HashSet<Integer> seenHashes) {
+    public void setSeenHashes(Set<Integer> seenHashes) {
         this.seenHashes = seenHashes;
     }
 }

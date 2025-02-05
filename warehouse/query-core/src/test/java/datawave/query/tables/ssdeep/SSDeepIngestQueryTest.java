@@ -140,7 +140,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     @SuppressWarnings("rawtypes")
     @Test
     public void testSSDeepSimilarity() throws Exception {
-        similarityQueryLogic.getConfig().setDedupe(false);
+        similarityQueryLogic.getConfig().setDedupeSimilarityHashes(false);
         log.info("------ testSSDeepSimilarity ------");
         @SuppressWarnings("SpellCheckingInspection")
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
@@ -156,7 +156,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "40", expectedOverlaps, "100", observedEvents);
 
         // now repeat with dedupe true
-        similarityQueryLogic.getConfig().setDedupe(true);
+        similarityQueryLogic.getConfig().setDedupeSimilarityHashes(true);
         response = runSSDeepQuery(query, similarityQueryLogic, 0);
 
         events = response.getEvents();
