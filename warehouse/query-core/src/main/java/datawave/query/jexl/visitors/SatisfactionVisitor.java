@@ -119,6 +119,7 @@ public class SatisfactionVisitor extends BaseVisitor {
                 case BOUNDED_RANGE:
                 case EXCEEDED_OR:
                 case EXCEEDED_VALUE:
+                case INDEX_HOLE:
                     // the fields of the source node should be visited as a double lock safety check
                     return null;
                 case DELAYED:
@@ -131,11 +132,9 @@ public class SatisfactionVisitor extends BaseVisitor {
                     return null;
                 case STRICT:
                 case LENIENT:
-                case INDEX_HOLE:
                 case DROPPED:
-                    // these markers do not matter and should have been removed
-                    log.warn("saw unexpected marker: " + instance.getType().getLabel());
                 default:
+                    // these markers do not matter and should have been removed
                     log.warn("saw unexpected marker: " + instance.getType().getLabel());
             }
         }

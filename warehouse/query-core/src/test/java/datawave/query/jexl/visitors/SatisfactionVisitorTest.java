@@ -130,6 +130,14 @@ public class SatisfactionVisitorTest {
     }
 
     @Test
+    public void testIndexHoleMarker() {
+        test(true, "((_Hole_ = true) && (INDEXED_FIELD == 'a'))");
+        test(true, "((_Hole_ = true) && (INDEX_ONLY_FIELD == 'a'))");
+        // this should be false. will be caught if we verify the source node for markers
+        test(true, "((_Hole_ = true) && (EVENT_ONLY_FIELD == 'a'))");
+    }
+
+    @Test
     public void testDelayedMarker() {
         test(false, "((_Delayed_ = true) && (INDEXED_FIELD == 'a'))");
         test(false, "((_Delayed_ = true) && (INDEX_ONLY_FIELD == 'a'))");
