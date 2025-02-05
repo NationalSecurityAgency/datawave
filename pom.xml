@@ -51,7 +51,7 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.4-97e4684860</version.accumulo>
+        <version.accumulo>2.1.4-SNAPSHOT</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
@@ -72,8 +72,8 @@
         <version.commons-pool>1.6</version.commons-pool>
         <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.commons-text>1.11.0</version.commons-text>
-        <version.curator>5.2.0</version.curator>
-        <version.curator.test>5.2.0</version.curator.test>
+        <version.curator>5.7.1</version.curator>
+        <version.curator.test>5.7.1</version.curator.test>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
@@ -719,6 +719,10 @@
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper-jute</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -857,6 +861,10 @@
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper-jute</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -868,6 +876,10 @@
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>zookeeper</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper-jute</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -878,6 +890,10 @@
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper-jute</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1051,6 +1067,25 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
+                <version>${version.zookeeper}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-classic</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper-jute</artifactId>
                 <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
