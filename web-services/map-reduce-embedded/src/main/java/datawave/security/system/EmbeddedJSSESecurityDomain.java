@@ -92,10 +92,10 @@ public class EmbeddedJSSESecurityDomain implements JSSESecurityDomain {
     public void initialize() throws Exception {
 
         if (this.cipherSuitesString != null) {
-            this.cipherSuites = StringUtils.split(this.cipherSuitesString);
+            this.cipherSuites = this.cipherSuitesString.split(" ");
         }
         if (this.protocolsString != null) {
-            this.protocols = StringUtils.split(this.protocolsString);
+            this.protocols = this.protocolsString.split(" ");
         }
         this.clientAuth = Boolean.parseBoolean(this.clientAuthString);
 

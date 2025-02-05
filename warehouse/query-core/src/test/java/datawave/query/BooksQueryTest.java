@@ -134,7 +134,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
                             String attrExtra = entry.getKey().substring(BooksField.AUTHOR.name().length());
                             Attribute attr = entry.getValue();
                             String name = attr.getData().toString();
-                            String[] parts = StringUtils.split(name, ' ');
+                            String[] parts = name.split(" ");
                             if (parts.length > 1) {
                                 attrs.put(AUTHOR_FIRST_NAME + attrExtra, new Content(parts[0], attr.getMetadata(), false, attr));
                             }

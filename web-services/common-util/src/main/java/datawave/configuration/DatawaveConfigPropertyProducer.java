@@ -112,7 +112,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Integer> produceIntegerListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = StringUtils.split(propertyValue, ",");
+        String[] values = propertyValue.split(",");
 
         ArrayList<Integer> list = new ArrayList<>();
         if (values != null) {

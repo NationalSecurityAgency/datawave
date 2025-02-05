@@ -727,7 +727,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-compressionType")) {
                 compressionType = args[++i];
             } else if (args[i].equals("-compressionTableDisallowList")) {
-                String[] tables = StringUtils.split(args[++i], ',');
+                String[] tables = args[++i].split(",");
                 compressionTableDisallowList.addAll(Arrays.asList(tables));
             } else if (args[i].equals("-maxRFileUndeduppedEntries")) {
                 maxRFileEntries = Integer.parseInt(args[++i]);
@@ -1157,7 +1157,7 @@ public class IngestJob implements Tool {
      *             if there is an issue with read or write
      */
     protected Path[] getFilesToProcess(FileSystem fs, boolean inputFileLists, String inputFileListMarker, String inputPaths) throws IOException {
-        String[] paths = StringUtils.trimAndRemoveEmptyStrings(StringUtils.split(inputPaths, ','));
+        String[] paths = StringUtils.trimAndRemoveEmptyStrings(inputPaths.split(","));
         List<Path> inputPathList = new ArrayList<>(inputFileLists ? paths.length * 100 : paths.length);
         for (String inputPath : paths) {
             // if we are to treat the input paths as file lists, then expand here

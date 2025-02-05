@@ -30,7 +30,7 @@ public class HdfsQueryLock implements QueryLock {
 
     public HdfsQueryLock(FileSystemCache fsCache, String hdfsBaseURIs, String queryId) throws MalformedURLException {
         this.queryId = queryId;
-        this.hdfsBaseURIs = filterHdfsOnly(StringUtils.split(hdfsBaseURIs, ','));
+        this.hdfsBaseURIs = filterHdfsOnly(hdfsBaseURIs.split(","));
         this.fsCache = fsCache;
     }
 
