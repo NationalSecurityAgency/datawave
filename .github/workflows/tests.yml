@@ -17,10 +17,57 @@ env:
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
 
 jobs:
+  check-should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      SHOULD_RUN: ${{ steps.check.outputs.SHOULD_RUN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Fetch integration branch
+        run: git fetch origin integration:integration
+
+      - name: Check if the merge_group actions should run
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "merge_group" ]; then
+            echo "Event is not merge_group, exiting successfully."
+            echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Get the merge base between current branch and integration
+          MERGE_BASE=$(git merge-base HEAD integration)
+          # Get the current commit of integration
+          integration_HEAD=$(git rev-parse integration)
+          
+          # Get the number of PRs in the merge queue
+          QUEUE_SIZE=$(gh api graphql -f query='
+            query($owner:String!, $name:String!) {
+              repository(owner:$owner, name:$name) {
+                mergeQueue {
+                  entries {
+                    totalCount
+                  }
+                }
+              }
+            }' -f owner=${{ github.repository_owner }} -f name=${{ github.event.repository.name }} --jq '.data.repository.mergeQueue.entries.totalCount')
+          
+          if [ "$MERGE_BASE" != "$integration_HEAD" ] || [ "$QUEUE_SIZE" -gt 1 ]; then
+            echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
+          else
+            echo "SHOULD_RUN=false" >> $GITHUB_OUTPUT
+          fi
   # Runs the pom sorter and code formatter to ensure that the code
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
   check-code-formatting:
+    needs: check-should-run
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -59,6 +106,8 @@ jobs:
         
   # Build the code and run the unit/integration tests.
   build-and-test:
+    needs: check-should-run
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -125,6 +174,8 @@ jobs:
   #           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
 
   quickstart-build-and-test:
+    needs: check-should-run
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -158,6 +209,8 @@ jobs:
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
   compose-build-and-test-latest-snapshots:
+    needs: check-should-run
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
@@ -227,6 +280,8 @@ jobs:
           docker compose logs
 
   compose-build-and-test:
+    needs: check-should-run
+    if: needs.check-should-run.outputs.SHOULD_RUN == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Free up some space
