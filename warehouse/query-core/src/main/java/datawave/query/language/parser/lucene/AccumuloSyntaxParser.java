@@ -388,7 +388,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         boolean endInc = false;
         QueryNode q = null;
         FieldQueryNode qLower, qUpper;
-        int defaultMaxEdits = FuzzyQuery.defaultMaxEdits;
+        float defaultMinSimilarity = FuzzyQuery.defaultMaxEdits;
         switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
             case FUNCTION:
             case TERM:
@@ -444,9 +444,9 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                         ;
                 }
                 if (fuzzy) {
-                    int fms = defaultMaxEdits;
+                    float fms = defaultMinSimilarity;
                     try {
-                        fms = Integer.valueOf(fuzzySlop.image.substring(1)).intValue();
+                        fms = Float.valueOf(fuzzySlop.image.substring(1)).floatValue();
                     } catch (Exception ignored) {}
                     if (fms < 0.0f) {
                         {
