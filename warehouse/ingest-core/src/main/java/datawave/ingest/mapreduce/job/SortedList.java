@@ -41,7 +41,8 @@ public class SortedList<T> {
 
         // verify after copying because nothing can change at this point
         @SuppressWarnings("unchecked")
-        boolean isSorted = Ordering.natural().isOrdered((Iterable<? extends Comparable>) copy);
+        boolean isSorted = (Ordering.natural().reverse().isOrdered((Iterable<? extends Comparable>) copy) ||
+                Ordering.natural().isOrdered((Iterable<? extends Comparable>) copy));
 
         if (isSorted) {
             return new SortedList<>(copy);
