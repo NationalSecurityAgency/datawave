@@ -87,7 +87,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         final String facetedFields = settings.findParameter(FacetedConfiguration.FACETED_FIELDS).getParameterValue().trim();
 
         if (org.apache.commons.lang.StringUtils.isNotBlank(facetedFields)) {
-            Set<String> facetedFieldSet = Sets.newHashSet(StringUtils.split(facetedFields, Constants.PARAM_VALUE_SEP));
+            Set<String> facetedFieldSet = Sets.newHashSet(facetedFields.split(Constants.PARAM_VALUE_SEP));
 
             // Only set the projection fields if we were actually given some
             if (!facetedFieldSet.isEmpty()) {
