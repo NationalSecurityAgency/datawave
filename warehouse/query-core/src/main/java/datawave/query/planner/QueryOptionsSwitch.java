@@ -36,15 +36,15 @@ public class QueryOptionsSwitch {
                     config.setHitList(Boolean.parseBoolean(value));
                     break;
                 case QueryParameters.LIMIT_FIELDS:
-                    String[] lf = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] lf = value.split(Constants.PARAM_VALUE_SEP);
                     config.setLimitFields(Sets.newHashSet(lf));
                     break;
                 case QueryParameters.MATCHING_FIELD_SETS:
-                    String[] mfs = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] mfs = value.split(Constants.PARAM_VALUE_SEP);
                     config.setMatchingFieldSets(Sets.newHashSet(mfs));
                     break;
                 case QueryParameters.GROUP_FIELDS:
-                    String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] groups = value.split(Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
                     groupFields.setGroupByFields(Sets.newHashSet(groups));
                     config.setGroupFields(groupFields);
@@ -79,20 +79,20 @@ public class QueryOptionsSwitch {
                     config.setSummaryOptions(summaryOptions);
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
-                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(value.split(Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.LENIENT_FIELDS:
-                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    config.setLenientFields(new HashSet<>(Arrays.asList(value.split(Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.STRICT_FIELDS:
-                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    config.setStrictFields(new HashSet<>(Arrays.asList(value.split(Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.RENAME_FIELDS:
-                    Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(value.split(Constants.PARAM_VALUE_SEP)));
                     config.setRenameFields(renameFieldExpressions);
                     break;
                 case QueryParameters.SUM_FIELDS:
-                    String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] sumFields = value.split(Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
                     groupFields.setSumFields(Sets.newHashSet(sumFields));
                     config.setGroupFields(groupFields);
@@ -102,7 +102,7 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.MAX_FIELDS:
-                    String[] maxFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] maxFields = value.split(Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
                     groupFields.setMaxFields(Sets.newHashSet(maxFields));
                     config.setGroupFields(groupFields);
@@ -112,7 +112,7 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.MIN_FIELDS:
-                    String[] minFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] minFields = value.split(Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
                     groupFields.setMinFields(Sets.newHashSet(minFields));
                     config.setGroupFields(groupFields);
@@ -122,7 +122,7 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.COUNT_FIELDS:
-                    String[] countFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] countFields = value.split(Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
                     groupFields.setCountFields(Sets.newHashSet(countFields));
                     config.setGroupFields(groupFields);
@@ -132,7 +132,7 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.AVERAGE_FIELDS:
-                    String[] averageFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    String[] averageFields = value.split(Constants.PARAM_VALUE_SEP);
                     groupFields = config.getGroupFields();
                     groupFields.setAverageFields(Sets.newHashSet(averageFields));
                     config.setGroupFields(groupFields);
