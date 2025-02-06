@@ -2,11 +2,9 @@ package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -18,7 +16,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.SortedList;
 import datawave.ingest.mapreduce.job.SplitsFile;
 
 /**
@@ -83,7 +80,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
 
         String tableName = key.getTableName().toString();
 
-        SortedList<Text> cutPointArray = null;
+        List<Text> cutPointArray = null;
         try {
             cutPointArray = SplitsFile.getSplits(conf, tableName);
         } catch (IOException e) {
@@ -93,8 +90,8 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             return (tableName.hashCode() & Integer.MAX_VALUE) % numPartitions;
         }
         key.getKey().getRow(holder);
-        int index = Collections.binarySearch(cutPointArray.get(), holder);
-        index = calculateIndex(index, numPartitions, tableName, cutPointArray.get().size());
+        int index = Collections.binarySearch(cutPointArray, holder);
+        index = calculateIndex(index, numPartitions, tableName, cutPointArray.size());
 
         index = partitionLimiter.limit(numPartitions, index);
 

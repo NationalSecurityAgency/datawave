@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
@@ -18,12 +17,9 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Maps;
-
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.SortedList;
 import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.util.time.DateHelper;
 
@@ -135,7 +131,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
 
-        SortedList<Text> sortedSplits = SplitsFile.getSplits(conf, tableName);
+        List<Text> sortedSplits = SplitsFile.getSplits(conf, tableName);
         Map<Text,String> shardIdToLocation = SplitsFile.getSplitsAndLocations(conf, tableName);
 
         if (log.isDebugEnabled())
@@ -159,7 +155,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
      *            the map of shard ids and their location
      * @return shardId to
      */
-    private HashMap<Text,Integer> assignPartitionsForEachShard(SortedList<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
+    private HashMap<Text,Integer> assignPartitionsForEachShard(List<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
 
         HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIds, shardIdToLocations);
@@ -179,11 +175,11 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return totalNumUniqueTServers;
     }
 
-    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, SortedList<Text> sortedShardIds, Map<Text,String> shardIdsToTservers) {
+    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, List<Text> sortedShardIds, Map<Text,String> shardIdsToTservers) {
         HashMap<String,Integer> partitionsByTServer = new HashMap<>(totalNumTServers);
         int nextAvailableSlot = 0;
         boolean alreadySkippedFutureShards = false;
-        for (Text shard : sortedShardIds.get()) {
+        for (Text shard : sortedShardIds) {
             if (alreadySkippedFutureShards || !isFutureShard(shard)) { // short circuiting for performance
                 alreadySkippedFutureShards = true;
                 String location = shardIdsToTservers.get(shard);
