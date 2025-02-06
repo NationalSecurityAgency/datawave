@@ -51,7 +51,7 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.4-SNAPSHOT</version.accumulo>
+        <version.accumulo>2.1.4-5657bc8cf22</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
