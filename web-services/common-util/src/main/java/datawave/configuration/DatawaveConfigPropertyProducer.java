@@ -136,7 +136,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public List<Long> produceLongListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] values = propertyValue.split( ",");
+        String[] values = propertyValue.split(",");
 
         ArrayList<Long> list = new ArrayList<>();
         if (values != null) {
