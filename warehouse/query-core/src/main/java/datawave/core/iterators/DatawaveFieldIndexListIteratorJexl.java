@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import javax.management.ObjectName;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -21,11 +23,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.InputStreamDataInput;
+import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.IntsRef;
 import org.apache.lucene.util.IntsRefBuilder;
 import org.apache.lucene.util.fst.FST;
+import org.apache.lucene.util.fst.FSTCompiler;
 import org.apache.lucene.util.fst.NoOutputs;
 import org.apache.lucene.util.fst.Outputs;
+import org.apache.lucene.util.fst.PositiveIntOutputs;
 import org.apache.lucene.util.fst.Util;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
@@ -185,28 +190,16 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
 
     public static FST<?> getFST(SortedSet<String> values) throws IOException {
         final IntsRefBuilder irBuilder = new IntsRefBuilder();
-        // The builder options with defaults
-        FST.INPUT_TYPE inputType = FST.INPUT_TYPE.BYTE1;
-        int minSuffixCount1 = 0;
-        int minSuffixCount2 = 0;
-        boolean doShareSuffix = true;
-        boolean doShareNonSingletonNodes = true;
-        int shareMaxTailLength = Integer.MAX_VALUE;
-
-        boolean allowArrayArcs = true;
-        int bytesPageBits = 15;
         final Outputs<Object> outputs = NoOutputs.getSingleton();
 
-        // create the FST from the values
-        org.apache.lucene.util.fst.Builder<Object> fstBuilder = new org.apache.lucene.util.fst.Builder<>(inputType, minSuffixCount1, minSuffixCount2,
-                        doShareSuffix, doShareNonSingletonNodes, shareMaxTailLength, outputs, allowArrayArcs, bytesPageBits);
-
+        // Add the values to the compiler and create the FST.
+        FSTCompiler<Object> fstCompiler = new FSTCompiler.Builder<>(FST.INPUT_TYPE.BYTE1, outputs).build();
         for (String value : values) {
             Util.toUTF16(value, irBuilder);
             final IntsRef scratchInt = irBuilder.get();
-            fstBuilder.add(scratchInt, outputs.getNoOutput());
+            fstCompiler.add(scratchInt, outputs.getNoOutput());
         }
-        return fstBuilder.finish();
+        return FST.fromFSTReader(fstCompiler.compile(), fstCompiler.getFSTReader());
     }
 
     /** Utility class to load one instance of any FST per classloader */
@@ -260,8 +253,10 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
                 fis = codec.createInputStream(fis);
             }
             NoOutputs outputs = NoOutputs.getSingleton();
+
             DataInput di = new InputStreamDataInput(fis);
-            return new FST<>(di, outputs);
+            FST.FSTMetadata<Object> metadata = FST.readMetadata(di, outputs);
+            return new FST<>(metadata, di);
         }
 
         public static synchronized void clear(String file) {

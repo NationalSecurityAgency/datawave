@@ -334,7 +334,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
 
     protected URI createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException,
                     NoSuchMethodException, InvocationTargetException {
-        FST fst = DatawaveFieldIndexListIteratorJexl.getFST(values);
+        FST<?> fst = DatawaveFieldIndexListIteratorJexl.getFST(values);
 
         // now serialize to our file system
         CompressionCodec codec = null;
@@ -357,7 +357,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
 
         OutputStreamDataOutput outStream = new OutputStreamDataOutput(fstFileOut);
-        fst.save(outStream);
+        fst.save(outStream, outStream);
         outStream.close();
 
         return fstFile.toUri();

@@ -40,6 +40,7 @@ import org.apache.lucene.queryparser.flexible.messages.Message;
 import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
+import org.apache.lucene.search.FuzzyQuery;
 
 @SuppressWarnings("all")
 public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserConstants {
@@ -387,7 +388,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         boolean endInc = false;
         QueryNode q = null;
         FieldQueryNode qLower, qUpper;
-        float defaultMinSimilarity = org.apache.lucene.search.FuzzyQuery.defaultMinSimilarity;
+        int defaultMaxEdits = FuzzyQuery.defaultMaxEdits;
         switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
             case FUNCTION:
             case TERM:
@@ -443,9 +444,9 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                         ;
                 }
                 if (fuzzy) {
-                    float fms = defaultMinSimilarity;
+                    int fms = defaultMaxEdits;
                     try {
-                        fms = Float.valueOf(fuzzySlop.image.substring(1)).floatValue();
+                        fms = Integer.valueOf(fuzzySlop.image.substring(1)).intValue();
                     } catch (Exception ignored) {}
                     if (fms < 0.0f) {
                         {
