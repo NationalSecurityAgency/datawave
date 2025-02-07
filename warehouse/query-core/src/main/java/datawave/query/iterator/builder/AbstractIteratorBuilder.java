@@ -61,14 +61,19 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
 
     protected HashMultimap<String,String> observedFieldValues = HashMultimap.create();
 
-    protected boolean forceDocumentBuild = false;
+    protected boolean buildDocument = false;
 
     public void addInclude(NestedIterator itr) {
         includes.add(itr);
     }
 
-    public void forceDocumentBuild(boolean forceDocumentBuild) {
-        this.forceDocumentBuild = forceDocumentBuild;
+    @Deprecated(forRemoval = true)
+    public void forceDocumentBuild(boolean buildDocument) {
+        buildDocument(buildDocument);
+    }
+
+    public void buildDocument(boolean buildDocument) {
+        this.buildDocument = buildDocument;
     }
 
     public void addExclude(NestedIterator itr) {

@@ -37,6 +37,16 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
+    /**
+     * The number of hashes the query logic will accept, -1 indicates unlimited
+     */
+    private int maxHashes = -1;
+
+    /**
+     * The max number of hashes to be generated per ngram, -1 indicates unlimited
+     */
+    private int maxHashesPerNGram = -1;
+
     public SSDeepSimilarityQueryConfiguration() {
         super();
         setQuery(new QueryImpl());
@@ -48,6 +58,33 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public static SSDeepSimilarityQueryConfiguration create() {
         return new SSDeepSimilarityQueryConfiguration();
+    }
+
+    public static SSDeepSimilarityQueryConfiguration create(SSDeepSimilarityQueryConfiguration other) {
+        SSDeepSimilarityQueryConfiguration config = new SSDeepSimilarityQueryConfiguration();
+        config.copyFrom(other);
+        return config;
+    }
+
+    public void clearState() {
+        queryMap = null;
+        ranges = null;
+    }
+
+    public void copyFrom(SSDeepSimilarityQueryConfiguration other) {
+        super.copyFrom(other);
+
+        setRanges(other.getRanges());
+        setQueryMap(other.getQueryMap());
+        setIndexBuckets(other.getIndexBuckets());
+        setQueryThreads(other.getQueryThreads());
+        setNGramSize(other.getNGramSize());
+        setMaxRepeatedCharacters(other.getMaxRepeatedCharacters());
+        setMinHashSize(other.getMinHashSize());
+        setBucketEncodingBase(other.getBucketEncodingBase());
+        setBucketEncodingLength(other.getBucketEncodingLength());
+        setMaxHashes(other.getMaxHashes());
+        setMaxHashesPerNGram(other.getMaxHashesPerNGram());
     }
 
     public Collection<Range> getRanges() {
@@ -120,5 +157,21 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public void setBucketEncodingLength(int bucketEncodingLength) {
         this.bucketEncodingLength = bucketEncodingLength;
+    }
+
+    public int getMaxHashes() {
+        return maxHashes;
+    }
+
+    public void setMaxHashes(int maxHashes) {
+        this.maxHashes = maxHashes;
+    }
+
+    public int getMaxHashesPerNGram() {
+        return maxHashesPerNGram;
+    }
+
+    public void setMaxHashesPerNGram(int maxHashesPerNGram) {
+        this.maxHashesPerNGram = maxHashesPerNGram;
     }
 }
