@@ -27,12 +27,21 @@ public class TextIndexAggregator extends PropogatingCombiner {
     public Value aggregate() {
         for (TermWeightPosition offset : offsets) {
             builder.addTermOffset(offset.getOffset());
+
             if (0 <= offset.getPrevSkips()) {
                 builder.addPrevSkips(offset.getPrevSkips());
             }
 
             if (0 <= offset.getScore()) {
                 builder.addScore(offset.getScore());
+            }
+
+            if (0 <= offset.getLeftBound()) {
+                builder.addLeftBound(offset.getLeftBound());
+            }
+
+            if (0 <= offset.getRightBound()) {
+                builder.addRightBound(offset.getRightBound());
             }
 
             // If the zeroOffset has been set and the termweight is still default(true)
@@ -71,7 +80,8 @@ public class TextIndexAggregator extends PropogatingCombiner {
 
         // Add each offset into the list maintaining sorted order
         TermWeightPosition.Builder builder = new TermWeightPosition.Builder();
-        for (int i = 0; i < info.getTermOffsetCount(); i++) {
+        int offsetCount = info.getTermOffsetCount();
+        for (int i = 0; i < offsetCount; i++) {
             builder.setTermWeightOffsetInfo(info, i);
             offsets.add(builder.build());
             builder.reset();

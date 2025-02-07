@@ -72,19 +72,34 @@ public final class TermWeight {
         boolean getZeroOffsetMatch();
 
         /**
-         * <code>repeated float time = 7;</code>
+         * <code>repeated float leftBound = 7;</code>
          */
-        java.util.List<java.lang.Float> getTimeList();
+        java.util.List<java.lang.Float> getLeftBoundList();
 
         /**
-         * <code>repeated float time = 7;</code>
+         * <code>repeated float leftBound = 7;</code>
          */
-        int getTimeCount();
+        int getLeftBoundCount();
 
         /**
-         * <code>repeated float time = 7;</code>
+         * <code>repeated float leftBound = 7;</code>
          */
-        float getTime(int index);
+        float getLeftBound(int index);
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        java.util.List<java.lang.Float> getRightBoundList();
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        int getRightBoundCount();
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        float getRightBound(int index);
     }
 
     /**
@@ -105,7 +120,8 @@ public final class TermWeight {
             prevSkips_ = java.util.Collections.emptyList();
             score_ = java.util.Collections.emptyList();
             zeroOffsetMatch_ = true;
-            time_ = java.util.Collections.emptyList();
+            leftBound_ = java.util.Collections.emptyList();
+            rightBound_ = java.util.Collections.emptyList();
         }
 
         @java.lang.Override
@@ -205,21 +221,42 @@ public final class TermWeight {
                         }
                         case 61: {
                             if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                                time_ = new java.util.ArrayList<java.lang.Float>();
+                                leftBound_ = new java.util.ArrayList<java.lang.Float>();
                                 mutable_bitField0_ |= 0x00000010;
                             }
-                            time_.add(input.readFloat());
+                            leftBound_.add(input.readFloat());
                             break;
                         }
                         case 58: {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000010) == 0x00000010) && input.getBytesUntilLimit() > 0) {
-                                time_ = new java.util.ArrayList<java.lang.Float>();
+                                leftBound_ = new java.util.ArrayList<java.lang.Float>();
                                 mutable_bitField0_ |= 0x00000010;
                             }
                             while (input.getBytesUntilLimit() > 0) {
-                                time_.add(input.readFloat());
+                                leftBound_.add(input.readFloat());
+                            }
+                            input.popLimit(limit);
+                            break;
+                        }
+                        case 69: {
+                            if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                                rightBound_ = new java.util.ArrayList<java.lang.Float>();
+                                mutable_bitField0_ |= 0x00000020;
+                            }
+                            rightBound_.add(input.readFloat());
+                            break;
+                        }
+                        case 66: {
+                            int length = input.readRawVarint32();
+                            int limit = input.pushLimit(length);
+                            if (!((mutable_bitField0_ & 0x00000020) == 0x00000020) && input.getBytesUntilLimit() > 0) {
+                                rightBound_ = new java.util.ArrayList<java.lang.Float>();
+                                mutable_bitField0_ |= 0x00000020;
+                            }
+                            while (input.getBytesUntilLimit() > 0) {
+                                rightBound_.add(input.readFloat());
                             }
                             input.popLimit(limit);
                             break;
@@ -241,7 +278,10 @@ public final class TermWeight {
                     score_ = java.util.Collections.unmodifiableList(score_);
                 }
                 if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                    time_ = java.util.Collections.unmodifiableList(time_);
+                    leftBound_ = java.util.Collections.unmodifiableList(leftBound_);
+                }
+                if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                    rightBound_ = java.util.Collections.unmodifiableList(rightBound_);
                 }
                 this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
@@ -347,28 +387,52 @@ public final class TermWeight {
             return zeroOffsetMatch_;
         }
 
-        public static final int TIME_FIELD_NUMBER = 7;
-        private java.util.List<java.lang.Float> time_;
+        public static final int LEFTBOUND_FIELD_NUMBER = 7;
+        private java.util.List<java.lang.Float> leftBound_;
 
         /**
-         * <code>repeated float time = 7;</code>
+         * <code>repeated float leftBound = 7;</code>
          */
-        public java.util.List<java.lang.Float> getTimeList() {
-            return time_;
+        public java.util.List<java.lang.Float> getLeftBoundList() {
+            return leftBound_;
         }
 
         /**
-         * <code>repeated float time = 7;</code>
+         * <code>repeated float leftBound = 7;</code>
          */
-        public int getTimeCount() {
-            return time_.size();
+        public int getLeftBoundCount() {
+            return leftBound_.size();
         }
 
         /**
-         * <code>repeated float time = 7;</code>
+         * <code>repeated float leftBound = 7;</code>
          */
-        public float getTime(int index) {
-            return time_.get(index);
+        public float getLeftBound(int index) {
+            return leftBound_.get(index);
+        }
+
+        public static final int RIGHTBOUND_FIELD_NUMBER = 8;
+        private java.util.List<java.lang.Float> rightBound_;
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        public java.util.List<java.lang.Float> getRightBoundList() {
+            return rightBound_;
+        }
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        public int getRightBoundCount() {
+            return rightBound_.size();
+        }
+
+        /**
+         * <code>repeated float rightBound = 8;</code>
+         */
+        public float getRightBound(int index) {
+            return rightBound_.get(index);
         }
 
         private byte memoizedIsInitialized = -1;
@@ -397,8 +461,11 @@ public final class TermWeight {
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
                 output.writeBool(6, zeroOffsetMatch_);
             }
-            for (int i = 0; i < time_.size(); i++) {
-                output.writeFloat(7, time_.get(i));
+            for (int i = 0; i < leftBound_.size(); i++) {
+                output.writeFloat(7, leftBound_.get(i));
+            }
+            for (int i = 0; i < rightBound_.size(); i++) {
+                output.writeFloat(8, rightBound_.get(i));
             }
             unknownFields.writeTo(output);
         }
@@ -438,9 +505,15 @@ public final class TermWeight {
             }
             {
                 int dataSize = 0;
-                dataSize = 4 * getTimeList().size();
+                dataSize = 4 * getLeftBoundList().size();
                 size += dataSize;
-                size += 1 * getTimeList().size();
+                size += 1 * getLeftBoundList().size();
+            }
+            {
+                int dataSize = 0;
+                dataSize = 4 * getRightBoundList().size();
+                size += dataSize;
+                size += 1 * getRightBoundList().size();
             }
             size += unknownFields.getSerializedSize();
             memoizedSize = size;
@@ -465,7 +538,8 @@ public final class TermWeight {
             if (hasZeroOffsetMatch()) {
                 result = result && (getZeroOffsetMatch() == other.getZeroOffsetMatch());
             }
-            result = result && getTimeList().equals(other.getTimeList());
+            result = result && getLeftBoundList().equals(other.getLeftBoundList());
+            result = result && getRightBoundList().equals(other.getRightBoundList());
             result = result && unknownFields.equals(other.unknownFields);
             return result;
         }
@@ -493,9 +567,13 @@ public final class TermWeight {
                 hash = (37 * hash) + ZEROOFFSETMATCH_FIELD_NUMBER;
                 hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getZeroOffsetMatch());
             }
-            if (getTimeCount() > 0) {
-                hash = (37 * hash) + TIME_FIELD_NUMBER;
-                hash = (53 * hash) + getTimeList().hashCode();
+            if (getLeftBoundCount() > 0) {
+                hash = (37 * hash) + LEFTBOUND_FIELD_NUMBER;
+                hash = (53 * hash) + getLeftBoundList().hashCode();
+            }
+            if (getRightBoundCount() > 0) {
+                hash = (37 * hash) + RIGHTBOUND_FIELD_NUMBER;
+                hash = (53 * hash) + getRightBoundList().hashCode();
             }
             hash = (29 * hash) + unknownFields.hashCode();
             memoizedHashCode = hash;
@@ -618,8 +696,10 @@ public final class TermWeight {
                 bitField0_ = (bitField0_ & ~0x00000004);
                 zeroOffsetMatch_ = true;
                 bitField0_ = (bitField0_ & ~0x00000008);
-                time_ = java.util.Collections.emptyList();
+                leftBound_ = java.util.Collections.emptyList();
                 bitField0_ = (bitField0_ & ~0x00000010);
+                rightBound_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000020);
                 return this;
             }
 
@@ -663,10 +743,15 @@ public final class TermWeight {
                 }
                 result.zeroOffsetMatch_ = zeroOffsetMatch_;
                 if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                    time_ = java.util.Collections.unmodifiableList(time_);
+                    leftBound_ = java.util.Collections.unmodifiableList(leftBound_);
                     bitField0_ = (bitField0_ & ~0x00000010);
                 }
-                result.time_ = time_;
+                result.leftBound_ = leftBound_;
+                if (((bitField0_ & 0x00000020) == 0x00000020)) {
+                    rightBound_ = java.util.Collections.unmodifiableList(rightBound_);
+                    bitField0_ = (bitField0_ & ~0x00000020);
+                }
+                result.rightBound_ = rightBound_;
                 result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
@@ -741,13 +826,23 @@ public final class TermWeight {
                 if (other.hasZeroOffsetMatch()) {
                     setZeroOffsetMatch(other.getZeroOffsetMatch());
                 }
-                if (!other.time_.isEmpty()) {
-                    if (time_.isEmpty()) {
-                        time_ = other.time_;
+                if (!other.leftBound_.isEmpty()) {
+                    if (leftBound_.isEmpty()) {
+                        leftBound_ = other.leftBound_;
                         bitField0_ = (bitField0_ & ~0x00000010);
                     } else {
-                        ensureTimeIsMutable();
-                        time_.addAll(other.time_);
+                        ensureLeftBoundIsMutable();
+                        leftBound_.addAll(other.leftBound_);
+                    }
+                    onChanged();
+                }
+                if (!other.rightBound_.isEmpty()) {
+                    if (rightBound_.isEmpty()) {
+                        rightBound_ = other.rightBound_;
+                        bitField0_ = (bitField0_ & ~0x00000020);
+                    } else {
+                        ensureRightBoundIsMutable();
+                        rightBound_.addAll(other.rightBound_);
                     }
                     onChanged();
                 }
@@ -1024,72 +1119,142 @@ public final class TermWeight {
                 return this;
             }
 
-            private java.util.List<java.lang.Float> time_ = java.util.Collections.emptyList();
+            private java.util.List<java.lang.Float> leftBound_ = java.util.Collections.emptyList();
 
-            private void ensureTimeIsMutable() {
+            private void ensureLeftBoundIsMutable() {
                 if (!((bitField0_ & 0x00000010) == 0x00000010)) {
-                    time_ = new java.util.ArrayList<java.lang.Float>(time_);
+                    leftBound_ = new java.util.ArrayList<java.lang.Float>(leftBound_);
                     bitField0_ |= 0x00000010;
                 }
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public java.util.List<java.lang.Float> getTimeList() {
-                return java.util.Collections.unmodifiableList(time_);
+            public java.util.List<java.lang.Float> getLeftBoundList() {
+                return java.util.Collections.unmodifiableList(leftBound_);
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public int getTimeCount() {
-                return time_.size();
+            public int getLeftBoundCount() {
+                return leftBound_.size();
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public float getTime(int index) {
-                return time_.get(index);
+            public float getLeftBound(int index) {
+                return leftBound_.get(index);
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public Builder setTime(int index, float value) {
-                ensureTimeIsMutable();
-                time_.set(index, value);
+            public Builder setLeftBound(int index, float value) {
+                ensureLeftBoundIsMutable();
+                leftBound_.set(index, value);
                 onChanged();
                 return this;
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public Builder addTime(float value) {
-                ensureTimeIsMutable();
-                time_.add(value);
+            public Builder addLeftBound(float value) {
+                ensureLeftBoundIsMutable();
+                leftBound_.add(value);
                 onChanged();
                 return this;
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public Builder addAllTime(java.lang.Iterable<? extends java.lang.Float> values) {
-                ensureTimeIsMutable();
-                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, time_);
+            public Builder addAllLeftBound(java.lang.Iterable<? extends java.lang.Float> values) {
+                ensureLeftBoundIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, leftBound_);
                 onChanged();
                 return this;
             }
 
             /**
-             * <code>repeated float time = 7;</code>
+             * <code>repeated float leftBound = 7;</code>
              */
-            public Builder clearTime() {
-                time_ = java.util.Collections.emptyList();
+            public Builder clearLeftBound() {
+                leftBound_ = java.util.Collections.emptyList();
                 bitField0_ = (bitField0_ & ~0x00000010);
+                onChanged();
+                return this;
+            }
+
+            private java.util.List<java.lang.Float> rightBound_ = java.util.Collections.emptyList();
+
+            private void ensureRightBoundIsMutable() {
+                if (!((bitField0_ & 0x00000020) == 0x00000020)) {
+                    rightBound_ = new java.util.ArrayList<java.lang.Float>(rightBound_);
+                    bitField0_ |= 0x00000020;
+                }
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public java.util.List<java.lang.Float> getRightBoundList() {
+                return java.util.Collections.unmodifiableList(rightBound_);
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public int getRightBoundCount() {
+                return rightBound_.size();
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public float getRightBound(int index) {
+                return rightBound_.get(index);
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder setRightBound(int index, float value) {
+                ensureRightBoundIsMutable();
+                rightBound_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder addRightBound(float value) {
+                ensureRightBoundIsMutable();
+                rightBound_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder addAllRightBound(java.lang.Iterable<? extends java.lang.Float> values) {
+                ensureRightBoundIsMutable();
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, rightBound_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated float rightBound = 8;</code>
+             */
+            public Builder clearRightBound() {
+                rightBound_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000020);
                 onChanged();
                 return this;
             }
@@ -1148,9 +1313,10 @@ public final class TermWeight {
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
         java.lang.String[] descriptorData = {
-                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"i\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
-                                + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
-                                + "Match\030\006 \001(\010:\004true\022\014\n\004time\030\007 \003(\002B\034\n\030dataw" + "ave.ingest.protobufH\001"};
+                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"\202\001\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tpre"
+                                + "vSkips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffse"
+                                + "tMatch\030\006 \001(\010:\004true\022\021\n\tleftBound\030\007 \003(\002\022\022\n"
+                                + "\nrightBound\030\010 \003(\002B\034\n\030datawave.ingest.pro" + "tobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
@@ -1162,7 +1328,7 @@ public final class TermWeight {
         internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
         internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_ingest_protobuf_Info_descriptor,
-                        new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch", "Time",});
+                        new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch", "LeftBound", "RightBound",});
     }
 
     // @@protoc_insertion_point(outer_class_scope)
