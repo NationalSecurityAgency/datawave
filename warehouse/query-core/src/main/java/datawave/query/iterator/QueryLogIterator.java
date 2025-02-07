@@ -100,12 +100,7 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         MDC.put("queryID", queryID);
         try {
             boolean result;
-
-            try {
-                result = source.hasTop();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            result = source.hasTop(); //I had to remove the try/catch that was nested here. Why does that partially work?
             return result;
         } finally {
             Thread.currentThread().setName(oldName);
@@ -119,15 +114,12 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public void next() throws IOException {
+        source.next();
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
         try {
-            try {
-                source.next();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            source.next();
         } finally {
             Thread.currentThread().setName(oldName);
             MDC.remove("queryID");
@@ -210,20 +202,21 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
-        String oldName = Thread.currentThread().getName();
-        Thread.currentThread().setName(oldName + " -> " + this.queryID);
-        MDC.put("queryID", queryID);
-        try {
-            try {
-                logStartOf("seek()");
-                this.source.seek(range, collection, b);
-            } finally {
-                logEndOf("seek()");
-            }
-        } finally {
-            Thread.currentThread().setName(oldName);
-            MDC.remove("queryID");
-        }
+        this.source.seek(range, collection, b);
+//        String oldName = Thread.currentThread().getName();
+//        Thread.currentThread().setName(oldName + " -> " + this.queryID);
+//        MDC.put("queryID", queryID);
+//        try {
+//            try {
+//                logStartOf("seek()");
+//                this.source.seek(range, collection, b);
+//            } finally {
+//                logEndOf("seek()");
+//            }
+//        } finally {
+//            Thread.currentThread().setName(oldName);
+//            MDC.remove("queryID");
+//        }
 
     }
 
