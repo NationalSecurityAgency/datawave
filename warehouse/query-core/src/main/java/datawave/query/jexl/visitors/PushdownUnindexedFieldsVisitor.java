@@ -8,7 +8,6 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
@@ -55,11 +54,11 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
+        if (QueryPropertyMarker.findInstance(node).isType(BOUNDED_RANGE)) {
             LiteralRange range = JexlASTHelper.findRange().getRange(node);
 
             if (range != null) {
-                return delayBoundedIndexHole(range, node, data);
+                return delayBoundedIndexHole(range, node);
             } else {
                 JexlNode andNode = JexlNodes.newInstanceOfType(node);
                 JexlNodes.copyIdentifierOrLiteral(node, andNode);
@@ -82,17 +81,18 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     /**
      * Delay the ranges that overlap holes. The range map is expected to only be indexed ranges.
      *
-     * @param data
-     *            the node data
      * @param range
      *            the range
      * @param currentNode
      *            the current node
      * @return a jexl node
      */
-    protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
+    protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode) {
 
         if (missingIndexRange(range)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Pushing down unindexed " + range);
+            }
             return QueryPropertyMarker.create(currentNode, EVALUATION_ONLY);
         } else {
             return currentNode;
@@ -103,6 +103,9 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (missingIndexRange(node)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Pushing down unindexed " + JexlStringBuildingVisitor.buildQuery(node));
+            }
             return QueryPropertyMarker.create(node, EVALUATION_ONLY);
         }
         return node;
@@ -111,6 +114,9 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTERNode node, Object data) {
         if (missingIndexRange(node)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Pushing down unindexed " + JexlStringBuildingVisitor.buildQuery(node));
+            }
             return QueryPropertyMarker.create(node, EVALUATION_ONLY);
         }
         return node;

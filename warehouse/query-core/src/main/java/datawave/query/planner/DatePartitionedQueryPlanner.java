@@ -64,10 +64,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
-    private SortedSet<Pair<Date,Date>> relevantHoles;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
-    private TimedVisitorManager visitorManager = new TimedVisitorManager();
+    private final TimedVisitorManager visitorManager = new TimedVisitorManager();
 
     /**
      * Return a new {@link DatePartitionedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
@@ -309,7 +308,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         if (dateRanges == null) {
             this.plannedScript = initialPlan.plannedScript;
         } else {
-            FederatedQueryIterable results = new FederatedQueryIterable();
+            DatePartitionedQueryIterable results = new DatePartitionedQueryIterable();
 
             for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
                 String subBeginDate = dateFormat.format(dateRange.getKey().getLeft());
@@ -330,7 +329,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                                         + dateRange.getValue() + ": " + configCopy.getQueryString());
                     }
                 } catch (DatawaveQueryException e) {
-                    log.warn("Exception occured when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")", e);
+                    log.warn("Exception occurred when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")", e);
 
                     throw e;
                 } finally {
@@ -363,7 +362,6 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         } else if (this.plans.size() == 1) {
             this.plannedScript = this.plans.iterator().next();
         } else {
-            int lastIndex = plans.size() - 1;
             StringBuilder sb = new StringBuilder();
             int i = 0;
             for (String plan : plans) {
@@ -418,7 +416,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
     /**
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
-     * range all query fields are either indexed or not-indexed across the entire range. It is expected that the date ranges will complete cover the original
+     * range all query fields are either indexed or not-indexed across the entire range. It is expected that the date ranges will completely cover the original
      * query date range without gaps or overlaps.
      */
     protected SortedMap<Pair<Date,Date>,Set<String>> getSubQueryDateRanges(ShardQueryConfiguration config) throws DatawaveQueryException {
@@ -473,10 +471,12 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
                 }
             }
             // update the set of unindexed fields depending on whether we are starting or ending a hole
-            if (next.isStart()) {
-                unindexedFields.addAll(next.getFields());
-            } else {
-                unindexedFields.removeAll(next.getFields());
+            if (next.hasField()) {
+                if (next.isStart()) {
+                    unindexedFields.add(next.getField());
+                } else {
+                    unindexedFields.remove(next.getField());
+                }
             }
             last = next;
         }
@@ -661,7 +661,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             timeline.add(new IndexFieldHoleBoundary(endDate, false));
         } else {
             if (timeline.first().getBoundary().after(beginDate)) {
-                // start with and beginning boundary that starts at the beginDate with no unindex field
+                // start with a beginning boundary sans field at the beginDate
                 timeline.add(new IndexFieldHoleBoundary(beginDate, true));
             }
             // add an artificial end boundary if the end date of the query is not covered
@@ -732,26 +732,25 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         return new Date(date.getTime() - 1);
     }
 
+    /**
+     * This class represents the start or end of a range where a field is unindexed. If the field is null, then it represents an artificial boundary at the
+     * start or end of the query range.
+     */
     public static class IndexFieldHoleBoundary implements Comparable<IndexFieldHoleBoundary> {
         private final Date date;
-        private final boolean indexFieldHoleStart;
-        private final Set<String> fields = new HashSet<>();
-
-        public IndexFieldHoleBoundary(Date date, boolean start, Set<String> fields) {
-            this.date = date;
-            this.indexFieldHoleStart = start;
-            this.fields.addAll(fields);
-        }
+        private final boolean start;
+        private final String field;
 
         public IndexFieldHoleBoundary(Date date, boolean start, String field) {
             this.date = date;
-            this.indexFieldHoleStart = start;
-            this.fields.add(field);
+            this.start = start;
+            this.field = field;
         }
 
         public IndexFieldHoleBoundary(Date date, boolean start) {
             this.date = date;
-            this.indexFieldHoleStart = start;
+            this.start = start;
+            this.field = null;
         }
 
         public Date getBoundary() {
@@ -759,28 +758,27 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         }
 
         public boolean isStart() {
-            return indexFieldHoleStart;
+            return start;
         }
 
-        public void addFields(Collection<String> fields) {
-            fields.addAll(fields);
+        public boolean hasField() {
+            return field != null;
         }
 
-        public Set<String> getFields() {
-            return fields;
+        public String getField() {
+            return field;
         }
 
         @Override
         public int hashCode() {
-            return new HashCodeBuilder().append(date).append(indexFieldHoleStart).append(fields).toHashCode();
+            return new HashCodeBuilder().append(date).append(start).append(field).toHashCode();
         }
 
         @Override
         public boolean equals(Object o) {
             if (o instanceof IndexFieldHoleBoundary) {
                 IndexFieldHoleBoundary other = (IndexFieldHoleBoundary) o;
-                return new EqualsBuilder().append(date, other.date).append(indexFieldHoleStart, other.indexFieldHoleStart).append(fields, other.fields)
-                                .isEquals();
+                return new EqualsBuilder().append(date, other.date).append(start, other.start).append(field, other.field).isEquals();
             }
             return false;
         }
@@ -789,10 +787,10 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         public int compareTo(IndexFieldHoleBoundary other) {
             int comparison = date.compareTo(other.date);
             if (comparison == 0) {
-                comparison = Boolean.valueOf(other.indexFieldHoleStart).compareTo(Boolean.valueOf(indexFieldHoleStart));
+                comparison = Boolean.compare(other.start, start);
             }
             if (comparison == 0) {
-                comparison = fields.toString().compareTo(other.fields.toString());
+                comparison = String.valueOf(field).compareTo(String.valueOf(other.field));
             }
             return comparison;
         }
