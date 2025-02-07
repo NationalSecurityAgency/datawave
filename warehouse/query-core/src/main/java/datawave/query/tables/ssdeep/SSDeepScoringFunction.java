@@ -25,26 +25,10 @@ import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 
 /** A function that transforms entries retrieved from Accumulo into Scored SSDeep hash matches */
-public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stream<ScoredSSDeepPair>> {
+public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDeepHash>,Stream<ScoredSSDeepPair>> {
 
     public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
     private static final Logger log = Logger.getLogger(SSDeepScoringFunction.class);
-
-    /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
-    private final ChunkSizeEncoding chunkSizeEncoding;
-
-    /** Used to encode buckets as characters which are prepended to the ranges used to retrieve ngram tuples */
-    private final IntegerEncoding bucketEncoder;
-
-    /**
-     * the position where the ngram will start in the generated ranges, determined at construction time based on the bucketEncoder parameters
-     */
-    private final int chunkStart;
-    /**
-     * the position where the query ngram will end in the generate ranges, determined based on the bucketEncoder and chunkSizeEncoding parameters
-     */
-
-    private final int chunkEnd;
 
     /** The maximum number of repeated characters allowed in a ssdeep hash - used to perform normalization for scoring */
     private final int maxRepeatedCharacters;
@@ -56,17 +40,11 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
 
     private final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer;
 
-    private final SSDeepSimilarityQueryConfiguration config;
+    private final SSDeepSimilarityQueryState queryState;
 
     public SSDeepScoringFunction(SSDeepSimilarityQueryConfiguration config) {
-        this.config = config;
+        this.queryState = config.getState();
         this.maxRepeatedCharacters = config.getMaxRepeatedCharacters();
-
-        this.bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
-        this.chunkSizeEncoding = new ChunkSizeEncoding();
-
-        this.chunkStart = bucketEncoder.getLength();
-        this.chunkEnd = chunkStart + chunkSizeEncoding.getLength();
 
         this.minScoreThreshold = readOptionalMinScoreThreshold(config.getQuery());
 
@@ -111,59 +89,12 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
      * @return A Stream of scored SSDeep pairs related to the row returned by Accumulo.
      */
     @Override
-    public Stream<ScoredSSDeepPair> apply(Map.Entry<Key,Value> entry) {
-        // We will receive entries like the following that follow the SSDeep bucket index format:
-        // +++//thPkK 3:3:yionv//thPkKlDtn/rXScG2/uDlhl2UE9FQEul/lldDpZflsup:6v/lhPkKlDtt/6TIPFQEqRDpZ+up []
-        // see: https://github.com/NationalSecurityAgency/datawave/wiki/SSDeep-In-Datawave#ssdeep-table-structure-bucketed
-        // generally, the rowid consists of a:
-        // - bucket; first two characters based on a hash of the original ssdeep
-        // - chunk; third character,
-        // - ngram; the rest of the rowid.
-        // the column family holds the chunk size.
-        // the column qualifier holds the original ssdeep hash from which the ngram was extracted.
-        final Key k = entry.getKey();
-        final String row = k.getRow().toString();
-
-        // strip off the bucketing to extract the matching ngram and chunk size from the rowId.
-        int chunkSize = chunkSizeEncoding.decode(row.substring(chunkStart, chunkEnd));
-        String ngram = row.substring(chunkEnd);
-
-        // extract the matching ssdeep hash from the column qualifier
-        final String matchingHashString = k.getColumnQualifier().toString();
-        final SSDeepHash matchingHash = SSDeepHash.parse(matchingHashString);
-
-        if (config.isDedupeSimilarityHashes()) {
-            int hashcode = matchingHash.hashCode();
-            if (config.getSeenHashes().contains(hashcode)) {
-                return Stream.empty();
-            }
-            config.getSeenHashes().add(hashcode);
-        }
-
-        if (config.getMaxHashesPerNGram() != -1) {
-            Long count = config.getNgramCountMap().get(ngram);
-            if (count == null) {
-                // first seen
-                count = 0L;
-            }
-
-            if (count + 1 > config.getMaxHashesPerNGram()) {
-                // exceeded count the first time
-                log.warn("Exceeded " + config.getMaxHashesPerNGram() + " hashes for " + ngram + " ignoring remaining hashes");
-                config.getNgramCountMap().put(ngram, -1L);
-                return Stream.empty();
-            } else if (count < 0) {
-                // exceeded count beyond the first time, go negative for tracking purposes
-                config.getNgramCountMap().put(ngram, count - 1);
-                return Stream.empty();
-            }
-            // increment count
-            config.getNgramCountMap().put(ngram, count + 1);
-        }
+    public Stream<ScoredSSDeepPair> apply(Map.Entry<NGramTuple,SSDeepHash> entry) {
+        NGramTuple ngram = entry.getKey();
+        SSDeepHash matchingHash = entry.getValue();
 
         // extract the query ssdeeps that contained this ngram from the query map.
-        final NGramTuple matchingNgram = new NGramTuple(chunkSize, ngram);
-        Collection<SSDeepHash> queryHashes = config.getQueryMap().get(matchingNgram);
+        Collection<SSDeepHash> queryHashes = queryState.getQueryMap().get(ngram);
 
         // score the match between each query ssdeep and matching hash, keep those that exceed the match
         // threshold.

@@ -2,10 +2,10 @@ package datawave.query.tables.ssdeep;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +64,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
         final SSDeepSimilarityQueryConfiguration config = new SSDeepSimilarityQueryConfiguration(getConfig());
+        config.setState(new SSDeepSimilarityQueryState());
         config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
@@ -84,14 +85,35 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), config.getQueryThreads(),
                             config.getQuery());
 
-            scanner.setRanges(config.getRanges());
+            scanner.setRanges(config.getState().getRanges());
+
+            final SSDeepParsingFunction parsingFunction = new SSDeepParsingFunction(config);
+            Stream<Map.Entry<NGramTuple,SSDeepHash>> parsedStream = scanner.stream().map(parsingFunction);
+
+            if (config.isDedupeSimilarityHashes()) {
+                final SSDeepSeenFunction ssDeepDedupeFunction = new SSDeepSeenFunction();
+                parsedStream = parsedStream.filter(ssDeepDedupeFunction);
+            }
+
+            if (config.getMaxHashesPerNGram() > -1) {
+                final SSDeepMaxHashPerNGramFilter maxHashPerNGramLimiter = new SSDeepMaxHashPerNGramFilter(config);
+                parsedStream = parsedStream.filter(maxHashPerNGramLimiter);
+            }
+
+            if (getMaxResults() > -1) {
+                final AtomicLong count = new AtomicLong();
+                parsedStream = parsedStream.peek(entry -> {
+                    if (count.incrementAndGet() > getMaxResults()) {
+                        throw new DatawaveFatalQueryException("Exceeded max work");
+                    }
+                });
+            }
 
             // must be called after setRanges so that we get the query map from the config.
             final SSDeepScoringFunction scoringFunction = new SSDeepScoringFunction(config);
+            Stream<ScoredSSDeepPair> scoredStream = parsedStream.flatMap(scoringFunction);
 
-            Stream<ScoredSSDeepPair> stream = scanner.stream().flatMap(scoringFunction);
-
-            this.iterator = stream.iterator();
+            this.iterator = scoredStream.iterator();
             this.scanner = scanner;
 
         } catch (TableNotFoundException e) {
@@ -156,8 +178,8 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             log.debug("Query map is: " + queryMap);
             log.debug("Ranges are: " + ranges);
         }
-        config.setRanges(ranges);
-        config.setQueryMap(queryMap);
+        config.getState().setRanges(ranges);
+        config.getState().setQueryMap(queryMap);
     }
 
     @Override
