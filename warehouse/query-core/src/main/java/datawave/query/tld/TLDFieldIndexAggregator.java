@@ -51,7 +51,7 @@ public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldI
             Attribute<?> attr = af.create(field, value, key, true);
             // in addition to keeping fields that the filter indicates should be kept, also keep fields that the filter applies. This is due to inconsistent
             // behavior between event/tld queries where an index only field index will be kept except when it is a child of a tld
-            attr.setToKeep((fieldsToAggregate == null || fieldsToAggregate.contains(JexlASTHelper.removeGroupingContext(field)))
+            attr.setToKeep((fieldsToAggregate == null || fieldsToAggregate.isEmpty() || fieldsToAggregate.contains(JexlASTHelper.removeGroupingContext(field)))
                             && (attrFilter == null || attrFilter.keep(key)));
             d.put(field, attr);
 

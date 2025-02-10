@@ -73,7 +73,7 @@ public class CardinalityAggregator extends IdentityAggregator {
             Cardinality card = new Cardinality(fvC, metadata, doc.isToKeep());
 
             // only keep fields that are index only
-            card.setToKeep(fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(field)));
+            card.setToKeep(fieldsToKeep == null || fieldsToKeep.isEmpty() || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(field)));
             doc.put(field, card);
 
             key = nextKey;

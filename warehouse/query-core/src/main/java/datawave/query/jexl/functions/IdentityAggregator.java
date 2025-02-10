@@ -106,7 +106,8 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
             for (Tuple2<String,String> fieldNameValue : fieldNameValues) {
                 Attribute<?> attr = attrs.create(fieldNameValue.first(), fieldNameValue.second(), topKey, true);
                 // only keep fields that are index only and pass the attribute filter
-                boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+                boolean toKeep = (fieldsToKeep == null || fieldsToKeep.isEmpty()
+                                || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
                                 && (filter == null || filter.keep(topKey));
                 attr.setToKeep(toKeep);
 
@@ -128,7 +129,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     }
 
     protected boolean toKeep(Key topKey, Tuple2<String,String> fieldNameValue) {
-        return (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+        return (fieldsToKeep == null || fieldsToKeep.isEmpty() || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
                         && (filter == null || filter.keep(topKey));
     }
 

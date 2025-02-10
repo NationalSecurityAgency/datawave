@@ -405,6 +405,10 @@ public class CompositeIndexTest {
         List<String> wktList = new ArrayList<>();
         wktList.addAll(Arrays.asList(wktLegacyData));
         wktList.addAll(Arrays.asList(wktCompositeData));
+        // there was a bug that prevented normalized data from the field index from being returned due to an
+        // incorrect evaluation of "to keep". The fact that this data is now coming back after the bugfix indicates
+        // that either the test is not configured correctly, or we are not building aggregators correctly
+        wktList.add("050200");
 
         List<Integer> wktByteLengthList = new ArrayList<>();
         wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
@@ -425,11 +429,11 @@ public class CompositeIndexTest {
             Assert.assertNotNull(wktByteLength);
 
             // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
+            Assert.assertTrue("tried to remove " + wkt + " from " + wktList + " but could not", wktList.remove(wkt));
             Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
         }
 
-        Assert.assertEquals(11, wktList.size());
+        Assert.assertEquals(12, wktList.size());
         Assert.assertEquals(11, wktByteLengthList.size());
         Assert.assertEquals(1, events.size());
     }
