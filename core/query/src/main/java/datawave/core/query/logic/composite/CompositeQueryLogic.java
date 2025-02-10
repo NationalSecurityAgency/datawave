@@ -16,6 +16,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
+import datawave.webservice.result.QueryValidationResponse;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel unless configured to be sequential.
@@ -724,6 +726,34 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         for (QueryLogic<?> logic : getQueryLogics().values()) {
             logic.setServerUser(user);
         }
+    }
+
+    @Override
+    public Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        // see if we can find a query logic that supports this method
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            try {
+                return logic.validateQuery(client, query, auths);
+            } catch (UnsupportedOperationException uoe) {
+                // try the next one
+            }
+        }
+        // ok, call the super method to throw the exception
+        return super.validateQuery(client, query, auths);
+    }
+
+    @Override
+    public Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+        // see if we can find a query logic that supports this method
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            try {
+                return logic.getQueryValidationResponseTransformer();
+            } catch (UnsupportedOperationException uoe) {
+                // try the next one
+            }
+        }
+        // ok, call the super method to throw the exception
+        return super.getQueryValidationResponseTransformer();
     }
 
     /**
