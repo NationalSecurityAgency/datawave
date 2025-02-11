@@ -95,8 +95,6 @@ jobs:
   #   steps:
   #     - name: Checkout Code
   #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
   #     - name: Set up JDK ${{env.JAVA_VERSION}}
   #       uses: actions/setup-java@v4
   #       with:
@@ -172,8 +170,6 @@ jobs:
           sudo rm -rf $AGENT_TOOLSDIRECTORY
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
@@ -241,8 +237,6 @@ jobs:
           sudo rm -rf $AGENT_TOOLSDIRECTORY
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
