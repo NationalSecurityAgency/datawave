@@ -117,7 +117,7 @@ public abstract class BaseHdfsFileCacheUtil {
     protected void readCache(BufferedReader in) throws IOException {
         String line;
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, this.delimiter);
+            String[] parts = line.split(this.delimiter);
             if (parts.length == 2) {
                 conf.set(parts[0], parts[1]);
             }

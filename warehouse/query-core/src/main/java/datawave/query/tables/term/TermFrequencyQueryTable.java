@@ -95,7 +95,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
         // TODO: Handle other parameters here
 
-        String[] parts = StringUtils.split(term, '/');
+        String[] parts = term.split("/");
 
         if (parts.length != 3) {
             throw new IllegalArgumentException(
