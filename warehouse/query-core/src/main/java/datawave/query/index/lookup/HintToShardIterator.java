@@ -63,6 +63,10 @@ public class HintToShardIterator implements Iterator<Tuple2<String,IndexInfo>> {
 
     @Override
     public Tuple2<String,IndexInfo> next() {
+        if (top == null) {
+            throw new RuntimeException("Tried calling next when no top element existed");
+        }
+
         String hint;
         if (isTopDay) {
             // get next shard
