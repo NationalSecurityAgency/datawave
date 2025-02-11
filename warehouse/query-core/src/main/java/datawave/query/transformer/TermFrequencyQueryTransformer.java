@@ -34,7 +34,7 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         super(markingFunctions);
         this.query = query;
         this.responseObjectFactory = responseObjectFactory;
-        this.auths = new Authorizations(StringUtils.split(this.query.getQueryAuthorizations(), ','));
+        this.auths = new Authorizations(this.query.getQueryAuthorizations().split(","));
     }
 
     @Override
