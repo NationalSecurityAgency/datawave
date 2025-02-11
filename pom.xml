@@ -89,7 +89,7 @@
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>4.0.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.10.0.pr1</version.jackson>
+        <version.jackson>2.13.4</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
         <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -120,7 +120,7 @@
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.16.3</version.protobuf>
-        <version.protostuff>1.6.2</version.protostuff>
+        <version.protostuff>1.8.0</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
@@ -388,6 +388,10 @@
                     <exclusion>
                         <groupId>ch.qos.reload4j</groupId>
                         <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.protostuff</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
