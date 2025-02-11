@@ -1,15 +1,27 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEWNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNEWNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNSWNode;
+import org.apache.commons.jexl3.parser.ASTSWNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -53,81 +65,158 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        // if not already delayed somehow
-        if (QueryPropertyMarker.findInstance(node).isType(BOUNDED_RANGE)) {
-            LiteralRange range = JexlASTHelper.findRange().getRange(node);
-
-            if (range != null) {
-                return delayBoundedIndexHole(range, node);
-            } else {
-                JexlNode andNode = JexlNodes.newInstanceOfType(node);
-                JexlNodes.copyIdentifierOrLiteral(node, andNode);
-                andNode.jjtSetParent(node.jjtGetParent());
-
-                // We have no bounded range to replace, just proceed as normal
-                JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
-                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                    JexlNode newChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
-                    andNode.jjtAddChild(newChild, i);
-                    newChild.jjtSetParent(andNode);
-                }
-                return andNode;
-            }
+        QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
+        if (!marker.isAnyType()) {
+            return super.visit(node, data);
         } else {
-            return node;
+            switch (marker.getType()) {
+                case EVALUATION_ONLY:
+                    return node;
+                case BOUNDED_RANGE:
+                    return delayBoundedRange(node);
+                case EXCEEDED_VALUE:
+                case EXCEEDED_OR:
+                    return delayIvarator(marker, node);
+                case INDEX_HOLE:
+                case DELAYED:
+                case DROPPED:
+                case LENIENT:
+                case STRICT:
+                case EXCEEDED_TERM:
+                default:
+                    return super.visit(node, data);
+            }
         }
+    }
+
+    @Override
+    public Object visit(ASTEQNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        // no need to delay functions
+        return copy(node);
+    }
+
+    @Override
+    public Object visit(ASTMethodNode node, Object data) {
+        // no need to delay functions
+        return copy(node);
+    }
+
+    @Override
+    protected Object visit(ASTSWNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    protected Object visit(ASTNSWNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    protected Object visit(ASTEWNode node, Object data) {
+        return delayExpression(node);
+    }
+
+    @Override
+    protected Object visit(ASTNEWNode node, Object data) {
+        return delayExpression(node);
     }
 
     /**
      * Delay the ranges that overlap holes. The range map is expected to only be indexed ranges.
      *
-     * @param range
-     *            the range
-     * @param currentNode
+     * @param node
      *            the current node
      * @return a jexl node
      */
-    protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode) {
+    protected JexlNode delayBoundedRange(ASTAndNode node) {
+        node = (ASTAndNode) copy(node);
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
 
-        if (missingIndexRange(range)) {
+        if (range != null && missingIndexRange(range)) {
             if (log.isDebugEnabled()) {
                 log.debug("Pushing down unindexed " + range);
             }
-            return QueryPropertyMarker.create(currentNode, EVALUATION_ONLY);
+            return QueryPropertyMarker.create(node, EVALUATION_ONLY);
         } else {
-            return currentNode;
+            return node;
         }
-
     }
 
-    @Override
-    public Object visit(ASTEQNode node, Object data) {
-        if (missingIndexRange(node)) {
+    protected JexlNode delayExpression(JexlNode node) {
+        node = copy(node);
+        if (missingIndex(node)) {
             if (log.isDebugEnabled()) {
-                log.debug("Pushing down unindexed " + JexlStringBuildingVisitor.buildQuery(node));
+                log.debug("Pushing down unindexed expression " + JexlStringBuildingVisitor.buildQuery(node));
             }
             return QueryPropertyMarker.create(node, EVALUATION_ONLY);
+        } else {
+            return node;
         }
-        return node;
     }
 
-    @Override
-    public Object visit(ASTERNode node, Object data) {
-        if (missingIndexRange(node)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Pushing down unindexed " + JexlStringBuildingVisitor.buildQuery(node));
+    protected JexlNode delayIvarator(QueryPropertyMarker.Instance marker, JexlNode node) {
+        if (missingIndex(marker.getSource())) {
+            // in the case of a list ivarator, we cannot simply make this eval only as the source node
+            // cannot be evaluated per-se. This visitor must be executed before pushing down long lists.
+            if (marker.isType(EXCEEDED_OR)) {
+                throw new IllegalStateException("Cannot make a list ivarator evaluation only");
             }
-            return QueryPropertyMarker.create(node, EVALUATION_ONLY);
+            if (log.isDebugEnabled()) {
+                log.debug("Pushing down unindexed expression " + JexlStringBuildingVisitor.buildQuery(node));
+            }
+            return QueryPropertyMarker.create(copy(marker.getSource()), EVALUATION_ONLY);
+        } else {
+            return copy(node);
         }
-        return node;
     }
 
-    private boolean missingIndexRange(ASTEQNode node) {
-        return unindexedFields.contains(JexlASTHelper.getIdentifier(node));
-    }
-
-    private boolean missingIndexRange(ASTERNode node) {
-        return unindexedFields.contains(JexlASTHelper.getIdentifier(node));
+    protected boolean missingIndex(JexlNode node) {
+        for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node)) {
+            if (unindexedFields.contains(JexlASTHelper.deconstructIdentifier(identifier))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean missingIndexRange(LiteralRange range) {
