@@ -71,7 +71,7 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
         } else {
             switch (marker.getType()) {
                 case EVALUATION_ONLY:
-                    return node;
+                    return copy(node);
                 case BOUNDED_RANGE:
                     return delayBoundedRange(node);
                 case EXCEEDED_VALUE:
