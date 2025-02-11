@@ -23,6 +23,8 @@ import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.HitSummary;
+import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.transformer.ExcerptTransform;
@@ -32,6 +34,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
 
     public static final String HIT_TERM_FIELD = "HIT_TERM";
+    public static final String HIT_QUERY_EXPRESSION = "HIT_QUERY";
 
     private String query;
     private JexlArithmetic arithmetic;
@@ -82,6 +85,8 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     @Override
     public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
 
+        boolean matched = false;
+
         // setup the term offset map to gather phrase indexes if requested.
         TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
         if (termOffsetMap != null && isGatherPhraseOffsets() && arithmetic instanceof HitListArithmetic) {
@@ -94,75 +99,98 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
             log.trace("Evaluating " + query + " against document " + input.second().getMetadata() + " with context " + input.third());
         }
 
-        Object o = script.execute(input.third());
+        // use a try finally to ensure we clear out any stateful arithmetic
+        try {
+            Object o = script.execute(input.third());
 
-        if (log.isTraceEnabled()) {
-            log.trace("Evaluation of " + query + " against document " + input.second().getMetadata() + " returned " + o);
-        }
+            if (log.isTraceEnabled()) {
+                log.trace("Evaluation of " + query + " against document " + input.second().getMetadata() + " returned " + o);
+            }
 
-        boolean matched = isMatched(o);
+            matched = isMatched(o);
 
-        // Add delayed info to document
-        if (matched && input.third() instanceof DelayedNonEventIndexContext) {
-            ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
-        }
+            // Add delayed info to document
+            if (matched && input.third() instanceof DelayedNonEventIndexContext) {
+                ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+            }
 
-        if (arithmetic instanceof HitListArithmetic) {
-            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
-            if (matched) {
-                Document document = input.second();
+            if (o instanceof HitSummary) {
+                HitSummary hitSummary = (HitSummary) o;
+                if (matched) {
+                    Document document = input.second();
+                    document.getTimestamp(); // will force an update to make the metadata valid
 
-                Attributes attributes = new Attributes(input.second().isToKeep());
+                    Attributes attributes = new Attributes(input.second().isToKeep());
 
-                for (ValueTuple hitTuple : hitListArithmetic.getHitTuples()) {
+                    for (ValueTuple hitTuple : hitSummary.getHits()) {
 
-                    ColumnVisibility cv = null;
-                    Key metadata = null;
-                    String term = hitTuple.getFieldName() + ':' + hitTuple.getValue();
+                        ColumnVisibility cv = null;
+                        Key metadata = null;
+                        String term = hitTuple.getFieldName() + ':' + hitTuple.getValue();
 
-                    if (hitTuple.getSource() != null) {
-                        cv = hitTuple.getSource().getColumnVisibility();
-                        metadata = hitTuple.getSource().getMetadata();
+                        if (hitTuple.getSource() != null) {
+                            cv = hitTuple.getSource().getColumnVisibility();
+                            metadata = hitTuple.getSource().getMetadata();
+                        }
+
+                        // fall back to extracting column visibility from document
+                        if (cv == null) {
+                            // get the visibility for the record with this hit
+                            cv = HitListArithmetic.getColumnVisibilityForHit(document, term);
+                            // if no visibility computed, then there were no hits that match fields still in the document......
+                        }
+                        // fall back to the metadata from document
+                        if (metadata == null) {
+                            metadata = document.getMetadata();
+                        }
+
+                        if (cv != null) {
+                            // unused
+                            Content content = new Content(term, metadata, document.isToKeep(), hitTuple.getSource());
+                            content.setColumnVisibility(cv);
+                            attributes.add(content);
+                        }
+                    }
+                    if (attributes.size() > 0) {
+                        document.put(HIT_TERM_FIELD, attributes);
                     }
 
-                    // fall back to extracting column visibility from document
-                    if (cv == null) {
-                        // get the visibility for the record with this hit
-                        cv = HitListArithmetic.getColumnVisibilityForHit(document, term);
-                        // if no visibility computed, then there were no hits that match fields still in the document......
-                    }
-                    // fall back to the metadata from document
-                    if (metadata == null) {
-                        metadata = document.getMetadata();
-                    }
+                    // put the matching nodestrings into the document
+                    attributes = new Attributes(input.second().isToKeep());
+                    for (String nodeString : hitSummary.getMatchedNodeStrings()) {
+                        ColumnVisibility cv = document.getColumnVisibility();
+                        Key metadata = document.getMetadata();
 
-                    if (cv != null) {
                         // unused
-                        long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
-                        Content content = new Content(term, metadata, document.isToKeep(), hitTuple.getSource());
+                        Content content = new Content(nodeString, metadata, document.isToKeep(), null);
                         content.setColumnVisibility(cv);
                         attributes.add(content);
                     }
-                }
-                if (attributes.size() > 0) {
-                    document.put(HIT_TERM_FIELD, attributes);
-                }
+                    if (attributes.size() > 0) {
+                        document.put(HIT_QUERY_EXPRESSION, attributes);
+                    }
 
-                // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
-                if (termOffsetMap != null) {
-                    PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
-                    if (phraseIndexes != null) {
-                        Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
-                        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
-                                            + document.getMetadata());
+                    // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
+                    if (termOffsetMap != null) {
+                        PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
+                        if (phraseIndexes != null) {
+                            Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
+                            document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
+                            if (log.isTraceEnabled()) {
+                                log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE
+                                                + " to document " + document.getMetadata());
+                            }
                         }
                     }
                 }
             }
-            hitListArithmetic.clear();
+        } finally {
+            // if this is a stateful arithmetic, then reset the instance to clear state
+            if (arithmetic instanceof StatefulArithmetic) {
+                arithmetic = ((StatefulArithmetic) arithmetic).clone();
+            }
         }
+
         return matched;
     }
 

@@ -10,14 +10,19 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlOptions;
@@ -27,6 +32,7 @@ import org.apache.commons.jexl3.internal.Interpreter;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEWNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTGENode;
 import org.apache.commons.jexl3.parser.ASTGTNode;
@@ -34,8 +40,14 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNEWNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNSWNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTSWNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -70,13 +82,26 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
  */
 public class DatawaveInterpreter extends Interpreter {
 
-    protected Map<String,Object> resultMap;
+    protected Map<String,Object> resultMap = new HashMap<>();
 
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
 
     public DatawaveInterpreter(Engine jexl, JexlOptions opts, JexlContext aContext, Frame eFrame) {
         super(jexl, opts, aContext, eFrame);
-        resultMap = Maps.newHashMap();
+    }
+
+    protected DatawaveInterpreter(Interpreter ii, JexlArithmetic jexla) {
+        super(ii, jexla);
+    }
+
+    @Override
+    public Object interpret(JexlNode node) {
+        Object result = super.interpret(node);
+        if (arithmetic instanceof HitListArithmetic) {
+            return new HitSummary(result, resultMap, ((HitListArithmetic) arithmetic).getHitTuples());
+        } else {
+            return result;
+        }
     }
 
     /**
@@ -88,55 +113,68 @@ public class DatawaveInterpreter extends Interpreter {
      */
     public static boolean isMatched(Object scriptExecuteResult) {
         boolean matched = false;
-        if (scriptExecuteResult != null && Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-            matched = (Boolean) scriptExecuteResult;
-        } else if (scriptExecuteResult != null && Collection.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-            // if the function returns a collection of matches, return true/false
-            // based on the number of matches
-            Collection<?> matches = (Collection<?>) scriptExecuteResult;
-            matched = (!matches.isEmpty());
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to process non-Boolean result from JEXL evaluation '" + scriptExecuteResult);
+        if (scriptExecuteResult != null) {
+            if (HitSummary.class.isAssignableFrom(scriptExecuteResult.getClass())) {
+                matched = isMatched(((HitSummary) scriptExecuteResult).getEvaluation());
+            } else if (Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
+                matched = (Boolean) scriptExecuteResult;
+            } else if (Collection.class.isAssignableFrom(scriptExecuteResult.getClass())) {
+                // if the function returns a collection of matches, return true/false
+                // based on the number of matches
+                Collection<?> matches = (Collection<?>) scriptExecuteResult;
+                matched = (!matches.isEmpty());
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Unable to process non-Boolean result from JEXL evaluation '" + scriptExecuteResult);
+                }
             }
+        } else {
+            log.debug("Unable to process null results from JEXL evaluation");
         }
         return matched;
     }
 
-    @Override
-    public Object visit(ASTFunctionNode node, Object data) {
+    public Object cachedVisit(JexlNode node, Function<String,Object> supplier) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
 
         Object result = resultMap.get(nodeString);
-        if (null != result) {
-            return result;
-        }
-
-        result = super.visit(node, data);
-
-        boolean isPhraseFunc = (nodeString.startsWith("content:phrase") || nodeString.startsWith("content:scoredPhrase"));
-        // special handling for phrase functions and HIT_TERMs
-        if (isPhraseFunc) {
-            addHitsForFunction(result, node);
-        }
-
-        // If a content:phrase returned a collection translate that to a true or a false
-        if (isPhraseFunc && result instanceof Collection) {
-            Collection<String> hitFields = (Collection<String>) result;
-            result = hitFields.isEmpty() ? Boolean.FALSE : Boolean.TRUE;
-        }
-
-        addHits(result);
-
-        // if the function stands alone, then it needs to return ag boolean
-        // if the function is paired with a method that is called on its results (like 'size') then the
-        // actual results must be returned.
-        if (hasSiblings(node)) {
+        if (null == result) {
+            result = supplier.apply(nodeString);
             resultMap.put(nodeString, result);
-            return result;
         }
-        resultMap.put(nodeString, result instanceof Collection ? !((Collection) result).isEmpty() : result);
-        return result instanceof Collection ? !((Collection) result).isEmpty() : result;
+
+        return result;
+    }
+
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            Object result = super.visit(node, data);
+
+            boolean isPhraseFunc = (nodeString.startsWith("content:phrase") || nodeString.startsWith("content:scoredPhrase"));
+            // special handling for phrase functions and HIT_TERMs
+            if (isPhraseFunc) {
+                addHitsForFunction(result, node);
+            }
+
+            // If a content:phrase returned a collection translate that to a true or a false
+            if (isPhraseFunc && result instanceof Collection) {
+                Collection<String> hitFields = (Collection<String>) result;
+                result = hitFields.isEmpty() ? Boolean.FALSE : Boolean.TRUE;
+            }
+
+            addHits(result);
+
+            // if the function stands alone, then it needs to return ag boolean
+            // if the function is paired with a method that is called on its results (like 'size') then the
+            // actual results must be returned.
+            if (hasSiblings(node)) {
+                return result;
+            }
+
+            result = result instanceof Collection ? !((Collection) result).isEmpty() : result;
+            return result;
+        });
     }
 
     /**
@@ -180,26 +218,93 @@ public class DatawaveInterpreter extends Interpreter {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
 
-        Object result = resultMap.get(nodeString);
-        if (null != result)
-            return result;
-        result = super.visit(node, data);
-        resultMap.put(nodeString, result);
-        return result;
+    @Override
+    protected Object visit(ASTNENode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTGENode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTGTNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTLENode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTLTNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTSWNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTNSWNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTEWNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTNEWNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
     }
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
 
-        Object result = resultMap.get(nodeString);
-        if (null != result)
-            return result;
-        result = super.visit(node, data);
-        resultMap.put(nodeString, result);
-        return result;
+    @Override
+    protected Object visit(ASTNRNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
+    }
+
+    @Override
+    protected Object visit(ASTNotNode node, Object data) {
+        return cachedVisit(node, (nodeString) -> {
+            return super.visit(node, data);
+        });
     }
 
     public Object visit(ASTIdentifier node, Object data) {

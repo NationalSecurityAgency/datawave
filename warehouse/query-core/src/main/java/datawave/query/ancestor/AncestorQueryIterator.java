@@ -45,6 +45,7 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.HitSummary;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.AncestorEventDataFilter;
@@ -185,12 +186,14 @@ public class AncestorQueryIterator extends QueryIterator {
             public boolean isMatched(Object o) {
                 boolean matched = false;
                 if (super.isMatched(o)) {
-                    // verify that we have at least one value within the current document being evaluated (dependent on ValueComparator below)
-                    Set<ValueTuple> hits = ((HitListArithmetic) getArithmetic()).getHitTuples();
-                    for (ValueTuple hit : hits) {
-                        if (isFromCurrentDoc(hit)) {
-                            matched = true;
-                            break;
+                    if (o instanceof HitSummary) {
+                        // verify that we have at least one value within the current document being evaluated (dependent on ValueComparator below)
+                        Set<ValueTuple> hits = ((HitSummary) o).getHits();
+                        for (ValueTuple hit : hits) {
+                            if (isFromCurrentDoc(hit)) {
+                                matched = true;
+                                break;
+                            }
                         }
                     }
                 }
