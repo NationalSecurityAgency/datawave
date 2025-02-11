@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -45,6 +46,7 @@ import datawave.data.type.IpAddressType;
 import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -153,7 +155,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        /**
+        /*
          * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
@@ -311,6 +313,16 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
 
+            // all normalizers must be applied to an ANYFIELD term
+            if (fieldName.equals(Constants.ANY_FIELD)) {
+                try {
+                    dataTypes.addAll(helper.getAllDatatypes());
+                } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
+                    log.error("Could not fetch all DataTypes while expanding unfielded term");
+                    throw new RuntimeException(e);
+                }
+            }
+
             // Catch the case of the user entering FIELD == null
             if (!dataTypes.isEmpty() && null != literal) {
                 try {
@@ -386,16 +398,19 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     if (log.isTraceEnabled()) {
                                         log.trace("Could not normalize " + term + " as cidr notation with: " + normalizer.getClass());
                                     }
-                                    failedNormalization = true;
+                                    // normalization failures do not matter for ANYFIELD terms
+                                    failedNormalization = !fieldName.equals(Constants.ANY_FIELD);
                                 }
                             } else {
-                                failedNormalization = true;
+                                // normalization failures do not matter for ANYFIELD terms
+                                failedNormalization = !fieldName.equals(Constants.ANY_FIELD);
                             }
                         } catch (Exception ne) {
                             if (log.isTraceEnabled()) {
                                 log.trace("Could not normalize " + term + " using " + normalizer.getClass());
                             }
-                            failedNormalization = true;
+                            // normalization failures do not matter for ANYFIELD terms
+                            failedNormalization = !fieldName.equals(Constants.ANY_FIELD);
                         }
                     }
 

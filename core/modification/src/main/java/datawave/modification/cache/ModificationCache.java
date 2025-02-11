@@ -15,14 +15,15 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.security.util.ScannerHelper;
 
 public class ModificationCache {
-    private static Logger log = Logger.getLogger(ModificationCache.class);
+    private static Logger log = LoggerFactory.getLogger(ModificationCache.class);
 
     private static final Text MODIFICATION_COLUMN = new Text("m");
 
@@ -51,8 +52,8 @@ public class ModificationCache {
         BatchScanner s = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            log.trace("getting mutable list from table " + this.modificationConfiguration.getTableName());
-            log.trace("modificationConfiguration.getPoolName() = " + modificationConfiguration.getPoolName());
+            log.trace("getting mutable list from table {}", this.modificationConfiguration.getTableName());
+            log.trace("modificationConfiguration.getPoolName() = {}", modificationConfiguration.getPoolName());
             client = connectionFactory.getClient(null, null, modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
             log.trace("got connection");
             s = ScannerHelper.createBatchScanner(client, this.modificationConfiguration.getTableName(),
@@ -62,16 +63,16 @@ public class ModificationCache {
             for (Entry<Key,Value> e : s) {
                 // Field name is in the row and datatype is in the colq.
                 String datatype = e.getKey().getColumnQualifier().toString();
-                log.trace("datatype = " + datatype);
+                log.trace("datatype = {}", datatype);
                 String fieldName = e.getKey().getRow().toString();
-                log.trace("fieldname = " + fieldName);
+                log.trace("fieldname = {}", fieldName);
                 if (null == cache.get(datatype))
                     cache.put(datatype, new HashSet<>());
                 cache.get(datatype).add(fieldName);
             }
-            log.trace("cache size = " + cache.size());
+            log.trace("cache size = {}", cache.size());
             for (Entry<String,Set<String>> e : cache.entrySet()) {
-                log.trace("datatype = " + e.getKey() + ", fieldcount = " + e.getValue().size());
+                log.trace("datatype = {}, fieldcount = {}", e.getKey(), e.getValue().size());
             }
             // now atomically replace the cache
             this.cache = cache;
@@ -105,12 +106,12 @@ public class ModificationCache {
      * @return true if field is mutable for the given datatype
      */
     public boolean isFieldMutable(String datatype, String field) {
-        log.trace("datatype = " + datatype + ", field = " + field);
+        log.trace("datatype = {}, field = {}", datatype, field);
         return cache.get(datatype).contains(field);
     }
 
     public Map<String,Set<String>> getCachedMutableFieldList() {
-        log.trace("cache = " + cache);
+        log.trace("cache = {}", cache);
         return Collections.unmodifiableMap(cache);
     }
 

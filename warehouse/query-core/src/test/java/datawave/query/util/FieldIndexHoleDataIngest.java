@@ -115,6 +115,10 @@ public class FieldIndexHoleDataIngest {
         public Pair<Long,Long> getMetadataCounts(String field) {
             return metadataCounts.get(field);
         }
+
+        public Map<String,Pair<Long,Long>> getMetadataCounts() {
+            return metadataCounts;
+        }
     }
 
     public static void writeItAll(AccumuloClient client, Range range, List<EventConfig> eventConfigs) throws Exception {

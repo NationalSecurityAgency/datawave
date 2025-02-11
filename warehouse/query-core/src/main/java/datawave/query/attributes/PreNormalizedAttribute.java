@@ -77,12 +77,7 @@ public class PreNormalizedAttribute extends Attribute<PreNormalizedAttribute> im
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.value);
         output.writeBoolean(this.toKeep);
     }
@@ -96,12 +91,7 @@ public class PreNormalizedAttribute extends Attribute<PreNormalizedAttribute> im
 
     @Override
     public void write(DataOutput output) throws IOException {
-        write(output, false);
-    }
-
-    @Override
-    public void write(DataOutput output, boolean reducedResponse) throws IOException {
-        super.writeMetadata(output, reducedResponse);
+        super.writeMetadata(output);
         WritableUtils.writeString(output, this.value);
         WritableUtils.writeVInt(output, toKeep ? 1 : 0);
     }

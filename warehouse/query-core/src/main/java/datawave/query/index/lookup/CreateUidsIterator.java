@@ -143,7 +143,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 src.next();
             }
             if (ignore) {
-                tv = new IndexInfo(count);
+                tv = new IndexInfo(count > 0 ? count : -1);
             } else {
                 if (parseTldUids) {
                     // For each uid in the list of uids, parse out the tld portion from the whole uid.

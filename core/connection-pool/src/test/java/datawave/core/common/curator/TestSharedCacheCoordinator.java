@@ -23,10 +23,11 @@ import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -51,7 +52,7 @@ public class TestSharedCacheCoordinator implements Serializable {
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
 
-    private Logger log = Logger.getLogger(getClass());
+    private Logger log = LoggerFactory.getLogger(getClass());
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;
@@ -143,20 +144,20 @@ public class TestSharedCacheCoordinator implements Serializable {
         try {
             curatorClient.delete().guaranteed().forPath(serverIdentifierPath);
         } catch (Exception e) {
-            log.warn("Error removing server identifier path " + serverIdentifierPath + ": " + e.getMessage(), e);
+            log.warn("Error removing server identifier path {}: {}", serverIdentifierPath, e.getMessage(), e);
         }
         for (Entry<String,SharedCount> entry : sharedCounters.entrySet()) {
             try {
                 entry.getValue().close();
             } catch (IOException e) {
-                log.warn("Error closing shared counter " + entry.getKey() + ": " + e.getMessage(), e);
+                log.warn("Error closing shared counter {}: {}", entry.getKey(), e.getMessage(), e);
             }
         }
         if (evictionPathCache != null) {
             try {
                 evictionPathCache.close();
             } catch (IOException e) {
-                log.warn("Error closing eviction monitor: " + e.getMessage(), e);
+                log.warn("Error closing eviction monitor: {}", e.getMessage(), e);
             }
         }
         curatorClient.close();
@@ -275,7 +276,7 @@ public class TestSharedCacheCoordinator implements Serializable {
         sharedBoolean.start();
         sharedBooleans.put(booleanName, sharedBoolean);
         localBooleans.put(booleanName, sharedBoolean.getBoolean());
-        log.debug("registered a boolean that is " + sharedBoolean.getBoolean());
+        log.debug("registered a boolean that is {}", sharedBoolean.getBoolean());
         sharedBoolean.addListener(listener);
     }
 
@@ -329,7 +330,7 @@ public class TestSharedCacheCoordinator implements Serializable {
         if (nodeData != null) {
             long delta = System.currentTimeMillis() - nodeData.getCtime();
             if (delta > EVICT_MESSAGE_TIMEOUT) {
-                log.debug("Attempting to delete " + evictMessagePath + " since it was created " + delta + "ms ago and hasn't been cleaned up.");
+                log.debug("Attempting to delete {} since it was created {}ms ago and hasn't been cleaned up.", evictMessagePath, delta);
                 ZKUtil.deleteRecursive(curatorClient.getZookeeperClient().getZooKeeper(), evictMessagePath);
             } else {
                 shouldCreate = false;
@@ -380,10 +381,10 @@ public class TestSharedCacheCoordinator implements Serializable {
             for (ChildData data : evictionPathCache.getCurrentData()) {
                 List<String> responders = curatorClient.getChildren().forPath(data.getPath());
                 if (responders.containsAll(liveServers)) {
-                    log.debug(data.getPath() + " can be cleaned up.");
+                    log.debug("{} can be cleaned up.", data.getPath());
                     pathsToDelete.add(data.getPath());
                 } else {
-                    log.debug(data.getPath() + " cannot be cleaned up: liveServers=" + liveServers + ", respondingServers=" + responders);
+                    log.debug("{} cannot be cleaned up: liveServers={}, respondingServers={}", data.getPath(), liveServers, responders);
                 }
             }
 
@@ -394,12 +395,12 @@ public class TestSharedCacheCoordinator implements Serializable {
                         String recursiveDeletePath = ZKPaths.makePath(curatorClient.getNamespace(), path);
                         ZKUtil.deleteRecursive(curatorClient.getZookeeperClient().getZooKeeper(), recursiveDeletePath);
                     } catch (Exception e) {
-                        log.trace("Problem deleting " + path + " (this may be ok): " + e.getMessage(), e);
+                        log.trace("Problem deleting {} (this may be ok): {}", path, e.getMessage(), e);
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn("Error cleaning up eviction notices: " + e.getMessage(), e);
+            log.warn("Error cleaning up eviction notices: {}", e.getMessage(), e);
         }
     }
 }
