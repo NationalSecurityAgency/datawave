@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-build-parent</artifactId>
-        <version>7.15.0-accumulo4</version>
+        <version>7.15.0.1-accumulo4</version>
     </parent>
     <artifactId>datawave-microservice-service-build-parent</artifactId>
     <packaging>pom</packaging>
