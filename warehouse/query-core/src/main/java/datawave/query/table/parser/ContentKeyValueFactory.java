@@ -31,7 +31,7 @@ public class ContentKeyValueFactory {
 
         c.setShardId(key.getRow().toString());
 
-        String[] field = StringUtils.split(key.getColumnQualifier().toString(), Constants.NULL_BYTE_STRING);
+        String[] field = key.getColumnQualifier().toString().split(Constants.NULL_BYTE_STRING);
         if (field.length > 0)
             c.setDatatype(field[0]);
         if (field.length > 1)

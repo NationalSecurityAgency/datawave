@@ -778,7 +778,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setDocumentPermutationClasses(String documentPermutationClassesStr) {
-        setDocumentPermutationClasses(Arrays.asList(StringUtils.split(documentPermutationClassesStr, ',')));
+        setDocumentPermutationClasses(Arrays.asList(documentPermutationClassesStr.split(",")));
     }
 
     public boolean isIncludeRecordId() {
@@ -1643,7 +1643,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = Sets.newHashSet(filterCsv.split(","));
 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
 
@@ -2022,14 +2022,14 @@ public class QueryOptions implements OptionDescriber {
         Map<String,Set<String>> mapping = new HashMap<>();
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
                 } else {
-                    String[] values = StringUtils.split(entrySplits[1], ',');
+                    String[] values = entrySplits[1].split(",");
                     HashSet<String> dataTypes = new HashSet<>();
 
                     Collections.addAll(dataTypes, values);
@@ -2049,9 +2049,9 @@ public class QueryOptions implements OptionDescriber {
     public static Set<String> fetchDataTypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
-            String[] entries = StringUtils.split(data, ';');
+            String[] entries = data.split(";");
             for (String entry : entries) {
-                String[] entrySplits = StringUtils.split(entry, ':');
+                String[] entrySplits = entry.split(":");
 
                 if (2 != entrySplits.length) {
                     log.warn("Skipping unparseable normalizer entry: '" + entry + "', from '" + data + "'");
@@ -2166,7 +2166,7 @@ public class QueryOptions implements OptionDescriber {
 
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String field : StringUtils.split(fieldStr, ',')) {
+        for (String field : fieldStr.split(",")) {
             if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
                 fields.add(field);
             }
@@ -2200,7 +2200,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {
-        return Sets.newHashSet(StringUtils.split(colFams, ','));
+        return Sets.newHashSet(colFams.split(","));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

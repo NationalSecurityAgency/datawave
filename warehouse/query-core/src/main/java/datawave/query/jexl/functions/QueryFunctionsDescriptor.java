@@ -253,7 +253,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.RENAME_FUNCTION:
                     for (JexlNode arg : args) {
                         String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
-                        String[] parts = StringUtils.split(value, Constants.EQUALS);
+                        String[] parts = value.split(Constants.EQUALS);
                         fields.add(parts[0]);
                     }
                 case QueryFunctions.MATCH_REGEX:

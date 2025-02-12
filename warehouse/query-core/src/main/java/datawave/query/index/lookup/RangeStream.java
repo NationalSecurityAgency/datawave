@@ -808,7 +808,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         String identifier = JexlASTHelper.getIdentifier(node);
         if (Constants.SHARD_DAY_HINT.equals(identifier)) {
             JexlNode myNode = JexlNodeFactory.createExpression(node);
-            String[] shardsAndDays = StringUtils.split(JexlASTHelper.getLiteralValue(node).toString(), ',');
+            String[] shardsAndDays = JexlASTHelper.getLiteralValue(node).toString().split(",");
             if (shardsAndDays.length > 0) {
                 return ScannerStream.withData(createIndexScanList(shardsAndDays).iterator(), myNode);
             } else {

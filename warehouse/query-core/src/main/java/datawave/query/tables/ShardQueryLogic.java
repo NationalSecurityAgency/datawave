@@ -900,7 +900,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the list of field rename mappings. May be null.
         String renameFields = settings.findParameter(QueryParameters.RENAME_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(renameFields)) {
-            Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(renameFields, Constants.PARAM_VALUE_SEP)));
+            Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(renameFields.split(Constants.PARAM_VALUE_SEP)));
             config.setRenameFields(renameFieldExpressions);
 
             if (log.isDebugEnabled()) {
@@ -914,7 +914,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the list of fields to project up the stack. May be null.
         String projectFields = settings.findParameter(QueryParameters.RETURN_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(projectFields)) {
-            List<String> projectFieldsList = Arrays.asList(StringUtils.split(projectFields, Constants.PARAM_VALUE_SEP));
+            List<String> projectFieldsList = Arrays.asList(projectFields.split(Constants.PARAM_VALUE_SEP));
 
             // Only set the projection fields if we were actually given some
             if (!projectFieldsList.isEmpty()) {
@@ -941,7 +941,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the list of disallowlisted fields. May be null.
         String tDisallowlistedFields = settings.findParameter(QueryParameters.DISALLOWLISTED_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(tDisallowlistedFields)) {
-            List<String> disallowlistedFieldsList = Arrays.asList(StringUtils.split(tDisallowlistedFields, Constants.PARAM_VALUE_SEP));
+            List<String> disallowlistedFieldsList = Arrays.asList(tDisallowlistedFields.split(Constants.PARAM_VALUE_SEP));
 
             // Only set the disallowlisted fields if we were actually given some
             if (!disallowlistedFieldsList.isEmpty()) {
@@ -960,7 +960,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the LIMIT_FIELDS parameter if given
         String limitFields = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(limitFields)) {
-            List<String> limitFieldsList = Arrays.asList(StringUtils.split(limitFields, Constants.PARAM_VALUE_SEP));
+            List<String> limitFieldsList = Arrays.asList(limitFields.split(Constants.PARAM_VALUE_SEP));
 
             // Only set the limit fields if we were actually given some
             if (!limitFieldsList.isEmpty()) {

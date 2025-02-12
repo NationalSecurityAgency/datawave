@@ -37,7 +37,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         }
 
         // @formatter:off
-        List<String> validShardsAndDays = Arrays.stream(StringUtils.split(shardsAndDays, ','))
+        List<String> validShardsAndDays = Arrays.stream(shardsAndDays.split( ","))
                         .map(String::trim)              // Strip whitespace.
                         .filter(s -> !s.isEmpty())      // Remove empty strings.
                         .distinct()                     // Remove duplicates.
@@ -105,7 +105,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
     // Merge the given shards and days with the shard and days in this visitor's list.
     private String mergeShardsAndDays(String shardsAndDays) {
         // Remove any duplicate shards and days hints from the initial list.
-        String[] values = StringUtils.split(shardsAndDays, ',');
+        String[] values = shardsAndDays.split(",");
         for (String value : values) {
             this.shardsAndDays.remove(value);
         }

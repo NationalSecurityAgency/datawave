@@ -24,7 +24,7 @@ public class TermFrequencyKeyValueFactory {
         TermFrequencyKeyValue t = new TermFrequencyKeyValue();
         t.setShardId(key.getRow().toString());
 
-        String[] field = StringUtils.split(key.getColumnQualifier().toString(), "\0");
+        String[] field = key.getColumnQualifier().toString().split("\0");
         if (field.length > 0) {
             t.setDatatype(field[0]);
         }

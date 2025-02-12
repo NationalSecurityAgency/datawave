@@ -25,7 +25,7 @@ public class WiredQueryModelProvider implements QueryModelProvider {
     public void setQueryModel(Map<String,String> mappings) {
         QueryModel model = new QueryModel();
         for (Map.Entry<String,String> mapping : mappings.entrySet()) {
-            for (String value : StringUtils.split(mapping.getValue(), ',')) {
+            for (String value : mapping.getValue().split(",")) {
                 model.addTermToModel(mapping.getKey(), value);
                 model.addTermToReverseModel(value, mapping.getKey());
             }
