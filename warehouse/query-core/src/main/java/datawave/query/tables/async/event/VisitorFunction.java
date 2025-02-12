@@ -663,7 +663,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
-            String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
+            String[] choices = config.getIvaratorFstHdfsBaseURIs().split(",");
             int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
             return path.toUri();

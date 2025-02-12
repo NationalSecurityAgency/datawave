@@ -867,7 +867,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             HashSet<String> typeFilter = new HashSet<>();
             HashSet<String> excludeSet = new HashSet<>();
 
-            for (String dataType : Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP))) {
+            for (String dataType : Arrays.asList(typeList.split(Constants.PARAM_VALUE_SEP))) {
                 if (dataType.charAt(0) == '!') {
                     excludeSet.add(StringUtils.substring(dataType, 1));
                 } else {
@@ -971,7 +971,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the MATCHING_FIELD_SETS parameter if given
         String matchingFieldSets = settings.findParameter(QueryParameters.MATCHING_FIELD_SETS).getParameterValue().trim();
         if (StringUtils.isNotBlank(matchingFieldSets)) {
-            List<String> matchingFieldSetsList = Arrays.asList(StringUtils.split(matchingFieldSets, Constants.PARAM_VALUE_SEP));
+            List<String> matchingFieldSetsList = Arrays.asList(matchingFieldSets.split(Constants.PARAM_VALUE_SEP));
 
             // Only set the limit fields if we were actually given some
             if (!matchingFieldSetsList.isEmpty()) {
@@ -995,7 +995,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the GROUP_FIELDS parameter if given
         String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFieldsParam)) {
-            String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
+            String[] groupFields = groupFieldsParam.split(Constants.PARAM_VALUE_SEP);
 
             // Only set the group fields if we were actually given some.
             if (groupFields.length > 0) {
@@ -1005,31 +1005,31 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // Update the sum fields if given.
                 String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(sumFieldsParam)) {
-                    groupByFields.setSumFields(Sets.newHashSet(StringUtils.split(sumFieldsParam, Constants.PARAM_VALUE_SEP)));
+                    groupByFields.setSumFields(Sets.newHashSet(sumFieldsParam.split(Constants.PARAM_VALUE_SEP)));
                 }
 
                 // Update the count fields if given.
                 String countFieldsParam = settings.findParameter(QueryParameters.COUNT_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(countFieldsParam)) {
-                    groupByFields.setCountFields(Sets.newHashSet(StringUtils.split(countFieldsParam, Constants.PARAM_VALUE_SEP)));
+                    groupByFields.setCountFields(Sets.newHashSet(countFieldsParam.split(Constants.PARAM_VALUE_SEP)));
                 }
 
                 // Update the average fields if given.
                 String averageFieldsParam = settings.findParameter(QueryParameters.AVERAGE_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(averageFieldsParam)) {
-                    groupByFields.setAverageFields(Sets.newHashSet(StringUtils.split(averageFieldsParam, Constants.PARAM_VALUE_SEP)));
+                    groupByFields.setAverageFields(Sets.newHashSet(averageFieldsParam.split(Constants.PARAM_VALUE_SEP)));
                 }
 
                 // Update the min fields if given.
                 String minFieldsParam = settings.findParameter(QueryParameters.MIN_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(averageFieldsParam)) {
-                    groupByFields.setMinFields(Sets.newHashSet(StringUtils.split(minFieldsParam, Constants.PARAM_VALUE_SEP)));
+                    groupByFields.setMinFields(Sets.newHashSet(minFieldsParam.split(Constants.PARAM_VALUE_SEP)));
                 }
 
                 // Update the max fields if given.
                 String maxFieldsParam = settings.findParameter(QueryParameters.MAX_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(averageFieldsParam)) {
-                    groupByFields.setMaxFields(Sets.newHashSet(StringUtils.split(maxFieldsParam, Constants.PARAM_VALUE_SEP)));
+                    groupByFields.setMaxFields(Sets.newHashSet(maxFieldsParam.split(Constants.PARAM_VALUE_SEP)));
                 }
 
                 // Update the config and the projection fields.

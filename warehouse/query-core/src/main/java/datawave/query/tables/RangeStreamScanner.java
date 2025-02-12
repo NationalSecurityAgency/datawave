@@ -508,7 +508,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             info.readFields(new DataInputStream(new ByteArrayInputStream(value.get())));
             if (log.isTraceEnabled()) {
                 for (IndexMatch match : info.uids()) {
-                    log.trace("match is " + StringUtils.split(match.getUid(), '\u0000')[1]);
+                    log.trace("match is " + match.getUid().split("\u0000")[1]);
                 }
             }
             return info;
