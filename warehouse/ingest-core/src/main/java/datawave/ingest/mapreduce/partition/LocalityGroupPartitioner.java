@@ -55,7 +55,7 @@ public class LocalityGroupPartitioner extends Partitioner<BulkIngestKey,Value> i
         // build the colFams set
         String columnFamiliesCsv = conf.get(propertyName, "");
         if (!columnFamiliesCsv.isEmpty()) {
-            String[] cfs = StringUtils.split(columnFamiliesCsv, ',');
+            String[] cfs = columnFamiliesCsv.split(",");
             colFams = new ArrayList<>();
             for (String cf : cfs) {
                 colFams.add(new Text(cf));

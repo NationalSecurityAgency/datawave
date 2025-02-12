@@ -380,7 +380,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (log.isInfoEnabled())
             log.info("Configured table names are " + configNames);
 
-        String[] configuredTableNames = StringUtils.split(configNames, ',', false);
+        String[] configuredTableNames = configNames.split(",");
 
         if (configuredTableNames.length > 0)
             tableList.addAll(Arrays.asList(configuredTableNames));

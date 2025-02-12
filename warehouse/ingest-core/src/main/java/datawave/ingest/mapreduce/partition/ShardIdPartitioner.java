@@ -74,7 +74,7 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
      * @return the shard id number
      */
     protected long generateNumberForShardId(String shardId, long baseTime) throws ParseException {
-        String[] shardPieces = StringUtils.split(shardId, '_');
+        String[] shardPieces = shardId.split("_");
 
         if (shardPieces.length != 2) {
             throw new ParseException("Shard id is not in expected format: yyyyMMdd_n: " + shardId, SHARD_ID_SPLIT);
