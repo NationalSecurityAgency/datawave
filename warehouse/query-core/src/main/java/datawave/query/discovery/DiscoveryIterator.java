@@ -128,7 +128,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             String term = reverseIndex ? new StringBuilder(first.getTerm()).reverse().toString() : first.getTerm();
             String date = sumCounts ? "" : first.date;
 
-            Set<ColumnVisibility> visibilities = new HashSet<>();
+            Set<AccessExpression> expressions = new HashSet<>();
             Map<String,Long> visibilityToCounts = new HashMap<>();
             long count = 0L;
 
@@ -138,10 +138,10 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                 long currentCount = this.showReferenceCount ? termEntry.getUidListSize() : termEntry.getUidCount();
                 try {
                     // Track the distinct visibilities seen.
-                    visibilities.add(termEntry.getVisibility());
+                    expressions.add(termEntry.getExpression());
                     // If counts by visibility should be tracked, do so.
                     if (this.separateCountsByColVis) {
-                        String visibility = new String(AccessExpression.of(termEntry.getVisibility().getExpression(), true).getExpression());
+                        String visibility = termEntry.getExpression().getExpression();
                         visibilityToCounts.compute(visibility, (k, v) -> v == null ? currentCount : v + currentCount);
                     }
                 } catch (Exception e) {
@@ -163,13 +163,13 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             } else {
                 // Otherwise, combine the visibilities, and return the aggregated result.
                 try {
-                    ColumnVisibility visibility = markingFunctions.combine(visibilities);
+                    ColumnVisibility visibility = markingFunctions.combine(expressions.stream().map(ColumnVisibility::new).collect(Collectors.toSet()));
                     MapWritable countsByVis = new MapWritable();
                     visibilityToCounts.forEach((key, value) -> countsByVis.put(new Text(key), new LongWritable(value)));
                     return new DiscoveredThing(term, first.getField(), first.getDatatype(), date, new String(visibility.getExpression()), count, countsByVis);
                 } catch (Exception e) {
                     if (log.isTraceEnabled()) {
-                        log.warn("Invalid column visibilities after combining " + visibilities);
+                        log.warn("Invalid column visibilities after combining " + expressions);
                     }
                     return null;
                 }
@@ -245,7 +245,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         private final String field;
         private String date;
         private String datatype;
-        private ColumnVisibility visibility;
+        private AccessExpression expression;
         private long uidCount;
         private long uidListSize;
         private boolean valid;
@@ -288,7 +288,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                     // Don't add UID information. At least we know what shard it's located in.
                 }
 
-                visibility = new ColumnVisibility(key.getColumnVisibility());
+                expression = AccessExpression.of(key.getColumnVisibility().getBytes());
 
                 // This is now considered a valid entry for aggregation.
                 valid = true;
@@ -311,8 +311,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             return datatype;
         }
 
-        public ColumnVisibility getVisibility() {
-            return visibility;
+        public AccessExpression getExpression() {
+            return expression;
         }
 
         public long getUidCount() {

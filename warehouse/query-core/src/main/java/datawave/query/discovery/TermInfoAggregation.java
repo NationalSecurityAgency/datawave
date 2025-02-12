@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 
+import datawave.marking.FlattenedVisibilityCache;
 import datawave.marking.MarkingFunctions;
 
 public class TermInfoAggregation implements Function<Collection<TermInfo>,DiscoveredThing> {
@@ -80,7 +81,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     // Keep track of counts for individual vis
                     if (separateCountsByColumnVisibility) {
                         Long cnt = 0L;
-                        String vis = AccessExpression.of(ti.vis.getExpression(), true).getExpression();
+                        String vis = FlattenedVisibilityCache.normalize(AccessExpression.parse(ti.vis.getExpression())).expression;
                         if (counts.containsKey(vis)) {
                             cnt = counts.get(vis);
                             cnt += chosenCount;

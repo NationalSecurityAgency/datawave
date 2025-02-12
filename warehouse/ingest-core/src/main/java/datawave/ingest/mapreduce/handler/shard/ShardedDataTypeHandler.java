@@ -2,7 +2,6 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +48,7 @@ import datawave.ingest.table.config.LoadDateTableConfigHelper;
 import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.DiskSpaceStarvationStrategy;
+import datawave.marking.FlattenedVisibilityCache;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.Direction;
 import datawave.util.CompositeTimestamp;
@@ -811,7 +811,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? AccessExpression.of(vis.getExpression(), true).getExpression().getBytes(UTF_8) : markingFunctions.flatten(vis);
+        return markingFunctions == null ? FlattenedVisibilityCache.normalize(AccessExpression.parse(vis.getExpression())).expression.getBytes(UTF_8)
+                        : markingFunctions.flatten(vis);
     }
 
     /**

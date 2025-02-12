@@ -78,7 +78,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
     @Override
     protected Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
                     ColumnVisibility origVis, long timestamp, IngestHelperInterface iHelper) {
-        return delegate.createEntries(record, fields, origVis, timestamp, iHelper);
+        return delegate.createEntries(record, fields, AccessExpression.of(origVis.getExpression()), timestamp, iHelper);
     }
 
     /**
@@ -189,7 +189,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
         }
 
         public Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
-                        ColumnVisibility origVis, long timestamp, IngestHelperInterface iHelper) {
+                        AccessExpression expression, long timestamp, IngestHelperInterface iHelper) {
             String hour = getHour(fields);
             if (hour == null) {
                 return HashMultimap.create();
@@ -203,8 +203,6 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
                 log.trace("Creating Keys for...rowIds.size() [" + rowIds.size() + "] colFs.size() [" + colFs.size() + "] colQs.size() [" + colQs.size() + "]");
             }
 
-            ColumnVisibility vis = new ColumnVisibility(AccessExpression.of(origVis.getExpression(), true));
-
             @SuppressWarnings("unchecked")
             Set<List<Text>> cartesianProduct = Sets.cartesianProduct(rowIds, colFs, colQs);
 
@@ -215,7 +213,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
                 Text cf = textComponents.get(1);
                 Text cq = textComponents.get(2);
                 Preconditions.checkArgument(textComponents.size() == 3);
-                Key k = new Key(row, cf, cq, vis, timestamp);
+                Key k = new Key(row.getBytes(), cf.getBytes(), cq.getBytes(), expression.getExpression().getBytes(), timestamp);
                 final BulkIngestKey bk = new BulkIngestKey(metricsSummaryTableName, k);
                 values.put(bk, INCREMENT_ONE_VALUE);
             }

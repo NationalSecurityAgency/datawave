@@ -20,6 +20,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.SetMultimap;
 
+import datawave.marking.FlattenedVisibilityCache;
 import datawave.query.parser.EventFields.FieldValue;
 
 /**
@@ -80,7 +81,7 @@ public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializ
         public int size() {
             byte[] exp = visibility.getExpression();
             return (exp == null || exp.length == 0 ? 0
-                            : AccessExpression.of(exp, true).getExpression().length() + value.length
+                            : FlattenedVisibilityCache.normalize(AccessExpression.parse(exp)).expression.length() + value.length
                                             + (context == null ? 0 : context.length() + (hit == null ? 0 : 1)));
         }
 
@@ -89,8 +90,8 @@ public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializ
             StringBuilder buf = new StringBuilder();
             if (null != visibility) {
                 byte[] expr = visibility.getExpression();
-                buf.append(" visibility: ").append(
-                                new String(expr == null || expr.length == 0 ? new byte[0] : AccessExpression.of(expr, true).getExpression().getBytes(UTF_8)));
+                buf.append(" visibility: ").append(new String(expr == null || expr.length == 0 ? new byte[0]
+                                : FlattenedVisibilityCache.normalize(AccessExpression.parse(expr)).expression.getBytes(UTF_8)));
             }
             if (null != value)
                 buf.append(" value size: ").append(value.length);

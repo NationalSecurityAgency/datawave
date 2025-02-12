@@ -51,6 +51,7 @@ import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.marking.FlattenedVisibilityCache;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
@@ -845,8 +846,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                 if (oldColumnVisibility != null) {
                     // need to compare the flattened values for equivalence.
-                    String oldColViz = AccessExpression.of(oldColumnVisibility.getExpression(), true).getExpression();
-                    String thisVis = AccessExpression.of(thisViz.getExpression(), true).getExpression();
+                    String oldColViz = FlattenedVisibilityCache.normalize(AccessExpression.parse(oldColumnVisibility.getExpression())).expression;
+                    String thisVis = FlattenedVisibilityCache.normalize(AccessExpression.parse(thisViz.getExpression())).expression;
                     if (!oldColViz.equals(thisVis)) {
                         log.trace("Skipping key that does not match with column visibility: {}", e.getKey());
                         continue;
