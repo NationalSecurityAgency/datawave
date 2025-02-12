@@ -1149,10 +1149,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
                         tl.invalidateCache();
 
-                        context.close();
                     }
 
                     clipRanges(binnedRanges);
+                    context.close();
                 }
             }
         } catch (Exception e) {
