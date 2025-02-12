@@ -1390,7 +1390,7 @@ public class IngestJob implements Tool {
         if (daemonClassNames == null) {
             return;
         }
-        for (String className : StringUtils.split(daemonClassNames, ',')) {
+        for (String className : daemonClassNames.split(",")) {
             try {
                 @SuppressWarnings("unchecked")
                 Class<? extends Runnable> daemonClass = (Class<? extends Runnable>) Class.forName(className.trim());

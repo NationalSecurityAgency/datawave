@@ -148,7 +148,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (tableListString == null) {
             return Collections.EMPTY_SET;
         } else {
-            String[] tables = StringUtils.split(tableListString, ',');
+            String[] tables = tableListString.split(",");
             return new HashSet<>(Arrays.asList(tables));
         }
     }

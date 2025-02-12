@@ -202,7 +202,7 @@ public class EdgeKeyVersioningCache {
         String line;
         Map<Integer,String> tmpVersions = new TreeMap<>();
         while ((line = in.readLine()) != null) {
-            String parts[] = StringUtils.split(line, '\t');
+            String parts[] = line.split("\t");
             tmpVersions.put(Integer.parseInt(parts[0]), parts[1]);
         }
         in.close();

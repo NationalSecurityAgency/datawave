@@ -366,7 +366,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, this.delimiter);
+            String[] parts = line.split(this.delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
                 if (!tmpSplitLocations.isEmpty()) {
                     this.splitLocations.put(tableName, tmpSplitLocations);
