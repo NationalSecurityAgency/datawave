@@ -1,4 +1,3 @@
-<!-- cancel outdated -->
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -131,7 +130,7 @@
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
-        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
+        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version.  CANCEL-->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
         <version.woodstox-core>5.4.0</version.woodstox-core>
