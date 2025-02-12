@@ -137,7 +137,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 if (!ignore)
                     for (String uid : uidInfo.third()) {
                         if (log.isTraceEnabled())
-                            log.trace("Adding uid " + uid.split( "\u0000")[1]);
+                            log.trace("Adding uid " + uid.split("\u0000")[1]);
                         uids.add(uid);
                     }
                 src.next();

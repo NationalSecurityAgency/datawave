@@ -90,7 +90,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
 
     public void reduce(Text key, Iterable<Text> values, Context context) throws IOException {
 
-        String[] keySplit = key.toString().split( "\0");
+        String[] keySplit = key.toString().split("\0");
         log.info("key is " + key);
 
         // we are dealing with counts for the specific data type.

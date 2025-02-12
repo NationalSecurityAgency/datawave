@@ -676,7 +676,7 @@ public class QueryContext implements EdgeContext {
                     columnFamilies.add(new Text(edgeType.getLiteral() + "/" + edgeRelationship.getLiteral()));
                     if (includeStats) {
                         for (EdgeKey.STATS_TYPE stats_type : EdgeKey.STATS_TYPE.values()) {
-                            String[] parts = StringUtils.split(edgeRelationship.getLiteral(), '-');
+                            String[] parts = edgeRelationship.getLiteral().split("-");
                             columnFamilies.add(new Text("STATS/" + stats_type + "/" + edgeType.getLiteral() + "/" + parts[0]));
                         }
                     }
