@@ -130,7 +130,7 @@
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
-        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version.  CANCEL?-->
+        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version.  CANCEL 2?-->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
         <version.woodstox-core>5.4.0</version.woodstox-core>
