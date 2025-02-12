@@ -197,8 +197,8 @@
                 <artifactId>annotations</artifactId>
                 <version>${version.googlecode-findbugs}</version>
             </dependency>
-            <dependency>
-                <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 -->
+	    <dependency>
+                <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 WAHOO-->
                 <groupId>com.google.guava</groupId>
                 <artifactId>failureaccess</artifactId>
                 <version>${version.google-guava-failure}</version>
