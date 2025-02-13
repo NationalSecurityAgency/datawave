@@ -18,23 +18,23 @@ public class TermWeightPositionTest {
         TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
 
         // Simple ordering tests
-        TermWeightPosition twp = twpBuilder.setOffset(4).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        TermWeightPosition twp = twpBuilder.setOffset(4).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(.65F).build();
         termWeightPositionList.add(twp);
-        twp = twpBuilder.setOffset(2).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(2).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         termWeightPositionList.add(twp);
-        twp = twpBuilder.setOffset(3).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(3).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         termWeightPositionList.add(twp);
-        twp = twpBuilder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         termWeightPositionList.add(twp);
 
         // Simple ordering tests with prevSkips
-        twp = twpBuilder.setOffset(12).setPrevSkips(1).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(12).setPrevSkips(1).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(.65F).build();
         termWeightPositionList.add(twp);
-        twp = twpBuilder.setOffset(13).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(13).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).setLeftBound(.65F).setRightBound(1.7F).build();
         termWeightPositionList.add(twp);
-        twp = twpBuilder.setOffset(11).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(11).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(1.7F).setRightBound(8.3F).build();
         termWeightPositionList.add(twp);
-        twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).setLeftBound(8.3F).setRightBound(10F).build();
         termWeightPositionList.add(twp);
 
         termWeightPositionList = Collections.unmodifiableList(termWeightPositionList);
@@ -47,23 +47,23 @@ public class TermWeightPositionTest {
         TermWeightPosition twp;
 
         // Simple ordering tests
-        twp = twpBuilder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(2).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(2).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(3).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(3).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(4).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(4).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
 
         // Simple ordering tests with prevSkips
-        twp = twpBuilder.setOffset(11).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(11).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(1.7F).setRightBound(8.3F).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(12).setPrevSkips(1).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(12).setPrevSkips(1).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(.65F).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(13).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(13).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).setLeftBound(.65F).setRightBound(1.7F).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).setLeftBound(8.3F).setRightBound(10F).build();
         listExpected.add(twp);
 
         List<TermWeightPosition> result = new ArrayList<>(termWeightPositionList);
@@ -79,23 +79,23 @@ public class TermWeightPositionTest {
         TermWeightPosition twp;
 
         // Simple ordering tests
-        twp = twpBuilder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(2).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(2).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(3).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(3).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(4).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(4).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         listExpected.add(twp);
 
         // Simple ordering tests with prevSkips
-        twp = twpBuilder.setOffset(13).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(13).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).setLeftBound(.65F).setRightBound(1.7F).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(11).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(11).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(1.7F).setRightBound(8.3F).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(12).setPrevSkips(1).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(12).setPrevSkips(1).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(.65F).build();
         listExpected.add(twp);
-        twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).build();
+        twp = twpBuilder.setOffset(15).setPrevSkips(4).setScore(0).setZeroOffsetMatch(true).setLeftBound(8.3F).setRightBound(10F).build();
         listExpected.add(twp);
 
         List<TermWeightPosition> result = new ArrayList<>(termWeightPositionList);
@@ -106,24 +106,23 @@ public class TermWeightPositionTest {
     @Test
     public void testBuilderReset() {
         TermWeightPosition.Builder builder = new TermWeightPosition.Builder();
-        TermWeightPosition expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
-        TermWeightPosition position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+
+        TermWeightPosition expectedAfterReset = builder.setOffset(-1).setPrevSkips(-1).setScore(-1).setZeroOffsetMatch(false).setLeftBound(-1).setRightBound(-1).build();
+
+        TermWeightPosition expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
+        TermWeightPosition position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         assertEquals(expected, position);
 
-        expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         builder.reset();
-        position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
-        assertEquals(expected, position);
-
-        expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
-        builder.reset();
-        position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
+        assertEquals(expectedAfterReset, builder.build());
+        position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).setLeftBound(0).setRightBound(0).build();
         assertEquals(expected, position);
     }
 
     @Test
     public void testPositionScoreToTermWeightScore() {
-        float positionScore = (float) -.0552721;
+        float positionScore = -.0552721F;
         int twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
         float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
 
