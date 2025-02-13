@@ -258,6 +258,7 @@ public class HitTermAssertions {
 
             if (!found) {
                 log.warn("expected to find at least one of required hits: {}", requiredHits);
+                log.warn("returned hit terms: {}", hits);
                 validated = false;
             }
         }
