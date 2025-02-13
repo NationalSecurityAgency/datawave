@@ -215,7 +215,7 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        Set<Set<String>> expected = new HashSet<>(); // is this just an issue like the other "todo: make this work someday"?
+        Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.sopranoUID, "MAGIC_COPY:18"));
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.corleoneUID, "MAGIC_COPY:18"));
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID, "MAGIC_COPY:18"));
