@@ -23,7 +23,7 @@
         <url.wildfly>https://download.jboss.org/wildfly/${version.wildfly.tar.gz}.Final/${dist.wildfly}</url.wildfly>
         <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-${version.zookeeper.tar.gz}/${dist.zookeeper}</url.zookeeper>
         <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
-        <version.accumulo.tar.gz>2.1.3</version.accumulo.tar.gz>
+        <version.accumulo.tar.gz>2.1.4-5657bc8cf22</version.accumulo.tar.gz>
         <version.hadoop.tar.gz>3.3.6</version.hadoop.tar.gz>
         <version.maven.tar.gz>3.8.8</version.maven.tar.gz>
         <version.wildfly.tar.gz>17.0.1</version.wildfly.tar.gz>

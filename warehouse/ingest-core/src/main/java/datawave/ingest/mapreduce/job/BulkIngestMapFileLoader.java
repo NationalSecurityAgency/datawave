@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -16,7 +15,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -67,15 +65,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
@@ -88,6 +77,7 @@ import datawave.util.cli.PasswordConverter;
  */
 public final class BulkIngestMapFileLoader implements Runnable {
     private static final Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
+    public static final String LOADPLAN_FILE_GLOB = "accumulo-bulk-loadplan*.json";
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
     private static int MAX_DIRECTORIES = 1;
@@ -134,16 +124,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
         @Deprecated
         V1,
         /**
-         * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are computed locally within the {@link BulkIngestMapFileLoader}
-         * JVM upon import. This will incur an import latency cost that is proportional to the size/number of rfiles to be imported and the number of tablets to
-         * be targeted
-         */
-        V2_LOCAL_MAPPING,
-        /**
          * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are determined from precomputed
          * {@link org.apache.accumulo.core.data.LoadPlan} files created in {@link MultiRFileOutputFormatter}
          */
-        V2_LOAD_PLANNING
+        V2
     }
 
     public static void main(String[] args) throws AccumuloSecurityException, IOException, NoSuchMethodException {
@@ -972,13 +956,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         accumuloClient.tableOperations()
                            .importDirectory(tableName, tableDir.toString(), failuresDir, false);
                         break;
-                    case V2_LOCAL_MAPPING:
-                        accumuloClient.tableOperations().importDirectory(tableDir.toString())
-                           .to(tableName)
-                           .ignoreEmptyDir(true)
-                           .tableTime(false).load();
-                        break;
-                    case V2_LOAD_PLANNING:
+                    case V2:
                         accumuloClient.tableOperations().importDirectory(tableDir.toString())
                            .to(tableName)
                            .plan(getLoadPlan())
@@ -1004,7 +982,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         private LoadPlan getLoadPlan() throws IOException {
             FileSystem fs = FileSystem.get(srcHdfs, new Configuration());
-            FileStatus[] loadPlans = fs.globStatus(new Path(tableDir, "accumulo-bulk-loadplan*.json"));
+            FileStatus[] loadPlans = fs.globStatus(new Path(tableDir, LOADPLAN_FILE_GLOB));
             var builder = LoadPlan.builder();
             log.debug("Deserializing load plan for " + tableDir);
             for (FileStatus lp : loadPlans) {

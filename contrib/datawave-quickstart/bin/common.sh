@@ -130,21 +130,28 @@ function downloadMavenTarball() {
    local artifact="$3"
    local version="$4"
    local tarballdir="$5"
+   local dwMavenRepo="${DW_MAVEN_REPOSITORY:-https://maven.pkg.github.com/NationalSecurityAgency/datawave}"
    tarball="${artifact}-${version}.tar.gz"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
+      info "Attempting to download ${tarball} from Maven repo: ${dwMavenRepo}"
       # download from maven repo
-      output=$( mvn -f "${pomFile}" -pl "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
+      [[ -n "${GITHUB_WORKSPACE}" ]] && local githubOpts="-s $GITHUB_WORKSPACE/.github/workflows/settings.xml"
+      output=$( mvn ${githubOpts} -f "${pomFile}" -pl "${rootProject}" -DremoteRepositories="remote-repo::default::${dwMavenRepo}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
          error "Failed to download ${tarball} via maven"
          error "$output"
+         error "Here's the ${tarballdir} directory listing for debugging purposes..."
+         ls -la "${tarballdir}"
+         error "Here are the local maven directory listings for debugging purposes..."
+         ls -laR "$HOME/.m2/repository/$(echo ${group} | sed 's|\.|/|g')/${artifact}"
          return $retVal
       else
          info "Downloaded ${artifact} via maven"
       fi
 
       # copy to specified directory
-      output=$( mvn -f "${pomFile}" -pl "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
+      output=$( mvn ${githubOpts} -f "${pomFile}" -pl "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
          error "Failed to copy ${tarball} to ${tarballdir} via maven"
