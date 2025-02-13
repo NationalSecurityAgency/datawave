@@ -207,7 +207,7 @@ public class BulkIngestMapFileLoaderTest {
                 loaderSleepTime,
                 loaderSleepTime,
                 false,
-                ImportMode.V2_LOCAL_MAPPING);
+                ImportMode.V1);
         // @formatter:on
     }
 

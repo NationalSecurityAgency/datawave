@@ -134,16 +134,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
         @Deprecated
         V1,
         /**
-         * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are computed locally within the {@link BulkIngestMapFileLoader}
-         * JVM upon import. This will incur an import latency cost that is proportional to the size/number of rfiles to be imported and the number of tablets to
-         * be targeted
-         */
-        V2_LOCAL_MAPPING,
-        /**
          * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are determined from precomputed
          * {@link org.apache.accumulo.core.data.LoadPlan} files created in {@link MultiRFileOutputFormatter}
          */
-        V2_LOAD_PLANNING
+        V2
     }
 
     public static void main(String[] args) throws AccumuloSecurityException, IOException, NoSuchMethodException {
@@ -972,13 +966,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         accumuloClient.tableOperations()
                            .importDirectory(tableName, tableDir.toString(), failuresDir, false);
                         break;
-                    case V2_LOCAL_MAPPING:
-                        accumuloClient.tableOperations().importDirectory(tableDir.toString())
-                           .to(tableName)
-                           .ignoreEmptyDir(true)
-                           .tableTime(false).load();
-                        break;
-                    case V2_LOAD_PLANNING:
+                    case V2:
                         accumuloClient.tableOperations().importDirectory(tableDir.toString())
                            .to(tableName)
                            .plan(getLoadPlan())
