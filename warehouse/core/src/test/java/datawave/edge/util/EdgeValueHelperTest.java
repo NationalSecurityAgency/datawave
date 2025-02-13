@@ -242,7 +242,7 @@ public class EdgeValueHelperTest {
         assertEquals("Hour List doesn't have correct bit set " + histogram.get(1), 1L, (long) histogram.get(1));
         assertEquals("Hour List doesn't have correct bit set " + histogram.get(2), 2L, (long) histogram.get(2));
         for (int i = 3; i < expectedLength; i++) {
-            assertEquals("Hour List's missing hours weren't correctly filled with zeros " + i + " " + expectedLength, 0, (long) histogram.get(i));
+            assertEquals("Hour List's missing hours weren't correctly filled with zeros " + i + ' ' + expectedLength, 0, (long) histogram.get(i));
         }
     }
 

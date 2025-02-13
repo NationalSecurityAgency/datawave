@@ -1016,7 +1016,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         return null;
 
                     if (!extent.tableId().canonical().equals(tableId)) {
-                        throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
+                        throw new AccumuloException("Saw unexpected table Id " + tableId + ' ' + extent);
                     }
 
                     if (lastExtent != null && !extent.isPreviousExtent(lastExtent)) {
@@ -1360,13 +1360,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         Text buffer = new Text();
 
                         // append row0
-                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(" ");
+                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(' ');
 
                         // append column family
                         appendBytes(sb, currentK.getColumnFamily(buffer).getBytes(), 0, currentK.getColumnFamily(buffer).getLength()).append(":");
 
                         // append column qualifier
-                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(" ");
+                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(' ');
 
                         // append visibility expression
                         sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));

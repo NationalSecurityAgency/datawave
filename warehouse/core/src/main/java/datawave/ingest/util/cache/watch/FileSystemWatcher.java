@@ -68,7 +68,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
 
             reload = (currentModTime - lastChange) > configuredDiff;
             if (log.isDebugEnabled())
-                log.debug(currentModTime + " " + lastChange + " " + configuredDiff + " reload triggered?" + reload);
+                log.debug(currentModTime + ' ' + lastChange + ' ' + configuredDiff + " reload triggered?" + reload);
         } catch (IOException e) {
             reload = true;
         }
