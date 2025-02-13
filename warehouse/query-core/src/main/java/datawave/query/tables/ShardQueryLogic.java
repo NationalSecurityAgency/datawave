@@ -3341,13 +3341,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 
-    public double getIndexFieldHoleMinThreshold(int fieldIndexHoleMinThreshold) {
+    public double getIndexFieldHoleMinThreshold() {
         return getConfig().getIndexFieldHoleMinThreshold();
-    }
-
-    @Deprecated
-    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
-        setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 
     public List<QueryRule> getValidationRules() {
