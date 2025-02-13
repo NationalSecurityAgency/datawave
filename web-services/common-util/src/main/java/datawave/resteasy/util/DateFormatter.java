@@ -47,7 +47,7 @@ public class DateFormatter implements ParamConverter<Date> {
                 log.debug("Param passed in was '+24Hours', setting value to now + 86400000ms");
             } else {
                 if (StringUtils.isNotBlank(this.defaultTime) && !str.contains(" ")) {
-                    str = str + " " + this.defaultTime;
+                    str = str + ' ' + this.defaultTime;
                 }
 
                 if (StringUtils.isNotBlank(this.defaultMillisec) && !str.contains(".")) {

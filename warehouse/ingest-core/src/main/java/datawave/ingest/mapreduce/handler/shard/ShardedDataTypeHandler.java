@@ -469,7 +469,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 NormalizedContentInterface value = e.getValue();
                 byte[] visibility = getVisibility(event, value);
                 if (log.isTraceEnabled()) {
-                    log.trace("Is " + e.getKey() + " indexed? " + hasIndexTerm(e.getKey()) + " " + helper.isIndexedField(e.getKey()));
+                    log.trace("Is " + e.getKey() + " indexed? " + hasIndexTerm(e.getKey()) + ' ' + helper.isIndexedField(e.getKey()));
                 }
 
                 values.putAll(createForwardIndices(helper, event, fields, value, visibility, maskedVisibility, maskedFieldHelper, shardId, indexedValue,

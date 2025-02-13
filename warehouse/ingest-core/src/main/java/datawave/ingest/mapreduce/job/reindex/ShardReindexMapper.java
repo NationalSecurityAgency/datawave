@@ -259,7 +259,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                     Long value = groupCounters.get(counter);
                     // optionally dump the counters to logs instead of the MR framework
                     if (this.dumpCounters) {
-                        log.info("COUNTER " + counterGroup + " " + counter + " " + value);
+                        log.info("COUNTER " + counterGroup + ' ' + counter + ' ' + value);
                     } else {
                         context.getCounter(counterGroup, counter).increment(value);
                     }

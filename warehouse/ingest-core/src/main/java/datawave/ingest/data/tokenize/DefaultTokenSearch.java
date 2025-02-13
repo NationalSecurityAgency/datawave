@@ -493,7 +493,7 @@ public class DefaultTokenSearch implements TokenSearch {
         // easier to fix this here than re-process the buds.
         String extra = null;
         int startPos = zlc.length();
-        int spacePos = zlc.lastIndexOf(" ", startPos);
+        int spacePos = zlc.lastIndexOf(' ', startPos);
         int slashPos = zlc.lastIndexOf("/", startPos);
 
         // working from the end to the beginning, look at spaces
@@ -513,7 +513,7 @@ public class DefaultTokenSearch implements TokenSearch {
             }
             // next space.
             startPos = spacePos - 1;
-            spacePos = zlc.lastIndexOf(" ", startPos);
+            spacePos = zlc.lastIndexOf(' ', startPos);
         }
 
         // File path without drive letter
@@ -542,14 +542,14 @@ public class DefaultTokenSearch implements TokenSearch {
             if (!zseg.isEmpty()) {
                 synonyms.add(zseg + zone);
 
-                spacePos = zseg.indexOf(" ");
+                spacePos = zseg.indexOf(' ');
                 if (spacePos > -1) {
                     // extract space delimited components of zseg.
                     int zsegstart = 0;
                     while (zsegstart <= spacePos && spacePos < zseg.length()) {
                         synonyms.add(zseg.substring(zsegstart, spacePos) + zone);
                         zsegstart = spacePos + 1;
-                        spacePos = zseg.indexOf(" ", zsegstart);
+                        spacePos = zseg.indexOf(' ', zsegstart);
                     }
 
                     if (zsegstart < zseg.length()) {
@@ -610,7 +610,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.add(lc + zone);
         }
 
-        int methodPos = lc.indexOf(" ");
+        int methodPos = lc.indexOf(' ');
         int versionPos = lc.indexOf(" http", methodPos + 1);
 
         if (methodPos > 0 && versionPos > methodPos) {

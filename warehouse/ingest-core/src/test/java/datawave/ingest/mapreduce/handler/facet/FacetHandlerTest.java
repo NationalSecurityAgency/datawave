@@ -312,8 +312,8 @@ public class FacetHandlerTest {
             for (FacetResult pair : results) {
                 switch (tableName) {
                     case DATAWAVE_FACETS:
-                        String facet = pair.getFirst().getKey().toString() + " " + FacetHandler.extractCardinality(pair.getSecond());
-                        log.debug(tableName + " " + facet);
+                        String facet = pair.getFirst().getKey().toString() + ' ' + FacetHandler.extractCardinality(pair.getSecond());
+                        log.debug(tableName + ' ' + facet);
                         if (!expectedFacets.remove(facet)) {
                             unexpectedFacets.add(facet);
                         }
@@ -321,7 +321,7 @@ public class FacetHandlerTest {
                         break;
                     case DATAWAVE_FACET_METADATA:
                         String facetMetadata = pair.getFirst().getKey().toString();
-                        log.debug(tableName + " " + facetMetadata);
+                        log.debug(tableName + ' ' + facetMetadata);
                         if (!expectedFacetMetadata.remove(facetMetadata)) {
                             unexpectedFacetMetadata.add(facetMetadata);
                         }
@@ -329,13 +329,13 @@ public class FacetHandlerTest {
                         break;
                     case DATAWAVE_FACET_HASHES:
                         String facetHash = pair.getFirst().getKey().toString();
-                        log.debug(tableName + " " + facetHash);
+                        log.debug(tableName + ' ' + facetHash);
                         if (!expectedFacetHashes.remove(facetHash)) {
                             unexpectedFacetHashes.add(facetHash);
                         }
                         break;
                     default:
-                        String item = tableName + " " + pair.getFirst().getKey().toString();
+                        String item = tableName + ' ' + pair.getFirst().getKey().toString();
                         log.warn("Unexpected table name/key: " + item);
                         totallyUnexpected.add(item);
                         break;
@@ -364,7 +364,7 @@ public class FacetHandlerTest {
 
         // dump and/or metadata item count
         facetMetadataKeyCounts.forEach((k, v) -> {
-            log.debug(DATAWAVE_FACET_METADATA + " " + k + " " + v);
+            log.debug(DATAWAVE_FACET_METADATA + ' ' + k + ' ' + v);
             if (metadataItemCount > 0) {
                 assertEquals("Metadata count equals itemCount " + metadataItemCount, metadataItemCount, v.intValue());
             }
@@ -377,7 +377,7 @@ public class FacetHandlerTest {
         final Object2IntMap<String> finalExpectedFacetKeyCounts = expectedFacetKeyCounts;
         sortedKeys.forEach((k) -> {
             int found = facetKeyCounts.getOrDefault(k, 0);
-            log.debug(DATAWAVE_FACETS + " " + k + " " + found);
+            log.debug(DATAWAVE_FACETS + ' ' + k + ' ' + found);
 
             if (evaluateExpectedFacetKeyCounts) {
                 int expected = finalExpectedFacetKeyCounts.getOrDefault(k, 0);

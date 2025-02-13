@@ -128,7 +128,7 @@ public abstract class RemoteHttpService {
             return client.execute(request, r -> {
                 if (r.getStatusLine().getStatusCode() >= 300) {
                     throw new ClientProtocolException(
-                                    "Unable to " + errorSupplier.get() + ": " + r.getStatusLine() + " " + EntityUtils.toString(r.getEntity()));
+                                    "Unable to " + errorSupplier.get() + ": " + r.getStatusLine() + ' ' + EntityUtils.toString(r.getEntity()));
                 } else {
                     return resultConverter.apply(r.getEntity());
                 }

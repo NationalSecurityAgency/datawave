@@ -195,7 +195,7 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
         ByteSequence cf = key.getColumnFamilyData();
         if (ShardReindexMapper.isKeyD(cf)) {
             context.getCounter(key.getRow().toString() + "-" + sourceNum, "d").increment(1);
-            log.info("D " + sourceNum + " " + key);
+            log.info("D " + sourceNum + ' ' + key);
             log.info("OTHER " + otherKey);
         } else if (ShardReindexMapper.isKeyTF(cf)) {
             String field = ShardReindexMapper.getFieldFromTF(key);
