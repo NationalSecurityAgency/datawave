@@ -77,6 +77,7 @@ public class HitTermAssertions {
 
     private final Set<String> discovered = new HashSet<>();
 
+    private boolean expectNoHitTerms = true;
     private boolean validated = true;
 
     public HitTermAssertions() {
@@ -93,6 +94,7 @@ public class HitTermAssertions {
         optionalAnyOf.clear();
         discovered.clear();
         validated = true;
+        expectNoHitTerms = false;
     }
 
     /**
@@ -102,6 +104,7 @@ public class HitTermAssertions {
      *            a collection of hit terms
      */
     public void withRequiredAllOf(String... hits) {
+        expectNoHitTerms = false;
         requiredAllOf.add(Set.of(hits));
     }
 
@@ -112,6 +115,7 @@ public class HitTermAssertions {
      *            a collection of hit terms
      */
     public void withRequiredAnyOf(String... hits) {
+        expectNoHitTerms = false;
         requiredAnyOf.add(Set.of(hits));
     }
 
@@ -122,6 +126,7 @@ public class HitTermAssertions {
      *            a collection of hit terms
      */
     public void withOptionalAllOf(String... hits) {
+        expectNoHitTerms = false;
         optionalAllOf.add(Set.of(hits));
     }
 
@@ -132,7 +137,12 @@ public class HitTermAssertions {
      *            a collection of hit terms
      */
     public void withOptionalAnyOf(String... hits) {
+        expectNoHitTerms = false;
         optionalAnyOf.add(Set.of(hits));
+    }
+
+    public void expectNoHitTerms() {
+        expectNoHitTerms = true;
     }
 
     /**
@@ -174,11 +184,27 @@ public class HitTermAssertions {
         discovered.clear();
 
         Preconditions.checkNotNull(document, "Expected document to be non-null");
+
         boolean anyHitTermSet = !requiredAllOf.isEmpty() || !requiredAnyOf.isEmpty() || !optionalAllOf.isEmpty() || !optionalAnyOf.isEmpty();
-        Preconditions.checkArgument(anyHitTermSet, "No expected hit terms set, please check test setup");
+        Preconditions.checkState((expectNoHitTerms != anyHitTermSet), "Invalid configuration: cannot expect hit terms and set expectNoHitTerm to false");
 
         Set<String> hits = extractHitTermsFromDocument(document);
-        if (hits.isEmpty()) {
+
+        if (expectNoHitTerms) {
+            if (!hits.isEmpty()) {
+                validated = false;
+                log.warn("Expected hit terms to be empty, but found {}", hits);
+            }
+            return validated;
+        }
+
+        if (anyHitTermSet && hits.isEmpty()) {
+            log.warn("Expected hit terms but document contained no hit terms");
+            return false;
+        }
+
+        if (!anyHitTermSet && !hits.isEmpty()) {
+            log.warn("No hit terms expected but found hit terms: {}", hits);
             return false;
         }
 
@@ -203,7 +229,9 @@ public class HitTermAssertions {
      */
     private Set<String> extractHitTermsFromDocument(Document document) {
         if (!document.containsKey(HIT_TERM_FIELD)) {
-            log.warn("Document did not contain any hit terms");
+            if (!expectNoHitTerms) {
+                log.warn("Document did not contain any hit terms");
+            }
             return Collections.emptySet();
         }
 
