@@ -30,10 +30,10 @@
         <url.wildfly>file://${DW_CLOUD_PLUGINS}/datawave/${dist.wildfly}</url.wildfly>
         <url.zookeeper>file://${DW_CLOUD_PLUGINS}/accumulo/${dist.zookeeper}</url.zookeeper>
 
-        <version.quickstart.accumulo>2.1.3</version.quickstart.accumulo>
-        <version.quickstart.hadoop>${version.hadoop}</version.quickstart.hadoop>
-        <version.quickstart.wildfly>${version.wildfly}</version.quickstart.wildfly>
-        <version.quickstart.zookeeper>${version.zookeeper}</version.quickstart.zookeeper>
+        <version.quickstart.accumulo>2.1.4-5657bc8cf22</version.quickstart.accumulo>
+        <version.quickstart.hadoop>3.3.6</version.quickstart.hadoop>
+        <version.quickstart.wildfly>17.0.1</version.quickstart.wildfly>
+        <version.quickstart.zookeeper>3.8.4</version.quickstart.zookeeper>
 
     </properties>
     <dependencies>

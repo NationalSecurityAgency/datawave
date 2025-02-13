@@ -4,7 +4,6 @@ import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_
 import static datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.findContainingSplits;
 import static org.junit.Assert.assertEquals;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -503,7 +501,7 @@ public class MultiRFileOutputFormatterTest {
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
         conf.set(SplitsFile.CONFIGURED_SHARDED_TABLE_NAMES, TableName.SHARD);
-        conf.setEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V2_LOAD_PLANNING);
+        conf.setEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V2);
     }
 
     @Test

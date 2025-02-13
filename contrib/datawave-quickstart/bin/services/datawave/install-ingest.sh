@@ -45,7 +45,7 @@ if ! hadoopIsRunning ; then
    hadoopStart
 fi
 
-# Create any Hadoop directories needed for live ingest input
+# Create any Hadoop directories needed for live (and optionally bulk) raw input
 if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
 
    OLD_IFS="${IFS}"
