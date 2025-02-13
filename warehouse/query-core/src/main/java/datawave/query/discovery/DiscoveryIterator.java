@@ -163,6 +163,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             } else {
                 // Otherwise, combine the visibilities, and return the aggregated result.
                 try {
+
                     ColumnVisibility visibility = markingFunctions.combine(expressions.stream().map(ColumnVisibility::new).collect(Collectors.toSet()));
                     MapWritable countsByVis = new MapWritable();
                     visibilityToCounts.forEach((key, value) -> countsByVis.put(new Text(key), new LongWritable(value)));

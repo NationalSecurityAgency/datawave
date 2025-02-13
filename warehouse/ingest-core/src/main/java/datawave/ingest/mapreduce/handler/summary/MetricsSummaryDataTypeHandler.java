@@ -77,6 +77,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
 
     @Override
     protected Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
+
                     ColumnVisibility origVis, long timestamp, IngestHelperInterface iHelper) {
         return delegate.createEntries(record, fields, AccessExpression.of(origVis.getExpression()), timestamp, iHelper);
     }
