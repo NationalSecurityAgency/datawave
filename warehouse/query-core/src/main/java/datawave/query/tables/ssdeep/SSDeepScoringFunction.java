@@ -1,23 +1,16 @@
 package datawave.query.tables.ssdeep;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
-
-import com.google.common.collect.Multimap;
 
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.util.ssdeep.ChunkSizeEncoding;
-import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 import datawave.util.ssdeep.SSDeepHashEditDistanceScorer;

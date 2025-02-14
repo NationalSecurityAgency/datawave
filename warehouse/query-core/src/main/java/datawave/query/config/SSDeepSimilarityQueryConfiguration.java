@@ -1,15 +1,5 @@
 package datawave.query.config;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.accumulo.core.data.Range;
-
-import com.google.common.collect.Multimap;
-
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.query.QueryImpl;
@@ -18,7 +8,6 @@ import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
-import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
