@@ -104,10 +104,10 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     log.trace("Did not aggregate any counts for [" + term + "][" + field + "][" + type + "][" + date + "]. Returning null.");
                 return null;
             } else {
-                ColumnVisibility columnVisibility = null;
+                byte [] expression;
                 try {
 
-                    columnVisibility = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+                    expression = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities).getExpression();
 
                 } catch (Exception e) {
                     log.warn("Invalid columnvisibility after combining!", e);
@@ -119,7 +119,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     countsByVis.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
                 }
 
-                return new DiscoveredThing(term, field, type, date, new String(columnVisibility.flatten()), count, countsByVis);
+                return new DiscoveredThing(term, field, type, date, new String(expression), count, countsByVis);
             }
         }
     }
