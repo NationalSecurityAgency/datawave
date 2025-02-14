@@ -73,23 +73,23 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                 chosenCount = showReferenceCountInsteadOfTermCount ? referenceCount : termCount;
 
                 try {
-                    MarkingFunctions.Factory.createMarkingFunctions().translateFromColumnVisibility(ti.vis); // just to test parsing
-                    columnVisibilities.add(ti.vis);
-
-                    // Keep track of counts for individual vis
-                    if (separateCountsByColumnVisibility) {
-                        Long cnt = 0L;
-                        String vis = new String(ti.vis.flatten());
-                        if (counts.containsKey(vis)) {
-                            cnt = counts.get(vis);
-                            cnt += chosenCount;
-                            counts.remove(vis);
-                        } else {
-                            cnt = chosenCount;
+                    // ColumnVisibility is verified on creation in TermInfo if set.
+                    if (ti.vis != null) {
+                        columnVisibilities.add(ti.vis);
+                        // Keep track of counts for individual vis
+                        if (separateCountsByColumnVisibility) {
+                            Long cnt = 0L;
+                            String vis = new String(ti.vis.flatten());
+                            if (counts.containsKey(vis)) {
+                                cnt = counts.get(vis);
+                                cnt += chosenCount;
+                                counts.remove(vis);
+                            } else {
+                                cnt = chosenCount;
+                            }
+                            counts.put(vis, cnt);
                         }
-                        counts.put(vis, cnt);
                     }
-
                 } catch (Exception e1) {
                     if (log.isTraceEnabled())
                         log.trace(e1);
