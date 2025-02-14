@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -328,7 +329,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
             // if results is already set, then we were merely adding a new query logic to the mix
             if (this.results == null) {
-                this.results = new CompositeQueryLogicResults(this, Math.min(settings.getPagesize() * 2, 1000));
+                this.results = new CompositeQueryLogicResults(this, Math.min(settings.getPagesize() * 2, 1000), getResultsPollTimeout(),
+                                getResultsPollTimeoutTimeUnit());
             }
 
             if (log.isDebugEnabled()) {
@@ -810,5 +812,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     public CountDownLatch getCompletionLatch() {
         return completionLatch;
+    }
+
+    public void setResultsPollTimeout(long resultsPollTimeout) {
+        getConfig().setResultsPollTimeout(resultsPollTimeout);
+    }
+
+    public long getResultsPollTimeout() {
+        return getConfig().getResultsPollTimeout();
+    }
+
+    public void setResultsPollTimeoutTimeUnit(TimeUnit timeUnit) {
+        getConfig().setResultsPollTimeoutTimeUnit(timeUnit);
+    }
+
+    public TimeUnit getResultsPollTimeoutTimeUnit() {
+        return getConfig().getResultsPollTimeoutTimeUnit();
     }
 }
