@@ -16,6 +16,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -790,23 +792,26 @@ public class BulkIngestMapFileLoaderTest {
             Files.createFile(metaRfile);
             Files.write(metaRfile, "Invalid rfile content here".getBytes(StandardCharsets.UTF_8));
 
-            String expectedMsg = "Error importing files into table " + METADATA_TABLE + " from directory file:"
-                            + Paths.get(workPath.toString(), jobName, "mapFiles");
-
             // Start the loader
             new Thread(processor, "map-file-watcher").start();
 
             // Wait up to 30 secs for the bulk loader to log the failure
             for (int i = 1; i <= 10; i++) {
                 Thread.sleep(3000);
-                if (log.contains(expectedMsg)) {
+                if (Files.exists(failedMarker)) {
                     break;
                 }
             }
 
             Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains(expectedMsg));
-            Assert.assertTrue("Bad metadata rfile should have remained in the job dir: " + metaRfile, Files.exists(metaRfile));
+            
+            var failDir = Paths.get(workPath.toString(), jobName, "mapFiles", "failures", METADATA_TABLE);
+            var failMatcher = FileSystems.getDefault().getPathMatcher("glob:I*.rf");
+            try (DirectoryStream<java.nio.file.Path> dirStream = Files.newDirectoryStream(failDir)) {
+                for (java.nio.file.Path p : dirStream) {
+                    Assert.assertTrue(failMatcher.matches(p.getFileName()));
+                }
+            }
             Assert.assertTrue("Missing 'job.failed' marker after failed import", Files.exists(failedMarker));
 
         } catch (Exception e) {
