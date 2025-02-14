@@ -3,7 +3,6 @@ package datawave.query.discovery;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.Text;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -17,6 +16,7 @@ public class TermInfo {
     protected String date = null;
     protected String datatype = null;
     protected ColumnVisibility vis = null;
+    protected byte[] accessExpression = null;
     protected boolean valid = false;
     private long listSize = 0;
 
@@ -61,8 +61,8 @@ public class TermInfo {
                 // it is located in.
             }
 
-            Text tvis = key.getColumnVisibility();
-            vis = new ColumnVisibility(tvis);
+            accessExpression = key.getColumnVisibilityData().getBackingArray();
+            vis = new ColumnVisibility(accessExpression);
 
             // we now have a valid info
             valid = true;
