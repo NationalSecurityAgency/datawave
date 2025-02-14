@@ -17,6 +17,8 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Iterators;
+
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -150,7 +152,10 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         builder.setNumRangesToBuffer(0);
         builder.setMaxWaitValue(maxWaitValue);
 
-        expect(mockPlans.iterator()).andReturn(Collections.emptyIterator());
+        // add a tiny delay to ensure that there is time to get inside the while loop before the rangeConsumer finishes
+        // this is necessary to prevent the test from intermittently failing on some hardware and jvms
+        expect(mockPlans.iterator()).andReturn(delayIterator(Collections.emptyIterator(), 25));
+
         mockPlans.close();
 
         replayAll();
