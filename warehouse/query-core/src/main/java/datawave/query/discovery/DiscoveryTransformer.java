@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.util.BadArgumentException;
 import org.apache.hadoop.io.Writable;
 
 import com.google.common.base.Preconditions;
@@ -14,7 +16,6 @@ import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
 import datawave.microservice.query.Query;
 import datawave.query.model.QueryModel;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -48,8 +49,11 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         EventBase event = this.responseObjectFactory.getEvent();
         Map<String,String> markings;
         try {
-            markings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(thing.getColumnVisibility()));
-        } catch (Exception e) {
+            // Replace this validate with AccessExpression
+            new ColumnVisibility(thing.getColumnVisibility());
+            markings = Maps.newHashMap();
+            markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, thing.getColumnVisibility());
+        } catch (BadArgumentException e) {
             throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
         }
         event.setMarkings(markings);
@@ -68,9 +72,11 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         if (thing.getCountsByColumnVisibility() != null && !thing.getCountsByColumnVisibility().isEmpty()) {
             for (Map.Entry<Writable,Writable> entry : thing.getCountsByColumnVisibility().entrySet()) {
                 try {
-                    Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
-                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
-                } catch (Exception e) {
+                    String accessExpression = entry.getKey().toString();
+                    // Replace this validate with AccessExpression
+                    new ColumnVisibility(accessExpression);
+                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), accessExpression, 0L, entry.getValue().toString()));
+                } catch (BadArgumentException e) {
                     throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
                 }
 
