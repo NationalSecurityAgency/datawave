@@ -54,7 +54,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     private final QueryData original;
 
     /**
-     * Used to configure the max size of the BlockingQueue which sits between the producer and consumer. Default is 1000 if <= 0 RangeConsumer will block if
+     * Used to configure the max size of the BlockingQueue which sits between the producer and consumer. Default is 1000 if &lt;= 0 RangeConsumer will block if
      * full.
      */
     private final long maxRanges;
@@ -89,14 +89,14 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     protected int numRangesToBuffer;
 
     /**
-     * The minimum amount of time in ms to wait for at least numRangesToBuffer to be in the queue only used if numRangesToBuffer > 0
+     * The minimum amount of time in ms to wait for at least numRangesToBuffer to be in the queue only used if numRangesToBuffer &gt; 0
      */
     @Deprecated
     protected long rangeBufferTimeoutMillis;
 
     /**
      * The interval in ms to sleep while waiting for at least numRangesToBuffer items on the rangeQueue or rangeBufferTimeoutMillis to be exceeded. Only used if
-     * numRangesToBuffer > 0
+     * numRangesToBuffer &gt; 0
      */
     @Deprecated
     protected long rangeBufferPollMillis;
