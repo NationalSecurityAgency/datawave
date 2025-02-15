@@ -212,10 +212,8 @@ public class BaseTableCache implements Serializable, TableCache {
                 Key valueKey = value.getKey();
 
                 Mutation m = new Mutation(value.getKey().getRow());
-                m.at().family(valueKey.getColumnFamilyData().getBackingArray())
-                        .qualifier(valueKey.getColumnQualifierData().getBackingArray())
-                        .visibility(valueKey.getColumnVisibilityData().getBackingArray())
-                        .timestamp(valueKey.getTimestamp()).put(value.getValue());
+                m.at().family(valueKey.getColumnFamilyData().getBackingArray()).qualifier(valueKey.getColumnQualifierData().getBackingArray())
+                                .visibility(valueKey.getColumnVisibilityData().getBackingArray()).timestamp(valueKey.getTimestamp()).put(value.getValue());
                 writer.addMutation(m);
                 count++;
             }
