@@ -104,7 +104,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     log.trace("Did not aggregate any counts for [" + term + "][" + field + "][" + type + "][" + date + "]. Returning null.");
                 return null;
             } else {
-                byte [] expression;
+                byte[] expression;
                 try {
 
                     expression = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities).getExpression();
