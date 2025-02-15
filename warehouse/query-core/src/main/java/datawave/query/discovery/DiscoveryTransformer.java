@@ -5,12 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.Maps;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.util.BadArgumentException;
 import org.apache.hadoop.io.Writable;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
