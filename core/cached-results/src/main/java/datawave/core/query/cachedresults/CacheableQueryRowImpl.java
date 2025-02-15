@@ -1,5 +1,7 @@
 package datawave.core.query.cachedresults;
 
+import static datawave.marking.MarkingFunctions.Default.COLUMN_VISIBILITY;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,10 +13,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.util.BadArgumentException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -59,25 +63,26 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
             if (this.markings.isEmpty()) {
                 // validate the markings
                 try {
-                    markingFunctions.translateToColumnVisibility(markings);
+                    new ColumnVisibility(markings.get(COLUMN_VISIBILITY));
                     if (this.markings.isEmpty()) {
                         // markings were empty, so use the one passed in.
                         this.markings = markings;
                     }
-                } catch (MarkingFunctions.Exception e) {
+                } catch (BadArgumentException e) {
                     log.error("Invalid markings {} skipping column {} = {}", markings, columnName, columnTypedValue, e);
                     return;
                 }
             } else {
                 try {
-                    Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-                    columnVisibilities.add(markingFunctions.translateToColumnVisibility(this.markings));
-                    columnVisibilities.add(markingFunctions.translateToColumnVisibility(markings));
-                    ColumnVisibility combinedVisibility = markingFunctions.combine(columnVisibilities);
+                    ColumnVisibility combinedVisibility = new ColumnVisibility(
+                                    "(" + this.markings.get(COLUMN_VISIBILITY) + ")&(" + markings.get(COLUMN_VISIBILITY) + ")");
+                    ColumnVisibility flattenedVisibility = new ColumnVisibility(combinedVisibility.flatten());
 
                     // use combined marking as new markings
-                    this.markings = markingFunctions.translateFromColumnVisibility(combinedVisibility);
-                } catch (MarkingFunctions.Exception e) {
+                    Map<String,String> newMarkings = Maps.newHashMap();
+                    newMarkings.put(COLUMN_VISIBILITY, new String(flattenedVisibility.getExpression(), Charsets.UTF_8));
+                    this.markings = newMarkings;
+                } catch (BadArgumentException e) {
                     log.error("Invalid markings {} skipping column {} = {}", markings, columnName, columnTypedValue, e);
                     return;
                 }
