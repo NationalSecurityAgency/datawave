@@ -388,6 +388,8 @@
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
         <property name="disableIteratorUniqueFields" value="false"/>
+        <property name="useDocumentScheduler" value="true"/>
+        <property name="documentScannerConfig" ref="DocumentScannerConfig"/>
         <property name="validationRules">
             <list value-type="datawave.query.rules.QueryRule">
                 <ref bean="InvalidQuoteRule"/>
@@ -505,6 +507,16 @@
         <property name="validateJunctions" value="true"/>
         <property name="validateReferenceExpressions" value="true"/>
         <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
+
+    <bean id="DocumentScannerConfig" scope="prototype" class="datawave.next.scanner.DocumentScannerConfig">
+        <!-- configure queue capacities, thread pool sizes, and max tasks per thread pool-->
+        <property name="docIdQueueCapacity" value="3"/>
+        <property name="resultQueueCapacity" value="3"/>
+        <property name="maxDocIdThreads" value="5"/>
+        <property name="maxDocumentThreads" value="5"/>
+        <property name="maxDocIdTasks" value="7"/>
+        <property name="maxDocumentTasks" value="7"/>
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

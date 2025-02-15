@@ -1,0 +1,170 @@
+package datawave.next;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.lang3.LongRange;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import datawave.query.jexl.JexlNodeFactory;
+
+public class DocIdIteratorTest extends FieldIndexDataTestUtil {
+
+    private String field;
+    private String value;
+
+    @BeforeEach
+    public void setup() {
+        field = null;
+        value = null;
+        clearState();
+    }
+
+    @Test
+    public void testSimpleScan() {
+        writeData("FIELD_A", "value-a", 10);
+        withFieldValue("FIELD_A", "value-a");
+        drive();
+        assertResultSize(10);
+        assertEquals(10, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+    }
+
+    @Test
+    public void testScanWithNoBackingData() {
+        writeData("FIELD_A", "value-b", 10);
+        withFieldValue("FIELD_A", "value-a");
+        drive();
+        assertResultSize(0);
+        assertEquals(0, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+    }
+
+    @Test
+    public void testScanWithDataTypeFilter() {
+        // a:2, b:3, c:4
+        writeIndex("FIELD_A", "value-a", "datatype-a", 1);
+        writeIndex("FIELD_A", "value-a", "datatype-a", 2);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 3);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 4);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 5);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 6);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 7);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 8);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 9);
+        withFieldValue("FIELD_A", "value-a");
+
+        // no filter, should hit every key
+        drive();
+        assertResultSize(9);
+        assertEquals(9, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        // filter on single datatype
+        withDataTypes("datatype-a");
+        drive();
+        assertResultSize(2);
+        assertEquals(2, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        withDataTypes("datatype-b");
+        drive();
+        assertResultSize(3);
+        assertEquals(3, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        withDataTypes("datatype-c");
+        drive();
+        assertResultSize(4);
+        assertEquals(4, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        // filter with two datatypes
+        withDataTypes("datatype-a", "datatype-b");
+        drive();
+        assertResultSize(5);
+        assertEquals(5, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        withDataTypes("datatype-a", "datatype-c");
+        drive();
+        assertResultSize(6);
+        assertEquals(6, stats.getNextCount());
+        assertEquals(2, stats.getSeekCount());
+        assertEquals(1, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        withDataTypes("datatype-b", "datatype-c");
+        drive();
+        assertResultSize(7);
+        assertEquals(7, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+
+        // filter with all datatypes
+        withDataTypes("datatype-a", "datatype-b", "datatype-c");
+        drive();
+        assertResultSize(9);
+        assertEquals(9, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+    }
+
+    @Test
+    public void testScanWithTimeFilter() {
+        writeData("FIELD_A", "value-a", 10);
+        withFieldValue("FIELD_A", "value-a");
+        // all keys written at timestamp 10, this will filter out all keys in the range
+        withTimeFilter(LongRange.of(5, 7));
+        drive();
+        assertResultSize(0);
+        assertEquals(10, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(10, stats.getTimeFilterMiss());
+    }
+
+    @Test
+    public void testScanWithNumericField() {
+        writeData("FIELD_12", "14", 10);
+        withFieldValue("FIELD_12", "14");
+        drive();
+        assertResultSize(10);
+        assertEquals(10, stats.getNextCount());
+        assertEquals(1, stats.getSeekCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+        assertEquals(0, stats.getTimeFilterMiss());
+    }
+
+    public void withFieldValue(String field, String value) {
+        this.field = field;
+        this.value = value;
+    }
+
+    @Override
+    protected DocIdIterator createIterator() {
+        SortedKeyValueIterator<Key,Value> source = createSource();
+        JexlNode node = JexlNodeFactory.buildEQNode(field, value);
+        return new DocIdIterator(source, row, node);
+    }
+}

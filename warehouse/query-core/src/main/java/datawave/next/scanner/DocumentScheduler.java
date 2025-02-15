@@ -1,0 +1,104 @@
+package datawave.next.scanner;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.configuration.Result;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.next.async.ContextThreadFactory;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.scheduler.PushdownScheduler;
+import datawave.query.scheduler.Scheduler;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.async.event.VisitorFunction;
+import datawave.query.tables.stats.ScanSessionStats;
+import datawave.security.util.AuthorizationsMinimizer;
+
+/**
+ * An alternate to the {@link PushdownScheduler} that splits query execution into two stages, finding documents and aggregating documents.
+ * <p>
+ * Separate executor pools are used to scan the field index and scan the event column.
+ */
+public class DocumentScheduler extends Scheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentScheduler.class);
+
+    private final Iterator<QueryData> queryDataIterator;
+
+    private final DocumentScannerConfig config;
+    private DocumentScanner scanner;
+    private VisitorFunction visitorFunction;
+
+    public DocumentScheduler(ShardQueryConfiguration config) {
+        this.config = config.getDocumentScannerConfig();
+        this.config.setClient(config.getClient());
+        this.config.setAuthorizations(AuthorizationsMinimizer.minimize(config.getAuthorizations()).iterator().next());
+
+        this.queryDataIterator = config.getQueriesIter();
+    }
+
+    public void setVisitorFunction(VisitorFunction visitorFunction) {
+        this.visitorFunction = visitorFunction;
+    }
+
+    @Override
+    public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public ScanSessionStats getSchedulerStats() {
+        return null;
+    }
+
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        return List.of();
+    }
+
+    @Override
+    public Iterator<Result> iterator() {
+        if (scanner == null) {
+            // initialize some objects in the config object
+            config.setResults(new ArrayBlockingQueue<>(config.getResultQueueCapacity()));
+            config.setDocIdQueue(new ArrayBlockingQueue<>(config.getDocIdQueueCapacity()));
+
+            config.setRecordIdFactory(new ContextThreadFactory("fi scan"));
+            config.setDocumentIdFactory(new ContextThreadFactory("doc scan"));
+
+            config.setDocIdExecutorPool(new ThreadPoolExecutor(0, config.getMaxDocIdThreads(), 15, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
+                            config.getRecordIdFactory()));
+            config.setDocumentExecutorPool(new ThreadPoolExecutor(0, config.getMaxDocumentThreads(), 15, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
+                            config.getDocumentIdFactory()));
+            config.getQueryDataConsumerExecuting().set(true);
+            config.getDocumentIdConsumerExecuting().set(true);
+
+            scanner = new DocumentScanner(config, queryDataIterator);
+            scanner.setVisitorFunction(visitorFunction);
+        }
+        return scanner;
+    }
+
+    @Override
+    public void close() throws IOException {
+        scanner.close();
+
+        logSchedulerStats();
+    }
+
+    private void logSchedulerStats() {
+        log.info("{}", config.getStats().logStats());
+    }
+}
