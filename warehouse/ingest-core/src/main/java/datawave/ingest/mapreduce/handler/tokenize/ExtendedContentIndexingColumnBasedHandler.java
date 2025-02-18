@@ -424,7 +424,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             boolean properLen = term.length() >= tokenHelper.getTermLengthMinimum();
             // Add the current term and emit the phrase if the current term isn't empty
             if (properLen) {
-                baseTerm.append(SPACE).append(term);
+                baseTerm.append(' ').append(term);
 
                 counters.increment(ContentIndexCounters.PHRASES_PROCESSED_COUNTER, reporter);
 

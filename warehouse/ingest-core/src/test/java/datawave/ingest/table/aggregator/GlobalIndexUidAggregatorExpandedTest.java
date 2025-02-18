@@ -1285,7 +1285,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         for (String expectedUid : expectation.getUIDList()) {
             assertTrue("UID list missing " + expectedUid + " - " + label, result.getUIDList().contains(expectedUid));
         }
-        assertEquals("UID count differs - " + label + " " + result.getUIDList(), expectation.getCOUNT(), result.getCOUNT());
+        assertEquals("UID count differs - " + label + ' ' + result.getUIDList(), expectation.getCOUNT(), result.getCOUNT());
         assertEquals("UID list size differs - " + label, expectation.getUIDList().size(), result.getUIDList().size());
         // The count and UID List sizes should match unless seenIgnore = true
         if (!expectation.getIGNORE()) {

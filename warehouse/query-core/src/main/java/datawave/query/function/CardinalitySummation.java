@@ -69,7 +69,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                 for (Attribute<?> myAttribute : attrs.getAttributes()) {
 
                     if (log.isTraceEnabled())
-                        log.trace("Attributes for " + attr.getKey() + " " + attributes.iterator().hasNext());
+                        log.trace("Attributes for " + attr.getKey() + ' ' + attributes.iterator().hasNext());
 
                     if (!attributes.isEmpty()) {
                         boolean foundAmongOthers = false;

@@ -62,7 +62,7 @@ public class RfileResource extends BatchResource {
         this.auths = Sets.newHashSet(auths);
 
         if (log.isTraceEnabled())
-            log.trace("Creating scanner resource from " + tableName + " " + auths + " " + currentRange);
+            log.trace("Creating scanner resource from " + tableName + ' ' + auths + ' ' + currentRange);
 
         internalTimer = new StopWatch();
         internalTimer.start();
@@ -124,10 +124,10 @@ public class RfileResource extends BatchResource {
     public String toString() {
 
         //@formatter:off
-        String builder = "RFileScanner" + " " +
-                "tableName=" + tableName + " " +
-                "auths=" + auths + " " +
-                "ranges=" + ranges + " ";
+        String builder = "RFileScanner" + ' ' +
+                "tableName=" + tableName + ' ' +
+                "auths=" + auths + ' ' +
+                "ranges=" + ranges + ' ';
         //@formatter:on
         return builder;
 

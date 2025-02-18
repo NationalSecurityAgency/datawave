@@ -1373,7 +1373,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
                         // append timestamp
                         tmpDate.get().setTime(entry.getKey().getTimestamp());
-                        sb.append(" ").append(formatter.get().format(tmpDate.get()));
+                        sb.append(' ').append(formatter.get().format(tmpDate.get()));
 
                         // append value
                         if (currentV != null && currentV.getSize() > 0) {

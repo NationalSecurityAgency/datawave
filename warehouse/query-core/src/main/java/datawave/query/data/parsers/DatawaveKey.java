@@ -344,7 +344,7 @@ public class DatawaveKey {
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(fieldName).append(" ").append(fieldValue).append(" ");
+        builder.append(fieldName).append(' ').append(fieldValue).append(' ');
         return builder.toString();
     }
 }

@@ -556,7 +556,7 @@ public class MapReduceJobConfiguration {
                 Map<String,String> valueMap = (Map<String,String>) object;
                 for (Map.Entry<String,String> valueEntry : valueMap.entrySet()) {
                     if (sb.length() > 0) {
-                        sb.append(" ");
+                        sb.append(' ');
                     }
                     if (StringUtils.isBlank(valueEntry.getValue())) {
                         sb.append(valueEntry.getKey());
