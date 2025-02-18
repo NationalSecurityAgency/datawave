@@ -3,6 +3,7 @@ package datawave.security.user;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -133,7 +134,20 @@ public class UserOperationsBean implements UserOperations {
                 for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
-                        datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, remotePrincipal);
+                        Set<DatawaveUser> reducedRemoteProxiedUsers = new HashSet<>();
+
+                        for(DatawaveUser user : remotePrincipal.getProxiedUsers()) {
+                            if(datawavePrincipal.getProxiedUsers().contains(user)) {
+                                reducedRemoteProxiedUsers.add(user);
+                            }
+                            else {
+                                log.debug("{} was a remote only user and has been removed", user.toString());
+                            }
+                        }
+
+                        DatawavePrincipal reducedRemotePrincipal = new DatawavePrincipal(reducedRemoteProxiedUsers);
+
+                        datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, reducedRemotePrincipal);
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
                         list.addMessage("Failed to lookup user from remote service: " + e.getMessage());
