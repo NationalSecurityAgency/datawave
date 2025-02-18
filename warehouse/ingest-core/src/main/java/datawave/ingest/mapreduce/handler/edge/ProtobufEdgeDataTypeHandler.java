@@ -354,7 +354,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         StringBuffer sb = new StringBuffer();
         sb.append("Data Types With Defined Edges: ");
         for (String t : edges.keySet()) {
-            sb.append(t).append(" ");
+            sb.append(t).append(' ');
         }
         log.info(sb.toString());
         log.info("ProtobufEdgeDataTypeHandler configured.");
