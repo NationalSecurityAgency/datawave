@@ -58,7 +58,7 @@ public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldI
             ByteSequence thisId = parseDatatypeUidFromFI(key.getColumnQualifierData());
             if (docId == null || !docId.equals(thisId)) {
                 docId = thisId;
-                Key docKey = new Key(key.getRow(), new Text(docId.toArray()), new Text(), ColumnVisibilityCache.get(key.getColumnVisibilityData()),
+                Key docKey = new Key(key.getRow(), new Text(docId.toArray()), new Text(), ColumnVisibilityCache.validate(key),
                                 key.getTimestamp());
                 attr = new DocumentKey(docKey, false);
                 d.put(Document.DOCKEY_FIELD_NAME, attr);

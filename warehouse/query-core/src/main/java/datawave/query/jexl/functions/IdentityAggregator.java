@@ -119,7 +119,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
             nextKey = (itr.hasTop() ? itr.getTopKey() : null);
         }
 
-        Key docKey = new Key(row, new Text(pointer.toArray()), new Text(), ColumnVisibilityCache.get(key.getColumnVisibilityData()), key.getTimestamp());
+        Key docKey = new Key(row, new Text(pointer.toArray()), new Text(), ColumnVisibilityCache.validate(key), key.getTimestamp());
         Attribute<?> attr = new DocumentKey(docKey, false);
         doc.put(Document.DOCKEY_FIELD_NAME, attr);
 
