@@ -239,7 +239,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                         // safety check...
                         Preconditions.checkState(field.equals(literalRange.getFieldName()),
-                                        "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
+                                        "Got an unexpected field name when expanding range" + field + ' ' + literalRange.getFieldName());
 
                         // obtaining the size of a map can be expensive,
                         // instead

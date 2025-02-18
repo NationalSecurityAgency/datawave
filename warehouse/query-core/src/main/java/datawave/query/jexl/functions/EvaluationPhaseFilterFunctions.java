@@ -126,7 +126,7 @@ public class EvaluationPhaseFilterFunctions {
     private static boolean compareSizeToCount(Object obj, String operatorString, int count) {
         int size = getSizeOf(obj);
         if (log.isDebugEnabled()) {
-            log.debug("evaluate(" + obj + ", size=" + size + " " + operatorString + ", " + count + ")");
+            log.debug("evaluate(" + obj + ", size=" + size + ' ' + operatorString + ", " + count + ")");
         }
         return OperationEvaluator.compare(size, count, operatorString);
     }
@@ -1440,7 +1440,7 @@ public class EvaluationPhaseFilterFunctions {
                     matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
                 }
             } catch (ParseException e) {
-                log.warn("could not evaluate:" + time1 + " " + operatorString + " " + time2 + " " + equalityString + " " + goal);
+                log.warn("could not evaluate:" + time1 + ' ' + operatorString + ' ' + time2 + ' ' + equalityString + ' ' + goal);
             }
         }
         return FunctionalSet.unmodifiableSet(matches);

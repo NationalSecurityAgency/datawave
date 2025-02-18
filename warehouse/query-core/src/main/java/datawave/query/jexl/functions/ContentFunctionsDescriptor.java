@@ -610,7 +610,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 if (child instanceof ASTStringLiteral) {
                     sb.append(((ASTStringLiteral) child).getLiteral());
                     if (iter.hasNext()) {
-                        sb.append(" ");
+                        sb.append(' ');
                     }
                 }
             }
