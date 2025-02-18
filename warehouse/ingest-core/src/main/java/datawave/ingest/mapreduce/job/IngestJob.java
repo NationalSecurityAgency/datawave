@@ -75,6 +75,7 @@ import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.jute.compiler.JString;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -151,6 +152,7 @@ public class IngestJob implements Tool {
     protected String flagFileDir = null;
     protected String flagFilePattern = null;
     protected String cacheBaseDir = "/data/BulkIngest/jobCache";
+    protected URI cacheFile = null;
     protected float markerFileReducePercentage = 0.33f;
     protected boolean markerFileFIFO = true;
     protected boolean generateMarkerFile = true;
@@ -224,6 +226,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-splitsCacheDir /path/to/directory]");
         System.out.println("                     [-accumuloConfigCachePath /path/to/file]");
         System.out.println("                     [-cacheBaseDir baseDir] [-cacheJars jar,jar,...]");
+        System.out.println("                     [-cacheFileURI /path/to/file]");
         System.out.println("                     [-multipleNumShardsCacheDir /path/to/directory]");
         System.out.println("                     [-skipMarkerFileGeneration] [-markerFileLIFO]");
         System.out.println("                     [-markerFileReducePercentage float_in_0_to_1]");
@@ -364,6 +367,7 @@ public class IngestJob implements Tool {
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
         log.info("Split File: " + conf.get(TableSplitsCache.SPLITS_CACHE_DIR) + "/"
                         + conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
+        log.info("Cache File: " + cacheFile.getPath());
 
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
@@ -698,6 +702,9 @@ public class IngestJob implements Tool {
                 markerFileFIFO = false;
             } else if (args[i].equals("-cacheBaseDir")) {
                 cacheBaseDir = args[++i];
+            } else if (args[i].equalsIgnoreCase("-cacheFileURI")) {
+                cacheFile = new URI(args[++i]);
+
             } else if (args[i].equals("-cacheJars")) {
                 String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].replaceAll("\\s+", "").split(","));
                 for (String jarString : jars) {
@@ -878,6 +885,9 @@ public class IngestJob implements Tool {
         // create a job name
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss.SSS");
         job.setJobName(IngestJob.class.getSimpleName() + "_" + format.format(new Date()));
+
+        if (cacheFile != null)
+            job.addCacheFile(cacheFile);
 
         // if doing this as a bulk job, create the job.paths file and the flag file if supplied
         if (!outputMutations) {
