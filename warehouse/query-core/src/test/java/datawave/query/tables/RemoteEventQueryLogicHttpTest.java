@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -86,14 +87,14 @@ public class RemoteEventQueryLogicHttpTest {
 
     private void setContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
-        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        InputStreamReader reader = new InputStreamReader(content, StandardCharsets.UTF_8);
         char[] buffer = new char[1024];
         int chars = reader.read(buffer);
         while (chars >= 0) {
             builder.append(buffer, 0, chars);
             chars = reader.read(buffer);
         }
-        List<NameValuePair> data = URLEncodedUtils.parse(builder.toString(), Charset.forName("UTF-8"));
+        List<NameValuePair> data = URLEncodedUtils.parse(builder.toString(), StandardCharsets.UTF_8);
         for (NameValuePair pair : data) {
             if (pair.getName().equals(QueryParameters.QUERY_STRING)) {
                 this.content = pair.getValue();

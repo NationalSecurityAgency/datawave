@@ -12,6 +12,7 @@ import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -248,7 +249,8 @@ public class CompositeIndexTest {
                 record.setRawFileName("geodata_" + recNum + ".dat");
                 record.setRawRecordNumber(recNum++);
                 record.setDate(formatter.parse(beginDate).getTime() + dates[i]);
-                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : "")).getBytes("UTF8"));
+                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : ""))
+                                .getBytes(StandardCharsets.UTF_8));
                 record.generateId(null);
                 record.setVisibility(new ColumnVisibility(AUTHS));
 

@@ -7,6 +7,7 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -372,7 +373,7 @@ public abstract class RemoteHttpService {
 
     public String getContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
-        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        InputStreamReader reader = new InputStreamReader(content, StandardCharsets.UTF_8);
         char[] buffer = new char[1024];
         int chars = reader.read(buffer);
         while (chars >= 0) {
