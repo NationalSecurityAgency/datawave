@@ -136,11 +136,10 @@ public class UserOperationsBean implements UserOperations {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
                         Set<DatawaveUser> reducedRemoteProxiedUsers = new HashSet<>();
 
-                        for(DatawaveUser user : remotePrincipal.getProxiedUsers()) {
-                            if(datawavePrincipal.getProxiedUsers().contains(user)) {
+                        for (DatawaveUser user : remotePrincipal.getProxiedUsers()) {
+                            if (datawavePrincipal.getProxiedUsers().contains(user)) {
                                 reducedRemoteProxiedUsers.add(user);
-                            }
-                            else {
+                            } else {
                                 log.debug("{} was a remote only user and has been removed", user.toString());
                             }
                         }
