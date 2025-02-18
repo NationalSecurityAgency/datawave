@@ -756,7 +756,7 @@ public class FieldIndexIntegrationTest {
      */
     private void assertTopKeyForField(String field, Key key) {
 
-        String searchKey = key.getRow().toString() + " " + key.getColumnFamily().toString() + " " + key.getColumnQualifier().toString();
+        String searchKey = key.getRow().toString() + ' ' + key.getColumnFamily().toString() + ' ' + key.getColumnQualifier().toString();
 
         boolean found = expectedTopKeys.get(field).contains(searchKey);
         if (!found) {

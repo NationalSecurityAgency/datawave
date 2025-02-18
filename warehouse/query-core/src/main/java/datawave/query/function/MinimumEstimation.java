@@ -60,7 +60,7 @@ public class MinimumEstimation implements Function<Entry<Key,Document>,Entry<Key
                     for (Attribute<?> myAttribute : attrs.getAttributes()) {
 
                         if (log.isTraceEnabled())
-                            log.trace("Attributes for " + attr.getKey() + " " + attributes.iterator().hasNext());
+                            log.trace("Attributes for " + attr.getKey() + ' ' + attributes.iterator().hasNext());
 
                         if (myAttribute instanceof Cardinality) {
 

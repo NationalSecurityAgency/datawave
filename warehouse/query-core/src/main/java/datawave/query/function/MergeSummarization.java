@@ -25,10 +25,10 @@ public class MergeSummarization extends CardinalitySummation {
         try {
 
             if (log.isTraceEnabled())
-                log.trace(originalCardinality.getData() + " Before merge " + originalCardinality.getContent().getEstimate().cardinality() + " " + keyParser);
+                log.trace(originalCardinality.getData() + " Before merge " + originalCardinality.getContent().getEstimate().cardinality() + ' ' + keyParser);
             originalCardinality.getContent().merge(cardinalityToMerge.getContent());
             if (log.isTraceEnabled())
-                log.trace(keyParser.getFieldName() + " After merge " + originalCardinality.getContent().getEstimate().cardinality() + " " + keyParser);
+                log.trace(keyParser.getFieldName() + " After merge " + originalCardinality.getContent().getEstimate().cardinality() + ' ' + keyParser);
         } catch (CardinalityMergeException e) {
             throw new RuntimeException(e);
         }

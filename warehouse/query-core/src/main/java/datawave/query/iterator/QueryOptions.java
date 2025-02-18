@@ -2037,7 +2037,7 @@ public class QueryOptions implements OptionDescriber {
                     mapping.put(entrySplits[0], dataTypes);
 
                     if (log.isTraceEnabled()) {
-                        log.trace("Adding " + entrySplits[0] + " " + dataTypes);
+                        log.trace("Adding " + entrySplits[0] + ' ' + dataTypes);
                     }
                 }
             }
@@ -2059,7 +2059,7 @@ public class QueryOptions implements OptionDescriber {
                     keys.add(entrySplits[0]);
 
                     if (log.isTraceEnabled()) {
-                        log.trace("Adding " + entrySplits[0] + " " + keys);
+                        log.trace("Adding " + entrySplits[0] + ' ' + keys);
                     }
                 }
             }

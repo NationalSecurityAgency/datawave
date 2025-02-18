@@ -82,7 +82,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                                     merge(card, otherCard, parser, merge);
 
                                     if (log.isTraceEnabled())
-                                        log.trace("Offering to " + attr.getKey() + " value " + card.getContent().getFloorValue() + " "
+                                        log.trace("Offering to " + attr.getKey() + " value " + card.getContent().getFloorValue() + ' '
                                                         + card.getContent().getCeilingValue());
                                     foundAmongOthers = true;
                                     break;
@@ -93,7 +93,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
 
                         if (!foundAmongOthers) {
                             if (log.isTraceEnabled())
-                                log.trace("put attributes " + attr.getKey() + " " + myAttribute.getData());
+                                log.trace("put attributes " + attr.getKey() + ' ' + myAttribute.getData());
                             tmpMap.put(attr.getKey(), myAttribute);
                         }
 
@@ -101,14 +101,14 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
 
                     } else {
                         if (log.isTraceEnabled())
-                            log.trace("adding attributes " + attr.getKey() + " " + myAttribute.getData());
+                            log.trace("adding attributes " + attr.getKey() + ' ' + myAttribute.getData());
                         newDocumentAttributes.put(attr.getKey(), myAttribute);
                     }
 
                 }
             } else {
                 if (log.isTraceEnabled())
-                    log.trace("Testing " + attr.getKey() + " " + attr.getValue().getData());
+                    log.trace("Testing " + attr.getKey() + ' ' + attr.getValue().getData());
                 NavigableSet<Attribute<? extends Comparable<?>>> attributes = newDocumentAttributes.get(attr.getKey());
                 Attribute<?> attribute = attributes.floor(attr.getValue());
 
@@ -116,7 +116,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                 for (Attribute<?> thoseAttributes : attributes) {
                     if (thoseAttributes.equals(attr.getValue())) {
                         if (log.isTraceEnabled())
-                            log.trace("found for " + attr.getKey() + " " + thoseAttributes.getData());
+                            log.trace("found for " + attr.getKey() + ' ' + thoseAttributes.getData());
                         Cardinality card = (Cardinality) thoseAttributes;
                         Cardinality otherCard = (Cardinality) attr.getValue();
 
@@ -132,7 +132,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                 if (!found) {
 
                     if (log.isTraceEnabled())
-                        log.trace("Don't have " + attr.getKey() + " " + attr.getValue().getData());
+                        log.trace("Don't have " + attr.getKey() + ' ' + attr.getValue().getData());
                     newDocumentAttributes.put(attr.getKey(), attr.getValue());
                 }
 
@@ -178,7 +178,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                     for (Attribute<?> myAttribute : attrs.getAttributes()) {
 
                         if (log.isTraceEnabled())
-                            log.trace("Attributes for " + attr.getKey() + " " + attributes.iterator().hasNext());
+                            log.trace("Attributes for " + attr.getKey() + ' ' + attributes.iterator().hasNext());
 
                         if (!attributes.isEmpty()) {
                             boolean foundAmongOthers = false;
@@ -191,7 +191,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                                         merge(card, otherCard, parser, merge);
 
                                         if (log.isTraceEnabled())
-                                            log.trace("Offering to " + attr.getKey() + " value " + card.getContent().getFloorValue() + " "
+                                            log.trace("Offering to " + attr.getKey() + " value " + card.getContent().getFloorValue() + ' '
                                                             + card.getContent().getCeilingValue());
                                         foundAmongOthers = true;
                                         break;
@@ -202,7 +202,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
 
                             if (!foundAmongOthers) {
                                 if (log.isTraceEnabled())
-                                    log.trace("put attributes " + attr.getKey() + " " + myAttribute.getData());
+                                    log.trace("put attributes " + attr.getKey() + ' ' + myAttribute.getData());
                                 tmpMap.put(attr.getKey(), myAttribute);
                             }
 
@@ -210,14 +210,14 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
 
                         } else {
                             if (log.isTraceEnabled())
-                                log.trace("adding attributes " + attr.getKey() + " " + myAttribute.getData());
+                                log.trace("adding attributes " + attr.getKey() + ' ' + myAttribute.getData());
                             newDocumentAttributes.put(attr.getKey(), myAttribute);
                         }
 
                     }
                 } else {
                     if (log.isTraceEnabled())
-                        log.trace("Testing " + attr.getKey() + " " + attr.getValue().getData());
+                        log.trace("Testing " + attr.getKey() + ' ' + attr.getValue().getData());
                     NavigableSet<Attribute<? extends Comparable<?>>> attributes = newDocumentAttributes.get(attr.getKey());
                     Attribute<?> attribute = attributes.floor(attr.getValue());
 
@@ -225,7 +225,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                     for (Attribute<?> thoseAttributes : attributes) {
                         if (thoseAttributes.equals(attr.getValue())) {
                             if (log.isTraceEnabled())
-                                log.trace("found for " + attr.getKey() + " " + thoseAttributes.getData());
+                                log.trace("found for " + attr.getKey() + ' ' + thoseAttributes.getData());
                             Cardinality card = (Cardinality) thoseAttributes;
                             Cardinality otherCard = (Cardinality) attr.getValue();
 
@@ -241,7 +241,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                     if (!found) {
 
                         if (log.isTraceEnabled())
-                            log.trace("Don't have " + attr.getKey() + " " + attr.getValue().getData());
+                            log.trace("Don't have " + attr.getKey() + ' ' + attr.getValue().getData());
                         newDocumentAttributes.put(attr.getKey(), attr.getValue());
                     }
 

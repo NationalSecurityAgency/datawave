@@ -389,7 +389,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         aggregationStop = System.currentTimeMillis();
 
         if (aggregationThreshold > 0 && (aggregationStop - aggregationStart) > aggregationThreshold) {
-            log.warn("time to aggregate document " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was "
+            log.warn("time to aggregate document " + k.getRow() + ' ' + k.getColumnFamily().toString().replace("\0", "0x00") + " was "
                             + (aggregationStop - aggregationStart));
         }
     }

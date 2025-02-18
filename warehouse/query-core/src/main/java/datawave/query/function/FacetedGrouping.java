@@ -193,7 +193,7 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
                 newCard.setContent(first.getFloorValue());
                 newCard.setCeiling(last.getCeilingValue());
                 if (log.isTraceEnabled())
-                    log.trace("Creating new bucket " + first.getFloorValue() + " " + last.getCeilingValue());
+                    log.trace("Creating new bucket " + first.getFloorValue() + ' ' + last.getCeilingValue());
                 newCardList.add(newCard);
                 if (newCardList.size() + 1 > config.getMaximumFacetGroupCount()) {
                     newCard.setCeiling(Iterables.getLast(fixNewList).getCeilingValue());
