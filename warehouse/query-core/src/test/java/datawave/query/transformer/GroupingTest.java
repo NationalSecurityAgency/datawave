@@ -42,6 +42,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.cache.CacheManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -248,6 +249,10 @@ public abstract class GroupingTest {
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 
     @Inject
+    @SpringBean(name = "metadataHelperCacheManager")
+    private CacheManager cacheManager;
+
+    @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     protected KryoDocumentDeserializer deserializer;
@@ -287,6 +292,9 @@ public abstract class GroupingTest {
         this.deserializer = new KryoDocumentDeserializer();
         this.startDate = format.parse("20091231");
         this.endDate = format.parse("20150101");
+
+        // clear any cache updates from previous tests
+        cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
     }
 
     @After
