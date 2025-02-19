@@ -22,6 +22,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.hadoop.shaded.org.eclipse.jetty.util.log.Log;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -48,8 +50,11 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.lookup.RangeStream;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.planner.DatePartitionedQueryPlanner;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
@@ -674,19 +679,24 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testWithHoles(){
+        //uncomment for full planning logs
+        //log.setLevel(Level.DEBUG);
+        //Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        //Logger.getLogger(RangeStream.class).setLevel(Level.DEBUG);
+
         eventQueryLogic.setQueryPlanner(new DatePartitionedQueryPlanner());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
-        //TODO: why is HOLE not being pushed down with _Hole_ marker?!
+
         String[] queryStrings = {
                 "UUID == 'CORLEONE' AND  HOLE == 'FOO'"
         };
 
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
+        List<String>[] expectedLists = new List[]{Collections.singletonList("CORLEONE")};
         for (int i = 0; i < queryStrings.length; i++) {
             try {
-                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20210103"), format.parse("20210103"), extraParameters);
+                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20130101"), format.parse("20210103"), extraParameters);
             } catch (Throwable t) {
                 log.error(t);
                 Assert.assertTrue(t instanceof DatawaveFatalQueryException);
