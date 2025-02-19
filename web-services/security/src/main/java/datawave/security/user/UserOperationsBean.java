@@ -20,6 +20,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
+import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.slf4j.Logger;
@@ -131,10 +132,11 @@ public class UserOperationsBean implements UserOperations {
 
             // if we have any remote services configured, merge those authorizations in here
             if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteUserOperationsList)) {
+                Set<DatawaveUser> reducedRemoteProxiedUsers = new HashSet<>();
+
                 for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
-                        Set<DatawaveUser> reducedRemoteProxiedUsers = new HashSet<>();
 
                         for (DatawaveUser user : remotePrincipal.getProxiedUsers()) {
                             if (datawavePrincipal.getProxiedUsers().contains(user)) {
@@ -144,14 +146,19 @@ public class UserOperationsBean implements UserOperations {
                             }
                         }
 
-                        DatawavePrincipal reducedRemotePrincipal = new DatawavePrincipal(reducedRemoteProxiedUsers);
-
-                        datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, reducedRemotePrincipal);
+                        for (DatawaveUser user : datawavePrincipal.getProxiedUsers()) {
+                            if(!remotePrincipal.getProxiedUsers().contains(user)) {
+                                throw new QueryException(user.toString() + " was not contained by all remote user operations");
+                            }
+                        }
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
                         list.addMessage("Failed to lookup user from remote service: " + e.getMessage());
                     }
                 }
+
+                DatawavePrincipal reducedRemotePrincipal = new DatawavePrincipal(reducedRemoteProxiedUsers);
+                datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, reducedRemotePrincipal);
             }
 
             // Add the user DN's auths into the authorization list
