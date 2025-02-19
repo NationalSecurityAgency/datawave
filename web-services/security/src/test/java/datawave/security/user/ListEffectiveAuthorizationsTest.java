@@ -2,69 +2,203 @@ package datawave.security.user;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
+import datawave.security.cache.CredentialsCacheBean;
+import datawave.security.system.AuthorizationCache;
 import datawave.user.AuthorizationsListBase;
+import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockSupport;
+import org.jboss.security.CacheableManager;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.concurrent.ConcurrentMapCache;
-import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
+import javax.ejb.EJBContext;
+import javax.enterprise.inject.Instance;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration
-public class ListEffectiveAuthorizationsTest {
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {ListEffectiveAuthorizationsTest.Config.class})
+public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
+    private static ResponseObjectFactory mockResponseObjectFactory;
+    private static EJBContext mockEJBContext;
+    private static CredentialsCacheBean mockCredentialsCache;
+    private static CacheableManager<?,Principal> mockCacheManager;
+    private static Instance<CachedDatawaveUserService> mockCachedDatawaveUserService;
+    private static AccumuloConnectionFactory mockAccumuloConnectionFactory;
+    private static UserOperations mockRemoteUserOperations1;
+
+    @BeforeClass
+    public static void setupStatic() {
+        mockResponseObjectFactory = EasyMock.createMock(ResponseObjectFactory.class);
+        mockEJBContext = EasyMock.createMock(EJBContext.class);
+        mockCredentialsCache = EasyMock.createMock(CredentialsCacheBean.class);
+        mockCacheManager = EasyMock.createMock(CacheableManager.class);
+        mockCachedDatawaveUserService = EasyMock.createMock(Instance.class);
+        mockAccumuloConnectionFactory = EasyMock.createMock(AccumuloConnectionFactory.class);
+        mockRemoteUserOperations1 = EasyMock.createMock(UserOperations.class);
+    }
+
+    @Override
+    public void replayAll() {
+        super.replayAll();
+        EasyMock.replay(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockCacheManager, mockCachedDatawaveUserService, mockAccumuloConnectionFactory, mockRemoteUserOperations1);
+    }
+
+    @Override
+    public void verifyAll() {
+        super.verifyAll();
+        EasyMock.verify(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockCacheManager, mockCachedDatawaveUserService, mockAccumuloConnectionFactory, mockRemoteUserOperations1);
+    }
+
+    @Override
+    public void resetAll() {
+        super.resetAll();
+        EasyMock.reset(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockCacheManager, mockCachedDatawaveUserService, mockAccumuloConnectionFactory, mockRemoteUserOperations1);
+    }
+
+    @After
+    public void cleanup() {
+        resetAll();
+    }
 
     @Configuration
     static class Config {
+        @Bean
+        public UserOperationsBean userOperationsBean() {
+            return new UserOperationsBean();
+        }
+
+        @Bean("RemoteUserOperationsList")
+        public List<UserOperations> RemoteUserOperationsList() {
+            return List.of(mockRemoteUserOperations1);
+        }
+
+        @Bean
+        public EJBContext context() {
+            return mockEJBContext;
+        }
 
         @Bean
         public ResponseObjectFactory responseObjectFactory() {
-            ResponseObjectFactory rof ;
-            return rof;
+            return mockResponseObjectFactory;
+        }
+
+        @Bean
+        public CredentialsCacheBean credentialsCache() {
+            return new StubbedCredentialsCacheBean();
+        }
+
+        @Bean
+        @AuthorizationCache
+        public CacheableManager<?, Principal> authManager() {
+            return mockCacheManager;
+        }
+
+        @Bean
+        public Instance<CachedDatawaveUserService> cachedDatawaveUserService() {
+            return mockCachedDatawaveUserService;
+        }
+
+        @Bean
+        public AccumuloConnectionFactory accumuloConnectionFactory() {
+            return mockAccumuloConnectionFactory;
         }
     }
 
     @Autowired
-    private UserOperationsBean uob = new UserOperationsBean();
+    private UserOperationsBean uob;
+
+    @Before
+    public void validateAutowire() {
+        assertNotNull(uob);
+    }
 
     @Test
-    public void reduceRemoteProxiedUsersTest () {
-        MockitoAnnotations.initMocks(this);
-
+    public void listEffectiveAuthorizationsRemoteTest() throws AuthorizationException {
         SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDN", "issuerDN");
         SubjectIssuerDNPair p1dn = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
+        SubjectIssuerDNPair p2dn = SubjectIssuerDNPair.of("entity2UserDN", "entity2IssuerDN");
 
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
         DatawaveUser p1 = new DatawaveUser(p1dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
-
         DatawavePrincipal proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1));
 
-        Mockito.when(responseObjectFactory.getAuthorizationsList()).thenReturn(Mockito.mock(AuthorizationsListBase.class));
+        DatawaveUser p2 = new DatawaveUser(p2dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("X", "Y", "Z"), null, null, System.currentTimeMillis());
+        DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
 
-        uob.listEffectiveAuthorizations(proxiedUserPrincipal);
-        // UserOperations
-        // UserOperationsBean
-        // Need to mock getRemoteUser call of UserOperations
-        // create local principal
+        expect(mockResponseObjectFactory.getAuthorizationsList()).andReturn(new DefaultAuthorizationsList());
+        expect(mockRemoteUserOperations1.getRemoteUser(proxiedUserPrincipal)).andReturn(remoteUserPrincipal);
 
-        // userOperationsBean.listEffectiveAuthorizations
+        replayAll();
 
-        // check that remote only proxied users were removed
+        AuthorizationsListBase result = uob.listEffectiveAuthorizations(proxiedUserPrincipal);
+
+        verifyAll();
+
+        Set<String> expectedUsers = new HashSet<>();
+        expectedUsers.add(userDN.subjectDN());
+        expectedUsers.add(p1dn.subjectDN());
+
+        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair, Set<String>> authMap = result.getAuths();
+        for (AuthorizationsListBase.SubjectIssuerDNPair pair : authMap.keySet()) {
+            assertTrue(expectedUsers.remove(pair.subjectDN));
+        }
+        assertTrue(expectedUsers.isEmpty());
     }
+
+    private static class StubbedCredentialsCacheBean extends CredentialsCacheBean {
+        @Override
+        protected void postConstruct() {
+            // no-op to avoid unmockable expectation
+        }
+    }
+
+//    @Test
+//    public void reduceRemoteProxiedUsersTest () {
+//        MockitoAnnotations.initMocks(this);
+//
+//        SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDN", "issuerDN");
+//        SubjectIssuerDNPair p1dn = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
+//
+//        DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
+//        DatawaveUser p1 = new DatawaveUser(p1dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
+//
+//        DatawavePrincipal proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1));
+//
+//        Mockito.when(responseObjectFactory.getAuthorizationsList()).thenReturn(Mockito.mock(AuthorizationsListBase.class));
+//
+//        uob.listEffectiveAuthorizations(proxiedUserPrincipal);
+//        // UserOperations
+//        // UserOperationsBean
+//        // Need to mock getRemoteUser call of UserOperations
+//        // create local principal
+//
+//        // userOperationsBean.listEffectiveAuthorizations
+//
+//        // check that remote only proxied users were removed
+//    }
 }

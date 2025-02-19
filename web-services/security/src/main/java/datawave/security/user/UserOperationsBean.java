@@ -40,6 +40,7 @@ import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Path("/Security/User")
 @LocalBean
@@ -61,7 +62,7 @@ public class UserOperationsBean implements UserOperations {
     private ResponseObjectFactory responseObjectFactory;
 
     @Inject
-    @SpringBean(name = "RemoteUserOperationsList")
+    @Qualifier(value = "RemoteUserOperationsList")
     private List<UserOperations> remoteUserOperationsList;
 
     /**
