@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -50,7 +49,6 @@ import datawave.query.tables.ScannerFactory;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
 
 public class ContentQueryLogicTest {
     private ContentQueryLogic contentQueryLogic;
