@@ -264,7 +264,7 @@ public class ContentFunctions {
                 }
             } else {
                 String z = ValueTuple.getFieldName(zone);
-                String[] parts = StringUtils.split(z, '|');
+                String[] parts = z.split("\\|");
                 fields.addAll(Arrays.asList(parts));
             }
         }

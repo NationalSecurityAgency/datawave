@@ -208,7 +208,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     // we actually don't need the name
     public Map<String,String> produceStringStringMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] pairs = StringUtils.split(propertyValue, "|");
+        String[] pairs = propertyValue.split("\\|");
 
         Map<String,String> map = new LinkedHashMap<>();
         if (pairs != null) {

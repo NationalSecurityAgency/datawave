@@ -28,7 +28,7 @@ public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProd
     // we actually don't need the name
     public Map<String,AuditType> produceStringAuditTypeMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] pairs = StringUtils.split(propertyValue, "|");
+        String[] pairs = propertyValue.split("\\|");
 
         Map<String,AuditType> map = new LinkedHashMap<>();
         if (pairs != null) {

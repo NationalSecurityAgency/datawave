@@ -24,7 +24,7 @@ public class ConnectionPoolClientConfiguration extends ConnectionPoolClientPrope
         String prefix = "dw." + poolName + ".client";
         for (Map.Entry<String,String> property : ConfigResolver.getAllProperties().entrySet()) {
             if (property.getKey().startsWith(prefix)) {
-                String[] tableAndHint = StringUtils.split(property.getKey().substring(prefix.length()), '.');
+                String[] tableAndHint = property.getKey().substring(prefix.length()).split("\\.");
                 if (tableAndHint.length == 2) {
                     if (tableAndHint[1].equals("consistency")) {
                         config.setConsistency(tableAndHint[0], ScannerBase.ConsistencyLevel.valueOf(property.getValue()));

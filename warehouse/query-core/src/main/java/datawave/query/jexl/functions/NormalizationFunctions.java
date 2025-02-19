@@ -32,7 +32,7 @@ public class NormalizationFunctions {
 
             // zero padd temp and return with the .* on the end
 
-            String[] octets = StringUtils.split(temp, ".");
+            String[] octets = temp.split("\\.");
             for (int i = 0; i < octets.length; i++) {
                 int oct = Integer.parseInt(octets[i]);
                 octets[i] = String.format("%03d", oct);
