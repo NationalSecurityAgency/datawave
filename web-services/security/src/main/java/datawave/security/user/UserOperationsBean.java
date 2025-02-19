@@ -1,6 +1,8 @@
 package datawave.security.user;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -132,28 +134,32 @@ public class UserOperationsBean implements UserOperations {
 
             // if we have any remote services configured, merge those authorizations in here
             if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteUserOperationsList)) {
-                Set<DatawaveUser> reducedRemoteProxiedUsers = new HashSet<>();
+                Set<String> localDns = new HashSet<>(Arrays.asList(datawavePrincipal.getDNs()));
+                log.debug("Verifying remote principals cover {}", localDns);
+                List<DatawaveUser> reducedRemoteProxiedUsers = new ArrayList<>();
 
                 for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
 
+                        Set<String> remoteDns = new HashSet<>(Arrays.asList(remotePrincipal.getDNs()));
+                        log.debug("Checking remote principal list {}", remoteDns);
+                        if (!remoteDns.containsAll(localDns)) {
+                            log.error(localDns + " was not contained by " + remoteDns);
+                            throw new IllegalStateException("Failed to merge authorizations from remote service");
+                        }
+
                         for (DatawaveUser user : remotePrincipal.getProxiedUsers()) {
-                            if (datawavePrincipal.getProxiedUsers().contains(user)) {
+                            if (localDns.contains(user.getDn().subjectDN())) {
                                 reducedRemoteProxiedUsers.add(user);
                             } else {
-                                log.debug("{} was a remote only user and has been removed", user.toString());
+                                log.debug("{} was a remote only user and has been removed", user);
                             }
                         }
 
-                        for (DatawaveUser user : datawavePrincipal.getProxiedUsers()) {
-                            if(!remotePrincipal.getProxiedUsers().contains(user)) {
-                                throw new QueryException(user.toString() + " was not contained by all remote user operations");
-                            }
-                        }
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
-                        list.addMessage("Failed to lookup user from remote service: " + e.getMessage());
+                        list.addMessage("Failed to include user from remote service: " + e.getMessage());
                     }
                 }
 
