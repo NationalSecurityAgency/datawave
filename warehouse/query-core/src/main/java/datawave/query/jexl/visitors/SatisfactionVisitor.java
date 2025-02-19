@@ -70,7 +70,7 @@ public class SatisfactionVisitor extends BaseVisitor {
                 log.trace("It is okay that we got no literal because of ", ex);
             }
             // there are cases where there is no literal, like when a query looks like this:
-            // afunction() == anotherFunction()
+            // functionA() == functionB()
             // we don't want any trouble here, so just let it go with something safe
         }
         return literal;
@@ -78,7 +78,7 @@ public class SatisfactionVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        /**
+        /*
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
@@ -90,14 +90,20 @@ public class SatisfactionVisitor extends BaseVisitor {
             isQueryFullySatisfied = false;
             return null;
         }
-        String field = JexlASTHelper.getIdentifier(node);
-        final boolean included = includeReferences.contains(field);
-        final boolean excluded = excludeReferences.contains(field);
 
-        if (excluded || !included) {
-            isQueryFullySatisfied = false;
-            return null;
+        String field = JexlASTHelper.getIdentifier(node);
+        // some queries will not have a field, as in the case of
+        // FIELD.max() == 1
+        if (field != null) {
+            final boolean included = includeReferences.contains(field);
+            final boolean excluded = excludeReferences.contains(field);
+
+            if (excluded || !included) {
+                isQueryFullySatisfied = false;
+                return null;
+            }
         }
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             // visit the kids in case there is a surprise there (like a Method node)
             node.jjtGetChild(i).jjtAccept(this, data);
@@ -108,16 +114,31 @@ public class SatisfactionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
-        // Recurse only if not delayed
-        if (!instance.isType(DELAYED)) {
-            if (instance.isNotAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE)) {
-                and.childrenAccept(this, data);
+        if (instance.isAnyType() && instance.getSource() != null) {
+            switch (instance.getType()) {
+                case BOUNDED_RANGE:
+                case EXCEEDED_OR:
+                case EXCEEDED_VALUE:
+                case INDEX_HOLE:
+                    // the fields of the source node should be visited as a double lock safety check
+                    return null;
+                case DELAYED:
+                case EVALUATION_ONLY:
+                    isQueryFullySatisfied = false;
+                    return null;
+                case EXCEEDED_TERM:
+                    log.warn("cannot support exceeded term marker");
+                    isQueryFullySatisfied = false;
+                    return null;
+                case STRICT:
+                case LENIENT:
+                case DROPPED:
+                default:
+                    // these markers do not matter and should have been removed
+                    log.warn("saw unexpected marker: " + instance.getType().getLabel());
             }
-        } else {
-            isQueryFullySatisfied = false;
         }
-
-        return null;
+        return and.childrenAccept(this, data);
     }
 
     @Override
@@ -137,7 +158,7 @@ public class SatisfactionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
-        // only functions in the QueryFunctions package can be fully satistfied by the field index
+        // only functions in the QueryFunctions package can be fully satisfied by the field index
         if (!namespaceNode.getNamespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
             isQueryFullySatisfied = false;
         }
@@ -194,11 +215,24 @@ public class SatisfactionVisitor extends BaseVisitor {
         return null;
     }
 
+    /**
+     * Negations can be satisfied on the field index as long as another term exists in the query, i.e. the root of the query tree cannot be a negation.
+     *
+     * @param node
+     *            the jexl node
+     * @param data
+     *            the data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        isQueryFullySatisfied = false;
+        if (isNegatedTermRoot(node)) {
+            isQueryFullySatisfied = false;
+            return null;
+        }
 
-        return null;
+        // must continue recursing to handles cases where the source node is not satisfiable against the index
+        return node.childrenAccept(this, data);
     }
 
     @Override
@@ -243,7 +277,7 @@ public class SatisfactionVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        /**
+        /*
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
@@ -289,5 +323,25 @@ public class SatisfactionVisitor extends BaseVisitor {
     public SatisfactionVisitor setUnindexedFields(Collection<String> unindexedField) {
         this.unindexedFields.addAll(unindexedField);
         return this;
+    }
+
+    /**
+     * Helper method that determined if the provided negated term is at the root of the query tree. Note: a negated term in a top level union is still a top
+     * level negation.
+     *
+     * @param node
+     *            the JexlNode
+     * @return true if the node is at the root of the query tree
+     */
+    private boolean isNegatedTermRoot(JexlNode node) {
+        JexlNode parent = node.jjtGetParent();
+        while (parent != null) {
+            if (parent instanceof ASTAndNode) {
+                // markers do not support negated source nodes so this should be safe
+                return false;
+            }
+            parent = parent.jjtGetParent();
+        }
+        return true;
     }
 }

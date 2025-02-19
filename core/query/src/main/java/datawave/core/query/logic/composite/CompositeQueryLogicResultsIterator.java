@@ -24,9 +24,14 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
     private final Object lock = new Object();
     private volatile Throwable failure = null;
 
-    public CompositeQueryLogicResultsIterator(CompositeQueryLogic logic, ArrayBlockingQueue<Object> results) {
+    private final long pollTimeout;
+    private final TimeUnit pollTimeoutUnit;
+
+    public CompositeQueryLogicResultsIterator(CompositeQueryLogic logic, ArrayBlockingQueue<Object> results, long pollTimeout, TimeUnit pollTimeoutUnit) {
         this.logic = logic;
         this.results = results;
+        this.pollTimeout = pollTimeout;
+        this.pollTimeoutUnit = pollTimeoutUnit;
     }
 
     @Override
@@ -43,7 +48,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                         throw new RuntimeException(failure);
                     }
                     while (nextEntry == null && failure == null && (!results.isEmpty() || logic.getCompletionLatch().getCount() > 0)) {
-                        nextEntry = results.poll(1, TimeUnit.SECONDS);
+                        nextEntry = results.poll(pollTimeout, pollTimeoutUnit);
                     }
                     if (failure != null) {
                         Throwables.throwIfUnchecked(failure);

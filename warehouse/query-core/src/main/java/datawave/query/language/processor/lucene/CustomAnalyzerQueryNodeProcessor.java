@@ -349,7 +349,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     public QueryNode createNewQueryNode(String field, String tokenizedText, int slopNeeded) {
         QueryNode newQueryNode = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
         newQueryNode.setTag(NODE_PROCESSED, Boolean.TRUE); // don't process this node again.
-        if (slopNeeded > 0) {
+        if (slopNeeded != Integer.MIN_VALUE) {
             newQueryNode = new SlopQueryNode(newQueryNode, slopNeeded);
             newQueryNode.setTag(NODE_PROCESSED, Boolean.TRUE); // don't process this node again.
         }
@@ -366,24 +366,26 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      *            the text of the original query.
      * @param positionsObserved
      *            the number of positions observed in the tokenized text.
-     * @return the amount of slop we need to add to our new query clauses.
+     * @return the amount of slop we need to add to our new query clauses, Integer.MIN_VALUE if there should be no changes to the original node.
      */
     private int calculateSlopNeeded(QueryNode node, String text, int positionsObserved) {
         int slopNeeded = positionsObserved;
 
-        final boolean originalWasQuoted = QuotedFieldQueryNode.class.isAssignableFrom(node.getClass());
-        final int originalSlop = node.getTag(ORIGINAL_SLOP) != null ? (Integer) node.getTag(ORIGINAL_SLOP) : 0;
-
-        if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
-            // Adjust the slop needed based on the slop in the original query.
+        // Adjust the slop based on the difference between the original
+        // slop minus the original token count (based on whitespace)
+        int originalSlop = 0;
+        if (node.getTag(ORIGINAL_SLOP) != null) {
+            originalSlop = (Integer) node.getTag(ORIGINAL_SLOP);
             final int delta = originalSlop - text.split("\\s+").length;
-            if (delta > 0) {
-                slopNeeded += delta;
-            }
-        } else {
-            slopNeeded = 0;
+            slopNeeded += delta;
         }
-        return slopNeeded;
+
+        final boolean originalWasQuoted = QuotedFieldQueryNode.class.isAssignableFrom(node.getClass());
+        if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
+            return slopNeeded;
+        }
+
+        return Integer.MIN_VALUE;
     }
 
     /**

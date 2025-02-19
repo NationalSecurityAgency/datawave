@@ -11,26 +11,43 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHA
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GRIDX_TNAME;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_TNAME;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.rfile.RFile;
+import org.apache.accumulo.core.iterators.user.RegExFilter;
+import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -38,6 +55,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.shaded.com.google.common.io.Files;
+import org.apache.hadoop.shaded.org.eclipse.jetty.util.preventers.GCThreadLeakPreventer;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -60,6 +79,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.query.iterator.SortedListKeyValueIterator;
 
 public class ShardReindexMapperTest extends EasyMockSupport {
     private Configuration conf;
@@ -67,6 +87,9 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     private ContextWriter<BulkIngestKey,Value> mockContextWriter;
     private Mapper.Context context;
+
+    private AccumuloClient mockClient;
+    private Scanner mockScanner;
 
     private ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -85,21 +108,9 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.set(SHARD_GRIDX_TNAME, "shardReverseIndex");
         conf.set(METADATA_TABLE_NAME, "DatawaveMetadata");
 
-        // simple required config for a type with some indexed fields
-        conf.set("samplecsv" + DATA_HEADER, "a,b,c,d,e");
-        conf.set("samplecsv" + DATA_SEP, ",");
-        conf.set("samplecsv" + INDEX_FIELDS, "FIELDA,FIELDB,FIELDC,FIELDE,FIELDE_TOKEN,FIELDF,FIELDF_TOKEN,FIELDG,FIELDG_TOKEN");
-        conf.set("samplecsv" + REVERSE_INDEX_FIELDS, "FIELDB,FIELDD");
-        conf.set("samplecsv" + INDEX_ONLY_FIELDS, "FIELDE,FIELDE_TOKEN");
-        conf.set("samplecsv" + TOKEN_INDEX_ALLOWLIST, "FIELDE,FIELDF,FIELDG");
-
-        Type t = new Type("samplecsv", CSVIngestHelper.class, null, null, 0, null);
-        // this needs to be called each test to clear any static config that may be cached
-        t.clearIngestHelper();
-
         TypeRegistry.reset();
-        TypeRegistry registry = TypeRegistry.getInstance(conf);
-        registry.put(t.typeName(), t);
+        setupDataType("samplecsv", "FIELDA,FIELDB,FIELDC,FIELDE,FIELDE_TOKEN,FIELDF,FIELDF_TOKEN,FIELDG,FIELDG_TOKEN", "FIELDB,FIELDD", "FIELDE,FIELDE_TOKEN",
+                        "FIELDE,FIELDF,FIELDG");
 
         shardIdFactory = new ShardIdFactory(conf);
 
@@ -109,6 +120,25 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         // create contextWriter mock
         mockContextWriter = createMock(ContextWriter.class);
         context = createMock(Mapper.Context.class);
+        mockClient = createMock(AccumuloClient.class);
+        mockScanner = createMock(Scanner.class);
+    }
+
+    private void setupDataType(String name, String indexed, String reverseIndexed, String indexOnly, String tokenized) {
+        // simple required config for a type with some indexed fields
+        conf.set(name + DATA_HEADER, "a,b,c,d,e");
+        conf.set(name + DATA_SEP, ",");
+        conf.set(name + INDEX_FIELDS, indexed);
+        conf.set(name + REVERSE_INDEX_FIELDS, reverseIndexed);
+        conf.set(name + INDEX_ONLY_FIELDS, indexOnly);
+        conf.set(name + TOKEN_INDEX_ALLOWLIST, tokenized);
+
+        Type t = new Type(name, CSVIngestHelper.class, null, null, 0, null);
+        // this needs to be called each test to clear any static config that may be cached
+        t.clearIngestHelper();
+
+        TypeRegistry registry = TypeRegistry.getInstance(conf);
+        registry.put(t.typeName(), t);
     }
 
     @Test
@@ -1126,6 +1156,841 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mapper.setup(context);
         mapper.setContextWriter(mockContextWriter);
         mapper.map(event, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    private void configureMetadataOnly(boolean metadataOnly, boolean generateFromFi, boolean disableFrequencyCounts, boolean generateRiFromFi,
+                    boolean lookupRiFromFi, boolean generateEventFromFi, boolean lookupEventFromFi) {
+        conf.setBoolean(ShardReindexMapper.METADATA_ONLY, metadataOnly);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, generateFromFi);
+        conf.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, disableFrequencyCounts);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, generateRiFromFi);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_RI_METADATA_FROM_FI, lookupRiFromFi);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENERATE_EVENT_FROM_FI, generateEventFromFi);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_EVENT_METADATA_FROM_FI, lookupEventFromFi);
+    }
+
+    private void expectMetadata(String field, String type, String dataType, String value, long timestamp) throws IOException, InterruptedException {
+        Key iKey;
+        if (value != null) {
+            iKey = new Key(field, type, dataType + '\u0000' + value, timestamp);
+        } else {
+            iKey = new Key(field, type, dataType, timestamp);
+        }
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        mockContextWriter.write(eq(iBik), EasyMock.isA(Value.class), eq(context));
+    }
+
+    private Key createFiKey(String row, String field, String value, String dataType, String uid, String date) throws ParseException {
+        Key fiKey = new Key(row, FI_START + field, value + '\u0000' + dataType + '\u0000' + uid);
+
+        if (date != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            Date d = sdf.parse(date);
+            long eventTime = getTimestamp(d);
+            fiKey.setTimestamp(eventTime);
+        }
+
+        return fiKey;
+    }
+
+    private void expectScanner(String tableName, Range r, Iterator<Map.Entry<Key,Value>> result)
+                    throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        expect(mockClient.createScanner(tableName)).andReturn(mockScanner);
+        mockScanner.setRange(eq(r));
+        expect(mockScanner.iterator()).andReturn(result);
+        mockScanner.close();
+    }
+
+    @Test
+    public void FI_metadataOnly_deletedKey_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDD", "ABC", "samplecsv", "1.2.3", null);
+        fiKey.setDeleted(true);
+
+        configureMetadataOnly(true, true, false, false, false, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_unindexedKey_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDZ", "ABC", "samplecsv", "1.2.3", null);
+
+        configureMetadataOnly(true, true, false, false, false, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_unindexedKeyWithCountsAndEvents_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDZ", "ABC", "samplecsv", "1.2.3", null);
+
+        configureMetadataOnly(true, true, false, false, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexed_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, false, false, false, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        // TODO this might be a bug in EventMetadata, but the frequency key comes with the event key, so is excluded here
+        // expectMetadata("FIELDA", "f", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedEventNoFrequency_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedEventAndFrequency_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, false, false, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "f", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedEventLookupFail_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        setupDataType("samplecsv2", "FIELDA", "FIELDD", "FIELDE,FIELDE_TOKEN", "FIELDE,FIELDF,FIELDG");
+
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nextFiKey = createFiKey("row", "FIELDA", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key fiKeyDataType2 = createFiKey("row", "FIELDA", "DEF", "samplecsv2", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, false, false, false, true, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(3);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key eventLookupKey = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
+        Key eventLookupKeyEnd = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '.' + '\uFFFF');
+        Range expectedLookupRange = new Range(eventLookupKey, true, eventLookupKeyEnd, true);
+        expectScanner("shard", expectedLookupRange, Collections.emptyIterator());
+
+        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        eventLookupKey = new Key("row", "samplecsv2" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
+        eventLookupKeyEnd = new Key("row", "samplecsv2" + '\u0000' + "1.2.3", "FIELDA" + '.' + '\uFFFF');
+        expectedLookupRange = new Range(eventLookupKey, true, eventLookupKeyEnd, true);
+        expectScanner("shard", expectedLookupRange, Collections.emptyIterator());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        // this causes no recheck because the previous combo of FIELDA/samplecsv
+        mapper.map(nextFiKey, new Value(), context);
+        // this will have an event check because the FIELDA/samplecsv2 combo hasn't been seen
+        mapper.map(fiKeyDataType2, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedEventLookup_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, false, false, false, true, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "f", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key eventLookupKey = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
+        Key eventLookupKeyEnd = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '.' + '\uFFFF');
+        Range expectedLookupRange = new Range(eventLookupKey, true, eventLookupKeyEnd, true);
+        expectScanner("shard", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedNoFrequency_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_indexedWithTfNoLookup_test() throws IOException, InterruptedException, ParseException {
+        // define a new dataType which does not use a token designator
+        setupDataType("undesignatedTokens", "FIELDA,FIELDB", "", "FIELDB", "FIELDA,FIELDB");
+        conf.setBoolean("undesignatedTokens.data.category.token.fieldname.designator.enabled", false);
+
+        // this field is indexed and index only, but was the result of tokenization
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        // this field is indexed, tokenized, and index only
+        Key nonTokenFi = createFiKey("row", "FIELDE", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        // this field is marked as indexed, but was the result of tokenization
+        Key regularTokenizedFi = createFiKey("row", "FIELDF_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        // this field is marked as indexed and tokenized
+        Key indexedFiThatWasTokenized = createFiKey("row", "FIELDF", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        // use the new data type to test that undesignated tokens also generate the correct metadata
+        Key undesignatedFi1 = createFiKey("row", "FIELDA", "ABC", "undesignatedTokens", "1.2.3", "20240216");
+        Key undesignatedFi2 = createFiKey("row", "FIELDB", "ABC", "undesignatedTokens", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(6);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+
+        expectMetadata("FIELDE", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+
+        expectMetadata("FIELDF", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDA", "e", "undesignatedTokens", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "i", "undesignatedTokens", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "undesignatedTokens", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        expectMetadata("FIELDA", "tf", "undesignatedTokens", null, fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "undesignatedTokens", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "undesignatedTokens", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+        expectMetadata("FIELDB", "tf", "undesignatedTokens", null, fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(nonTokenFi, new Value(), context);
+        mapper.map(regularTokenizedFi, new Value(), context);
+        mapper.map(indexedFiThatWasTokenized, new Value(), context);
+        mapper.map(undesignatedFi1, new Value(), context);
+        mapper.map(undesignatedFi2, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    // this test verifies the RegExFilter applied for TF lookups works as expected
+    @Test
+    public void verifyRegExFilterWorksTest() throws IOException {
+        List<Map.Entry<Key,Value>> data = new ArrayList();
+        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c"), new Value()));
+        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "cc"), new Value()));
+        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c" + '\u0000' + "df"), new Value()));
+        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c" + '\u0000' + "DF"), new Value()));
+        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c" + '\u0000' + " df"), new Value()));
+        SortedListKeyValueIterator iterator = new SortedListKeyValueIterator(data);
+        RegExFilter filter = new RegExFilter();
+        Map<String,String> options = new HashMap<>();
+        options.put("colqRegex", '\u0000' + "df$");
+        options.put("matchSubstring", "true");
+
+        filter.init(iterator, options, null);
+        filter.seek(new Range(), Collections.emptySet(), false);
+
+        assertTrue(filter.hasTop());
+        int count = 0;
+        while (filter.hasTop()) {
+            count++;
+            filter.next();
+        }
+
+        assertEquals(1, count);
+    }
+
+    @Test
+    public void FI_metadataOnly_unrestrictedIngestHelperTf_test()
+                    throws ParseException, IOException, InterruptedException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        configureMetadataOnly(true, true, true, true, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, true);
+
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        Key start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
+        Key end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
+        Range r = new Range(start, true, end, false);
+        expectScanner("shard", r, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        Capture<IteratorSetting> fieldECapture = Capture.newInstance();
+        mockScanner.addScanIterator(capture(fieldECapture));
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_tfLookupFail_test()
+                    throws ParseException, IOException, InterruptedException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, true);
+
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
+        Key end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
+        Range r = new Range(start, true, end, false);
+        expectScanner("shard", r, Collections.emptyIterator());
+        Capture<IteratorSetting> iteratorSettingCapture = Capture.newInstance();
+        mockScanner.addScanIterator(capture(iteratorSettingCapture));
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+
+        // make sure the regex iterator on the scanner is setup correctly
+        assertEquals('\u0000' + "FIELDE_TOKEN$", iteratorSettingCapture.getValue().getOptions().get("colqRegex"));
+        assertEquals("true", iteratorSettingCapture.getValue().getOptions().get("matchSubstring"));
+    }
+
+    @Test
+    public void FI_metadataOnly_tfLookupCache_test()
+                    throws ParseException, IOException, InterruptedException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nextFiKey = createFiKey("row", "FIELDE_TOKEN", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key fFiKey = createFiKey("row", "FIELDF_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, true);
+
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(3);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        // fieldE scanner
+        Key start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
+        Key end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
+        Range r = new Range(start, true, end, false);
+        expectScanner("shard", r, Collections.emptyIterator());
+        Capture<IteratorSetting> fieldECapture = Capture.newInstance();
+        mockScanner.addScanIterator(capture(fieldECapture));
+
+        // fieldF scanner
+        start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
+        end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
+        r = new Range(start, true, end, false);
+        expectScanner("shard", r, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        Capture<IteratorSetting> fieldFCapture = Capture.newInstance();
+        mockScanner.addScanIterator(capture(fieldFCapture));
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(nextFiKey, new Value(), context);
+        mapper.map(fFiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+
+        // make sure the regex iterator on the scanner is setup correctly
+        assertEquals('\u0000' + "FIELDE_TOKEN$", fieldECapture.getValue().getOptions().get("colqRegex"));
+        assertEquals("true", fieldECapture.getValue().getOptions().get("matchSubstring"));
+        assertEquals('\u0000' + "FIELDF_TOKEN$", fieldFCapture.getValue().getOptions().get("colqRegex"));
+
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedAssumeReverse_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, true, false, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedAssumeReverseWithEvent_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, true, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedNoReverse_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedNoReverseWithEvent_test() throws IOException, InterruptedException, ParseException {
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedVerifyReverseFail_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, true, true, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
+        expectScanner("shardReverseIndex", expectedLookupRange, Collections.emptyIterator());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedVerifyReverse_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+        // this key will not have a scanner created because this field/datatype has already been validated and no counts are being generated
+        Key anotherFiKey = createFiKey("row", "FIELDB", "XYZ", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, true, true, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(2);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
+        expectScanner("shardReverseIndex", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(anotherFiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_forwardAndReverseIndexedVerifyReverseCacheVerify_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        setupDataType("samplecsv2", "FIELDB", "FIELDD", "FIELDE,FIELDE_TOKEN", "FIELDE,FIELDF,FIELDG");
+
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key altFiKey = createFiKey("row", "FIELDB", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key sample2FiKey = createFiKey("row", "FIELDB", "DEF", "samplecsv2", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, true, true, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(3);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
+        expectScanner("shardReverseIndex", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(altFiKey, new Value(), context);
+        mapper.map(sample2FiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_dataTypeVerify_test()
+                    throws IOException, InterruptedException, ParseException, TableNotFoundException, AccumuloException, AccumuloSecurityException {
+        setupDataType("samplecsv2", "FIELDB", "FIELDD", "FIELDE,FIELDE_TOKEN", "FIELDE,FIELDF,FIELDG");
+
+        Key fiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key sample2FiKey = createFiKey("row", "FIELDB", "ABC", "samplecsv2", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, true, true, false, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(2);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "ri", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
+        expectScanner("shardReverseIndex", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+
+        replayAll();
+
+        mapper.setAccumuloClient(mockClient);
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(sample2FiKey, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_disableFrequency_test() throws ParseException, IOException, InterruptedException {
+        setupDataType("samplecsv2", "FIELDA,FIELDB", "", "FIELDB", "");
+        Key fiKey = createFiKey("row", "FIELDA", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key dupDataType = createFiKey("row", "FIELDA", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key nextDataType = createFiKey("row", "FIELDA", "ABC", "samplecsv2", "1.2.3", "20240216");
+        Key nextField = createFiKey("row", "FIELDB", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nextFieldDataType = createFiKey("row", "FIELDB", "DEF", "samplecsv2", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(5);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDA", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDA", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDA", "e", "samplecsv2", null, fiKey.getTimestamp());
+        expectMetadata("FIELDA", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDB", "i", "samplecsv2", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(dupDataType, new Value(), context);
+        mapper.map(nextDataType, new Value(), context);
+        mapper.map(nextField, new Value(), context);
+        mapper.map(nextFieldDataType, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void FI_metadataOnly_generateTf_test() throws ParseException, IOException, InterruptedException {
+        Key fiKey = createFiKey("row", "FIELDE_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nextFiKey = createFiKey("row", "FIELDE_TOKEN", "DEF", "samplecsv", "1.2.3", "20240216");
+        Key fFiKey = createFiKey("row", "FIELDF_TOKEN", "ABC", "samplecsv", "1.2.3", "20240216");
+        Key nonTokenFiKey = createFiKey("row", "FIELDF", "ABC", "samplecsv", "1.2.3", "20240216");
+
+        configureMetadataOnly(true, true, true, false, false, true, false);
+        conf.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, true);
+        conf.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, false);
+
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        context.progress();
+        expectLastCall().times(4);
+        mockContextWriter.cleanup(context);
+
+        expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDE_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDF_TOKEN", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "tf", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF_TOKEN", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        expectMetadata("FIELDF", "i", "samplecsv", "20240216", fiKey.getTimestamp());
+        expectMetadata("FIELDF", "e", "samplecsv", null, fiKey.getTimestamp());
+        expectMetadata("FIELDF", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.setContextWriter(mockContextWriter);
+        mapper.map(fiKey, new Value(), context);
+        mapper.map(nextFiKey, new Value(), context);
+        mapper.map(fFiKey, new Value(), context);
+        mapper.map(nonTokenFiKey, new Value(), context);
         mapper.cleanup(context);
 
         verifyAll();

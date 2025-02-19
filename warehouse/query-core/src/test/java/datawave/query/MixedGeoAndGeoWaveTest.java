@@ -378,9 +378,8 @@ public class MixedGeoAndGeoWaveTest {
 
     @Test
     public void intersectsSmallBoundingBoxEvaluationOnlyTest() throws Exception {
-        String query = "geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
+        String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((_Eval_ = true) && geowave:intersects("
+                        + GEO_FIELD + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(2, events.size());
@@ -485,7 +484,7 @@ public class MixedGeoAndGeoWaveTest {
     @Test
     public void intersectsLargeBoundingBoxEvaluationOnlyTest() throws Exception {
         String query = "geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((_Eval_ = true) && geowave:intersects(" + GEO_FIELD
                         + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))'))";
 
         List<DefaultEvent> events = getQueryResults(query);
@@ -590,8 +589,8 @@ public class MixedGeoAndGeoWaveTest {
 
     @Test
     public void intersectsLargeCircleEvaluationOnlyTest() throws Exception {
-        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((ASTEvaluationOnly = true) && geowave:intersects("
-                        + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "'))";
+        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((_Eval_ = true) && geowave:intersects(" + GEO_FIELD
+                        + ", '" + createCircle(0, 0, 90).toText() + "'))";
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(12, events.size());
