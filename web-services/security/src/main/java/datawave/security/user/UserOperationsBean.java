@@ -134,26 +134,26 @@ public class UserOperationsBean implements UserOperations {
 
             // if we have any remote services configured, merge those authorizations in here
             if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteUserOperationsList)) {
-                Set<String> localDns = new HashSet<>(Arrays.asList(datawavePrincipal.getDNs()));
-                log.debug("Verifying remote principals cover {}", localDns);
+                Set<String> localDNs = new HashSet<>(Arrays.asList(datawavePrincipal.getDNs()));
+                log.debug("Verifying remote principals cover {}", localDNs);
                 List<DatawaveUser> reducedRemoteProxiedUsers = new ArrayList<>();
 
                 for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
 
-                        Set<String> remoteDns = new HashSet<>(Arrays.asList(remotePrincipal.getDNs()));
-                        log.debug("Checking remote principal list {}", remoteDns);
-                        if (!remoteDns.containsAll(localDns)) {
-                            log.error(localDns + " was not contained by " + remoteDns);
+                        Set<String> remoteDNs = new HashSet<>(Arrays.asList(remotePrincipal.getDNs()));
+                        log.debug("Checking remote principal list {}", remoteDNs);
+                        if (!remoteDNs.containsAll(localDNs)) {
+                            log.error(localDNs + " was not contained by " + remoteDNs);
                             throw new IllegalStateException("Failed to merge authorizations from remote service");
                         }
 
                         for (DatawaveUser user : remotePrincipal.getProxiedUsers()) {
-                            if (localDns.contains(user.getDn().subjectDN())) {
+                            if (localDNs.contains(user.getDn().subjectDN())) {
                                 reducedRemoteProxiedUsers.add(user);
                             } else {
-                                log.debug("{} was a remote only user and has been removed", user);
+                                log.debug("{} was a remote only user and has been removed", user.getDn().subjectDN());
                             }
                         }
 
