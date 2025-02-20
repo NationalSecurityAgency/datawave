@@ -22,7 +22,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
-import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.slf4j.Logger;
@@ -40,7 +39,6 @@ import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 @Path("/Security/User")
 @LocalBean
@@ -62,7 +60,7 @@ public class UserOperationsBean implements UserOperations {
     private ResponseObjectFactory responseObjectFactory;
 
     @Inject
-    @Qualifier(value = "RemoteUserOperationsList")
+    @SpringBean(name = "RemoteUserOperationsList")
     private List<UserOperations> remoteUserOperationsList;
 
     /**
