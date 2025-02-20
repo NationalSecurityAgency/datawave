@@ -1,7 +1,7 @@
 package datawave.core.query.logic.filtered;
 
+import java.util.ArrayList;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.security.Authorizations;
 
@@ -36,7 +36,7 @@ public class QueryLogicFilterByAuth extends ProxiedAuthorizationsPredicate imple
 
     @Override
     public boolean canRunQuery(Query settings, Set<Authorizations> auths) {
-        boolean canRunQuery = test(auths.stream().collect(Collectors.toList()));
+        boolean canRunQuery = test(new ArrayList<>(auths));
         if (negated) {
             canRunQuery = !canRunQuery;
         }
