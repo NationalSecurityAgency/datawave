@@ -144,8 +144,8 @@ public class UserOperationsBean implements UserOperations {
                         Set<String> remoteDNs = new HashSet<>(Arrays.asList(remotePrincipal.getDNs()));
                         log.debug("Checking remote principal list {}", remoteDNs);
                         if (!remoteDNs.containsAll(localDNs)) {
-                            log.error(localDNs + " was not contained by " + remoteDNs);
-                            throw new IllegalStateException("Failed to merge authorizations from remote service");
+                            log.warn("Skipping remote user: " + localDNs + " was not contained by " + remoteDNs);
+                            continue;
                         }
 
                         for (DatawaveUser user : remotePrincipal.getProxiedUsers()) {
@@ -153,6 +153,7 @@ public class UserOperationsBean implements UserOperations {
                                 reducedRemoteProxiedUsers.add(user);
                             } else {
                                 log.debug("{} was a remote only user and has been removed", user.getDn().subjectDN());
+                                log.trace("Remote only user DN and Authorizations: {} : {}", user.getDn().subjectDN(), user.getAuths());
                             }
                         }
 
@@ -162,6 +163,7 @@ public class UserOperationsBean implements UserOperations {
                     }
                 }
 
+                reducedRemoteProxiedUsers.add(datawavePrincipal.getPrimaryUser());
                 DatawavePrincipal reducedRemotePrincipal = new DatawavePrincipal(reducedRemoteProxiedUsers);
                 datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, reducedRemotePrincipal);
             }
