@@ -296,13 +296,13 @@ public class CompositeQueryLogicTest {
 
         @Override
         public Iterator<Entry<Key,Value>> iterator() {
-            return data.entrySet().stream().filter(e -> checkAuths(e.getKey().getColumnVisibilityParsed())).iterator();
+            return data.entrySet().stream().filter(e -> checkAuths(e.getKey().getColumnVisibility().toString())).iterator();
         }
 
-        private boolean checkAuths(ColumnVisibility vis) {
+        private boolean checkAuths(String vis) {
             return auths.stream().allMatch(a -> {
                 try {
-                    return new VisibilityEvaluator(a).evaluate(vis);
+                    return new VisibilityEvaluator(a).evaluate(new ColumnVisibility(vis));
                 } catch (VisibilityParseException e) {
                     throw new RuntimeException(e);
                 }
