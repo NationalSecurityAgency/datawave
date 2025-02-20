@@ -11,13 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.Iterators;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;

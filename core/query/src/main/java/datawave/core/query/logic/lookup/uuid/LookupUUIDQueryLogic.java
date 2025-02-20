@@ -1,7 +1,6 @@
 package datawave.core.query.logic.lookup.uuid;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.util.MultiValueMap;
 
