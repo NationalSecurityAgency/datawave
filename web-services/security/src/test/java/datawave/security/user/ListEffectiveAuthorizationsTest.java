@@ -11,16 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-
 import javax.ejb.EJBContext;
 import javax.enterprise.inject.Instance;
 
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.CachedDatawaveUserService;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.authorization.UserOperations;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.jboss.security.CacheableManager;
@@ -40,6 +33,12 @@ import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.CachedDatawaveUserService;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
 import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.system.AuthorizationCache;
 import datawave.user.AuthorizationsListBase;
@@ -206,7 +205,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         expectedUsers.add(userDN.subjectDN());
         expectedUsers.add(p1dn.subjectDN());
 
-        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair, Set<String>> authMap = result.getAuths();
+        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = result.getAuths();
         for (AuthorizationsListBase.SubjectIssuerDNPair pair : authMap.keySet()) {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
@@ -237,7 +236,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         expectedUsers.add(userDN.subjectDN());
         expectedUsers.add(p1dn.subjectDN());
 
-        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair, Set<String>> authMap = result.getAuths();
+        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = result.getAuths();
         for (AuthorizationsListBase.SubjectIssuerDNPair pair : authMap.keySet()) {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
@@ -245,7 +244,8 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
     }
 
     /*
-    This unit test mimics the response returned for a filtered caller object for datawave.security.authorization.remote.ConditionalRemoteUserOperations#listEffectiveAuthorizations
+     * This unit test mimics the response returned for a filtered caller object for
+     * datawave.security.authorization.remote.ConditionalRemoteUserOperations#listEffectiveAuthorizations
      */
     @Test
     public void listEffectiveAuthorizationsConditionalRemoteUserOperationsTest() throws AuthorizationException {
@@ -253,7 +253,8 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         SubjectIssuerDNPair filteredUserDN = SubjectIssuerDNPair.of("filteredUserDN", "filteredIssuerDN");
 
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
-        DatawaveUser filteredUser = new DatawaveUser(filteredUserDN, DatawaveUser.UserType.USER, Collections.EMPTY_LIST, null, null, System.currentTimeMillis());
+        DatawaveUser filteredUser = new DatawaveUser(filteredUserDN, DatawaveUser.UserType.USER, Collections.EMPTY_LIST, null, null,
+                        System.currentTimeMillis());
         DatawavePrincipal proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user));
         DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(filteredUser));
 
@@ -269,7 +270,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         Set<String> expectedUsers = new HashSet<>();
         expectedUsers.add(userDN.subjectDN());
 
-        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair, Set<String>> authMap = result.getAuths();
+        LinkedHashMap<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = result.getAuths();
         for (AuthorizationsListBase.SubjectIssuerDNPair pair : authMap.keySet()) {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
