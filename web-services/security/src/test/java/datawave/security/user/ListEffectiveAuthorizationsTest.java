@@ -5,12 +5,22 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.security.Principal;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+
 
 import javax.ejb.EJBContext;
 import javax.enterprise.inject.Instance;
 
-import datawave.security.authorization.*;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.CachedDatawaveUserService;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.jboss.security.CacheableManager;
