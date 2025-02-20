@@ -137,7 +137,7 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
 
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        // no need to delay functions
+        // no need to delay methods
         return copy(node);
     }
 
