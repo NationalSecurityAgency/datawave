@@ -6,8 +6,6 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.Text;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -34,7 +32,7 @@ public class QueryUtil {
         }
     }
 
-    public static <T extends Query> T deserialize(String queryImplClassName, Text columnVisibility, Value value)
+    public static <T extends Query> T deserialize(String queryImplClassName, String columnVisibility, Value value)
                     throws InvalidProtocolBufferException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Class<T> queryClass = (Class<T>) Class.forName(queryImplClassName);
@@ -42,7 +40,7 @@ public class QueryUtil {
         Schema<T> schema = RuntimeSchema.getSchema(queryClass);
         T queryImpl = schema.newMessage();
         ProtobufIOUtil.mergeFrom(b, queryImpl, schema);
-        queryImpl.setColumnVisibility(columnVisibility.toString());
+        queryImpl.setColumnVisibility(columnVisibility);
         return queryImpl;
     }
 
@@ -62,14 +60,16 @@ public class QueryUtil {
 
     private static ThreadLocal<LinkedBuffer> BUFFER = ThreadLocal.withInitial(() -> LinkedBuffer.allocate(1024));
 
-    public static <T extends Query> Mutation toMutation(T query, ColumnVisibility vis) {
+    public static <T extends Query> Mutation toMutation(T query) {
         // Store by sid for backwards compatibility
         Mutation m = new Mutation(query.getOwner());
         try {
             @SuppressWarnings("unchecked")
             Schema<T> schema = (Schema<T>) RuntimeSchema.getSchema(query.getClass());
             byte[] bytes = ProtobufIOUtil.toByteArray(query, schema, BUFFER.get());
-            m.put(query.getQueryName(), query.getId() + NULL_BYTE + query.getClass().getName(), vis, query.getExpirationDate().getTime(), new Value(bytes));
+            m.at().family(query.getQueryName())
+                    .qualifier(query.getId() + NULL_BYTE + query.getClass().getName()).visibility(query.getColumnVisibility())
+                    .timestamp(query.getExpirationDate().getTime()).put(bytes);
             return m;
         } finally {
             BUFFER.get().clear();

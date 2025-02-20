@@ -38,7 +38,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -80,7 +80,7 @@ public class Persister {
         public Q apply(final Entry<Key,Value> entry) {
             try {
 
-                return (Q) QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue());
+                return (Q) QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibilityData().toString(), entry.getValue());
             } catch (InvalidProtocolBufferException | ClassNotFoundException ipbEx) {
                 throw new EJBException("Error deserializing the Query", ipbEx);
             }
@@ -145,7 +145,7 @@ public class Persister {
             tableCheck(c);
             try (BatchWriter writer = c.createBatchWriter(TABLE_NAME,
                             new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1))) {
-                writer.addMutation(QueryUtil.toMutation(query, new ColumnVisibility(query.getColumnVisibility())));
+                writer.addMutation(QueryUtil.toMutation(query));
             }
 
         } catch (RuntimeException re) {
@@ -319,7 +319,7 @@ public class Persister {
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
                         results = new ArrayList<>();
-                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibilityData().toString(), entry.getValue()));
                 }
 
                 return results;
@@ -364,7 +364,7 @@ public class Persister {
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
                         results = new ArrayList<>();
-                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibilityData().toString(), entry.getValue()));
                 }
                 return results;
             }
@@ -416,7 +416,7 @@ public class Persister {
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
                         results = new ArrayList<>();
-                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibilityData().toString(), entry.getValue()));
                 }
                 return results;
             }

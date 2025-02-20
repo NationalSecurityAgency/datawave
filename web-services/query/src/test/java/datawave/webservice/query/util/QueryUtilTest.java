@@ -7,8 +7,6 @@ import java.util.UUID;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -40,12 +38,12 @@ public class QueryUtilTest {
         parameters.add(new Parameter("some param", "some value"));
         q.setParameters(parameters);
 
-        Mutation m = QueryUtil.toMutation(q, new ColumnVisibility(q.getColumnVisibility()));
+        Mutation m = QueryUtil.toMutation(q);
 
         Assert.assertEquals(1, m.getUpdates().size());
 
         byte[] value = m.getUpdates().get(0).getValue();
-        Query q2 = QueryUtil.deserialize(QueryImpl.class.getName(), new Text("A&B"), new Value(value));
+        Query q2 = QueryUtil.deserialize(QueryImpl.class.getName(), "A&B", new Value(value));
 
         Assert.assertEquals(q, q2);
 
