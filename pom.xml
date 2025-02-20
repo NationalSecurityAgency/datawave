@@ -1411,6 +1411,7 @@
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
                         <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1457,6 +1458,7 @@
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                            <phase>compile</phase>
                         </execution>
                     </executions>
                 </plugin>

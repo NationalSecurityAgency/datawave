@@ -5,8 +5,6 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.MET
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
