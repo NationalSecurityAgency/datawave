@@ -2,6 +2,7 @@ package datawave.query.metrics;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,7 +22,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.TabletId;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -151,7 +151,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         try {
             bws.get(table).addMutation(mutation);
         } catch (MutationsRejectedException e) {
-            log.error("Mutation rejected with constraint violations: " + e.getConstraintViolationSummaries() + " row: " + mutation.getRow() + " updates: "
+            log.error("Mutation rejected with constraint violations: " + e.getConstraintViolationSummaries() + " row: " + Arrays.toString(mutation.getRow()) + " updates: "
                             + mutation.getUpdates());
             throw new IOException("MutationsRejectedException - ConstraintViolations: " + e.getConstraintViolationSummaries(), e);
         }
@@ -195,7 +195,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             log.trace(String.format("Table %s row key: %s", table, hexDump(m.getRow())));
             for (ColumnUpdate cu : m.getUpdates()) {
                 log.trace(String.format("Table %s column: %s:%s", table, hexDump(cu.getColumnFamily()), hexDump(cu.getColumnQualifier())));
-                log.trace(String.format("Table %s security: %s", table, new ColumnVisibility(cu.getColumnVisibility()).toString()));
+                log.trace(String.format("Table %s security: %s", table, Arrays.toString(cu.getColumnVisibility())));
                 log.trace(String.format("Table %s value: %s", table, hexDump(cu.getValue())));
             }
         }
