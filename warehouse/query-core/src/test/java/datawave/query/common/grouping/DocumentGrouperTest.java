@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
