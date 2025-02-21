@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Throwables;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.exception.EmptyObjectException;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
 
