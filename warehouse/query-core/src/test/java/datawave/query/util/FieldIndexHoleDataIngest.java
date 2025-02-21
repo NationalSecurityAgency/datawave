@@ -4,15 +4,20 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -22,6 +27,7 @@ import org.javatuples.Pair;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
+import datawave.data.type.BaseType;
 import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.IpAddressType;
@@ -76,10 +82,52 @@ public class FieldIndexHoleDataIngest {
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
 
+    public static final Map<String,Pair<Long,Long>> DEFAULT_COUNTS = new HashMap<>();
+    public static final Set<String> EVENT_FIELDS = new HashSet<>();
+
+    static {
+        DEFAULT_COUNTS.put("NAME", Pair.with(10L, 10L));
+        DEFAULT_COUNTS.put("NOME", Pair.with(19L, 19L));
+        DEFAULT_COUNTS.put("GENDER", Pair.with(11L, 11L));
+        DEFAULT_COUNTS.put("GENERE", Pair.with(21L, 21L));
+        DEFAULT_COUNTS.put("AGE", Pair.with(12L, 12L));
+        DEFAULT_COUNTS.put("ETA", Pair.with(22L, 22L));
+        DEFAULT_COUNTS.put("GEO", Pair.with(22L, 22L));
+        DEFAULT_COUNTS.put("UUID", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("LOCATION", Pair.with(11L, 11L));
+        DEFAULT_COUNTS.put("POSIZIONE", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("SENTENCE", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("MAGIC", Pair.with(12L, 0L));
+        DEFAULT_COUNTS.put("NUMBER", Pair.with(12L, 0L));
+        DEFAULT_COUNTS.put("ETA", Pair.with(12L, 0L));
+        DEFAULT_COUNTS.put("BIRTH_DATE", Pair.with(3L, 0L));
+        DEFAULT_COUNTS.put("DEATH_DATE", Pair.with(3L, 0L));
+        DEFAULT_COUNTS.put("NULL1", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("NULL2", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("QUOTE", Pair.with(3L, 3L));
+
+        EVENT_FIELDS.add("NAME");
+        EVENT_FIELDS.add("NOME");
+        EVENT_FIELDS.add("GENDER");
+        EVENT_FIELDS.add("GENERE");
+        EVENT_FIELDS.add("AGE");
+        EVENT_FIELDS.add("ETA");
+        EVENT_FIELDS.add("GEO");
+        EVENT_FIELDS.add("MAGIC");
+        EVENT_FIELDS.add("NUMBER");
+        EVENT_FIELDS.add("ETA");
+        EVENT_FIELDS.add("UUID");
+        EVENT_FIELDS.add("BIRTH_DATE");
+        EVENT_FIELDS.add("DEATH_DATE");
+        EVENT_FIELDS.add("NULL1");
+        EVENT_FIELDS.add("NULL2");
+        EVENT_FIELDS.add("QUOTE");
+    }
+
     public static class EventConfig {
         private String date;
         private long time;
-        private final Map<String,Pair<Long,Long>> metadataCounts = new HashMap<>();
+        private final Map<String,Pair<Long,Long>> metadataCounts = new HashMap<>(DEFAULT_COUNTS);
 
         public static EventConfig forDate(String date) {
             return new EventConfig().withDate(date);
@@ -226,6 +274,17 @@ public class FieldIndexHoleDataIngest {
         }
     }
 
+    private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
+                    long ts, Value v) throws MutationsRejectedException {
+        AtomicLong count = indexCounts.get(field);
+        // if (count.get() > 0) {
+        count.decrementAndGet();
+        Mutation mutation = new Mutation(normalize ? normalizerForColumn(field).normalize(value) : value);
+        mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, ts, v);
+        bw.addMutation(mutation);
+        // }
+    }
+
     private static void writeShardIndexTable(AccumuloClient client, Range range, List<EventConfig> eventConfigs, BatchWriterConfig bwConfig)
                     throws TableNotFoundException, MutationsRejectedException {
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig)) {
@@ -234,171 +293,92 @@ public class FieldIndexHoleDataIngest {
                 String shard = config.getDate() + "_0";
                 long timeStamp = config.getTime();
 
+                Map<String,AtomicLong> indexCounts = config.getMetadataCounts().entrySet().stream()
+                                .collect(Collectors.toMap(e -> e.getKey(), e -> new AtomicLong(e.getValue().getValue1())));
+
                 // corleones
                 // uuid
-                Mutation mutation = new Mutation(lcNoDiacriticsType.normalize("CORLEONE"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-
-                mutation = new Mutation(lcNoDiacriticsType.normalize("ANDOLINI"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneChildUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "UUID", "CORLEONE", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "UUID", "ANDOLINI", true, shard, timeStamp, range.getValue(corleoneChildUID));
 
                 // names
-                mutation = new Mutation(lcNoDiacriticsType.normalize("SANTINO"));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("FREDO"));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("MICHAEL"));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("CONSTANZIA"));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("LUCA"));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("VINCENT"));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "NOME", "SANTINO", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "NOME", "FREDO", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "NOME", "MICHAEL", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "NOME", "CONSTANZIA", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, timeStamp, range.getValue(corleoneUID));
 
                 // genders
-                mutation = new Mutation(lcNoDiacriticsType.normalize("MALE"));
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID, caponeUID));
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("MALE"));
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "GENERE", "MALE", true, shard, timeStamp, range.getValue(corleoneUID));
 
                 // ages
-                mutation = new Mutation(numberType.normalize("24"));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("22"));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("20"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("18"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("40"));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("12"));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneChildUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "ETA", "12", true, shard, timeStamp, range.getValue(corleoneChildUID));
+                writeShardIndexEntry(bw, indexCounts, "ETA", "18", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "ETA", "20", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "ETA", "22", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "ETA", "24", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "ETA", "40", true, shard, timeStamp, range.getValue(corleoneUID));
 
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
-                    mutation = new Mutation(normalized);
-                    mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                    bw.addMutation(mutation);
+                    writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(corleoneUID));
                 }
+                // add some index-only fields
+                writeShardIndexEntry(bw, indexCounts, "POSIZIONE", "newyork", false, shard, timeStamp, range.getValue(corleoneUID));
+                // add some tokens
+                addTokens(bw, shard, timeStamp, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
 
                 // sopranos
                 // uuid
-                mutation = new Mutation(lcNoDiacriticsType.normalize("SOPRANO"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "UUID", "SOPRANO", true, shard, timeStamp, range.getValue(sopranoUID));
                 // names
-                mutation = new Mutation(lcNoDiacriticsType.normalize("ANTHONY"));
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("MEADOW"));
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "NAME", "ANTHONY", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, timeStamp, range.getValue(sopranoUID));
                 // genders
+                writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
 
                 // ages
-                mutation = new Mutation(numberType.normalize("16"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("18"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
 
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
-                    mutation = new Mutation(normalized);
-                    mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                    bw.addMutation(mutation);
+                    writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(sopranoUID));
                 }
+                // add some index-only fields
+                writeShardIndexEntry(bw, indexCounts, "LOCATION", "newjersey", false, shard, timeStamp, range.getValue(sopranoUID));
+                // add some tokens
+                addTokens(bw, shard, timeStamp, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
 
                 // capones
                 // uuid
-                mutation = new Mutation(lcNoDiacriticsType.normalize("CAPONE"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "UUID", "CAPONE", true, shard, timeStamp, range.getValue(caponeUID));
                 // names
-                mutation = new Mutation(lcNoDiacriticsType.normalize("ALPHONSE"));
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("FRANK"));
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("RALPH"));
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("MICHAEL"));
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "NAME", "ALPHONSE", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "NAME", "FRANK", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "NAME", "RALPH", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "NAME", "MICHAEL", true, shard, timeStamp, range.getValue(caponeUID));
                 // genders
+                // see above: writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
-                mutation = new Mutation(numberType.normalize("30"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("34"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("20"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("40"));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(numberType.normalize("12"));
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneChildUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "AGE", "20", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "AGE", "30", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "AGE", "34", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "AGE", "40", true, shard, timeStamp, range.getValue(caponeUID));
 
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
-                    mutation = new Mutation(normalized);
-                    mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                    bw.addMutation(mutation);
+                    writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(caponeUID));
                 }
 
                 // add some index-only fields
-                mutation = new Mutation("chicago");
-                mutation.put("LOCATION", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation("newyork");
-                mutation.put("POSIZIONE", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation("newjersey");
-                mutation.put("LOCATION", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation("11y");
-                mutation.put("SENTENCE", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
+                writeShardIndexEntry(bw, indexCounts, "LOCATION", "chicago", false, shard, timeStamp, range.getValue(caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "SENTENCE", "11y", false, shard, timeStamp, range.getValue(caponeUID));
 
                 // add some tokens
-                addTokens(bw, shard, timeStamp, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-                addTokens(bw, shard, timeStamp, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
                 addTokens(bw, shard, timeStamp, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone",
                                 caponeUID);
-
-                bw.addMutation(mutation);
             }
         }
     }
@@ -697,196 +677,44 @@ public class FieldIndexHoleDataIngest {
         }
     }
 
+    private static Mutation getMetadataTableMutation(Map.Entry<String,Pair<Long,Long>> countEntry, String date) {
+        Mutation mutation = new Mutation(countEntry.getKey());
+        Pair<Long,Long> counts = countEntry.getValue();
+        if (eventField(countEntry.getKey())) {
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+        }
+        mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
+        if (counts.getValue1() > 0) {
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
+                            new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
+                            new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
+        }
+        mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn(countEntry.getKey()).getClass().getName()), emptyValue);
+        return mutation;
+    }
+
     private static void writeMetadataTable(AccumuloClient client, List<EventConfig> eventConfigs, BatchWriterConfig bwConfig)
                     throws TableNotFoundException, MutationsRejectedException {
         try (BatchWriter bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig)) {
             for (EventConfig config : eventConfigs) {
                 String date = config.getDate();
 
-                Mutation mutation = new Mutation("NAME");
-                Pair<Long,Long> counts = config.hasCountsForField("NAME") ? config.getMetadataCounts("NAME") : Pair.with(10L, 10L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NAME")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("NOME");
-                counts = config.hasCountsForField("NOME") ? config.getMetadataCounts("NOME") : Pair.with(19L, 19L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NOME")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("GENDER");
-                counts = config.hasCountsForField("GENDER") ? config.getMetadataCounts("GENDER") : Pair.with(11L, 11L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENDER")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("GENERE");
-                counts = config.hasCountsForField("GENERE") ? config.getMetadataCounts("GENERE") : Pair.with(21L, 21L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENERE")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("AGE");
-                counts = config.hasCountsForField("AGE") ? config.getMetadataCounts("AGE") : Pair.with(12L, 12L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("AGE")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("ETA");
-                counts = config.hasCountsForField("ETA") ? config.getMetadataCounts("ETA") : Pair.with(22L, 22L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("ETA")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("GEO");
-                counts = config.hasCountsForField("GEO") ? config.getMetadataCounts("GEO") : Pair.with(22L, 22L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GEO")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("MAGIC");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("MAGIC")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("NUMBER");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NUMBER")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("ETA");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("ETA")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("UUID");
-                counts = config.hasCountsForField("UUID") ? config.getMetadataCounts("UUID") : Pair.with(3L, 3L);
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("BIRTH_DATE");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("DEATH_DATE");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
-                bw.addMutation(mutation);
-
-                // index only fields
-                mutation = new Mutation("LOCATION");
-                counts = config.hasCountsForField("LOCATION") ? config.getMetadataCounts("LOCATION") : Pair.with(11L, 11L);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("POSIZIONE");
-                counts = config.hasCountsForField("POSIZIONE") ? config.getMetadataCounts("POSIZIONE") : Pair.with(3L, 3L);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-                bw.addMutation(mutation);
-
-                mutation = new Mutation("SENTENCE");
-                counts = config.hasCountsForField("SENTENCE") ? config.getMetadataCounts("SENTENCE") : Pair.with(3L, 3L);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
-                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-                // type column intentionally omitted
-                bw.addMutation(mutation);
-
-                // add some fields to test for null
-                mutation = new Mutation("NULL1");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-                bw.addMutation(mutation);
-                mutation = new Mutation("NULL2");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-                bw.addMutation(mutation);
-
-                // add a field to test tokens
-                mutation = new Mutation("QUOTE");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
-                bw.addMutation(mutation);
+                for (Map.Entry<String,Pair<Long,Long>> fieldCounts : config.getMetadataCounts().entrySet()) {
+                    Mutation mutation = getMetadataTableMutation(fieldCounts, date);
+                    if (fieldCounts.getKey().equals("QUOTE")) {
+                        // a field to test tokens and missing reverse index
+                        Mutation mutation2 = new Mutation(mutation.getRow());
+                        for (ColumnUpdate update : mutation.getUpdates()) {
+                            if (!new Text(update.getColumnFamily()).equals(ColumnFamilyConstants.COLF_I)) {
+                                mutation2.put(update.getColumnFamily(), update.getColumnQualifier(), update.getValue());
+                            }
+                        }
+                        mutation2.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
+                        mutation = mutation2;
+                    }
+                    bw.addMutation(mutation);
+                }
             }
         }
     }
@@ -973,16 +801,20 @@ public class FieldIndexHoleDataIngest {
         }
     }
 
-    private static String normalizerForColumn(String column) {
+    private static BaseType<?> normalizerForColumn(String column) {
         if ("AGE".equals(column) || "MAGIC".equals(column) || "ETA".equals(column)) {
-            return numberType.getClass().getName();
+            return numberType;
         } else if ("FROM_ADDRESS".equals(column) || "TO_ADDRESS".equals(column)) {
-            return ipAddressType.getClass().getName();
+            return ipAddressType;
         } else if ("GEO".equals(column)) {
-            return geoType.getClass().getName();
+            return geoType;
         } else {
-            return lcNoDiacriticsType.getClass().getName();
+            return lcNoDiacriticsType;
         }
+    }
+
+    private static boolean eventField(String column) {
+        return EVENT_FIELDS.contains(column);
     }
 
     private static void addTokens(BatchWriter bw, String shard, long timeStamp, Range range, String field, String phrase, String uid)
