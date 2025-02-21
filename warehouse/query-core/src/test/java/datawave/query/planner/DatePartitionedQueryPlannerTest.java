@@ -18,13 +18,16 @@ import java.util.StringJoiner;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
+import org.checkerframework.checker.units.qual.C;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -35,6 +38,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ComparisonFailure;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -48,6 +52,12 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.PushdownUnindexedFieldsVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
@@ -135,13 +145,16 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     private final DateFormat formatDate = new SimpleDateFormat("yyyyMMdd");
     private final DateFormat formatDateTime = new SimpleDateFormat("yyyyMMdd HHmmss");
+    private final DateFormat formatDateTimeMillis = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
     private final List<FieldIndexHoleDataIngest.EventConfig> eventConfigs = new ArrayList<>();
     private final Map<String,String> queryParameters = new HashMap<>();
     private final Set<Event> expectedEvents = new HashSet<>();
+    private final Map<Pair<Date,Date>,Pair<String,String>> expectedPlans = new HashMap<>();
 
     private String query;
     private Date startDate;
     private Date endDate;
+    private String plan;
     private Double fieldIndexHoleMinThreshold;
 
     @Deployment
@@ -175,9 +188,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         this.eventConfigs.clear();
         this.queryParameters.clear();
         this.expectedEvents.clear();
+        this.expectedPlans.clear();
         this.query = null;
         this.startDate = null;
         this.endDate = null;
+        this.plan = null;
         this.fieldIndexHoleMinThreshold = null;
     }
 
@@ -195,18 +210,34 @@ public abstract class DatePartitionedQueryPlannerTest {
     }
 
     private void givenStartDate(String date) throws ParseException {
+        this.startDate = start(date);
+    }
+
+    private Date start(String date) throws ParseException {
         if (date.length() == 8) {
-            this.startDate = formatDate.parse(date);
+            return formatDate.parse(date);
+        } else if (date.length() == 15) {
+            return formatDateTime.parse(date);
         } else {
-            this.startDate = formatDateTime.parse(date);
+            return formatDateTimeMillis.parse(date);
         }
     }
 
     private void givenEndDate(String date) throws ParseException {
+        this.endDate = end(date);
+    }
+
+    private void givenPlan(String plan) {
+        this.plan = plan;
+    }
+
+    private Date end(String date) throws ParseException {
         if (date.length() == 8) {
-            this.endDate = formatDate.parse(date);
+            return formatDateTimeMillis.parse(date + " 235959.999");
+        } else if (date.length() == 15) {
+            return formatDateTimeMillis.parse(date + ".999");
         } else {
-            this.endDate = formatDateTime.parse(date);
+            return formatDateTimeMillis.parse(date);
         }
     }
 
@@ -218,6 +249,14 @@ public abstract class DatePartitionedQueryPlannerTest {
         for (String uid : uids) {
             this.expectedEvents.add(new Event(date, uid));
         }
+    }
+
+    private void expectPlan(Date begin, Date end, String plan) {
+        this.expectedPlans.put(Pair.of(begin, end), Pair.of(plan, plan));
+    }
+
+    private void expectPlan(Date begin, Date end, String pushdownPlan, String finalPlan) {
+        this.expectedPlans.put(Pair.of(begin, end), Pair.of(pushdownPlan, finalPlan));
     }
 
     private AccumuloClient createClient() throws Exception {
@@ -284,6 +323,9 @@ public abstract class DatePartitionedQueryPlannerTest {
         Assert.assertNotNull("lastSubRange should not be null", lastSubRange);
         Assert.assertEquals("end of lastSubRange should equal query endDate", this.endDate.getTime(), lastSubRange.getRight().getTime());
 
+        Assert.assertEquals(getDiffs(expectedPlans.keySet(), subRanges.keySet()), expectedPlans.keySet(), subRanges.keySet());
+        ASTJexlScript planTree = JexlASTHelper.parseJexlQuery(plan);
+
         Pair<Date,Date> previousPair = null;
         for (Pair<Date,Date> range : subRanges.keySet()) {
             Set<String> datesWithHolesInRange = new TreeSet<>();
@@ -314,6 +356,12 @@ public abstract class DatePartitionedQueryPlannerTest {
                 long difference = range.getLeft().getTime() - previousPair.getRight().getTime();
                 Assert.assertEquals("Expected difference of 1ms, got " + difference, 1, difference);
             }
+
+            // check the plan
+            String actualPlan = JexlStringBuildingVisitor.buildQuery(PushdownUnindexedFieldsVisitor.pushdownPredicates(planTree, subRanges.get(range)));
+            String expectedPlan = expectedPlans.get(range).getLeft();
+            assertPlanEquals(expectedPlan, actualPlan);
+
             previousPair = range;
         }
     }
@@ -340,6 +388,9 @@ public abstract class DatePartitionedQueryPlannerTest {
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
 
+        Set<String> actualPlans = new HashSet<>();
+        actualPlans.addAll(PartitionedPlanVisitor.getPlans(config.getQueryString()));
+
         // Run the query and retrieve the response.
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
         List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
@@ -354,27 +405,78 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
 
         Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
+        Set<String> expectedFinalPlans = expectedPlans.values().stream().map(e -> e.getRight()).collect(Collectors.toSet());
+        assertPlanEquals(expectedFinalPlans, actualPlans);
         return client;
     }
 
-    private String getDiffs(Set<Event> expectedEvents, Set<Event> actualEvents) {
+    private String getDiffs(Set<?> expected, Set<?> actual) {
         StringBuilder builder = new StringBuilder();
-        for (Event e : expectedEvents) {
-            if (!actualEvents.contains(e)) {
+        for (Object e : expected) {
+            if (!actual.contains(e)) {
                 builder.append("\nmissing " + e);
             }
         }
-        for (Event e : expectedEvents) {
-            if (actualEvents.contains(e)) {
+        for (Object e : expected) {
+            if (actual.contains(e)) {
                 builder.append("\nmatched " + e);
             }
         }
-        for (Event e : actualEvents) {
-            if (!expectedEvents.contains(e)) {
+        for (Object e : actual) {
+            if (!expected.contains(e)) {
                 builder.append("\nextra " + e);
             }
         }
+        builder.append('\n');
         return builder.toString();
+    }
+
+    /**
+     * assertQuery is almost the same as Assert.assertEquals except that it will allow for different orderings of the terms within an AND or and OR.
+     *
+     * @param expected
+     *            The expected query
+     * @param query
+     *            The query being tested
+     */
+    protected void assertPlanEquals(String expected, String query) throws org.apache.commons.jexl3.parser.ParseException {
+        // first do the quick check
+        if (expected.equals(query)) {
+            return;
+        }
+
+        ASTJexlScript expectedTree = JexlASTHelper.parseJexlQuery(expected);
+        expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
+        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
+        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
+        if (!comparison.isEqual()) {
+            throw new ComparisonFailure(comparison.getReason(), expected, query);
+        }
+    }
+
+    protected void assertPlanEquals(Set<String> expectedPlans, Set<String> actualPlans) throws org.apache.commons.jexl3.parser.ParseException {
+        Assert.assertEquals("Expected plans differ in size from actual plans", expectedPlans.size(), actualPlans.size());
+
+        // we will be modifying the actual set
+        actualPlans = new HashSet<>(actualPlans);
+        for (String expected : expectedPlans) {
+            String match = null;
+            for (String actual : actualPlans) {
+                try {
+                    assertPlanEquals(expected, actual);
+                    match = actual;
+                    break;
+                } catch (ComparisonFailure c) {
+
+                }
+            }
+            if (match == null) {
+                throw new ComparisonFailure("Unable to find expected plan in actual plans", expected, actualPlans.toString());
+            } else {
+                actualPlans.remove(match);
+            }
+        }
     }
 
     /**
@@ -391,6 +493,9 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+
+        expectPlan(start("20130101"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -415,6 +520,9 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130104");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+
+        expectPlan(start("20130101"), end("20130104"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -438,6 +546,12 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+
+        expectPlan(start("20130101"), end("20130102"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+        expectPlan(start("20130103"), end("20130103"),
+                        "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
+        expectPlan(start("20130104"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -462,6 +576,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130104");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+
+        expectPlan(start("20130101"), end("20130102"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+        expectPlan(start("20130103"), end("20130104"),
+                        "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -485,6 +604,15 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+
+        expectPlan(start("20130101"), end("20130102"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+        // the final plan required expanding the UUID list
+        expectPlan(start("20130103"), end("20130103"),
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))",
+                        "(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && ((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male'))");
+        expectPlan(start("20130104"), end("20130104"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
+        expectPlan(start("20130105"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -509,6 +637,19 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+
+        expectPlan(start("20130101"), end("20130101"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+        // final plan required expansion of the UUID regex
+        expectPlan(start("20130102"), end("20130102"),
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))",
+                        "(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && ((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male'))");
+        // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
+        expectPlan(start("20130103"), end("20130103"),
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))",
+                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
+        expectPlan(start("20130104"), end("20130104"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
+        expectPlan(start("20130105"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -524,15 +665,51 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testOverlappingFieldIndexHolesForDifferentFieldsNoSingleDates() throws Exception {
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
+
+        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
+        givenStartDate("20130101");
+        givenEndDate("20130105");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+
+        // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
+        expectPlan(start("20130101"), end("20130103"),
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))",
+                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
+        expectPlan(start("20130104"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
+
+        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+
+        assertSubrangesCorrect(assertQueryResults());
+    }
+
+    /**
+     * Test a query that targets fields with field index holes for different fields that overlap.
+     */
+    @Test
+    public void testMissingIndexedData() throws Exception {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
+        givenQuery("GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("GENDER == 'male' || GENERE == 'male'");
+
+        expectPlan(start("20130101"), end("20130101"), "GENDER == 'male' || GENERE == 'male'");
+        expectPlan(start("20130102"), end("20130103"), "GENERE == 'male' || ((_Eval_ = true) && (GENDER == 'male'))");
+        expectPlan(start("20130104"), end("20130105"), "GENDER == 'male' || GENERE == 'male'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -557,6 +734,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+
+        expectPlan(start("20130101"), end("20130102"),
+                        "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
+        expectPlan(start("20130103"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -578,6 +760,14 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20120101");
         givenEndDate("20130105 120000");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+
+        expectPlan(start("20120101"), end("20130101"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+        expectPlan(start("20130102"), end("20130102"),
+                        "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
+        expectPlan(start("20130103"), end("20130103"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+        expectPlan(start("20130104"), end("20130105 120000"),
+                        "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -602,7 +792,10 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
         givenFieldIndexMinThreshold(.9);
+
+        expectPlan(start("20130101"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -627,7 +820,13 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("UUID =~ '^[CS].*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
+        givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
         givenFieldIndexMinThreshold(.9);
+
+        expectPlan(start("20130101"), end("20130103"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
+        expectPlan(start("20130104"), end("20130104"),
+                        "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
+        expectPlan(start("20130105"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);

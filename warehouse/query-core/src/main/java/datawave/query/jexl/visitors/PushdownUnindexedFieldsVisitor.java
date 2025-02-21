@@ -76,9 +76,9 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
                     return delayBoundedRange(node);
                 case EXCEEDED_VALUE:
                 case EXCEEDED_OR:
-                    return delayIvarator(marker, node);
-                case INDEX_HOLE:
                 case DELAYED:
+                    return delayByReplaceMarker(marker, node);
+                case INDEX_HOLE:
                 case DROPPED:
                 case LENIENT:
                 case STRICT:
@@ -194,7 +194,7 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
         }
     }
 
-    protected JexlNode delayIvarator(QueryPropertyMarker.Instance marker, JexlNode node) {
+    protected JexlNode delayByReplaceMarker(QueryPropertyMarker.Instance marker, JexlNode node) {
         if (missingIndex(marker.getSource())) {
             // in the case of a list ivarator, we cannot simply make this eval only as the source node
             // cannot be evaluated per-se. This visitor must be executed before pushing down long lists.
