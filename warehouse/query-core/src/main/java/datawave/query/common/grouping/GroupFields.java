@@ -110,15 +110,39 @@ public class GroupFields implements Serializable {
                     }
                 }
             } else {
-                // Otherwise, the string may be in the legacy format of a comma-delimited string with group-fields only.
+                // Otherwise, the string may be in the legacy format of a comma-delimited string with group-fields only, or are comma-delimited sets of fields
+                // followed by date granularities to group on.
                 groupFields.groupByFieldMap = parseGroupByFields(string);
             }
         }
         return groupFields;
     }
 
+    /**
+     * Returns a map of fields to one or more {@link TemporalGranularity} parsed from the given string. The provided string is expected to have comma delimited
+     * sets of fields that may be directly followed by bracketed, comma-delimited {@link TemporalGranularity} names. For example,
+     * {@code "fieldA,fieldB[HOUR],fieldC[DAY,HOUR]"}. Any fields not specified with a {@link TemporalGranularity} name will be added with the default
+     * {@link TemporalGranularity#ALL} granularity. All whitespace will be stripped before parsing. See below for certain edge cases.
+     * <ul>
+     * <li>Given null or a blank string, an empty map will be returned</li>
+     * <li>Given {@code field1[],field2[DAY]}, or {@code field1,field2[DAY]}, or {@code field1[ALL],field2[DAY]}, a map will be returned where the key field1 is
+     * added with {@link TemporalGranularity#ALL}, and the key field2 is added with {@link TemporalGranularity#TRUNCATE_TEMPORAL_TO_DAY}.</li>
+     * </ul>
+     *
+     * @param string
+     *            the string
+     * @return a map of fields and associated temporal granularities
+     */
     public static TreeMultimap<String,TemporalGranularity> parseGroupByFields(String string) {
         TreeMultimap<String,TemporalGranularity> map = TreeMultimap.create();
+
+        if (string == null) {
+            return map;
+        }
+
+        // Strip whitespaces.
+        string = StringUtils.deleteWhitespace(string);
+
         int currentIndex = 0;
         int finalIndex = string.length() - 1;
         while (currentIndex < finalIndex) {
@@ -550,6 +574,13 @@ public class GroupFields implements Serializable {
         return Objects.hash(groupByFieldMap, sumFields, countFields, averageFields, minFields, maxFields, reverseModelMap);
     }
 
+    /**
+     * Returns this {@link GroupFields} as a formatted string that can later be parsed back into a {@link GroupFields} using {@link GroupFields#from(String)}.
+     * This is also what will be used when serializing a {@link GroupFields} to JSON/XML. The string will have the format
+     * {@code GROUP(field[Granularity,...],...)|SUM(field,...)|COUNT(field,...)|AVERAGE(field,...)|MIN(field,...)|MAX(field,...)|REVERSE_MODEL_MAP(field1=model1,field1=model2:field2=model3,...)}
+     *
+     * @return a formatted string
+     */
     @JsonValue
     @Override
     public String toString() {
@@ -567,6 +598,10 @@ public class GroupFields implements Serializable {
     // Write the fields to group on to the given string builder.
     private void writeGroupByFieldMap(StringBuilder sb) {
         if (!groupByFieldMap.isEmpty()) {
+            if (sb.length() > 0) {
+                sb.append(Constants.PIPE);
+            }
+
             sb.append(GROUP).append(Constants.LEFT_PAREN);
             Iterator<String> fieldIterator = groupByFieldMap.keySet().iterator();
             while (fieldIterator.hasNext()) {
