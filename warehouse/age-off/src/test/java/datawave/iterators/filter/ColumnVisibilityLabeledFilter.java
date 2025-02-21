@@ -12,7 +12,6 @@ import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.util.CompositeTimestamp;
-import datawave.util.StringUtils;
 
 /**
  * Test class used for the purpose of providing an alternative matchPattern format from TokenSpecParser with some overlap.

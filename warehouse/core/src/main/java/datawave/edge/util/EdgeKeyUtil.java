@@ -15,7 +15,6 @@ import org.apache.hadoop.io.Text;
 
 import datawave.data.type.Type;
 import datawave.edge.model.EdgeModelFields.FieldKey;
-import datawave.util.StringUtils;
 
 /**
  * Utility class for generating regular expressions to scan various formats of the edge table.
