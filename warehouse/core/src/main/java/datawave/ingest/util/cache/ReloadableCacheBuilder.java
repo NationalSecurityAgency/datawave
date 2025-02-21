@@ -76,7 +76,7 @@ public class ReloadableCacheBuilder<K extends Reloadable,V> extends Loader<K,V> 
                 if (watcher.hasChanged()) {
                     synchronized (entryCache) {
                         if (log.isTraceEnabled())
-                            log.trace("rebuild " + watcher + " ? " + watcher.hasChanged() + ' ' + watcher.reload());
+                            log.trace("rebuild " + watcher + " ? " + watcher.hasChanged() + " " + watcher.reload());
 
                         entryCache.put(keyWatcher, (V) watcher.reload());
 
