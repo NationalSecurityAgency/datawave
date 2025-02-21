@@ -1,5 +1,7 @@
 package datawave.query.planner;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -11,7 +13,6 @@ import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -184,7 +185,7 @@ public class GeoSortedQueryDataTest {
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(BEGIN_DATE).getTime() + dates[i]);
-            record.setRawData(wktData[i].getBytes(StandardCharsets.UTF_8));
+            record.setRawData(wktData[i].getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
 

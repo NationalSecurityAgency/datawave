@@ -1,5 +1,7 @@
 package datawave.query.jexl.nodes;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -11,7 +13,6 @@ import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -225,7 +226,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(beginDate).getTime());
-            record.setRawData((wktData[i]).getBytes(StandardCharsets.UTF_8));
+            record.setRawData((wktData[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
 
