@@ -177,7 +177,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
             event.setFields(new ArrayList<>(documentFields));
 
             Metadata metadata = new Metadata();
-            String[] colfParts = StringUtils.split(colf, '\0');
+            String[] colfParts = colf.split("\0");
             if (colfParts.length >= 1) {
                 metadata.setDataType(colfParts[0]);
             }

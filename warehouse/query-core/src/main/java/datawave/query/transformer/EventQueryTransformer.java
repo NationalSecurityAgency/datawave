@@ -125,7 +125,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         event.setFields(new ArrayList<>(values));
 
         Metadata metadata = new Metadata();
-        String[] colfParts = StringUtils.split(colf, '\0');
+        String[] colfParts = colf.split("\0");
         if (colfParts.length >= 1) {
             metadata.setDataType(colfParts[0]);
         }

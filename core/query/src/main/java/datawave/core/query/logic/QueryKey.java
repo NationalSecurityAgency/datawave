@@ -35,7 +35,7 @@ public class QueryKey implements Serializable {
      *            The toString() from a task key
      */
     public QueryKey(String value) {
-        String[] parts = StringUtils.split(value, '.');
+        String[] parts = value.split("\\.");
         for (String part : parts) {
             setPart(part);
         }

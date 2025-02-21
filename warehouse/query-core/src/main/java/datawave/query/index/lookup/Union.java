@@ -350,7 +350,7 @@ public class Union extends BaseIndexStream {
         builder.append(context).append(": Union (").append(contextDebug).append(')');
         for (String childrenContext : childrenContextDebug) {
             String prefix = "\n - ";
-            String[] lines = StringUtils.split(childrenContext, '\n');
+            String[] lines = childrenContext.split("\n");
             for (String line : lines) {
                 builder.append(prefix).append(line);
                 prefix = "\n   ";

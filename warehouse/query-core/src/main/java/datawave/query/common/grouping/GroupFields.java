@@ -72,7 +72,7 @@ public class GroupFields implements Serializable {
             // The string contains group fields in the latest formatting GROUP(field,...)...
             if (string.contains(Constants.LEFT_PAREN)) {
                 // Individual elements are separated by a pipe.
-                String[] elements = string.split( "\\|");
+                String[] elements = string.split("\\|");
 
                 // Each element starts NAME().
                 for (String element : elements) {

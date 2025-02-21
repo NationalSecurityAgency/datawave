@@ -159,7 +159,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         Key key = origKey;
         if (key != null) {
             String colFam = key.getColumnFamily().toString();
-            String[] colFamParts = StringUtils.split(colFam, '\0');
+            String[] colFamParts = colFam.split("\0");
             if (colFamParts.length == 3) {
                 // skip part 0 and return a key with parts 1 & 2 as the colFam
                 key = new Key(key.getRow(), new Text(colFamParts[1] + '\0' + colFamParts[2]), key.getColumnQualifier(), key.getColumnVisibility(),

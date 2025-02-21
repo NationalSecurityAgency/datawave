@@ -211,7 +211,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isDebugEnabled()) {
             log.debug("Query returned a stream with a context of " + this.context);
             if (queryStream != null) {
-                for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                for (String line : queryStream.getContextDebug().split("\n")) {
                     log.debug(line);
                 }
             }
@@ -256,7 +256,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
-                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                    for (String line : queryStream.getContextDebug().split("\n")) {
                         log.debug(line);
                     }
                 }

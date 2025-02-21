@@ -248,7 +248,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                 Entry<Key,Value> entry = iterator.next();
                 Key k = entry.getKey();
 
-                String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
+                String[] parts = k.getColumnQualifier().toString().split("\0");
                 if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
                     desc.fields.add(parts[2]);
                     String date = parts[0];
@@ -333,12 +333,12 @@ public class DateIndexHelper implements ApplicationContextAware {
             while (iterator.hasNext()) {
                 Entry<Key,Value> entry = iterator.next();
                 Key k = entry.getKey();
-                String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
+                String[] parts = k.getColumnQualifier().toString().split("\0");
                 String date = parts[0];
 
                 // If the event date is more than one day before the event actually happened,
                 // then skip it, unless time-travel has been enabled.
-                String[] columnFamilyParts = StringUtils.split(k.getColumnFamily().toString(), '\0');
+                String[] columnFamilyParts = k.getColumnFamily().toString().split("\0");
                 if (timeTravel == false && columnFamilyParts.length > 0 && columnFamilyParts[0].equals("ACTIVITY")) {
                     try {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
