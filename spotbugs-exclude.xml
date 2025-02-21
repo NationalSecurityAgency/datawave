@@ -141,6 +141,12 @@
         <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
     </Match>
 
+    <Match>
+        <Class name="~datawave\.core\.query\..*" />
+        <Method name="clone" />
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
+    </Match>
+
     <!-- False-positive: byteSeq local var is clearly being used in multiple places (??) -->
     <Match>
         <Class name="datawave.query.transformer.UniqueTransform" />

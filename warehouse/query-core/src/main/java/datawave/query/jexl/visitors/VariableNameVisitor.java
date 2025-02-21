@@ -5,7 +5,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 
 import java.util.Set;
 
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
