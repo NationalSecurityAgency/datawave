@@ -93,37 +93,7 @@ public class PushdownUnindexedFieldsVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
                 "INDEXED_FIELD == 'a' && ((_Eval_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
                 Collections.singleton("UNINDEXED_FIELD")
-            },
-            {
-                "DelayedIvarator",
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                "INDEXED_FIELD == 'a' && ((_Eval_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                Collections.singleton("UNINDEXED_FIELD")
-                },
-                {
-                "DelayedIvarator",
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                "INDEXED_FIELD == 'a' && ((_Eval_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                Collections.singleton("UNINDEXED_FIELD")
-                },
-                {
-                "DelayedIvarator",
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                "INDEXED_FIELD == 'a' && ((_Eval_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                Collections.singleton("UNINDEXED_FIELD")
-                },
-                {
-                "DelayedIvarator",
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                "INDEXED_FIELD == 'a' && ((_Eval_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                        Collections.singleton("UNINDEXED_FIELD")
-                },
-                {
-                        "DelayedIvarator",
-                        "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                        "INDEXED_FIELD == 'a' && ((_Eval_ = true) && (UNINDEXED_FIELD =~ 'b.*'))",
-                        Collections.singleton("UNINDEXED_FIELD")
-                }
+            }
         });
         // @formatter:on
     }
