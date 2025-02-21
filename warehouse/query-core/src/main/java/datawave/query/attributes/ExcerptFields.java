@@ -60,7 +60,7 @@ public class ExcerptFields implements Serializable {
 
         String[] fieldParts = string.split(Constants.COMMA);
         for (String fieldPart : fieldParts) {
-            String[] parts = StringUtils.split(fieldPart, Constants.FORWARD_SLASH);
+            String[] parts = fieldPart.split(Constants.FORWARD_SLASH);
             String direction = parts.length == 3 ? parts[2] : BOTH;
             excerptFields.put(parts[0], Integer.valueOf(parts[1]), direction);
         }
