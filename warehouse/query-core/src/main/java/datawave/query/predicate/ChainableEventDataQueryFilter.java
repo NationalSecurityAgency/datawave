@@ -10,8 +10,6 @@ import javax.annotation.Nullable;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
-import datawave.query.attributes.Document;
-
 /**
  * Wrap multiple EventDataQueryFilter objects and in order process them
  */

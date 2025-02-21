@@ -8,7 +8,6 @@ import org.apache.deltaspike.core.api.config.ConfigResolver;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.result.ConnectionPoolClientProperties;
-import datawave.webservice.common.connection.AccumuloClientConfiguration;
 
 /**
  * The configuration for the connection pool clients of the form derived from properties as follows:

@@ -26,7 +26,6 @@ import org.junit.Assert;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
@@ -42,7 +41,6 @@ import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
 import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentDataTypeHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
 /**

@@ -130,6 +130,14 @@ public class SatisfactionVisitorTest {
     }
 
     @Test
+    public void testIndexHoleMarker() {
+        test(true, "((_Hole_ = true) && (INDEXED_FIELD == 'a'))");
+        test(true, "((_Hole_ = true) && (INDEX_ONLY_FIELD == 'a'))");
+        // this should be false. will be caught if we verify the source node for markers
+        test(true, "((_Hole_ = true) && (EVENT_ONLY_FIELD == 'a'))");
+    }
+
+    @Test
     public void testDelayedMarker() {
         test(false, "((_Delayed_ = true) && (INDEXED_FIELD == 'a'))");
         test(false, "((_Delayed_ = true) && (INDEX_ONLY_FIELD == 'a'))");
@@ -146,11 +154,11 @@ public class SatisfactionVisitorTest {
 
     @Test
     public void testBoundedRangeMarker() {
-        // this is absolutely executable against the field index
-        test(false, "((_Bounded_ = true) && (INDEXED_FIELD > '1' && INDEXED_FIELD < '2'))");
-        // this is absolutely executable against the field index
-        test(false, "((_Bounded_ = true) && (INDEX_ONLY_FIELD > '1' && INDEX_ONLY_FIELD < '2'))");
-        test(false, "((_Bounded_ = true) && (EVENT_ONLY_FIELD > '1' && EVENT_ONLY_FIELD < '2'))");
+        test(true, "((_Bounded_ = true) && (INDEXED_FIELD > '1' && INDEXED_FIELD < '2'))");
+        test(true, "((_Bounded_ = true) && (INDEX_ONLY_FIELD > '1' && INDEX_ONLY_FIELD < '2'))");
+        // this is not executable against the field index and should be wrapped with a delayed or eval marker
+        // leave this test case in to document behavior when the fields for the source node are not visited
+        test(true, "((_Bounded_ = true) && (EVENT_ONLY_FIELD > '1' && EVENT_ONLY_FIELD < '2'))");
     }
 
     @Test
@@ -420,17 +428,15 @@ public class SatisfactionVisitorTest {
 
     @Test
     public void testAndNot() {
-        // this should be true
-        test(false, "INDEXED_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
-        // this should be true
-        test(false, "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
+        // negations can be handled by the field index
+        test(true, "INDEXED_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
+        test(true, "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
         // this is technically satisfiable if we run an iterator against the event column
         test(false, "INDEXED_FIELD == 'a' && !(EVENT_ONLY_FIELD == 'b')");
 
-        // this should be true
-        test(false, "INDEX_ONLY_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
-        // this should be true
-        test(false, "INDEX_ONLY_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
+        // negations can be handled by the field index
+        test(true, "INDEX_ONLY_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
+        test(true, "INDEX_ONLY_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
         // this is technically satisfiable if we run an iterator against the event column
         test(false, "INDEX_ONLY_FIELD == 'a' && !(EVENT_ONLY_FIELD == 'b')");
 
@@ -438,6 +444,33 @@ public class SatisfactionVisitorTest {
         test(false, "EVENT_ONLY_FIELD == 'a' && !(INDEXED_FIELD == 'b')");
         test(false, "EVENT_ONLY_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b')");
         test(false, "EVENT_ONLY_FIELD == 'a' && !(EVENT_ONLY_FIELD == 'b')");
+
+        // alternate type of negated term that is not satisfiable against the field index
+        test(false, "INDEXED_FIELD == 'a' && !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "INDEX_ONLY_FIELD == 'a' && !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "EVENT_ONLY_FIELD == 'a' && !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+    }
+
+    @Test
+    public void testOrNot() {
+        // any negated term within a top level union is considered a top level negation
+
+        test(false, "INDEXED_FIELD == 'a' || !(INDEXED_FIELD == 'b')");
+        test(false, "INDEXED_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b')");
+        test(false, "INDEXED_FIELD == 'a' || !(EVENT_ONLY_FIELD == 'b')");
+
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(INDEXED_FIELD == 'b')");
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b')");
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(EVENT_ONLY_FIELD == 'b')");
+
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(INDEXED_FIELD == 'b')");
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b')");
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(EVENT_ONLY_FIELD == 'b')");
+
+        // alternate type of negated term that is not satisfiable against the field index
+        test(false, "INDEXED_FIELD == 'a' || !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "INDEX_ONLY_FIELD == 'a' || !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
+        test(false, "EVENT_ONLY_FIELD == 'a' || !(filter:includeRegex(INDEXED_FIELD,'ba.*'))");
     }
 
     /**
