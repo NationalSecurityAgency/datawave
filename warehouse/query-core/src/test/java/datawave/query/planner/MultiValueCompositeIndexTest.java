@@ -13,7 +13,6 @@ import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

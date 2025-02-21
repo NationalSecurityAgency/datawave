@@ -3,7 +3,6 @@ package datawave.core.iterators;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.ByteSequence;
