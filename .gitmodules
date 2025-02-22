@@ -4,9 +4,6 @@
 [submodule "microservices/services/dictionary"]
 	path = microservices/services/dictionary
 	url = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git
-[submodule "microservices/services/audit"]
-	path = microservices/services/audit
-	url = git@github.com:NationalSecurityAgency/datawave-audit-service.git
 [submodule "microservices/services/query-metric"]
 	path = microservices/services/query-metric
 	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
