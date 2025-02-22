@@ -22,9 +22,6 @@
 [submodule "microservices/services/query-metric"]
 	path = microservices/services/query-metric
 	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
-[submodule "core/metrics-reporter"]
-	path = core/metrics-reporter
-	url = git@github.com:NationalSecurityAgency/datawave-metrics-reporter.git
 [submodule "microservices/starters/cache"]
 	path = microservices/starters/cache
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cache.git
