@@ -10,9 +10,6 @@
 [submodule "core/utils/common-utils"]
 	path = core/utils/common-utils
 	url = git@github.com:NationalSecurityAgency/datawave-common-utils.git
-[submodule "core/base-rest-responses"]
-	path = core/base-rest-responses
-	url = git@github.com:NationalSecurityAgency/datawave-base-rest-responses.git
 [submodule "core/utils/metadata-utils"]
 	path = core/utils/metadata-utils
 	url = git@github.com:NationalSecurityAgency/datawave-metadata-utils.git
