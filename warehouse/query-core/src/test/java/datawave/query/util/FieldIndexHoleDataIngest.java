@@ -275,12 +275,12 @@ public class FieldIndexHoleDataIngest {
     }
 
     private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
-                                             long ts, Value v) throws MutationsRejectedException {
+                    long ts, Value v) throws MutationsRejectedException {
         writeShardIndexEntry(bw, indexCounts, field, value, normalize, shard, ts, v, false);
     }
 
-    private static void writeReverseShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
-                                             long ts, Value v) throws MutationsRejectedException {
+    private static void writeReverseShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize,
+                    String shard, long ts, Value v) throws MutationsRejectedException {
         writeShardIndexEntry(bw, indexCounts, field, value, normalize, shard, ts, v, true);
     }
 
@@ -397,7 +397,7 @@ public class FieldIndexHoleDataIngest {
                 long timeStamp = config.getTime();
 
                 Map<String,AtomicLong> indexCounts = config.getMetadataCounts().entrySet().stream()
-                        .collect(Collectors.toMap(e -> e.getKey(), e -> new AtomicLong(e.getValue().getValue1())));
+                                .collect(Collectors.toMap(e -> e.getKey(), e -> new AtomicLong(e.getValue().getValue1())));
 
                 // corleones
                 // uuid
