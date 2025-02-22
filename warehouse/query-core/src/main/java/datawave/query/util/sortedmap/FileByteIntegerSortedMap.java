@@ -6,7 +6,6 @@ import java.util.SortedMap;
 
 import org.apache.log4j.Logger;
 
-import datawave.query.util.sortedmap.rfile.RFileByteDocumentOutputStream;
 import datawave.query.util.sortedmap.rfile.RFileByteIntegerInputStream;
 import datawave.query.util.sortedmap.rfile.RFileByteIntegerOutputStream;
 import datawave.query.util.sortedset.ByteArrayComparator;

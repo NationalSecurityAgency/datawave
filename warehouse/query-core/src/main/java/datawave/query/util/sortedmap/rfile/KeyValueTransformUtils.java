@@ -10,7 +10,6 @@ import java.util.Map;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.ValueFormatException;
-import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.io.WritableUtils;
 
