@@ -7,9 +7,6 @@
 [submodule "microservices/starters/datawave"]
 	path = microservices/starters/datawave
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter.git
-[submodule "microservices/services/hazelcast"]
-	path = microservices/services/hazelcast
-	url = git@github.com:NationalSecurityAgency/datawave-hazelcast-service.git
 [submodule "microservices/starters/metadata"]
 	path = microservices/starters/metadata
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-metadata.git
