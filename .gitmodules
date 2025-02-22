@@ -25,9 +25,6 @@
 [submodule "microservices/services/query-executor"]
 	path = microservices/services/query-executor
 	url = git@github.com:NationalSecurityAgency/datawave-query-executor-service.git
-[submodule "microservices/services/modification"]
-	path = microservices/services/modification
-	url = git@github.com:NationalSecurityAgency/datawave-modification-service.git
 [submodule "microservices/starters/cached-results"]
 	path = microservices/starters/cached-results
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cached-results.git
