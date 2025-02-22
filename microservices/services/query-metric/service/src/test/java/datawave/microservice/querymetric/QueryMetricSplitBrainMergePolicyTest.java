@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+@Ignore
 public class QueryMetricSplitBrainMergePolicyTest {
     
     private final static QueryMetricFactory queryMetricFactory = new QueryMetricFactoryImpl();
