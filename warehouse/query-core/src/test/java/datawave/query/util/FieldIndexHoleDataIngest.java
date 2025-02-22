@@ -275,11 +275,25 @@ public class FieldIndexHoleDataIngest {
     }
 
     private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
-                    long ts, Value v) throws MutationsRejectedException {
+                                             long ts, Value v) throws MutationsRejectedException {
+        writeShardIndexEntry(bw, indexCounts, field, value, normalize, shard, ts, v, false);
+    }
+
+    private static void writeReverseShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
+                                             long ts, Value v) throws MutationsRejectedException {
+        writeShardIndexEntry(bw, indexCounts, field, value, normalize, shard, ts, v, true);
+    }
+
+    private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
+                    long ts, Value v, boolean reverse) throws MutationsRejectedException {
         AtomicLong count = indexCounts.get(field);
         // if (count.get() > 0) {
         count.decrementAndGet();
-        Mutation mutation = new Mutation(normalize ? normalizerForColumn(field).normalize(value) : value);
+        String normalizedValue = normalize ? normalizerForColumn(field).normalize(value) : value;
+        if (reverse) {
+            normalizedValue = new StringBuilder(normalizedValue).reverse().toString();
+        }
+        Mutation mutation = new Mutation(normalizedValue);
         mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, ts, v);
         bw.addMutation(mutation);
         // }
@@ -300,7 +314,6 @@ public class FieldIndexHoleDataIngest {
                 // uuid
                 writeShardIndexEntry(bw, indexCounts, "UUID", "CORLEONE", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "UUID", "ANDOLINI", true, shard, timeStamp, range.getValue(corleoneChildUID));
-
                 // names
                 writeShardIndexEntry(bw, indexCounts, "NOME", "SANTINO", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "NOME", "FREDO", true, shard, timeStamp, range.getValue(corleoneUID));
@@ -308,10 +321,8 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "NOME", "CONSTANZIA", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, timeStamp, range.getValue(corleoneUID));
-
                 // genders
                 writeShardIndexEntry(bw, indexCounts, "GENERE", "MALE", true, shard, timeStamp, range.getValue(corleoneUID));
-
                 // ages
                 writeShardIndexEntry(bw, indexCounts, "ETA", "12", true, shard, timeStamp, range.getValue(corleoneChildUID));
                 writeShardIndexEntry(bw, indexCounts, "ETA", "18", true, shard, timeStamp, range.getValue(corleoneUID));
@@ -319,7 +330,6 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "ETA", "22", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "ETA", "24", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "ETA", "40", true, shard, timeStamp, range.getValue(corleoneUID));
-
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
                     writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(corleoneUID));
@@ -337,11 +347,9 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, timeStamp, range.getValue(sopranoUID));
                 // genders
                 writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
-
                 // ages
                 writeShardIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
-
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
                     writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(sopranoUID));
@@ -366,16 +374,13 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "AGE", "30", true, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "34", true, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "40", true, shard, timeStamp, range.getValue(caponeUID));
-
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
                     writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(caponeUID));
                 }
-
                 // add some index-only fields
                 writeShardIndexEntry(bw, indexCounts, "LOCATION", "chicago", false, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "SENTENCE", "11y", false, shard, timeStamp, range.getValue(caponeUID));
-
                 // add some tokens
                 addTokens(bw, shard, timeStamp, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone",
                                 caponeUID);
@@ -391,155 +396,63 @@ public class FieldIndexHoleDataIngest {
                 String shard = config.getDate() + "_0";
                 long timeStamp = config.getTime();
 
+                Map<String,AtomicLong> indexCounts = config.getMetadataCounts().entrySet().stream()
+                        .collect(Collectors.toMap(e -> e.getKey(), e -> new AtomicLong(e.getValue().getValue1())));
+
                 // corleones
-                Mutation mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("CORLEONE")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("ANDOLINI")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneChildUID));
-                bw.addMutation(mutation);
-
+                // uuid
+                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "CORLEONE", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "ANDOLINI", true, shard, timeStamp, range.getValue(corleoneChildUID));
                 // names
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("SANTINO")).reverse());
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("FREDO")).reverse());
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MICHAEL")).reverse());
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("CONSTANZIA")).reverse());
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("LUCA")).reverse());
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("VINCENT")).reverse());
-                mutation.put("NOME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "SANTINO", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "FREDO", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "MICHAEL", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "CONSTANZIA", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, timeStamp, range.getValue(corleoneUID));
                 // genders
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENERE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "GENERE", "MALE", true, shard, timeStamp, range.getValue(corleoneUID));
                 // ages
-                mutation = new Mutation(new StringBuilder(numberType.normalize("24")).reverse());
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("22")).reverse());
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("20")).reverse());
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("18")).reverse());
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("40")).reverse());
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("12")).reverse());
-                mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneChildUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "12", true, shard, timeStamp, range.getValue(corleoneChildUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "18", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "20", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "22", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "24", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "40", true, shard, timeStamp, range.getValue(corleoneUID));
+                // add some index-only fields
+                writeReverseShardIndexEntry(bw, indexCounts, "POSIZIONE", "newyork", false, shard, timeStamp, range.getValue(corleoneUID));
 
                 // sopranos
                 // uuid
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("SOPRANO")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "SOPRANO", true, shard, timeStamp, range.getValue(sopranoUID));
                 // names
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("ANTHONY")).reverse());
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MEADOW")).reverse());
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "ANTHONY", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, timeStamp, range.getValue(sopranoUID));
                 // genders
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
-                mutation = new Mutation(new StringBuilder(numberType.normalize("16")).reverse());
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("18")).reverse());
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
+                // add some index-only fields
+                writeReverseShardIndexEntry(bw, indexCounts, "LOCATION", "newjersey", false, shard, timeStamp, range.getValue(sopranoUID));
 
                 // capones
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("CAPONE")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
+                // uuid
+                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "CAPONE", true, shard, timeStamp, range.getValue(caponeUID));
                 // names
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("ALPHONSE")).reverse());
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("FRANK")).reverse());
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("RALPH")).reverse());
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MICHAEL")).reverse());
-                mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "ALPHONSE", true, shard, timeStamp, range.getValue(caponeUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "FRANK", true, shard, timeStamp, range.getValue(caponeUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "RALPH", true, shard, timeStamp, range.getValue(caponeUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "MICHAEL", true, shard, timeStamp, range.getValue(caponeUID));
                 // genders
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("MALE")).reverse());
-                mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
+                // see above: writeReverseShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
-                mutation = new Mutation(new StringBuilder(numberType.normalize("30")).reverse());
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("34")).reverse());
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("20")).reverse());
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder(numberType.normalize("40")).reverse());
-                mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-
+                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "20", true, shard, timeStamp, range.getValue(caponeUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "30", true, shard, timeStamp, range.getValue(caponeUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "34", true, shard, timeStamp, range.getValue(caponeUID));
+                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "40", true, shard, timeStamp, range.getValue(caponeUID));
                 // add some index-only fields
-                mutation = new Mutation(new StringBuilder("chicago").reverse());
-                mutation.put("LOCATION", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(caponeUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder("newyork").reverse());
-                mutation.put("POSIZIONE", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(corleoneUID));
-                bw.addMutation(mutation);
-                mutation = new Mutation(new StringBuilder("newjersey").reverse());
-                mutation.put("LOCATION", shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(sopranoUID));
-                bw.addMutation(mutation);
+                writeReverseShardIndexEntry(bw, indexCounts, "LOCATION", "chicago", false, shard, timeStamp, range.getValue(caponeUID));
             }
         }
     }
