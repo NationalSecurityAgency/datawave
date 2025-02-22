@@ -1,6 +1,3 @@
-[submodule "microservices/services/authorization"]
-	path = microservices/services/authorization
-	url = git@github.com:NationalSecurityAgency/datawave-authorization-service.git
 [submodule "microservices/services/dictionary"]
 	path = microservices/services/dictionary
 	url = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git

@@ -1,0 +1,5 @@
+server:
+  outbound-ssl:
+    key-store: classpath:ssl/notallowedcaller.p12
+    key-store-password: LetMeIn
+    key-store-type: PKCS12
