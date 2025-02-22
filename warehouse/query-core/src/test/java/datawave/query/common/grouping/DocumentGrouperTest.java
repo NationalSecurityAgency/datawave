@@ -22,6 +22,7 @@ import com.google.common.collect.Multimap;
 import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -1127,11 +1128,11 @@ public class DocumentGrouperTest {
         // 2025-12-12-FEMALE (Count of 2)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
         groupsAssert.hasTotalGroups(5);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-01-05T12:15:30.558Z", "2025-01-05")).hasCount(3);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-05T20:13:30.343Z", "2025-01-05")).hasCount(2);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-12T12:05:30.654Z", "2025-01-12")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-12-12T04:15:30.454Z", "2025-12-12")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-12-12T12:22:30.655Z", "2025-12-12")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(3);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(2);
     }
 
     /**
@@ -1190,13 +1191,13 @@ public class DocumentGrouperTest {
         // 2025-FEMALE (Count of 5)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
         groupsAssert.hasTotalGroups(7);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-01-05T12:15:30.558Z", "2025-01-05")).hasCount(3);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-05T20:13:30.343Z", "2025-01-05")).hasCount(2);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-12T12:05:30.654Z", "2025-01-12")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-12-12T04:15:30.454Z", "2025-12-12")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-12-12T12:22:30.655Z", "2025-12-12")).hasCount(2);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-01-05T12:15:30.558Z", "2025")).hasCount(4);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-05T20:13:30.343Z", "2025")).hasCount(5);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(3);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025")).hasCount(4);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025")).hasCount(5);
     }
 
     /**
@@ -1258,23 +1259,20 @@ public class DocumentGrouperTest {
         // 2025, FEMALE, 2025-01-05T10 (Count of 2)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
         // Groupings for GENDER[ALL], EXPIRATION_DATE[DAY], CREATION_DATE[HOUR]
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-05T12:15:30.534Z", "2025-01-05"),
-                        dateKey("CREATION_DATE", "2025-01-05T10:15:01.558Z", "2025-01-05T10")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-01-05T12:15:30.558Z", "2025-01-05"),
-                        dateKey("CREATION_DATE", "2025-01-05T10:15:22.655Z", "2025-01-05T10")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-05T20:13:30.343Z", "2025-01-05"),
-                        dateKey("CREATION_DATE", "2025-01-05T22:15:15.653Z", "2025-01-05T22")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-12T12:05:30.654Z", "2025-01-12"),
-                        dateKey("CREATION_DATE", "2025-01-05T10:15:22.454Z", "2025-01-05T10")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-12-12T04:15:30.454Z", "2025-12-12"),
-                        dateKey("CREATION_DATE", "2025-01-05T10:15:30.655Z", "2025-01-05T10")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05"), stringKey("CREATION_DATE", "2025-01-05T22"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12"), stringKey("CREATION_DATE", "2025-01-05T10"))
+                        .hasCount(1);
         // Groupings for GENDER[ALL], EXPIRATION_DATE[YEAR], CREATION_DATE[HOUR]
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-05T20:13:30.343Z", "2025"),
-                        dateKey("CREATION_DATE", "2025-01-05T22:15:15.653Z", "2025-01-05T22")).hasCount(1);
-        groupsAssert.assertGroup(textKey("GENDER", "MALE"), dateKey("EXPIRATION_DATE", "2025-12-12T04:15:30.454Z", "2025"),
-                        dateKey("CREATION_DATE", "2025-01-05T10:15:30.655Z", "2025-01-05T10")).hasCount(2);
-        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), dateKey("EXPIRATION_DATE", "2025-01-12T12:05:30.654Z", "2025"),
-                        dateKey("CREATION_DATE", "2025-01-05T10:15:22.454Z", "2025-01-05T10")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T22")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10")).hasCount(2);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025"), stringKey("CREATION_DATE", "2025-01-05T10")).hasCount(2);
     }
 
     private void givenGroupFields(String... fields) {
@@ -1329,19 +1327,21 @@ public class DocumentGrouperTest {
     }
 
     private GroupingAttribute<?> numericKey(String key, String value) {
-        return createGroupingAttribute(key, new NumberType(value), null);
+        return createGroupingAttribute(key, new NumberType(value));
     }
 
     private GroupingAttribute<?> textKey(String key, String value) {
-        return createGroupingAttribute(key, new LcNoDiacriticsType(value), null);
+        return createGroupingAttribute(key, new LcNoDiacriticsType(value));
     }
 
-    private GroupingAttribute<?> dateKey(String key, String value, String overridingValue) {
-        return createGroupingAttribute(key, new DateType(value), overridingValue);
+    private GroupingAttribute<?> stringKey(String key, String value) {
+        StringType stringType = new StringType();
+        stringType.setDelegate(value);
+        return createGroupingAttribute(key, stringType);
     }
 
-    private GroupingAttribute<?> createGroupingAttribute(String key, Type<?> type, String comparingTypeValue) {
-        return new GroupingAttribute<>(type, new Key(key), true, comparingTypeValue);
+    private GroupingAttribute<?> createGroupingAttribute(String key, Type<?> type) {
+        return new GroupingAttribute<>(type, new Key(key), true);
     }
 
     private static class DocumentEntry {

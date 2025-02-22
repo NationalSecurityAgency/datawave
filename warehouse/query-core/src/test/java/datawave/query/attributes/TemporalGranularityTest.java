@@ -1,13 +1,14 @@
 package datawave.query.attributes;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.util.AssertionErrors.assertFalse;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -88,6 +89,9 @@ public class TemporalGranularityTest {
         assertEquals("2019-01-15T03:1", TemporalGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 3:10:15"));
     }
 
+    /**
+     * Verify that no duplicate names are used for {@link TemporalGranularity}.
+     */
     @Test
     public void testNamesForUniqueness() {
         Set<String> names = new HashSet<>();
@@ -97,41 +101,36 @@ public class TemporalGranularityTest {
         }
     }
 
+    /**
+     * Verify that {@link TemporalGranularity#of(String)} returns the correct granularity for each name.
+     */
     @Test
     public void testStaticOf() {
         for (TemporalGranularity transformer : TemporalGranularity.values()) {
             TemporalGranularity actual = TemporalGranularity.of(transformer.getName());
-            assertEquals("Incorrect transformer " + actual + " returned for name " + transformer.getName(), transformer, actual);
+            assertEquals(transformer, actual, "Incorrect transformer " + actual + " returned for name " + transformer.getName());
         }
     }
 
+    /**
+     * Verify that each {@link TemporalGranularity} serializes to their name.
+     */
     @Test
     public void testSerialization() throws JsonProcessingException {
-        assertEquals("\"" + TemporalGranularity.ALL.getName() + "\"", objectMapper.writeValueAsString(TemporalGranularity.ALL));
-        assertEquals("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.getName() + "\"",
-                        objectMapper.writeValueAsString(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY));
-        assertEquals("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.getName() + "\"",
-                        objectMapper.writeValueAsString(TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR));
-        assertEquals("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName() + "\"",
-                        objectMapper.writeValueAsString(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE));
-        assertEquals("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.getName() + "\"",
-                        objectMapper.writeValueAsString(TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND));
-        assertEquals("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.getName() + "\"",
-                        objectMapper.writeValueAsString(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND));
+        for (TemporalGranularity granularity : TemporalGranularity.values()) {
+            Assertions.assertEquals("\"" + granularity.getName() + "\"", objectMapper.writeValueAsString(granularity),
+                            "Incorrect serialization of " + granularity);
+        }
     }
 
+    /**
+     * Verify that each {@link TemporalGranularity} can be deserialized from their name.
+     */
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        assertEquals(TemporalGranularity.ALL, objectMapper.readValue("\"" + TemporalGranularity.ALL.getName() + "\"", TemporalGranularity.class));
-        assertEquals(TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY,
-                        objectMapper.readValue("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY.getName() + "\"", TemporalGranularity.class));
-        assertEquals(TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR,
-                        objectMapper.readValue("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_HOUR.getName() + "\"", TemporalGranularity.class));
-        assertEquals(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE,
-                        objectMapper.readValue("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName() + "\"", TemporalGranularity.class));
-        assertEquals(TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND,
-                        objectMapper.readValue("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_SECOND.getName() + "\"", TemporalGranularity.class));
-        assertEquals(TemporalGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND,
-                        objectMapper.readValue("\"" + TemporalGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.getName() + "\"", TemporalGranularity.class));
+        for (TemporalGranularity granularity : TemporalGranularity.values()) {
+            Assertions.assertEquals(granularity, objectMapper.readValue("\"" + granularity.getName() + "\"", TemporalGranularity.class),
+                            "Incorrect deserialization of " + granularity);
+        }
     }
 }

@@ -29,6 +29,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -130,7 +131,6 @@ public class DocumentGrouper {
     public static final String FIELD_AVERAGE_DIVISOR_SUFFIX = "_AVERAGE_DIVISOR";
     public static final String FIELD_AVERAGE_SUFFIX = "_AVERAGE";
     public static final String FIELD_COUNT_SUFFIX = "_COUNT";
-    public static final String FIELD_VALUE_OVERRIDE = "_VALUE_OVERRIDE";
 
     /**
      * Groups and aggregates fields from the entries in the given document and merges the new group information into the given {@link Groups} instance.
@@ -277,24 +277,10 @@ public class DocumentGrouper {
                 } else if (field.getBase().endsWith(FIELD_MAX_SUFFIX)) {
                     String fieldName = removeSuffix(field.getBase(), FIELD_MAX_SUFFIX);
                     fieldAggregator.mergeAggregator(MaxAggregator.of(fieldName, field.getAttribute()));
-                    // We found a field that is part of the grouping. Any field ending with _AVERAGE_DIVISOR should have been handled above for the
-                    // _AVERAGE_NUMERATOR case above, and any field ending with _TYPE_OVERRIDE_CLASS or _TYPE_OVERRIDE_VALUE will be handled below.
-                } else if (!field.getBase().endsWith(FIELD_AVERAGE_DIVISOR_SUFFIX) && !field.getBase().endsWith(FIELD_VALUE_OVERRIDE)
-                                && !field.getBase().endsWith(FIELD_VALUE_OVERRIDE)) {
-
-                    String overridingValue = null;
-                    // The key for the overriding type class and value will be the key of their associated attribute with the suffix and instance.
-                    String overridingValueKey = field.getBase() + FIELD_VALUE_OVERRIDE + "." + field.getInstance();
-                    Attribute<?> overridingValueAttribute = document.get(overridingValueKey);
-
-                    // If an overriding value exists for the current attribute, fetch it from the document.
-                    if (overridingValueAttribute != null) {
-                        overridingValue = ((TypeAttribute<String>) overridingValueAttribute).getType().getDelegate();
-                    }
-
-                    // Create the grouping attribute.
+                    // We found a field that is part of the grouping.
+                } else if (!field.getBase().endsWith(FIELD_AVERAGE_DIVISOR_SUFFIX)) {
                     Attribute<?> attribute = field.getAttribute();
-                    GroupingAttribute<?> newAttribute = new GroupingAttribute<>((Type<?>) attribute.getData(), new Key(field.getBase()), true, overridingValue);
+                    GroupingAttribute<?> newAttribute = new GroupingAttribute<>((Type<?>) attribute.getData(), new Key(field.getBase()), true);
                     newAttribute.setColumnVisibility(attribute.getColumnVisibility());
                     grouping.add(newAttribute);
                 }
@@ -651,8 +637,11 @@ public class DocumentGrouper {
                         newAttribute.setColumnVisibility(attribute.getColumnVisibility());
                         groupingAttributes.add(newAttribute);
                     } else {
-                        String comparingValue = granularity.transform(type.getDelegateAsString());
-                        GroupingAttribute<?> newAttribute = new GroupingAttribute<>(type, new Key(field), true, comparingValue);
+                        // If the value should be transformed, replace the type with a StringType to avoid any possible normalization issues for other types.
+                        String transformedValue = granularity.transform(type.getDelegateAsString());
+                        StringType stringType = new StringType();
+                        stringType.setDelegate(transformedValue);
+                        GroupingAttribute<?> newAttribute = new GroupingAttribute<>(stringType, new Key(field), true);
                         newAttribute.setColumnVisibility(attribute.getColumnVisibility());
                         groupingAttributes.add(newAttribute);
                     }

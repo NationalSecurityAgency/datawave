@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import com.google.common.base.Preconditions;
 
 import datawave.data.type.NumberType;
-import datawave.data.type.StringType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
@@ -86,7 +85,7 @@ public class GroupingUtils {
      * @param group
      *            the group
      * @param key
-     *            the docment key
+     *            the document key
      * @param markingFunctions
      *            the marking functions to use when combining column visibilities
      * @param averageWriteFormat
@@ -104,18 +103,7 @@ public class GroupingUtils {
         for (GroupingAttribute<?> attribute : group.getGrouping()) {
             // Update the visibility to the combined visibilities of each visibility seen for this attribute in a grouping.
             attribute.setColumnVisibility(combineVisibilities(group.getVisibilitiesForAttribute(attribute), markingFunctions, false));
-            String attributeKey = attribute.getMetadata().getRow().toString();
-            document.put(attributeKey, attribute);
-            // If the attribute has an overriding value, add an attribute for it so that we may fetch it later if we have subsequent groupings to perform.
-            if (attribute.hasOverridingValue()) {
-                // Write the overriding value.
-                StringType overridingValueType = new StringType();
-                overridingValueType.setDelegate(attribute.getOverridingValue());
-                TypeAttribute<String> overridingValueAttribute = new TypeAttribute<>(overridingValueType,
-                                new Key(attributeKey + DocumentGrouper.FIELD_VALUE_OVERRIDE), true);
-                overridingValueAttribute.setColumnVisibility(attribute.getColumnVisibility());
-                document.put(attributeKey + DocumentGrouper.FIELD_VALUE_OVERRIDE, overridingValueAttribute);
-            }
+            document.put(attribute.getMetadata().getRow().toString(), attribute);
         }
 
         // Add an attribute for the count.

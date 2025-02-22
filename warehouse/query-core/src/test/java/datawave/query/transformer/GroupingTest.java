@@ -1110,9 +1110,9 @@ public abstract class GroupingTest {
 
         givenLuceneParserForLogic();
 
-        expectGroup(Group.of("Tue Dec 01 00:00:05 GMT 1925", "FEMALE").withCount(1));
-        expectGroup(Group.of("Sat Dec 12 00:00:05 GMT 1925", "MALE").withCount(1));
-        expectGroup(Group.of("Thu Dec 01 00:00:05 GMT 1910", "MALE").withCount(3));
+        expectGroup(Group.of("1925", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925", "MALE").withCount(1));
+        expectGroup(Group.of("1910", "MALE").withCount(3));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -1132,9 +1132,9 @@ public abstract class GroupingTest {
 
         givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
-        expectGroup(Group.of("Tue Dec 01 00:00:05 GMT 1925", "FEMALE").withCount(1));
-        expectGroup(Group.of("Sat Dec 12 00:00:05 GMT 1925", "MALE").withCount(1));
-        expectGroup(Group.of("Thu Dec 01 00:00:05 GMT 1910", "MALE").withCount(3));
+        expectGroup(Group.of("1925", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925", "MALE").withCount(1));
+        expectGroup(Group.of("1910", "MALE").withCount(3));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -1155,9 +1155,9 @@ public abstract class GroupingTest {
         givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,BIRTH_DATE[YEAR]");
         givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
-        expectGroup(Group.of("Tue Dec 01 00:00:05 GMT 1925", "FEMALE").withCount(1));
-        expectGroup(Group.of("Sat Dec 12 00:00:05 GMT 1925", "MALE").withCount(1));
-        expectGroup(Group.of("Thu Dec 01 00:00:05 GMT 1910", "MALE").withCount(3));
+        expectGroup(Group.of("1925", "FEMALE").withCount(1));
+        expectGroup(Group.of("1925", "MALE").withCount(1));
+        expectGroup(Group.of("1910", "MALE").withCount(3));
 
         // Run the test queries and collect their results.
         collectQueryResults();
