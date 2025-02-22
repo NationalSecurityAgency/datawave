@@ -26,6 +26,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -50,6 +51,7 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -174,8 +176,10 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     @Before
     public void setup() throws Exception {
+        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
+        this.logic.setMaxDepthThreshold(100);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
         this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         this.deserializer = new KryoDocumentDeserializer();
@@ -365,6 +369,13 @@ public abstract class DatePartitionedQueryPlannerTest {
     }
 
     private AccumuloClient assertQueryResults() throws Exception {
+        return assertQueryResults(false);
+    }
+
+    private AccumuloClient assertQueryResults(boolean fullTableScanRequired) throws Exception {
+        // setup the full table scan enabled flag
+        this.logic.setFullTableScanEnabled(fullTableScanRequired);
+
         // Initialize the query settings.
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(this.startDate);
@@ -383,6 +394,7 @@ public abstract class DatePartitionedQueryPlannerTest {
             logic.setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
         }
         AccumuloClient client = createClient();
+
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
 
@@ -405,6 +417,18 @@ public abstract class DatePartitionedQueryPlannerTest {
         Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
         Set<String> expectedFinalPlans = expectedPlans.values().stream().map(e -> e.getRight()).collect(Collectors.toSet());
         assertPlanEquals(expectedFinalPlans, actualPlans);
+
+        // verify that the full table scan was actually required
+        if (fullTableScanRequired) {
+            try {
+                logic.setFullTableScanEnabled(false);
+                logic.initialize(client, settings, authSet);
+                Assert.fail("Expected full table scan to be required");
+            } catch (FullTableScansDisallowedException e) {
+                // expected
+            }
+        }
+
         return client;
     }
 
@@ -488,7 +512,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -515,7 +539,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130104");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -541,7 +565,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -557,7 +581,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     /**
@@ -571,7 +595,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130104");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -585,7 +609,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     /**
@@ -599,18 +623,21 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
+        givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
-        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
-        expectPlan(start("20130101"), end("20130102"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
-        // the final plan required expanding the UUID list
+        expectPlan(start("20130101"), end("20130102"),
+                        "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130103"), end("20130103"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))",
-                        "(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && ((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male'))");
-        expectPlan(start("20130104"), end("20130104"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
-        expectPlan(start("20130105"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')",
+                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
+        expectPlan(start("20130104"), end("20130104"),
+                        "(GENDER == 'male' || GENERE == 'male') && (((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano')))");
+        expectPlan(start("20130105"), end("20130105"),
+                        "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -632,22 +659,25 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
+        givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
-        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))");
 
-        expectPlan(start("20130101"), end("20130101"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+        expectPlan(start("20130101"), end("20130101"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
         // final plan required expansion of the UUID regex
         expectPlan(start("20130102"), end("20130102"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))",
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
                         "(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && ((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male'))");
         // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130103"), end("20130103"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))",
-                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
-        expectPlan(start("20130104"), end("20130104"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
-        expectPlan(start("20130105"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && (((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano')))");
+        expectPlan(start("20130104"), end("20130104"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "(GENDER == 'male' || GENERE == 'male') && (((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano')))");
+        expectPlan(start("20130105"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -655,7 +685,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     /**
@@ -669,16 +699,17 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
 
-        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
+        givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
-        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ '^[cs].*'))");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))");
 
         // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130101"), end("20130103"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))",
-                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
-        expectPlan(start("20130104"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ '^[cs].*'))");
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && (((_Eval_ = true) && (UUID =~ 'c.*')) || ((_Eval_ = true) && (UUID =~ 's.*')))");
+        expectPlan(start("20130104"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "(GENDER == 'male' || GENERE == 'male') && (((_Eval_ = true) && (UUID =~ 'c.*')) || ((_Eval_ = true) && (UUID =~ 's.*')))");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -686,7 +717,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     /**
@@ -715,7 +746,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     /**
@@ -729,7 +760,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -744,7 +775,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     @Test
@@ -755,7 +786,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 1L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 1L));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20120101");
         givenEndDate("20130105 120000");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -773,7 +804,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 
     /**
@@ -787,7 +818,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -815,7 +846,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 15L)); // Does not meet min threshold.
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
         givenEndDate("20130105");
         givenPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
@@ -832,6 +863,6 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
         expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
 
-        assertSubrangesCorrect(assertQueryResults());
+        assertSubrangesCorrect(assertQueryResults(true));
     }
 }

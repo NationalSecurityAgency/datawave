@@ -3049,9 +3049,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getFullTableScanEnabled()) {
                 ranges = this.getFullScanRange(config, queryTree);
             } else {
-                if (log.isTraceEnabled())
-                    log.trace("Full table scans are not enabled, query will not be run");
-
+                if (log.isTraceEnabled()) {
+                    String query = JexlStringBuildingVisitor.buildQuery(queryTree);
+                    log.trace("Full table scans are not enabled, query will not be run: " + query);
+                }
                 QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED, fullTableScanReason);
                 throw new FullTableScansDisallowedException(qe);
             }
