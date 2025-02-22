@@ -86,25 +86,24 @@ public class FieldIndexHoleDataIngest {
     public static final Set<String> EVENT_FIELDS = new HashSet<>();
 
     static {
-        DEFAULT_COUNTS.put("NAME", Pair.with(10L, 10L));
-        DEFAULT_COUNTS.put("NOME", Pair.with(19L, 19L));
-        DEFAULT_COUNTS.put("GENDER", Pair.with(11L, 11L));
-        DEFAULT_COUNTS.put("GENERE", Pair.with(21L, 21L));
-        DEFAULT_COUNTS.put("AGE", Pair.with(12L, 12L));
-        DEFAULT_COUNTS.put("ETA", Pair.with(22L, 22L));
-        DEFAULT_COUNTS.put("GEO", Pair.with(22L, 22L));
-        DEFAULT_COUNTS.put("UUID", Pair.with(3L, 3L));
-        DEFAULT_COUNTS.put("LOCATION", Pair.with(11L, 11L));
-        DEFAULT_COUNTS.put("POSIZIONE", Pair.with(3L, 3L));
-        DEFAULT_COUNTS.put("SENTENCE", Pair.with(3L, 3L));
-        DEFAULT_COUNTS.put("MAGIC", Pair.with(12L, 0L));
-        DEFAULT_COUNTS.put("NUMBER", Pair.with(12L, 0L));
-        DEFAULT_COUNTS.put("ETA", Pair.with(12L, 0L));
-        DEFAULT_COUNTS.put("BIRTH_DATE", Pair.with(3L, 0L));
-        DEFAULT_COUNTS.put("DEATH_DATE", Pair.with(3L, 0L));
-        DEFAULT_COUNTS.put("NULL1", Pair.with(3L, 3L));
-        DEFAULT_COUNTS.put("NULL2", Pair.with(3L, 3L));
-        DEFAULT_COUNTS.put("QUOTE", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("NAME", Pair.with(6L, 6L));
+        DEFAULT_COUNTS.put("NOME", Pair.with(6L, 6L));
+        DEFAULT_COUNTS.put("GENDER", Pair.with(6L, 6L));
+        DEFAULT_COUNTS.put("GENERE", Pair.with(6L, 6L));
+        DEFAULT_COUNTS.put("AGE", Pair.with(6L, 6L));
+        DEFAULT_COUNTS.put("ETA", Pair.with(7L, 7L));
+        DEFAULT_COUNTS.put("GEO", Pair.with(3L, 3L));
+        DEFAULT_COUNTS.put("UUID", Pair.with(4L, 4L));
+        DEFAULT_COUNTS.put("LOCATION", Pair.with(0L, 2L));
+        DEFAULT_COUNTS.put("POSIZIONE", Pair.with(0L, 1L));
+        DEFAULT_COUNTS.put("SENTENCE", Pair.with(0L, 1L));
+        DEFAULT_COUNTS.put("MAGIC", Pair.with(3L, 0L));
+        DEFAULT_COUNTS.put("NUMBER", Pair.with(2L, 0L));
+        DEFAULT_COUNTS.put("BIRTH_DATE", Pair.with(5L, 0L));
+        DEFAULT_COUNTS.put("DEATH_DATE", Pair.with(4L, 0L));
+        DEFAULT_COUNTS.put("NULL1", Pair.with(1L, 1L));
+        DEFAULT_COUNTS.put("NULL2", Pair.with(1L, 1L));
+        DEFAULT_COUNTS.put("QUOTE", Pair.with(2L, 2L));
 
         EVENT_FIELDS.add("NAME");
         EVENT_FIELDS.add("NOME");
@@ -276,27 +275,65 @@ public class FieldIndexHoleDataIngest {
 
     private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
                     long ts, Value v) throws MutationsRejectedException {
-        writeShardIndexEntry(bw, indexCounts, field, value, normalize, shard, ts, v, false);
+        writeShardIndexEntry(bw, indexCounts, field, value, normalize, 1, shard, ts, v);
     }
 
-    private static void writeReverseShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize,
+    private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, int numEntries,
                     String shard, long ts, Value v) throws MutationsRejectedException {
-        writeShardIndexEntry(bw, indexCounts, field, value, normalize, shard, ts, v, true);
+        writeGlobalIndexEntry(bw, indexCounts, field, value, normalize, false, numEntries, shard, ts, v);
     }
 
-    private static void writeShardIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
-                    long ts, Value v, boolean reverse) throws MutationsRejectedException {
-        AtomicLong count = indexCounts.get(field);
-        // if (count.get() > 0) {
-        count.decrementAndGet();
+    private static void writeShardReverseIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize,
+                    String shard, long ts, Value v) throws MutationsRejectedException {
+        writeShardReverseIndexEntry(bw, indexCounts, field, value, normalize, 1, shard, ts, v);
+    }
+
+    private static void writeShardReverseIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize,
+                    int numEntries, String shard, long ts, Value v) throws MutationsRejectedException {
+        writeGlobalIndexEntry(bw, indexCounts, field, value, normalize, true, numEntries, shard, ts, v);
+    }
+
+    /**
+     * Write a shard index or reverse index entry
+     *
+     * @param bw
+     *            The batch write
+     * @param indexCounts
+     *            The index counts permitted per field
+     * @param field
+     *            The field
+     * @param value
+     *            The value
+     * @param normalize
+     *            Should we normalize the value
+     * @param reverse
+     *            Should we reverse the value for the reverse index
+     * @param numEntries
+     *            The number of entries this represents (may be multiple in the event like GENERE.0, GENERE.1, ...)
+     * @param shard
+     *            The shard
+     * @param ts
+     *            The timestamp
+     * @param v
+     *            The value (UID.List)
+     * @throws MutationsRejectedException
+     */
+    private static void writeGlobalIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize,
+                    boolean reverse, int numEntries, String shard, long ts, Value v) throws MutationsRejectedException {
         String normalizedValue = normalize ? normalizerForColumn(field).normalize(value) : value;
         if (reverse) {
             normalizedValue = new StringBuilder(normalizedValue).reverse().toString();
         }
         Mutation mutation = new Mutation(normalizedValue);
         mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, ts, v);
-        bw.addMutation(mutation);
-        // }
+        AtomicLong count = indexCounts.get(field);
+        if (count.get() > 0) {
+            count.addAndGet(0 - numEntries);
+            bw.addMutation(mutation);
+        } else {
+            System.out.println("Dropping global index mutation " + new Text(mutation.getRow()) + ' ' + new Text(mutation.getUpdates().get(0).getColumnFamily())
+                            + ':' + new Text(mutation.getUpdates().get(0).getColumnQualifier()));
+        }
     }
 
     private static void writeShardIndexTable(AccumuloClient client, Range range, List<EventConfig> eventConfigs, BatchWriterConfig bwConfig)
@@ -322,7 +359,7 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, timeStamp, range.getValue(corleoneUID));
                 // genders
-                writeShardIndexEntry(bw, indexCounts, "GENERE", "MALE", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardIndexEntry(bw, indexCounts, "GENERE", "MALE", true, 6, shard, timeStamp, range.getValue(corleoneUID));
                 // ages
                 writeShardIndexEntry(bw, indexCounts, "ETA", "12", true, shard, timeStamp, range.getValue(corleoneChildUID));
                 writeShardIndexEntry(bw, indexCounts, "ETA", "18", true, shard, timeStamp, range.getValue(corleoneUID));
@@ -337,7 +374,7 @@ public class FieldIndexHoleDataIngest {
                 // add some index-only fields
                 writeShardIndexEntry(bw, indexCounts, "POSIZIONE", "newyork", false, shard, timeStamp, range.getValue(corleoneUID));
                 // add some tokens
-                addTokens(bw, shard, timeStamp, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
+                addTokens(bw, indexCounts, shard, timeStamp, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
 
                 // sopranos
                 // uuid
@@ -346,7 +383,7 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "NAME", "ANTHONY", true, shard, timeStamp, range.getValue(sopranoUID));
                 writeShardIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, timeStamp, range.getValue(sopranoUID));
                 // genders
-                writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
+                writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, 6, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
                 writeShardIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
@@ -357,7 +394,7 @@ public class FieldIndexHoleDataIngest {
                 // add some index-only fields
                 writeShardIndexEntry(bw, indexCounts, "LOCATION", "newjersey", false, shard, timeStamp, range.getValue(sopranoUID));
                 // add some tokens
-                addTokens(bw, shard, timeStamp, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
+                addTokens(bw, indexCounts, shard, timeStamp, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
 
                 // capones
                 // uuid
@@ -368,7 +405,7 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "NAME", "RALPH", true, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "NAME", "MICHAEL", true, shard, timeStamp, range.getValue(caponeUID));
                 // genders
-                // see above: writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
+                // see above: writeShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, 6, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
                 writeShardIndexEntry(bw, indexCounts, "AGE", "20", true, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "30", true, shard, timeStamp, range.getValue(caponeUID));
@@ -382,8 +419,8 @@ public class FieldIndexHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "LOCATION", "chicago", false, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "SENTENCE", "11y", false, shard, timeStamp, range.getValue(caponeUID));
                 // add some tokens
-                addTokens(bw, shard, timeStamp, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone",
-                                caponeUID);
+                addTokens(bw, indexCounts, shard, timeStamp, range, "QUOTE",
+                                "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
             }
         }
     }
@@ -401,59 +438,79 @@ public class FieldIndexHoleDataIngest {
 
                 // corleones
                 // uuid
-                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "CORLEONE", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "ANDOLINI", true, shard, timeStamp, range.getValue(corleoneChildUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "UUID", "CORLEONE", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "UUID", "ANDOLINI", true, shard, timeStamp, range.getValue(corleoneChildUID));
                 // names
-                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "SANTINO", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "FREDO", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "MICHAEL", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "CONSTANZIA", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NOME", "SANTINO", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NOME", "FREDO", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NOME", "MICHAEL", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NOME", "CONSTANZIA", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, timeStamp, range.getValue(corleoneUID));
                 // genders
-                writeReverseShardIndexEntry(bw, indexCounts, "GENERE", "MALE", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "GENERE", "MALE", true, 6, shard, timeStamp, range.getValue(corleoneUID));
                 // ages
-                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "12", true, shard, timeStamp, range.getValue(corleoneChildUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "18", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "20", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "22", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "24", true, shard, timeStamp, range.getValue(corleoneUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "ETA", "40", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "ETA", "12", true, shard, timeStamp, range.getValue(corleoneChildUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "ETA", "18", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "ETA", "20", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "ETA", "22", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "ETA", "24", true, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "ETA", "40", true, shard, timeStamp, range.getValue(corleoneUID));
                 // add some index-only fields
-                writeReverseShardIndexEntry(bw, indexCounts, "POSIZIONE", "newyork", false, shard, timeStamp, range.getValue(corleoneUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "POSIZIONE", "newyork", false, shard, timeStamp, range.getValue(corleoneUID));
 
                 // sopranos
                 // uuid
-                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "SOPRANO", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "UUID", "SOPRANO", true, shard, timeStamp, range.getValue(sopranoUID));
                 // names
-                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "ANTHONY", true, shard, timeStamp, range.getValue(sopranoUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NAME", "ANTHONY", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, timeStamp, range.getValue(sopranoUID));
                 // genders
-                writeReverseShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "GENDER", "MALE", true, 6, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
-                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
                 // add some index-only fields
-                writeReverseShardIndexEntry(bw, indexCounts, "LOCATION", "newjersey", false, shard, timeStamp, range.getValue(sopranoUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "LOCATION", "newjersey", false, shard, timeStamp, range.getValue(sopranoUID));
 
                 // capones
                 // uuid
-                writeReverseShardIndexEntry(bw, indexCounts, "UUID", "CAPONE", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "UUID", "CAPONE", true, shard, timeStamp, range.getValue(caponeUID));
                 // names
-                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "ALPHONSE", true, shard, timeStamp, range.getValue(caponeUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "FRANK", true, shard, timeStamp, range.getValue(caponeUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "RALPH", true, shard, timeStamp, range.getValue(caponeUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "NAME", "MICHAEL", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NAME", "ALPHONSE", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NAME", "FRANK", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NAME", "RALPH", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "NAME", "MICHAEL", true, shard, timeStamp, range.getValue(caponeUID));
                 // genders
-                // see above: writeReverseShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
+                // see above: writeReverseShardIndexEntry(bw, indexCounts, "GENDER", "MALE", true, 6, shard, timeStamp, range.getValue(sopranoUID, caponeUID));
                 // ages
-                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "20", true, shard, timeStamp, range.getValue(caponeUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "30", true, shard, timeStamp, range.getValue(caponeUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "34", true, shard, timeStamp, range.getValue(caponeUID));
-                writeReverseShardIndexEntry(bw, indexCounts, "AGE", "40", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "AGE", "20", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "AGE", "30", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "AGE", "34", true, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "AGE", "40", true, shard, timeStamp, range.getValue(caponeUID));
                 // add some index-only fields
-                writeReverseShardIndexEntry(bw, indexCounts, "LOCATION", "chicago", false, shard, timeStamp, range.getValue(caponeUID));
+                writeShardReverseIndexEntry(bw, indexCounts, "LOCATION", "chicago", false, shard, timeStamp, range.getValue(caponeUID));
             }
+        }
+    }
+
+    private static void writeFieldIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, String shard,
+                    String uid, long ts) throws MutationsRejectedException {
+        writeFieldIndexEntry(bw, indexCounts, field, value, normalize, 1, shard, uid, ts);
+    }
+
+    private static void writeFieldIndexEntry(BatchWriter bw, Map<String,AtomicLong> indexCounts, String field, String value, boolean normalize, int numEntries,
+                    String shard, String uid, long ts) throws MutationsRejectedException {
+        String normalizedValue = normalize ? normalizerForColumn(field).normalize(value) : value;
+        Mutation mutation = new Mutation(shard);
+        mutation.put("fi\u0000" + field.toUpperCase(), normalizedValue + "\u0000" + datatype + "\u0000" + uid, columnVisibility, ts, emptyValue);
+        AtomicLong count = indexCounts.get(field);
+        if (count.get() > 0) {
+            count.addAndGet(0 - numEntries);
+            bw.addMutation(mutation);
+        } else {
+            System.out.println("Dropping field index mutation " + new Text(mutation.getRow()) + ' ' + new Text(mutation.getUpdates().get(0).getColumnFamily())
+                            + ':' + new Text(mutation.getUpdates().get(0).getColumnQualifier()));
         }
     }
 
@@ -466,116 +523,80 @@ public class FieldIndexHoleDataIngest {
                 long timeStamp = config.getTime();
                 Mutation mutation = new Mutation(shard);
 
+                Map<String,AtomicLong> indexCounts = config.getMetadataCounts().entrySet().stream()
+                                .collect(Collectors.toMap(e -> e.getKey(), e -> new AtomicLong(e.getValue().getValue1())));
+
                 // corleones
                 // uuid
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CORLEONE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
-
-                // uuid
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("ANDOLINI") + "\u0000" + datatype + "\u0000" + corleoneChildUID,
-                                columnVisibility, timeStamp, emptyValue);
-
+                writeFieldIndexEntry(bw, indexCounts, "UUID", "CORLEONE", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "UUID", "ANDOLINI", true, shard, corleoneChildUID, timeStamp);
                 // names
-                mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("SANTINO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("FREDO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("CONSTANZIA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("LUCA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("VINCENT") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "NOME", "SANTINO", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NOME", "FREDO", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NOME", "MICHAEL", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NOME", "CONSTANZIA", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NOME", "LUCA", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NOME", "VINCENT", true, shard, corleoneUID, timeStamp);
                 // genders
-                mutation.put("fi\u0000" + "GENERE", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "GENERE", "MALE", true, 6, shard, corleoneUID, timeStamp);
                 // ages
-                mutation.put("fi\u0000" + "ETA", numberType.normalize("24") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "ETA", numberType.normalize("22") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "ETA", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "ETA", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "ETA", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility, timeStamp,
-                                emptyValue);
-
+                writeFieldIndexEntry(bw, indexCounts, "ETA", "24", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "ETA", "22", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "ETA", "20", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "ETA", "18", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "ETA", "40", true, shard, corleoneUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "ETA", "12", true, shard, corleoneChildUID, timeStamp);
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
-                    mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                    writeFieldIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, corleoneUID, timeStamp);
                 }
+                // add some index-only fields
+                writeFieldIndexEntry(bw, indexCounts, "POSIZIONE", "newyork", true, shard, corleoneUID, timeStamp);
+                addFiTfTokens(bw, indexCounts, shard, timeStamp, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
 
                 // sopranos
                 // uuid
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("SOPRANO") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "UUID", "SOPRANO", true, shard, sopranoUID, timeStamp);
                 // names
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("ANTHONY") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MEADOW") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "NAME", "ANTHONY", true, shard, sopranoUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NAME", "MEADOW", true, shard, sopranoUID, timeStamp);
                 // genders
-                mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "GENDER", "MALE", true, 2, shard, sopranoUID, timeStamp);
                 // ages
-                mutation.put("fi\u0000" + "AGE", numberType.normalize("16") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp,
-                                emptyValue);
-
+                writeFieldIndexEntry(bw, indexCounts, "AGE", "16", true, shard, sopranoUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "AGE", "18", true, shard, sopranoUID, timeStamp);
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
-                    mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                    writeFieldIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, corleoneUID, timeStamp);
                 }
+                // add some index-only fields
+                writeFieldIndexEntry(bw, indexCounts, "LOCATION", "newjersey", true, shard, sopranoUID, timeStamp);
+                addFiTfTokens(bw, indexCounts, shard, timeStamp, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
 
                 // capones
                 // uuid
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CAPONE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "UUID", "CAPONE", true, shard, caponeUID, timeStamp);
                 // names
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("ALPHONSE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("FRANK") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("RALPH") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "NAME", "ALPHONSE", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NAME", "FRANK", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NAME", "RALPH", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "NAME", "MICHAEL", true, shard, caponeUID, timeStamp);
                 // genders
-                mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                                timeStamp, emptyValue);
+                writeFieldIndexEntry(bw, indexCounts, "GENDER", "MALE", true, 4, shard, caponeUID, timeStamp);
                 // ages
-                mutation.put("fi\u0000" + "AGE", numberType.normalize("30") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "AGE", numberType.normalize("34") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "AGE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                                emptyValue);
-
+                writeFieldIndexEntry(bw, indexCounts, "AGE", "30", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "AGE", "34", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "AGE", "20", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "AGE", "40", true, shard, caponeUID, timeStamp);
                 // geo
                 for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
-                    mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                    writeFieldIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, corleoneUID, timeStamp);
                 }
-
                 // add some index-only fields
-                mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "LOCATION", "newjersey" + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "SENTENCE", "11y" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-
-                bw.addMutation(mutation);
-
-                addFiTfTokens(bw, shard, timeStamp, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-                addFiTfTokens(bw, shard, timeStamp, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-                addFiTfTokens(bw, shard, timeStamp, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone",
-                                caponeUID);
+                writeFieldIndexEntry(bw, indexCounts, "LOCATION", "chicago", true, shard, caponeUID, timeStamp);
+                writeFieldIndexEntry(bw, indexCounts, "SENTENCE", "11y", true, shard, caponeUID, timeStamp);
+                addFiTfTokens(bw, indexCounts, shard, timeStamp, "QUOTE",
+                                "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
             }
         }
     }
@@ -720,31 +741,40 @@ public class FieldIndexHoleDataIngest {
         return EVENT_FIELDS.contains(column);
     }
 
-    private static void addTokens(BatchWriter bw, String shard, long timeStamp, Range range, String field, String phrase, String uid)
-                    throws MutationsRejectedException {
+    private static void addTokens(BatchWriter bw, Map<String,AtomicLong> indexCounts, String shard, long timeStamp, Range range, String field, String phrase,
+                    String uid) throws MutationsRejectedException {
         Mutation mutation = new Mutation(lcNoDiacriticsType.normalize(phrase));
         mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(uid));
         bw.addMutation(mutation);
 
+        AtomicLong count = indexCounts.get(field);
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
             mutation = new Mutation(lcNoDiacriticsType.normalize(token));
             mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(uid));
-            bw.addMutation(mutation);
+            if (count.get() > 0) {
+                count.decrementAndGet();
+                bw.addMutation(mutation);
+            }
         }
     }
 
-    private static void addFiTfTokens(BatchWriter bw, String shard, long timeStamp, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addFiTfTokens(BatchWriter bw, Map<String,AtomicLong> indexCounts, String shard, long timeStamp, String field, String phrase, String uid)
+                    throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                         emptyValue);
 
+        AtomicLong count = indexCounts.get(field);
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
-            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
-                            emptyValue);
-            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility, timeStamp,
-                            emptyValue);
+            if (count.get() > 0) {
+                count.decrementAndGet();
+                fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
+                                timeStamp, emptyValue);
+                fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility, timeStamp,
+                                emptyValue);
+            }
         }
         bw.addMutation(fi);
     }
