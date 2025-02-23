@@ -16,6 +16,7 @@ import javax.xml.bind.Unmarshaller;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.parallel.Execution;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -43,9 +44,12 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
+import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
+@Execution(SAME_THREAD)
 public class StreamingServiceTest extends AbstractQueryServiceTest {
     
     @Test
