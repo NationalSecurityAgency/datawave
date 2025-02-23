@@ -176,7 +176,8 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     @Before
     public void setup() throws Exception {
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        // change to debug to see planning
+        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.WARN);
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setMaxDepthThreshold(100);
