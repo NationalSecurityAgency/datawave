@@ -63,6 +63,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     // we want a unique set of plans, but maintain insertion order (facilitates easier testing)
     private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
+    private String initialPlan;
     private String plannedScript;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
@@ -93,6 +94,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     public DatePartitionedQueryPlanner(DatePartitionedQueryPlanner other) {
         this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
+        this.initialPlan = other.initialPlan;
         this.plannedScript = other.plannedScript;
     }
 
@@ -124,6 +126,15 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     @Override
     public String getPlannedScript() {
         return this.plannedScript;
+    }
+
+    /**
+     * Return the initial planned script prior to pushing down index holes. Used for testing purposes.
+     *
+     * @return initialPlan
+     */
+    public String getInitialPlan() {
+        return initialPlan;
     }
 
     /**
@@ -298,15 +309,16 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
         // Let's do the planning with the delegate planner first to ensure we have a final date range
         // and appropriately expanded unfielded terms etc.
-        DefaultQueryPlanner initialPlan = this.queryPlanner.clone();
-        CloseableIterable<QueryData> iterator = initialPlan.process(originalConfig, query, settings, scannerFactory);
+        DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
+        CloseableIterable<QueryData> iterator = initialPlanner.process(originalConfig, query, settings, scannerFactory);
+        this.initialPlan = initialPlanner.plannedScript;
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
         SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(originalConfig);
 
         // if no holes were found, then leave the iterator as is and used the initial planned script
         if (dateRanges == null) {
-            this.plannedScript = initialPlan.plannedScript;
+            this.plannedScript = this.initialPlan;
         } else {
             DatePartitionedQueryIterable results = new DatePartitionedQueryIterable();
 

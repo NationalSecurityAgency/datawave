@@ -415,6 +415,8 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
 
         Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
+
+        assertPlanEquals(plan, ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getInitialPlan());
         Set<String> expectedFinalPlans = expectedPlans.values().stream().map(e -> e.getRight()).collect(Collectors.toSet());
         assertPlanEquals(expectedFinalPlans, actualPlans);
 
@@ -662,21 +664,21 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
-        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
-        expectPlan(start("20130101"), end("20130101"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+        expectPlan(start("20130101"), end("20130101"),
                         "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
-        // final plan required expansion of the UUID regex
+        // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130102"), end("20130102"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
-                        "(UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano') && ((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male'))");
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')",
+                        "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
         // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130103"), end("20130103"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && (((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano')))",
                         "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && (((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano')))");
-        expectPlan(start("20130104"), end("20130104"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+        expectPlan(start("20130104"), end("20130104"),
                         "(GENDER == 'male' || GENERE == 'male') && (((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano')))");
-        expectPlan(start("20130105"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+        expectPlan(start("20130105"), end("20130105"),
                         "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
@@ -702,13 +704,13 @@ public abstract class DatePartitionedQueryPlannerTest {
         givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
-        givenPlan("(GENDER == 'male' || GENERE == 'male') && ((_Delayed_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))");
+        givenPlan("(GENDER == 'male' || GENERE == 'male') && (((_Delayed_ = true) && (UUID =~ 'c.*')) || ((_Delayed_ = true) && (UUID =~ 's.*')))");
 
         // final plan delayed the clause including the GENERE term because all entries in the OR are not resolvable in the index
         expectPlan(start("20130101"), end("20130103"),
-                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+                        "(((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male') && (((_Eval_ = true) && (UUID =~ 'c.*')) || ((_Eval_ = true) && (UUID =~ 's.*')))",
                         "((_Delayed_ = true) && (((_Eval_ = true) && (GENDER == 'male')) || GENERE == 'male')) && (((_Eval_ = true) && (UUID =~ 'c.*')) || ((_Eval_ = true) && (UUID =~ 's.*')))");
-        expectPlan(start("20130104"), end("20130105"), "(GENDER == 'male' || GENERE == 'male') && ((_Eval_ = true) && (UUID =~ 'c.*' || UUID =~ 's.*'))",
+        expectPlan(start("20130104"), end("20130105"),
                         "(GENDER == 'male' || GENERE == 'male') && (((_Eval_ = true) && (UUID =~ 'c.*')) || ((_Eval_ = true) && (UUID =~ 's.*')))");
 
         expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
