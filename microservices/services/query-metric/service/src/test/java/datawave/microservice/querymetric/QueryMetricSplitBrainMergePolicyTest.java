@@ -3,6 +3,7 @@ package datawave.microservice.querymetric;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -10,10 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.parallel.Execution;
 
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
@@ -28,7 +27,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-@Ignore
+@Execution(SAME_THREAD)
 public class QueryMetricSplitBrainMergePolicyTest {
     
     private final static QueryMetricFactory queryMetricFactory = new QueryMetricFactoryImpl();
