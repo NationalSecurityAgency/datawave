@@ -11,32 +11,12 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
+        <module>microservice-parent</module>
+        <module>microservice-service-parent</module>
         <module>services</module>
         <module>starters</module>
     </modules>
     <profiles>
-        <profile>
-            <id>submodule-microservice-parent</id>
-            <activation>
-                <file>
-                    <exists>microservice-parent/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>microservice-parent</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>submodule-microservice-service-parent</id>
-            <activation>
-                <file>
-                    <exists>microservice-service-parent/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>microservice-service-parent</module>
-            </modules>
-        </profile>
         <profile>
             <id>configcheck</id>
             <activation>

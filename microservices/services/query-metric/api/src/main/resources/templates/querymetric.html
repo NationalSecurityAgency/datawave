@@ -1,0 +1,190 @@
+<html xmlns:th="http:/>/www.thymeleaf.org">
+<!--/*
+    HTML page for QueryMetricResponse
+*/-->
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DATAWAVE - Query Metrics</title>
+    <link rel="stylesheet" type="text/css" media="screen" th:href="${basePath + '/css/screen.css'}">
+    <link rel="stylesheet" type="text/css" th:href="${basePath + '/css/theme.css'}"> <!--/* styling for query metric page */-->
+    <script th:src="${basePath + '/js/query-interactive-parens.js'}">
+    </script>
+    <script th:src="${basePath + '/js/querymetric-functions.js'}">
+    </script>
+    <!--/* only needed if isGeoQuery */-->
+    <script type="text/javascript" th:src="${basePath + '/webjars/jquery/jquery.min.js'}">
+    </script>
+</head>
+<body>
+    <div th:utext="${header}"></div>
+    <h1>Query Metrics</h1>
+
+    <script type="text/javascript">
+
+        function toggleVisibility(field, metricNum) {
+            divBaseName = field + metricNum;
+            if (divBaseName != '') {
+                valueDiv = document.getElementById(divBaseName + '-value');
+                placeholderDiv = document.getElementById(divBaseName + '-placeholder');
+                if (valueDiv.style.visibility == "collapse") {
+                    valueDiv.style.visibility = "visible";
+                    placeholderDiv.style.visibility = "collapse";
+                    setCookie("/querymetric", field + "-visible", true, null);
+                } else {
+                    valueDiv.style.visibility = "collapse";
+                    placeholderDiv.style.visibility = "visible";
+                    setCookie("/querymetric", field + "-visible", false, null);
+                }
+            }
+        }
+
+        function initializeField(field, metricNum) {
+            var visible = getCookie(field + "-visible");
+            if (visible != null && visible === "true") {
+                toggleVisibility(field, metricNum);
+            }
+        }
+
+        function addMapLinks(metricNum) {
+            var currentUrl = window.location.href.replace(/\/+$/, '');
+            var queryHeader = document.getElementById("query" + metricNum + "-placeholder-header");
+            if (queryHeader) {
+                var innerHTML = queryHeader.innerHTML;
+                innerHTML = innerHTML + ' (<a href="' + currentUrl + '/map">map</a>)';
+                queryHeader.innerHTML = innerHTML;
+            }
+            var queryHeader = document.getElementById("query" + metricNum + "-header");
+            if (queryHeader) {
+                var innerHTML = queryHeader.innerHTML;
+                innerHTML = innerHTML + ' (<a href="' + currentUrl + '/map">map</a>)';
+                queryHeader.innerHTML = innerHTML;
+            }
+        }
+    </script>
+
+
+    <div th:each="metric,metricIter : ${metricList}">
+        <h3 th:text="${metric.queryId}"/>
+        <table class="metric-vertical">
+            <tr class="highlight"><td>Visibility</td><td th:text="${metric.columnVisibility}"></td></tr>
+            <tr><td>Query Date</td><td th:text="${metric.createDateStr}"></td></tr>
+            <tr class="highlight"><td>User</td><td th:text="${metric.user}"></td></tr>
+            <tr><td>UserDN</td><td th:text="${metric.userDN}"></td></tr>
+            <tr class="highlight"><td>Proxy Server(s)</td><td th:utext="${metric.proxyServersStr}"></td></tr>
+            <tr><td>Query Id</td><td><a th:href="${metric.queryIdUrl}" th:text="${metric.queryId}"></a></td></tr>
+            <tr class="highlight"><td>Query Logic</td><td th:text="${metric.queryLogic}"></td></tr>
+            <tr><td>Query Name</td><td th:text="${metric.queryName}"></td></tr>
+            <tr class="highlight"><td>Query Type</td><td th:text="${metric.queryType}"></td>
+            <tr><td>Begin Date</td><td th:text="${metric.beginDateStr}"></td></tr>
+            <tr class="highlight"><td>End Date</td><td th:text="${metric.endDateStr}"></td></tr>
+            <tr><td>Versions</td><td th:utext="${metric.versionStr}"></td></tr>
+
+            <tr class="highlight" th:id="'queryauths' + ${metricIter.index + 1} + '-placeholder'">
+                <td>Query Auths (<a th:onClick="|toggleVisibility('queryauths', ${metricIter.index + 1})|">show</a>)</td>
+                <td>click link to show/hide</td>
+            </tr>
+            <tr class="highlight" th:id="'queryauths' + ${metricIter.index + 1} + '-value'" style="visibility:collapse;">
+                <td>Query Auths (<a th:onClick="|toggleVisibility('queryauths', ${metricIter.index + 1})|">hide</a>)</td>
+                <td style="overflow-wrap:anywhere;" th:text="${metric.queryAuthorizationsStr}"></td>
+            </tr>
+
+            <tr th:id="'parameters' + ${metricIter.index + 1} + '-placeholder'">
+                <td>Parameters (<a th:onClick="|toggleVisibility('parameters', ${metricIter.index + 1})|">show</a>)</td>
+                <td>click link to show/hide</td>
+            </tr>
+            <tr th:id="'parameters' + ${metricIter.index + 1} + '-value'" style="visibility:collapse;">
+                <td>Parameters (<a th:onClick="|toggleVisibility('parameters', ${metricIter.index + 1})|">hide</a>)</td>
+                <td style="overflow-wrap: anywhere;" th:utext="${metric.parametersStr}"></td>
+            </tr>
+
+            <!--/* Note the HTML for the Query and Query Plan are set later... See scripts at end of these tr elements */-->
+            <tr class="highlight" th:id="'query' + ${metricIter.index + 1} + '-placeholder'">
+                <td th:id="'query' + ${metricIter.index + 1} + '-placeholder-header'">Query (<a th:onClick="|toggleVisibility('query', ${metricIter.index + 1})|">show</a>)</td>
+                <td>click link to show/hide</td>
+            </tr>
+            <tr class="highlight" th:id="'query' + ${metricIter.index + 1} + '-value'" style="visibility:collapse;">
+                <td th:id="'query' + ${metricIter.index + 1} + '-header'">Query (<a th:onClick="|toggleVisibility('query', ${metricIter.index + 1})|">hide</a>)</td>
+                <td th:id="'query' + ${metricIter.index + 1}" th:style="${metric.queryStyle}"/>
+            </tr>
+
+            <tr th:id="'query-plan' + ${metricIter.index + 1} + '-placeholder'">
+                <td>Query Plan (<a th:onClick="|toggleVisibility('query-plan', ${metricIter.index + 1})|">show</a>)</td>
+                <td>click link to show/hide</td>
+            </tr>
+            <tr th:id="'query-plan' + ${metricIter.index + 1} + '-value'" style="visibility:collapse;">
+                <td>Query Plan (<a th:onClick="|toggleVisibility('query-plan', ${metricIter.index + 1})|">hide</a>)</td>
+                <td th:id="'query-plan' + ${metricIter.index + 1}" style="white-space:pre-wrap; overflow-wrap:anywhere;"/>
+            </tr>
+            <tr class="highlight"><td>Predictions</td><td th:text="${metric.predictionsStr}"></td></tr>
+            <tr><td>Server</td><td th:text="${metric.host}"></td></tr>
+            <tr class="highlight"><td>Elapsed Time</td><td th:text="${metric.elapsedTimeStr}"></td></tr>
+            <tr><td>Lifecycle</td><td th:text="${metric.lifecycle}"></td></tr>
+            <tr class="highlight"><td>Number Pages</td><td th:text="${metric.numPagesStr}"></td></tr>
+            <tr><td>Number Results</td><td th:text="${metric.numResultsStr}"></td></tr>
+            <tr class="highlight"><td>Error Code</td><td style="overflow-wrap: anywhere;" th:text="${metric.errorCode}"></td></tr>
+            <tr><td>Error Message</td><td style="overflow-wrap: anywhere;" th:text="${metric.errorMessage}"></td></tr>
+            <tr class="highlight"><td>Login Time (ms)</td><td th:text="${metric.loginTimeStr}"></td></tr>
+            <tr><td>Query Setup Time (ms)</td><td th:text="${metric.setupTimeStr}"></td></tr>
+            <tr class="highlight"><td>Query Setup Call Time (ms)</td><td th:text="${metric.createCallTimeStr}"></td></tr>
+            <tr><td>Doc Size</td><td th:text="${metric.docSizeStr}"></td></tr>
+            <tr class="highlight"><td>Doc Ranges</td><td th:text="${metric.docRangesStr}"></td></tr>
+            <tr><td>FI Ranges</td><td th:text="${metric.fiRangesStr}"></td></tr>
+            <tr class="highlight"><td>Sources</td><td th:text="${metric.sourceCountStr}"></td></tr>
+            <tr><td>Next Calls</td><td th:text="${metric.nextCountStr}"></td>
+            <tr class="highlight"><td>Seek Calls</td><td th:text="${metric.seekCountStr}"></td></tr>
+            <tr><td>Yield Count</td><td th:text="${metric.yieldCountStr}"></td></tr>
+            <tr class="highlight"><td>Total Page Time (ms)</td><td th:text="${metric.totalPageTimeStr}"></td></tr>
+            <tr><td>Total Page Call Time (ms)</td><td th:text="${metric.totalPageCallTimeStr}"></td></tr>
+            <tr class="highlight"><td>Total Page Serialization Time (ms)</td><td th:text="${metric.totalSerializationTimeStr}"></td>
+            <tr><td>Total Page Bytes Sent (uncompressed)</td><td th:text="${metric.totalBytesSentStr}"></td></tr>
+
+            <script type="text/javascript">
+                // Makes the metric's query and the metric's query plan interactive (highlight
+                // matching parens on mouse over, clicking a paren brings you to its matching paren)
+                var metricNum = [[${metricIter.index + 1}]];
+                interactiveParens(`[[${metric.queryEscapedForTemplateString}]]`, false, metricNum);
+                interactiveParens(`[[${metric.planEscapedForTemplateString}]]`, true, metricNum);
+                if ("[[${isGeoQuery}]]" === "true") {
+                    addMapLinks(metricNum);
+                }
+
+                initializeField("queryauths", metricNum);
+                initializeField("parameters", metricNum);
+                initializeField("query", metricNum);
+                initializeField("query-plan", metricNum);
+            </script>
+        </table>
+        <br/>
+        <br/>
+        <table>
+            <tr>
+                <th>Page number</th>
+                <th>Page requested</th>
+                <th>Page returned</th>
+                <th>Response time (ms)</th>
+                <th>Page size</th>
+                <th>Call time (ms)</th>
+                <th>Login time (ms)</th>
+                <th>Serialization time (ms)</th>
+                <th>Bytes written (uncompressed)</th>
+            </tr>
+            <tr th:each="page,pageIter : ${metric.pageTimeModels}" th:class="(${pageIter.index} % 2 == 0) ? 'highlight' : ''">
+                <td th:text="${page.pageNumberStr}"></td>
+                <td th:text="${page.pageRequestedStr}"></td>
+                <td th:text="${page.pageReturnedStr}"></td>
+                <td th:text="${page.returnTimeStr}"></td>
+                <td th:text="${page.pageSizeStr}"></td>
+                <td th:text="${page.callTimeStr}"></td>
+                <td th:text="${page.loginTimeStr}"></td>
+                <td th:text="${page.serializationTimeStr}"></td>
+                <td th:text="${page.bytesWrittenStr}"></td>
+            </tr>
+        </table>
+        <br th:if="${!metricIter.last}"/>
+        <br th:if="${!metricIter.last}"/>
+        <hr style="height:4px;width:100%" th:if="${!metricIter.last}"/>
+    </div>
+    <br/>
+    <div th:utext="${footer}"></div>
+</body>
+</html>

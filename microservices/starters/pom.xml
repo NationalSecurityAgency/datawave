@@ -12,79 +12,96 @@
     <modules />
     <profiles>
         <profile>
-            <id>submodule-starter-audit</id>
+            <id>starter-audit</id>
             <activation>
-                <file>
-                    <exists>audit/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-audit</name>
+                </property>
             </activation>
             <modules>
                 <module>audit</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-starter-cache</id>
+            <id>starter-cache</id>
             <activation>
-                <file>
-                    <exists>cache/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-cache</name>
+                </property>
             </activation>
             <modules>
                 <module>cache</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-starter-cached-results</id>
+            <id>starter-cached-results</id>
             <activation>
-                <file>
-                    <exists>cached-results/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-cached-results</name>
+                </property>
             </activation>
             <modules>
                 <module>cached-results</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-starter-datawave</id>
+            <id>starter-datawave</id>
             <activation>
-                <file>
-                    <exists>datawave/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-datawave</name>
+                </property>
             </activation>
             <modules>
                 <module>datawave</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-starter-metadata</id>
+            <id>starter-metadata</id>
             <activation>
-                <file>
-                    <exists>metadata/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-metadata</name>
+                </property>
             </activation>
             <modules>
                 <module>metadata</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-starter-query</id>
+            <id>starter-query</id>
             <activation>
-                <file>
-                    <exists>query/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-query</name>
+                </property>
             </activation>
             <modules>
                 <module>query</module>
             </modules>
         </profile>
         <profile>
-            <id>submodule-starter-query-metric</id>
+            <id>query-metric</id>
             <activation>
-                <file>
-                    <exists>query-metric/pom.xml</exists>
-                </file>
+                <property>
+                    <name>starter-query-metric</name>
+                </property>
             </activation>
             <modules>
+                <module>query-metric</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>starters</id>
+            <activation>
+                <property>
+                    <name>starters</name>
+                </property>
+            </activation>
+            <modules>
+                <module>audit</module>
+                <module>cache</module>
+                <module>cached-results</module>
+                <module>datawave</module>
+                <module>metadata</module>
+                <module>query</module>
                 <module>query-metric</module>
             </modules>
         </profile>
