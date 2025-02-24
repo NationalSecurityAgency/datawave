@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 
 import datawave.query.Constants;
 import datawave.query.enrich.DataEnricher;
-import datawave.util.StringUtils;
 
 /**
  * <p>

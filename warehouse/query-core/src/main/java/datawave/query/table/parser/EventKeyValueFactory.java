@@ -12,7 +12,6 @@ import com.google.common.collect.Maps;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
-import datawave.util.StringUtils;
 
 public class EventKeyValueFactory {
 

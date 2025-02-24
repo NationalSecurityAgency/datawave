@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.collect.ImmutableList;
 
 import datawave.core.query.exception.EmptyObjectException;

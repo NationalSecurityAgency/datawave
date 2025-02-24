@@ -33,7 +33,6 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.tables.IndexQueryLogic;
 import datawave.query.transformer.FacetedTransformer;
-import datawave.util.StringUtils;
 
 /**
  *

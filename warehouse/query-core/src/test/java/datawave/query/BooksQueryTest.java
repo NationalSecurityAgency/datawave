@@ -16,7 +16,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.ClassRule;
 import org.junit.Test;

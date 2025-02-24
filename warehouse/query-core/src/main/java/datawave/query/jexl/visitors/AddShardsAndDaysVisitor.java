@@ -16,7 +16,6 @@ import com.google.common.collect.Lists;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.util.StringUtils;
 
 /**
  * When SHARDS_AND_DAYS hints are supplied via the OPTIONS function, they should be added back into the query tree either by updating an existing

@@ -36,7 +36,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.security.util.ScannerHelper;
-import datawave.util.StringUtils;
 
 /**
  * <p>

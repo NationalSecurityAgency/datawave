@@ -17,7 +17,6 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.util.StringUtils;
 
 public class QueryOptionsSwitch {
 

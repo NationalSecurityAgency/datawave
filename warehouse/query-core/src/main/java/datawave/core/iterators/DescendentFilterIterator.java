@@ -21,7 +21,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.data.hash.UIDConstants;
-import datawave.util.StringUtils;
 
 /**
  * <p>

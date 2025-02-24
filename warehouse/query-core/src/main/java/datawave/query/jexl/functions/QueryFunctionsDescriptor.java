@@ -36,7 +36,6 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import datawave.util.StringUtils;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 

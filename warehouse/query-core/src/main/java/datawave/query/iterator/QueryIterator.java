@@ -124,7 +124,6 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.StringUtils;
 
 /**
  * <p>

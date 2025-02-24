@@ -15,7 +15,6 @@ import com.google.common.collect.Multimap;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.PhraseIndexes;
-import datawave.util.StringUtils;
 
 /**
  * Represents a set of fields that have been specified within an #EXCERPT_FIELDS function, as well as their corresponding target offsets that should be used to

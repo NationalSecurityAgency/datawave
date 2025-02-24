@@ -20,7 +20,6 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
-import datawave.util.StringUtils;
 
 /**
  * Jexl Masking rule will provide a rule based upon JEXL 'queries'

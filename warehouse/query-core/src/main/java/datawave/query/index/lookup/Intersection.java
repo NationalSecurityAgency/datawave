@@ -28,7 +28,6 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.util.StringUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

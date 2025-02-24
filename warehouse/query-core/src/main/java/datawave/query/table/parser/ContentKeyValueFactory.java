@@ -14,7 +14,6 @@ import org.apache.log4j.Logger;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
-import datawave.util.StringUtils;
 
 public class ContentKeyValueFactory {
 

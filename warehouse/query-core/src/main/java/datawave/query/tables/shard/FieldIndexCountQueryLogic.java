@@ -43,7 +43,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.CompositeTimestamp;
-import datawave.util.StringUtils;
 import datawave.webservice.query.exception.QueryException;
 
 /**

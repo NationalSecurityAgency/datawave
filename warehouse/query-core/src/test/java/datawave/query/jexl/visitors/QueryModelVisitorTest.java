@@ -34,7 +34,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import datawave.util.StringUtils;
 
 public class QueryModelVisitorTest {
 

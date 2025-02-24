@@ -62,7 +62,6 @@ import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;

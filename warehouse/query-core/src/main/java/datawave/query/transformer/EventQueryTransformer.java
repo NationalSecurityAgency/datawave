@@ -23,7 +23,6 @@ import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
-import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;

@@ -12,7 +12,6 @@ import com.google.common.collect.HashMultimap;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeKey;
 import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.util.StringUtils;
 
 /**
  * A Query context represents a group of ranges over which the same query parameters will be applied The Query context stores 3 data structures: rowContext -

@@ -20,7 +20,6 @@ import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
-import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;

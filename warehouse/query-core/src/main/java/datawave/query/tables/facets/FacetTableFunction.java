@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.FieldValueCardinality;
-import datawave.util.StringUtils;
 
 public class FacetTableFunction implements Function<Entry<Key,Value>,Entry<Key,Document>> {
 

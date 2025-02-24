@@ -47,7 +47,6 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.util.CompositeTimestamp;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;

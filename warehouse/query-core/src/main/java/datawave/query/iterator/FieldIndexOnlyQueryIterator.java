@@ -44,7 +44,6 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.predicate.TimeFilter;
-import datawave.util.StringUtils;
 
 /**
  *

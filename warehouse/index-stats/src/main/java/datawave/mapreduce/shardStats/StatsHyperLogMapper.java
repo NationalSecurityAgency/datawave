@@ -31,7 +31,6 @@ import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.data.parsers.DatawaveKey;
-import datawave.util.StringUtils;
 
 class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private static final Logger log = Logger.getLogger(StatsHyperLogMapper.class);

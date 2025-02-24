@@ -13,8 +13,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.util.StringUtils;
-
 public class CsvKeyFilter extends Filter {
     private static Logger log = Logger.getLogger(CsvKeyFilter.class);
 
