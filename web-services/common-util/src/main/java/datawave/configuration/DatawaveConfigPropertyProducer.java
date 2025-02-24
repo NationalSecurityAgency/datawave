@@ -18,7 +18,6 @@ import javax.enterprise.inject.Specializes;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.interceptor.Interceptor;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
 

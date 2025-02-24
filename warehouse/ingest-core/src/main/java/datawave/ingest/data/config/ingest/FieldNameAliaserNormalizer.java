@@ -12,7 +12,6 @@ import org.apache.hadoop.conf.Configuration;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.util.StringUtils;
 
 /**
  * This class supports aliasing fieldname, and will ensure field names are normalized appropriately. Only [A-Z0-9_.] is permitted in the end.

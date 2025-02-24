@@ -11,7 +11,6 @@ import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.util.CompositeTimestamp;
-import datawave.util.StringUtils;
 
 /**
  * This class provides an abstract base class to be extended to filter based on matching a STRING to the {@code Strings} tokens that represents some portion of

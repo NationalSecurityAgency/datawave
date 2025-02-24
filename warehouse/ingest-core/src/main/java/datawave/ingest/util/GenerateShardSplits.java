@@ -20,7 +20,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 
-import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 import datawave.util.time.DateHelper;
 

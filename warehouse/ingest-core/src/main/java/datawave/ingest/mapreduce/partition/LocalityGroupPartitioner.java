@@ -10,7 +10,6 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.StringUtils;
 
 /**
  * Directs each locality group to its own partition. Puts anything else in another bin (assumes that every column family is named and evenly distributed)

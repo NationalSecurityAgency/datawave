@@ -4,7 +4,6 @@ import java.text.ParseException;
 import java.util.Date;
 
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;

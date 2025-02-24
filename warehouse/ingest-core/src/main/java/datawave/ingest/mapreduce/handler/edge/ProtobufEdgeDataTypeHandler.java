@@ -76,7 +76,6 @@ import datawave.ingest.time.Now;
 import datawave.marking.MarkingFunctions;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 
 public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {

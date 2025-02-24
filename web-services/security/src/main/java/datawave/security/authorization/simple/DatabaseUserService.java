@@ -27,7 +27,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.util.StringUtils;
 
 /**
  * A {@link DatawaveUserService} that retrieves {@link DatawaveUser} objects from a SQL database. This login module expects the supplied {@link DataSource} to

@@ -30,7 +30,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.mapreduce.handler.error.ErrorDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 
 /**
