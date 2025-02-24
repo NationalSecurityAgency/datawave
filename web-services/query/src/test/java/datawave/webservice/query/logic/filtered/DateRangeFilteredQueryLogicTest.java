@@ -4,6 +4,7 @@ import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -160,6 +161,8 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         // this one has no results
         expect(transformIterator1.hasNext()).andReturn(false).anyTimes();
         delegate.setPageProcessingStartTime(anyLong());
+        // setting of the page processing start time is in a separate thread, so may or may not actually see this call
+        expectLastCall().anyTimes();
 
         expect(delegate2.initialize(eq(null), capture(logic2Settings), eq(Collections.emptySet()))).andReturn(config2);
         expect(delegate2.getResultLimit(capture(logic2SettingsDupe1))).andReturn(100l);
@@ -168,6 +171,8 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         // this one has no results
         expect(transformIterator2.hasNext()).andReturn(false).anyTimes();
         delegate2.setPageProcessingStartTime(anyLong());
+        // setting of the page processing start time is in a separate thread, so may or may not actually see this call
+        expectLastCall().anyTimes();
 
         replayAll();
 
