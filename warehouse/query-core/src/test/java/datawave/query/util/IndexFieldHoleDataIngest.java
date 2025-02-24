@@ -42,7 +42,7 @@ import datawave.util.TableName;
 /**
  * Test data that contains field index holes.
  */
-public class FieldIndexHoleDataIngest {
+public class IndexFieldHoleDataIngest {
 
     public enum Range {
         SHARD {

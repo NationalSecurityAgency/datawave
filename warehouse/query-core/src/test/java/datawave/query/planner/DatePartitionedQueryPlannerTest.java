@@ -61,7 +61,7 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
-import datawave.query.util.FieldIndexHoleDataIngest;
+import datawave.query.util.IndexFieldHoleDataIngest;
 import datawave.query.util.MetadataHelper;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -79,8 +79,8 @@ public abstract class DatePartitionedQueryPlannerTest {
     public static class ShardRange extends DatePartitionedQueryPlannerTest {
 
         @Override
-        protected FieldIndexHoleDataIngest.Range getRange() {
-            return FieldIndexHoleDataIngest.Range.SHARD;
+        protected IndexFieldHoleDataIngest.Range getRange() {
+            return IndexFieldHoleDataIngest.Range.SHARD;
         }
     }
 
@@ -88,8 +88,8 @@ public abstract class DatePartitionedQueryPlannerTest {
     public static class DocumentRange extends DatePartitionedQueryPlannerTest {
 
         @Override
-        protected FieldIndexHoleDataIngest.Range getRange() {
-            return FieldIndexHoleDataIngest.Range.DOCUMENT;
+        protected IndexFieldHoleDataIngest.Range getRange() {
+            return IndexFieldHoleDataIngest.Range.DOCUMENT;
         }
     }
 
@@ -133,7 +133,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
     }
 
-    protected abstract FieldIndexHoleDataIngest.Range getRange();
+    protected abstract IndexFieldHoleDataIngest.Range getRange();
 
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
@@ -146,7 +146,7 @@ public abstract class DatePartitionedQueryPlannerTest {
     private final DateFormat formatDate = new SimpleDateFormat("yyyyMMdd");
     private final DateFormat formatDateTime = new SimpleDateFormat("yyyyMMdd HHmmss");
     private final DateFormat formatDateTimeMillis = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
-    private final List<FieldIndexHoleDataIngest.EventConfig> eventConfigs = new ArrayList<>();
+    private final List<IndexFieldHoleDataIngest.EventConfig> eventConfigs = new ArrayList<>();
     private final Map<String,String> queryParameters = new HashMap<>();
     private final Set<Event> expectedEvents = new HashSet<>();
     private final Map<Pair<Date,Date>,Pair<String,String>> expectedPlans = new HashMap<>();
@@ -204,7 +204,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         TypeRegistry.reset();
     }
 
-    private void configureEvent(FieldIndexHoleDataIngest.EventConfig config) {
+    private void configureEvent(IndexFieldHoleDataIngest.EventConfig config) {
         this.eventConfigs.add(config);
     }
 
@@ -264,7 +264,7 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     private AccumuloClient createClient() throws Exception {
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log).client;
-        FieldIndexHoleDataIngest.writeItAll(client, getRange(), eventConfigs);
+        IndexFieldHoleDataIngest.writeItAll(client, getRange(), eventConfigs);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -509,11 +509,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testNoFieldIndexHoles() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -522,11 +522,11 @@ public abstract class DatePartitionedQueryPlannerTest {
 
         expectPlan(start("20130101"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults());
     }
@@ -536,11 +536,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testFieldIndexHolesOutsideDateRange() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -549,10 +549,10 @@ public abstract class DatePartitionedQueryPlannerTest {
 
         expectPlan(start("20130101"), end("20130104"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults());
     }
@@ -562,11 +562,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testFieldIndexHolesWithinDateRange() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -578,11 +578,11 @@ public abstract class DatePartitionedQueryPlannerTest {
                         "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
         expectPlan(start("20130104"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
@@ -592,11 +592,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testFieldIndexHolesPartiallyWithinDateRange() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -607,10 +607,10 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectPlan(start("20130103"), end("20130104"),
                         "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
@@ -620,11 +620,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testConsecutiveFieldIndexHolesForDifferentFields() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
@@ -642,11 +642,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectPlan(start("20130105"), end("20130105"),
                         "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults());
     }
@@ -656,11 +656,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testOverlappingFieldIndexHolesForDifferentFields() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
@@ -682,11 +682,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectPlan(start("20130105"), end("20130105"),
                         "(GENDER == 'male' || GENERE == 'male') && (UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano')");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
@@ -696,11 +696,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testOverlappingFieldIndexHolesForDifferentFieldsNoSingleDates() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 2L));
 
         givenQuery("(UUID =~ 'C.*' || UUID =~ 'S.*') && GEN == 'MALE'");
         givenStartDate("20130101");
@@ -714,11 +714,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectPlan(start("20130104"), end("20130105"),
                         "(GENDER == 'male' || GENERE == 'male') && (((_Eval_ = true) && (UUID =~ 'c.*')) || ((_Eval_ = true) && (UUID =~ 's.*')))");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
@@ -728,11 +728,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testMissingIndexedData() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("GEN == 'MALE'");
         givenStartDate("20130101");
@@ -743,11 +743,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectPlan(start("20130102"), end("20130103"), "GENERE == 'male' || ((_Eval_ = true) && (GENDER == 'male'))");
         expectPlan(start("20130104"), end("20130105"), "GENDER == 'male' || GENERE == 'male'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
@@ -757,11 +757,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testFieldIndexHolesAtStartOfRange() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 10L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 2L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 2L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -772,22 +772,22 @@ public abstract class DatePartitionedQueryPlannerTest {
                         "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
         expectPlan(start("20130103"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
 
     @Test
     public void testFieldIndexHolesAtEndOfRange() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 10L, 1L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 1L));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 1L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 10L, 1L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 1L));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105").withMetadataCount("UUID", 10L, 1L));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20120101");
@@ -801,11 +801,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         expectPlan(start("20130104"), end("20130105 120000"),
                         "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
@@ -815,11 +815,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testFieldIndexMinThresholdWithAllMeeting() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -829,11 +829,11 @@ public abstract class DatePartitionedQueryPlannerTest {
 
         expectPlan(start("20130101"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults());
     }
@@ -843,11 +843,11 @@ public abstract class DatePartitionedQueryPlannerTest {
      */
     @Test
     public void testFieldIndexMinThresholdWithSomeNotMeeting() throws Exception {
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 15L)); // Does not meet min threshold.
-        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 15L)); // Does not meet min threshold.
+        configureEvent(IndexFieldHoleDataIngest.EventConfig.forDate("20130105"));
 
         givenQuery("UUID =~ 'C.*' || UUID =~ 'S.*'");
         givenStartDate("20130101");
@@ -860,11 +860,11 @@ public abstract class DatePartitionedQueryPlannerTest {
                         "((_Eval_ = true) && (UUID == 'capone')) || ((_Eval_ = true) && (UUID == 'corleone')) || ((_Eval_ = true) && (UUID == 'soprano'))");
         expectPlan(start("20130105"), end("20130105"), "UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
-        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
-        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130101", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130102", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130103", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130104", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
+        expectEvents("20130105", IndexFieldHoleDataIngest.corleoneUID, IndexFieldHoleDataIngest.caponeUID, IndexFieldHoleDataIngest.sopranoUID);
 
         assertSubrangesCorrect(assertQueryResults(true));
     }
