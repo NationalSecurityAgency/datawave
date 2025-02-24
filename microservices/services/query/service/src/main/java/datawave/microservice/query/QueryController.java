@@ -1509,9 +1509,9 @@ public class QueryController {
                     example = "KEY_1:VALUE_1;KEY_2:VALUE_2")
     })
     // @formatter:on
-    @RequestMapping(path = "translateIDs", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+    @RequestMapping(path = "translateIds", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public BaseQueryResponse translateIDs(@Parameter(hidden = true) @RequestParam MultiValueMap<String,String> parameters, @RequestHeader HttpHeaders headers,
+    public BaseQueryResponse translateIds(@Parameter(hidden = true) @RequestParam MultiValueMap<String,String> parameters, @RequestHeader HttpHeaders headers,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return translateIdService.translateIds(parameters, getPool(headers), currentUser);
     }
