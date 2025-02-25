@@ -1,0 +1,17 @@
+name: Tests
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    branches:
+    - 'main'
+    - 'release/*'
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+
+jobs:
+  call-reusable-workflow:
+    uses: nationalsecurityagency/datawave/.github/workflows/microservice-maven-tests.yaml@integration
+    secrets:
+      USER_NAME: ${{ secrets.USER_NAME }}
+      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}

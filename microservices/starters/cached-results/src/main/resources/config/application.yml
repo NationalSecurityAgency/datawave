@@ -1,0 +1,40 @@
+# Configuration used in Wildfly
+# /subsystem=datasources/data-source=CachedResultsDS:add(
+#   jndi-name=java:jboss/datasources/CachedResultsDS,
+#   connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull",
+#   min-pool-size=${mysql.pool.min.size},
+#   max-pool-size=${mysql.pool.max.size},
+#   blocking-timeout-wait-millis=5000,
+#   idle-timeout-minutes=15,
+#   exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter,
+#   valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,
+#   user-name=${mysql.user.name},
+#   password=${mysql.user.password},
+#   driver-name=mysql)
+
+datawave:
+  mysql:
+    host: 'localhost'
+    dbname: 'sort'
+    pool:
+      min-size: '5'
+      max-size: '20'
+    username: 'sorted'
+    password: 'datawave'
+
+spring:
+  datasource:
+    cachedResults:
+      url: 'jdbc:mysql://${datawave.mysql.host}:3306/${datawave.mysql.dbname}?zeroDateTimeBehavior=convertToNull'
+      username: '${datawave.mysql.username}'
+      password: '${datawave.mysql.password}'
+      driver-class-name: 'com.mysql.jdbc.Driver'
+      hikari:
+        # default: 30000
+        connection-timeout: 5000
+        # default: 600000
+        idle-timeout: 900000
+        # default: maximum-pool-size
+        minimum-idle: ${datawave.mysql.pool.min-size}
+        # default: 10
+        maximum-pool-size: ${datawave.mysql.pool.max-size}

@@ -67,7 +67,7 @@
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
         <version.datawave.dictionary-api>4.0.1</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
-        <version.datawave.metadata-utils>4.0.8</version.datawave.metadata-utils>
+        <version.datawave.metadata-utils>4.0.9</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
@@ -1415,6 +1415,7 @@
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
                         <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1461,6 +1462,7 @@
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                            <phase>compile</phase>
                         </execution>
                     </executions>
                 </plugin>

@@ -1,20 +1,13 @@
 package datawave.query.config;
 
-import java.util.Collection;
-
-import org.apache.accumulo.core.data.Range;
-
-import com.google.common.collect.Multimap;
-
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.query.tables.ssdeep.SSDeepSimilarityQueryState;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
-import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
@@ -33,23 +26,32 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private ChunkSizeEncoding chunkSizeEncoder;
 
-    private Collection<Range> ranges;
-
-    private Multimap<NGramTuple,SSDeepHash> queryMap;
-
     /**
      * The number of hashes the query logic will accept, -1 indicates unlimited
      */
     private int maxHashes = -1;
 
     /**
-     * The max number of hashes to be generated per ngram, -1 indicates unlimited
+     * Dedupe matching hashes matched inside the SSDeepScoringFunction. When true only process a matching hash once regardless of how many times an ngram may
+     * match it
+     */
+    private boolean dedupeSimilarityHashes = true;
+
+    /**
+     * The max number of hashes to be retrieved per ngram, -1 indicates unlimited
      */
     private int maxHashesPerNGram = -1;
+
+    private SSDeepSimilarityQueryState state;
 
     public SSDeepSimilarityQueryConfiguration() {
         super();
         setQuery(new QueryImpl());
+        setState(new SSDeepSimilarityQueryState());
+    }
+
+    public SSDeepSimilarityQueryConfiguration(SSDeepSimilarityQueryConfiguration other) {
+        copyFrom(other);
     }
 
     public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
@@ -60,47 +62,22 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         return new SSDeepSimilarityQueryConfiguration();
     }
 
-    public static SSDeepSimilarityQueryConfiguration create(SSDeepSimilarityQueryConfiguration other) {
-        SSDeepSimilarityQueryConfiguration config = new SSDeepSimilarityQueryConfiguration();
-        config.copyFrom(other);
-        return config;
-    }
-
-    public void clearState() {
-        queryMap = null;
-        ranges = null;
-    }
-
     public void copyFrom(SSDeepSimilarityQueryConfiguration other) {
         super.copyFrom(other);
 
-        setRanges(other.getRanges());
-        setQueryMap(other.getQueryMap());
-        setIndexBuckets(other.getIndexBuckets());
-        setQueryThreads(other.getQueryThreads());
-        setNGramSize(other.getNGramSize());
-        setMaxRepeatedCharacters(other.getMaxRepeatedCharacters());
-        setMinHashSize(other.getMinHashSize());
+        this.bucketEncoder = other.bucketEncoder;
+        this.chunkSizeEncoder = other.chunkSizeEncoder;
         setBucketEncodingBase(other.getBucketEncodingBase());
         setBucketEncodingLength(other.getBucketEncodingLength());
+        setIndexBuckets(other.getIndexBuckets());
+        setMaxRepeatedCharacters(other.getMaxRepeatedCharacters());
+        setMinHashSize(other.getMinHashSize());
+        setNGramSize(other.getNGramSize());
+        setQueryThreads(other.getQueryThreads());
+        setDedupeSimilarityHashes(other.isDedupeSimilarityHashes());
         setMaxHashes(other.getMaxHashes());
         setMaxHashesPerNGram(other.getMaxHashesPerNGram());
-    }
-
-    public Collection<Range> getRanges() {
-        return ranges;
-    }
-
-    public void setRanges(Collection<Range> ranges) {
-        this.ranges = ranges;
-    }
-
-    public Multimap<NGramTuple,SSDeepHash> getQueryMap() {
-        return queryMap;
-    }
-
-    public void setQueryMap(Multimap<NGramTuple,SSDeepHash> queryMap) {
-        this.queryMap = queryMap;
+        setState(other.getState());
     }
 
     public int getIndexBuckets() {
@@ -159,6 +136,14 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         this.bucketEncodingLength = bucketEncodingLength;
     }
 
+    public boolean isDedupeSimilarityHashes() {
+        return this.dedupeSimilarityHashes;
+    }
+
+    public void setDedupeSimilarityHashes(boolean dedupeSimilarityHashes) {
+        this.dedupeSimilarityHashes = dedupeSimilarityHashes;
+    }
+
     public int getMaxHashes() {
         return maxHashes;
     }
@@ -173,5 +158,13 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public void setMaxHashesPerNGram(int maxHashesPerNGram) {
         this.maxHashesPerNGram = maxHashesPerNGram;
+    }
+
+    public void setState(SSDeepSimilarityQueryState state) {
+        this.state = state;
+    }
+
+    public SSDeepSimilarityQueryState getState() {
+        return this.state;
     }
 }
