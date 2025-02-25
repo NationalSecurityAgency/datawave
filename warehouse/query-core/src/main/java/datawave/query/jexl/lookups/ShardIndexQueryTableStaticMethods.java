@@ -471,17 +471,13 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.setRanges(ranges);
 
-        SessionOptions options = new SessionOptions();
-
         IteratorSetting setting = configureDateRangeIterator(config);
-        options.addScanIterator(setting);
+        bs.getOptions().addScanIterator(setting);
 
         setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
         if (setting != null) {
-            options.addScanIterator(setting);
+            bs.getOptions().addScanIterator(setting);
         }
-
-        bs.setOptions(options);
 
         return bs;
     }
@@ -501,18 +497,15 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.setRanges(ranges);
 
-        SessionOptions options = new SessionOptions();
-        options.addScanIterator(configureDateRangeIterator(config));
+        bs.getOptions().addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
         if (setting != null) {
-            options.addScanIterator(setting);
+            bs.getOptions().addScanIterator(setting);
         }
         setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
         if (setting != null) {
-            options.addScanIterator(setting);
+            bs.getOptions().addScanIterator(setting);
         }
-
-        bs.setOptions(options);
 
         return bs;
     }
