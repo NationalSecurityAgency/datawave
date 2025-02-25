@@ -3,7 +3,6 @@ package datawave.webservice.result;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
