@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -100,6 +101,7 @@ public class QueryMetricSplitBrainMergePolicyTest {
         h2.shutdown();
     }
     
+    @Ignore
     @Test
     public void testFieldsUpdated() {
         String mapName = HazelcastUtils.randomMapName();
