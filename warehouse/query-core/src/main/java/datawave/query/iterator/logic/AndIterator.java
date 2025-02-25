@@ -24,14 +24,13 @@ import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.Util;
 import datawave.query.iterator.Util.Transformer;
 
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
  */
-public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, SeekableIterator {
+public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes, contextIncludes, contextExcludes;
 
@@ -258,27 +257,23 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         while (include.hasNext()) {
             NestedIterator<T> child = include.next();
             try {
-                for (NestedIterator<T> itr : child.leaves()) {
-                    if (itr instanceof SeekableIterator) {
-                        try {
-                            ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
-                        } catch (IterationInterruptedException e2) {
-                            // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
-                            throw e2;
-                        } catch (Exception e2) {
-                            if (itr.isNonEventField()) {
-                                // dropping a non-event term from the query means that the accuracy of the query
-                                // cannot be guaranteed. Thus, a fatal exception.
-                                log.error("Lookup of a non-event field failed, failing query");
-                                throw new DatawaveFatalQueryException("Lookup of non-event field failed", e2);
-                            }
-                            // otherwise we can safely drop this term from the intersection as the field will get re-introduced
-                            // to the context when the event is aggregated
-                            // Note: even though the precision of the query is affected the accuracy is not. i.e., documents that
-                            // would have been defeated at the field index will now be defeated at evaluation time
-                            throw e2;
-                        }
+                try {
+                    child.seek(range, columnFamilies, inclusive);
+                } catch (IterationInterruptedException e2) {
+                    // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
+                    throw e2;
+                } catch (Exception e2) {
+                    if (child.isNonEventField()) {
+                        // dropping a non-event term from the query means that the accuracy of the query
+                        // cannot be guaranteed. Thus, a fatal exception.
+                        log.error("Lookup of a non-event field failed, failing query");
+                        throw new DatawaveFatalQueryException("Lookup of non-event field failed", e2);
                     }
+                    // otherwise we can safely drop this term from the intersection as the field will get re-introduced
+                    // to the context when the event is aggregated
+                    // Note: even though the precision of the query is affected the accuracy is not. i.e., documents that
+                    // would have been defeated at the field index will now be defeated at evaluation time
+                    throw e2;
                 }
             } catch (QueryIteratorYieldingException qye) {
                 throw qye;
@@ -286,21 +281,20 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 throw iie;
             } catch (Exception e) {
                 include.remove();
-                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException || e instanceof IterationInterruptedException) {
+                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException) {
                     throw e;
                 } else {
                     log.warn("Lookup of event field failed, precision of query reduced.");
                 }
             }
         }
-        Iterator<NestedIterator<T>> exclude = excludes.iterator();
-        while (exclude.hasNext()) {
-            NestedIterator<T> child = exclude.next();
-            for (NestedIterator<T> itr : child.leaves()) {
-                if (itr instanceof SeekableIterator) {
-                    ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
-                }
-            }
+
+        for (NestedIterator<T> contextInclude : contextIncludes) {
+            contextInclude.seek(range, columnFamilies, inclusive);
+        }
+
+        for (NestedIterator<T> exclude : excludes) {
+            exclude.seek(range, columnFamilies, inclusive);
         }
 
         if (isInitialized()) {

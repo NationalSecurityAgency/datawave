@@ -7,7 +7,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
@@ -21,7 +22,7 @@ import datawave.security.authorization.UserOperations;
  */
 public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLogic<Object> {
 
-    public static final Logger log = Logger.getLogger(FilteredQueryLogic.class);
+    public static final Logger log = LoggerFactory.getLogger(FilteredQueryLogic.class);
 
     private QueryLogicFilter filter;
 
@@ -67,9 +68,9 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     public boolean isFiltered() {
         if (log.isDebugEnabled()) {
             if (filtered) {
-                log.debug("Filter " + filter + " blocking query " + super.getLogicName());
+                log.debug("Filter {} blocking query {}", filter, super.getLogicName());
             } else {
-                log.debug("Passing through filter " + filter + " for query " + super.getLogicName());
+                log.debug("Passing through filter {} for query {}", filter, super.getLogicName());
             }
         }
         return filtered || (getDelegate() instanceof FilteredQueryLogic && ((FilteredQueryLogic) getDelegate()).isFiltered());
@@ -127,6 +128,15 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
             return super.getTransformIterator(settings);
         } else {
             return new DatawaveTransformIterator(iterator());
+        }
+    }
+
+    @Override
+    public Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        if (!isFiltered()) {
+            return super.validateQuery(client, query, auths);
+        } else {
+            throw new UnsupportedOperationException("Query validation not implemented");
         }
     }
 

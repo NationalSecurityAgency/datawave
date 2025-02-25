@@ -185,7 +185,6 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
      */
     public void setKeyThresholdExceeded() {
         exceededKeyThreshold = true;
-
     }
 
     public void setPatterns(Set<String> patterns) {

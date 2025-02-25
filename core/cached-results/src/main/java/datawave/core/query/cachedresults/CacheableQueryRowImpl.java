@@ -12,21 +12,21 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.util.TypedValue;
 
 public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSizeOf {
 
-    private static Logger log = Logger.getLogger(CacheableQueryRowImpl.class);
+    private static Logger log = LoggerFactory.getLogger(CacheableQueryRowImpl.class);
 
     private String user = null;
     private String queryId = null;
@@ -65,7 +65,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
                         this.markings = markings;
                     }
                 } catch (MarkingFunctions.Exception e) {
-                    log.error("Invalid markings " + markings + ", skipping column " + columnName + "=" + columnTypedValue, e);
+                    log.error("Invalid markings {} skipping column {} = {}", markings, columnName, columnTypedValue, e);
                     return;
                 }
             } else {
@@ -78,7 +78,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
                     // use combined marking as new markings
                     this.markings = markingFunctions.translateFromColumnVisibility(combinedVisibility);
                 } catch (MarkingFunctions.Exception e) {
-                    log.error("Invalid markings " + markings + ", skipping column " + columnName + "=" + columnTypedValue, e);
+                    log.error("Invalid markings {} skipping column {} = {}", markings, columnName, columnTypedValue, e);
                     return;
                 }
             }
@@ -295,7 +295,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
             markingFunctions.translateToColumnVisibility(markings);
             this.markings = markings;
         } catch (MarkingFunctions.Exception e) {
-            log.error("Invalid markings " + markings, e);
+            log.error("Invalid markings {}", markings, e);
         }
     }
 

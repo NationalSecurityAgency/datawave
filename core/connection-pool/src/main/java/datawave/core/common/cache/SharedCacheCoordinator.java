@@ -27,11 +27,12 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -51,7 +52,7 @@ public class SharedCacheCoordinator implements Serializable {
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
 
-    private static final Logger log = Logger.getLogger(SharedCacheCoordinator.class);
+    private static final Logger log = LoggerFactory.getLogger(SharedCacheCoordinator.class);
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;
@@ -202,7 +203,7 @@ public class SharedCacheCoordinator implements Serializable {
                 count.close();
             } catch (IOException e) {
                 // ignore -- we're going to abandon this counter.
-                log.warn("Error closing counter " + counterName + " after connection lost.", e);
+                log.warn("Error closing counter {} after connection lost.", counterName, e);
             }
         }
     }
@@ -214,7 +215,7 @@ public class SharedCacheCoordinator implements Serializable {
                 System.out.println("**** RE-REGISTER " + counterName);
                 reregisterCounter(counterName, sharedCountListeners.get(counterName), entry.getValue());
             } catch (Exception e) {
-                log.error("Unable to re-register shared counter " + counterName, e);
+                log.error("Unable to re-register shared counter {}", counterName, e);
             }
         }
     }
@@ -228,7 +229,7 @@ public class SharedCacheCoordinator implements Serializable {
                 sharedBoolean.close();
             } catch (IOException e) {
                 // ignore -- we're going to abandon this counter.
-                log.warn("Error closing shared boolean " + booleanName + " after connection lost.", e);
+                log.warn("Error closing shared boolean {} after connection lost.", booleanName, e);
             }
         }
     }
@@ -240,7 +241,7 @@ public class SharedCacheCoordinator implements Serializable {
                 System.out.println("**** RE-REGISTER " + booleanName);
                 reregisterBoolean(booleanName, sharedBooleanListeners.get(booleanName), entry.getValue());
             } catch (Exception e) {
-                log.error("Unable to re-register shared boolean " + booleanName, e);
+                log.error("Unable to re-register shared boolean {}", booleanName, e);
             }
         }
     }
@@ -254,7 +255,7 @@ public class SharedCacheCoordinator implements Serializable {
                 sharedTriState.close();
             } catch (IOException e) {
                 // ignore -- we're going to abandon this counter.
-                log.warn("Error closing shared TriState " + triStateName + " after connection lost.", e);
+                log.warn("Error closing shared TriState {} after connection lost.", triStateName, e);
             }
         }
     }
@@ -266,7 +267,7 @@ public class SharedCacheCoordinator implements Serializable {
                 System.out.println("**** RE-REGISTER " + triStateName);
                 reregisterTriState(triStateName, sharedTriStateListeners.get(triStateName), entry.getValue());
             } catch (Exception e) {
-                log.error("Unable to re-register shared TriState " + triStateName, e);
+                log.error("Unable to re-register shared TriState {}", triStateName, e);
             }
         }
     }
@@ -277,20 +278,20 @@ public class SharedCacheCoordinator implements Serializable {
         try {
             serverIdentifierNode.close();
         } catch (Exception e) {
-            log.warn("Error removing server identifier path " + serverIdentifierPath + ": " + e.getMessage(), e);
+            log.warn("Error removing server identifier path {}: {}", serverIdentifierPath, e.getMessage(), e);
         }
         for (Entry<String,SharedCount> entry : sharedCounters.entrySet()) {
             try {
                 entry.getValue().close();
             } catch (IOException e) {
-                log.warn("Error closing shared counter " + entry.getKey() + ": " + e.getMessage(), e);
+                log.warn("Error closing shared counter {}: {}", entry.getKey(), e.getMessage(), e);
             }
         }
         if (evictionPathCache != null) {
             try {
                 evictionPathCache.close();
             } catch (IOException e) {
-                log.warn("Error closing eviction monitor: " + e.getMessage(), e);
+                log.warn("Error closing eviction monitor: {}", e.getMessage(), e);
             }
         }
         curatorClient.close();
@@ -357,7 +358,7 @@ public class SharedCacheCoordinator implements Serializable {
                     try {
                         reregisterCounter(counterName, sharedCountListeners.get(counterName), localCounters.get(counterName));
                     } catch (Exception e) {
-                        System.err.println("Unable to re-register counter " + counterName + ": " + e.getMessage());
+                        log.error("Unable to re-register counter {}: {}", counterName, e.getMessage());
                     }
                 }
             }
@@ -366,8 +367,8 @@ public class SharedCacheCoordinator implements Serializable {
     }
 
     /**
-     * Given the shared counter {@code counterName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}.
-     * If the value does not match, the local cached value is updated.
+     * Given the shared counter {@code counterName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}. If the
+     * value does not match, the local cached value is updated.
      *
      * @param counterName
      *            the name of the counter whose locally cached value is to be tested
@@ -441,17 +442,17 @@ public class SharedCacheCoordinator implements Serializable {
 
         SharedBoolean sharedBoolean = new SharedBoolean(curatorClient, ZKPaths.makePath("/booleans", booleanName), seedValue);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " created a sharedBoolean:" + sharedBoolean);
+            log.trace("table:{} created a sharedBoolean:{}", booleanName, sharedBoolean);
         }
         sharedBoolean.start();
         sharedBooleans.put(booleanName, sharedBoolean);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " sharedBooleans has:" + sharedBooleans);
+            log.trace("table:{} sharedBooleans has:{}", booleanName, sharedBooleans);
         }
         localBooleans.put(booleanName, sharedBoolean.getBoolean());
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " localBooleans has:" + localBooleans);
-            log.trace("table:" + booleanName + " registered a boolean that is " + sharedBoolean.getBoolean());
+            log.trace("table:{} localBooleans has:{}", booleanName, localBooleans);
+            log.trace("table:{} registered a boolean that is {}", booleanName, sharedBoolean.getBoolean());
         }
 
         sharedBoolean.addListener(new SharedBooleanListener() {
@@ -464,7 +465,7 @@ public class SharedCacheCoordinator implements Serializable {
                     try {
                         reregisterBoolean(booleanName, sharedBooleanListeners.get(booleanName), localBooleans.get(booleanName));
                     } catch (Exception e) {
-                        System.err.println("Unable to re-register boolean " + booleanName + ": " + e.getMessage());
+                        log.error("Unable to re-register boolean {}: {}", booleanName, e.getMessage());
                     }
                 }
             }
@@ -473,8 +474,8 @@ public class SharedCacheCoordinator implements Serializable {
     }
 
     /**
-     * Given the shared boolean {@code booleanName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}.
-     * If the value does not match, the local cached value is updated.
+     * Given the shared boolean {@code booleanName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue}. If the
+     * value does not match, the local cached value is updated.
      *
      * @param booleanName
      *            the name of the counter whose locally cached value is to be tested
@@ -489,8 +490,8 @@ public class SharedCacheCoordinator implements Serializable {
         SharedBoolean sharedBoolean = sharedBooleans.get(booleanName);
         Preconditions.checkArgument(sharedBoolean != null, "Invalid boolean name: " + booleanName);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " got " + sharedBoolean + " from " + sharedBooleans);
-            log.trace("table:" + booleanName + " checking to see if sharedBoolean " + sharedBoolean + " is the same as expected value:" + expectedValue);
+            log.trace("table:{} got {} from {}", booleanName, sharedBoolean, sharedBooleans);
+            log.trace("table:{} checking to see if sharedBoolean {} is the same as expected value:{}", booleanName, sharedBoolean, expectedValue);
         }
         return sharedBoolean.getBoolean() == expectedValue;
     }
@@ -506,18 +507,18 @@ public class SharedCacheCoordinator implements Serializable {
      *             if there are issues
      */
     public void setBoolean(String booleanName, boolean state) throws Exception {
-        log.trace("table:" + booleanName + " setBoolean(" + state + ")");
+        log.trace("table:{} setBoolean( {} )", booleanName, state);
         ArgumentChecker.notNull(booleanName);
 
         SharedBoolean sharedBoolean = sharedBooleans.get(booleanName);
         Preconditions.checkArgument(sharedBoolean != null, "Invalid boolean name: " + booleanName);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " got " + sharedBoolean + " from " + sharedBooleans);
+            log.trace("table:{} got {} from {}", booleanName, sharedBoolean, sharedBooleans);
         }
 
         boolean newBoolean = state;
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " put(" + booleanName + ", " + state + ")" + "into localBooleans:" + localBooleans);
+            log.trace("table:{} put ( {}, {} ) into localBooleans:{}", booleanName, booleanName, state, localBooleans);
         }
         int tries = 0;
         while (!sharedBoolean.trySetBoolean(newBoolean)) {
@@ -535,9 +536,9 @@ public class SharedCacheCoordinator implements Serializable {
         }
         localBooleans.put(booleanName, state);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + booleanName + " sharedBoolean now:" + sharedBoolean);
-            log.trace("table:" + booleanName + " localBooleans:" + localBooleans);
-            log.trace("table:" + booleanName + " sharedBooleans:" + sharedBooleans);
+            log.trace("table:{} sharedBoolean now:{}", booleanName, sharedBoolean);
+            log.trace("table:{} localBooleans:{}", booleanName, localBooleans);
+            log.trace("table:{} sharedBooleans:{}", booleanName, sharedBooleans);
         }
     }
 
@@ -551,15 +552,15 @@ public class SharedCacheCoordinator implements Serializable {
 
         SharedTriState sharedTriState = new SharedTriState(curatorClient, ZKPaths.makePath("/triStates", triStateName), seedValue);
         if (log.isTraceEnabled())
-            log.trace("table:" + triStateName + " created a sharedTriState:" + sharedTriState);
+            log.trace("table:{} created a sharedTriState:{}", triStateName, sharedTriState);
         sharedTriState.start();
         sharedTriStates.put(triStateName, sharedTriState);
         if (log.isTraceEnabled())
-            log.trace("table:" + triStateName + " sharedTriStates has:" + sharedTriStates);
+            log.trace("table:{} sharedTriStates has:{}", triStateName, sharedTriStates);
         localTriStates.put(triStateName, sharedTriState.getState());
         if (log.isTraceEnabled()) {
-            log.trace("table:" + triStateName + " localTriStates has:" + localTriStates);
-            log.trace("table:" + triStateName + " registered a TriState that is " + sharedTriState.getState());
+            log.trace("table:{} localTriStates has:{}", triStateName, localTriStates);
+            log.trace("table:{} registered a TriState that is {}", triStateName, sharedTriState.getState());
         }
         sharedTriState.addListener(new SharedTriStateListener() {
             @Override
@@ -571,7 +572,7 @@ public class SharedCacheCoordinator implements Serializable {
                     try {
                         reregisterTriState(triStateName, sharedTriStateListeners.get(triStateName), localTriStates.get(triStateName));
                     } catch (Exception e) {
-                        System.err.println("Unable to re-register tri-state " + triStateName + ": " + e.getMessage());
+                        log.error("Unable to re-register tri-state {}: {}", triStateName, e.getMessage());
                     }
                 }
             }
@@ -580,8 +581,8 @@ public class SharedCacheCoordinator implements Serializable {
     }
 
     /**
-     * Given the shared TriState {@code triStateName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}
-     * . If the value does not match, the local cached value is updated.
+     * Given the shared TriState {@code triStateName}, checks whether the locally cached value matches the expected shared value of {@code expectedValue} . If
+     * the value does not match, the local cached value is updated.
      *
      * @param triStateName
      *            the name of the state whose locally cached value is to be tested
@@ -596,8 +597,8 @@ public class SharedCacheCoordinator implements Serializable {
         SharedTriState sharedTriState = sharedTriStates.get(triStateName);
         Preconditions.checkArgument(sharedTriState != null, "Invalid TriState name: " + triStateName);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
-            log.trace("table:" + triStateName + " checking to see if sharedTriState " + sharedTriState + " is the same as expected value:" + expectedValue);
+            log.trace("table:{} got {} from {}", triStateName, sharedTriState, sharedTriStates);
+            log.trace("table:{} checking to see if sharedTriState {} is the same as expected value:{}", triStateName, sharedTriState, expectedValue);
         }
         return sharedTriState.getState() == expectedValue;
     }
@@ -613,24 +614,24 @@ public class SharedCacheCoordinator implements Serializable {
      *             if there are issues
      */
     public void setTriState(String triStateName, SharedTriState.STATE state) throws Exception {
-        log.trace("table:" + triStateName + " setTriState(" + state + ")");
+        log.trace("table:{} setTriState( {} )", triStateName, state);
         ArgumentChecker.notNull(triStateName);
 
         SharedTriState sharedTriState = sharedTriStates.get(triStateName);
         Preconditions.checkArgument(sharedTriState != null, "Invalid state name: " + triStateName);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
+            log.trace("table:{} got {} from {}", triStateName, sharedTriState, sharedTriStates);
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("table:" + triStateName + " put(" + triStateName + ", " + state + ")" + "into localTriStates:" + localTriStates);
+            log.trace("table:{} put( {}, {} )into localTriStates:{}", triStateName, triStateName, state, localTriStates);
         }
         sharedTriState.setState(state);
         localTriStates.put(triStateName, state);
         if (log.isTraceEnabled()) {
-            log.trace("table:" + triStateName + " sharedTriState now:" + sharedTriState);
-            log.trace("table:" + triStateName + " localTriStates:" + localTriStates);
-            log.trace("table:" + triStateName + " sharedTriStates:" + sharedTriStates);
+            log.trace("table:{} sharedTriState now:{}", triStateName, sharedTriState);
+            log.trace("table:{} localTriStates:{}", triStateName, localTriStates);
+            log.trace("table:{} sharedTriStates:{}", triStateName, sharedTriStates);
         }
     }
 
@@ -652,7 +653,7 @@ public class SharedCacheCoordinator implements Serializable {
         if (nodeData != null) {
             long delta = System.currentTimeMillis() - nodeData.getCtime();
             if (delta > EVICT_MESSAGE_TIMEOUT) {
-                log.debug("Attempting to delete " + evictMessagePath + " since it was created " + delta + "ms ago and hasn't been cleaned up.");
+                log.debug("Attempting to delete {} since it was created {}ms ago and hasn't been cleaned up.", evictMessagePath, delta);
                 ZKUtil.deleteRecursive(curatorClient.getZookeeperClient().getZooKeeper(), evictMessagePath);
             } else {
                 shouldCreate = false;
@@ -666,8 +667,7 @@ public class SharedCacheCoordinator implements Serializable {
     /**
      * Watches the eviction path for new eviction messages. If a message is received, then {@code callback} is invoked, and then zookeeper is updated to
      * indicate this server has responded to the eviction request. Once all running servers have responded, then a cleanup thread running on each server will
-     * attempt to remove the eviction request marker so as not to overpopulate zookeeper. All servers may try, but only one will actually delete all of the
-     * nodes.
+     * attempt to remove the eviction request marker so as not to overpopulate zookeeper. All servers may try, but only one will actually delete all the nodes.
      *
      * @param callback
      *            the callback to invoke
@@ -712,10 +712,10 @@ public class SharedCacheCoordinator implements Serializable {
             for (ChildData data : evictionPathCache.getCurrentData()) {
                 List<String> responders = curatorClient.getChildren().forPath(data.getPath());
                 if (responders.containsAll(liveServers)) {
-                    log.debug(data.getPath() + " can be cleaned up.");
+                    log.debug("{} can be cleaned up.", data.getPath());
                     pathsToDelete.add(data.getPath());
                 } else {
-                    log.debug(data.getPath() + " cannot be cleaned up: liveServers=" + liveServers + ", respondingServers=" + responders);
+                    log.debug("{} cannot be cleaned up: liveServers={}, respondingServers={}", data.getPath(), liveServers, responders);
                 }
             }
 
@@ -726,12 +726,12 @@ public class SharedCacheCoordinator implements Serializable {
                         String recursiveDeletePath = ZKPaths.makePath(curatorClient.getNamespace(), path);
                         ZKUtil.deleteRecursive(curatorClient.getZookeeperClient().getZooKeeper(), recursiveDeletePath);
                     } catch (Exception e) {
-                        log.trace("Problem deleting " + path + " (this may be ok): " + e.getMessage(), e);
+                        log.trace("Problem deleting {} (this may be ok): {}", path, e.getMessage(), e);
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn("Error cleaning up eviction notices: " + e.getMessage(), e);
+            log.warn("Error cleaning up eviction notices: {}", e.getMessage(), e);
         }
     }
 
