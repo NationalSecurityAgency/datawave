@@ -772,7 +772,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
                                 .withModel(getQueryModel())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                                .withIvaratorCacheDirConfigs(getLocalIvaratorCacheDirConfigs())
                                 .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
                                 .withSubDirectory(getConfig().getQuery().getId().toString())
                                 .withMaxOpenFiles(getIvaratorMaxOpenFiles())
