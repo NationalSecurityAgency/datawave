@@ -65,7 +65,7 @@ mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests clean install
 Datawave web services utilize several microservices at runtime (currently authorization and auditing, although that
 list will expand soon). Datawave depends on api modules for some of these services, and the dependencies are set in
 the parent pom (see `version.datawave.*` properties) to released versions. If you wish to build the microservices
-for some reason, you can simply add `-Dservices` to your maven build command.
+for some reason, you can simply add `-Dservices` to your maven build command.  If you wish to build the starters you can add `-Dstarters` and for the utility modules add `-Dutils`.
 
 ### Releasing Microservices
 

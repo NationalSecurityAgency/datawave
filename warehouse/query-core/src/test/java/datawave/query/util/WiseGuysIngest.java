@@ -111,6 +111,7 @@ public class WiseGuysIngest {
                             emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NOME.4" + "\u0000" + "LUCA", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NOME.5" + "\u0000" + "VINCENT", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "HOLE.0" + "\u0000" + "FOO", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.0" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.1" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.2" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
@@ -912,9 +913,23 @@ public class WiseGuysIngest {
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210103"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("HOLE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20121231"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20130101"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20130102"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210103"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(30L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210104"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(30L)));
+
+            // just indexed 20121231
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), 1356988400000L, emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("UUID");
