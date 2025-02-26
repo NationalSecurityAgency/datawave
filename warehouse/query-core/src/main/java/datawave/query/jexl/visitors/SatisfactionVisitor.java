@@ -114,16 +114,31 @@ public class SatisfactionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
-        // Recurse only if not delayed
-        if (!instance.isType(DELAYED)) {
-            if (instance.isNotAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE)) {
-                and.childrenAccept(this, data);
+        if (instance.isAnyType() && instance.getSource() != null) {
+            switch (instance.getType()) {
+                case BOUNDED_RANGE:
+                case EXCEEDED_OR:
+                case EXCEEDED_VALUE:
+                case INDEX_HOLE:
+                    // the fields of the source node should be visited as a double lock safety check
+                    return null;
+                case DELAYED:
+                case EVALUATION_ONLY:
+                    isQueryFullySatisfied = false;
+                    return null;
+                case EXCEEDED_TERM:
+                    log.warn("cannot support exceeded term marker");
+                    isQueryFullySatisfied = false;
+                    return null;
+                case STRICT:
+                case LENIENT:
+                case DROPPED:
+                default:
+                    // these markers do not matter and should have been removed
+                    log.warn("saw unexpected marker: " + instance.getType().getLabel());
             }
-        } else {
-            isQueryFullySatisfied = false;
         }
-
-        return null;
+        return and.childrenAccept(this, data);
     }
 
     @Override

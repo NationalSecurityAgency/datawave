@@ -3,12 +3,10 @@ package datawave.query;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -24,22 +22,20 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.jboss.arquillian.junit.Arquillian;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Multimap;
+import org.junit.runner.RunWith;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.data.ColumnFamilyConstants;
@@ -51,18 +47,14 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.util.ScannerHelper;
+import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 
 /**
@@ -70,13 +62,12 @@ import datawave.util.TableName;
  * This test confirms that hit terms are found in the correct documents, and only in the correct documents. The test data has fields that will hit in different
  * grouping context levels, and assures that the hits contain the fields with the correct grouping context. It also confirms that an 'or' query that hits
  * different fields in the returned documents will have the correct hit terms.
- *
+ * <p>
  * The same tests are made against document ranges and shard ranges
- *
+ * <p>
  * If this test fails, then hit terms are broken... maybe... probably...
- *
  */
-public class IfThisTestFailsThenHitTermsAreBroken {
+public abstract class IfThisTestFailsThenHitTermsAreBroken {
 
     @ClassRule
     // Temporary folders are not successfully deleted in this test with @Rule for some reason, but they are with @ClassRule.
@@ -90,7 +81,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
 
     protected static AccumuloClient client = null;
 
-    protected Authorizations auths = new Authorizations("A");
+    protected static final Authorizations auths = new Authorizations("A");
 
     protected Set<Authorizations> authSet = Collections.singleton(auths);
 
@@ -100,40 +91,68 @@ public class IfThisTestFailsThenHitTermsAreBroken {
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
 
-    @SuppressWarnings("unchecked")
-    Multimap<String,String>[] expectedHitTerms = new Multimap[] {
+    private String query;
+    private int expectedResultCount = 0;
+    private final Set<Document> results = new HashSet<>();
+    private final Map<String,String> extraParameters = new HashMap<>();
+    private final HitTermAssertions hitTermAssertions = new HitTermAssertions();
 
-            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").put("Second", "UUID.0:Second").build(),
+    @RunWith(Arquillian.class)
+    public static class ShardRangeTest extends IfThisTestFailsThenHitTermsAreBroken {
 
-            new ImmutableListMultimap.Builder<String,String>().put("First", "FOO.0:FOO").put("First", "UUID.0:First").put("Second", "BAR.0:BAR")
-                            .put("Second", "UUID.0:Second").build(),
+        @BeforeClass
+        public static void beforeAll() throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRangeTest.class.toString(), log);
+            client = qtth.client;
 
-            new ImmutableListMultimap.Builder<String,String>().put("First", "NAME.0:NAME0").put("First", "UUID.0:First").put("Second", "NAME.1:NAME0")
-                            .put("Second", "UUID.0:Second").build(),
+            MoreTestData.writeItAll(client, WhatKindaRange.SHARD);
+            if (log.isDebugEnabled()) {
+                log.debug("testWithShardRange");
+                PrintUtility.printTable(client, auths, TableName.SHARD);
+                PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+                PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            }
+        }
+    }
 
-            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").put("First", "NAME.2:Haiqu").put("First", "FOO.0:FOO").build(),
+    @RunWith(Arquillian.class)
+    public static class DocumentRangeTest extends IfThisTestFailsThenHitTermsAreBroken {
 
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
+        @BeforeClass
+        public static void beforeAll() throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRangeTest.class.toString(), log);
+            client = qtth.client;
 
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
+            MoreTestData.writeItAll(client, WhatKindaRange.DOCUMENT);
+            if (log.isDebugEnabled()) {
+                log.debug("testWithDocumentRange");
+                PrintUtility.printTable(client, auths, TableName.SHARD);
+                PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+                PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            }
+        }
+    }
 
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").build(),};
-
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
+    @Before
+    public void beforeEach() {
+        extraParameters.put("hit.list", "true");
+        query = null;
+        expectedResultCount = 0;
     }
 
     @After
     public void after() {
         TypeRegistry.reset();
         System.clearProperty("type.metadata.dir");
+
+        extraParameters.clear();
+        results.clear();
+        hitTermAssertions.resetState();
+    }
+
+    @AfterClass
+    public static void teardown() {
+        TypeRegistry.reset();
     }
 
     @Before
@@ -161,7 +180,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         deserializer = new KryoDocumentDeserializer();
     }
 
-    public void debugQuery(String tableName) throws Exception {
+    public void dumpTable(String tableName) throws Exception {
         Scanner s = ScannerHelper.createScanner(client, tableName, authSet);
         Range r = new Range();
         s.setRange(r);
@@ -172,238 +191,170 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         }
     }
 
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Multimap<String,String> expectedHitTerms) throws Exception {
+    private void drive() throws Exception {
+        // might be called multiple times by a single test, so clear results
+        results.clear();
+
+        setupQuery();
+        executeQuery();
+        assertResults();
+    }
+
+    private void setupQuery() throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
+
+        settings.setBeginDate(format.parse("20091231"));
+        settings.setEndDate(format.parse("20150101"));
         settings.setPagesize(Integer.MAX_VALUE);
         settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
+        settings.setQuery(query);
+        settings.setParameters(extraParameters);
         settings.setId(UUID.randomUUID());
-        settings.setParameters(extraParms);
 
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
 
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
+    }
 
-        HashSet<String> expectedSet = new HashSet<>(expected);
-        HashSet<String> resultSet;
-        resultSet = new HashSet<>();
-        Set<Document> docs = new HashSet<>();
+    private void executeQuery() {
         for (Entry<Key,Value> entry : logic) {
-
-            Document d = deserializer.apply(entry).getValue();
-
-            log.debug(entry.getKey() + " => " + d);
-
-            Attribute<?> attr = d.get("UUID.0");
-
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
-                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
-
-            TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
-
-            String uuid = uuidAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
-
-            Attribute<?> hitTermAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
-            if (hitTermAttribute instanceof Attributes) {
-
-                Attributes hitTerms = (Attributes) hitTermAttribute;
-                for (Attribute<?> hitTerm : hitTerms.getAttributes()) {
-                    log.debug("hitTerm:" + hitTerm);
-                    String hitString = hitTerm.getData().toString();
-                    log.debug("as string:" + hitString);
-                    log.debug("expectedHitTerms:" + expectedHitTerms);
-                    Assert.assertNotEquals(hitTerm.getTimestamp(), Long.MAX_VALUE);
-                    // make sure this hitString is in the map, and remove it
-                    boolean result = expectedHitTerms.get(uuid).remove(hitString);
-                    if (result == false) {
-                        log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
-                                        + hitTerms);
-                        Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms
-                                        + " from hitTerms:" + hitTerms);
-                    } else {
-                        log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
-                                        + hitTerms);
-                    }
-                }
-            } else if (hitTermAttribute instanceof Attribute) {
-                log.debug("hitTerm:" + (Attribute<?>) hitTermAttribute);
-                String hitString = ((Attribute<?>) hitTermAttribute).getData().toString();
-                log.debug("as string:" + hitString);
-                log.debug("expectedHitTerms:" + expectedHitTerms);
-                boolean result = expectedHitTerms.get(uuid).remove(hitString);
-                if (result == false) {
-                    log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
-                    Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
-                } else {
-                    log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:"
-                                    + (Attribute<?>) hitTermAttribute);
-                }
-            }
-
-            resultSet.add(uuid);
-            docs.add(d);
+            Document document = deserializer.apply(entry).getValue();
+            results.add(document);
         }
+    }
 
-        if (expected.size() > resultSet.size()) {
-            expectedSet.addAll(expected);
-            expectedSet.removeAll(resultSet);
-
-            for (String s : expectedSet) {
-                log.warn("Missing: " + s);
-            }
+    private void assertResults() {
+        Assert.assertEquals(expectedResultCount, results.size());
+        for (Document result : results) {
+            assertResult(result);
         }
+    }
 
-        if (!expected.containsAll(resultSet)) {
-            log.error("Expected results " + expected + " differ form actual results " + resultSet);
-        }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
-
-        // the map is empty if there were no unexpected hit terms in it
-        log.debug("expectedHitTerms:" + expectedHitTerms);
-        Assert.assertTrue(expectedHitTerms.isEmpty());
-
+    private void assertResult(Document result) {
+        boolean validated = hitTermAssertions.assertHitTerms(result);
+        Assert.assertEquals(hitTermAssertions.hitTermExpected(), validated);
     }
 
     @Test
-    public void testWithShardRange() throws Exception {
+    public void testUnion() throws Exception {
+        // sanity check that expects two documents
+        query = "UUID == 'First' || UUID == 'Second'";
+        hitTermAssertions.withRequiredAnyOf("UUID.0:First", "UUID.0:Second");
+        expectedResultCount = 2;
+        drive();
 
-        QueryTestTableHelper qtth = new QueryTestTableHelper(IfThisTestFailsThenHitTermsAreBroken.class.toString(), log);
-        client = qtth.client;
-
-        MoreTestData.writeItAll(client, WhatKindaRange.SHARD);
-        if (log.isDebugEnabled()) {
-            log.debug("testWithShardRange");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-        doIt();
-        doItWithProjection();
-    }
-
-    @Test
-    public void testWithDocumentRange() throws Exception {
-
-        QueryTestTableHelper qtth = new QueryTestTableHelper(IfThisTestFailsThenHitTermsAreBroken.class.toString(), log);
-        client = qtth.client;
-
-        MoreTestData.writeItAll(client, WhatKindaRange.DOCUMENT);
-        if (log.isDebugEnabled()) {
-            log.debug("testWithDocumentRange");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-        doIt();
-        doItWithProjection();
-    }
-
-    private void doIt() throws Exception {
-
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("hit.list", "true");
-        // @formatter:off
-        String[] queryStrings = {
-                // sanity check. I got the 2 documents
-                "UUID == 'First' || UUID == 'Second'",
-                // look for FOO or BAR, expecting the hit_terms to be in the right places
-                "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )",
-                // should find NAME0 in different grouping contexts, but the hit terms should be correct
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'",
-                // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'",
-                // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'",
-                // try to pull in hits from Third, should still hit only Second
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'",
-
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')",
-
-                "UUID == 'Second' && BAR == 'BAR'",
-
-                "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
-
-                "UUID == 'First' && filter:isNotNull(NAME)"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("First")
-        };
-        // @formatter:on
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
-                            ArrayListMultimap.create(expectedHitTerms[i]));
-        }
-    }
-
-    private void doItWithProjection() throws Exception {
-
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("hit.list", "true");
         extraParameters.put("return.fields", "*");
-        // @formatter:off
-        String[] queryStrings = {
-                // sanity check. I got the 2 documents
-                "UUID == 'First' || UUID == 'Second'",
-                // look for FOO or BAR, expecting the hit_terms to be in the right places
-                "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )",
-                // should find NAME0 in different grouping contexts, but the hit terms should be correct
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'",
-                // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'",
-                // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'",
-                // try to pull in hits from Third, should still hit only Second
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'",
+        drive();
+    }
 
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')",
+    @Test
+    public void testDoubleNestedUnion() throws Exception {
+        // look for FOO or BAR, expecting the hit_terms to be in the right places
+        query = "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )";
+        hitTermAssertions.withRequiredAnyOf("UUID.0:First", "UUID.0:Second");
+        hitTermAssertions.withRequiredAnyOf("FOO.0:FOO", "BAR.0:BAR");
+        expectedResultCount = 2;
+        drive();
 
-                "UUID == 'Second' && BAR == 'BAR'",
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
 
-                "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
+    @Test
+    public void testNestedUnionWithAnchorOfDifferentGroupingContext() throws Exception {
+        // should find NAME0 in different grouping contexts, but the hit terms should be correct
+        query = "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'";
+        hitTermAssertions.withRequiredAnyOf("UUID.0:First", "UUID.0:Second");
+        hitTermAssertions.withRequiredAnyOf("NAME.0:NAME0", "NAME.1:NAME0");
+        expectedResultCount = 2;
+        drive();
 
-                "UUID == 'First' && filter:isNotNull(NAME)"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("First")
-        };
-        // @formatter:on
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
-                            ArrayListMultimap.create(expectedHitTerms[i]));
-        }
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testNestedUnionFirstDocumentReturned() throws Exception {
+        // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
+        query = "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'";
+        hitTermAssertions.withRequiredAllOf("UUID.0:First", "NAME.2:Haiqu", "FOO.0:FOO");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testNestedUnionSecondDocumentReturned() throws Exception {
+        // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
+        query = "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'";
+        hitTermAssertions.withRequiredAllOf("UUID.0:Second", "NAME.2:Haiqu", "BAR.0:BAR");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testLargeNestedUnionStillOnlySecondDocumentReturned() throws Exception {
+        // try to pull in hits from Third, should still hit only Second
+        query = "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'";
+        hitTermAssertions.withRequiredAllOf("UUID.0:Second", "NAME.2:Haiqu", "BAR.0:BAR");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testNestedUnionWithFilterAnchorTerms() throws Exception {
+        query = "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')";
+        hitTermAssertions.withRequiredAllOf("UUID.0:Second", "NAME.2:Haiqu", "BAR.0:BAR");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testSecondAndBarBar() throws Exception {
+        query = "UUID == 'Second' && BAR == 'BAR'";
+        hitTermAssertions.withRequiredAllOf("UUID.0:Second", "BAR.0:BAR");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testFilterOccurrenceFunction() throws Exception {
+        query = "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)";
+        hitTermAssertions.withRequiredAllOf("BAR.0:BAR", "NAME.2:Haiqu");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
+    }
+
+    @Test
+    public void testFilterIsNotNull() throws Exception {
+        query = "UUID == 'First' && filter:isNotNull(NAME)";
+        hitTermAssertions.withRequiredAnyOf("UUID.0:First");
+        expectedResultCount = 1;
+        drive();
+
+        extraParameters.put("return.fields", "*");
+        drive();
     }
 
     private static class MoreTestData {
@@ -415,14 +366,14 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         protected static final String shard = date + "_0";
         protected static final ColumnVisibility columnVisibility = new ColumnVisibility("A");
         protected static final Value emptyValue = new Value(new byte[0]);
-        protected static final long timeStamp = 1356998400000l;
+        protected static final long timeStamp = 1356998400000L;
 
         /**
          */
         public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
             BatchWriter bw = null;
             BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-            Mutation mutation = null;
+            Mutation mutation;
 
             String firstUID = UID.builder().newId("First".getBytes(), (Date) null).toString();
             String secondUID = UID.builder().newId("Second".getBytes(), (Date) null).toString();
@@ -598,6 +549,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
 
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
+        // technically this value could be zero due to delete mutations, depending on the combiner
+        // set on the table the key may or may not be deleted.
         builder.setCOUNT(50); // better not be zero!!!!
         builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());

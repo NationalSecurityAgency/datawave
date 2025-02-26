@@ -1,7 +1,6 @@
 package datawave.query.rules;
 
 import java.util.List;
-import java.util.StringJoiner;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;

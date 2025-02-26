@@ -69,7 +69,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.IndexHole;
+import datawave.query.config.IndexValueHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
@@ -93,8 +93,8 @@ import datawave.query.language.parser.QueryParser;
 import datawave.query.language.parser.lucene.LuceneSyntaxQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryOptionsSwitch;
@@ -470,6 +470,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         initializeQueryModel(config, metadataHelper, dateIndexHelper);
 
+        if (this.queryModel == null) {
+            loadQueryModel(metadataHelper, config);
+        }
+
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
 
@@ -518,8 +522,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         DefaultQueryPlanner defaultQueryPlanner = null;
         if (queryPlanner instanceof DefaultQueryPlanner) {
             defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-        } else if (queryPlanner instanceof FederatedQueryPlanner) {
-            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        } else if (queryPlanner instanceof DatePartitionedQueryPlanner) {
+            defaultQueryPlanner = ((DatePartitionedQueryPlanner) queryPlanner).getQueryPlanner();
         }
 
         if (defaultQueryPlanner != null) {
@@ -2488,7 +2492,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new FederatedQueryPlanner();
+            planner = new DatePartitionedQueryPlanner();
         }
         return planner;
     }
@@ -2915,12 +2919,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setCacheModel(cacheModel);
     }
 
-    public List<IndexHole> getIndexHoles() {
-        return getConfig().getIndexHoles();
+    public List<IndexValueHole> getIndexValueHoles() {
+        return getConfig().getIndexValueHoles();
     }
 
-    public void setIndexHoles(List<IndexHole> indexHoles) {
-        getConfig().setIndexHoles(indexHoles);
+    public void setIndexValueHoles(List<IndexValueHole> indexValueHoles) {
+        getConfig().setIndexValueHoles(indexValueHoles);
+    }
+
+    @Deprecated
+    public void setIndexHoles(List<IndexValueHole> indexHoles) {
+        setIndexValueHoles(indexHoles);
     }
 
     public CardinalityConfiguration getCardinalityConfiguration() {
@@ -3328,12 +3337,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
     }
 
-    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
-        getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
+    public void setIndexFieldHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        getConfig().setIndexFieldHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 
-    public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
-        return getConfig().getFieldIndexHoleMinThreshold();
+    public double getIndexFieldHoleMinThreshold() {
+        return getConfig().getIndexFieldHoleMinThreshold();
     }
 
     public List<QueryRule> getValidationRules() {
