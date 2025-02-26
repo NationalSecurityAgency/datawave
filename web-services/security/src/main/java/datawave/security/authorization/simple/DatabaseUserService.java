@@ -98,6 +98,7 @@ public class DatabaseUserService implements DatawaveUserService {
 
     private final String usersTableName;
     private final String mappingTableName;
+    private final String regPattern = "\\s*,\\s*";
 
     /**
      * Constructs a new DatabaseUserService.
@@ -150,8 +151,8 @@ public class DatabaseUserService implements DatawaveUserService {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     UserType userType = UserType.valueOf(rs.getString("userType"));
-                    Collection<String> roles = Arrays.asList(rs.getString("roles").split("\\s*,\\s*"));
-                    Collection<String> auths = Arrays.asList(rs.getString("auths").split("\\s*,\\s*"));
+                    Collection<String> roles = Arrays.asList(rs.getString("roles").split(regPattern));
+                    Collection<String> auths = Arrays.asList(rs.getString("auths").split(regPattern));
                     HashMultimap<String,String> map = HashMultimap.create();
                     roles.forEach(r -> map.putAll(r, roleToAuthorizationMap.get(r)));
                     return new DatawaveUser(dn, userType, auths, roles, map, System.currentTimeMillis());

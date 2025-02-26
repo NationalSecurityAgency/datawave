@@ -10,6 +10,7 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.spi.config.BaseConfigPropertyProducer;
 
@@ -27,7 +28,7 @@ public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProd
     // we actually don't need the name
     public Map<String,AuditType> produceStringAuditTypeMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
-        String[] pairs = propertyValue.split("\\|");
+        String[] pairs = StringUtils.split(propertyValue, "|");
 
         Map<String,AuditType> map = new LinkedHashMap<>();
         if (pairs != null) {

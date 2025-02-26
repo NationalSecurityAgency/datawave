@@ -179,7 +179,7 @@ public interface VirtualIngest {
             for (int i = 0; i < fieldNames.length; i++) {
                 String name = fieldNames[i];
 
-                String[] members = fieldMembers[i].split("\\.");
+                String[] members = datawave.util.StringUtils.split(fieldMembers[i], '.');
                 virtualFieldDefinitions.put(name, members);
 
                 if (groupingPolicies.length == 0) {

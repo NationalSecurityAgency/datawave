@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import datawave.query.attributes.ValueTuple;
 import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -263,7 +264,7 @@ public class ContentFunctions {
                 }
             } else {
                 String z = ValueTuple.getFieldName(zone);
-                String[] parts = z.split("\\|");
+                String[] parts = StringUtils.split(z, '|');
                 fields.addAll(Arrays.asList(parts));
             }
         }

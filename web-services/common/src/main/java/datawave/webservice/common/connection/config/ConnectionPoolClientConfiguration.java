@@ -3,6 +3,7 @@ package datawave.webservice.common.connection.config;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
 import org.apache.log4j.Logger;
 
@@ -22,7 +23,7 @@ public class ConnectionPoolClientConfiguration extends ConnectionPoolClientPrope
         String prefix = "dw." + poolName + ".client";
         for (Map.Entry<String,String> property : ConfigResolver.getAllProperties().entrySet()) {
             if (property.getKey().startsWith(prefix)) {
-                String[] tableAndHint = property.getKey().substring(prefix.length()).split("\\.");
+                String[] tableAndHint = StringUtils.split(property.getKey().substring(prefix.length()), '.');
                 if (tableAndHint.length == 2) {
                     if (tableAndHint[1].equals("consistency")) {
                         config.setConsistency(tableAndHint[0], ScannerBase.ConsistencyLevel.valueOf(property.getValue()));
