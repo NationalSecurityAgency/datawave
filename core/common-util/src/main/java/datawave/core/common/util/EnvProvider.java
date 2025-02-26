@@ -21,15 +21,16 @@ public class EnvProvider {
      * @return the property value
      */
     public static String resolve(String property) {
-        if (property != null && property.startsWith(ENV_PREFIX)) {
-            String target = property.substring(4);
+        if (property != null && property.startsWith(ENV_PREFIX)) {String target = property.substring(4);
             if (StringUtils.isNotBlank(target)) {
+
                 String value = System.getenv(target);
                 if (StringUtils.isNotBlank(value)) {
                     log.trace("env target resolved");
                     return value;
                 } else {
-                    log.warn("could not resolve env target: " + target);
+
+                            log.warn("could not resolve env target: " + target);
                 }
             }
         }
