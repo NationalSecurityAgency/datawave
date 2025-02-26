@@ -20,7 +20,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -32,12 +31,11 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
+import org.mockito.Mockito;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
@@ -75,44 +73,39 @@ public class MultiRFileOutputFormatterTest {
 
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
 
-        Configuration mocked = PowerMock.createMock(Configuration.class);
+        Configuration mocked = Mockito.mock(Configuration.class);
 
         MultiRFileOutputFormatterTest.logger.info(String.format("createMockConfiguration: %d", mocked.hashCode()));
 
-        mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        Mockito.doAnswer(invocationOnMock -> {
 
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String value = (String) EasyMock.getCurrentArguments()[1];
+            String key = (String) invocationOnMock.getArguments()[0];
+            String value = (String) invocationOnMock.getArguments()[1];
 
             MultiRFileOutputFormatterTest.mockedConfiguration.put(key, value);
 
             return null;
-        }).anyTimes();
+        }).when(mocked).set(Mockito.any(String.class), Mockito.any(String.class));
 
-        mocked.setStrings(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        Mockito.doAnswer(invocationOnMock -> {
+            if (2 <= invocationOnMock.getArguments().length) {
 
-            if (2 <= EasyMock.getCurrentArguments().length) {
-
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String[] values = new String[EasyMock.getCurrentArguments().length - 1];
+                String key = (String) invocationOnMock.getArguments()[0];
+                String[] values = new String[invocationOnMock.getArguments().length - 1];
 
                 for (int index = 1; index <= values.length; index++) {
 
-                    values[index - 1] = (String) EasyMock.getCurrentArguments()[index];
+                    values[index - 1] = (String) invocationOnMock.getArguments()[index];
                 }
 
                 MultiRFileOutputFormatterTest.mockedConfiguration.put(key, StringUtils.arrayToString(values));
             }
             return null;
-        }).anyTimes();
+        }).when(mocked).setStrings(Mockito.any(String.class), Mockito.any(String.class), Mockito.any(String.class));
 
-        mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String value = (String) EasyMock.getCurrentArguments()[1];
+        Mockito.doAnswer(invocationOnMock -> {
+            String key = (String) invocationOnMock.getArguments()[0];
+            String value = (String) invocationOnMock.getArguments()[1];
 
             if (MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(key)) {
 
@@ -120,9 +113,7 @@ public class MultiRFileOutputFormatterTest {
             }
 
             return value;
-        }).anyTimes();
-
-        PowerMock.replay(mocked);
+        }).when(mocked).get(Mockito.any(String.class), Mockito.any(String.class));
 
         return mocked;
     }

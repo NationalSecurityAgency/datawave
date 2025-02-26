@@ -56,6 +56,8 @@ public class AbstractTableConfigHelperTest {
 
         public AbstractTableConfigHelperTest parent;
 
+        private Configuration config;
+
         protected Logger createMockLogger() {
 
             Logger log = PowerMock.createMock(Logger.class);

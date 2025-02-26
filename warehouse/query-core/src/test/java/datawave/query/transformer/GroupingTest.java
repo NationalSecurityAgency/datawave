@@ -42,6 +42,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.cache.CacheManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -248,6 +249,10 @@ public abstract class GroupingTest {
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 
     @Inject
+    @SpringBean(name = "metadataHelperCacheManager")
+    private CacheManager cacheManager;
+
+    @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     protected KryoDocumentDeserializer deserializer;
@@ -287,6 +292,9 @@ public abstract class GroupingTest {
         this.deserializer = new KryoDocumentDeserializer();
         this.startDate = format.parse("20091231");
         this.endDate = format.parse("20150101");
+
+        // clear any cache updates from previous tests
+        cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
     }
 
     @After
@@ -669,6 +677,37 @@ public abstract class GroupingTest {
         expectGroup(Group.of("MALE", "20").withCount(2));
         expectGroup(Group.of("MALE", "24").withCount(1));
         expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that specifying a single field via the lucene function works correctly.
+     */
+    @Test
+    public void testGroupBySingleField() throws Exception {
+        givenNonModelData();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY(AGE)");
+        givenQueryParameter(QueryParameters.RETURN_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.HIT_LIST, "true");
+        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=100");
+        givenQueryParameter(QueryOptions.REDUCED_RESPONSE, "true");
+        logic.setCollectTimingDetails(true);
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("16").withCount(1));
+        expectGroup(Group.of("18").withCount(2));
+        expectGroup(Group.of("20").withCount(2));
+        expectGroup(Group.of("22").withCount(2));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("30").withCount(1));
+        expectGroup(Group.of("34").withCount(1));
+        expectGroup(Group.of("40").withCount(2));
 
         // Run the test queries and collect their results.
         collectQueryResults();

@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 
@@ -15,19 +15,20 @@ public class CompositeQueryLogicResults implements Iterable<Object>, Thread.Unca
     private final ArrayBlockingQueue<Object> results;
     private final List<Thread.UncaughtExceptionHandler> handlers;
     private final List<Map.Entry<Thread,Throwable>> exceptions;
+    private final long pollTimeout;
+    private final TimeUnit pollTimeoutTimeUnit;
 
     public CompositeQueryLogicResults() {
-        this.logic = null;
-        this.results = new ArrayBlockingQueue<>(1);
-        this.handlers = new ArrayList<>();
-        this.exceptions = new ArrayList<>();
+        this(null, 1, 1000, TimeUnit.MILLISECONDS);
     }
 
-    public CompositeQueryLogicResults(CompositeQueryLogic logic, int pagesize) {
+    public CompositeQueryLogicResults(CompositeQueryLogic logic, int pagesize, long pollTimeout, TimeUnit pollTimeoutTimeUnit) {
         this.logic = logic;
         this.results = new ArrayBlockingQueue<>(pagesize);
         this.handlers = new ArrayList<>();
         this.exceptions = new ArrayList<>();
+        this.pollTimeout = pollTimeout;
+        this.pollTimeoutTimeUnit = pollTimeoutTimeUnit;
     }
 
     public void add(Object object) throws InterruptedException {
@@ -48,7 +49,8 @@ public class CompositeQueryLogicResults implements Iterable<Object>, Thread.Unca
 
     @Override
     public Iterator<Object> iterator() {
-        CompositeQueryLogicResultsIterator it = new CompositeQueryLogicResultsIterator(logic, this.results);
+        CompositeQueryLogicResultsIterator it = new CompositeQueryLogicResultsIterator(logic, this.results, pollTimeout, pollTimeoutTimeUnit);
+
         synchronized (handlers) {
             // first pass any exceptions we have already seen
             for (Map.Entry<Thread,Throwable> exception : exceptions) {

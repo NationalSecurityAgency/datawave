@@ -74,9 +74,6 @@ import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ScanHintRule;
@@ -106,7 +103,6 @@ import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
-import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
@@ -138,7 +134,6 @@ import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
-import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
@@ -182,6 +177,7 @@ import datawave.query.tables.async.event.ReduceFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
@@ -613,6 +609,134 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
+    /**
+     * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
+     *
+     * @see DatePartitionedQueryPlanner
+     * @param config
+     * @param settings
+     * @param scannerFactory
+     * @return a range stream
+     * @throws DatawaveQueryException
+     */
+    public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
+
+        startConcurrentExecution(config);
+
+        settingFuture = null;
+        IteratorSetting cfg = null;
+        if (preloadOptions) {
+            cfg = getQueryIterator(metadataHelper, config, "", false, true);
+        }
+
+        try {
+            config.setQueryTree(reprocessTree(config, metadataHelper, config.getTimers(), scannerFactory));
+        } catch (StackOverflowError e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Stack trace for overflow " + e);
+            }
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
+            log.warn(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (NoResultsException e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Definitively determined that no results exist from the indexes");
+            }
+
+            return DefaultQueryPlanner.emptyCloseableIterator();
+        }
+
+        boolean isFullTable = false;
+        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
+
+        if (!config.isGeneratePlanOnly()) {
+            queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, config.getQueryTree());
+
+            // a full table scan is required if
+            isFullTable = queryRanges.second();
+
+            // abort if we cannot handle full table scans
+            if (isFullTable && !config.getFullTableScanEnabled()) {
+                PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                throw new FullTableScansDisallowedException(qe);
+            }
+        }
+
+        final QueryStopwatch timers = config.getTimers();
+
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
+
+        // Set the final query after we're done mucking with it
+        String newQueryString = JexlStringBuildingVisitor.buildQuery(config.getQueryTree());
+        if (log.isTraceEnabled())
+            log.trace("newQueryString is " + newQueryString);
+        if (StringUtils.isBlank(newQueryString)) {
+            stopwatch.stop();
+            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
+            throw new DatawaveFatalQueryException(qe);
+        }
+
+        stopwatch.stop();
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
+
+        if (!config.isGeneratePlanOnly()) {
+            while (null == cfg) {
+                cfg = getQueryIterator(metadataHelper, config, "", false, false);
+            }
+            configureIterator(config, cfg, newQueryString, isFullTable);
+        }
+
+        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
+
+        stopwatch.stop();
+
+        this.plannedScript = newQueryString;
+        config.setQueryString(this.plannedScript);
+
+        if (logConcurrentStageExecution) {
+            logTimeSavedViaConcurrentExecution();
+        }
+
+        if (!config.isGeneratePlanOnly()) {
+            // add the geo query comparator to sort by geo range granularity if this is a geo query
+            List<Comparator<QueryPlan>> queryPlanComparators = null;
+            if (config.isSortGeoWaveQueryRanges()) {
+                List<String> geoFields = new ArrayList<>();
+                for (String fieldName : config.getIndexedFields()) {
+                    for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
+                        if (type instanceof AbstractGeometryType) {
+                            geoFields.add(fieldName);
+                            break;
+                        }
+                    }
+                }
+
+                if (!geoFields.isEmpty()) {
+                    queryPlanComparators = new ArrayList<>();
+                    queryPlanComparators.add(new GeoWaveQueryPlanComparator(geoFields));
+                    queryPlanComparators.add(new DefaultQueryPlanComparator());
+                }
+            }
+
+            // @formatter:off
+            return new ThreadedRangeBundler.Builder()
+                    .setOriginal(queryData)
+                    .setQueryTree(config.getQueryTree())
+                    .setRanges(queryRanges.first())
+                    .setMaxRanges(maxRangesPerQueryPiece())
+                    .setSettings(settings)
+                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
+                    .setQueryPlanComparators(queryPlanComparators)
+                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
+                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
+                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
+                    .build();
+            // @formatter:on
+        } else {
+            return null;
+        }
+    }
+
     private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
                     throws DatawaveQueryException {
 
@@ -622,11 +746,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         configureExcerpts(config, cfg);
 
+        configureSummaries(config, cfg);
+
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+        if (config.getUniqueFields().isMostRecent()) {
+            // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -652,6 +783,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
+        }
+    }
+
+    private void configureSummaries(ShardQueryConfiguration config, IteratorSetting cfg) {
+        if (config.getSummaryOptions().getSummarySize() != 0) {
+            addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
+            addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
         }
     }
 
@@ -834,15 +972,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
         }
 
-        if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
-            config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
-        } else {
-            // look for the shards and days hint in the query settings
-            // the shards and days hint cannot always be specified in the query string when using certain query parsers
-            Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
-            if (StringUtils.isNotBlank(parameter.getParameterValue())) {
-                optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+        // Do not add a SHARDS_AND_DAYS hint if it is specifically not allowed. This was checked and updated when timedIncludeDateFilters was called.
+        if (config.isShardsAndDaysHintAllowed()) {
+            if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
                 config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+            } else {
+                // look for the shards and days hint in the query settings
+                // the shards and days hint cannot always be specified in the query string when using certain query parsers
+                Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
+                if (StringUtils.isNotBlank(parameter.getParameterValue())) {
+                    optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+                    config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+                }
             }
         }
 
@@ -946,6 +1087,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         TraceStopwatch stopwatch = null;
 
+        // need to fetch field to datatype map first
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
             config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
@@ -958,8 +1102,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
+        // need to run this before normalization expansion otherwise nasty regexes could slip through
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Unfielded Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
+
+        // must expand multi-normalized terms after index queries but before index expansion
+        // for example, f:includeText(_ANYFIELD_, 'value') would get missed by the multi normalizer visitor, but expanding it first allows the EQ node to get
+        // expanded
+        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
@@ -986,15 +1136,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Regex/Range Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
 
-        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
-
         config.setQueryTree(timedFixUnindexedNumerics(timers, config.getQueryTree(), config));
 
-        config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
-
         // if we have any index holes, then mark em
-        if (!config.getIndexHoles().isEmpty()) {
-            config.setQueryTree(timedMarkIndexHoles(timers, config.getQueryTree(), config, metadataHelper));
+        if (!config.getIndexValueHoles().isEmpty()) {
+            config.setQueryTree(timedMarkIndexValueGaps(timers, config.getQueryTree(), config, metadataHelper));
         }
 
         // lets precompute the indexed fields and index only fields for the specific datatype if needed below
@@ -1101,6 +1247,82 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.debug("Bounded range and regex conversion has been disabled");
             }
         }
+
+        // fields may have been added or removed from the query, need to update the field to type map
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
+        return config.getQueryTree();
+    }
+
+    /**
+     * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
+     *
+     * @see DatePartitionedQueryPlanner
+     * @param config
+     * @param metadataHelper
+     * @param timers
+     * @param scannerFactory
+     * @return An adjusted query tree.
+     * @throws DatawaveQueryException
+     */
+    protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers, ScannerFactory scannerFactory)
+                    throws DatawaveQueryException {
+
+        TraceStopwatch stopwatch = null;
+
+        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
+        Set<String> indexedFields = null;
+        Set<String> indexOnlyFields = null;
+        Set<String> nonEventFields = null;
+        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
+            indexedFields = getIndexedFields();
+            indexOnlyFields = getIndexOnlyFields();
+            nonEventFields = getNonEventFields();
+        }
+
+        LinkedList<String> debugOutput = null;
+        if (log.isDebugEnabled()) {
+            debugOutput = new LinkedList<>();
+        }
+
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pull, Expand, Push (reprocess)");
+
+        try {
+            // Unless config.isExpandAllTerms is true, this may set some of
+            // the terms to be delayed.
+            if (!ExecutableDeterminationVisitor.isExecutable(config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
+                            metadataHelper)) {
+
+                Map<String,IndexLookup> indexLookupMap = new HashMap<>();
+                // if we now have an unexecutable tree because of delayed
+                // predicates, then remove delayed predicates as needed and
+                // reexpand
+                config.setQueryTree(timedRemoveDelayedPredicates(timers, "Remove Delayed Predicates", config.getQueryTree(), config, metadataHelper,
+                                indexedFields, indexOnlyFields, nonEventFields, indexLookupMap, scannerFactory, metadataHelper, debugOutput));
+            }
+
+            // if we now have an unexecutable tree because of missing
+            // delayed predicates, then add delayed predicates where
+            // possible
+            config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
+                            indexOnlyFields, nonEventFields, debugOutput));
+        } catch (TableNotFoundException e) {
+            stopwatch.stop();
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (CannotExpandUnfieldedTermFatalException e) {
+            if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException) {
+                throw (DoNotPerformOptimizedQueryException) e.getCause();
+            }
+            QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
+
+        if (reduceQuery) {
+            config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
+        }
+
+        stopwatch.stop();
 
         return config.getQueryTree();
     }
@@ -1377,7 +1599,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedUpperCaseIdentifiers(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (upperCaseIdentifiers(metadataHelper, config, script)));
+        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (ShardQueryUtils.upperCaseIdentifiers(metadataHelper, config, script)));
     }
 
     protected ASTJexlScript timedRewriteNegations(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -1558,9 +1780,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         () -> (ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script)));
     }
 
-    protected ASTJexlScript timedMarkIndexHoles(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
+    protected ASTJexlScript timedMarkIndexValueGaps(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Mark Index Holes",
+        return visitorManager.timedVisit(timers, "Mark Index Value Holes/Gaps",
                         () -> (PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, metadataHelper)));
     }
 
@@ -1727,7 +1949,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Check if there are any bounded ranges to expand.
         if (nodeCount.isPresent(BOUNDED_RANGE)) {
-
             try {
                 config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
             } catch (TableNotFoundException e) {
@@ -1834,135 +2055,22 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    protected Set<String> upcase(Set<String> fields) {
-        return fields.stream().map(s -> s.toUpperCase()).collect(Collectors.toSet());
-    }
-
-    protected ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
-        GroupFields groupFields = config.getGroupFields();
-        if (groupFields != null && groupFields.hasGroupByFields()) {
-            groupFields.setMaxFields(upcase(groupFields.getMaxFields()));
-            groupFields.setSumFields(upcase(groupFields.getSumFields()));
-            groupFields.setGroupByFields(upcase(groupFields.getGroupByFields()));
-            groupFields.setAverageFields(upcase(groupFields.getAverageFields()));
-            groupFields.setCountFields(upcase(groupFields.getCountFields()));
-            groupFields.setMinFields(upcase(groupFields.getMinFields()));
-
-            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
-            config.setProjectFields(groupFields.getProjectionFields());
-        } else {
-            Set<String> projectFields = config.getProjectFields();
-
-            if (projectFields != null && !projectFields.isEmpty()) {
-                config.setProjectFields(upcase(projectFields));
-            }
-        }
-
-        UniqueFields uniqueFields = config.getUniqueFields();
-        if (uniqueFields != null && !uniqueFields.isEmpty()) {
-            Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
-        }
-
-        ExcerptFields excerptFields = config.getExcerptFields();
-        if (excerptFields != null && !excerptFields.isEmpty()) {
-            Sets.newHashSet(excerptFields.getFields()).stream().forEach(s -> excerptFields.replace(s, s.toUpperCase()));
-        }
-
-        Set<String> userProjection = config.getRenameFields();
-        if (userProjection != null && !userProjection.isEmpty()) {
-            config.setRenameFields(upcase(userProjection));
-        }
-
-        Set<String> disallowlistedFields = config.getDisallowlistedFields();
-        if (disallowlistedFields != null && !disallowlistedFields.isEmpty()) {
-            config.setDisallowlistedFields(upcase(disallowlistedFields));
-        }
-
-        Set<String> limitFields = config.getLimitFields();
-        if (limitFields != null && !limitFields.isEmpty()) {
-            config.setLimitFields(upcase(limitFields));
-        }
-
-        return (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script));
-    }
-
-    // Overwrite projection and disallowlist properties if the query model is
-    // being used
+    /**
+     * Apply the query model to the given query script and query configuration, using the set of all fields cached in allFieldTypeMap if cacheDataTypes is true,
+     * or from {@link MetadataHelper#getAllFields(Set)} otherwise.
+     *
+     * @param metadataHelper
+     *            the metadata helper
+     * @param config
+     *            the query config
+     * @param script
+     *            the query script
+     * @param queryModel
+     *            the query model
+     * @return
+     */
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
-        // generate the inverse of the reverse mapping; {display field name
-        // => db field name}
-        // a reverse mapping is always many to one, therefore the inverted
-        // reverse mapping
-        // can be one to many
-        Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
-
-        inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), disallowlistedFields = config.getDisallowlistedFields(),
-                        limitFields = config.getLimitFields();
-
-        if (projectFields != null && !projectFields.isEmpty()) {
-            projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated projection set using query model to: " + projectFields);
-            }
-            config.setProjectFields(Sets.newHashSet(projectFields));
-        }
-
-        GroupFields groupFields = config.getGroupFields();
-        if (groupFields != null && groupFields.hasGroupByFields()) {
-            groupFields.remapFields(inverseReverseModel, queryModel.getReverseQueryMapping());
-            if (log.isTraceEnabled()) {
-                log.trace("Updating group-by fields using query model to " + groupFields);
-            }
-            config.setGroupFields(groupFields);
-
-            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
-            config.setProjectFields(groupFields.getProjectionFields());
-        }
-
-        UniqueFields uniqueFields = config.getUniqueFields();
-        if (uniqueFields != null && !uniqueFields.isEmpty()) {
-            uniqueFields.remapFields(inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated unique set using query model to: " + uniqueFields.getFields());
-            }
-            config.setUniqueFields(uniqueFields);
-        }
-
-        ExcerptFields excerptFields = config.getExcerptFields();
-        if (excerptFields != null && !excerptFields.isEmpty()) {
-            excerptFields.expandFields(inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated excerpt fields using query model to " + excerptFields.getFields());
-            }
-            config.setExcerptFields(excerptFields);
-        }
-
-        Set<String> userProjection = config.getRenameFields();
-        if (userProjection != null && !userProjection.isEmpty()) {
-            userProjection = Sets.newHashSet(queryModel.remapParameterEquation(userProjection, inverseReverseModel));
-            if (log.isTraceEnabled()) {
-                log.trace("Updated user projection fields using query model to " + userProjection);
-            }
-            config.setRenameFields(userProjection);
-        }
-
-        if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
-            disallowlistedFields = queryModel.remapParameter(disallowlistedFields, inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated disallowlist set using query model to: " + disallowlistedFields);
-            }
-            config.setDisallowlistedFields(Sets.newHashSet(disallowlistedFields));
-        }
-
-        if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
-            limitFields = queryModel.remapParameterEquation(limitFields, inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated limitFields set using query model to: " + limitFields);
-            }
-            config.setLimitFields(Sets.newHashSet(limitFields));
-        }
-
+        // Establish the set of all fields to use when applying the query model.
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields = null;
         try {
@@ -1972,8 +2080,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             if (null == allFields) {
                 allFields = metadataHelper.getAllFields(dataTypes);
-                if (cacheDataTypes)
+                if (cacheDataTypes) {
                     allFieldTypeMap.put(dataTypeHash, allFields);
+                }
             }
 
             if (log.isTraceEnabled()) {
@@ -2001,8 +2110,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        return (QueryModelVisitor.applyModel(script, queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
-                        config.getStrictFields()));
+        return ShardQueryUtils.applyQueryModel(script, config, allFields, queryModel);
     }
 
     /**
@@ -2113,57 +2221,73 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // if we are using something other than the default of EVENT date
-        // time, then we need to modify the query
-        if (!dateType.equals(defaultDateType)) {
+        // Get the set of date types that should not be expanded if the end date is the current date.
+        // @formatter:off
+        Set<String> noExpansionIfCurrentDateTypes = config.getNoExpansionIfCurrentDateTypes() == null ? Collections.emptySet() :
+                        config.getNoExpansionIfCurrentDateTypes().stream()
+                                        .map(String::trim)
+                                        .map(String::toUpperCase)
+                                        .collect(Collectors.toSet());
+        // @formatter:on
 
-            log.info("Using the date index for " + dateType);
-            // if no date index helper configured, then we are in error
-            if (dateIndexHelper == null) {
-                throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
-            }
-            // get all of the fields used for this date type
-            DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
-                            config.getDatatypeFilter());
-            if (dateIndexData.getFields().isEmpty()) {
-                log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
-                // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired effect.
-                // Also it will be understandable from the plan as to why no results were returned.
-                dateIndexData.getFields().add(Constants.NO_FIELD);
-            }
-            log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
-            // now for each field, add an expression to filter that date
-            List<JexlNode> andChildren = new ArrayList<>();
-            for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
-                if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
-                    andChildren.add(queryTree.jjtGetChild(i));
-                } else {
-                    andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
-                }
-            }
-            List<JexlNode> orChildren = new ArrayList<>();
-            for (String field : dateIndexData.getFields()) {
-                orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
-            }
-            if (orChildren.size() > 1) {
-                andChildren.add(JexlNodeFactory.createOrNode(orChildren));
-            } else {
-                andChildren.addAll(orChildren);
-            }
-            JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
-            JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
-
-            // now lets update the query parameters with the correct start and
-            // end dates
-            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                            + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
-
-            // reset the dates in the configuration, no need to reset then in
-            // the Query settings object
-            config.setBeginDate(dateIndexData.getBeginDate());
-            config.setEndDate(dateIndexData.getEndDate());
+        // If the date type is one marked for no expansion if current, and the query's end date is the current date, do not add any date filters, and do not
+        // allow a SHARDS_AND_DAYS hint to be added later.
+        if (config.getNoExpansionIfCurrentDateTypes().contains(dateType) && DateUtils.isSameDay(new Date(), config.getEndDate())) {
+            log.info("Query end date equals current date and date type " + dateType
+                            + " is marked for no expansion if current. SHARDS_AND_DAYS hint will be forbidden.");
+            config.setShardsAndDaysHintAllowed(false);
         } else {
-            log.info("Date index not needed for this query");
+            // If we are using something other than the default of EVENT date time, then we need to modify the query.
+            if (!dateType.equals(defaultDateType)) {
+                log.info("Using the date index for " + dateType);
+                // if no date index helper configured, then we are in error
+                if (dateIndexHelper == null) {
+                    throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
+                }
+                // get all of the fields used for this date type
+                DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
+                                config.getDatatypeFilter());
+                if (dateIndexData.getFields().isEmpty()) {
+                    log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
+                    // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired
+                    // effect.
+                    // Also it will be understandable from the plan as to why no results were returned.
+                    dateIndexData.getFields().add(Constants.NO_FIELD);
+                }
+                log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
+                // now for each field, add an expression to filter that date
+                List<JexlNode> andChildren = new ArrayList<>();
+                for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
+                    if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
+                        andChildren.add(queryTree.jjtGetChild(i));
+                    } else {
+                        andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                    }
+                }
+                List<JexlNode> orChildren = new ArrayList<>();
+                for (String field : dateIndexData.getFields()) {
+                    orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
+                }
+                if (orChildren.size() > 1) {
+                    andChildren.add(JexlNodeFactory.createOrNode(orChildren));
+                } else {
+                    andChildren.addAll(orChildren);
+                }
+                JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
+                JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
+
+                // now lets update the query parameters with the correct start and
+                // end dates
+                log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+
+                // reset the dates in the configuration, no need to reset then in
+                // the Query settings object
+                config.setBeginDate(dateIndexData.getBeginDate());
+                config.setEndDate(dateIndexData.getEndDate());
+            } else {
+                log.info("Date index not needed for this query");
+            }
         }
 
         return queryTree;
@@ -2447,16 +2571,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, String queryString, Boolean isFullTable,
                     boolean isPreload) throws DatawaveQueryException {
-        if (null == settingFuture)
+        if (null == settingFuture) {
             settingFuture = loadQueryIterator(metadataHelper, config, isFullTable, isPreload);
-        if (settingFuture.isDone())
+        }
+        if (settingFuture.isDone()) {
             try {
                 return settingFuture.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
-        else
+        } else {
             return null;
+        }
     }
 
     public void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
@@ -2477,29 +2603,61 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
 
-            TypeMetadata typeMetadata = getTypeMetadata();
-
-            if (config.getReduceTypeMetadata() && !isPreload) {
-                Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
-                typeMetadata = typeMetadata.reduce(fieldsToRetain);
-            }
-
-            String serializedTypeMetadata = typeMetadata.toString();
-
             if (compressMappings) {
                 nonIndexedTypes = QueryOptions.compressOption(nonIndexedTypes, QueryOptions.UTF8);
                 requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
-                if (!config.getReduceTypeMetadataPerShard()) {
-                    // if we're reducing later, don't compress the type metadata
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
-                }
             }
 
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
-            addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
 
+            // now handle TypeMetadata
+            boolean canReduceTypeMetadata = !config.getProjectFields().isEmpty() || !config.getDisallowlistedFields().isEmpty();
+            if (!canReduceTypeMetadata) {
+                config.setReduceTypeMetadata(false);
+                config.setReduceTypeMetadataPerShard(false);
+            }
+
+            if (!isPreload) {
+                // TypeMetadata is serialized at the end of query planning for two reasons
+                // First, the metadata is fetched in an async thread so don't wait on that during a preload
+                // Second, the query model application updates the projection fields, so that needs to happen first
+                TypeMetadata typeMetadata = getTypeMetadata();
+
+                if (canReduceTypeMetadata && (config.getReduceTypeMetadata() || config.getReduceTypeMetadataPerShard())) {
+                    // If per-shard reduction is enabled we still attempt a first-pass reduction here. This reduces
+                    // the amount of future work done by the VisitorFunction and the raw bytes passed around.
+
+                    Set<String> fieldsToRetain = new HashSet<>();
+                    if (!config.getProjectFields().isEmpty()) {
+                        // sum query fields, projection fields, and composite fields
+                        fieldsToRetain.addAll(ReduceFields.getQueryFields(config.getQueryTree()));
+                        fieldsToRetain.addAll(config.getProjectFields());
+                        fieldsToRetain.addAll(config.getCompositeToFieldMap().keySet());
+                        // GroupBy fields already added to projection at this point in planning
+                        // Unique and Excerpt fields do not affect returned fields
+                    } else {
+                        // sum all fields, remove exclude fields
+                        fieldsToRetain.addAll(typeMetadata.keySet()); // metadata fetch filtered by datatype
+                        // might need to add composite fields here
+                        fieldsToRetain.removeAll(config.getDisallowlistedFields());
+                        // GroupBy fields already added to projection at this point in planning
+                        // Unique and Excerpt fields do not affect returned fields
+                    }
+
+                    typeMetadata = typeMetadata.reduce(fieldsToRetain);
+                }
+
+                // only compress if enabled AND not reducing per shard
+                // type metadata will be serialized in the VisitorFunction
+                String serializedTypeMetadata = typeMetadata.toString();
+                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                }
+
+                addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
+            }
         } catch (IOException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.TYPE_MAPPING_CONFIG_ERROR, e);
             throw new DatawaveQueryException(qe);
@@ -2650,6 +2808,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
+
+        if (config.getCardinalityThreshold() > 0) { // only add option if it is set
+            addOption(cfg, QueryOptions.CARDINALITY_THRESHOLD, Integer.toString(config.getCardinalityThreshold()), false);
+        }
     }
 
     /**
@@ -2873,6 +3035,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            // TODO -- in practice the second half of this config is always false, so this check is pointless
             if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
@@ -2880,13 +3043,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             stopwatch.stop();
         }
+
+        // only requires a full table scan IFF it's only ivarators at the top level. single ivarators may be delayed.
         if (needsFullTable) {
             if (config.getFullTableScanEnabled()) {
                 ranges = this.getFullScanRange(config, queryTree);
             } else {
-                if (log.isTraceEnabled())
-                    log.trace("Full table scans are not enabled, query will not be run");
-
+                if (log.isTraceEnabled()) {
+                    String query = JexlStringBuildingVisitor.buildQuery(queryTree);
+                    log.trace("Full table scans are not enabled, query will not be run: " + query);
+                }
                 QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED, fullTableScanReason);
                 throw new FullTableScansDisallowedException(qe);
             }
@@ -3107,7 +3273,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     Multimap<String,Type<?>> normalizedFieldMap, ShardQueryConfiguration config) {
         config.setIndexedFields(indexedFields);
         config.setReverseIndexedFields(reverseIndexedFields);
-        config.setQueryFieldsDatatypes(queryFieldMap);
+        updateQueryFieldsDatatypes(config, queryFieldMap);
         config.setNormalizedFieldsDatatypes(normalizedFieldMap);
     }
 
@@ -3122,7 +3288,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         log.debug("normalizedFields = " + normalizedFields);
 
-        config.setQueryFieldsDatatypes(HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !normalizedFields.contains(input))));
+        Multimap<String,Type<?>> queryFieldToDatatypeMap = HashMultimap
+                        .create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !normalizedFields.contains(input)));
+        updateQueryFieldsDatatypes(config, queryFieldToDatatypeMap);
         log.debug("IndexedFields Datatypes: " + config.getQueryFieldsDatatypes());
 
         config.setNormalizedFieldsDatatypes(HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, normalizedFields::contains)));
@@ -3135,7 +3303,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return fieldToDatatypeMap;
+    }
 
+    protected void updateQueryFieldsDatatypes(ShardQueryConfiguration config, Multimap<String,Type<?>> queryFieldMap) {
+        Multimap<String,Type<?>> queryFieldToDatatypeMap = config.getQueryFieldsDatatypes();
+        queryFieldToDatatypeMap.putAll(queryFieldMap);
+        config.setQueryFieldsDatatypes(queryFieldToDatatypeMap);
     }
 
     public void setDisableTestNonExistentFields(boolean disableTestNonExistentFields) {

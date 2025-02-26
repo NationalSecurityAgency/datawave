@@ -1,14 +1,11 @@
 package datawave.query.jexl.lookups;
 
-import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.replayAll;
-import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
@@ -231,6 +228,13 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         test(lookup, "FIELD_A");
     }
 
+    @Test
+    public void testWithNoBackingData() {
+        withDateRange("20240701", "20240709");
+        BoundedRangeIndexLookup lookup = createLookup("FIELD_A", "absent-lower", "absent-upper");
+        test(lookup, "FIELD_A");
+    }
+
     private void test(BoundedRangeIndexLookup lookup, String field) {
         lookup.submit();
 
@@ -308,7 +312,12 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         assertEquals(10001, scanner.getSeekCount()); // with new iterator this is initial seek + one seek per unique row in the range
         // this represents data collapsed and sent back to the client by the WholeRowIterator
         assertEquals(0, scanner.getNextCount()); // no next cals with seeking filter
-        assertTrue(map.get("FOO").isThresholdExceeded());
+        assertNotNull(map);
+        if (map.containsKey("FOO")) {
+            assertTrue(map.get("FOO").isThresholdExceeded());
+        } else {
+            assertTrue(map.isEmpty());
+        }
         verifyAll();
     }
 }

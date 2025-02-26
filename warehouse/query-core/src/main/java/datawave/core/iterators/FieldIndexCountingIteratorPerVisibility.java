@@ -36,6 +36,7 @@ import com.google.common.collect.Sets;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
+import datawave.util.CompositeTimestamp;
 import datawave.util.TextUtil;
 
 /**
@@ -97,7 +98,6 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
 
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private TreeMap<Key,Value> keyCache = null;
-    protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -357,11 +357,11 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         this.count += 1;
 
         // set most recent timestamp
-        this.maxTimeStamp = (this.maxTimeStamp > key.getTimestamp()) ? maxTimeStamp : key.getTimestamp();
+        this.maxTimeStamp = (this.maxTimeStamp > key.getTimestamp()) ? maxTimeStamp : CompositeTimestamp.getEventDate(key.getTimestamp());
     }
 
     private boolean acceptTimestamp(Key k) {
-        return this.stampRange.containsLong(k.getTimestamp());
+        return this.stampRange.containsLong(CompositeTimestamp.getEventDate(k.getTimestamp()));
     }
 
     private boolean isFieldIndexKey(Key key) {
@@ -565,7 +565,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             ColumnVisibility cv = null;
             try {
                 // Calculate the columnVisibility for this key from the combiner.
-                cv = markingFunctions.combine(columnVisibilities);
+                cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
             } catch (Exception e) {
                 log.error("Could not create combined columnVisibility for the count", e);
                 return null;

@@ -14,12 +14,10 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
-
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -86,9 +84,9 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testMaxValueRegexIndexOnly_federatedQueryPlanner() throws Exception {
-        log.info("------  testMaxValueRegexIndexOnly : " + FederatedQueryPlanner.class.getSimpleName() + " ------");
+        log.info("------  testMaxValueRegexIndexOnly : " + DatePartitionedQueryPlanner.class.getSimpleName() + " ------");
 
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
 
         // set regex to match multiple fields
         String city = EQ_OP + "'a-1'";
@@ -150,9 +148,9 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testMaxValueAnyField_federatedQueryPlanner() throws Exception {
-        log.info("------  testMaxValueAnyField : " + FederatedQueryPlanner.class.getSimpleName() + " ------");
+        log.info("------  testMaxValueAnyField : " + DatePartitionedQueryPlanner.class.getSimpleName() + " ------");
 
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
 
         String regexT = RE_OP + "'b-.*'";
         String regexA = RE_OP + "'a-.*'";
@@ -213,9 +211,9 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testMaxValueNegAnyField_federatedQueryPlanner() throws Exception {
-        log.info("------  testMaxValueNegAnyField : " + FederatedQueryPlanner.class.getSimpleName() + "  ------");
+        log.info("------  testMaxValueNegAnyField : " + DatePartitionedQueryPlanner.class.getSimpleName() + "  ------");
 
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
 
         String regexPhrase = RE_OP + "'a.*'";
         String country = "'b-StaTe'";

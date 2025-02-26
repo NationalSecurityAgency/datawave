@@ -4,8 +4,11 @@ import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.WildcardFieldedFilter;
 
 public class Exclude extends AbstractEvaluationPhaseFunction {
+
+    public static final String FUNCTION_NAME = "exclude";
+
     public Exclude() {
-        super("exclude");
+        super(FUNCTION_NAME);
     }
 
     @Override

@@ -47,11 +47,13 @@ import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -122,7 +124,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
-    private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -237,7 +238,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Filter results on datatypes. Default to having no filters
     private Set<String> datatypeFilter = UniversalSet.instance();
     // A set of sorted index holes
-    private List<IndexHole> indexHoles = new ArrayList<>();
+    private List<IndexValueHole> indexValueHoles = new ArrayList<>();
     // a set of user specified mappings
     private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
@@ -358,6 +359,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
+
+    private int uniqueCacheBufferSize = 100;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
@@ -438,6 +441,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the excerpt iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
+    private SummaryOptions summaryOptions = new SummaryOptions();
+
+    // The class for the summary iterator
+    private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
+
     /**
      * A bloom filter to avoid duplicate results if needed
      */
@@ -504,6 +512,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean sortQueryPostIndexWithTermCounts = false;
 
     /**
+     * If a query's cardinality is under this threshold, ivarators will be run as context required filter iterators.
+     */
+    private int cardinalityThreshold;
+
+    /**
      * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
      * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
      */
@@ -514,7 +527,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
-    private double fieldIndexHoleMinThreshold = 1.0d;
+    private double indexFieldHoleMinThreshold = 1.0d;
+
+    /**
+     * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
+     * SHARDS_AND_DAYS hint.
+     */
+    private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
+
+    /**
+     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
+     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
+     */
+    private boolean shardsAndDaysHintAllowed = true;
 
     /**
      * Default constructor
@@ -568,7 +593,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
-        this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -622,7 +646,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null
                         : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
-        this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
+        this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : Lists.newArrayList(other.getIndexValueHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
         this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
@@ -716,7 +740,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
+        this.setUniqueFields(other.getUniqueFields());
+        log.info("Checkpointing with " + getUniqueFields());
+        this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -734,6 +760,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
+        this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
+        this.setSummaryIterator(other.getSummaryIterator());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
@@ -752,9 +780,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSortQueryPreIndexWithFieldCounts(other.isSortQueryPreIndexWithFieldCounts());
         this.setSortQueryPostIndexWithTermCounts(other.isSortQueryPostIndexWithTermCounts());
         this.setSortQueryPostIndexWithFieldCounts(other.isSortQueryPostIndexWithFieldCounts());
+        this.setCardinalityThreshold(other.getCardinalityThreshold());
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
-        this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
+        this.setNoExpansionIfCurrentDateTypes(
+                        other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
     /**
@@ -1516,6 +1548,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
@@ -1871,11 +1911,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
-        // If unique fields are present, make sure they are deconstructed by this point.
-        if (uniqueFields != null) {
-            uniqueFields.deconstructIdentifierFields();
-        }
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public boolean isHitList() {
@@ -2274,14 +2310,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
-    public boolean getSequentialScheduler() {
-        return sequentialScheduler;
-    }
-
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        this.sequentialScheduler = sequentialScheduler;
-    }
-
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2307,12 +2335,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
-    public List<IndexHole> getIndexHoles() {
-        return indexHoles;
+    public List<IndexValueHole> getIndexValueHoles() {
+        return indexValueHoles;
     }
 
-    public void setIndexHoles(List<IndexHole> indexHoles) {
-        this.indexHoles = indexHoles;
+    public void setIndexValueHoles(List<IndexValueHole> indexValueHoles) {
+        this.indexValueHoles = indexValueHoles;
     }
 
     public boolean getCollectTimingDetails() {
@@ -2611,6 +2639,24 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptIterator = excerptIterator;
     }
 
+    public SummaryOptions getSummaryOptions() {
+        return summaryOptions;
+    }
+
+    public void setSummaryOptions(SummaryOptions summaryOptions) {
+        if (summaryOptions != null) {
+            this.summaryOptions = summaryOptions;
+        }
+    }
+
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
+        return summaryIterator;
+    }
+
+    public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
+        this.summaryIterator = summaryIterator;
+    }
+
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -2743,12 +2789,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rebuildDatatypeFilterPerShard = rebuildDatatypeFilterPerShard;
     }
 
-    public double getFieldIndexHoleMinThreshold() {
-        return fieldIndexHoleMinThreshold;
+    public double getIndexFieldHoleMinThreshold() {
+        return indexFieldHoleMinThreshold;
     }
 
-    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
-        this.fieldIndexHoleMinThreshold = fieldIndexHoleMinThreshold;
+    public void setIndexFieldHoleMinThreshold(double indexFieldHoleMinThreshold) {
+        this.indexFieldHoleMinThreshold = indexFieldHoleMinThreshold;
     }
 
     public boolean getReduceIngestTypes() {
@@ -2799,14 +2845,25 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
 
+    public int getCardinalityThreshold() {
+        return cardinalityThreshold;
+    }
+
+    public void setCardinalityThreshold(int cardinalityThreshold) {
+        this.cardinalityThreshold = cardinalityThreshold;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-        if (!super.equals(o))
+        }
+        if (!super.equals(o)) {
             return false;
+        }
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
@@ -2828,7 +2885,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
-                getSequentialScheduler() == that.getSequentialScheduler() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
                 getLogTimingDetails() == that.getLogTimingDetails() &&
                 getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
@@ -2917,6 +2973,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() &&
                 getAccrueStats() == that.getAccrueStats() &&
                 Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
+                getUniqueCacheBufferSize() == that.getUniqueCacheBufferSize() &&
                 getCacheModel() == that.getCacheModel() &&
                 isTrackSizes() == that.isTrackSizes() &&
                 getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression() &&
@@ -2947,7 +3004,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
                 Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
                 Objects.equals(getDatatypeFilter(), that.getDatatypeFilter()) &&
-                Objects.equals(getIndexHoles(), that.getIndexHoles()) &&
+                Objects.equals(getIndexValueHoles(), that.getIndexValueHoles()) &&
                 Objects.equals(getProjectFields(), that.getProjectFields()) &&
                 Objects.equals(getRenameFields(), that.getRenameFields()) &&
                 Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields()) &&
@@ -2990,6 +3047,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
+                Objects.equals(getSummaryOptions(), that.getSummaryOptions()) &&
                 getFiFieldSeek() == that.getFiFieldSeek() &&
                 getFiNextSeek() == that.getFiNextSeek() &&
                 getEventFieldSeek() == that.getEventFieldSeek() &&
@@ -3003,10 +3061,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
-                isSortQueryPreIndexWithImpliedCounts() == isSortQueryPreIndexWithImpliedCounts() &&
-                isSortQueryPreIndexWithFieldCounts() == isSortQueryPreIndexWithFieldCounts() &&
-                isSortQueryPostIndexWithTermCounts() == isSortQueryPostIndexWithTermCounts() &&
-                isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts();
+                isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
+                isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
+                isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
+                isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
+                getCardinalityThreshold() == that.getCardinalityThreshold() &&
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+ isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+
         // @formatter:on
     }
 
@@ -3036,7 +3098,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceTypeMetadataPerShard(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
-                getSequentialScheduler(),
                 getCollectTimingDetails(),
                 getLogTimingDetails(),
                 getSendTimingToStatsd(),
@@ -3086,7 +3147,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getNonEventKeyPrefixes(),
                 getUnevaluatedFields(),
                 getDatatypeFilter(),
-                getIndexHoles(),
+                getIndexValueHoles(),
                 getProjectFields(),
                 getRenameFields(),
                 getDisallowlistedFields(),
@@ -3184,6 +3245,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getAccrueStats(),
                 getGroupFields(),
                 getUniqueFields(),
+                getUniqueCacheBufferSize(),
                 getCacheModel(),
                 isTrackSizes(),
                 getContentFieldNames(),
@@ -3195,6 +3257,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getLenientFields(),
                 getStrictFields(),
                 getExcerptFields(),
+                getSummaryOptions(),
                 getFiFieldSeek(),
                 getFiNextSeek(),
                 getEventFieldSeek(),
@@ -3211,7 +3274,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPreIndexWithImpliedCounts(),
                 isSortQueryPreIndexWithFieldCounts(),
                 isSortQueryPostIndexWithTermCounts(),
-                isSortQueryPostIndexWithFieldCounts()
+                isSortQueryPostIndexWithFieldCounts(),
+                getCardinalityThreshold(),
+                getNoExpansionIfCurrentDateTypes(),
+                isShardsAndDaysHintAllowed()
         );
         // @formatter:on
     }
@@ -3245,5 +3311,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
+    }
+
+    public Set<String> getNoExpansionIfCurrentDateTypes() {
+        return noExpansionIfCurrentDateTypes;
+    }
+
+    public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
+        this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
+    }
+
+    public boolean isShardsAndDaysHintAllowed() {
+        return shardsAndDaysHintAllowed;
+    }
+
+    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
+        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 }

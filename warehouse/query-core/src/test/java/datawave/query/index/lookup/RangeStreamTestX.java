@@ -363,6 +363,24 @@ public class RangeStreamTestX {
         m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(45L));
         bw.addMutation(m);
 
+        // --------------- some entries to verify that proper merges happen when the count hits zero or below
+
+        m = new Mutation("negative one");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(-1));
+        bw.addMutation(m);
+
+        m = new Mutation("zero");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(0));
+        bw.addMutation(m);
+
+        m = new Mutation("one");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), buildValueForShard());
+        bw.addMutation(m);
+
+        m = new Mutation("one billion");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(1_000_000_000L));
+        bw.addMutation(m);
+
         // ---------------
 
         bw.flush();
@@ -3457,6 +3475,54 @@ public class RangeStreamTestX {
         drive(query, expected);
     }
 
+    @Test
+    public void testIntersectionsOfVariousCounts() {
+        String query = "(F1 == 'negative one' && F1 == 'negative one')";
+        drive(query, "F1 == 'negative one'");
+
+        query = "(F1 == 'negative one' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'negative one')";
+        drive(query, query);
+
+        query = "(F1 == 'negative one' && F1 == 'one billion')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one billion' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'one billion')";
+        drive(query, query);
+    }
+
+    @Test
+    public void testUnionsOfVariousCounts() {
+        String query = "(F1 == 'negative one' || F1 == 'negative one')";
+        drive(query, "(F1 == 'negative one')");
+
+        query = "(F1 == 'negative one' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'negative one')";
+        drive(query, query);
+
+        query = "(F1 == 'negative one' || F1 == 'one billion')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one billion' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'one billion')";
+        drive(query, query);
+    }
+
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
 
         assertEquals("Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size(),
@@ -3559,12 +3625,13 @@ public class RangeStreamTestX {
             config.setBeginDate(sdf.parse("20200101"));
             config.setEndDate(sdf.parse("20200105"));
 
-            config.setDatatypeFilter(Sets.newHashSet("sort-type"));
+            config.setDatatypeFilter(Sets.newHashSet("sort-type", "datatype1"));
 
             Multimap<String,Type<?>> dataTypes = HashMultimap.create();
             dataTypes.putAll("FIELD_A", Sets.newHashSet(new LcNoDiacriticsType()));
             dataTypes.putAll("FIELD_B", Sets.newHashSet(new LcNoDiacriticsType()));
             dataTypes.putAll("FIELD_C", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("F1", Sets.newHashSet(new LcNoDiacriticsType()));
 
             config.setQueryFieldsDatatypes(dataTypes);
             config.setIndexedFields(dataTypes);

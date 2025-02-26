@@ -40,7 +40,6 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.input.reader.AggregatingRecordReader;
 import datawave.ingest.input.reader.EventInitializer;
 import datawave.ingest.input.reader.KeyReader;
-import datawave.ingest.input.reader.LineReader;
 import datawave.ingest.input.reader.ReaderInitializer;
 import datawave.ingest.input.reader.ValueReader;
 import datawave.ingest.input.reader.event.EventFixer;
