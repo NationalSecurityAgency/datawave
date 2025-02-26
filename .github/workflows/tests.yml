@@ -46,7 +46,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dservices
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
@@ -56,7 +56,7 @@ jobs:
           git config --global user.email "datawave@github.com"
           git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
-          git merge ${{ steps.extract_branch.outputs.branch }} --no-edit ||
+          git merge FETCH_HEAD --no-edit ||
           git commit -am "GitHub Actions: Fix Formatting"
           git push origin ${{ steps.extract_branch.outputs.branch }}
         else
