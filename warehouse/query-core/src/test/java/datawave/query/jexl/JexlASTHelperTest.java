@@ -696,7 +696,7 @@ public class JexlASTHelperTest {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
         ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
         RuntimeException exception = Assert.assertThrows(RuntimeException.class, () -> JexlASTHelper.validateJunctionChildren(conjunction, true));
-        assertEquals("Instance of AND/OR node found with less than 2 children", exception.getMessage());
+        assertEquals("Could not process node. Instance of AND/OR node found with less than 2 children", exception.getCause().getMessage());
     }
 
     @Test

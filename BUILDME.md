@@ -64,8 +64,8 @@ mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 Datawave web services utilize several microservices at runtime (currently authorization and auditing, although that
 list will expand soon). Datawave depends on api modules for some of these services, and the dependencies are set in
-the parent pom (see `version.microservice.*` properties) to released versions. If you wish to build the microservices
-for some reason, you can simply add `-Dservices` to your maven build command.
+the parent pom (see `version.datawave.*` properties) to released versions. If you wish to build the microservices
+for some reason, you can simply add `-Dservices` to your maven build command.  If you wish to build the starters you can add `-Dstarters` and for the utility modules add `-Dutils`.
 
 ### Releasing Microservices
 
@@ -95,7 +95,7 @@ the authorization service API version 1.0 is tagged with `svc_authorization-api_
 
 Note that simply building a new API or service release won't ensure that it is used anywhere. You will need to update
 build properties in either the datawave parent pom or within other service poms (for cross-service dependencies) to
-ensure that the new version is used. Look for properties starting with `version.microservice.` to see what to update.
+ensure that the new version is used. Look for properties starting with `version.datawave.` to see what to update.
 If you are updating an API module, you should be careful. In general, the associated service will need to be updated as
 well to support the API changes. The service should _add_ a new version of the API and continue to support the old
 version until it can be ensured that there are no more consumers of the old API.

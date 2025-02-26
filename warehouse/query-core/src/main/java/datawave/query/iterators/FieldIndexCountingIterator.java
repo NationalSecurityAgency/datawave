@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
+import datawave.util.CompositeTimestamp;
 import datawave.util.TextUtil;
 
 /**
@@ -89,8 +90,6 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static final Text fi_PREFIX_TEXT = new Text("fi\u0000");
 
     private Set<Text> visibilitySet = new HashSet<>();
-
-    protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -355,11 +354,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         this.count += 1;
 
         // set most recent timestamp
-        this.maxTimeStamp = (this.maxTimeStamp > key.getTimestamp()) ? maxTimeStamp : key.getTimestamp();
+        this.maxTimeStamp = (this.maxTimeStamp > CompositeTimestamp.getEventDate(key.getTimestamp())) ? maxTimeStamp
+                        : CompositeTimestamp.getEventDate(key.getTimestamp());
     }
 
     private boolean acceptTimestamp(Key k) {
-        return this.stampRange.containsLong(k.getTimestamp());
+        return this.stampRange.containsLong(CompositeTimestamp.getEventDate(k.getTimestamp()));
     }
 
     private boolean isFieldIndexKey(Key key) {
@@ -586,7 +586,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         }
         ColumnVisibility cv;
         try {
-            cv = markingFunctions.combine(columnVisibilities);
+            cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
         } catch (MarkingFunctions.Exception e) {
             log.error("Could not combine visibilities: " + visibilitySet + "  " + e);
             return null;

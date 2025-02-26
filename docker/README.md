@@ -7,12 +7,9 @@ out the [prereqs](#prereqs) at a minimum):
 ## TLDR
 
 ```shell
-# from the base datawave project directory check out the microservice submodules
-git submodule update --init --recursive
-
 # build docker images for datawave and all of the microservices
 # optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
-mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
+mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 # bootstrap the services, and bring them up using docker compose
 cd docker
@@ -189,10 +186,10 @@ Build the Datawave Quickstart docker image using the following build command:
 
 ```
 # To build the quickstart docker image, and all of the microservice images, run this
-mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
 
 # To build just the quickstart docker image, run this
-mvn -Pcompose -DskipServices -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
 ```
 Note that the quickstart-docker property is set.  This property is a shortcut which activates the `docker` and `quickstart` profiles without activating the `docker` profile for the microservices.
 
@@ -252,7 +249,7 @@ datawaveWebStop
 If you haven't done so already, you can build the Datawave Microservice docker images using the following build command:
 
 ```
-mvn -Pcompose -Dmicroservice-docker -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dservices -Dmicroservice-docker -Ddist -DskipTests clean install -T1C
 ```
 
 Note that the microservice-docker property is set.  This property is a shortcut which activates the `docker` profile for just the microservices.

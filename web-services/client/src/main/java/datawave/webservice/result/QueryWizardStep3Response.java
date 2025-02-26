@@ -1,7 +1,5 @@
 package datawave.webservice.result;
 
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -9,10 +7,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.commons.lang.StringUtils;
-
 import datawave.webservice.HtmlProvider;
-import datawave.webservice.query.result.logic.QueryLogicDescription;
 
 @XmlRootElement(name = "QueryWizardStep3")
 @XmlAccessorType(XmlAccessType.NONE)

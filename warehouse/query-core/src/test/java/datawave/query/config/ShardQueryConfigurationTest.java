@@ -39,9 +39,11 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
@@ -51,7 +53,7 @@ import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
+    public static final Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -178,8 +180,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
-        defaultValues.put("sequentialScheduler", false);
-        updatedValues.put("sequentialScheduler", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);
@@ -268,8 +268,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFilters", true);
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
-        defaultValues.put("indexHoles", Lists.newArrayList());
-        updatedValues.put("indexHoles", Lists.newArrayList(new IndexHole()));
+        defaultValues.put("indexValueHoles", Lists.newArrayList());
+        updatedValues.put("indexValueHoles", Lists.newArrayList(new IndexValueHole()));
         defaultValues.put("indexedFields", Sets.newHashSet());
         updatedValues.put("indexedFields", Sets.newHashSet("FIELD_C", "FIELD_D"));
         defaultValues.put("reverseIndexedFields", Sets.newHashSet());
@@ -445,6 +445,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("uniqueCacheBufferSize", 100);
+        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -469,6 +471,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("excerptFields", ExcerptFields.from("FIELD_E/10,FIELD_F/11"));
         defaultValues.put("excerptIterator", TermFrequencyExcerptIterator.class);
         updatedValues.put("excerptIterator", TermFrequencyIndexIterator.class);
+        defaultValues.put("summaryOptions", new SummaryOptions());
+        updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
+        defaultValues.put("summaryIterator", ContentSummaryIterator.class);
+        updatedValues.put("summaryIterator", ContentSummaryIterator.class);
         defaultValues.put("fiFieldSeek", -1);
         updatedValues.put("fiFieldSeek", 10);
         defaultValues.put("fiNextSeek", -1);
@@ -537,8 +543,8 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 
-        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
-        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
+        defaultValues.put("indexFieldHoleMinThreshold", 1.0d);
+        updatedValues.put("indexFieldHoleMinThreshold", 0.5d);
 
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
@@ -589,6 +595,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryPostIndexWithTermCounts", true);
         defaultValues.put("sortQueryPostIndexWithFieldCounts", false);
         updatedValues.put("sortQueryPostIndexWithFieldCounts", true);
+        defaultValues.put("cardinalityThreshold", 0);
+        updatedValues.put("cardinalityThreshold", 25);
         defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
@@ -598,6 +606,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
+        updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
+
+        defaultValues.put("shardsAndDaysHintAllowed", true);
+        updatedValues.put("shardsAndDaysHintAllowed", false);
     }
 
     private Query createQuery(String query) {

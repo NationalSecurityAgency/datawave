@@ -24,8 +24,7 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -85,7 +84,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         // init must set auths
