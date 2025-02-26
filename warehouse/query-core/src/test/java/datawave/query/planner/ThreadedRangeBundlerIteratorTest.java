@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -105,6 +106,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         // do not limit speed off this iterator
         expect(mockPlans.iterator()).andReturn(producerItr);
         mockPlans.close();
+        expectLastCall().times(0, 1);
 
         replayAll();
 
@@ -153,6 +155,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         expect(mockPlans.iterator()).andReturn(delayIterator(Collections.emptyIterator(), 25));
 
         mockPlans.close();
+        expectLastCall().times(0, 1);
 
         replayAll();
 
@@ -180,6 +183,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
         expect(mockPlans.iterator()).andReturn(List.of(plan).iterator());
         mockPlans.close();
+        expectLastCall().times(0, 1);
 
         replayAll();
 
