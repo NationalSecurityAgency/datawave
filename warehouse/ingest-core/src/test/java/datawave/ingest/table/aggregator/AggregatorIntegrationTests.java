@@ -10,7 +10,6 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -24,6 +23,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -60,7 +60,6 @@ public class AggregatorIntegrationTests {
     private static final String[] tableNames = new String[] {DEFAULT_AGGREGATOR, UID_AGGREGATOR, KEEP_COUNT_AGGREGATOR, COUNT_ONLY_AGGREGATOR};
 
     private final List<String> existingRows = new ArrayList<>();
-    private static final Random rand = new Random();
 
     private Value defaultValue;
     private Value uidValue;
@@ -462,7 +461,7 @@ public class AggregatorIntegrationTests {
     private String getRandomRow() {
         String row = null;
         while (row == null || existingRows.contains(row)) {
-            row = String.valueOf(rand.nextInt(256));
+            row = RandomStringUtils.randomAlphabetic(6);
         }
         existingRows.add(row);
         return row;

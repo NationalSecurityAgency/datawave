@@ -256,9 +256,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (subNode instanceof ASTEQNode) {
                     delayedEqNodes.add(subNode);
                 }
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
                 log.trace("Will not process ASTDelayedPredicate.");
             }
             return null;
@@ -372,9 +370,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         iterators.addInclude(nested);
                     }
                 } else {
-                    if (isQueryFullySatisfied) {
-                        log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                    }
+                    checkForSatisfactionError();
                     // if there is no parent
                     if (root == null && data == null) {
                         // make this nested the root node
@@ -397,6 +393,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (data == null) {
                 // Make this AndIterator the root node
                 if (!andItr.includes().isEmpty()) {
+                    // TODO: if the query is a single marker node an AndIterator is still built with a single source.
+                    // This isn't functionally incorrect, it could be better.
                     root = andItr.build();
                 }
             } else {
@@ -616,9 +614,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // verify that the field exists and is indexed
         if (builder.getField() == null || isUnindexed(builder.getField())) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -630,11 +626,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 throw new DatawaveFatalQueryException(qe);
             }
 
-            // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied) {
-                // note: this is different from the ASTEQ method...
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            // FIELD != null should have set satisfied to false
+            checkForSatisfactionError();
             return null;
         }
 
@@ -647,7 +640,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setQueryId(queryId);
             builder.setSource(deepCopySource());
             builder.setTypeMetadata(typeMetadata);
-            builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
             builder.setDatatypeFilter(getDatatypeFilter());
             builder.setKeyTransform(getFiAggregator());
@@ -657,9 +649,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             iterators.addExclude(builder.build());
         } else {
             // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
         }
 
         return null;
@@ -679,9 +669,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // verify that field exists and is indexed
         if (builder.getField() == null || isUnindexed(builder.getField())) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -722,9 +710,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 loadBuilder(builder, data, node);
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
 
@@ -755,11 +741,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         builder.setNode(node);
     }
 
@@ -934,7 +919,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setField(identifier);
         builder.setTimeFilter(TimeFilter.alwaysTrue());
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
@@ -950,9 +934,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -964,7 +946,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setQueryId(queryId);
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setEnv(env);
@@ -974,9 +955,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
             return null;
         }
 
@@ -1001,9 +980,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
         }
 
@@ -1027,9 +1004,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+            checkForSatisfactionError();
         }
 
         return null;
@@ -1118,7 +1093,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         builder.negateAsNeeded(data);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         ivarate(builder, rootNode, sourceNode, data);
     }
 
@@ -1191,7 +1166,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         builder.negateAsNeeded(data);
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
 
         ivarate(builder, rootNode, sourceNode, data);
     }
@@ -1253,7 +1228,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+
+        builder.buildDocument(shouldBuildDocument(builder.getField()));
         ivarate(builder, rootNode, sourceNode, data);
     }
 
@@ -1468,7 +1444,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
         builder.setCompositeSeekThreshold(compositeSeekThreshold);
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(getDatatypeFilter());
         builder.setKeyTransform(getFiAggregator());
         builder.setIvaratorCacheDirs(getIvaratorCacheDirs());
@@ -1508,10 +1483,34 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
-                }
+                checkForSatisfactionError();
             }
+        }
+    }
+
+    /**
+     * A document should be aggregated if this is a shard range query and the field index fully satisfies the query, OR if the field is in the list of fields to
+     * aggregate (typically index only or non-event fields).
+     *
+     * @return true if documents need to be built
+     */
+    protected boolean shouldBuildDocument(String field) {
+        if (field == null) {
+            throw new IllegalStateException("Must specify a field in order to determine if documents are built");
+        }
+
+        // historically this check always ran first
+        if (!limitLookup && this.isQueryFullySatisfied) {
+            return true;
+        }
+
+        // historically this check was a fail-safe
+        return fieldsToAggregate != null && fieldsToAggregate.contains(field);
+    }
+
+    protected void checkForSatisfactionError() {
+        if (isQueryFullySatisfied) {
+            log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
         }
     }
 
@@ -1643,8 +1642,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
 
-    public IteratorBuildingVisitor setSource(SourceFactory sourceFactory, IteratorEnvironment env) {
-        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
+    public IteratorBuildingVisitor setSource(SourceFactory<Key,Value> sourceFactory, IteratorEnvironment env) {
+        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy("IBV");
         this.source = new SourceManager(skvi);
         this.env = env;
         Map<String,String> options = Maps.newHashMap();

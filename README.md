@@ -19,42 +19,74 @@ Basic build instructions are [here](BUILDME.md)
 
 ## How to Use this Repository
 
-The microservices and associated utility projects are intended to be
-developed, versioned, and released independently and as such are stored
-in separate repositories. This repository includes them all as submodules
-in order to provide an easy way to import them all in an IDE for viewing
-the code, or refactoring. [Git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
-require some extra commands over the normal ones that one may be familiar
-with.
+The microservices and associated utility projects are intended to be developed, versioned,
+and released independently.  The following subdirectories contain those independently
+versioned modules:
 
-### Cloning with all submodules
-Cloning with all of the submodules is not required; however, if you are interested in checking 
-out and building all of the datawave projects under one repo, read this!
-
-It's easiest to clone the repository pointing the submodules at the same branch
-```bash
-# Start out by cloning the project as you normally would.
-git clone git@github.com:NationalSecurityAgency/datawave.git
-
-# Now, use git to retrieve all of the datawave submodules.
-# This will leave your submodules in a detached head state.
-cd datawave
-git submodule update --init --recursive
-
-# You can checkout the main branch for each submodule so that you are no longer in a detached head state.
-# The addition of `|| :` will ensure that the command is executed for each submodule, 
-# ignoring failures for submodules that don't have a main branch.
-git submodule foreach 'git checkout main || :'
-
-# It is recommended to build the project using multiple threads.
-mvn -Pdocker,dist clean install -T 1C
-
-# If you don't want to build the microservices, you can skip them.
-mvn -Pdocker,dist -DskipMicroservices clean install -T 1C
-
-# If you decide that you no longer need the submodules, you can remove them.
-git submodule deinit --all
 ```
+core/utils/type-utils
+contrib/datawave-utils
+core/base-rest-responses
+core/in-memory-accumulo
+core/metrics-reporter
+core/utils/accumulo-utils
+core/utils/common-utils
+core/utils/metadata-utils
+microservices/microservice-parent
+microservices/microservice-service-parent
+microservices/starters/audit
+microservices/starters/cache
+microservices/starters/cached-results
+microservices/starters/datawave
+microservices/starters/metadata
+microservices/starters/query
+microservices/starters/query-metric
+microservices/services/accumulo
+microservices/services/audit
+microservices/services/authorization
+microservices/services/config
+microservices/services/dictionary
+microservices/services/file-provider
+microservices/services/hazelcast
+microservices/services/map
+microservices/services/mapreduce-query
+microservices/services/modification
+microservices/services/query
+microservices/services/query-executor
+microservices/services/query-metric
+```
+
+Each of those subdirectories contain a .gitrepo file that keeps track of where the code came from.
+
+### Updating one of the datawave sub-repositories
+At one point we used submodules to link in a all of the sub-repositories.  We have now switched
+to including the submodules' code directly into the main datawave repository.  The git subrepo
+mechanism (https://github.com/ingydotnet/git-subrepo) was used to facilitate the transition.
+That same mechanism can be used to pull in changes from the other repositories as needed until
+they can be removed altogether.  The original cloning of the sub repositories was done using
+the subrepo command as follows:
+```
+git subrepo clone <repo> <dir>
+```
+If changes need to be pulled in, then the following process can be used:
+```
+git subrepo pull <dir>
+```
+### Building
+
+It is recommended to build the project using multiple threads.  This will not build the starters, utilities, and services.
+```
+mvn -Pdocker,dist clean install -T 1C
+```
+
+If you want to build the starters, util modules, and services as well then try this
+```
+mvn -Pdocker,dist -Dstarters -Dservices -Dutils clean install -T 1C
+```
+If you want to build the service apis but not the services themselveds then add -DonlyServiceApis
+
+NOTE: The util modules, starters, and services are actually tagged and deployed separately.
+  Hence the snapshot versions within those sub repos are not connected together.
 
 ### DataWave Microservices
 

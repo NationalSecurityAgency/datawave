@@ -1,0 +1,156 @@
+<html xmlns:th="http:/>/www.thymeleaf.org">
+<!--/*
+    HTML page for QueryMetricResponse
+*/-->
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DATAWAVE - Query Metrics</title>
+    <link rel="stylesheet" type="text/css" media="screen" th:href="${basePath + '/css/screen.css'}">
+    <link rel="stylesheet" type="text/css" th:href="${basePath + '/css/theme.css'}"> <!--/* styling for query metric page */-->
+    <!--/* only needed if isGeoQuery */-->
+    <script type="text/javascript" th:src="${basePath + '/webjars/jquery/jquery.min.js'}" />
+    <script type="text/javascript">
+        if ("[[${isGeoQuery}]]" === "true") {
+            $(document).ready(function() {
+                var currentUrl = window.location.href.replace(/\/+$/, '');
+                var queryHeader = document.getElementById("query-header").innerHTML;
+                queryHeader = queryHeader + '<br>(<a href="' + currentUrl + '/map">map</a>)';
+                document.getElementById("query-header").innerHTML = queryHeader;
+            });
+        }
+    </script>
+</head>
+<body>
+    <div th:utext="${header}"></div>
+    <h1>Query Metrics</h1>
+
+    <script th:src="${basePath + '/js/query-interactive-parens.js'}">
+    </script>
+
+    <div th:each="metric,metricIter : ${metricList}">
+        <h3 th:text="${metric.queryId}"/>
+        <table class="metric-horizontal">
+            <tr>
+                <th>Visibility</th>
+                <th>Query Date</th>
+                <th>User</th>
+                <th>UserDN</th>
+                <th>Proxy Server(s)</th>
+                <th>Query Id</th>
+                <th>Query Type</th>
+                <th>Query Logic</th>
+                <th id="query-header">Query</th>
+                <th>Query Plan</th>
+                <th>Query Name</th>
+                <th>Begin Date</th>
+                <th>End Date</th>
+                <th>Parameters</th>
+                <th>Query Auths</th>
+                <th>Server</th>
+                <th>Predictions</th>
+                <th>Login Time (ms)</th>
+                <th>Query Setup Time (ms)</th>
+                <th>Query Setup Call Time (ms)</th>
+                <th>Number Pages</th>
+                <th>Number Results</th>
+                <th>Doc Size</th>
+                <th>Doc Ranges</th>
+                <th>FI Ranges</th>
+                <th>Sources</th>
+                <th>Next Calls</th>
+                <th>Seek Calls</th>
+                <th>Yield Count</th>
+                <th>Versions</th>
+                <th>Total Page Time (ms)</th>
+                <th>Total Page Call Time (ms)</th>
+                <th>Total Page Serialization Time (ms)</th>
+                <th>Total Page Bytes Sent (uncompressed)</th>
+                <th>Lifecycle</th>
+                <th>Elapsed Time</th>
+                <th>Error Code</th>
+                <th>Error Message</th>
+            </tr>
+            <tr class="highlight">
+                <td th:text="${metric.columnVisibility}"></td>
+                <td style="min-width:125px;" th:text="${metric.createDateStr}"></td>
+                <td th:text="${metric.user}"></td>
+                <td style="min-width:500px;" th:text="${metric.userDN}"></td>
+                <td th:utext="${metric.proxyServersStr}"></td>
+                <td><a th:href="${metric.queryIdUrl}" th:text="${metric.queryId}"></a></td>
+                <td th:text="${metric.queryType}"></td>
+                <td th:text="${metric.queryLogic}"></td>
+                <!--/* Note the HTML for the Query and Query Plan are set later... See scripts at end of this tr element */-->
+                <td th:id="query + ${metricIter.index + 1}" th:style="${metric.queryStyle + ' min-width:500px;'}"></td>
+                <td th:id="query-plan + ${metricIter.index + 1}" style="white-space:pre-wrap; overflow-wrap:anywhere; min-width:500px;"></td>
+                <td th:text="${metric.queryName}"></td>
+                <td style="min-width:125px;" th:text="${metric.beginDateStr}"></td>
+                <td style="min-width:125px;" th:text="${metric.endDateStr}"></td>
+                <td style="overflow-wrap:anywhere; min-width:300px;" th:utext="${metric.parametersStr}"></td>
+                <td style="overflow-wrap:anywhere; min-width:300px;" th:text="${metric.queryAuthorizationsStr}"></td>
+                <td th:text="${metric.host}"></td>
+                <td th:text="${metric.predictionsStr}"></td>
+                <td th:text="${metric.loginTimeStr}"></td>
+                <td th:text="${metric.setupTimeStr}"></td>
+                <td th:text="${metric.createCallTimeStr}"></td>
+                <td th:text="${metric.numPagesStr}"></td>
+                <td th:text="${metric.numResultsStr}"></td>
+                <td th:text="${metric.docSizeStr}"></td>
+                <td th:text="${metric.docRangesStr}"></td>
+                <td th:text="${metric.fiRangesStr}"></td>
+                <td th:text="${metric.sourceCountStr}"></td>
+                <td th:text="${metric.nextCountStr}"></td>
+                <td th:text="${metric.seekCountStr}"></td>
+                <td th:text="${metric.yieldCountStr}"></td>
+                <td th:utext="${metric.versionStr}"></td>
+                <td th:text="${metric.totalPageTimeStr}"></td>
+                <td th:text="${metric.totalPageCallTimeStr}"></td>
+                <td th:text="${metric.totalSerializationTimeStr}"></td>
+                <td th:text="${metric.totalBytesSentStr}"></td>
+                <td th:text="${metric.lifecycle}"></td>
+                <td th:text="${metric.elapsedTimeStr}"></td>
+                <td style="overflow-wrap:anywhere;" th:text="${metric.errorCode}"></td>
+                <td style="overflow-wrap:anywhere;" th:text="${metric.errorMessage}"></td>
+
+                <script type="text/javascript">
+                    // Makes the metric's query and the metric's query plan interactive (highlight
+                    // matching parens on mouse over, clicking a paren brings you to its matching paren)
+                    var metricNum = [[${metricIter.index + 1}]];
+                    interactiveParens(`[[${metric.queryEscapedForTemplateString}]]`, false, metricNum);
+                    interactiveParens(`[[${metric.planEscapedForTemplateString}]]`, true, metricNum);
+                </script>
+            </tr>
+        </table>
+        <br/>
+        <br/>
+        <table>
+            <tr>
+                <th>Page number</th>
+                <th>Page requested</th>
+                <th>Page returned</th>
+                <th>Response time (ms)</th>
+                <th>Page size</th>
+                <th>Call time (ms)</th>
+                <th>Login time (ms)</th>
+                <th>Serialization time (ms)</th>
+                <th>Bytes written (uncompressed)</th>
+            </tr>
+            <tr th:each="page,pageIter : ${metric.pageTimeModels}" th:class="(${pageIter.index} % 2 == 0) ? 'highlight' : ''">
+                <td th:text="${page.pageNumberStr}"></td>
+                <td th:text="${page.pageRequestedStr}"></td>
+                <td th:text="${page.pageReturnedStr}"></td>
+                <td th:text="${page.returnTimeStr}"></td>
+                <td th:text="${page.pageSizeStr}"></td>
+                <td th:text="${page.callTimeStr}"></td>
+                <td th:text="${page.loginTimeStr}"></td>
+                <td th:text="${page.serializationTimeStr}"></td>
+                <td th:text="${page.bytesWrittenStr}"></td>
+            </tr>
+        </table>
+        <br th:if="${!metricIter.last}"/>
+        <br th:if="${!metricIter.last}"/>
+        <br th:if="${!metricIter.last}"/>
+    </div>
+    <br/>
+    <div th:utext="${footer}"></div>
+</body>
+</html>

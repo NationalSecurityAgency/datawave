@@ -7,9 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-
 import datawave.query.attributes.Document;
 import datawave.query.util.sortedmap.FileSortedMap;
 
