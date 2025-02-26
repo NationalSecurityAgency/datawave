@@ -15,7 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.config.IndexHole;
+import datawave.query.config.IndexValueHole;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
@@ -32,17 +32,17 @@ import datawave.query.testframework.ShardIdValues;
 /**
  * The index hole provides the means of using the entries in the event when indexes are missing for a range.
  */
-public class IndexHoleQueryTest extends AbstractFunctionalQuery {
+public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
 
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
+    private static final Logger log = Logger.getLogger(IndexValueHoleQueryTest.class);
 
-    private static final List<IndexHole> INDEX_HOLE = new ArrayList<>();
+    private static final List<IndexValueHole> INDEX_HOLE = new ArrayList<>();
     static {
         String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0505.getDateStr()};
-        IndexHole hole = new IndexHole(dateHole, new String[] {"us", "ut"});
+        IndexValueHole hole = new IndexValueHole(dateHole, new String[] {"us", "ut"});
         INDEX_HOLE.add(hole);
     }
 
@@ -62,7 +62,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         client = accumuloSetup.loadTables(log);
     }
 
-    public IndexHoleQueryTest() {
+    public IndexValueHoleQueryTest() {
         super(CitiesDataType.getManager());
     }
 
@@ -83,7 +83,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'uSa'";
         String query = CityField.CODE.name() + EQ_OP + usa;
         // setting the index hole creates an invalid query
-        this.logic.setIndexHoles(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         runTest(query, query);
     }
 
@@ -93,7 +93,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'uSa'";
         String rome = "'rOme'";
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
-        this.logic.setIndexHoles(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         // set the date range to cover just the index hole
         Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
@@ -106,7 +106,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'usA'";
         String rome = "'rOme'";
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
-        this.logic.setIndexHoles(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         // set the date range to exclude the index hole
         Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
@@ -120,7 +120,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String usa = "'usA'";
         String rome = "'roMe'";
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
-        this.logic.setIndexHoles(INDEX_HOLE);
+        this.logic.setIndexValueHoles(INDEX_HOLE);
         // results should consist of entries from non-indexed for hole datatype and indexed entries from generic datatype
         Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
