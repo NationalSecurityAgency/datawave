@@ -3,7 +3,6 @@ package datawave.age.off.util;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
