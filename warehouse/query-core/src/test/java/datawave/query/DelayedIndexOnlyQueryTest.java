@@ -10,8 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -67,7 +66,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     @Override
     protected ShardQueryLogic createShardQueryLogic() {
         ShardQueryLogic logic = super.createShardQueryLogic();
-        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
+        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
         return logic;
     }
 

@@ -393,6 +393,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (data == null) {
                 // Make this AndIterator the root node
                 if (!andItr.includes().isEmpty()) {
+                    // TODO: if the query is a single marker node an AndIterator is still built with a single source.
+                    // This isn't functionally incorrect, it could be better.
                     root = andItr.build();
                 }
             } else {
