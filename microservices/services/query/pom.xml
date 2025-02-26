@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>gov.nsa.datawave.microservice</groupId>
+        <artifactId>datawave-microservice-parent</artifactId>
+        <version>4.0.0</version>
+        <relativePath>../../microservice-parent/pom.xml</relativePath>
+    </parent>
+    <artifactId>query-service-parent</artifactId>
+    <version>1.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <url>https://github.com/NationalSecurityAgency/datawave-query-service</url>
+    <modules>
+        <module>api</module>
+    </modules>
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-query-service.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-query-service.git</developerConnection>
+        <url>https://github.com/NationalSecurityAgency/datawave-query-service</url>
+    </scm>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
+    <profiles>
+        <profile>
+            <id>services</id>
+            <activation>
+                <property>
+                    <name>!onlyServiceApis</name>
+                </property>
+            </activation>
+            <modules>
+                <module>service</module>
+            </modules>
+        </profile>
+    </profiles>
+</project>

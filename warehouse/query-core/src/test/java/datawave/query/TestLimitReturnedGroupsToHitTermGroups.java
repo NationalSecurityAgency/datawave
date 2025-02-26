@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,14 +47,14 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CommonalityTokenTestDataIngest;
+import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
- * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
+ * Tests the 'limit.fields' feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
  * the field that hit on the query. This test uses a dot delimited token in the event field name as a 'commonality token'. This test also validates that no
  * unexpected fields are returned.
- *
  */
 public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
@@ -77,9 +76,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         }
 
         @Override
-        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                        throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+        protected void runTestQuery(Collection<String> goodResults) throws Exception {
+            super.runTestQuery(connector, goodResults);
         }
     }
 
@@ -101,9 +99,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         }
 
         @Override
-        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                        throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+        protected void runTestQuery(Collection<String> goodResults) throws Exception {
+            super.runTestQuery(connector, goodResults);
         }
     }
 
@@ -117,9 +114,17 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
 
-    protected KryoDocumentDeserializer deserializer;
+    protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+
+    private final Map<String,String> extraParameters = new HashMap<>();
+
+    private String query;
+
+    private final Set<Document> results = new HashSet<>();
+
+    private final HitTermAssertions hitTermAssertions = new HitTermAssertions();
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -134,32 +139,45 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                                         "beans.xml");
     }
 
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-
     @Before
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         log.setLevel(Level.DEBUG);
         logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
+
+        query = null;
+        extraParameters.clear();
+        results.clear();
+        hitTermAssertions.resetState();
+
+        // every query requires hit list arithmetic, so set that once here
+        withParameter("hit.list", "true");
     }
 
-    protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                    throws Exception;
+    @AfterClass
+    public static void teardown() {
+        TypeRegistry.reset();
+    }
 
-    protected void runTestQuery(AccumuloClient connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Collection<String> goodResults) throws Exception {
+    protected void withQuery(String query) {
+        this.query = query;
+    }
+
+    protected void withParameter(String key, String value) {
+        extraParameters.put(key, value);
+    }
+
+    protected abstract void runTestQuery(Collection<String> goodResults) throws Exception;
+
+    protected void runTestQuery(AccumuloClient connector, Collection<String> goodResults) throws Exception {
 
         QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
+        settings.setBeginDate(format.parse("20091231"));
+        settings.setEndDate(format.parse("20150101"));
         settings.setPagesize(Integer.MAX_VALUE);
         settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(queryString);
-        settings.setParameters(extraParms);
+        settings.setQuery(query);
+        settings.setParameters(extraParameters);
         settings.setId(UUID.randomUUID());
 
         log.debug("query: " + settings.getQuery());
@@ -168,13 +186,26 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
 
-        Set<Document> docs = new HashSet<>();
-        Set<String> unexpectedFields = new HashSet<>();
+        // execute the query and aggregate documents
+        driveQuery();
+        assertResults(goodResults);
+        assertHitTerms();
+    }
+
+    protected void driveQuery() {
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             log.trace(entry.getKey() + " => " + d);
-            docs.add(d);
-            Map<String,Attribute<? extends Comparable<?>>> dictionary = d.getDictionary();
+            results.add(d);
+        }
+    }
+
+    protected void assertResults(Collection<String> goodResults) {
+        Set<Document> docs = new HashSet<>();
+        Set<String> unexpectedFields = new HashSet<>();
+        for (Document result : results) {
+            docs.add(result);
+            Map<String,Attribute<? extends Comparable<?>>> dictionary = result.getDictionary();
 
             log.debug("dictionary:" + dictionary);
             for (Entry<String,Attribute<? extends Comparable<?>>> dictionaryEntry : dictionary.entrySet()) {
@@ -187,7 +218,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
                         String toFind = dictionaryEntry.getKey() + ":" + attr;
                         boolean found = goodResults.remove(toFind);
                         if (found)
@@ -207,40 +238,54 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         unexpectedFields.add(toFind);
                     }
                 }
-
             }
         }
 
         Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
-        Assert.assertTrue("unexpected fields returned: " + unexpectedFields.toString(), unexpectedFields.isEmpty());
-        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
+        Assert.assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
+        Assert.assertFalse("No docs were returned!", docs.isEmpty());
+    }
+
+    protected void assertHitTerms() {
+        boolean valid = hitTermAssertions.assertHitTerms(results);
+        Assert.assertTrue(valid);
+    }
+
+    protected void assertFieldExists(String field) {
+        for (Document result : results) {
+            Assert.assertTrue(result.containsKey(field));
+        }
+    }
+
+    protected void assertFieldDoesNotExist(String field) {
+        for (Document result : results) {
+            Assert.assertFalse(result.containsKey(field));
+        }
     }
 
     @Test
     public void testOneGroup() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
         // group 13
-        String queryString = "CANINE == 'shepherd'";
+        withQuery("CANINE == 'shepherd'");
+        hitTermAssertions.withRequiredAllOf("CANINE.PET.13:shepherd");
 
         // definitely should NOT include group 3
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
                         "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testMultipleGroups() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "_ANYFIELD_=-1");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "_ANYFIELD_=-1");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+        hitTermAssertions.expectNoHitTerms();
 
         // definitely should NOT include group 2 or 3
         //@formatter:off
@@ -252,73 +297,76 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                 "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
         //@formatter:on
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
+        assertFieldExists("HIT_TERM_ORIGINAL_COUNT"); // HIT_TERM got limited
+        assertFieldDoesNotExist("HIT_TERM");
     }
 
     @Test
     public void testMultipleGroupsWithRegexAndReturnFields() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=-1");
-        extraParameters.put("return.fields", "CANINE");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=-1");
+        withParameter("return.fields", "CANINE");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+
+        hitTermAssertions.withOptionalAllOf("CANINE.PET.50:doberman");
+        hitTermAssertions.withOptionalAllOf("CANINE.PET.1:basset", "CANINE.PET.13:shepherd", "CANINE.PET.0:beagle", "CANINE.PET.12:bernese",
+                        "CANINE.WILD.1:coyote");
 
         // definitely should NOT include group 2 or 3
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "CANINE.PET.1:basset", "CANINE.PET.12:bernese", "CANINE.PET.13:shepherd",
                         "CANINE.WILD.1:coyote", "CANINE.PET.50:doberman");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testGroupWithRegexAndMatchesInGroup() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
-        extraParameters.put("return.fields", "CANINE,BIRD");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=-1,BIRD=-1");
+        withParameter("return.fields", "CANINE,BIRD");
 
-        String queryString = "CANINE =~ '.*a.*' AND grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+        withQuery("CANINE =~ '.*a.*' AND grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')");
+        hitTermAssertions.withRequiredAllOf("BIRD.WILD.2:crow", "CANINE.PET.1:basset", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
 
         // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
         Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
         // added because sorting query causes 'basset' to evaluate first
         goodResults.addAll(Sets.newHashSet("CANINE.PET.1:basset", "BIRD.PET.1:canary"));
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testGroupWithExpandedRegexNaturalOrderAndMatchesInGroup() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
-        extraParameters.put("return.fields", "CANINE,BIRD");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=-1,BIRD=-1");
+        withParameter("return.fields", "CANINE,BIRD");
 
         // this is the same query as above with terms in natural order after regex expansion
-        String queryString = "(CANINE == 'chihuahua' || CANINE == 'beagle' || CANINE == 'dachshund' || CANINE == 'basset') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+        withQuery("(CANINE == 'chihuahua' || CANINE == 'beagle' || CANINE == 'dachshund' || CANINE == 'basset') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')");
+
+        hitTermAssertions.withRequiredAllOf("BIRD.WILD.2:crow", "CANINE.PET.1:basset", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
 
         // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
         Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
         // added because sorting query causes 'basset' to evaluate first
         goodResults.addAll(Sets.newHashSet("CANINE.PET.1:basset", "BIRD.PET.1:canary"));
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testGroupWithExpandedRegexAlphabeticalOrderAndMatchesInGroup() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
-        extraParameters.put("return.fields", "CANINE,BIRD");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=-1,BIRD=-1");
+        withParameter("return.fields", "CANINE,BIRD");
 
         // this is the same query as above but union terms are ordered alphabetically
-        String queryString = "(CANINE == 'basset' || CANINE == 'beagle' || CANINE == 'chihuahua' || CANINE == 'dachshund') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+        withQuery("(CANINE == 'basset' || CANINE == 'beagle' || CANINE == 'chihuahua' || CANINE == 'dachshund') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')");
+
+        hitTermAssertions.withRequiredAllOf("BIRD.WILD.2:crow", "CANINE.PET.1:basset", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
 
         // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
         Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
@@ -328,19 +376,19 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         // when 'basset' sorts first it is from group 1, so LimitFields reduces the document fields to groups 1 and 2
         goodResults.addAll(Sets.newHashSet("CANINE.PET.1:basset", "BIRD.PET.1:canary"));
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testGroupWithExpandedRegexAlphabeticalOrderAndMatchesInGroupPartTwo() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
-        extraParameters.put("return.fields", "CANINE,BIRD");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=-1,BIRD=-1");
+        withParameter("return.fields", "CANINE,BIRD");
 
         // this is the same query as above but 'beagle' is sorted first on purpose to demonstrate group 0 influencing return fields
-        String queryString = "(CANINE == 'beagle' || CANINE == 'basset' || CANINE == 'chihuahua' || CANINE == 'dachshund') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+        withQuery("(CANINE == 'beagle' || CANINE == 'basset' || CANINE == 'chihuahua' || CANINE == 'dachshund') && grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')");
+
+        hitTermAssertions.withRequiredAllOf("BIRD.WILD.2:crow", "CANINE.PET.0:beagle", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
 
         // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
         Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
@@ -351,35 +399,37 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         // disable just for this test to prove group 0 can be returned
         logic.setSortQueryPreIndexWithFieldCounts(false);
         logic.setSortQueryPreIndexWithImpliedCounts(false);
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
         logic.setSortQueryPreIndexWithFieldCounts(true);
         logic.setSortQueryPreIndexWithImpliedCounts(true);
     }
 
     @Test
     public void testMultipleIncludeGroupingFalse() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=-1,BIRD=2");
-        extraParameters.put("return.fields", "CANINE,BIRD");
+        withParameter("include.grouping.context", "false");
+        withParameter("limit.fields", "CANINE=-1,BIRD=2");
+        withParameter("return.fields", "CANINE,BIRD");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+
+        hitTermAssertions.withOptionalAllOf("CANINE:coyote", "CANINE:shepherd", "CANINE:basset", "CANINE:bernese", "CANINE:beagle");
+        hitTermAssertions.withOptionalAllOf("CANINE:doberman");
 
         Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "BIRD:canary", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd",
                         "CANINE:bernese", "CANINE:doberman");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testLimiting() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=1,BIRD=1,DOG=1");
+        withParameter("include.grouping.context", "false");
+        withParameter("limit.fields", "CANINE=1,BIRD=1,DOG=1");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+
+        hitTermAssertions.withOptionalAllOf("CANINE:coyote", "CANINE:shepherd", "CANINE:basset", "CANINE:bernese", "CANINE:beagle");
+        hitTermAssertions.withOptionalAllOf("CANINE:doberman");
 
         // Only CANINE hits, 1 bird, and all fish, cats, dog, and reptile
         Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese",
@@ -388,17 +438,18 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
                         "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote", "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testLimitingToZero() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=0,BIRD=0,DOG=0");
+        withParameter("include.grouping.context", "false");
+        withParameter("limit.fields", "CANINE=0,BIRD=0,DOG=0");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+
+        hitTermAssertions.withOptionalAllOf("CANINE:coyote", "CANINE:shepherd", "CANINE:basset", "CANINE:bernese", "CANINE:beagle");
+        hitTermAssertions.withOptionalAllOf("CANINE:doberman");
 
         // Only CANINE hits, 0 birds, and all fish and cats and reptile. The dog was not a hit.
         Set<String> goodResults = Sets.newHashSet("CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese", "FISH:tuna",
@@ -407,17 +458,19 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
                         "FISH:guppy", "FISH:salmon", "REPTILE:snake", "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testLimitingWithGrouping() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=1,BIRD=1,DOG=1");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=1,BIRD=1,DOG=1");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+
+        hitTermAssertions.withOptionalAllOf("CANINE.PET.1:basset", "CANINE.PET.13:shepherd", "CANINE.PET.0:beagle", "CANINE.PET.12:bernese",
+                        "CANINE.WILD.1:coyote");
+        hitTermAssertions.withOptionalAllOf("CANINE.PET.50:doberman");
 
         // CANINE hits along with the associated birds, all fish and cats and related dog and reptile
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "BIRD.PET.0:parakeet", "CANINE.PET.1:basset", "BIRD.PET.1:canary",
@@ -429,17 +482,18 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5",
                         "SIZE.CANINE.WILD.1:90,26.5", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 
     @Test
     public void testLimitingToZeroWithGrouping() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "CANINE=0,BIRD=0,DOG=0");
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "CANINE=0,BIRD=0,DOG=0");
 
-        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        withQuery("filter:getAllMatches(CANINE,'.*e.*')");
+        hitTermAssertions.withOptionalAllOf("CANINE.PET.1:basset", "CANINE.PET.13:shepherd", "CANINE.PET.0:beagle", "CANINE.PET.12:bernese",
+                        "CANINE.WILD.1:coyote");
+        hitTermAssertions.withOptionalAllOf("CANINE.PET.50:doberman");
 
         // CANINE hits along with the associated birds, all fish and cats and related dog and reptile
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "BIRD.PET.0:parakeet", "CANINE.PET.1:basset", "BIRD.PET.1:canary",
@@ -451,6 +505,6 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5",
                         "SIZE.CANINE.WILD.1:90,26.5", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(goodResults);
     }
 }

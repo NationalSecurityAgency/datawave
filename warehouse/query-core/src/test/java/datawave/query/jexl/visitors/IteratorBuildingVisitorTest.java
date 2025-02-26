@@ -137,6 +137,15 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
+    public void testIteratorForIndexHole() throws ParseException {
+        String query = "((_Hole_ = true) && (FIELD == 'value'))";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+    }
+
+    @Test
     public void buildLiteralRange_trailingWildcardTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
@@ -976,7 +985,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class SourceFactory implements datawave.query.iterator.SourceFactory<Key,Value> {
-        private Iterator<Map.Entry<Key,Value>> iterator;
+        private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
             this.iterator = iterator;
@@ -984,6 +993,11 @@ public class IteratorBuildingVisitorTest {
 
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
+            return new SortedListKeyValueIterator(iterator);
+        }
+
+        @Override
+        public SortedKeyValueIterator<Key,Value> getSourceDeepCopy(String stage) {
             return new SortedListKeyValueIterator(iterator);
         }
     }

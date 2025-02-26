@@ -1,6 +1,5 @@
 package datawave.query.rules;
 
-import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

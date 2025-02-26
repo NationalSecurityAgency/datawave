@@ -3,7 +3,6 @@ package datawave.query.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.AbstractMap;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
@@ -14,7 +13,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -37,7 +35,6 @@ import datawave.ingest.mapreduce.handler.shard.content.OffsetQueue;
 import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
 
@@ -114,6 +111,7 @@ public class WiseGuysIngest {
                             emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NOME.4" + "\u0000" + "LUCA", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NOME.5" + "\u0000" + "VINCENT", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "HOLE.0" + "\u0000" + "FOO", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.0" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.1" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.2" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
@@ -915,9 +913,23 @@ public class WiseGuysIngest {
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210103"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("HOLE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20121231"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20130101"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20130102"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210103"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(30L)));
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + "20210104"), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(30L)));
+
+            // just indexed 20121231
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), 1356988400000L, emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("UUID");
@@ -1098,7 +1110,7 @@ public class WiseGuysIngest {
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        builder.setCOUNT(50); // better not be zero!!!!
+        builder.setCOUNT(0); // Setting to zero to ensure we still find these hits in case this happens
         builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());
     }

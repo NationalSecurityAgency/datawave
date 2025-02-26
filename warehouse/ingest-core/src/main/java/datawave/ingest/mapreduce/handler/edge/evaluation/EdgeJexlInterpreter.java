@@ -1,9 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
 import org.apache.commons.jexl3.JexlContext;
-import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlException;
-import org.apache.commons.jexl3.JexlOperator;
 import org.apache.commons.jexl3.JexlOptions;
 import org.apache.commons.jexl3.internal.Frame;
 import org.apache.commons.jexl3.internal.Interpreter;
