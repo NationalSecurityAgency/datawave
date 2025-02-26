@@ -56,7 +56,7 @@ jobs:
           git config --global user.email "datawave@github.com"
           git fetch origin ${{ steps.extract_branch.outputs.branch }}
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
-          git merge origin/${{ steps.extract_branch.outputs.branch }} --no-edit ||
+          git merge ${{ steps.extract_branch.outputs.branch }} --no-edit ||
           git commit -am "GitHub Actions: Fix Formatting"
           git push origin ${{ steps.extract_branch.outputs.branch }}
         else
