@@ -55,7 +55,7 @@ admin.enableServer=false"
 DW_ACCUMULO_VERSION="2.1.4-5657bc8cf22"
 DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/${DW_ACCUMULO_VERSION}/accumulo-${DW_ACCUMULO_VERSION}-bin.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-9002a0475fdb38541e78048709006926655c726e93e823b84e2dbf5b53fd539a5342e7266447d23db0e5528e27a19961b115b180c94f2272ff124c7e5c8304e7}"
+DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-5b9e98b368cfb44b5547e367714b93129bc013c103f7c48204ba1d9d568a32b51ea60e8fb76f9ca513e71cf39d078443cd412405e3e782b0edd44207ec283605}"
 # shellcheck disable=SC2034
 DW_ACCUMULO_DIST="$( { downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
