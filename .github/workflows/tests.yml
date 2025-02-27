@@ -59,7 +59,7 @@ jobs:
 
         if git ls-remote --heads origin ${{ steps.extract_branch.outputs.branch }} | grep -q ${{ steps.extract_branch.outputs.branch }}; then
           git checkout ${{ steps.extract_branch.outputs.branch }}
-          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase --allow-unrelated-histories
+          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase
         else
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
         fi
