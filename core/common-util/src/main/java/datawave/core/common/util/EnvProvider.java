@@ -22,10 +22,10 @@ public class EnvProvider {
      */
     public static String resolve(String property) {
         if (property != null && property.startsWith(ENV_PREFIX)) {
-                String target = property.substring(4);
+            String target = property.substring(4);
             if (StringUtils.isNotBlank(target)) {
 
-                        String value = System.getenv(target);
+                String value = System.getenv(target);
                 if (StringUtils.isNotBlank(value)) {
                     log.trace("env target resolved");
                     return value;
@@ -35,6 +35,6 @@ public class EnvProvider {
                 }
             }
         }
-            return property;
+        return property;
     }
 }
