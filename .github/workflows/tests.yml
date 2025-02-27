@@ -52,15 +52,24 @@ jobs:
     - name: Commit Changes
       run: |
         if [ "$diffs_found" = true ]; then
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "datawave@github.com"
-          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "datawave@github.com"
+        
+        git fetch origin
+
+        if git ls-remote --heads origin ${{ steps.extract_branch.outputs.branch }} | grep -q ${{ steps.extract_branch.outputs.branch }}; then
+          git checkout ${{ steps.extract_branch.outputs.branch }}
+          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase --allow-unrelated-histories
+        else
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
-          git merge FETCH_HEAD --no-edit ||
+        fi
+
+        if git diff --quiet; then
+          echo "No changes to commit."
+        else
           git commit -am "GitHub Actions: Fix Formatting"
           git push origin ${{ steps.extract_branch.outputs.branch }}
-        else
-          echo "Nothing to do"
+        fi
         fi
         
   # Build the code and run the unit/integration tests.
