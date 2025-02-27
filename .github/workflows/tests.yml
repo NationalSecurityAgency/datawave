@@ -26,6 +26,7 @@ jobs:
   # they are committed back to the branch
   check-code-formatting:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'merge_group' }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -45,7 +46,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
@@ -53,8 +54,9 @@ jobs:
         if [ "$diffs_found" = true ]; then
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
-          git pull origin ${{ steps.extract_branch.outputs.branch }} --rebase --autostash
-          git checkout -b ${{ steps.extract_branch.outputs.branch }}
+          git fetch origin
+          git checkout ${{ steps.extract_branch.outputs.branch }}
+          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase
           git commit -am "GitHub Actions: Fix Formatting"
           git push origin ${{ steps.extract_branch.outputs.branch }}
         else
