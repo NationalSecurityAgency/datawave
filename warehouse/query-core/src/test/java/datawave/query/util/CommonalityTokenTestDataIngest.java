@@ -3,7 +3,6 @@ package datawave.query.util;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -19,6 +18,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.CompositeTimestamp;

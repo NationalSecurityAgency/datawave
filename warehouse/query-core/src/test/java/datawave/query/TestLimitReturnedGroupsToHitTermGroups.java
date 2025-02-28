@@ -72,7 +72,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
             CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            //set to DEBUG if you want table output
+            // set to DEBUG if you want table output
             Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
@@ -105,7 +105,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
             CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            //set to DEBUG if you want table output
+            // set to DEBUG if you want table output
             Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
