@@ -30,6 +30,7 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.logic.DatawaveRoleManager;
@@ -392,7 +393,7 @@ public class CompositeQueryLogicTest {
         public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
-
+        
         @Override
         public boolean isLongRunningQuery() {
             return true;
@@ -682,6 +683,47 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
+    }
+
+    @Test
+    public void testInitializeAllFailQueryExceptionCause() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new RuntimeException(new QueryException("query initialize failed"));
+            }
+        });
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setAllMustInitialize(true);
+        c.setQueryLogics(logics);
+
+        c.setPrincipal(principal);
+        try {
+            c.initialize(null, settings, Collections.singleton(auths));
+
+            c.getTransformer(settings);
+        } catch (CompositeLogicException e) {
+            Assert.assertEquals("query initialize failed", e.getCause().getCause().getMessage());
+        }
     }
 
     @Test(expected = RuntimeException.class)
@@ -1139,8 +1181,8 @@ public class CompositeQueryLogicTest {
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional parameter
-        logic1.setMaxResults(1);
-        logic2.setMaxResults(4);
+        logic1.setMaxResults(2); // it can return 4, so this will cap it at 3 (1 more than max)
+        logic2.setMaxResults(1); // it cat return 4, so this will cap it at 2 (1 more than max)
         /**
          * RunningQuery.setupConnection()
          */
@@ -1427,20 +1469,20 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic2 = new TestQueryLogic();
         logics.put("TestQueryLogic", logic1);
         logics.put("TestQueryLogic2", logic2);
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
-
+        
         Assert.assertFalse(c.isLongRunningQuery());
-
+        
         TestQueryLogic2 logic3 = new TestQueryLogic2();
         logics.put("TestQueryLogic3", logic3);
-
+        
         c.setQueryLogics(logics);
-
+        
         Assert.assertTrue(c.isLongRunningQuery());
     }
-
+    
     @Test
     public void testAuthorizationsUpdate() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();

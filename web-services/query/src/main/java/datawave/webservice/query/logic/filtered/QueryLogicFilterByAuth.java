@@ -49,4 +49,9 @@ public class QueryLogicFilterByAuth extends ProxiedAuthorizationsPredicate imple
     public void setNegated(boolean negated) {
         this.negated = negated;
     }
+
+    @Override
+    public String toString() {
+        return '(' + super.toString() + " == " + !negated + ')';
+    }
 }

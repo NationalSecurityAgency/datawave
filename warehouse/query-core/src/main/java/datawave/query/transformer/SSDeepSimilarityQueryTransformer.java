@@ -22,7 +22,9 @@ import datawave.query.util.ssdeep.IntegerEncoding;
 import datawave.query.util.ssdeep.NGramScoreTuple;
 import datawave.query.util.ssdeep.NGramTuple;
 import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.query.util.ssdeep.SSDeepHashScorer;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
@@ -32,6 +34,8 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
 public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<Map.Entry<Key,Value>,Map.Entry<SSDeepHash,NGramTuple>> {
+
+    public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTransformer.class);
 
@@ -58,11 +62,17 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
     /** Tracks which ssdeep hashes each of the ngrams originated from */
     final Multimap<NGramTuple,SSDeepHash> queryMap;
 
+    /** The maximum number of repeated characters allowed in a ssdeep hash - used to perform normalization for scoring */
+    final int maxRepeatedCharacters;
+
+    final int minScoreThreshold;
+
     public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.queryMap = config.getQueryMap();
+        this.maxRepeatedCharacters = config.getMaxRepeatedCharacters();
         this.responseObjectFactory = responseObjectFactory;
 
         this.bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
@@ -70,6 +80,28 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
         this.chunkStart = bucketEncoder.getLength();
         this.chunkEnd = chunkStart + chunkSizeEncoding.getLength();
+
+        this.minScoreThreshold = readOptionalMinScoreThreshold(query);
+    }
+
+    private int readOptionalMinScoreThreshold(Query query) {
+        QueryImpl.Parameter minScoreParameter = query.findParameter(MIN_SSDEEP_SCORE_PARAMETER);
+        if (minScoreParameter != null) {
+            String minScoreString = minScoreParameter.getParameterValue();
+            try {
+                int minScore = Integer.parseInt(minScoreString);
+                if (minScore < 0 || minScore > 100) {
+                    log.warn("Ssdeep score threshold must be between 0-100, but was " + minScoreString + ", ignoring " + MIN_SSDEEP_SCORE_PARAMETER
+                                    + " parameter.");
+                } else {
+                    return minScore;
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Number format exception encountered when parsing score threshold of '" + minScoreString + "' ignoring " + MIN_SSDEEP_SCORE_PARAMETER
+                                + " parameter.");
+            }
+        }
+        return 0;
     }
 
     @Override
@@ -112,12 +144,12 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
             f = responseObjectFactory.getField();
             f.setName("MATCH_SCORE");
-            f.setValue(String.valueOf(e.getValue().getScore()));
+            f.setValue(String.valueOf(e.getValue().getBaseScore()));
             fields.add(f);
 
             f = responseObjectFactory.getField();
-            f.setName("MATCH_RANK");
-            f.setValue(String.valueOf(rank));
+            f.setName("WEIGHTED_SCORE");
+            f.setValue(String.valueOf(e.getValue().getWeightedScore()));
             fields.add(f);
 
             event.setFields(fields);
@@ -168,28 +200,40 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
      * @return a map of ssdeep hashes to score tuples.
      */
     protected Multimap<SSDeepHash,NGramScoreTuple> scoreQuery(Multimap<NGramTuple,SSDeepHash> queryMap, Multimap<SSDeepHash,NGramTuple> chunkPostings) {
-        // score based on chunk match count
+        // The base match score based on the number of matching ngrams shared between the query hash and the matched hash
+        // This map tracks that: the query hash is the key, matching hash and score is the value.
         final Map<SSDeepHash,Map<SSDeepHash,Integer>> scoredHashMatches = new TreeMap<>();
 
         // align the chunk postings to their original query ssdeep hash and count the number of matches
-        // for each chunk that corresponds to that original ssdeep hash
-        chunkPostings.asMap().forEach((hash, cpc) -> {
-            log.trace("Posting " + hash + " had " + cpc.size() + "chunk tuples");
-            cpc.forEach(ct -> {
-                Collection<SSDeepHash> ssdhc = queryMap.get(ct);
-                log.trace("Chunk tuple " + ct + " had " + ssdhc.size() + "related query hashes");
-                ssdhc.forEach(ssdh -> {
-                    final Map<SSDeepHash,Integer> chunkMatchCount = scoredHashMatches.computeIfAbsent(ssdh, s -> new TreeMap<>());
-                    final Integer score = chunkMatchCount.computeIfAbsent(hash, m -> 0);
-                    log.trace("Incrementing score for " + ssdh + "," + hash + " by " + cpc.size());
-                    chunkMatchCount.put(hash, score + 1);
+        // for each chunk that corresponds to that original ssdeep hash. The number of ngrams that the query and
+        // target have in common thus become the base score.
+        chunkPostings.asMap().forEach((matchingHash, matchingNgrams) -> {
+            log.trace("Posting " + matchingHash + " had " + matchingNgrams.size() + " matching ngrams");
+            matchingNgrams.forEach(matchingNgram -> { // for each matching hash ngram
+                Collection<SSDeepHash> queryHashes = queryMap.get(matchingNgram); // find the queries that included that ngram
+                log.trace("Ngram " + matchingNgram + " had " + queryHashes.size() + " related query hashes");
+                queryHashes.forEach(queryHash -> { // increment the score for each query the ngram appeared in.
+                    final Map<SSDeepHash,Integer> chunkMatchCount = scoredHashMatches.computeIfAbsent(queryHash, s -> new TreeMap<>());
+                    final Integer score = chunkMatchCount.computeIfAbsent(matchingHash, m -> 0);
+                    log.trace("Incrementing score for " + queryHash + "," + matchingHash + " by 1");
+                    chunkMatchCount.put(matchingHash, score + 1);
                 });
             });
         });
 
-        // convert the counted chunks into tuples.
+        final SSDeepHashScorer scorer = new SSDeepHashScorer(maxRepeatedCharacters);
+
+        // convert the counted chunks into score tuples.
         final Multimap<SSDeepHash,NGramScoreTuple> scoreTuples = TreeMultimap.create();
-        scoredHashMatches.forEach((sdh, cmc) -> cmc.forEach((k, v) -> scoreTuples.put(sdh, new NGramScoreTuple(k, v))));
+        scoredHashMatches.forEach((queryHash, scoredMatches) -> {
+            scoredMatches.forEach((matchingHash, baseScore) -> {
+                int weightedScore = scorer.apply(queryHash, matchingHash);
+                // keep the scored tuple if either the minScoreThreshold is not set or the weightedScore exceeds the set threshold.
+                if (minScoreThreshold <= 0 || weightedScore > minScoreThreshold) {
+                    scoreTuples.put(queryHash, new NGramScoreTuple(matchingHash, baseScore, weightedScore));
+                }
+            });
+        });
         return scoreTuples;
     }
 

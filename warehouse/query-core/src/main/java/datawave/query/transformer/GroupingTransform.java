@@ -146,7 +146,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.debug("setting query execution page start time to {}", queryExecutionForPageStartTime);
         super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
     }
-
+    
     @Override
     public Entry<Key,Document> flush() {
         Document document = null;

@@ -1,6 +1,7 @@
 package datawave.webservice.query.cache;
 
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.logic.QueryLogic;
@@ -125,6 +126,7 @@ public class QueryCacheBeanTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(q)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        logic.preInitialize(q, AuthorizationsUtil.buildAuthorizations(null));
         expect(logic.getUserOperations()).andReturn(null);
         
         PowerMock.replayAll();
