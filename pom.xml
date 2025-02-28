@@ -111,7 +111,6 @@
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
-        <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
@@ -127,7 +126,6 @@
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
-        <version.surefire.plugin>3.5.2</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
@@ -142,6 +140,34 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j2}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.junit.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${version.springframework}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>wildfly-javaee8-with-tools</artifactId>
+                <version>${version.wildfly}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
@@ -1118,34 +1144,6 @@
                 <scope>runtime</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j2}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${version.junit.bom}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-framework-bom</artifactId>
-                <version>${version.springframework}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-javaee8-with-tools</artifactId>
-                <version>${version.wildfly}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-common-test</artifactId>
                 <version>${project.version}</version>
@@ -1292,11 +1290,12 @@
                 <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
-                    <version>2.10.0</version>
+                    <version>4.0.0</version>
                     <configuration>
                         <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
                         <createBackupFile>false</createBackupFile>
                         <lineSeparator>\n</lineSeparator>
+                        <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
                         <expandEmptyElements>false</expandEmptyElements>
                         <nrOfIndentSpace>4</nrOfIndentSpace>
                         <sortDependencies>scope,groupId,artifactId</sortDependencies>
@@ -1316,7 +1315,7 @@
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>3.1.11</version>
+                    <version>4.8.6.6</version>
                     <configuration>
                         <effort>Max</effort>
                         <threshold>High</threshold>
@@ -1385,7 +1384,7 @@
                 <plugin>
                     <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
-                    <version>2.18.0</version>
+                    <version>2.23.0</version>
                     <configuration>
                         <removeTrailingWhitespace>true</removeTrailingWhitespace>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
@@ -1412,18 +1411,18 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>1.8</version>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>3.7.1</version>
                 </plugin>
                 <plugin>
                     <!-- This was added to ensure project only uses public API -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.6.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                         <failsOnError>true</failsOnError>
@@ -1432,45 +1431,6 @@
                         <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>com.puppycrawl.tools</groupId>
-                            <artifactId>checkstyle</artifactId>
-                            <version>8.29</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.4</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>log4j</groupId>
-                                    <artifactId>log4j</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.4</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>log4j</groupId>
-                                    <artifactId>log4j</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
                             <id>check-style</id>
@@ -1484,7 +1444,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.4.0</version>
                     <configuration>
                         <filesets>
                             <fileset>
@@ -1502,7 +1462,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.13.0</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>
@@ -1520,41 +1480,24 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.1</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.4</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>log4j</groupId>
-                                    <artifactId>log4j</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                        <!-- Workaround for error: Execution default-cli of goal org.apache.maven.plugins:maven-dependency-plugin:3.1.1:analyze failed: Unsupported class file major version 55 -->
-                        <dependency>
-                            <groupId>org.apache.maven.shared</groupId>
-                            <artifactId>maven-dependency-analyzer</artifactId>
-                            <version>1.11.1</version>
-                        </dependency>
-                    </dependencies>
+                    <version>3.8.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-ear-plugin</artifactId>
-                    <version>2.10</version>
+                    <version>3.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.5.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>de.skuzzle.enforcer</groupId>
+                            <artifactId>restrict-imports-enforcer-rule</artifactId>
+                            <version>2.6.0</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>enforce-maven</id>
@@ -1564,7 +1507,7 @@
                             <configuration>
                                 <rules>
                                     <requireMavenVersion>
-                                        <version>3.0.5</version>
+                                        <version>3.6.3</version>
                                     </requireMavenVersion>
                                 </rules>
                             </configuration>
@@ -1592,7 +1535,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${version.surefire.plugin}</version>
+                    <version>3.5.2</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
@@ -1637,11 +1580,11 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>${version.maven-install-plugin}</version>
+                    <version>3.1.3</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.1.2</version>
+                    <version>3.4.2</version>
                     <configuration>
                         <archive>
                             <manifest>
@@ -1657,7 +1600,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>3.11.2</version>
+                    <configuration>
+                        <doclint>none</doclint>
+                    </configuration>
                     <dependencies>
                         <dependency>
                             <groupId>ch.qos.reload4j</groupId>
@@ -1680,17 +1626,17 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jxr-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.12.0</version>
+                    <version>3.26.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>3.3.1</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
                         <escapeString>\</escapeString>
@@ -1699,19 +1645,19 @@
                         <dependency>
                             <groupId>org.apache.maven.shared</groupId>
                             <artifactId>maven-filtering</artifactId>
-                            <version>1.3</version>
+                            <version>3.4.0</version>
                         </dependency>
                     </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.3.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${version.surefire.plugin}</version>
+                    <version>3.5.2</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
@@ -1728,17 +1674,22 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
-                    <version>3.2.3</version>
+                    <version>3.4.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.xmlbeans</groupId>
+                    <artifactId>xmlbeans</artifactId>
+                    <version>5.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>3.3.0</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>buildnumber-maven-plugin</artifactId>
-                    <version>1.4</version>
+                    <version>3.2.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1748,7 +1699,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
+                    <version>3.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1758,12 +1709,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>rpm-maven-plugin</artifactId>
-                    <version>2.1.5</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>xmlbeans-maven-plugin</artifactId>
-                    <version>2.3.3-threadsafe</version>
+                    <version>2.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.mortbay.jetty</groupId>
@@ -1773,7 +1719,7 @@
                 <plugin>
                     <groupId>pl.project13.maven</groupId>
                     <artifactId>git-commit-id-plugin</artifactId>
-                    <version>2.2.3</version>
+                    <version>4.9.10</version>
                     <configuration>
                         <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
                         <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
@@ -1807,7 +1753,7 @@
             <plugin>
                 <groupId>org.commonjava.maven.plugins</groupId>
                 <artifactId>directory-maven-plugin</artifactId>
-                <version>0.3.1</version>
+                <version>1.0</version>
                 <executions>
                     <execution>
                         <id>directories</id>
@@ -1867,14 +1813,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.3.0</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>de.skuzzle.enforcer</groupId>
-                                <artifactId>restrict-imports-enforcer-rule</artifactId>
-                                <version>2.3.1</version>
-                            </dependency>
-                        </dependencies>
                         <executions>
                             <execution>
                                 <id>prevent-star-imports</id>
@@ -1931,24 +1869,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>ch.qos.reload4j</groupId>
-                                <artifactId>reload4j</artifactId>
-                                <version>1.2.22</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.apache.maven.doxia</groupId>
-                                <artifactId>doxia-site-renderer</artifactId>
-                                <version>1.7.4</version>
-                                <exclusions>
-                                    <exclusion>
-                                        <groupId>log4j</groupId>
-                                        <artifactId>log4j</artifactId>
-                                    </exclusion>
-                                </exclusions>
-                            </dependency>
-                        </dependencies>
                         <executions>
                             <!-- build javadoc jars per module for publishing to the repo -->
                             <execution>
@@ -2324,7 +2244,6 @@
                     <plugin>
                         <groupId>net.revelc.code</groupId>
                         <artifactId>impsort-maven-plugin</artifactId>
-                        <version>1.9.0</version>
                         <configuration>
                             <groups>java.,javax.,org.,com.</groups>
                             <staticGroups>java,*</staticGroups>
@@ -2352,7 +2271,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.3.0</version>
                         <executions>
                             <execution>
                                 <id>enforce-versions</id>

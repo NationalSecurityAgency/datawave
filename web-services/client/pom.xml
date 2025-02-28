@@ -249,7 +249,7 @@
                             <outputDirectory>lib</outputDirectory>
                             <includeScope>runtime</includeScope>
                             <excludeScope>provided</excludeScope>
-                            <excludeScope>test</excludeScope>
+                            <excludeScope>compile</excludeScope>
                         </configuration>
                     </execution>
                 </executions>

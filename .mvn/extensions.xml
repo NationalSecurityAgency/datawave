@@ -3,12 +3,12 @@
     <extension>
         <groupId>io.takari.maven</groupId>
         <artifactId>takari-smart-builder</artifactId>
-        <version>0.6.1</version>
+        <version>1.0.2</version>
     </extension>
 
     <extension>
         <groupId>org.apache.maven.extensions</groupId>
         <artifactId>maven-build-cache-extension</artifactId>
-        <version>1.0.1</version>
+        <version>1.2.0</version>
     </extension>
 </extensions>
