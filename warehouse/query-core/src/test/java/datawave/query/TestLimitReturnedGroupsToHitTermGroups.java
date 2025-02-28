@@ -15,9 +15,12 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -29,7 +32,10 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
@@ -58,9 +64,15 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  */
 public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    protected static final String PASSWORD = "password";
+    protected static MiniAccumuloCluster mac;
+
     @RunWith(Arquillian.class)
     public static class ShardRange extends TestLimitReturnedGroupsToHitTermGroups {
-        protected static AccumuloClient connector = null;
+        protected static AccumuloClient client = null;
 
         @BeforeClass
         public static void setUp() throws Exception {
@@ -70,13 +82,18 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
             qtth.configureTables(recordWriter);
 
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
+
+            client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
+
+            CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
+
             // set to DEBUG if you want table output
             Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+
         }
 
         @Before
@@ -85,15 +102,20 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             logic.setCollapseUids(true);
         }
 
+        @AfterClass
+        public static void tearDown() throws Exception {
+            mac.stop();
+        }
+
         @Override
         protected void runTestQuery(Collection<String> goodResults) throws Exception {
-            super.runTestQuery(connector, goodResults);
+            super.runTestQuery(client, goodResults);
         }
     }
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends TestLimitReturnedGroupsToHitTermGroups {
-        protected static AccumuloClient connector = null;
+        protected static AccumuloClient client = null;
 
         @BeforeClass
         public static void setUp() throws Exception {
@@ -103,13 +125,15 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
             qtth.configureTables(recordWriter);
 
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
+
+            CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
             // set to DEBUG if you want table output
             Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+
         }
 
         @Before
@@ -118,9 +142,14 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             logic.setCollapseUids(false);
         }
 
+        @AfterClass
+        public static void tearDown() throws Exception {
+            mac.stop();
+        }
+
         @Override
         protected void runTestQuery(Collection<String> goodResults) throws Exception {
-            super.runTestQuery(connector, goodResults);
+            super.runTestQuery(client, goodResults);
         }
     }
 
@@ -296,7 +325,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
                         "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
 
-        // TODO: when executing as a document range no results are found
+        // this exercises the dangling index case, i.e., two shard index entries exist but only one has backing data
         runTestQuery(goodResults);
     }
 
