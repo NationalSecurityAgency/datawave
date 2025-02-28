@@ -5,8 +5,8 @@
 ;
 [subrepo]
 	remote = git@github.com:NationalSecurityAgency/datawave-metadata-utils.git
-	branch = release/version4.0.9
-	commit = 0d0872a05b4df82e5cfd588fa5960b384d944085
-	parent = d748cfa1ab95f1bcc5be0403eae3c10a29c4b2e1
+	branch = main
+	commit = 08198923b4cec7428a51e8fd896736c8012cf883
+	parent = f58e820c20a93c73a5c5373f45270970db495e50
 	method = merge
 	cmdver = 0.4.9

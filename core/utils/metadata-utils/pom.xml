@@ -8,7 +8,7 @@
         <relativePath>../../../microservices/microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>metadata-utils</artifactId>
-    <version>4.0.9.1-SNAPSHOT</version>
+    <version>4.0.11-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-metadata-utils</url>
     <licenses>
         <license>
