@@ -29,7 +29,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -68,9 +67,13 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
             connector = qtth.client;
+            MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
+            qtth.configureTables(recordWriter);
 
             CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
+            //set to DEBUG if you want table output
+            Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -97,9 +100,13 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
             connector = qtth.client;
+            MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
+            qtth.configureTables(recordWriter);
 
             CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
+            //set to DEBUG if you want table output
+            Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -276,7 +283,6 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         }
     }
 
-    @Ignore
     @Test
     public void testOneGroup() throws Exception {
         withParameter("include.grouping.context", "true");
