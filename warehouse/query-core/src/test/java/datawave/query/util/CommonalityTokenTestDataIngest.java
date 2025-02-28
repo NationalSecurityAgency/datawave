@@ -1,22 +1,14 @@
 package datawave.query.util;
 
-import static datawave.util.TableName.METADATA;
-import static datawave.util.TableName.SHARD;
-import static datawave.util.TableName.SHARD_INDEX;
-import static datawave.util.TableName.SHARD_RINDEX;
-
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -50,27 +42,9 @@ public class CommonalityTokenTestDataIngest {
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000L;
+    protected static final long timeStamp = 1356998400000l;
 
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
-
-        TableOperations tops = client.tableOperations();
-        tops.create(SHARD);
-        tops.create(SHARD_INDEX);
-        tops.create(SHARD_RINDEX);
-        tops.create(METADATA);
-
-        IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
-        for (IteratorUtil.IteratorScope scope : scopes) {
-            String name = "table.iterator." + scope.name() + ".UIDAggregator";
-            String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
-
-            client.tableOperations().setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
-            client.tableOperations().setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
-        }
-
-        // grant root user all auths so they can scan the tables
-        client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
 
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
