@@ -32,7 +32,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -82,7 +81,6 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
             qtth.configureTables(recordWriter);
 
-
             client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
 
             CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
@@ -124,7 +122,6 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             connector = qtth.client;
             MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
             qtth.configureTables(recordWriter);
-
 
             CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
