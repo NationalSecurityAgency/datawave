@@ -125,6 +125,7 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.user.UserOperationsBean;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
@@ -143,6 +144,7 @@ import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
+import datawave.webservice.query.cache.limits.QueryLimitStore;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -271,6 +273,12 @@ public class QueryExecutorBean implements QueryExecutor {
 
     @Inject
     private QueryParameters qp;
+
+    @Inject
+    private CredentialsCacheBean credentialsCacheBean;
+
+    @Inject
+    private QueryLimitStore queryLimitStore;
 
     // A few items that are cached by the validateQuery call
     private static class QueryData {
@@ -704,6 +712,14 @@ public class QueryExecutorBean implements QueryExecutor {
             response.setHasResults(true);
 
             AuditType auditType = qd.logic.getAuditType(null);
+            if (qd.logic.isLimitConcurrentQueries()) {
+                // we need to check whether the query should be limited.
+                if (metrics.countRunningQueries() >= queryLimitStore.getQueryLimit(qd.userDn, Integer.MAX_VALUE)) {
+                    QueryException qe = new QueryException("You've exceeded your allocated concurrent queries. Please try again later.", 429);
+                    response.addException(qe);
+                    throw qe;
+                }
+            }
             try {
                 Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));

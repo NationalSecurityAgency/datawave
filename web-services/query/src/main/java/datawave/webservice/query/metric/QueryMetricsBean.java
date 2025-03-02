@@ -402,4 +402,9 @@ public class QueryMetricsBean {
         uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));
         return Response.temporaryRedirect(builder.build()).build();
     }
+
+    public Long countRunningQueries() {
+        return queryHandler.countQueries(getPrincipal(), BaseQueryMetric.Lifecycle.INITIALIZED, BaseQueryMetric.Lifecycle.DEFINED,
+                        BaseQueryMetric.Lifecycle.RESULTS);
+    }
 }

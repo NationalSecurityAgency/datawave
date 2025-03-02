@@ -221,6 +221,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private QueryLogicTransformer transformerInstance = null;
     private CardinalityConfiguration cardinalityConfiguration = null;
     private List<QueryRule> validationRules = null;
+    /**
+     * Determine if concurrent queries are limited;
+     */
+    private boolean limitConcurrentQueries = false;
 
     /**
      * Basic constructor
@@ -265,6 +269,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.setConfiguredProfiles(other.getConfiguredProfiles());
         this.setSelectedProfile(other.getSelectedProfile());
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
+
+        this.setLimitConcurrentQueries(other.limitConcurrentQueries);
 
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
@@ -3383,5 +3389,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         getConfig().setNoExpansionIfCurrentDateTypes(noExpansionIfCurrentDateTypes);
+    }
+
+    public boolean isLimitConcurrentQueries() {
+        return limitConcurrentQueries;
+    }
+
+    public void setLimitConcurrentQueries(boolean limitConcurrentQueries) {
+        this.limitConcurrentQueries = limitConcurrentQueries;
     }
 }

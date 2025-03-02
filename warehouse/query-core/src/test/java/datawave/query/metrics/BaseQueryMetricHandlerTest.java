@@ -99,6 +99,11 @@ public class BaseQueryMetricHandlerTest {
         }
 
         @Override
+        public long countQueries(DatawavePrincipal datawavePrincipal, BaseQueryMetric.Lifecycle firstLifecycle, BaseQueryMetric.Lifecycle... otherLifecycles) {
+            return 0;
+        }
+
+        @Override
         public void flush() throws Exception {
 
         }

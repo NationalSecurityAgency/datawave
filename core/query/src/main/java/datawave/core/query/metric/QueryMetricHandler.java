@@ -22,6 +22,8 @@ public interface QueryMetricHandler<T extends BaseQueryMetric> {
 
     QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal);
 
+    long countQueries(DatawavePrincipal datawavePrincipal, BaseQueryMetric.Lifecycle firstLifecycle, BaseQueryMetric.Lifecycle... otherLifecycles);
+
     void flush() throws Exception;
 
     /**

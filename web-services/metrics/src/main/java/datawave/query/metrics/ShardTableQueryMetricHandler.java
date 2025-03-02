@@ -7,9 +7,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -874,5 +876,111 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
 
         return response;
+    }
+
+    private long countMetrics(Query query, DatawavePrincipal datawavePrincipal, BaseQueryMetric.Lifecycle firstLifecycle,
+                    BaseQueryMetric.Lifecycle... otherLifecycles) {
+
+        RunningQuery runningQuery = null;
+        AccumuloClient client = null;
+
+        Set<BaseQueryMetric.Lifecycle> lifecycleSet = EnumSet.of(firstLifecycle, otherLifecycles);
+        long count = 0;
+        try {
+            Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            client = this.connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
+            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal);
+            runningQuery = new RunningQuery(null, client, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal, metricFactory);
+
+            boolean done = false;
+
+            while (!done) {
+                ResultsPage resultsPage = runningQuery.next();
+
+                if (!resultsPage.getResults().isEmpty()) {
+                    BaseQueryResponse queryResponse = queryLogic.getEnrichedTransformer(query).createResponse(new ResultsPage(resultsPage.getResults()));
+                    List<QueryExceptionType> exceptions = queryResponse.getExceptions();
+
+                    if (queryResponse.getExceptions() != null && !queryResponse.getExceptions().isEmpty()) {
+                        throw new QueryException();
+                    }
+
+                    EventQueryResponseBase eventQueryResponse = (EventQueryResponseBase) queryResponse;
+                    List<EventBase> eventList = eventQueryResponse.getEvents();
+
+                    if (eventList != null) {
+                        for (EventBase<?,?> event : eventList) {
+                            QueryMetric metric = (QueryMetric) toMetric(event);
+                            if (lifecycleSet.contains(metric.getLifecycle())) {
+                                count++;
+                            }
+                        }
+                    }
+                } else {
+                    done = true;
+                }
+
+            }
+
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return -1;
+        } finally {
+            if (null != this.connectionFactory) {
+                if (null != runningQuery && null != client) {
+                    try {
+                        runningQuery.closeConnection(this.connectionFactory);
+                    } catch (Exception e) {
+                        log.warn("Could not return connector to factory", e);
+                    }
+                } else if (null != client) {
+                    try {
+                        this.connectionFactory.returnClient(client);
+                    } catch (Exception e) {
+                        log.warn("Could not return connector to factory", e);
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    @Override
+    public long countQueries(DatawavePrincipal datawavePrincipal, BaseQueryMetric.Lifecycle firstLifecycle, BaseQueryMetric.Lifecycle... otherLifecycles) {
+        long count = 0;
+        try {
+            enableLogs(false);
+
+            Date end = new Date();
+
+            Calendar ninetyDaysBeforeEnd = Calendar.getInstance();
+            ninetyDaysBeforeEnd.setTime(end);
+            ninetyDaysBeforeEnd.add(Calendar.DATE, -90);
+
+            Date begin = DateUtils.truncate(ninetyDaysBeforeEnd, Calendar.DATE).getTime();
+            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
+            QueryImpl query = new QueryImpl();
+            query.setBeginDate(begin);
+            query.setEndDate(end);
+            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
+
+            String user = datawavePrincipal.getShortName();
+            query.setQuery("USER == '" + user + "'");
+
+            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
+            query.setColumnVisibility(visibilityString);
+            query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
+            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
+            query.setPagesize(1000);
+            query.setUserDN(datawavePrincipal.getShortName());
+            query.setId(UUID.randomUUID());
+            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
+
+            count = countMetrics(query, datawavePrincipal, firstLifecycle, otherLifecycles);
+        } finally {
+            enableLogs(true);
+        }
+
+        return count;
     }
 }

@@ -541,6 +541,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean shardsAndDaysHintAllowed = true;
 
+    // configuration parameter to determine if we limit the number of concurrent queries by DN\
+    // default is false
+    private boolean limitConcurrentQueries = false;
+
     /**
      * Default constructor
      */

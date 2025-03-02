@@ -507,4 +507,23 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
         throw new UnsupportedOperationException("Query validation response transformer not implemented");
     }
 
+    /**
+     * Returns whether we can limit concurrent queries.
+     *
+     * @return whether to limit concurrentQueries.
+     */
+    default boolean isLimitConcurrentQueries() {
+        return false;
+    }
+
+    /**
+     * Set whether concurrent queries are limited.
+     *
+     * @param limitConcurrentQueries
+     *            limit concurrent queries.
+     */
+    default void setLimitConcurrentQueries(boolean limitConcurrentQueries) {
+        throw new UnsupportedOperationException("Concurrent query limiting will be disabled for this class");
+    }
+
 }
