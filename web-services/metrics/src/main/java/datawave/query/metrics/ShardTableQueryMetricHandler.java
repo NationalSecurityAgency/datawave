@@ -629,7 +629,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("CREATE_CALL_TIME")) {
                         m.setCreateCallTime(Long.parseLong(fieldValue));
                     } else if (fieldName.startsWith("PAGE_METRICS")) {
-                        int index = fieldName.indexOf(".");
+                        int index = fieldName.indexOf('.');
                         if (-1 == index) {
                             log.error("Could not parse field name to extract repetition count: " + fieldName);
                         } else {

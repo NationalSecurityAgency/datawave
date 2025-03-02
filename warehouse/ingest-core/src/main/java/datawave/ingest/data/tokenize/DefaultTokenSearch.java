@@ -320,7 +320,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.add(lcaddr + zone);
         }
 
-        int atpos = addr.indexOf("@");
+        int atpos = addr.indexOf('@');
         if (atpos > 0) {
             String name = lcaddr.substring(0, atpos);
             String domain = lcaddr.substring(atpos);
@@ -430,7 +430,7 @@ public class DefaultTokenSearch implements TokenSearch {
         tstamp = lctstamp; // reuse tstamp for edits
 
         // extract the y,m,d portion prior to t.
-        int tPos = tstamp.indexOf("t");
+        int tPos = tstamp.indexOf('t');
         if (tPos > 0) {
             String daystamp = tstamp.substring(0, tPos);
             synonyms.add(daystamp + zone);
@@ -523,7 +523,7 @@ public class DefaultTokenSearch implements TokenSearch {
 
         // lowercased portions of trailing segments
         // (to avoid leading wildcard search)
-        slashPos = zlc.indexOf("/");
+        slashPos = zlc.indexOf('/');
         int segstart = 0;
         String zseg;
 
@@ -542,7 +542,7 @@ public class DefaultTokenSearch implements TokenSearch {
             if (!zseg.isEmpty()) {
                 synonyms.add(zseg + zone);
 
-                spacePos = zseg.indexOf(" ");
+                spacePos = zseg.indexOf(' ');
                 if (spacePos > -1) {
                     // extract space delimited components of zseg.
                     int zsegstart = 0;
