@@ -357,6 +357,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String modifiedFieldName = indexedFieldName + tokenFieldNameSuffix;
         String content = nci.getIndexedFieldValue();
 
+        if (tokenHelper.isContentContextEnabled()) {
+            modifiedFieldName = modifiedFieldName + "." + tokenHelper.getContentContextHash(content);
+        }
+
         TokenStream tokenizer = a.tokenStream(indexedFieldName, new StringReader(content));
         tokenizer.reset();
 

@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+import datawave.ingest.data.tokenize.TokenizationHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -54,7 +55,7 @@ public class ContentIndexingColumnBasedHandlerTest {
     private static final char INTRA_COL_DELIMETER = '\u0000';
 
     private static final String NUMERIC_LIST = "NUMERIC_LIST";
-    private static final String ALPHANUM_LIST = "APLHANUM_LIST";
+    private static final String ALPHANUM_LIST = "ALPHANUM_LIST";
     private static final String LIST_VALUE = "12.34,56.78";
     private static final String LIST_VALUE_WITH_SPACE = "12.34, 56.78";
     private static final String LIST_VALUE_WITH_EMPTY_ENTRY = "12.34, , 56.78";
@@ -62,34 +63,39 @@ public class ContentIndexingColumnBasedHandlerTest {
     private static final Text SHARD_TABLE_NAME = new Text("shard");
     private static final String TF = "tf";
 
-    private static String[] tokenizeAlphanumResults = {"12", "34", "56", "78", "12.34,56.78"};
-    private static String[] tokenizeAlphanumResultsWithSpace = {"12", "34", "56", "78", "12.34", "56.78"};
-    private static String[] tokenizeAlphanumReverseResults = {"21", "43", "65", "87", "87.65,43.21"};
-    private static String[] tokenizeAlphanumReverseResultsWithSpace = {"21", "43", "65", "87", "87.65", "43.21"};
-    private static String[] listAlphanumResults = {"12.34", "56.78"};
-    private static String[] listAlphanumReverseResults = {"43.21", "87.65"};
-    private static String[] listNumericResults = {"+bE1.234", "+bE5.678"};
-    private static String[] listNumericReverseResults = {"+bE4.321", "+bE8.765"};
+    private static final String[] tokenizeAlphanumResults = {"12", "34", "56", "78", "12.34,56.78"};
+    private static final String[] tokenizeAlphanumResultsWithSpace = {"12", "34", "56", "78", "12.34", "56.78"};
+    private static final String[] tokenizeAlphanumReverseResults = {"21", "43", "65", "87", "87.65,43.21"};
+    private static final String[] tokenizeAlphanumReverseResultsWithSpace = {"21", "43", "65", "87", "87.65", "43.21"};
+    private static final String[] listAlphanumResults = {"12.34", "56.78"};
+    private static final String[] listAlphanumReverseResults = {"43.21", "87.65"};
+    private static final String[] listNumericResults = {"+bE1.234", "+bE5.678"};
+    private static final String[] listNumericReverseResults = {"+bE4.321", "+bE8.765"};
 
-    private static Multimap<String,NormalizedContentInterface> tokenizedExpectedFields = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> tokenizedExpectedIndex = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> tokenizedExpectedReverse = HashMultimap.create();
-    private static Multimap<String,Pair<String,Integer>> tokenizedExpectedTfValues = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedFields = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedIndex = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedReverse = HashMultimap.create();
+    private static final Multimap<String,Pair<String,Integer>> tokenizedExpectedTfValues = HashMultimap.create();
 
-    private static Multimap<String,NormalizedContentInterface> tokenizedExpectedFieldsWithSpace = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> tokenizedExpectedIndexWithSpace = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> tokenizedExpectedReverseWithSpace = HashMultimap.create();
-    private static Multimap<String,Pair<String,Integer>> tokenizedExpectedTfValuesWithSpace = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedFieldsWithSpace = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedIndexWithSpace = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedReverseWithSpace = HashMultimap.create();
+    private static final Multimap<String,Pair<String,Integer>> tokenizedExpectedTfValuesWithSpace = HashMultimap.create();
 
-    private static Multimap<String,NormalizedContentInterface> listExpectedNumericFields = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> listExpectedNumericIndex = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> listExpectedNumericReverse = HashMultimap.create();
-    private static Multimap<String,Pair<String,Integer>> listExpectedNumericTfValues = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedFieldsWithContext = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedIndexWithContext = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> tokenizedExpectedReverseWithContext = HashMultimap.create();
+    private static final Multimap<String,Pair<String,Integer>> tokenizedExpectedTfValuesWithContext = HashMultimap.create();
 
-    private static Multimap<String,NormalizedContentInterface> listExpectedAlpahnumFields = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> listExpectedAlpahnumIndex = HashMultimap.create();
-    private static Multimap<String,NormalizedContentInterface> listExpectedAlpahnumReverse = HashMultimap.create();
-    private static Multimap<String,Pair<String,Integer>> listExpectedAlphanumTfValues = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> listExpectedNumericFields = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> listExpectedNumericIndex = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> listExpectedNumericReverse = HashMultimap.create();
+    private static final Multimap<String,Pair<String,Integer>> listExpectedNumericTfValues = HashMultimap.create();
+
+    private static final Multimap<String,NormalizedContentInterface> listExpectedAlphanumFields = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> listExpectedAlphanumIndex = HashMultimap.create();
+    private static final Multimap<String,NormalizedContentInterface> listExpectedAlphanumReverse = HashMultimap.create();
+    private static final Multimap<String,Pair<String,Integer>> listExpectedAlphanumTfValues = HashMultimap.create();
 
     private RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
     private TestContentBaseIngestHelper helper;
@@ -169,8 +175,11 @@ public class ContentIndexingColumnBasedHandlerTest {
         SetExpectedMap(ALPHANUM_LIST + TOKEN_DESIGNATOR, tokenizeAlphanumResultsWithSpace, tokenizeAlphanumReverseResultsWithSpace,
                         tokenizedExpectedFieldsWithSpace, tokenizedExpectedIndexWithSpace, tokenizedExpectedReverseWithSpace,
                         tokenizedExpectedTfValuesWithSpace);
-        SetExpectedMap(ALPHANUM_LIST, listAlphanumResults, listAlphanumReverseResults, listExpectedAlpahnumFields, listExpectedAlpahnumIndex,
-                        listExpectedAlpahnumReverse, listExpectedAlphanumTfValues);
+        SetExpectedMap(ALPHANUM_LIST + TOKEN_DESIGNATOR + ".kir5i4", tokenizeAlphanumResultsWithSpace, tokenizeAlphanumReverseResultsWithSpace,
+                tokenizedExpectedFieldsWithContext, tokenizedExpectedIndexWithContext, tokenizedExpectedReverseWithContext,
+                tokenizedExpectedTfValuesWithContext);
+        SetExpectedMap(ALPHANUM_LIST, listAlphanumResults, listAlphanumReverseResults, listExpectedAlphanumFields, listExpectedAlphanumIndex,
+                listExpectedAlphanumReverse, listExpectedAlphanumTfValues);
         SetExpectedMap(NUMERIC_LIST, listNumericResults, listNumericReverseResults, listExpectedNumericFields, listExpectedNumericIndex,
                         listExpectedNumericReverse, listExpectedNumericTfValues);
     }
@@ -225,6 +234,23 @@ public class ContentIndexingColumnBasedHandlerTest {
         helper.setup(ctx.getConfiguration());
         testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_SPACE, tokenizedExpectedFieldsWithSpace, tokenizedExpectedIndexWithSpace,
                         tokenizedExpectedReverseWithSpace, tokenizedExpectedTfValuesWithSpace, true);
+    }
+
+    @Test
+    public void testHandlerWithContentContextEnabled() throws Exception {
+        ctx.getConfiguration().set("test" + TokenizationHelper.CONTENT_CONTEXT_ENABLED, "true");
+
+        TypeRegistry.reset();
+        TypeRegistry.getInstance(ctx.getConfiguration());
+
+        setupMocks();
+
+        TestContentIndexingColumnBasedHandler handler = new TestContentIndexingColumnBasedHandler();
+        handler.setup(ctx);
+
+        helper.setup(ctx.getConfiguration());
+        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_SPACE, tokenizedExpectedFieldsWithContext, tokenizedExpectedIndexWithContext,
+                tokenizedExpectedReverseWithContext, tokenizedExpectedTfValuesWithContext, true);
     }
 
     @Test
@@ -283,7 +309,7 @@ public class ContentIndexingColumnBasedHandlerTest {
 
         helper.setup(ctx.getConfiguration());
 
-        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE, listExpectedAlpahnumFields, listExpectedAlpahnumIndex, listExpectedAlpahnumReverse,
+        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE, listExpectedAlphanumFields, listExpectedAlphanumIndex, listExpectedAlphanumReverse,
                         listExpectedAlphanumTfValues, false);
     }
 
@@ -303,7 +329,7 @@ public class ContentIndexingColumnBasedHandlerTest {
 
         helper.setup(ctx.getConfiguration());
 
-        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_SPACE, listExpectedAlpahnumFields, listExpectedAlpahnumIndex, listExpectedAlpahnumReverse,
+        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_SPACE, listExpectedAlphanumFields, listExpectedAlphanumIndex, listExpectedAlphanumReverse,
                         listExpectedAlphanumTfValues, false);
     }
 
@@ -323,7 +349,7 @@ public class ContentIndexingColumnBasedHandlerTest {
 
         helper.setup(ctx.getConfiguration());
 
-        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_EMPTY_ENTRY, listExpectedAlpahnumFields, listExpectedAlpahnumIndex, listExpectedAlpahnumReverse,
+        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_EMPTY_ENTRY, listExpectedAlphanumFields, listExpectedAlphanumIndex, listExpectedAlphanumReverse,
                         listExpectedAlphanumTfValues, false);
     }
 
