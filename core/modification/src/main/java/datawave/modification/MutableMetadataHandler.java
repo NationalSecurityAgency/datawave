@@ -499,7 +499,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             for (Type<?> n : dataTypes) {
                 String indexTerm = fieldValue;
                 if (historicalValue) {
-                    int lastColon = fieldValue.lastIndexOf(":");
+                    int lastColon = fieldValue.lastIndexOf(':');
                     // The next two lines build up to the beginning of the indexTerm by finding the first two colons
                     // We could use split if we could guarantee a colon never appears in the index term itself
                     int indexTermLeadingColon = fieldValue.indexOf(":", 0);
