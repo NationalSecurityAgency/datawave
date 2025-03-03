@@ -183,7 +183,7 @@ A new Accumulo ${_accumulo_version}.x-compatible DataWave release has been tagge
 }
 
 update_git() {
-  local _commit_message="Publishing update for new DW tagged release(s)"
+  local _commit_message="Auto-update for new DW tagged release(s) via '$(basename $0)' script"
   cd "${TMP_GHPAGES_DIR}"
   ${GIT} add . || logf "Failed to git-add updates to local gh-pages branch!"
   logi "======================== BEGIN git diff ============================="
