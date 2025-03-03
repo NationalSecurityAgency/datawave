@@ -549,7 +549,7 @@ public class DefaultTokenSearch implements TokenSearch {
                     while (zsegstart <= spacePos && spacePos < zseg.length()) {
                         synonyms.add(zseg.substring(zsegstart, spacePos) + zone);
                         zsegstart = spacePos + 1;
-                        spacePos = zseg.indexOf(" ", zsegstart);
+                        spacePos = zseg.indexOf(' ', zsegstart);
                     }
 
                     if (zsegstart < zseg.length()) {
@@ -562,7 +562,7 @@ public class DefaultTokenSearch implements TokenSearch {
             if (segstart <= slashPos) {
                 segstart = slashPos + 1;
                 synonyms.add(zlc.substring(segstart) + zone); // trailing bits of the path.
-                slashPos = zlc.indexOf("/", segstart);
+                slashPos = zlc.indexOf('/', segstart);
             } else {
                 break;
             }
@@ -610,7 +610,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.add(lc + zone);
         }
 
-        int methodPos = lc.indexOf(" ");
+        int methodPos = lc.indexOf(' ');
         int versionPos = lc.indexOf(" http", methodPos + 1);
 
         if (methodPos > 0 && versionPos > methodPos) {
@@ -622,7 +622,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.addAll(urlTokens(new String[] {requestUri, zone}, false, includeTerm));
             synonyms.add(version + zone);
 
-            versionPos = version.indexOf("/");
+            versionPos = version.indexOf('/');
             if (versionPos > 0) {
                 synonyms.add(version.substring(0, versionPos) + zone);
             }

@@ -70,7 +70,7 @@ public class FunctionQueryNode extends QueryNodeImpl {
      */
     public FunctionQueryNode(CharSequence text, int begin, int end) throws ParseException {
         String s = text.toString();
-        int openParen = s.indexOf("(");
+        int openParen = s.indexOf('(');
         int closeParen = s.lastIndexOf(")");
         this.function = s.substring(1, openParen);
 
