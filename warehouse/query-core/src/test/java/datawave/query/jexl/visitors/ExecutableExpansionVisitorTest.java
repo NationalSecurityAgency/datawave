@@ -33,7 +33,6 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -45,6 +44,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -492,20 +492,16 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             Assert.assertFalse(JexlStringBuildingVisitor.buildQuery(queryTree).equals(JexlStringBuildingVisitor.buildQuery(newTree)));
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
@@ -521,22 +517,18 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             Object data = queryTree.jjtGetChild(0).childrenAccept(visitor, null);
-
-            EasyMock.verify(config, helper);
 
             Assert.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
         }
@@ -550,23 +542,19 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
             rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
-
-            EasyMock.verify(config, helper);
 
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
             Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
@@ -581,23 +569,19 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
             rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
-
-            EasyMock.verify(config, helper);
 
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
             String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
@@ -620,20 +604,16 @@ public abstract class ExecutableExpansionVisitorTest {
             // overwrite the old UUID==capone with the ExceededThreshold marker
             queryTree.jjtGetChild(0).jjtAddChild(child, 0);
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
@@ -672,20 +652,16 @@ public abstract class ExecutableExpansionVisitorTest {
         derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree),
@@ -729,20 +705,16 @@ public abstract class ExecutableExpansionVisitorTest {
         derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
             String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
@@ -776,20 +748,16 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             if (queryTree == origQueryTree) {
                 // included ExceededValueThresholdMarker before
@@ -818,25 +786,22 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
             Set<String> dataTypes = new HashSet<>();
             dataTypes.add("test");
             Set<String> nonEventFields = new HashSet<>();
             nonEventFields.add("QUOTE");
-            EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
-            EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(dataTypes).when(config).getDatatypeFilter();
+            Mockito.doReturn(nonEventFields).when(helper).getNonEventFields(dataTypes);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
@@ -860,26 +825,23 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
             Set<String> dataTypes = new HashSet<>();
             dataTypes.add("test");
             // QUOTE being delayed creates a query that is non-executable we cannot delay a field which is nonEvent
             Set<String> nonEventFields = new HashSet<>();
             nonEventFields.add("QUOTE");
-            EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
-            EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(dataTypes).when(config).getDatatypeFilter();
+            Mockito.doReturn(nonEventFields).when(helper).getNonEventFields(dataTypes);
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // included ExceededValueThresholdMarker before
             Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
@@ -913,20 +875,16 @@ public abstract class ExecutableExpansionVisitorTest {
             origOrNode.jjtGetParent().jjtAddChild(newOr, 0);
             newOr.jjtSetParent(origOrNode.jjtGetParent());
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // starts executable
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -960,20 +918,16 @@ public abstract class ExecutableExpansionVisitorTest {
             queryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(newOr, 0);
             newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1));
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // starts executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -996,20 +950,16 @@ public abstract class ExecutableExpansionVisitorTest {
             // strip reference/referenceExpressions
             queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
 
-            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
+            MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
             HashSet<String> indexedFields = new HashSet<>();
             indexedFields.add("UUID");
             indexedFields.add("QUOTE");
 
-            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-
-            EasyMock.replay(config, helper);
+            Mockito.doReturn(indexedFields).when(config).getIndexedFields();
 
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-
-            EasyMock.verify(config, helper);
 
             // starts executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));

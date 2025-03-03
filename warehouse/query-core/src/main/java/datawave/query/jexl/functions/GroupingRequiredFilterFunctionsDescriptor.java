@@ -22,8 +22,8 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 
 public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -106,7 +106,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                 }
                 return Collections.emptySet();
             } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -121,7 +121,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                 try {
                     allFields = helper.getAllFields(datatypeFilter);
                 } catch (TableNotFoundException e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                     log.error(qe);
                     throw new DatawaveFatalQueryException(qe);
                 }
@@ -173,7 +173,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
 
                 return filteredSets;
             } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -230,8 +230,9 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!GroupingRequiredFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException(
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.ARGUMENTDESCRIPTOR_NODE_FOR_FUNCTION,
                                 "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(qe);
             }
             return new GroupingRequiredFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {

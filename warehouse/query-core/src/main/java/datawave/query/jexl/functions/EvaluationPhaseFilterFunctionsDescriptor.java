@@ -32,8 +32,8 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 
 /**
  * Evaluation phase filter functions cannot be evaluated against index-only fields
@@ -161,7 +161,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
 
                 }
             } catch (ParseException e) {
-                throw new IllegalArgumentException("Unable to parse dates from date function", e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_DATE, "Unable to parse dates from date function");
+                throw new IllegalArgumentException(qe);
             } catch (TableNotFoundException e) {
                 // if we are missing the table, then lets assume the date index is simply not configured on this system
                 log.warn("Missing date index, scanning entire range", e);
@@ -199,7 +200,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            Set<String> fields = Sets.newHashSet();
+            // Maintain insertion order.
+            Set<String> fields = Sets.newLinkedHashSet();
 
             List<JexlNode> arguments = functionMetadata.args();
             if (MATCHCOUNTOF.equals(functionMetadata.name())) {
@@ -247,11 +249,11 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                 } // non-null but empty typeFilters allow nothing
                 return Collections.unmodifiableSet(filteredFields);
             } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
             } catch (InstantiationException | IllegalAccessException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -290,8 +292,9 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException(
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.ARGUMENTDESCRIPTOR_NODE_FOR_FUNCTION,
                                 "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(qe);
             }
             FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
             fvis.visit(node, null);

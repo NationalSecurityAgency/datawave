@@ -1,12 +1,13 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-	THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 #
 # Get the classpath
@@ -50,7 +51,7 @@ fi
 MAP_MEMORY_MB=$(( (($BULK_CHILD_MAP_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
 REDUCE_MEMORY_MB=$(( (($BULK_CHILD_REDUCE_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
 
-DATE=`date "+%Y%m%d%H%M%S"`
+DATE=$(date "+%Y%m%d%H%M%S")
 WORKDIR=${BASE_WORK_DIR}/${DATE}-$$/
 # using the hash partitioner to reduce latency....
 PART_ARG=
@@ -71,10 +72,10 @@ export CHILD_MAP_OPTS="-Xmx${LIVE_CHILD_MAP_MAX_MEMORY_MB}m -XX:+UseConcMarkSwee
 export CHILD_REDUCE_OPTS="-Xmx${LIVE_CHILD_REDUCE_MAX_MEMORY_MB}m -XX:+UseConcMarkSweepGC -Dfile.encoding=UTF8 -Duser.timezone=GMT -XX:+UseNUMA $CHILD_INGEST_OPTS"
 
 
-echo $INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.IngestJob -jt $INGEST_JOBTRACKER_NODE $INPUT_FILES ${INGEST_CONFIG[@]} -cacheBaseDir $JOB_CACHE_DIR -cacheJars $LIBJARS -user $USERNAME -pass $PASSWORD -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS -workDir $WORKDIR  -flagFileDir ${FLAG_DIR} -flagFilePattern '.*_live_.*\.flag' -mapred.map.child.java.opts=\"$CHILD_MAP_OPTS\" -mapred.reduce.child.java.opts=\"$CHILD_REDUCE_OPTS\" "${BATCHWRITER_OPTS}" $MAPRED_OPTS -outputMutations -mapOnly -srcHdfs $INGEST_HDFS_NAME_NODE -destHdfs $WAREHOUSE_HDFS_NAME_NODE $EXTRA_OPTS
+echo $INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.IngestJob -jt $INGEST_JOBTRACKER_NODE $INPUT_FILES ${INGEST_CONFIG[@]} -cacheBaseDir $JOB_CACHE_DIR -cacheJars $LIBJARS -user $USERNAME -pass $PASSWORD -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS -workDir $WORKDIR  -flagFileDir ${FLAG_DIR} -flagFilePattern '.*_live_.*\.flag' -mapreduce.map.java.opts=\"$CHILD_MAP_OPTS\" -mapreduce.reduce.java.opts=\"$CHILD_REDUCE_OPTS\" "${BATCHWRITER_OPTS}" $MAPRED_OPTS -outputMutations -mapOnly -srcHdfs $INGEST_HDFS_NAME_NODE -destHdfs $WAREHOUSE_HDFS_NAME_NODE $EXTRA_OPTS
 echo "For decreased latency, one can add the -mapOnly flag at the cost of possibly overcounting duplicate records"
 
-$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.IngestJob -jt $INGEST_JOBTRACKER_NODE $INPUT_FILES ${INGEST_CONFIG[@]} -cacheBaseDir $JOB_CACHE_DIR -cacheJars $LIBJARS -user $USERNAME -pass $PASSWORD -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS -workDir $WORKDIR  -flagFileDir ${FLAG_DIR} -flagFilePattern '.*_live_.*\.flag' -mapred.map.child.java.opts="$CHILD_MAP_OPTS" -mapred.reduce.child.java.opts="$CHILD_REDUCE_OPTS" "${BATCHWRITER_OPTS}" $MAPRED_OPTS -outputMutations -mapOnly -srcHdfs $INGEST_HDFS_NAME_NODE -destHdfs $WAREHOUSE_HDFS_NAME_NODE $EXTRA_OPTS
+$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.IngestJob -jt $INGEST_JOBTRACKER_NODE $INPUT_FILES ${INGEST_CONFIG[@]} -cacheBaseDir $JOB_CACHE_DIR -cacheJars $LIBJARS -user $USERNAME -pass $PASSWORD -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS -workDir $WORKDIR  -flagFileDir ${FLAG_DIR} -flagFilePattern '.*_live_.*\.flag' -mapreduce.map.java.opts="$CHILD_MAP_OPTS" -mapreduce.reduce.java.opts="$CHILD_REDUCE_OPTS" "${BATCHWRITER_OPTS}" $MAPRED_OPTS -outputMutations -mapOnly -srcHdfs $INGEST_HDFS_NAME_NODE -destHdfs $WAREHOUSE_HDFS_NAME_NODE $EXTRA_OPTS
 
 RETURN_CODE=$?
 

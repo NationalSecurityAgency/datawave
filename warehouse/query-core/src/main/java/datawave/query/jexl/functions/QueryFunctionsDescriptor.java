@@ -5,6 +5,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.UniqueFields;
@@ -38,8 +40,9 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.util.StringUtils;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     private static final Logger log = Logger.getLogger(QueryFunctionsDescriptor.class);
@@ -64,86 +67,142 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         }
 
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) throws TableNotFoundException {
+            switch (name) {
+                case BETWEEN:
+                    JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
+                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                    JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
+                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
+                    // Return a bounded range.
+                    return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
+                case LENGTH:
+                    // Return a regex node with the appropriate number of matching characters
+                    return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
+                                    ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
+                case QueryFunctions.MATCH_REGEX:
+                    // Return an index query.
+                    return getIndexQuery(helper, datatypeFilter);
+                case QueryFunctions.INCLUDE_TEXT:
+                    // Return the appropriate index query.
+                    return getTextIndexQuery(helper, datatypeFilter);
+                default:
+                    // Return the true node if unable to parse arguments.
+                    return TRUE_NODE;
+            }
+        }
+
+        private JexlNode getIndexQuery(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException {
             try {
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
-                switch (name) {
-                    case BETWEEN:
-                        JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
-                                        JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
-                        JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
-                                        JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
-                        // Return a bounded range.
-                        return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
-                    case LENGTH:
-                        // Return a regex node with the appropriate number of matching characters
-                        return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                        ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
-                    case QueryFunctions.MATCH_REGEX:
-                        // Return an index query.
-                        return getIndexQuery(allFields);
-                    case QueryFunctions.INCLUDE_TEXT:
-                        // Return the appropriate index query.
-                        return getTextIndexQuery(allFields);
-                    default:
-                        // Return the true node if unable to parse arguments.
-                        return TRUE_NODE;
+
+                JexlNode node0 = args.get(0);
+                final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
+                if (node0 instanceof ASTIdentifier) {
+                    final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
+                    if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
+                        return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                    } else {
+                        return null;
+                    }
+                } else {
+                    // node0 is an Or node or an And node
+                    // copy it
+                    JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
+                    int i = 0;
+                    for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
+                        String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
+                        if (allFields.contains(field)) {
+                            JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                            kid.jjtSetParent(newParent);
+                            newParent.jjtAddChild(kid, i++);
+                        }
+                    }
+                    return newParent;
                 }
             } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
         }
 
-        private JexlNode getIndexQuery(Set<String> allFields) throws TableNotFoundException {
-            JexlNode node0 = args.get(0);
-            final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
-            if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
-                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
-                    return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
-                } else {
+        /**
+         * The index query for a text function MUST normalize the value as the actual value may differ between the event key and the index key
+         *
+         * @param helper
+         *            a metadata helper
+         * @return a JexlNode
+         */
+        private JexlNode getTextIndexQuery(MetadataHelper helper, Set<String> datatypeFilter) {
+            List<JexlNode> children = new LinkedList<>();
+
+            if (args.size() == 2) {
+                // single field value
+                createChildren(children, args.get(0), args.get(1), helper, datatypeFilter);
+            } else if (args.size() % 2 == 1) {
+                // dealing with {AND/OR, field, value, field value}
+                for (int i = 1; i < args.size(); i += 2) {
+                    createChildren(children, args.get(i), args.get(i + 1), helper, datatypeFilter);
+                }
+            }
+
+            switch (children.size()) {
+                case 0:
                     return null;
-                }
-            } else {
-                // node0 is an Or node or an And node
-                // copy it
-                JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
-                int i = 0;
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
-                    if (allFields.contains(field)) {
-                        JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
-                        kid.jjtSetParent(newParent);
-                        newParent.jjtAddChild(kid, i++);
+                case 1:
+                    return children.get(0);
+                default:
+                    // expand into an OR, unless an intersection is specifically requested
+                    String expansion = JexlASTHelper.getIdentifier(args.get(0));
+                    if (expansion.equals("AND")) {
+                        return JexlNodeFactory.createAndNode(children);
+                    } else {
+                        return JexlNodeFactory.createOrNode(children);
                     }
-                }
-                return newParent;
             }
         }
 
-        private JexlNode getTextIndexQuery(Set<String> allFields) {
-            JexlNode node0 = args.get(0);
-            final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
-            if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
-                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
-                    return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+        private void createChildren(List<JexlNode> children, JexlNode fieldName, JexlNode fieldValue, MetadataHelper helper, Set<String> datatypeFilter) {
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) fieldName).getName());
+                if (allFields.contains(field)) {
+                    String literal = JexlNodes.getIdentifierOrLiteralAsString(fieldValue);
+                    Set<String> values = getNormalizedValues(field, literal, helper);
+                    for (String value : values) {
+                        children.add(JexlNodeFactory.buildNode((ASTEQNode) null, field, value));
+                    }
+                }
+            } catch (TableNotFoundException e) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
+        }
+
+        private Set<String> getNormalizedValues(String field, String value, MetadataHelper helper) {
+            Set<String> values = new HashSet<>();
+            values.add(value); // retain original
+
+            Set<Type<?>> types = getTypesForField(field, helper);
+            for (Type<?> type : types) {
+                try {
+                    values.add(type.normalize(value));
+                } catch (IllegalArgumentException e) {
+                    // failure to normalize is not a problem
+                }
+            }
+            return values;
+        }
+
+        private Set<Type<?>> getTypesForField(String field, MetadataHelper helper) {
+            try {
+                if (field.equals(Constants.ANY_FIELD)) {
+                    return helper.getAllDatatypes();
                 } else {
-                    return null;
+                    return helper.getDatatypesForField(field);
                 }
-            } else {
-                // node0 is an Or node or an And node
-                // copy it
-                JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
-                int i = 0;
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
-                    kid.jjtSetParent(newParent);
-                    newParent.jjtAddChild(kid, i++);
-                }
-                return newParent;
+            } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
         }
 
@@ -172,7 +231,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 try {
                     allFields = helper.getAllFields(datatypeFilter);
                 } catch (TableNotFoundException e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                     log.error(qe);
                     throw new DatawaveFatalQueryException(qe);
                 }
@@ -187,6 +246,15 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.NO_EXPANSION:
                 case QueryFunctions.LENIENT_FIELDS_FUNCTION:
                 case QueryFunctions.STRICT_FIELDS_FUNCTION:
+                case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_DAY_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_HOUR_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
+                case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION:
                     // In practice each of these functions should be parsed from the query
                     // almost immediately. This implementation is added for consistency
                     for (JexlNode arg : args) {
@@ -216,6 +284,14 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         }
                     }
                     break;
+                case QueryFunctions.SUMMARY_FUNCTION:
+                    break;
+                case QueryFunctions.RENAME_FUNCTION:
+                    for (JexlNode arg : args) {
+                        String value = JexlNodes.getIdentifierOrLiteralAsString(arg);
+                        String[] parts = StringUtils.split(value, Constants.EQUALS);
+                        fields.add(parts[0]);
+                    }
                 case QueryFunctions.MATCH_REGEX:
                 case BETWEEN:
                 case LENGTH:
@@ -286,13 +362,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(visitor.namespace());
 
-        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace()))
-            throw new IllegalArgumentException(
+        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace())) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
-        if (!functionClass.equals(QueryFunctions.class))
-            throw new IllegalArgumentException(
+            throw new IllegalArgumentException(qe);
+        }
+        if (!functionClass.equals(QueryFunctions.class)) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
-
+            throw new IllegalArgumentException(qe);
+        }
         verify(visitor.name(), visitor.args().size());
 
         return new QueryJexlArgumentDescriptor(node, visitor.namespace(), visitor.name(), visitor.args());
@@ -302,17 +381,23 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         switch (name) {
             case BETWEEN:
                 if (numArgs != 3) {
-                    throw new IllegalArgumentException("Wrong number of arguments to between function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Wrong number of arguments to between function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case LENGTH:
                 if (numArgs != 3) {
-                    throw new IllegalArgumentException("Wrong number of arguments to length function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Wrong number of arguments to length function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case QueryFunctions.OPTIONS_FUNCTION:
                 if (numArgs % 2 != 0) {
-                    throw new IllegalArgumentException("Expected even number of arguments to options function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Expected even number of arguments to options function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case QueryFunctions.UNIQUE_FUNCTION:
@@ -324,6 +409,15 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_DAY_FUNCTION:
             case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
             case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryFunctions.UNIQUE_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_HOUR_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_DAY_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
+            case QueryFunctions.MOST_RECENT_PREFIX + QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
             case QueryFunctions.GROUPBY_FUNCTION:
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
             case QueryFunctions.MATCH_REGEX:
@@ -338,11 +432,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.AVERAGE:
             case QueryFunctions.RENAME_FUNCTION:
                 if (numArgs == 0) {
-                    throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Expected at least one argument to the " + name + " function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
+            case QueryFunctions.SUMMARY_FUNCTION:
+                break;
             default:
-                throw new IllegalArgumentException("Unknown Query function: " + name);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, "Unknown Query function: " + name);
+                throw new IllegalArgumentException(qe);
         }
     }
 }

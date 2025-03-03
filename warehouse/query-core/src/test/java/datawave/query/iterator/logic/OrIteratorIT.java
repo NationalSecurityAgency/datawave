@@ -3,6 +3,7 @@ package datawave.query.iterator.logic;
 import static datawave.query.iterator.logic.TestUtil.randomUids;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,7 +26,6 @@ import org.junit.jupiter.api.Test;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 
 class OrIteratorIT {
 
@@ -40,10 +40,7 @@ class OrIteratorIT {
         Set<NestedIterator<Key>> includes = new HashSet<>();
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsEven));
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", uidsOdd));
-
-        seekIterators(includes);
-
-        OrIterator itr = new OrIterator(includes);
+        OrIterator<?> itr = new OrIterator<>(includes);
         driveIterator(itr, new TreeSet<>(uidsAll));
     }
 
@@ -53,12 +50,10 @@ class OrIteratorIT {
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsEven));
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", uidsOdd, true));
 
-        seekIterators(includes);
-
         Map<String,Integer> indexOnlyCounts = new HashMap<>();
         indexOnlyCounts.put("FIELD_B", 5);
 
-        OrIterator itr = new OrIterator(includes);
+        OrIterator<?> itr = new OrIterator<>(includes);
         driveIterator(itr, uidsAll, indexOnlyCounts);
     }
 
@@ -68,12 +63,10 @@ class OrIteratorIT {
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsEven));
         includes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_B", uidsOdd, true, 4));
 
-        seekIterators(includes);
-
         Map<String,Integer> indexOnlyCounts = new HashMap<>();
         indexOnlyCounts.put("FIELD_B", 3);
 
-        OrIterator itr = new OrIterator(includes);
+        OrIterator<?> itr = new OrIterator<>(includes);
         assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
     }
 
@@ -86,13 +79,10 @@ class OrIteratorIT {
         Set<NestedIterator<Key>> excludes = new HashSet<>();
         excludes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_B", uidsOdd, true, 4));
 
-        seekIterators(includes);
-        seekIterators(excludes);
-
         Map<String,Integer> indexOnlyCounts = new HashMap<>();
         indexOnlyCounts.put("FIELD_B", 3);
 
-        OrIterator itr = new OrIterator(includes, excludes);
+        OrIterator<?> itr = new OrIterator<>(includes, excludes);
         assertThrows(IllegalStateException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
     }
 
@@ -151,7 +141,6 @@ class OrIteratorIT {
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", uidsB, true));
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC, true));
 
-        seekIterators(includes);
         OrIterator<Key> orIterator = new OrIterator<>(includes);
 
         Map<String,Integer> indexOnlyCounts = new HashMap<>();
@@ -181,7 +170,7 @@ class OrIteratorIT {
      * @param uids
      *            expected uids
      */
-    private void driveIterator(OrIterator itr, SortedSet<String> uids) {
+    private void driveIterator(OrIterator<?> itr, SortedSet<String> uids) {
         driveIterator(itr, uids, Collections.emptyMap());
     }
 
@@ -195,7 +184,8 @@ class OrIteratorIT {
      * @param indexOnlyCounts
      *            the expected index only field counts
      */
-    private void driveIterator(OrIterator itr, SortedSet<String> uids, Map<String,Integer> indexOnlyCounts) {
+    private void driveIterator(OrIterator<?> itr, SortedSet<String> uids, Map<String,Integer> indexOnlyCounts) {
+        seekIterator(itr);
         itr.initialize();
 
         int count = 0;
@@ -206,7 +196,7 @@ class OrIteratorIT {
             assertTrue(itr.hasNext());
 
             Object o = itr.next();
-            assertTrue(o instanceof Key);
+            assertInstanceOf(Key.class, o);
             IndexIteratorTest.assertTopKey((Key) o, uid);
 
             if (!indexOnlyCounts.isEmpty()) {
@@ -226,21 +216,11 @@ class OrIteratorIT {
         assertEquals(indexOnlyCounts, counts);
     }
 
-    /**
-     * Because the OrIterator is not seekable, this helper method will seek any underlying iterators
-     *
-     * @param iterators
-     *            the set of iterators within a union
-     */
-    protected static void seekIterators(Set<NestedIterator<Key>> iterators) {
-        for (NestedIterator<Key> iterator : iterators) {
-            if (iterator instanceof SeekableIterator) {
-                try {
-                    ((SeekableIterator) iterator).seek(new Range(), Collections.emptyList(), false);
-                } catch (IOException e) {
-                    fail("Could not seek iterator during test setup");
-                }
-            }
+    private void seekIterator(NestedIterator<?> iterator) {
+        try {
+            iterator.seek(new Range(), Collections.emptyList(), false);
+        } catch (IOException e) {
+            fail("Failed to seek iterators", e);
         }
     }
 }

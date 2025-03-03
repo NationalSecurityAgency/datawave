@@ -9,7 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -17,7 +18,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public class CacheableQueryRowReader {
 
-    private static Logger log = Logger.getLogger(CacheableQueryRowReader.class);
+    private static Logger log = LoggerFactory.getLogger(CacheableQueryRowReader.class);
 
     public static CacheableQueryRow createRow(ResultSet cachedRowSet, Set<String> fixedFieldsInEvent, ResponseObjectFactory responseObjectFactory,
                     MarkingFunctions markingFunctions) {

@@ -246,7 +246,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
                     }
                 }
             }
-            if (event.getDate() == Long.MIN_VALUE) {
+            if (!event.isTimestampSet()) {
                 List<String> patterns = new ArrayList<>(formatters.size());
                 for (SimpleDateFormat formatter : formatters) {
                     patterns.add(formatter.toPattern());

@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.easymock.EasyMock;
@@ -23,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.core.query.configuration.QueryData;
+import datawave.data.type.LcNoDiacriticsType;
 import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -34,6 +37,7 @@ import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.util.TableName;
 
 public class VisitorFunctionTest extends EasyMockSupport {
@@ -446,5 +450,63 @@ public class VisitorFunctionTest extends EasyMockSupport {
         keys = settings.getOptions().keySet();
         Assert.assertTrue(keys.contains(QueryOptions.QUERY));
         Assert.assertFalse(keys.contains(QueryOptions.COMPOSITE_FIELDS));
+    }
+
+    @Test
+    public void testTypeMetadataReductionViaIncludeFields() throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        MockMetadataHelper helper = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(config, helper);
+
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("FIELD_A == 'a'");
+        IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
+        loadSettings(settings);
+
+        // add include fields
+        settings.addOption(QueryOptions.PROJECTION_FIELDS, "FIELD_A,FIELD_B");
+
+        function.reduceTypeMetadata(script, settings);
+
+        Map<String,String> options = settings.getOptions();
+        Assert.assertTrue(options.containsKey(QueryOptions.TYPE_METADATA));
+
+        String option = options.get(QueryOptions.TYPE_METADATA);
+        Assert.assertTrue(StringUtils.isNotBlank(option));
+
+        TypeMetadata metadata = new TypeMetadata(option);
+        Assert.assertEquals(Set.of("FIELD_A", "FIELD_B"), metadata.keySet());
+    }
+
+    @Test
+    public void testTypeMetadataReductionViaExcludeFields() throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        MockMetadataHelper helper = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(config, helper);
+
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("FIELD_A == 'a'");
+        IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
+        loadSettings(settings);
+
+        // add exclude fields
+        settings.addOption(QueryOptions.DISALLOWLISTED_FIELDS, "FIELD_B");
+
+        function.reduceTypeMetadata(script, settings);
+
+        Map<String,String> options = settings.getOptions();
+        Assert.assertTrue(options.containsKey(QueryOptions.TYPE_METADATA));
+
+        String option = options.get(QueryOptions.TYPE_METADATA);
+        Assert.assertTrue(StringUtils.isNotBlank(option));
+
+        TypeMetadata metadata = new TypeMetadata(option);
+        Assert.assertEquals(Set.of("FIELD_A", "FIELD_C"), metadata.keySet());
+    }
+
+    private void loadSettings(IteratorSetting settings) {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("FIELD_A", "type-a", LcNoDiacriticsType.class.getSimpleName());
+        metadata.put("FIELD_B", "type-a", LcNoDiacriticsType.class.getSimpleName());
+        metadata.put("FIELD_C", "type-a", LcNoDiacriticsType.class.getSimpleName());
+        settings.addOption(QueryOptions.TYPE_METADATA, metadata.toString());
     }
 }
