@@ -27,7 +27,6 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.easymock.Capture;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -117,7 +116,7 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Ignore
+    @Test
     public void compositeQueryLogicDateStrippingTest() throws Exception {
         QueryLogic delegate2 = createMock(QueryLogic.class);
         TransformIterator transformIterator1 = createMock(TransformIterator.class);
