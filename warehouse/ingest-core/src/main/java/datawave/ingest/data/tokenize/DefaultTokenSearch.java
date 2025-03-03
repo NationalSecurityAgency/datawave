@@ -713,9 +713,9 @@ public class DefaultTokenSearch implements TokenSearch {
         do {
             prevUrl = lc_url.toString();
 
-            int querypos = lc_url.indexOf("?");
+            int querypos = lc_url.indexOf('?');
             int schemepos = lc_url.indexOf("://");
-            int fragpos = lc_url.indexOf("#");
+            int fragpos = lc_url.indexOf('#');
 
             // Include the downcased url if different from the original term
             // or includeTerm is raised.
@@ -729,7 +729,7 @@ public class DefaultTokenSearch implements TokenSearch {
                 synonyms.add(lc_url.substring(schemepos + 3) + zone);
 
                 // Just the URL path, excluding host, including query and fragment strings.
-                int pathstart = lc_url.indexOf("/", schemepos + 4);
+                int pathstart = lc_url.indexOf('/', schemepos + 4);
                 if (pathstart > -1) {
                     synonyms.add(lc_url.substring(pathstart) + zone);
 
@@ -744,7 +744,7 @@ public class DefaultTokenSearch implements TokenSearch {
                     }
 
                     // Just the host or ip
-                    int portpos = lc_url.indexOf(":", schemepos + 4);
+                    int portpos = lc_url.indexOf(':', schemepos + 4);
                     if (portpos > schemepos && portpos < pathstart) {
                         synonyms.add(lc_url.substring(schemepos + 3, portpos) + zone);
                     } else {
@@ -775,13 +775,13 @@ public class DefaultTokenSearch implements TokenSearch {
                             synonyms.add(decoded + zone);
 
                             // See if we have an embedded url or email address as a parameter
-                            if (param.indexOf("=") > 0) {
+                            if (param.indexOf('=') > 0) {
                                 String kv[] = decoded.split("=", 2);
                                 if (kv != null && kv.length == 2 && kv[1].length() > 4) {
                                     if (kv[1].startsWith("http://") || kv[1].startsWith("https://")) {
                                         synonyms.addAll(urlTokens(new String[] {kv[1], zone}, false, includeTerm));
-                                    } else if (kv[1].indexOf("@") > 0) {
-                                        int atPos = kv[1].indexOf("@");
+                                    } else if (kv[1].indexOf('@') > 0) {
+                                        int atPos = kv[1].indexOf('@');
                                         synonyms.add(kv[1] + zone);
                                         if (atPos + 1 < kv[1].length()) {
                                             synonyms.add(kv[1].substring(atPos) + zone);
@@ -830,10 +830,10 @@ public class DefaultTokenSearch implements TokenSearch {
             }
 
             // trim leading path segments, adding each as a synonym.
-            int slashpos = url_path.indexOf("/");
+            int slashpos = url_path.indexOf('/');
             while (slashpos > -1 && (slashpos < (url_path.length() - 1))) {
                 synonyms.add(url_path.substring(slashpos + 1) + zone);
-                slashpos = url_path.indexOf("/", slashpos + 1);
+                slashpos = url_path.indexOf('/', slashpos + 1);
             }
 
             // Index words from this url
