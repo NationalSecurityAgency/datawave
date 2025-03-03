@@ -34,7 +34,6 @@ public class QueryMetricSplitBrainMergePolicyTest {
     private final static QueryMetricFactory queryMetricFactory = new QueryMetricFactoryImpl();
     
     @Ignore
-    @Test
     public void testAllPagesMerged() {
         String mapName = HazelcastUtils.randomMapName();
         Config config = newConfig(QueryMetricSplitBrainMergePolicy.class.getName(), mapName);
@@ -103,7 +102,6 @@ public class QueryMetricSplitBrainMergePolicyTest {
     }
     
     @Ignore
-    @Test
     public void testFieldsUpdated() {
         String mapName = HazelcastUtils.randomMapName();
         Config config = newConfig(QueryMetricSplitBrainMergePolicy.class.getName(), mapName);
