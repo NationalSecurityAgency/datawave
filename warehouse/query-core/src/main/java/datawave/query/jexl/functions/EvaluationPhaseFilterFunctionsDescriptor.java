@@ -114,7 +114,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                         log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
                     }
                     String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                                    datatypeFilter);
+                                    datatypeFilter, config);
                     // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
                     if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
                         log.info("Found no index for field " + field + " and data types " + datatypeFilter);
@@ -138,7 +138,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                             log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
                         }
                         String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                                        datatypeFilter);
+                                        datatypeFilter, config);
                         // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
                         if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
                             log.info("Found no index for field " + field + " and data types " + datatypeFilter);

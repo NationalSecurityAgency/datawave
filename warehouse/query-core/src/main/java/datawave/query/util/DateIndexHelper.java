@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 import com.github.benmanes.caffeine.cache.Cache;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
 
@@ -222,8 +223,9 @@ public class DateIndexHelper implements ApplicationContextAware {
      *             if the table is not found
      */
     @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
-                    cacheManager = "dateIndexHelperCacheManager")
-    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
+                    cacheManager = "dateIndexHelperCacheManager", sync = true)
+    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter, ShardQueryConfiguration config)
+                    throws TableNotFoundException {
         log.debug("cache fault for getTypeDescription(" + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
                         + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
@@ -234,6 +236,13 @@ public class DateIndexHelper implements ApplicationContextAware {
         DateTypeDescription desc = new DateTypeDescription();
 
         BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
+        if (config.getTableConsistencyLevels() != null && !config.getTableConsistencyLevels().isEmpty()) {
+            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(dateIndexTableName));
+        }
+        if (config.getTableHints() != null && !config.getTableHints().isEmpty()) {
+            bs.setExecutionHints(config.getTableHints().get(dateIndexTableName));
+        }
+
         try {
 
             // scan from begin to end
@@ -305,9 +314,9 @@ public class DateIndexHelper implements ApplicationContextAware {
      */
     @Cacheable(value = "getShardsAndDaysHint",
                     key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
-                    cacheManager = "dateIndexHelperCacheManager")
-    public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
-                    throws TableNotFoundException {
+                    cacheManager = "dateIndexHelperCacheManager", sync = true)
+    public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter,
+                    ShardQueryConfiguration config) throws TableNotFoundException {
         log.debug("cache fault for getShardsAndDaysHint(" + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
                         + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
@@ -324,6 +333,12 @@ public class DateIndexHelper implements ApplicationContextAware {
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
 
         BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
+        if (config.getTableConsistencyLevels() != null && !config.getTableConsistencyLevels().isEmpty()) {
+            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(dateIndexTableName));
+        }
+        if (config.getTableHints() != null && !config.getTableHints().isEmpty()) {
+            bs.setExecutionHints(config.getTableHints().get(dateIndexTableName));
+        }
 
         try {
             bs.setRanges(Arrays.asList(new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~')));

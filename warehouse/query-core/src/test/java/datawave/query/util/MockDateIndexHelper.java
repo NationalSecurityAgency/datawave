@@ -9,6 +9,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 
 import com.google.common.collect.TreeMultimap;
 
+import datawave.query.config.ShardQueryConfiguration;
+
 public class MockDateIndexHelper extends DateIndexHelper {
 
     private final TreeMultimap<String,Entry> entries = TreeMultimap.create();
@@ -84,7 +86,8 @@ public class MockDateIndexHelper extends DateIndexHelper {
     }
 
     @Override
-    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
+    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter, ShardQueryConfiguration config)
+                    throws TableNotFoundException {
         final DateTypeDescription desc = new DateTypeDescription();
         for (Entry value : entries.values()) {
             if (value.type.equals(dateType) && (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(value.dataType))) {
@@ -118,8 +121,8 @@ public class MockDateIndexHelper extends DateIndexHelper {
     }
 
     @Override
-    public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
-                    throws TableNotFoundException {
+    public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter,
+                    ShardQueryConfiguration config) throws TableNotFoundException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         String beginStr = formatter.format(begin);
         String endStr = formatter.format(end);

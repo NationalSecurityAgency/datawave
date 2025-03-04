@@ -2246,7 +2246,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 // get all of the fields used for this date type
                 DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
-                                config.getDatatypeFilter());
+                                config.getDatatypeFilter(), config);
                 if (dateIndexData.getFields().isEmpty()) {
                     log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
                     // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired
