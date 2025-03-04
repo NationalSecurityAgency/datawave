@@ -484,7 +484,7 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      */
     @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#modelTableName,#modelName,#unevaluatedFields,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
         log.debug("cache fault for getQueryModel({}, {}, {}, {}, {})", this.auths, modelTableName, modelName, unevaluatedFields, ingestTypeFilter);
@@ -562,7 +562,7 @@ public class MetadataHelper {
      * @return a list of query model names
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getQueryModelNames", key = "{#root.target.auths,#modelTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getQueryModelNames", key = "{#root.target.auths,#modelTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getQueryModelNames(String modelTableName) throws TableNotFoundException {
         Preconditions.checkNotNull(modelTableName);
         
@@ -698,7 +698,7 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getFacets", key = "{#root.target.auths,#table}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getFacets", key = "{#root.target.auths,#table}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,String> getFacets(String table) throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getFacets({}, {})", this.auths, table);
         Multimap<String,String> fieldPivots = HashMultimap.create();
@@ -737,7 +737,7 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getTermCounts", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getTermCounts", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Map<String,MetadataCardinalityCounts>> getTermCounts() throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getTermCounts({}, {})", this.auths, this.metadataTableName);
         Map<String,Map<String,MetadataCardinalityCounts>> allCounts = Maps.newHashMap();
@@ -777,7 +777,7 @@ public class MetadataHelper {
      * @throws AccumuloSecurityException
      *             if something goes wrong getting root authorizations
      */
-    @Cacheable(value = "getTermCountsWithRootAuths", key = "{#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getTermCountsWithRootAuths", key = "{#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Map<String,MetadataCardinalityCounts>> getTermCountsWithRootAuths()
                     throws InstantiationException, IllegalAccessException, TableNotFoundException, AccumuloSecurityException, AccumuloException {
         log.debug("cache fault for getTermCounts({}, {})", this.auths, this.metadataTableName);
@@ -819,7 +819,8 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      *             if the table does not exist
      */
-    @Cacheable(value = "getAllNormalized", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getAllNormalized", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Set<String> getAllNormalized() throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getAllNormalized({}, {})", this.auths, this.metadataTableName);
         Set<String> normalizedFields = Sets.newHashSetWithExpectedSize(10);
@@ -1005,7 +1006,7 @@ public class MetadataHelper {
      * @throws ExecutionException
      *             it can't, remove this
      */
-    @Cacheable(value = "getEdges", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}")
+    @Cacheable(value = "getEdges", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", sync = true)
     public SetMultimap<Key,Value> getEdges() throws TableNotFoundException, ExecutionException {
         log.debug("cache fault for getEdges({})", this.auths);
         SetMultimap<Key,Value> edges = HashMultimap.create();
@@ -1112,7 +1113,8 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      *             if the table does not exist
      */
-    @Cacheable(value = "getTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName,#p0}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName,#p0}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
         Multimap<String,String> termFrequencyFields = loadTermFrequencyFields();
