@@ -15,13 +15,10 @@ import com.google.common.base.Preconditions;
 
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
-class ListDocIdIteratorTest extends FieldIndexDataTestUtil {
-
-    private String query;
+public class ListDocIdIteratorTest extends FieldIndexDataTestUtil {
 
     @BeforeEach
     public void setUp() throws Exception {
-        query = null;
         clearState();
     }
 

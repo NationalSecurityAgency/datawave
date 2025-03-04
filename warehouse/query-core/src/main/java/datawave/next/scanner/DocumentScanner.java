@@ -114,7 +114,7 @@ public class DocumentScanner implements Iterator<Result>, Closeable {
         if (log.isDebugEnabled()) {
             log.debug("closing DocumentScanner");
         }
-        log.info("closing document scanner");
+
         consumerExecutorPool.shutdownNow();
         docIdExecutorPool.shutdownNow();
         documentExecutorPool.shutdownNow();

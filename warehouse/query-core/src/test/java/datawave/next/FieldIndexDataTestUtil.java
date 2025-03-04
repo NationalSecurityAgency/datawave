@@ -25,7 +25,9 @@ import datawave.next.stats.DocumentIteratorStats;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * Test utility with common methods for writing data asserting results
+ * Test utility with common methods for writing data asserting results.
+ * <p>
+ * Extending classes can easily write singleton or bulk test data, create and drive an iterator and assert results.
  */
 public abstract class FieldIndexDataTestUtil {
 
@@ -39,6 +41,7 @@ public abstract class FieldIndexDataTestUtil {
     protected LongRange timeFilter = null;
     protected final SortedSet<Key> results = new TreeSet<>();
 
+    protected String query;
     protected DocumentIteratorStats stats;
 
     protected void clearState() {
@@ -47,6 +50,10 @@ public abstract class FieldIndexDataTestUtil {
         timeFilter = null;
         results.clear();
         stats = null;
+    }
+
+    protected void withQuery(String query) {
+        this.query = query;
     }
 
     public void withDataTypes(String... datatypes) {

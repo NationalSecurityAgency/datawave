@@ -16,13 +16,13 @@ import com.google.common.base.Preconditions;
 
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
+/**
+ * Test cases for the {@link RangeDocIdIterator}
+ */
 public class RangeDocIdIteratorTest extends FieldIndexDataTestUtil {
-
-    private String query;
 
     @BeforeEach
     public void setup() {
-        query = null;
         clearState();
     }
 

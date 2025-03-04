@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
+/**
+ * Test cases for the {@link SimpleQueryVisitor}, which determines if a query can be handled by the document scheduler
+ */
 public class SimpleQueryVisitorTest {
 
     private final Set<String> indexedFields = Set.of("INDEXED", "INDEX_ONLY");
@@ -49,28 +52,57 @@ public class SimpleQueryVisitorTest {
     }
 
     @Test
-    public void testMarkers() {
+    public void testValueMarker() {
         test("(_Value_ = true) && (INDEXED =~ 'ba.*')", true);
         test("(_Value_ = true) && (INDEX_ONLY =~ 'ba.*')", true);
         test("(_Value_ = true) && (NON_EVENT =~ 'ba.*')", false);
+    }
 
+    @Test
+    public void testDelayedMarker() {
+        test("(_Delayed_ = true) && (INDEXED =~ 'ba.*')", false);
+        test("(_Delayed_ = true) && (INDEX_ONLY =~ 'ba.*')", false);
+        test("(_Delayed_ = true) && (NON_EVENT =~ 'ba.*')", false);
+    }
+
+    @Test
+    public void testEvaluationOnlyMarker() {
         test("(_Eval_ = true) && (INDEXED =~ 'ba.*')", false);
         test("(_Eval_ = true) && (INDEX_ONLY =~ 'ba.*')", false);
         test("(_Eval_ = true) && (NON_EVENT =~ 'ba.*')", false);
+    }
 
-        test("(_Bounded_ = true) && (INDEXED >= 1 && INDEXED <= 2)", false);
-        test("(_Bounded_ = true) && (INDEX_ONLY >= 1 && INDEX_ONLY <= 2)", false);
+    @Test
+    public void testBoundedRangeMarker() {
+        test("(_Bounded_ = true) && (INDEXED >= 1 && INDEXED <= 2)", true);
+        test("(_Bounded_ = true) && (INDEX_ONLY >= 1 && INDEX_ONLY <= 2)", true);
         test("(_Bounded_ = true) && (NON_EVENT >= 1 && NON_EVENT <= 2)", false);
     }
 
     @Test
-    public void testKnownFalseCases() {
+    public void testListMarker() {
+        test("((_List_ = true) && (((id = 'uuid') && (field = 'INDEXED') && (params = '{\"values\":[\"value-a\"]}'))))", true);
+        test("((_List_ = true) && (((id = 'uuid') && (field = 'INDEX_ONLY') && (params = '{\"values\":[\"value-a\"]}'))))", true);
+        test("((_List_ = true) && (((id = 'uuid') && (field = 'NON_EVENT') && (params = '{\"values\":[\"value-a\"]}'))))", false);
+    }
+
+    @Test
+    public void testIsNull() {
         test("INDEXED == 'a' && filter:isNull(INDEXED)", true);
+        test("INDEXED == 'a' && INDEXED == null", true);
+    }
+
+    @Test
+    public void testIsNotNull() {
         test("INDEXED == 'a' && filter:isNotNull(INDEXED)", true);
-        test("INDEXED == 'a' && INDEXED == null", false);
         test("INDEXED == 'a' && INDEXED != null", false);
         test("INDEXED == 'a' && !(INDEXED == null)", false);
+    }
+
+    @Test
+    public void testNegatedRegex() {
         test("INDEXED !~ 'ba.*'", false);
+        test("!(INDEXED =~ 'ba.*')", false);
     }
 
     @Test
@@ -79,6 +111,13 @@ public class SimpleQueryVisitorTest {
         test("(NON_INDEXED == 'a' || NON_INDEXED == 'b')", false);
         test("(NON_INDEXED == 'a' || NON_INDEXED == 'b')", false);
         test("INDEXED == 'a' && (NON_INDEXED == 'b' || NON_INDEXED == 'c')", true);
+    }
+
+    @Test
+    public void testIntersectionWithFilterRegex() {
+        test("INDEXED == 'a' && filter:includeRegex(INDEXED_FIELD, 'ba.*')", true);
+        test("INDEXED == 'a' && filter:includeRegex(INDEX_ONLY_FIELD, 'ba.*')", true);
+        test("INDEXED == 'a' && filter:includeRegex(EVENT_ONLY_FIELD, 'ba.*')", true);
     }
 
     private void test(String query, boolean expected) {

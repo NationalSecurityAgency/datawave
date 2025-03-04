@@ -18,6 +18,7 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 
@@ -56,9 +57,10 @@ public class SimpleQueryVisitor extends BaseVisitor {
         if (instance != null && instance.getType() != null) {
             switch (instance.getType()) {
                 case BOUNDED_RANGE:
+                    handleBoundedRange(instance.getSource());
+                    return data;
                 case EXCEEDED_OR:
-                    // assume we're good, even when we're not
-                    valid = true;
+                    handleListMarker(instance.getSource());
                     return data;
                 case EXCEEDED_VALUE:
                     node.childrenAccept(this, data);
@@ -76,6 +78,15 @@ public class SimpleQueryVisitor extends BaseVisitor {
         }
         node.childrenAccept(this, data);
         return data;
+    }
+
+    private void handleBoundedRange(JexlNode node) {
+        validateFields(node);
+    }
+
+    private void handleListMarker(JexlNode node) {
+        ExceededOr exceededOr = new ExceededOr(node);
+        validateField(exceededOr.getField());
     }
 
     @Override
@@ -157,6 +168,17 @@ public class SimpleQueryVisitor extends BaseVisitor {
     }
 
     private void visitLeaf(JexlNode node) {
+
+        // check the literal first. A term like "FIELD == null" does not contribute to finding candidate documents, but shouldn't fail the visitor either
+        Object value = JexlASTHelper.getLiteralValue(node);
+        if (value == null) {
+            return;
+        }
+
+        validateFields(node);
+    }
+
+    private void validateFields(JexlNode node) {
         Set<String> fields = JexlASTHelper.getIdentifierNames(node);
         if (fields.isEmpty()) {
             // likely dealing with method functions
@@ -164,15 +186,13 @@ public class SimpleQueryVisitor extends BaseVisitor {
         }
 
         for (String field : fields) {
-            if (indexedFields.contains(field) || indexOnlyFields.contains(field)) {
-                atLeastOneFieldIndexed = true;
-                break;
-            }
+            validateField(field);
         }
+    }
 
-        Object value = JexlASTHelper.getLiteralValue(node);
-        if (value == null) {
-            valid = false;
+    private void validateField(String field) {
+        if (indexedFields.contains(field) || indexOnlyFields.contains(field)) {
+            atLeastOneFieldIndexed = true;
         }
     }
 }

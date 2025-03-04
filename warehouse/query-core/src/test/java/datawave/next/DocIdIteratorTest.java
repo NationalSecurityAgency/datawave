@@ -1,33 +1,32 @@
 package datawave.next;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.LongRange;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.query.jexl.JexlNodeFactory;
-
+/**
+ * Test cases for the {@link DocIdIterator}
+ */
 public class DocIdIteratorTest extends FieldIndexDataTestUtil {
-
-    private String field;
-    private String value;
 
     @BeforeEach
     public void setup() {
-        field = null;
-        value = null;
         clearState();
     }
 
     @Test
     public void testSimpleScan() {
         writeData("FIELD_A", "value-a", 10);
-        withFieldValue("FIELD_A", "value-a");
+        withQuery("FIELD_A == 'value-a'");
         drive();
         assertResultSize(10);
         assertEquals(10, stats.getNextCount());
@@ -39,7 +38,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
     @Test
     public void testScanWithNoBackingData() {
         writeData("FIELD_A", "value-b", 10);
-        withFieldValue("FIELD_A", "value-a");
+        withQuery("FIELD_A == 'value-a'");
         drive();
         assertResultSize(0);
         assertEquals(0, stats.getNextCount());
@@ -60,7 +59,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         writeIndex("FIELD_A", "value-a", "datatype-c", 7);
         writeIndex("FIELD_A", "value-a", "datatype-c", 8);
         writeIndex("FIELD_A", "value-a", "datatype-c", 9);
-        withFieldValue("FIELD_A", "value-a");
+        withQuery("FIELD_A == 'value-a'");
 
         // no filter, should hit every key
         drive();
@@ -133,7 +132,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
     @Test
     public void testScanWithTimeFilter() {
         writeData("FIELD_A", "value-a", 10);
-        withFieldValue("FIELD_A", "value-a");
+        withQuery("FIELD_A == 'value-a'");
         // all keys written at timestamp 10, this will filter out all keys in the range
         withTimeFilter(LongRange.of(5, 7));
         drive();
@@ -147,7 +146,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
     @Test
     public void testScanWithNumericField() {
         writeData("FIELD_12", "14", 10);
-        withFieldValue("FIELD_12", "14");
+        withQuery("FIELD_12 == '14'");
         drive();
         assertResultSize(10);
         assertEquals(10, stats.getNextCount());
@@ -156,15 +155,13 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         assertEquals(0, stats.getTimeFilterMiss());
     }
 
-    public void withFieldValue(String field, String value) {
-        this.field = field;
-        this.value = value;
-    }
-
     @Override
     protected DocIdIterator createIterator() {
+        ASTJexlScript script = parse(query);
+        JexlNode child = script.jjtGetChild(0);
+        assertInstanceOf(ASTEQNode.class, child);
+
         SortedKeyValueIterator<Key,Value> source = createSource();
-        JexlNode node = JexlNodeFactory.buildEQNode(field, value);
-        return new DocIdIterator(source, row, node);
+        return new DocIdIterator(source, row, child);
     }
 }
