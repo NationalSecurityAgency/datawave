@@ -615,6 +615,12 @@ public class ShapesIngest {
         }
 
         // TODO -- query model
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            m = new Mutation("num_shards");
+            m.put("ns", "20240101_1", new Value());
+            bw.addMutation(m);
+        }
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)

@@ -460,7 +460,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
             }
             JexlNode wrappedNode = JexlNodes.wrap(node);
-            return ScannerStream.exceededValueThreshold(createFullFieldIndexScanList(config, wrappedNode).iterator(), wrappedNode);
+            IndexScanList iter = new IndexScanList(wrappedNode, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
+            return ScannerStream.exceededValueThreshold(iter, wrappedNode);
+
         } else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
             return ScannerStream.ignored(node);
         } else if (instance.isType(DROPPED)) {
@@ -952,6 +954,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      *            a JexlNode
      * @return The list of index info ranges
      */
+    @Deprecated(forRemoval = true)
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
 
