@@ -268,8 +268,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFilters", true);
         defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
         updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
-        defaultValues.put("indexHoles", Lists.newArrayList());
-        updatedValues.put("indexHoles", Lists.newArrayList(new IndexHole()));
+        defaultValues.put("indexValueHoles", Lists.newArrayList());
+        updatedValues.put("indexValueHoles", Lists.newArrayList(new IndexValueHole()));
         defaultValues.put("indexedFields", Sets.newHashSet());
         updatedValues.put("indexedFields", Sets.newHashSet("FIELD_C", "FIELD_D"));
         defaultValues.put("reverseIndexedFields", Sets.newHashSet());
@@ -543,8 +543,8 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 
-        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
-        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
+        defaultValues.put("indexFieldHoleMinThreshold", 1.0d);
+        updatedValues.put("indexFieldHoleMinThreshold", 0.5d);
 
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));

@@ -9,14 +9,14 @@ import datawave.core.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 
 /**
- * Implementation of {@link CloseableIterable} intended to be used by {@link FederatedQueryPlanner}. This iterable
+ * Implementation of {@link CloseableIterable} intended to be used by {@link DatePartitionedQueryPlanner}. This iterable
  */
-public class FederatedQueryIterable implements CloseableIterable<QueryData> {
+public class DatePartitionedQueryIterable implements CloseableIterable<QueryData> {
 
     private final List<CloseableIterable<QueryData>> iterables = new ArrayList<>();
 
     /**
-     * Add an iterable to this {@link FederatedQueryIterable}.
+     * Add an iterable to this {@link DatePartitionedQueryIterable}.
      *
      * @param iterable
      *            the iterable to add
@@ -28,7 +28,7 @@ public class FederatedQueryIterable implements CloseableIterable<QueryData> {
     }
 
     /**
-     * Closes and clears each iterable in this {@link FederatedQueryIterable}.
+     * Closes and clears each iterable in this {@link DatePartitionedQueryIterable}.
      *
      * @throws IOException
      *             if an error occurred when closing an iterable
@@ -42,7 +42,7 @@ public class FederatedQueryIterable implements CloseableIterable<QueryData> {
     }
 
     /**
-     * Returns an iterator that will iterate over the {@link QueryData} returned by each iterable in this {@link FederatedQueryIterable}.
+     * Returns an iterator that will iterate over the {@link QueryData} returned by each iterable in this {@link DatePartitionedQueryIterable}.
      *
      * @return the iterator
      */

@@ -60,7 +60,7 @@ import datawave.data.type.Type;
 import datawave.data.type.TypeFactory;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeMetadataHelper;
-import datawave.query.model.FieldIndexHole;
+import datawave.query.model.IndexFieldHole;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
 import datawave.util.time.DateHelper;
@@ -276,7 +276,7 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getAllDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getAllDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<Type<?>> getAllDatatypes() throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getAllDatatypes({}, {})", this.auths, this.metadataTableName);
         
@@ -327,7 +327,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getCompositeToFieldMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getCompositeToFieldMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
         log.debug("cache fault for getCompositeToFieldMap({}, {})", this.auths, this.metadataTableName);
         return this.getCompositeToFieldMap(null);
@@ -344,7 +345,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeToFieldMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,String> getCompositeToFieldMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeToFieldMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -393,7 +394,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeTransitionDateMap", key = "{#root.target.auths,#root.target.metadataTableName}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Date> getCompositeTransitionDateMap() throws TableNotFoundException {
         log.debug("cache fault for getCompositeTransitionDateMap({}, {})", this.auths, this.metadataTableName);
         return this.getCompositeTransitionDateMap(null);
@@ -410,7 +411,7 @@ public class AllFieldMetadataHelper {
      */
     
     @Cacheable(value = "getCompositeTransitionDateMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Date> getCompositeTransitionDateMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeTransitionDateMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -464,7 +465,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getWhindexCreationDateMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getWhindexCreationDateMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Map<String,Date> getWhindexCreationDateMap() throws TableNotFoundException {
         log.debug("cache fault for getWhindexCreationDateMap({}, {})", this.auths, this.metadataTableName);
         return this.getWhindexCreationDateMap(null);
@@ -480,7 +482,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getWhindexCreationDateMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Date> getWhindexCreationDateMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getWhindexCreationDateMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -536,7 +538,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeFieldSeparatorMap", key = "{#root.target.auths,#root.target.metadataTableName}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,String> getCompositeFieldSeparatorMap() throws TableNotFoundException {
         log.debug("cache fault for getCompositeFieldSeparatorMap({}, {})", this.auths, this.metadataTableName);
         return this.getCompositeFieldSeparatorMap(null);
@@ -552,7 +554,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeFieldSeparatorMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,String> getCompositeFieldSeparatorMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeFieldSeparatorMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -656,7 +658,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getFieldsToDatatypes", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getFieldsToDatatypes({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
@@ -690,7 +692,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getFieldsForDatatype", key = "{#root.target.auths,#root.target.metadataTableName,#datawaveType}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getFieldsForDatatype({})", datawaveType);
@@ -712,7 +714,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getFieldsForDatatype", key = "{#root.target.auths,#root.target.metadataTableName,#datawaveType,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getFieldsForDatatype({}, {})", datawaveType, ingestTypeFilter);
         TypeMetadata typeMetadata = this.typeMetadataHelper.getTypeMetadata(ingestTypeFilter);
@@ -929,7 +931,7 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,String> loadAllFields() throws TableNotFoundException {
         log.debug("cache fault for loadAllFields({}, {})", this.auths, this.metadataTableName);
         if (log.isTraceEnabled()) {
@@ -968,7 +970,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getIndexOnlyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getIndexOnlyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> getIndexOnlyFields() throws TableNotFoundException {
         log.debug("cache fault for getIndexOnlyFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1040,7 +1043,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadTermFrequencyFields() throws TableNotFoundException {
         log.debug("cache fault for loadTermFrequencyFields({}, {})", this.auths, this.metadataTableName);
         Multimap<String,String> fields = HashMultimap.create();
@@ -1067,7 +1071,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadIndexedFields() throws TableNotFoundException {
         log.debug("cache fault for loadIndexedFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1096,7 +1101,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadReverseIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadReverseIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadReverseIndexedFields() throws TableNotFoundException {
         log.debug("cache fault for loadReverseIndexedFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1124,7 +1130,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadIndexedFields", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadIndexedFields", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadAllIndexedFields() throws TableNotFoundException {
         log.debug("cache fault for loadIndexedFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1152,7 +1159,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadExpansionFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadExpansionFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadExpansionFields() throws TableNotFoundException {
         log.debug("cache fault for loadExpansionFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1180,7 +1188,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadContentFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadContentFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadContentFields() throws TableNotFoundException {
         log.debug("cache fault for loadContentFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1211,7 +1220,7 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> loadDatatypes() throws TableNotFoundException {
         log.debug("cache fault for loadDatatypes({}, {})", this.auths, this.metadataTableName);
         
@@ -1247,7 +1256,7 @@ public class AllFieldMetadataHelper {
      *            range 0.0 to 1.0
      * @return a map of field names and datatype pairs to field index holes
      */
-    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
+    public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         return getFieldIndexHoles(ColumnFamilyConstants.COLF_I, fields, datatypes, minThreshold);
     }
@@ -1265,7 +1274,7 @@ public class AllFieldMetadataHelper {
      *            range 0.0 to 1.0
      * @return a map of field names and datatype pairs to field index holes
      */
-    public Map<String,Map<String,FieldIndexHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
+    public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         return getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, fields, datatypes, minThreshold);
     }
@@ -1287,7 +1296,7 @@ public class AllFieldMetadataHelper {
      * @throws IOException
      *             if a value fails to deserialize
      */
-    private Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
+    private Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         // create local copies to avoid side effects
         fields = new HashSet<>(fields);
@@ -1340,7 +1349,7 @@ public class AllFieldMetadataHelper {
             minThreshold = 0.0d;
         }
         
-        Map<String,Map<String,FieldIndexHole>> indexHoles;
+        Map<String,Map<String,IndexFieldHole>> indexHoles;
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             
             // Fetch the frequency column and the specified index column.
@@ -1384,24 +1393,48 @@ public class AllFieldMetadataHelper {
         this.typeCacheExpirationInMinutes = typeCacheExpirationInMinutes;
     }
     
+    private enum BOUNDARY_TYPE {
+        NONE, // denoting a non-boundary marker
+        IMPLIED, // denoting a boundary implied by the old style index entry (using timestamp for date)
+        MANUAL_INDEXED, // denoting a boundary that was manually injected including the date in the key and a true value
+        MANUAL_UNINDEXED // denoting a boundary that was manually injected including the date in the key and a false value
+    }
+    
     private static class FieldCount {
         private long count = 0;
-        private Boolean boundaryValue;
+        private Date date = null;
+        private BOUNDARY_TYPE boundaryType = BOUNDARY_TYPE.NONE;
         
         public void increment(long value) {
             this.count += value;
         }
         
-        public void setBoundaryValue(boolean boundaryValue) {
-            this.boundaryValue = boundaryValue;
+        public void setBoundaryValue(BOUNDARY_TYPE boundaryType) {
+            this.boundaryType = boundaryType;
         }
         
         public boolean isBoundary() {
-            return this.boundaryValue != null;
+            return this.boundaryType != null && this.boundaryType != BOUNDARY_TYPE.NONE;
         }
         
-        public boolean getBoundaryValue() {
-            return this.boundaryValue;
+        public boolean isIndexBoundary() {
+            return this.boundaryType == BOUNDARY_TYPE.IMPLIED || this.boundaryType == BOUNDARY_TYPE.MANUAL_INDEXED;
+        }
+        
+        public boolean isUnindexedBoundary() {
+            return this.boundaryType == BOUNDARY_TYPE.MANUAL_UNINDEXED;
+        }
+        
+        public BOUNDARY_TYPE getBoundaryType() {
+            return this.boundaryType;
+        }
+        
+        public void setDate(Date date) {
+            this.date = date;
+        }
+        
+        public Date getDate() {
+            return date;
         }
         
         public long getCount() {
@@ -1459,7 +1492,7 @@ public class AllFieldMetadataHelper {
          * @throws IOException
          *             if a value fails to deserialize
          */
-        Map<String,Map<String,FieldIndexHole>> findHoles() throws IOException {
+        Map<String,Map<String,IndexFieldHole>> findHoles() throws IOException {
             String prevFieldName = null;
             Text prevColumnFamily = null;
             
@@ -1468,13 +1501,19 @@ public class AllFieldMetadataHelper {
             Text currColumnFamily;
             Date currDate;
             long currCount;
-            Boolean currBoundaryValue;
+            BOUNDARY_TYPE currBoundaryType;
             
             for (Map.Entry<Key,Value> entry : scanner) {
+                
                 // Parse the current row.
                 Key key = entry.getKey();
                 currFieldName = key.getRow().toString();
                 currColumnFamily = key.getColumnFamily();
+                
+                // avoid carrying over anything
+                currDatatype = null;
+                currDate = null;
+                currBoundaryType = BOUNDARY_TYPE.NONE;
                 
                 String cq = key.getColumnQualifier().toString();
                 int offset = cq.indexOf(NULL_BYTE);
@@ -1487,9 +1526,9 @@ public class AllFieldMetadataHelper {
                     }
                     
                     // we can treat this like an index marker but the ts of the entry denotes the boundary
-                    currDate = getBaseDate(key.getTimestamp());
+                    currDate = getPreviousDay(key.getTimestamp());
                     log.warn("Found an index entry missing the date, treating as an index marker at " + currDate + " : " + key);
-                    currBoundaryValue = true;
+                    currBoundaryType = BOUNDARY_TYPE.IMPLIED;
                     currCount = 0;
                 } else {
                     currDatatype = cq.substring(0, offset);
@@ -1504,11 +1543,11 @@ public class AllFieldMetadataHelper {
                     // where the boolean denotes that we can assume the field is indexed/no on and before this date
                     offset = cqRemainder.indexOf(NULL_BYTE);
                     if (offset >= 0) {
-                        currBoundaryValue = Boolean.valueOf(cqRemainder.substring(offset + 1));
+                        currBoundaryType = Boolean.valueOf(cqRemainder.substring(offset + 1)) ? BOUNDARY_TYPE.MANUAL_INDEXED : BOUNDARY_TYPE.MANUAL_UNINDEXED;
                         currDate = DateHelper.parse(cqRemainder.substring(0, offset));
                         currCount = 0;
                     } else {
-                        currBoundaryValue = null;
+                        currBoundaryType = null;
                         try {
                             currDate = DateHelper.parse(cqRemainder);
                             ByteArrayInputStream byteStream = new ByteArrayInputStream(entry.getValue().get());
@@ -1517,9 +1556,9 @@ public class AllFieldMetadataHelper {
                         } catch (DateTimeParseException e) {
                             // probably the really old type classname format instead of a date.
                             // we can treat this like an index marker but the ts of the entry denotes the boundary
-                            currDate = getBaseDate(key.getTimestamp());
+                            currDate = getPreviousDay(key.getTimestamp());
                             log.warn("Found an index entry missing the date, treating as an index marker at " + currDate + " : " + key);
-                            currBoundaryValue = true;
+                            currBoundaryType = BOUNDARY_TYPE.IMPLIED;
                             currCount = 0;
                         }
                     }
@@ -1556,7 +1595,7 @@ public class AllFieldMetadataHelper {
                     }
                     
                     // Add the current entry to the target entry map.
-                    addToTargetMap(currDatatype, currDate, currCount, currBoundaryValue);
+                    addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
                 } else {
                     // The column family is the same. We have two possible scenarios:
                     // - A row with a field that is different to the previous field.
@@ -1569,10 +1608,10 @@ public class AllFieldMetadataHelper {
                         // Clear the entry maps.
                         clearEntryMaps();
                         // Add the current entry to the target entry map.
-                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryValue);
+                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
                     } else {
                         // The current row has the same field. Add the current entry to the target map.
-                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryValue);
+                        addToTargetMap(currDatatype, currDate, currCount, currBoundaryType);
                     }
                 }
                 
@@ -1588,13 +1627,25 @@ public class AllFieldMetadataHelper {
             return getImmutableFieldIndexHoles();
         }
         
-        private Date getBaseDate(long ts) {
+        private Date getPreviousDay(long ts) {
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(ts);
             c.set(Calendar.HOUR_OF_DAY, 0);
             c.set(Calendar.SECOND, 0);
             c.set(Calendar.MINUTE, 0);
             c.set(Calendar.MILLISECOND, 0);
+            c.add(Calendar.DATE, -1);
+            return c.getTime();
+        }
+        
+        private Date getNextDay(long ts) {
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis(ts);
+            c.set(Calendar.HOUR_OF_DAY, 0);
+            c.set(Calendar.SECOND, 0);
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            c.add(Calendar.DATE, +1);
             return c.getTime();
         }
         
@@ -1608,11 +1659,17 @@ public class AllFieldMetadataHelper {
         /**
          * Add the current date and count to the current target map for the current datatype.
          */
-        private void addToTargetMap(String datatype, Date date, long count, Boolean boundaryValue) {
+        private void addToTargetMap(String datatype, Date date, long count, BOUNDARY_TYPE boundaryType) {
             FieldCount fieldCount = getFieldCount(targetMap, datatype, date);
             fieldCount.increment(count);
-            if (boundaryValue != null) {
-                fieldCount.setBoundaryValue(boundaryValue);
+            if (boundaryType != null) {
+                fieldCount.setBoundaryValue(boundaryType);
+                
+                // If this is an implied boundary type, then the date of field count is actually the following day
+                // (see calls to getPreviousDay above)
+                if (boundaryType == BOUNDARY_TYPE.IMPLIED) {
+                    fieldCount.setDate(getNextDay(date.getTime()));
+                }
             }
             
             // we need to ensure we have a frequency entry if a boundary so that we will catch this when finding holes
@@ -1631,6 +1688,7 @@ public class AllFieldMetadataHelper {
             FieldCount fieldCount = datesToCounts.get(date);
             if (fieldCount == null) {
                 fieldCount = new FieldCount();
+                fieldCount.setDate(date);
                 datesToCounts.put(date, fieldCount);
             }
             return fieldCount;
@@ -1669,6 +1727,25 @@ public class AllFieldMetadataHelper {
         }
         
         /**
+         * An expression to determine if we can assume a field is index on a particular date given the previous boundary and the date in question. This is true
+         * if the previous boundary was an implied boundary (previous index entry type, based on timestamp of key) and the date in question is the date that the
+         * implied boundary was found. In this case the boundary is actually assigned the previous date in the map but the date in the FieldCount is the actual
+         * date the marker was found on based on the key timestamp.
+         * 
+         * @param date
+         *            the date in question
+         * @param prevBoundary
+         *            the previous boundary if any
+         * @return true if we can assume indexed
+         */
+        private boolean canAssumeIndexed(Date date, FieldCount prevBoundary) {
+            if (prevBoundary != null && prevBoundary.getBoundaryType() == BOUNDARY_TYPE.IMPLIED) {
+                return date.equals(prevBoundary.getDate());
+            }
+            return false;
+        }
+        
+        /**
          * Return a set of all index hole date ranges found for the given maps of frequency and index entries.
          * 
          * @param frequencyMap
@@ -1681,24 +1758,31 @@ public class AllFieldMetadataHelper {
             Set<Pair<Date,Date>> indexHoles = new HashSet<>();
             Date holeStartDate = null;
             Date prevDate = null;
+            FieldCount prevBoundary = null;
             
             for (Date date : frequencyMap.keySet()) {
+                // see if we can assume this date is indexed
+                boolean canAssumeIndexed = canAssumeIndexed(date, prevBoundary);
+                prevBoundary = null;
+                
                 // There is a corresponding index entry for the current date.
-                if (indexMap.containsKey(date)) {
+                if (indexMap.containsKey(date) || canAssumeIndexed) {
                     FieldCount indexCount = indexMap.get(date);
                     
                     // if this is a boundary marker, then replace/clear map thus far
-                    if (indexCount.isBoundary()) {
+                    if (indexCount != null && indexCount.isBoundary()) {
                         // all holes thus far are to be replaced
                         indexHoles.clear();
                         // if not indexed, then start a hole since the beginning
-                        if (!indexCount.getBoundaryValue()) {
+                        if (indexCount.isUnindexedBoundary()) {
                             holeStartDate = frequencyMap.firstKey();
                         } else {
                             // else indexed since the beginning
                             holeStartDate = null;
+                            // keep track of the previous indexed boundary
+                            prevBoundary = indexCount;
                         }
-                    } else if (meetsMinThreshold(frequencyMap.get(date), indexCount)) {
+                    } else if (canAssumeIndexed || meetsMinThreshold(frequencyMap.get(date), indexCount)) {
                         // The count for the current index entry meets the minimum threshold.
                         // The previous entry was part of an index hole. Capture the index hole range.
                         if (holeStartDate != null) {
@@ -1707,8 +1791,7 @@ public class AllFieldMetadataHelper {
                         }
                     } else {
                         // The count for the current index entry does not meet the minimum threshold, and thus this entry is part of an index hole. Mark the
-                        // start
-                        // of an index hole date range if we have not already found one.
+                        // start of an index hole date range if we have not already found one.
                         if (holeStartDate == null) {
                             holeStartDate = date;
                         }
@@ -1720,7 +1803,7 @@ public class AllFieldMetadataHelper {
                     }
                 }
                 
-                // Track the previous date.
+                // Track the previous date
                 prevDate = date;
             }
             
@@ -1755,15 +1838,15 @@ public class AllFieldMetadataHelper {
          * 
          * @return an immutable map.
          */
-        private Map<String,Map<String,FieldIndexHole>> getImmutableFieldIndexHoles() {
-            ImmutableMap.Builder<String,Map<String,FieldIndexHole>> fieldMapBuilder = new ImmutableMap.Builder<>();
+        private Map<String,Map<String,IndexFieldHole>> getImmutableFieldIndexHoles() {
+            ImmutableMap.Builder<String,Map<String,IndexFieldHole>> fieldMapBuilder = new ImmutableMap.Builder<>();
             
             for (String fieldName : this.fieldIndexHoles.keySet()) {
                 Multimap<String,Pair<Date,Date>> datatypeMap = this.fieldIndexHoles.get(fieldName);
                 if (!datatypeMap.isEmpty()) {
-                    ImmutableMap.Builder<String,FieldIndexHole> datatypeMapBuilder = new ImmutableMap.Builder<>();
+                    ImmutableMap.Builder<String,IndexFieldHole> datatypeMapBuilder = new ImmutableMap.Builder<>();
                     for (String datatype : datatypeMap.keySet()) {
-                        FieldIndexHole fieldIndexHole = new FieldIndexHole(fieldName, datatype, datatypeMap.get(datatype));
+                        IndexFieldHole fieldIndexHole = new IndexFieldHole(fieldName, datatype, datatypeMap.get(datatype));
                         datatypeMapBuilder.put(datatype, fieldIndexHole);
                     }
                     fieldMapBuilder.put(fieldName, datatypeMapBuilder.build());
