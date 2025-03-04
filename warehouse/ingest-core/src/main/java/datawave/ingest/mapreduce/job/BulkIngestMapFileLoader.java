@@ -87,7 +87,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static int SHUTDOWN_PORT = 24111;
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
-    private static ImportMode BULK_IMPORT_MODE = ImportMode.V1;
 
     public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
@@ -143,15 +142,16 @@ public final class BulkIngestMapFileLoader implements Runnable {
             log.error("usage: BulkIngestMapFileLoader hdfsWorkDir jobDirPattern instanceName zooKeepers username password "
                             + "[-sleepTime sleepTime] [-majcThreshold threshold] [-majcCheckInterval count] [-majcDelay majcDelay] "
                             + " [-seqFileHdfs seqFileSystemUri] [-srcHdfs srcFileSystemURI] [-destHdfs destFileSystemURI] [-jt jobTracker] "
-                            + "[-ingestMetricsDisabled] [-jobObservers jobObserverClasses] [-shutdownPort portNum] confFile [{confFile}]");
+                            + "[-ingestMetricsDisabled] [-jobObservers jobObserverClasses] [-shutdownPort portNum] [-importMode accumuloImportMode] confFile [{confFile}]");
             System.exit(-1);
         }
 
-        int numBulkThreads = 8;
-        int numBulkAssignThreads = 4;
         List<Observer> jobObservers = new ArrayList<>();
         // default the number of HDFS threads to 1
         int numHdfsThreads = 1;
+
+        ImportMode importMode = ImportMode.V1;
+
         if (args.length > 6) {
             for (int i = 6; i < args.length; ++i) {
                 if ("-sleepTime".equalsIgnoreCase(args[i])) {
@@ -210,17 +210,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-maxDirectories must be followed a number of directories", e);
                         System.exit(-2);
                     }
-                } else if ("-numThreads".equalsIgnoreCase(args[i])) {
-                    if (i + 2 > args.length) {
-                        log.error("-numThreads must be followed by the number of bulk import threads");
-                        System.exit(-2);
-                    }
-                    try {
-                        numBulkThreads = Integer.parseInt(args[++i]);
-                    } catch (NumberFormatException e) {
-                        log.error("-numThreads must be followed by the number of bulk import threads", e);
-                        System.exit(-2);
-                    }
                 } else if ("-numHdfsThreads".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-numHdfsThreads must be followed by the number of threads to use for concurrent HDFS operations");
@@ -232,15 +221,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-numHdfsThreads must be followed by the number of threads to use for concurrent HDFS operations", e);
                         System.exit(-2);
                     }
-                } else if ("-numAssignThreads".equalsIgnoreCase(args[i])) {
+                } else if ("-importMode".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
-                        log.error("-numAssignThreads must be followed by the number of bulk import assignment threads");
+                        log.error("-importMode must be followed by the import mode to use. One of [V1, V2] ");
                         System.exit(-2);
                     }
                     try {
-                        numBulkAssignThreads = Integer.parseInt(args[++i]);
+                        importMode = ImportMode.valueOf(args[++i]);
                     } catch (NumberFormatException e) {
-                        log.error("-numAssignThreads must be followed by the number of bulk import assignment threads", e);
+                        log.error("-importMode must be followed by a valid import mode. [V1, V2]", e);
                         System.exit(-2);
                     }
                 } else if ("-seqFileHdfs".equalsIgnoreCase(args[i])) {
@@ -339,23 +328,19 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
         }
 
-        BULK_IMPORT_MODE = conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V1);
-
         log.info("Set sleep time to " + SLEEP_TIME + "ms");
         log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
         log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
         log.info("Will check the majcThreshold and majcDelay every " + MAJC_CHECK_INTERVAL + " bulk loads.");
         log.info("Processing a max of " + MAX_DIRECTORIES + " directories");
-        log.info("Using " + numBulkThreads + " bulk load threads");
         log.info("Using " + numHdfsThreads + " HDFS operation threads");
-        log.info("Using " + numBulkAssignThreads + " bulk assign threads");
         log.info("Using " + seqFileHdfs + " as the file system containing the original sequence files");
         log.info("Using " + srcHdfs + " as the source file system");
         log.info("Using " + destHdfs + " as the destination file system");
         log.info("Using " + jobtracker + " as the jobtracker");
         log.info("Using " + SHUTDOWN_PORT + " as the shutdown port");
         log.info("Using " + (FIFO ? "FIFO" : "LIFO") + " processing order");
-        log.info("Using " + BULK_IMPORT_MODE + " bulk import mode");
+        log.info("Using " + importMode + " bulk import mode");
 
         for (String[] s : properties) {
             conf.set(s[0], s[1]);
@@ -384,7 +369,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, user, new PasswordToken(passwordStr),
                         seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers, SLEEP_TIME,
-                        FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
+                        FAILURE_SLEEP_TIME, INGEST_METRICS, importMode);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
     }
@@ -392,13 +377,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
         this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
-                        SHUTDOWN_PORT, 1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
+                        SHUTDOWN_PORT, 1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, ImportMode.V2);
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
         this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort,
-                        1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
+                        1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, ImportMode.V2);
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
