@@ -408,35 +408,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>enforce-banned-dependencies</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <!-- spring boot microservices do not use the following slf4j binders -->
-                                        <exclude>ch.qos.reload4j:reload4j</exclude>
-                                        <exclude>org.slf4j:slf4j-reload4j</exclude>
-                                        <!-- spring boot microservices do not use 1.x versions of log4j -->
-                                        <exclude>log4j:log4j</exclude>
-                                        <!-- spring boot microservices do not use 1.x versions of junit -->
-                                        <exclude>junit:junit</exclude>
-                                    </excludes>
-                                    <includes>
-                                        <!-- some spring boot microservices include test dependencies which use 1.x versions of junit -->
-                                        <include>junit:junit:*:*:test</include>
-                                    </includes>
-                                </bannedDependencies>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1-SNAPSHOT</version>
         <relativePath>../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>authorization-service-parent</artifactId>
