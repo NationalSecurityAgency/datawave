@@ -459,9 +459,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     log.debug("{\"" + JexlASTHelper.getLiterals(node) + "\"} requires a full field index scan.");
                 }
             }
-            JexlNode wrappedNode = JexlNodes.wrap(node);
-            IndexScanList iter = new IndexScanList(wrappedNode, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
-            return ScannerStream.exceededValueThreshold(iter, wrappedNode);
+
+            JexlNode wrapped = JexlNodes.wrap(node);
+            ShardSpecificIndexIterator iter = new ShardSpecificIndexIterator(wrapped, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
+            return ScannerStream.withData(iter, wrapped);
 
         } else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
             return ScannerStream.ignored(node);

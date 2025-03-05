@@ -8,13 +8,19 @@ import java.util.TreeSet;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.index.lookup.RangeStream.NumShardFinder;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.util.Tuple2;
 import datawave.util.time.DateHelper;
 
 /**
  * This iterator presents a shard-specific view of an index scan, given the date range and the number of shards per day
+ * <p>
+ * Terms such as {@link MarkerType#EXCEEDED_VALUE} or {@link MarkerType#EXCEEDED_OR} are not executable against the global index for the purposes of shard
+ * nomination. In these cases this iterator is used to present a full index scan list of shards for maximum fan out.
+ * <p>
+ * Functionally similar to the {@link HintToShardIterator}
  */
-public class IndexScanList implements Iterator<Tuple2<String,IndexInfo>> {
+public class ShardSpecificIndexIterator implements Iterator<Tuple2<String,IndexInfo>> {
 
     private final JexlNode node;
     private final NumShardFinder numShardFinder;
@@ -25,7 +31,7 @@ public class IndexScanList implements Iterator<Tuple2<String,IndexInfo>> {
     private String day = null;
     private final TreeSet<String> shards = new TreeSet<>();
 
-    public IndexScanList(JexlNode node, NumShardFinder numShardFinder, Date start, Date stop) {
+    public ShardSpecificIndexIterator(JexlNode node, NumShardFinder numShardFinder, Date start, Date stop) {
         this.node = node;
         this.numShardFinder = numShardFinder;
         this.start = getCalendarStartOfDay(start);

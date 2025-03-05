@@ -287,6 +287,9 @@ public class RangeStreamQueryTest {
                 "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'uid')",
                 "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
                 "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
+                // two terms, both delayed
+                "((_Value_ = true) && (FOO =~ 'zz.*')) || ((_Value_ = true) && (FOO =~ 'xx.*'))",
+                "((_Value_ = true) && (FOO =~ 'zz.*')) && ((_Value_ = true) && (FOO =~ 'xx.*'))",
                 // three terms, one term is a nested union
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'shard')",
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'uid')",
@@ -341,6 +344,9 @@ public class RangeStreamQueryTest {
                 "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'uid')",
                 "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
                 "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
+                // two terms, both delayed
+                "((_Value_ = true) && (FOO =~ 'zz.*')) || ((_Value_ = true) && (FOO =~ 'xx.*'))",
+                "((_Value_ = true) && (FOO =~ 'zz.*')) && ((_Value_ = true) && (FOO =~ 'xx.*'))",
                 // three terms, one term is a nested intersection
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'shard')",
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'uid')",
@@ -422,6 +428,8 @@ public class RangeStreamQueryTest {
         ASTJexlScript plannedScript = JexlNodeFactory.createScript(plan.getQueryTree());
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
         if (!TreeEqualityVisitor.isEqual(expectedScript, plannedScript)) {
+            log.info("expected: " + buildQuery(expectedScript));
+            log.info("result  : " + buildQuery(plannedScript));
             fail("Expected [" + buildQuery(expectedScript) + "] but got [" + buildQuery(plannedScript) + "]");
         }
         queryPlans.close();

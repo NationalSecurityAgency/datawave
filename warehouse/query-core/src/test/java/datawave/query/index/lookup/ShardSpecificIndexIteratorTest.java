@@ -17,7 +17,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 import datawave.util.time.DateHelper;
 
-public class IndexScanListTest {
+public class ShardSpecificIndexIteratorTest {
 
     private String start;
     private String stop;
@@ -94,7 +94,7 @@ public class IndexScanListTest {
 
         NumShardFinder numShards = new MockNumShardFinder(cacheData);
 
-        IndexScanList iter = new IndexScanList(node, numShards, DateHelper.parse(start), DateHelper.parse(stop));
+        ShardSpecificIndexIterator iter = new ShardSpecificIndexIterator(node, numShards, DateHelper.parse(start), DateHelper.parse(stop));
 
         while (iter.hasNext()) {
             Tuple2<String,IndexInfo> tuple = iter.next();
