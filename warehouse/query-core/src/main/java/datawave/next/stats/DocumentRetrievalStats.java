@@ -21,10 +21,18 @@ public class DocumentRetrievalStats {
 
     private static final DecimalFormat format = new DecimalFormat("#.#");
 
+    private String slowestContext = null;
+    private long slowestTime = 0L;
+
     public synchronized void merge(ScanTimeStats stats) {
         this.submitStats.addValue(stats.getSubmitTime());
         this.scanStats.addValue(stats.getScanTime());
         this.elapsedStats.addValue(stats.getElapsedTime());
+
+        if (stats.getScanTime() > slowestTime) {
+            slowestTime = stats.getScanTime();
+            slowestContext = stats.getContext();
+        }
     }
 
     public String getSubmitStats() {
@@ -49,6 +57,10 @@ public class DocumentRetrievalStats {
         sb.append(", p95: ").append(format(stats.getPercentile(95)));
         sb.append(", p99: ").append(format(stats.getPercentile(99)));
         return sb.toString();
+    }
+
+    public String getSlowestScan() {
+        return format(slowestTime) + " ms for record id: " + slowestContext;
     }
 
     private String format(double ns) {

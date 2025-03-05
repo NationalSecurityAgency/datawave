@@ -43,8 +43,15 @@ public class DocumentRangeScan implements RunnableWithContext {
         this.queue = config.getResults();
         this.auths = config.getAuthorizations();
         this.numDocScans = config.getNumDocScans();
+
+        String context = getRecordId(keyWithContext.getKey());
         this.stats = new ScanTimeStats();
+        this.stats.setContext(context);
         this.stats.markSubmit();
+    }
+
+    private String getRecordId(Key key) {
+        return key.getRow().toString() + " " + key.getColumnFamily().toString();
     }
 
     @Override

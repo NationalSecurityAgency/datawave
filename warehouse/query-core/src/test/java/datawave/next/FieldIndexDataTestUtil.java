@@ -176,7 +176,7 @@ public abstract class FieldIndexDataTestUtil {
     protected ASTJexlScript parse(String query) {
         try {
             return JexlASTHelper.parseAndFlattenJexlQuery(query);
-        } catch (ParseException e) {
+        } catch (Exception e) {
             fail("Failed to parse query: " + query);
             throw new RuntimeException(e);
         }

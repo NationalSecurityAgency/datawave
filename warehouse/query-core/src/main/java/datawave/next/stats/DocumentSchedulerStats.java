@@ -76,6 +76,7 @@ public class DocumentSchedulerStats {
         // candidate and retrieval timing stats
         sb.append("candidate scan stats: ").append(candidateStats.getScanStats()).append("\n");
         sb.append("retrieval scan stats: ").append(retrievalStats.getScanStats()).append("\n");
+        sb.append("slowest retrieval took : ").append(retrievalStats.getSlowestScan()).append("\n");
 
         //  @formatter:off
         sb.append("total candidates/doc scans/results: (")
