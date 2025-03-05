@@ -169,13 +169,12 @@ create_post() {
   local _post_file_name="${POSTS_DIR}/${_yyyymmdd}-datawave-${1}.md"
   local _post="---
 title: DataWave ${1}
-version: ${1}
+version: \"${1}\"
+accumulo: \"${_accumulo_version}\"
 tags: [news, releases]
 draft: false
 ---
-A new Accumulo ${_accumulo_version}.x-compatible DataWave release has been tagged
-
-[View the release on GitHub]({{ site.repository_url }}/releases/tag/{{ page.version }})
+{% include new_release_info.html %}
 "
   logi "Generating post for '${1}' @ ${_post_file_name}"
   echo "${_post}" > ${_post_file_name}
@@ -240,7 +239,7 @@ get_published_tags() {
 
 configure "${@}"
 
-# Update gh-pages' _posts/release to reflect latest DW releses for all tracked versions  
+# Update gh-pages' _posts/release to reflect latest DW releases for all tracked versions  
 
 for _major_version in "${TRACKED_DW_VERSIONS[@]}" ; do
   get_dw_tags
