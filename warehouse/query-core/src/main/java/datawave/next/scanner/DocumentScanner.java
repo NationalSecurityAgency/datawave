@@ -27,7 +27,7 @@ public class DocumentScanner implements Iterator<Result>, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentScanner.class);
 
-    private Result result;
+    protected Result result;
 
     private final ArrayBlockingQueue<Result> results;
 
@@ -40,7 +40,9 @@ public class DocumentScanner implements Iterator<Result>, Closeable {
     // fetches and evaluates document candidates
     private final ExecutorService documentExecutorPool;
 
-    private final DocumentScannerConfig config;
+    protected final DocumentScannerConfig config;
+
+    private final Iterator<QueryData> queryDataIterator;
 
     /**
      * Default constructor, will likely need to swap this out for a config object constructor
@@ -52,11 +54,14 @@ public class DocumentScanner implements Iterator<Result>, Closeable {
      */
     public DocumentScanner(DocumentScannerConfig config, Iterator<QueryData> queryDataIterator) {
         this.config = config;
+        this.queryDataIterator = queryDataIterator;
         this.results = this.config.getResults();
 
         this.docIdExecutorPool = this.config.getDocIdExecutorPool();
         this.documentExecutorPool = this.config.getDocumentExecutorPool();
+    }
 
+    public void start() {
         // takes query data and either submits fi scans or pushes document scans directly to the doc id queue
         QueryDataConsumer queryDataConsumer = new QueryDataConsumer(config, queryDataIterator);
         consumerExecutorPool.execute(queryDataConsumer);

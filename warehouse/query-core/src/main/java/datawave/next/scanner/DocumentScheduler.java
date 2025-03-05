@@ -35,11 +35,11 @@ public class DocumentScheduler extends Scheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentScheduler.class);
 
-    private final Iterator<QueryData> queryDataIterator;
+    protected final Iterator<QueryData> queryDataIterator;
 
-    private final DocumentScannerConfig config;
-    private DocumentScanner scanner;
-    private VisitorFunction visitorFunction;
+    protected final DocumentScannerConfig config;
+    protected DocumentScanner scanner;
+    protected VisitorFunction visitorFunction;
 
     public DocumentScheduler(ShardQueryConfiguration config) {
         this.config = config.getDocumentScannerConfig();
@@ -85,9 +85,17 @@ public class DocumentScheduler extends Scheduler {
             config.getQueryDataConsumerExecuting().set(true);
             config.getDocumentIdConsumerExecuting().set(true);
 
-            scanner = new DocumentScanner(config, queryDataIterator);
-            scanner.setVisitorFunction(visitorFunction);
+            scanner = createScanner();
         }
+        return scanner;
+    }
+
+    protected DocumentScanner createScanner() {
+        DocumentScanner scanner = new DocumentScanner(config, queryDataIterator);
+        scanner.setVisitorFunction(visitorFunction);
+
+        // no time like the present
+        scanner.start();
         return scanner;
     }
 

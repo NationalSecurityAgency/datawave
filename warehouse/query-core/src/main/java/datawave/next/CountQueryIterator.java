@@ -30,7 +30,9 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * An alternate {@link QueryIterator} that provides counts for simple queries
+ * An alternate {@link QueryIterator} that provides counts for simple queries.
+ * <p>
+ * This was an attempt an at optimized count query for the field index.
  */
 public class CountQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
