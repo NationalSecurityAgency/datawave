@@ -141,7 +141,7 @@ public abstract class IfThisTestFailsThenHitTermsAreBroken {
         @Before
         public void setup() throws Exception {
             super.setup();
-            logic.setCollapseUids(true);
+            logic.setCollapseUids(false);
         }
     }
 
