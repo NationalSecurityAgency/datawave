@@ -93,7 +93,7 @@ public class QuerySpanCollector {
     private void logStack() {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
-        sb.append("thread:").append(Thread.currentThread().getId()).append(' ').append(this).append(' ').append(this).append("\n");
+        sb.append("thread:").append(Thread.currentThread().getId()).append(" ").append(this).append(" ").append(this).append("\n");
         for (int x = 1; x < (stack.length - 1); x++) {
             StackTraceElement element = stack[x];
             sb.append(element).append("\n");

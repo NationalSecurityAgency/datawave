@@ -368,7 +368,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Seek range: " + range + ' ' + query);
+                log.debug("Seek range: " + range + " " + query);
             }
             this.range = range;
 

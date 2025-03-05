@@ -197,7 +197,7 @@ public class Union extends BaseIndexStream {
 
         // use startsWith to match shards with a day
         if (log.isTraceEnabled())
-            log.trace("advancing " + pointers.getNode() + ' ' + children.peek().context());
+            log.trace("advancing " + pointers.getNode() + " " + children.peek().context());
 
         /**
          * Since children is a PriorityQueue sorted by shard and its possible for a day_shard to call next() and then return a day. That iterator will sort to
@@ -208,7 +208,7 @@ public class Union extends BaseIndexStream {
         while (!children.isEmpty()) {
             String streamDayOrShard = children.peek().peek().first();
             if (log.isTraceEnabled())
-                log.trace("we have " + streamDayOrShard + ' ' + dayOrShard);
+                log.trace("we have " + streamDayOrShard + " " + dayOrShard);
 
             if (!streamDayOrShard.equals(dayOrShard)) {
                 // additional test if dayOrShard is a day

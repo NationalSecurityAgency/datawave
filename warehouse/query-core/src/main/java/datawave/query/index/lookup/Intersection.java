@@ -124,7 +124,7 @@ public class Intersection extends BaseIndexStream {
                     case VARIABLE:
                     case EXCEEDED_VALUE_THRESHOLD:
                         if (log.isTraceEnabled()) {
-                            log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + ' ' + key(stream));
+                            log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
                         }
                         this.nodeSet.add(stream.currentNode());
                         this.children.put(key(stream), stream);
@@ -292,7 +292,7 @@ public class Intersection extends BaseIndexStream {
     public static Iterable<IndexInfo> convert(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> i) {
         final Function<PeekingIterator<Tuple2<String,IndexInfo>>,IndexInfo> f = itr -> {
             if (log.isTraceEnabled())
-                log.trace("ah" + itr.peek().first() + ' ' + itr.peek().second());
+                log.trace("ah" + itr.peek().first() + " " + itr.peek().second());
             return itr.peek().second();
         };
         return Iterables.transform(i, f);
@@ -692,7 +692,7 @@ public class Intersection extends BaseIndexStream {
         if (log.isTraceEnabled()) {
             log.trace("we have " + JexlStringBuildingVisitor.buildQuery(currNode));
             if (null != next) {
-                log.trace(' ' + next.first());
+                log.trace(" " + next.first());
             }
         }
         return currNode;

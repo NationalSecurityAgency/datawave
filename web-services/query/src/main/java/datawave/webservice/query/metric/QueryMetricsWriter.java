@@ -541,7 +541,7 @@ public class QueryMetricsWriter {
                         if (!StringUtils.isBlank(fieldValue)) {
                             // ensure that there are no spaces in tag values
                             fieldValue = fieldValue.replaceAll(" ", "_");
-                            tagSb.append(fieldName).append("=").append(fieldValue).append(' ');
+                            tagSb.append(fieldName).append("=").append(fieldValue).append(" ");
                         }
                     }
                     int tagSbLength = tagSb.length();

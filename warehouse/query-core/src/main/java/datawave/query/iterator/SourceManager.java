@@ -99,7 +99,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
 
     protected void recreateSources(long sizeToCreate) {
         if (null == originalSource) {
-            throw new RuntimeException("Original source wasn't configured " + originalSource + ' ' + originalEnv);
+            throw new RuntimeException("Original source wasn't configured " + originalSource + " " + originalEnv);
         }
         for (int i = 0; i < sizeToCreate; i++) {
             sourceQueue.offer(createSource());
@@ -274,7 +274,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             }
 
             if (log.isTraceEnabled()) {
-                log.trace("reseek " + lastRange + ' ' + childRange + ' ' + childLastKey + ' ' + lastKey);
+                log.trace("reseek " + lastRange + " " + childRange + " " + childLastKey + " " + lastKey);
             }
 
             if (!rangesMatch(childRange, lastRange) || !keysMatch(childLastKey, lastKey)) {

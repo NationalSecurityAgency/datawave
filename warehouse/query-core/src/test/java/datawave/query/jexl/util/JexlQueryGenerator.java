@@ -50,7 +50,7 @@ public class JexlQueryGenerator extends AbstractQueryGenerator {
      */
     public String getQuery(int minTerms, int maxTerms) {
         Preconditions.checkArgument(minTerms > 0, "minimum terms must be positive: " + minTerms);
-        Preconditions.checkArgument(minTerms < maxTerms, "minTerms must be less than maxTerms: " + minTerms + ' ' + maxTerms);
+        Preconditions.checkArgument(minTerms < maxTerms, "minTerms must be less than maxTerms: " + minTerms + " " + maxTerms);
         validateOptions();
         int numTerms = minTerms + random.nextInt(maxTerms - minTerms);
         return getQuery(numTerms);

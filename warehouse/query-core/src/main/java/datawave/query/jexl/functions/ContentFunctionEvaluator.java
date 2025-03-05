@@ -98,7 +98,7 @@ public abstract class ContentFunctionEvaluator {
         if (!isValidArguments(distance, termOffsetMap, terms)) {
             if (log.isTraceEnabled()) {
                 log.trace("Failing within() because of bad arguments");
-                log.trace(distance + ' ' + ((termOffsetMap == null) ? "null" : termOffsetMap.toString()) + ' ' + Arrays.toString(terms));
+                log.trace(distance + " " + ((termOffsetMap == null) ? "null" : termOffsetMap.toString()) + " " + Arrays.toString(terms));
             }
             return false;
         }

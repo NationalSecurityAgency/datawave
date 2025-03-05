@@ -312,7 +312,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         cdiOpts += " '-Dserver.principal=" + encodePrincipal(serverPrincipal) + "'";
         cdiOpts += " '-Dcaller.principal=" + encodePrincipal((DatawavePrincipal) principal) + "'";
         String javaOpts = job.getConfiguration().get("mapreduce.map.java.opts");
-        javaOpts = (javaOpts == null) ? cdiOpts : (javaOpts + ' ' + cdiOpts);
+        javaOpts = (javaOpts == null) ? cdiOpts : (javaOpts + " " + cdiOpts);
         job.getConfiguration().set("mapreduce.map.java.opts", javaOpts);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);

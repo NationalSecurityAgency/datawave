@@ -843,7 +843,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             if (log.isDebugEnabled()) {
                 StringBuilder b = new StringBuilder();
                 for (String f : fieldNameFilter) {
-                    b.append(f).append(' ');
+                    b.append(f).append(" ");
                 }
 
                 log.debug("Iter configured with FieldNames: " + b);

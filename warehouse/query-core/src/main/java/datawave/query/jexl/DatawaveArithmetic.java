@@ -161,7 +161,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
                 return super.compare(left, right, operator);
             }
         }
-        throw new ArithmeticException("Object comparison:(" + left + ' ' + operator + ' ' + right + ")");
+        throw new ArithmeticException("Object comparison:(" + left + " " + operator + " " + right + ")");
     }
 
     /**

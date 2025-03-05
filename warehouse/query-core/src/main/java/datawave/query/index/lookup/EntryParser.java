@@ -71,9 +71,9 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
         String date = entry.getKey().getColumnQualifier().toString();
 
         if (log.isTraceEnabled()) {
-            log.trace("Adding " + currNode + " to " + entry.getKey() + ' ');
+            log.trace("Adding " + currNode + " to " + entry.getKey() + " ");
             for (IndexMatch match : info.uids()) {
-                log.trace(date + ' ' + match.getUid().split("\u0000")[1]);
+                log.trace(date + " " + match.getUid().split("\u0000")[1]);
             }
         }
 
@@ -82,7 +82,7 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
             if (isDelayedPredicate(currNode)) {
                 if (log.isTraceEnabled()) {
                     log.trace("not delaying " + currNode + " because it is already delayed" + currNode.jjtGetParent() + "<- parent "
-                                    + JexlStringBuildingVisitor.buildQuery(currNode) + ' ' + date + ' ' + info.uids.size());
+                                    + JexlStringBuildingVisitor.buildQuery(currNode) + " " + date + " " + info.uids.size());
                 }
                 info.applyNode(currNode);
             } else if (null != indexOnlyFields && indexOnlyFields.contains(fieldName)) {
@@ -93,7 +93,7 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
             } else {
                 if (log.isTraceEnabled()) {
                     log.trace("delaying " + currNode + " because it is already delayed" + currNode.jjtGetParent() + "<- parent "
-                                    + JexlStringBuildingVisitor.buildQuery(currNode) + ' ' + date + ' ' + info.uids.size());
+                                    + JexlStringBuildingVisitor.buildQuery(currNode) + " " + date + " " + info.uids.size());
                 }
                 info.applyNode(QueryPropertyMarker.create(JexlNodeFactory.buildEQNode(fieldName, literal), DELAYED));
             }
