@@ -41,7 +41,7 @@ public class ValueCombiner implements Iterator<Value> {
 
     private boolean _hasNext() {
         if (log.isTraceEnabled()) {
-            log.trace("source hastop ? " + source.hasTop() + ' ' + topKey);
+            log.trace("source hastop ? " + source.hasTop() + " " + topKey);
             if (source.hasTop())
                 log.trace(source.getTopKey());
 

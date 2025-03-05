@@ -223,7 +223,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                         }
                         first = false;
                         group.addMember(new SimplePrincipal(r));
-                        buf.append(' ').append(r).append(' ');
+                        buf.append(" ").append(r).append(" ");
                     } catch (Exception e) {
                         log.debug("Failed to create principal for: " + r, e);
                     }

@@ -148,7 +148,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
         StringBuilder builder = new StringBuilder();
         builder.append(uid + " - {");
         for (String nodeKey : nodeSet.getNodeKeys()) {
-            builder.append(nodeKey).append(' ');
+            builder.append(nodeKey).append(" ");
         }
         builder.append("}");
 

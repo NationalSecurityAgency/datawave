@@ -311,7 +311,7 @@ public class LookupUUIDUtil {
                 }
                 // Conditionally append an OR operator
                 else if (contentQuery.length() > 0) {
-                    contentQuery.append(' ');
+                    contentQuery.append(SPACE);
                 }
 
                 // Append the content query criteria
