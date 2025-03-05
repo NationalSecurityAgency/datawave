@@ -86,16 +86,19 @@
                 @click="queryTable"
               />
         </template>
-
         <template v-slot:header="props">
           <q-tr :props="props">
             <q-th />
-            <q-th style="font-size: 13.7px;" v-for="col in props.cols" :key="col.name" :props="props">
-              {{ col.label }}
+            <q-th v-for="col in props.cols" :key="col.name" :props="props">
+              <div class="tooltip-wrapper">
+                {{ col.label }}
+                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                  {{ Feature.toolTipGen(col.name) }}
+                </q-tooltip>
+              </div>
             </q-th>
           </q-tr>
         </template>
-
         <template v-slot:body="props">
           <q-tr
             :props="props"
@@ -129,15 +132,17 @@
               :key="col.name"
               :props="props"
               style="font-size: 13px;"
-              :title="Formatters.parseVal(col.name, col.value)"
               @click="Feature.copyLabel(col.value)"
             >
               <label style="cursor: pointer;">
                 {{
-                Formatters.maxSubstring(
-                  Formatters.parseVal(col.name, col.value), col.name
-                )
-              }}
+                  Formatters.maxSubstring(
+                    Formatters.parseVal(col.name, col.value), col.name
+                  )
+                }}
+                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                  {{ Formatters.parseVal(col.name, col.value) }}
+                </q-tooltip>
               </label>
             </q-td>
           </q-tr>
