@@ -99,13 +99,13 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
             log.warn("Did not find any dropoff lat/lon in the event.");
 
         if (pickupLat != null && pickupLon != null) {
-            derivedFields.put(PICKUP_LOCATION, "POINT (" + pickupLon + ' ' + pickupLat + ")");
-            derivedFields.put(ALL_LOCATIONS, "POINT (" + pickupLon + ' ' + pickupLat + ")");
+            derivedFields.put(PICKUP_LOCATION, "POINT (" + pickupLon + " " + pickupLat + ")");
+            derivedFields.put(ALL_LOCATIONS, "POINT (" + pickupLon + " " + pickupLat + ")");
         }
 
         if (dropoffLat != null && dropoffLon != null) {
-            derivedFields.put(DROPOFF_LOCATION, "POINT (" + dropoffLon + ' ' + dropoffLat + ")");
-            derivedFields.put(ALL_LOCATIONS, "POINT (" + dropoffLon + ' ' + dropoffLat + ")");
+            derivedFields.put(DROPOFF_LOCATION, "POINT (" + dropoffLon + " " + dropoffLat + ")");
+            derivedFields.put(ALL_LOCATIONS, "POINT (" + dropoffLon + " " + dropoffLat + ")");
         }
 
         // create some extra geos for testing purposes
@@ -128,8 +128,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         // create an overloaded composite field for testing purposes
         if (helper instanceof NYCTLCHelper && ((NYCTLCHelper) helper).isGenerateOverloadedComposite()) {
             if (pickupLat != null && pickupLon != null && dropoffLat != null && dropoffLon != null) {
-                derivedFields.put(ALL_LOCATIONS, "POINT (" + pickupLon + ' ' + pickupLat + ")");
-                derivedFields.put(ALL_LOCATIONS, "POINT (" + dropoffLon + ' ' + dropoffLat + ")");
+                derivedFields.put(ALL_LOCATIONS, "POINT (" + pickupLon + " " + pickupLat + ")");
+                derivedFields.put(ALL_LOCATIONS, "POINT (" + dropoffLon + " " + dropoffLat + ")");
 
                 double pickupLonDouble = Double.parseDouble(pickupLon), pickupLatDouble = Double.parseDouble(pickupLat),
                                 dropoffLonDouble = Double.parseDouble(dropoffLon), dropoffLatDouble = Double.parseDouble(dropoffLat);
@@ -155,10 +155,10 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         }
 
         // add point query fields
-        derivedFields.put(ALL_POINTS, "POINT (" + pickupLon + ' ' + pickupLat + ")");
-        derivedFields.put(ALL_POINTS, "POINT (" + dropoffLon + ' ' + dropoffLat + ")");
-        derivedFields.put(ALL_POINTS_GEO, pickupLat + ' ' + pickupLon);
-        derivedFields.put(ALL_POINTS_GEO, dropoffLat + ' ' + dropoffLon);
+        derivedFields.put(ALL_POINTS, "POINT (" + pickupLon + " " + pickupLat + ")");
+        derivedFields.put(ALL_POINTS, "POINT (" + dropoffLon + " " + dropoffLat + ")");
+        derivedFields.put(ALL_POINTS_GEO, pickupLat + " " + pickupLon);
+        derivedFields.put(ALL_POINTS_GEO, dropoffLat + " " + dropoffLon);
 
         eventFields.putAll(normalize(derivedFields));
 

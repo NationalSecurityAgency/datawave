@@ -189,7 +189,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         }
 
         if (log.isTraceEnabled()) {
-            log.trace(key + "agg == " + (aggr == null) + ' ' + key.isDeleted());
+            log.trace(key + "agg == " + (aggr == null) + " " + key.isDeleted());
         }
         return aggr;
     }

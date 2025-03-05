@@ -544,9 +544,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 // put a variable in here instead which will resolve to the flag file inprogress when that time comes. The baseName could have changed by then.
                 sb.append(" ${JOB_FILE}");
             }
-            sb.append(' ').append(fc.getReducers()).append(" -inputFormat ").append(fc.getInputFormat().getName()).append(' ');
+            sb.append(" ").append(fc.getReducers()).append(" -inputFormat ").append(fc.getInputFormat().getName()).append(" ");
             if (fc.getFileListMarker() != null) {
-                sb.append("-inputFileLists -inputFileListMarker ").append(fc.getFileListMarker()).append(' ');
+                sb.append("-inputFileLists -inputFileListMarker ").append(fc.getFileListMarker()).append(" ");
             }
             if (fc.getExtraIngestArgs() != null) {
                 sb.append(fc.getExtraIngestArgs());

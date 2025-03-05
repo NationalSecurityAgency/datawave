@@ -66,7 +66,7 @@ public class AttributeToCardinality implements Function<Entry<Key,Document>,Entr
                             fvC.setDoc(prevDoc);
                             card = new Cardinality(fvC, metadata, attrs.isToKeep());
                             if (log.isTraceEnabled())
-                                log.trace("Adding from attributes " + attr.getKey() + ' ' + attributeItem.getData());
+                                log.trace("Adding from attributes " + attr.getKey() + " " + attributeItem.getData());
                         }
                         newAttrs.add(card);
                     }
@@ -83,7 +83,7 @@ public class AttributeToCardinality implements Function<Entry<Key,Document>,Entr
                         card = new Cardinality(fvC, metadata, attribute.isToKeep());
 
                         if (log.isTraceEnabled())
-                            log.trace("Adding " + parser.getUid() + ' ' + attr.getKey() + ' ' + attribute.getData() + ' ' + fvC.getEstimate().cardinality());
+                            log.trace("Adding " + parser.getUid() + " " + attr.getKey() + " " + attribute.getData() + " " + fvC.getEstimate().cardinality());
 
                     }
                     newDictionary.put(attr.getKey(), card);

@@ -189,7 +189,7 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
         ByteSequence cf = key.getColumnFamilyData();
         if (ShardReindexMapper.isKeyD(cf)) {
             context.getCounter(key.getRow().toString() + "-" + sourceNum, "d").increment(1);
-            log.info("D " + sourceNum + ' ' + key);
+            log.info("D " + sourceNum + " " + key);
             log.info("OTHER " + otherKey);
         } else if (ShardReindexMapper.isKeyTF(cf)) {
             String field = ShardReindexMapper.getFieldFromTF(key);
@@ -197,18 +197,18 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
             context.getCounter("tf", field).increment(1);
             TermWeight.Info info1 = TermWeight.Info.parseFrom(value.get());
             TermWeight.Info info2 = TermWeight.Info.parseFrom(value.get());
-            log.info("TF " + key + ' ' + StringUtils.join(info1.getTermOffsetList(), ',') + " | " + StringUtils.join(info2.getTermOffsetList(), ','));
+            log.info("TF " + key + " " + StringUtils.join(info1.getTermOffsetList(), ',') + " | " + StringUtils.join(info2.getTermOffsetList(), ','));
             context.getCounter("diff", "value").increment(1);
         } else if (ShardReindexMapper.isKeyFI(cf)) {
             String field = ShardReindexMapper.getFieldFromFI(key);
             context.getCounter(key.getRow().toString() + "-" + sourceNum, "fi").increment(1);
             context.getCounter("fi-" + sourceNum, field).increment(1);
-            log.info("FI " + sourceNum + ' ' + key);
+            log.info("FI " + sourceNum + " " + key);
             log.info("OTHER " + otherKey);
         } else if (ShardReindexMapper.isKeyEvent(cf)) {
             context.getCounter(key.getRow().toString() + "-" + sourceNum, "event").increment(1);
             context.getCounter("event-" + sourceNum, cf.toString()).increment(1);
-            log.info("EVENT " + sourceNum + ' ' + key);
+            log.info("EVENT " + sourceNum + " " + key);
             log.info("OTHER " + otherKey);
         } else {
             // index keys? TODO

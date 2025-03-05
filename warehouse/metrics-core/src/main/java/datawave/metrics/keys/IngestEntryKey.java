@@ -119,7 +119,7 @@ public class IngestEntryKey implements XKey {
 
     private String createString() {
         StringBuilder sb = new StringBuilder(100);
-        sb.append(timestamp).append(' ').append(type).append('\u0000').append(count).append('\u0000').append(duration).append(" ").append(jobId);
+        sb.append(timestamp).append(" ").append(type).append('\u0000').append(count).append('\u0000').append(duration).append(" ").append(jobId);
         if (outputDirectory != null) {
             sb.append('\u0000').append(outputDirectory);
         }

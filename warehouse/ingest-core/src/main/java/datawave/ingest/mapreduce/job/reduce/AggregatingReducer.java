@@ -157,7 +157,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     String clazz = options.get(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     if (null == clazz) {
                         throw new RuntimeException(
-                                        "Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + ' ' + options.entrySet());
+                                        "Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " " + options.entrySet());
                     }
                     log.info("configuring iterator (combiner) " + clazz + " for table " + table);
 
