@@ -1359,20 +1359,20 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         Text buffer = new Text();
 
                         // append row0
-                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(' ');
+                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(" ");
 
                         // append column family
                         appendBytes(sb, currentK.getColumnFamily(buffer).getBytes(), 0, currentK.getColumnFamily(buffer).getLength()).append(":");
 
                         // append column qualifier
-                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(' ');
+                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(" ");
 
                         // append visibility expression
                         sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));
 
                         // append timestamp
                         tmpDate.get().setTime(entry.getKey().getTimestamp());
-                        sb.append(' ').append(formatter.get().format(tmpDate.get()));
+                        sb.append(" ").append(formatter.get().format(tmpDate.get()));
 
                         // append value
                         if (currentV != null && currentV.getSize() > 0) {

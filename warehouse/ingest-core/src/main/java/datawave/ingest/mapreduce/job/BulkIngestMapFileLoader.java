@@ -1054,7 +1054,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // rename the map files directory
             boolean success = destFs.rename(mapFilesDir, new Path(mapFilesDir.getParent(), "failed." + mapFilesDir.getName()));
             if (!success)
-                log.error("Unable to rename map files directory " + destFs.getUri() + ' ' + mapFilesDir + " to failed." + mapFilesDir.getName());
+                log.error("Unable to rename map files directory " + destFs.getUri() + " " + mapFilesDir + " to failed." + mapFilesDir.getName());
 
             // create the job.failed file (renamed from job.loading if possible)
             success = destFs.rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, FAILED_FILE_MARKER));

@@ -102,7 +102,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
 
                 }
 
-                System.err.println("Value: " + field_value[0] + ' ' + field_value[1]);
+                System.err.println("Value: " + field_value[0] + " " + field_value[1]);
                 tSet.add(field_value[1]);
                 subCategories.put(field_value[0], tSet);
 
