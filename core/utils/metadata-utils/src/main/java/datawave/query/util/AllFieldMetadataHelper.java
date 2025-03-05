@@ -276,7 +276,7 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getAllDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getAllDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<Type<?>> getAllDatatypes() throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getAllDatatypes({}, {})", this.auths, this.metadataTableName);
         
@@ -327,7 +327,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getCompositeToFieldMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getCompositeToFieldMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
         log.debug("cache fault for getCompositeToFieldMap({}, {})", this.auths, this.metadataTableName);
         return this.getCompositeToFieldMap(null);
@@ -344,7 +345,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeToFieldMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,String> getCompositeToFieldMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeToFieldMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -393,7 +394,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeTransitionDateMap", key = "{#root.target.auths,#root.target.metadataTableName}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Date> getCompositeTransitionDateMap() throws TableNotFoundException {
         log.debug("cache fault for getCompositeTransitionDateMap({}, {})", this.auths, this.metadataTableName);
         return this.getCompositeTransitionDateMap(null);
@@ -410,7 +411,7 @@ public class AllFieldMetadataHelper {
      */
     
     @Cacheable(value = "getCompositeTransitionDateMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Date> getCompositeTransitionDateMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeTransitionDateMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -464,7 +465,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getWhindexCreationDateMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getWhindexCreationDateMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Map<String,Date> getWhindexCreationDateMap() throws TableNotFoundException {
         log.debug("cache fault for getWhindexCreationDateMap({}, {})", this.auths, this.metadataTableName);
         return this.getWhindexCreationDateMap(null);
@@ -480,7 +482,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getWhindexCreationDateMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Date> getWhindexCreationDateMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getWhindexCreationDateMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -536,7 +538,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeFieldSeparatorMap", key = "{#root.target.auths,#root.target.metadataTableName}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,String> getCompositeFieldSeparatorMap() throws TableNotFoundException {
         log.debug("cache fault for getCompositeFieldSeparatorMap({}, {})", this.auths, this.metadataTableName);
         return this.getCompositeFieldSeparatorMap(null);
@@ -552,7 +554,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getCompositeFieldSeparatorMap", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,String> getCompositeFieldSeparatorMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeFieldSeparatorMap({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
         
@@ -656,7 +658,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getFieldsToDatatypes", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getFieldsToDatatypes({}, {}, {})", this.auths, this.metadataTableName, ingestTypeFilter);
@@ -690,7 +692,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getFieldsForDatatype", key = "{#root.target.auths,#root.target.metadataTableName,#datawaveType}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException {
         log.debug("cache fault for getFieldsForDatatype({})", datawaveType);
@@ -712,7 +714,7 @@ public class AllFieldMetadataHelper {
      *             if no table exists
      */
     @Cacheable(value = "getFieldsForDatatype", key = "{#root.target.auths,#root.target.metadataTableName,#datawaveType,#ingestTypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getFieldsForDatatype({}, {})", datawaveType, ingestTypeFilter);
         TypeMetadata typeMetadata = this.typeMetadataHelper.getTypeMetadata(ingestTypeFilter);
@@ -929,7 +931,7 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,String> loadAllFields() throws TableNotFoundException {
         log.debug("cache fault for loadAllFields({}, {})", this.auths, this.metadataTableName);
         if (log.isTraceEnabled()) {
@@ -968,7 +970,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "getIndexOnlyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getIndexOnlyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> getIndexOnlyFields() throws TableNotFoundException {
         log.debug("cache fault for getIndexOnlyFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1040,7 +1043,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadTermFrequencyFields() throws TableNotFoundException {
         log.debug("cache fault for loadTermFrequencyFields({}, {})", this.auths, this.metadataTableName);
         Multimap<String,String> fields = HashMultimap.create();
@@ -1067,7 +1071,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadIndexedFields() throws TableNotFoundException {
         log.debug("cache fault for loadIndexedFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1096,7 +1101,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadReverseIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadReverseIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadReverseIndexedFields() throws TableNotFoundException {
         log.debug("cache fault for loadReverseIndexedFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1124,7 +1130,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadIndexedFields", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadIndexedFields", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadAllIndexedFields() throws TableNotFoundException {
         log.debug("cache fault for loadIndexedFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1152,7 +1159,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadExpansionFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadExpansionFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadExpansionFields() throws TableNotFoundException {
         log.debug("cache fault for loadExpansionFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1180,7 +1188,8 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadContentFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadContentFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public Multimap<String,String> loadContentFields() throws TableNotFoundException {
         log.debug("cache fault for loadContentFields({}, {})", this.auths, this.metadataTableName);
         
@@ -1211,7 +1220,7 @@ public class AllFieldMetadataHelper {
      * @throws TableNotFoundException
      *             if no table exists
      */
-    @Cacheable(value = "loadDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "loadDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> loadDatatypes() throws TableNotFoundException {
         log.debug("cache fault for loadDatatypes({}, {})", this.auths, this.metadataTableName);
         

@@ -92,7 +92,7 @@ public class TypeMetadataHelper {
         return metadataTableName;
     }
     
-    @Cacheable(value = "getTypeMetadata", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getTypeMetadata", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public TypeMetadata getTypeMetadata() throws TableNotFoundException {
         if (log.isDebugEnabled())
             log.debug("cache fault for getTypeMetadata(" + this.auths + "," + this.metadataTableName + ")");
@@ -100,7 +100,7 @@ public class TypeMetadataHelper {
     }
     
     @Cacheable(value = "getTypeMetadata", key = "{#root.target.auths,#root.target.metadataTableName,#datatypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public TypeMetadata getTypeMetadata(Set<String> datatypeFilter) throws TableNotFoundException {
         if (log.isDebugEnabled())
             log.debug("cache fault for getTypeMetadata(" + this.auths + "," + this.metadataTableName + "," + datatypeFilter + ")");
