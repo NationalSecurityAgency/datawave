@@ -9,70 +9,99 @@
 
 ## Prerequisites
 
-- Ruby: <https://rvm.io>
-- Jekyll: <https://jekyllrb.com/docs/quickstart/>
-- Site Source: <https://github.com/nationalsecurityagency/datawave>
+- **Ruby** <https://rvm.io>
+
+  ```bash
+  # YMMV. See rvm.io for details 
+  
+  $ curl -sSL https://get.rvm.io | bash -s stable
+    ...
+  $ export PATH="$PATH:$HOME/.rvm/bin"
+  
+  $ source $HOME/.rvm/scripts/rvm
+  ```
+- **Jekyll** <https://jekyllrb.com/docs/quickstart/>
+
+  ```bash
+  # YMMV. See jekyllrb.com for details
+  
+  $ gem install jekyll bundler
+    ...
+  ```
+- **Site Source** <https://github.com/nationalsecurityagency/datawave/tree/gh-pages>
+
+  ```bash
+  $ git clone --single-branch \
+    --branch gh-pages \
+    https://github.com/NationalSecurityAgency/datawave.git \
+    datawave-gh-pages
+    ...
+  
+  $ cd datawave-gh-pages
+  
+  $ bundle install
+    ...
+  ```
 
 ## Build and run the site
 
 ```bash
- # Clone datawave and pull/checkout only the gh-pages branch...
- 
- $ git clone --single-branch \
-   --branch gh-pages \
-   https://github.com/NationalSecurityAgency/datawave.git \
-   datawave-gh-pages
-   ...
  $ cd datawave-gh-pages
-  
- # Build and run the site using the preview server with overridden baseurl (see baseurl configuration
- # notes in _config.yml for more info), and auto-sync site changes via '--watch' option ...
-  
- $ bundle update # Optional
+
+ # This will build and run the site using the preview server with an
+ # overridden baseurl value as required (see _config.yml), and will
+ # auto-sync any site changes via the '--watch' option...
+
  $ bundle exec jekyll serve --baseurl '' --watch
- 
- # By default, JEKYLL_ENV=development (see details below)
- 
- # Now browse to http://localhost:4000/
- 
+   ...
 ```
 
 ## Development Mode vs Production Mode
 
-When you build/run the site locally, you'll automatically be in development mode, i.e., **JEKYLL_ENV=development**.
-So, if you want to build the production site, then you must set **JEKYLL_ENV=production**, which is the value set by
-GitHub when it builds and renders the site automatically (i.e., whenever new commits are pushed) 
+When you build and run the site locally you'll be in development mode by default. Or you can
+set your environment explicitly, if needed
 
-Currently, the only difference between dev and prod mode is that dev mode will enable display of *TODO*, *WIP*,
-and other dev-related *tags* and *includes* throughout the site.
+```
+ JEKYLL_ENV=development
+```
 
-To build and run locally in production mode...
+Dev mode will enable display of **TODO**, **WIP**, and other dev-related tags throughout the site.
+For example, new dev-mode content could be added to the site as follows
+
+```
+ ...
+ {% if jekyll.environment != 'production' %}
+   <h1>I'm in development!</h1> 
+ {% endif %}
+ ...
+```
+
+If you want to build the site as rendered on GitHub, then you must enable production mode in your environment
+prior to building.
+
+E.g.,
 
 ```bash
 JEKYLL_ENV=production bundle exec jekyll serve --baseurl '' --watch
-
 ```
 
-For example, you can add dev-only content to the site as follows...
-
-```
-{% if jekyll.environment != 'production' %}
-   <h1>I'm in development!</h1> 
-{% endif %}
-
-```
 # Site Maintenance for New DataWave Releases
 
-For doc changes pertaining to minor or patch releases of DW, you can probably skip straight to step 9 below, i.e., for
-content-only, mostly non-structural changes.
+For site changes pertaining to minor and patch releases of DW, you can probably skip straight to step 9 below, i.e., for
+non-structural changes and for minor updates to existing documentation within the gh-pages site.
 
-For doc updates related to a new major release, structural changes are required, so you'll need to start with step 1 below.
+For site updates related to a new major release, structural changes are required in order to preserve access to older
+docs versions. In this case, you'll need to start with step 1 below.
 
-**Note**: You may use [scripts/prep-next-major-release-docs](scripts/prep-next-major-release-docs) to automate steps 1
-through 6 below. Steps 7 through 10 must be performed manually.
+### Helpful Scripts
 
-**Note**: To automate publishing of 'Project News' related to new DataWave releases,
-see [scripts/publish-new-releases](scripts/publish-new-releases) 
+- To automate steps 1 through 6 below for a new major release, you may run the [prep-next-major-release-docs](scripts/prep-next-major-release-docs) 
+  script. (Steps 7 through 10 must be performed manually, at least for now)
+
+- To automate publishing of *Project News* related to any new DataWave tagged release - major, minor, or other - use the
+  [publish-new-releases](scripts/publish-new-releases) script.
+
+## Steps to Update the Site for New Major Releases
 
 1. Assuming *8.x* is the next major release, copy the existing _docs-latest (*7.x*) to a new collection directory
    ```
@@ -80,7 +109,7 @@ see [scripts/publish-new-releases](scripts/publish-new-releases)
    ```
    **Note**: maintaining the underscore prefix is important to Jekyll
 
-2. Delete the 'redirect' files from the old version. We want to maintain only the ones in _docs-latest/
+2. Delete the *redirect* files from the old version. We want to maintain only the ones in _docs-latest/
    ```
    rm -f _docs-7x/*.md
    ```
