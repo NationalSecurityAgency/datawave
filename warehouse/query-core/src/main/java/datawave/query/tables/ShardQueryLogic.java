@@ -1355,7 +1355,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        // ony optimize if unique fields are not requested
+        // ony optimize if unique fields are not requested. The suspicion is that the unique transform on the query iterator
+        // is reducing the amount of network traffic between scanners and webservice, and we don't want to overwhelm
+        // the unique transform in the webservice.
+        // However, this hypothesis needs to be tested. A limited test where the unique fields check was removed showed no discernible effect on the overall
+        // execution time.
         if (isUseDocumentScheduler() && config.getUniqueFields().isEmpty() && !isCheckpointable() && !isFullTableScanEnabled()) {
 
             QueryPlanner queryPlanner = getQueryPlanner();

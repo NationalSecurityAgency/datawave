@@ -116,6 +116,7 @@ public class QueryDataConsumer implements Runnable {
             next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
         }
 
+        // TODO: migrate to scanner factory to pick up configuration for scan hints and consistency level
         Scanner scanner = config.getClient().createScanner(queryData.getTableName(), config.getAuthorizations());
 
         // this check exists because datawave can produce day ranges for certain unit tests. The document scheduler is optimized for shard-specific plans and

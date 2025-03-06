@@ -43,6 +43,7 @@ public class SimpleQueryVisitor extends BaseVisitor {
     }
 
     public boolean isValid() {
+        // TODO: detect top level union, in which case all fields must be indexed
         return this.valid && this.atLeastOneFieldIndexed && !negationsExist;
     }
 
@@ -154,8 +155,6 @@ public class SimpleQueryVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        // be aggressive when invalidating a query. For example, query functions are okay. But we're going to ignore that for now.
-        // valid = false;
         // assume all functions are okay when punting to the query iterator in a doc range
         return data;
     }
