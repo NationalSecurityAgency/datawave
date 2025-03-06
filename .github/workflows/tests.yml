@@ -38,7 +38,7 @@ jobs:
         cache: 'maven'
     - name: Extract branch name
       shell: bash
-      run: 
+      run: |
         if [ ${{ github.event_name }} == 'merge_group' ]; then
           echo "Does not need to run on merge_group event."
           exit 0
