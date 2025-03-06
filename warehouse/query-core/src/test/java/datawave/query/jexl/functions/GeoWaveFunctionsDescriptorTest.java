@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -19,11 +20,14 @@ import org.powermock.reflect.Whitebox;
 
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public class GeoWaveFunctionsDescriptorTest {
 
@@ -107,7 +111,13 @@ public class GeoWaveFunctionsDescriptorTest {
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
 
-        JexlNode indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
+        JexlNode indexQuery;
+        try {
+            indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
+        } catch (TableNotFoundException e) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
         return JexlStringBuildingVisitor.buildQuery(indexQuery);
     }
 

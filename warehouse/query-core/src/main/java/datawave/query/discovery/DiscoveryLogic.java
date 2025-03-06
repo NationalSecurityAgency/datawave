@@ -67,6 +67,7 @@ import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 import datawave.webservice.query.exception.QueryException;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
@@ -158,7 +159,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         setQueryModel(metadataHelper.getQueryModel(getModelTableName(), getModelName(), null));
 
         // Set the currently indexed fields
-        getConfig().setIndexedFields(metadataHelper.getIndexedFields(Collections.emptySet()));
+        getConfig().setIndexedFields(metadataHelper.getIndexedFields(TypeFilter.ALL.getDataTypes()));
 
         // Set the connector.
         getConfig().setClient(client);

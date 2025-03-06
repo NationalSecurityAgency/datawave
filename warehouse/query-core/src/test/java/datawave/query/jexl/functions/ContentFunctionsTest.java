@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlException;
@@ -30,6 +31,7 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
@@ -41,6 +43,8 @@ import datawave.query.postprocessing.tf.PhraseOffset;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public class ContentFunctionsTest {
     private static DatawaveJexlEngine engine;
@@ -1659,7 +1663,13 @@ public class ContentFunctionsTest {
         ASTFunctionNode function = (ASTFunctionNode) child;
 
         JexlArgumentDescriptor desc = new ContentFunctionsDescriptor().getArgumentDescriptor(function);
-        JexlNode indexQuery = desc.getIndexQuery(null, metadataHelper, dateIndexHelper, null);
+        JexlNode indexQuery = null;
+        try {
+            indexQuery = desc.getIndexQuery(null, metadataHelper, dateIndexHelper, null);
+        } catch (TableNotFoundException e) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
 
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         JexlNode scriptChild = expectedScript.jjtGetChild(0);

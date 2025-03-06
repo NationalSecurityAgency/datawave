@@ -58,7 +58,7 @@ public class DiscoveryLogicTest {
     private String query;
     private String startDate;
     private String endDate;
-    private Map<String,String> parameters = new HashMap<>();
+    private final Map<String,String> parameters = new HashMap<>();
 
     private final List<DiscoveredThing> expected = new ArrayList<>();
 

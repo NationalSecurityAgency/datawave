@@ -1,6 +1,5 @@
 package datawave.query.rules;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeFilter;
 
 public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
@@ -70,7 +70,7 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
     public void testExceptionThrown() throws Exception {
         MetadataHelper mockHelper = EasyMock.createMock(MetadataHelper.class);
         Exception exception = new IllegalArgumentException("Failed to fetch all fields");
-        EasyMock.expect(mockHelper.getAllFields(Collections.emptySet())).andThrow(exception);
+        EasyMock.expect(mockHelper.getAllFields(TypeFilter.ALL.getDataTypes())).andThrow(exception);
         EasyMock.replay(mockHelper);
 
         givenQuery("FOO == 'abc'");

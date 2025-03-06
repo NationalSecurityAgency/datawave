@@ -40,6 +40,7 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 import datawave.util.StringUtils;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -67,7 +68,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         }
 
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) throws TableNotFoundException {
+        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter)
+                        throws TableNotFoundException {
             switch (name) {
                 case BETWEEN:
                     JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
@@ -166,7 +168,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             try {
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
                 String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) fieldName).getName());
-                if (allFields.contains(field)) {
+                if (allFields.contains(field) || field.equals("_ANYFIELD_")) {
                     String literal = JexlNodes.getIdentifierOrLiteralAsString(fieldValue);
                     Set<String> values = getNormalizedValues(field, literal, helper);
                     for (String value : values) {
@@ -298,7 +300,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 default:
                     fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
             }
-            if (allFields != null) {
+            if (allFields != null && !(datatypeFilter == TypeFilter.ALL.getDataTypes())) {
+                // we only want to filter if there's a reason to
                 return filterSet(allFields, fields);
             } else {
                 return fields;

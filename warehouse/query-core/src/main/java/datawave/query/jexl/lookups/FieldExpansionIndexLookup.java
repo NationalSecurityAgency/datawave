@@ -25,6 +25,7 @@ import com.google.common.base.Preconditions;
 import datawave.core.iterators.FieldExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.util.TypeFilter;
 import datawave.util.time.DateHelper;
 
 /**
@@ -95,7 +96,7 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
         setting.addOption(FieldExpansionIterator.START_DATE, DateHelper.format(config.getBeginDate()));
         setting.addOption(FieldExpansionIterator.END_DATE, DateHelper.format(config.getEndDate()));
 
-        if (!config.getDatatypeFilter().isEmpty()) {
+        if (!(config.getDatatypeFilter() == TypeFilter.ALL.getDataTypes()) && !config.getDatatypeFilter().equals(TypeFilter.NONE.getDataTypes())) {
             setting.addOption(FieldExpansionIterator.DATATYPES, Joiner.on(',').join(config.getDatatypeFilter()));
         }
 

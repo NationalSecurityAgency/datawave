@@ -4,9 +4,10 @@ import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlAr
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -24,12 +25,16 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeFilter;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Although most query functions are removed from the query by the {@link QueryOptionsFromQueryVisitor}, several functions will persist. These functions may
@@ -97,8 +102,14 @@ class QueryFunctionsDescriptorTest {
         fieldToTypes.putAll("FIELD_A", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
         fieldToTypes.putAll("FIELD_B", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
 
+        Set<String> fields = new HashSet<>();
+        fields.add("FIELD");
+        fields.add("FIELD_A");
+        fields.add("FIELD_B");
+
         helper = new MockMetadataHelper();
         helper.setDataTypes(fieldToTypes);
+        helper.addFields(fields);
 
         dateIndexHelper = new MockDateIndexHelper();
     }
@@ -247,7 +258,13 @@ class QueryFunctionsDescriptorTest {
 
     private void assertIndexQuery(String query, String expected) {
         QueryJexlArgumentDescriptor argDescriptor = getDescriptor(query);
-        JexlNode expanded = argDescriptor.getIndexQuery(config, helper, dateIndexHelper, Collections.emptySet());
+        JexlNode expanded;
+        try {
+            expanded = argDescriptor.getIndexQuery(config, helper, dateIndexHelper, TypeFilter.ALL.getDataTypes());
+        } catch (TableNotFoundException e) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
         String result = JexlStringBuildingVisitor.buildQuery(expanded);
         assertEquals(expected, result);
     }

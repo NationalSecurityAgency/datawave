@@ -54,6 +54,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -581,7 +582,7 @@ public class ShardIndexQueryTableStaticMethods {
 
         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 22, "dataTypeFilter", GlobalIndexDataTypeFilter.class);
         int i = 1;
-        if (dataTypes != null) {
+        if (dataTypes != TypeFilter.NONE.getDataTypes() && dataTypes != TypeFilter.ALL.getDataTypes()) {
             for (String dataType : dataTypes) {
                 cfg.addOption(GlobalIndexDataTypeFilter.DATA_TYPE + i, dataType);
                 i++;

@@ -6,6 +6,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATIO
 
 import java.util.Arrays;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -20,6 +21,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -28,6 +30,8 @@ import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Visits an JexlNode tree, and expand the functions to be AND'ed with their index query equivalents. Note that the functions are left in the final query to
@@ -118,7 +122,13 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
         }
 
         if (!evaluationOnly && desc != null) {
-            JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
+            JexlNode indexQuery = null;
+            try {
+                indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
+            } catch (TableNotFoundException e) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
             if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
                 if (desc instanceof ContentFunctionsDescriptor.ContentJexlArgumentDescriptor) {
                     return distributeFunctionIntoIndexQuery(node, indexQuery);

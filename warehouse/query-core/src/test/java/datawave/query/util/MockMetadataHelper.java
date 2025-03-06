@@ -11,13 +11,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
@@ -145,7 +143,8 @@ public class MockMetadataHelper extends MetadataHelper {
 
     @Override
     public Metadata getMetadata() {
-        return getMetadata(null);
+        // for mock purposes, we assume all dataTypes are requested if nothing has been specified
+        return getMetadata(TypeFilter.ALL.getDataTypes());
     }
 
     @Override
@@ -158,9 +157,9 @@ public class MockMetadataHelper extends MetadataHelper {
     public Set<String> getAllFields(Set<String> ingestTypeFilter) {
         Set<String> fields = new HashSet<>();
 
-        if (ingestTypeFilter == null) {
+        if (ingestTypeFilter == TypeFilter.ALL.getDataTypes()) {
             return Collections.unmodifiableSet(getMetadata().getAllFields());
-        } else if (!ingestTypeFilter.isEmpty()) {
+        } else if (!ingestTypeFilter.equals(TypeFilter.NONE.getDataTypes())) {
             for (Map.Entry<String,String> entry : fieldsToDatatype.entries()) {
                 if (ingestTypeFilter.contains(entry.getValue())) {
                     fields.add(entry.getKey());

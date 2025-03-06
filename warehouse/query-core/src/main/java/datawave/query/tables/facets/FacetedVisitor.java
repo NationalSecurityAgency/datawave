@@ -36,7 +36,6 @@ import datawave.query.predicate.NegationPredicate;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
 import datawave.query.util.TypeMetadata;
-import datawave.util.UniversalSet;
 
 /**
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,

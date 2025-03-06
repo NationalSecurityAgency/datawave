@@ -10,6 +10,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
+import datawave.query.util.TypeFilter;
 
 /**
  * A {@link QueryRule} implementation that will check a query for any non-existent fields, i.e. not present in the data dictionary.
@@ -76,7 +77,7 @@ public class FieldExistenceRule extends ShardQueryRule {
             // Fetch the set of non-existent fields.
             ASTJexlScript jexlQuery = (ASTJexlScript) ruleConfig.getParsedQuery();
             Set<String> nonExistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(ruleConfig.getMetadataHelper(), jexlQuery,
-                            Collections.emptySet(), getSpecialFields());
+                            TypeFilter.ALL.getDataTypes(), getSpecialFields());
             // If any non-existent fields were found, add them to the result.
             if (!nonExistentFields.isEmpty()) {
                 result.addMessage("Fields not found in data dictionary: " + String.join(", ", nonExistentFields));

@@ -37,6 +37,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.util.TypeFilter;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
@@ -138,7 +139,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                                 BoundedRangeExpansionIterator.class);
                 setting.addOption(BoundedRangeExpansionIterator.START_DATE, startDay);
                 setting.addOption(BoundedRangeExpansionIterator.END_DATE, endDay);
-                if (!config.getDatatypeFilter().isEmpty()) {
+                if (!(config.getDatatypeFilter() == TypeFilter.ALL.getDataTypes()) && !config.getDatatypeFilter().equals(TypeFilter.NONE.getDataTypes())) {
                     setting.addOption(BoundedRangeExpansionIterator.DATATYPES_OPT, Joiner.on(',').join(config.getDatatypeFilter()));
                 }
                 bs.addScanIterator(setting);

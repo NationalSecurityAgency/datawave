@@ -59,6 +59,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 
 /**
  * Return a set of all fields present in the query
@@ -162,7 +163,7 @@ public class QueryFieldsVisitor extends BaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         Set<String> fields = null;
         if (desc != null) {
-            fields = desc.fields(helper, null);
+            fields = desc.fields(helper, TypeFilter.ALL.getDataTypes());
             ((Set<String>) data).addAll(fields);
         }
 
