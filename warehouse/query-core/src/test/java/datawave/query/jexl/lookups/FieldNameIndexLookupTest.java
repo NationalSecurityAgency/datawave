@@ -101,7 +101,6 @@ public class FieldNameIndexLookupTest extends EasyMockSupport {
         expect(scannerFactory.newLimitedScanner(isA(Class.class), isA(String.class), isA(Set.class), isA(QueryImpl.class), isA(String.class)))
                         .andReturn(scannerSession);
         expect(scannerSession.setRanges(anyObject())).andReturn(scannerSession);
-        expect(scannerSession.setOptions(anyObject())).andReturn(scannerSession);
         expect(scannerSession.getOptions()).andAnswer(SessionOptions::new).anyTimes();
 
         expect(scannerSession.hasNext()).andAnswer(() -> {

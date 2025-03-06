@@ -5,11 +5,10 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 
 import com.google.common.collect.TreeMultimap;
-
-import datawave.query.config.ShardQueryConfiguration;
 
 public class MockDateIndexHelper extends DateIndexHelper {
 
@@ -86,8 +85,8 @@ public class MockDateIndexHelper extends DateIndexHelper {
     }
 
     @Override
-    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter, ShardQueryConfiguration config)
-                    throws TableNotFoundException {
+    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter,
+                    Map<String,ScannerBase.ConsistencyLevel> consistencyLevels, Map<String,Map<String,String>> tableHints) throws TableNotFoundException {
         final DateTypeDescription desc = new DateTypeDescription();
         for (Entry value : entries.values()) {
             if (value.type.equals(dateType) && (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(value.dataType))) {
@@ -122,7 +121,7 @@ public class MockDateIndexHelper extends DateIndexHelper {
 
     @Override
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter,
-                    ShardQueryConfiguration config) throws TableNotFoundException {
+                    Map<String,ScannerBase.ConsistencyLevel> consistencyLevels, Map<String,Map<String,String>> tableHints) throws TableNotFoundException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         String beginStr = formatter.format(begin);
         String endStr = formatter.format(end);

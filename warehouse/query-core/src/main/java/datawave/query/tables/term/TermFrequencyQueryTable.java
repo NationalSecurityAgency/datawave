@@ -139,8 +139,12 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                             tfConfig.getQuery());
             scanner.setRange(tfConfig.getRange());
 
-            scanner.setConsistencyLevel(tfConfig.getTableConsistencyLevels().get(tfConfig.getTableName()));
-            scanner.setExecutionHints(tfConfig.getTableHints().get(tfConfig.getTableName()));
+            if (tfConfig.getTableConsistencyLevels() != null && !tfConfig.getTableConsistencyLevels().isEmpty()) {
+                scanner.setConsistencyLevel(tfConfig.getTableConsistencyLevels().get(tfConfig.getTableName()));
+            }
+            if (tfConfig.getTableHints() != null && !tfConfig.getTableHints().isEmpty()) {
+                scanner.setExecutionHints(tfConfig.getTableHints().get(tfConfig.getTableName()));
+            }
 
             this.iterator = scanner.iterator();
             this.scanner = scanner;

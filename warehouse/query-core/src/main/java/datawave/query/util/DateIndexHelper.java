@@ -16,6 +16,7 @@ import java.util.TreeMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -35,7 +36,6 @@ import org.springframework.stereotype.Component;
 import com.github.benmanes.caffeine.cache.Cache;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
 
@@ -218,14 +218,19 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            end date
      * @param datatypeFilter
      *            data type filter
+     * @param consistencyLevels
+     *            table consistency levels
+     * @param tableHints
+     *            table scan hints
      * @return the date type description
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
+    @Cacheable(value = "getTypeDescription",
+                    key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter,#consistencyLevels,#tableHints}",
                     cacheManager = "dateIndexHelperCacheManager", sync = true)
-    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter, ShardQueryConfiguration config)
-                    throws TableNotFoundException {
+    public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter,
+                    Map<String,ScannerBase.ConsistencyLevel> consistencyLevels, Map<String,Map<String,String>> tableHints) throws TableNotFoundException {
         log.debug("cache fault for getTypeDescription(" + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
                         + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
@@ -236,11 +241,11 @@ public class DateIndexHelper implements ApplicationContextAware {
         DateTypeDescription desc = new DateTypeDescription();
 
         BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
-        if (config.getTableConsistencyLevels() != null && !config.getTableConsistencyLevels().isEmpty()) {
-            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(dateIndexTableName));
+        if (consistencyLevels != null && !consistencyLevels.isEmpty() && consistencyLevels.containsKey(dateIndexTableName)) {
+            bs.setConsistencyLevel(consistencyLevels.get(dateIndexTableName));
         }
-        if (config.getTableHints() != null && !config.getTableHints().isEmpty()) {
-            bs.setExecutionHints(config.getTableHints().get(dateIndexTableName));
+        if (tableHints != null && !tableHints.isEmpty() && tableHints.containsKey(dateIndexTableName)) {
+            bs.setExecutionHints(tableHints.get(dateIndexTableName));
         }
 
         try {
@@ -308,15 +313,19 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            The maximum shard to search
      * @param datatypeFilter
      *            The data type filter
+     * @param consistencyLevels
+     *            The table consistency levels
+     * @param tableHints
+     *            The table scan hints
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
      *             if the table is not found
      */
     @Cacheable(value = "getShardsAndDaysHint",
-                    key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
+                    key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter,#consistencyLevels,#tableHints}",
                     cacheManager = "dateIndexHelperCacheManager", sync = true)
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter,
-                    ShardQueryConfiguration config) throws TableNotFoundException {
+                    Map<String,ScannerBase.ConsistencyLevel> consistencyLevels, Map<String,Map<String,String>> tableHints) throws TableNotFoundException {
         log.debug("cache fault for getShardsAndDaysHint(" + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
                         + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
@@ -333,11 +342,11 @@ public class DateIndexHelper implements ApplicationContextAware {
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
 
         BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
-        if (config.getTableConsistencyLevels() != null && !config.getTableConsistencyLevels().isEmpty()) {
-            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(dateIndexTableName));
+        if (consistencyLevels != null && !consistencyLevels.isEmpty() && consistencyLevels.containsKey(dateIndexTableName)) {
+            bs.setConsistencyLevel(consistencyLevels.get(dateIndexTableName));
         }
-        if (config.getTableHints() != null && !config.getTableHints().isEmpty()) {
-            bs.setExecutionHints(config.getTableHints().get(dateIndexTableName));
+        if (tableHints != null && !tableHints.isEmpty() && tableHints.containsKey(dateIndexTableName)) {
+            bs.setExecutionHints(tableHints.get(dateIndexTableName));
         }
 
         try {

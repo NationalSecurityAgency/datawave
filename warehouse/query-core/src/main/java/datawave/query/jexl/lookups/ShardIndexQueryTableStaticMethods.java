@@ -52,7 +52,6 @@ import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.tables.AnyFieldScanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
-import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
