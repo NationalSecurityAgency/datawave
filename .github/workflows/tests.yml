@@ -26,7 +26,6 @@ jobs:
   # they are committed back to the branch
   check-code-formatting:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'merge_group' }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -39,7 +38,12 @@ jobs:
         cache: 'maven'
     - name: Extract branch name
       shell: bash
-      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      run: 
+        if [ ${{ github.event_name }} == 'merge_group' ]; then
+          echo "Does not need to run on merge_group event."
+          exit 0
+        fi
+        echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
       id: extract_branch
     - name: Format code
       env:
