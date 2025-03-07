@@ -200,13 +200,14 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
 
         // empty but non-null datatypeFilter should have the same behavior since we allow nothing to pass through
-        dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"), Collections.EMPTY_SET);
+        dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"),
+                        TypeFilter.NONE.getDataTypes());
         Assert.assertEquals(Collections.EMPTY_SET, dtd.getFields());
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100103"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100103"), dtd.getEndDate());
 
         // a null filter should indicate allowance of all the things
-        dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), null);
+        dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), TypeFilter.ALL.getDataTypes());
         Assert.assertEquals(Collections.singleton("LOAD_DATE"), dtd.getFields());
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100101"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());

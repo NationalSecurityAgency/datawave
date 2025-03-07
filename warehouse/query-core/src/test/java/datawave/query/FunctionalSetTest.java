@@ -45,6 +45,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.TypeFilter;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -349,7 +350,7 @@ public abstract class FunctionalSetTest {
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             // stat must be reset between each run when pruning ingest types
-            logic.getConfig().setDatatypeFilter(null);
+            logic.getConfig().setDatatypeFilter(TypeFilter.ALL.getDataTypes());
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

@@ -43,6 +43,7 @@ import datawave.query.postprocessing.tf.PhraseOffset;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeFilter;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
@@ -1665,7 +1666,7 @@ public class ContentFunctionsTest {
         JexlArgumentDescriptor desc = new ContentFunctionsDescriptor().getArgumentDescriptor(function);
         JexlNode indexQuery = null;
         try {
-            indexQuery = desc.getIndexQuery(null, metadataHelper, dateIndexHelper, null);
+            indexQuery = desc.getIndexQuery(null, metadataHelper, dateIndexHelper, TypeFilter.ALL.getDataTypes());
         } catch (TableNotFoundException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
             throw new DatawaveFatalQueryException(qe);

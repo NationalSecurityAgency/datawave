@@ -26,6 +26,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeFilter;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
@@ -113,7 +114,7 @@ public class GeoWaveFunctionsDescriptorTest {
 
         JexlNode indexQuery;
         try {
-            indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
+            indexQuery = desc.getIndexQuery(config, metadataHelper, null, TypeFilter.ALL.getDataTypes());
         } catch (TableNotFoundException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
             throw new DatawaveFatalQueryException(qe);

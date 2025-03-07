@@ -23,6 +23,7 @@ import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.TypeFilter;
 
 public class FunctionNormalizationRebuildingVisitorTest {
 
@@ -161,7 +162,7 @@ public class FunctionNormalizationRebuildingVisitorTest {
 
         assertInstanceOf(ASTFunctionNode.class, child);
 
-        JexlNode node = FunctionNormalizationRebuildingVisitor.normalize((ASTFunctionNode) child, normalizers, helper, null);
+        JexlNode node = FunctionNormalizationRebuildingVisitor.normalize((ASTFunctionNode) child, normalizers, helper, TypeFilter.ALL.getDataTypes());
         String result = JexlStringBuildingVisitor.buildQuery(node);
         assertEquals(expected, result);
     }

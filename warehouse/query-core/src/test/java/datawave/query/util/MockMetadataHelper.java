@@ -222,7 +222,7 @@ public class MockMetadataHelper extends MetadataHelper {
 
     @Override
     public Set<Type<?>> getDatatypesForField(String fieldName, Set<String> ingestTypeFilter) {
-        if (ingestTypeFilter == null) {
+        if (ingestTypeFilter == TypeFilter.ALL.getDataTypes()) {
             return new HashSet<>(dataTypes.get(fieldName));
         } else if (!ingestTypeFilter.isEmpty()) {
             Set<Type<?>> types = new HashSet<>(dataTypes.get(fieldName));

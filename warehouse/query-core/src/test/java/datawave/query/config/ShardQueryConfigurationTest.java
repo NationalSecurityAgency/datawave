@@ -49,6 +49,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
+import datawave.query.util.TypeFilter;
 import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
@@ -528,7 +529,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("unevaluatedFields", Sets.newHashSet());
         updatedValues.put("unevaluatedFields", Sets.newHashSet("FIELD_U", "FIELD_V"));
 
-        defaultValues.put("datatypeFilter", null);
+        defaultValues.put("datatypeFilter", TypeFilter.ALL.getDataTypes());
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
         defaultValues.put("datatypeFilterAsString", "");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");

@@ -169,7 +169,7 @@ class QueryFunctionsDescriptorTest {
 
     @Test
     void testFieldSets() {
-        // assertFieldSets(singleFieldCount, Set.of(Set.of("FIELD")));
+        assertFieldSets(singleFieldCount, Set.of(Set.of("FIELD")));
         assertFieldSets(multiFieldedCount, Set.of(Set.of("FIELD_A"), Set.of("FIELD_B")));
 
         assertFieldSets(betweenDecimal, Set.of(Set.of("FIELD")));

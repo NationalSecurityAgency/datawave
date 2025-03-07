@@ -71,6 +71,7 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ShapesIngest;
+import datawave.query.util.TypeFilter;
 import datawave.test.HitTermAssertions;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -586,7 +587,7 @@ public abstract class ShapesTest {
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         withRequiredAllOf("SHAPE:hexagon");
         planAndExecuteQuery();
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -606,7 +607,7 @@ public abstract class ShapesTest {
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         withRequiredAllOf("SHAPE:hexagon");
         planAndExecuteQuery();
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -616,7 +617,7 @@ public abstract class ShapesTest {
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         withRequiredAllOf("SHAPE:hexagon");
         planAndExecuteQuery();
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -649,7 +650,7 @@ public abstract class ShapesTest {
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         withRequiredAllOf("SHAPE:hexagon");
         planAndExecuteQuery();
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -766,7 +767,7 @@ public abstract class ShapesTest {
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         withRequiredAllOf("SHAPE:hexagon", "ONLY_HEX:hexa");
         planAndExecuteQuery();
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -776,7 +777,7 @@ public abstract class ShapesTest {
         withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         planAndExecuteQuery();
         assertPlannedQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -811,7 +812,7 @@ public abstract class ShapesTest {
         withRequiredAnyOf("SHAPE:pentagon", "SHAPE:hexagon", "SHAPE:octagon");
         planAndExecuteQuery();
         assertPlannedQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        assertDatatypeFilter(null);
+        assertDatatypeFilter(TypeFilter.ALL.getDataTypes());
     }
 
     @Test
@@ -881,7 +882,7 @@ public abstract class ShapesTest {
     public void testExclusiveFilter() throws Exception {
         withQuery("ONLY_HEX == 'hexa'");
         withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        withExpected(TypeFilter.NONE.getDataTypes());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
@@ -890,7 +891,7 @@ public abstract class ShapesTest {
         logic.setReduceIngestTypes(true);
         withQuery("ONLY_HEX == 'hexa'");
         withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        withExpected(TypeFilter.NONE.getDataTypes());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
@@ -899,7 +900,7 @@ public abstract class ShapesTest {
         logic.setRebuildDatatypeFilter(true);
         withQuery("ONLY_HEX == 'hexa'");
         withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        withExpected(TypeFilter.NONE.getDataTypes());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
@@ -908,7 +909,7 @@ public abstract class ShapesTest {
         logic.setPruneQueryByIngestTypes(true);
         withQuery("ONLY_HEX == 'hexa'");
         withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle");
-        withExpected(Collections.emptySet());
+        withExpected(TypeFilter.NONE.getDataTypes());
         planAndExecuteQuery(); // datatype filter will not find ONLY_HEX and throw exception
     }
 
