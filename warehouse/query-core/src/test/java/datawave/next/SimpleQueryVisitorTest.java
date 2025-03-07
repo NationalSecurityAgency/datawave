@@ -18,7 +18,6 @@ public class SimpleQueryVisitorTest {
 
     private final Set<String> indexedFields = Set.of("INDEXED", "INDEX_ONLY");
     private final Set<String> indexOnlyFields = Set.of("INDEX_ONLY");
-    private final Set<String> nonEventFields = Set.of("NON_EVENT");
 
     @Test
     public void testIndexedField() {
@@ -134,7 +133,7 @@ public class SimpleQueryVisitorTest {
 
     private void test(String query, boolean expected) {
         ASTJexlScript script = parse(query);
-        boolean result = SimpleQueryVisitor.validate(script, indexedFields, indexOnlyFields, nonEventFields);
+        boolean result = SimpleQueryVisitor.validate(script, indexedFields, indexOnlyFields);
         assertEquals(expected, result);
     }
 

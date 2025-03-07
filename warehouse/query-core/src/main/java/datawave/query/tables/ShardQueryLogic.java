@@ -1365,7 +1365,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             QueryPlanner queryPlanner = getQueryPlanner();
             if (planner instanceof DefaultQueryPlanner) {
                 DefaultQueryPlanner dqp = (DefaultQueryPlanner) queryPlanner;
-                boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields(), dqp.getNonEventFields());
+                boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
                 if (simple) {
                     DocumentScheduler documentScheduler = new DocumentScheduler(config);
                     documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));

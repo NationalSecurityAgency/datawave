@@ -16,6 +16,8 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOr;
@@ -29,28 +31,33 @@ import datawave.query.jexl.visitors.RewriteNegationsVisitor;
  */
 public class SimpleQueryVisitor extends BaseVisitor {
 
+    private static final Logger log = LoggerFactory.getLogger(SimpleQueryVisitor.class);
+
     private final Set<String> indexedFields;
     private final Set<String> indexOnlyFields;
-    private final Set<String> nonEventFields;
 
     // assume noble intentions
     private boolean valid = true;
     private boolean negationsExist = false;
     private boolean atLeastOneFieldIndexed = false;
 
-    public SimpleQueryVisitor(Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields) {
+    public SimpleQueryVisitor(Set<String> indexedFields, Set<String> indexOnlyFields) {
         this.indexedFields = indexedFields;
         this.indexOnlyFields = indexOnlyFields;
-        this.nonEventFields = nonEventFields;
     }
 
     public boolean isValid() {
         // TODO: detect top level union, in which case all fields must be indexed
-        return this.valid && this.atLeastOneFieldIndexed && !negationsExist;
+        boolean valid = this.valid && this.atLeastOneFieldIndexed && !negationsExist;
+        if (!valid) {
+            log.warn("DocumentScheduler rejected query, valid: {}, atLeastOneFieldIndexed: {}, negationsExist: {}", this.valid, atLeastOneFieldIndexed,
+                            negationsExist);
+        }
+        return valid;
     }
 
-    public static boolean validate(ASTJexlScript script, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields) {
-        SimpleQueryVisitor visitor = new SimpleQueryVisitor(indexedFields, indexOnlyFields, nonEventFields);
+    public static boolean validate(ASTJexlScript script, Set<String> indexedFields, Set<String> indexOnlyFields) {
+        SimpleQueryVisitor visitor = new SimpleQueryVisitor(indexedFields, indexOnlyFields);
         script.jjtAccept(visitor, null);
         return visitor.isValid();
     }
