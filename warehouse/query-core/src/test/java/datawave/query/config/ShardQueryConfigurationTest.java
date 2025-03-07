@@ -37,7 +37,6 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.next.scanner.DocumentScannerConfig;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
@@ -620,9 +619,10 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("useDocumentScheduler", false);
         updatedValues.put("useDocumentScheduler", true);
 
-        DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
-        defaultValues.put("documentScannerConfig", documentScannerConfig);
-        updatedValues.put("documentScannerConfig", documentScannerConfig);
+        // TODO: formally make this serializable
+        // DocumentScannerConfig documentScannerConfig = new DocumentScannerConfig();
+        // defaultValues.put("documentScannerConfig", documentScannerConfig);
+        // updatedValues.put("documentScannerConfig", documentScannerConfig);
     }
 
     private Query createQuery(String query) {

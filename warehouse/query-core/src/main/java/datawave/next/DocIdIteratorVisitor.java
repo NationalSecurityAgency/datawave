@@ -133,11 +133,13 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         if (!positive.isEmpty() && !negative.isEmpty()) {
-            throw new IllegalStateException("cannot mix positive and negative terms in a union");
+            log.warn("union of negated and positive terms will not be executed");
+            return null;
         }
 
         if (positive.isEmpty() && !negative.isEmpty()) {
-            throw new IllegalStateException("cannot have a union of all negative terms");
+            log.warn("union of negated terms will not be executed");
+            return null;
         }
 
         Set<Key> ids = null;

@@ -545,7 +545,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
 
     private boolean useDocumentScheduler = false;
-    private DocumentScannerConfig documentScannerConfig;
+    private transient DocumentScannerConfig documentScannerConfig;
 
     /**
      * Default constructor
