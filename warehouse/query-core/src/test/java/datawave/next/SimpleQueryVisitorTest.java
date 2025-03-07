@@ -96,13 +96,25 @@ public class SimpleQueryVisitorTest {
     public void testIsNotNull() {
         test("INDEXED == 'a' && filter:isNotNull(INDEXED)", true);
         test("INDEXED == 'a' && INDEXED != null", false);
-        test("INDEXED == 'a' && !(INDEXED == null)", false);
+        test("INDEXED == 'a' && !(INDEXED == null)", true);
+    }
+
+    @Test
+    public void testNegatedEquality() {
+        test("!(INDEXED == 'a')", true);
+        test("!(INDEX_ONLY == 'a')", true);
+        test("!(EVENT_ONLY == 'a')", false);
     }
 
     @Test
     public void testNegatedRegex() {
         test("INDEXED !~ 'ba.*'", false);
-        test("!(INDEXED =~ 'ba.*')", false);
+        test("INDEX_ONLY !~ 'ba.*'", false);
+        test("EVENT_ONLY !~ 'ba.*'", false);
+
+        test("!(INDEXED =~ 'ba.*')", true);
+        test("!(INDEX_ONLY =~ 'ba.*')", true);
+        test("!(EVENT_ONLY =~ 'ba.*')", false);
     }
 
     @Test
@@ -115,9 +127,9 @@ public class SimpleQueryVisitorTest {
 
     @Test
     public void testIntersectionWithFilterRegex() {
-        test("INDEXED == 'a' && filter:includeRegex(INDEXED_FIELD, 'ba.*')", true);
-        test("INDEXED == 'a' && filter:includeRegex(INDEX_ONLY_FIELD, 'ba.*')", true);
-        test("INDEXED == 'a' && filter:includeRegex(EVENT_ONLY_FIELD, 'ba.*')", true);
+        test("INDEXED == 'a' && filter:includeRegex(INDEXED, 'ba.*')", true);
+        test("INDEXED == 'a' && filter:includeRegex(INDEX_ONLY, 'ba.*')", true);
+        test("INDEXED == 'a' && filter:includeRegex(EVENT_ONLY, 'ba.*')", true);
     }
 
     private void test(String query, boolean expected) {

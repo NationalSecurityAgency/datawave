@@ -1,7 +1,9 @@
 package datawave.next;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -11,7 +13,12 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -28,11 +35,24 @@ import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
- * A visitor that returns all document ids that match a given query.
+ * A visitor that scans the field index and returns all document ids that match a given query.
  * <p>
- * Equality, regex and range terms are supported.
+ * Operators that are supported
+ * <ul>
+ * <li>equality</li>
+ * <li>regex</li>
+ * <li>range</li>
+ * <li>list marker</li>
+ * <li>negations that are part of an intersection</li>
+ * </ul>
  * <p>
- * Negations, filter functions, LIST markers and TERM markers are not supported
+ * Operators that are NOT supported
+ * <ul>
+ * <li>negated regex (NR)</li>
+ * <li>negated equality (NE)</li>
+ * <li>functions</li>
+ * <li>term markers</li>
+ * </ul>
  */
 public class DocIdIteratorVisitor extends BaseVisitor {
 
@@ -101,10 +121,28 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     @Override
     @SuppressWarnings("unchecked")
     public Object visit(ASTOrNode node, Object data) {
-        Set<Key> ids = null;
+        List<JexlNode> positive = new ArrayList<>();
+        List<JexlNode> negative = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            JexlNode child = node.jjtGetChild(i);
-            Object o = child.jjtAccept(this, data);
+            JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
+            if (deref instanceof ASTNotNode) {
+                negative.add(deref);
+            } else {
+                positive.add(deref);
+            }
+        }
+
+        if (!positive.isEmpty() && !negative.isEmpty()) {
+            throw new IllegalStateException("cannot mix positive and negative terms in a union");
+        }
+
+        if (positive.isEmpty() && !negative.isEmpty()) {
+            throw new IllegalStateException("cannot have a union of all negative terms");
+        }
+
+        Set<Key> ids = null;
+        for (JexlNode child : positive) {
+            Object o = child.jjtAccept(this, ids);
             if (o instanceof Set) {
                 if (ids == null) {
                     ids = (Set<Key>) o;
@@ -131,6 +169,10 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         return ids;
     }
 
+    /*
+     * There are many potential types of joins happening here. Enumerate and work through cases.
+     */
+
     @Override
     @SuppressWarnings("unchecked")
     public Object visit(ASTAndNode node, Object data) {
@@ -139,34 +181,80 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             return handleMarker(node, data, instance);
         }
 
-        Set<Key> ids = null;
+        List<JexlNode> positive = new ArrayList<>();
+        List<JexlNode> negative = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            JexlNode child = node.jjtGetChild(i);
-            Object o = child.jjtAccept(this, data);
-            if (o instanceof Set) {
-                Set<Key> childIds = (Set<Key>) o;
-                if (childIds.isEmpty()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("short circuit intersection, child returned zero hits");
-                    }
-                    return new HashSet<>();
-                }
-
-                if (ids == null) {
-                    ids = new HashSet<>(childIds);
-                } else {
-                    ids.retainAll(childIds);
-                    if (ids.isEmpty()) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("short circuit intersection, no ids exist after merge");
-                        }
-                        return ids;
-                    }
-                }
+            JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
+            if (deref instanceof ASTNotNode) {
+                negative.add(deref);
             } else {
+                positive.add(deref);
+            }
+        }
+
+        // positive terms first
+        Set<Key> ids = null;
+        for (JexlNode child : positive) {
+            Object o = child.jjtAccept(this, ids);
+            if (!(o instanceof Set)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
+                continue;
+            }
+
+            Set<Key> childIds = (Set<Key>) o;
+            if (childIds.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("short circuit intersection, child returned zero hits");
+                }
+                return new HashSet<>();
+            }
+
+            if (ids == null) {
+                ids = new HashSet<>(childIds);
+            } else {
+                ids.retainAll(childIds);
+                if (ids.isEmpty()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("short circuit intersection, no ids exist after merge");
+                    }
+                    return ids;
+                }
+            }
+        }
+
+        // TODO: handle the case of all negations (A && (B || (!C && !D)))
+
+        // now process negations
+        for (JexlNode child : negative) {
+            Object o = child.jjtAccept(this, ids);
+            if (!(o instanceof Set)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
+                }
+                continue;
+            }
+
+            Set<Key> childIds = (Set<Key>) o;
+            if (childIds.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("negated term in intersection, child returned zero hits");
+                }
+                continue;
+            }
+
+            // uncomment for exceptions
+            // Preconditions.checkNotNull(ids);
+            if (ids != null && !ids.isEmpty()) {
+                ids.removeAll(childIds);
+            }
+
+            if (ids != null && ids.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("no ids exist for intersection after processing merge, short circuit return");
+                }
+                return ids;
             }
         }
 
@@ -243,12 +331,12 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     public Object visit(ASTEQNode node, Object data) {
         String field = JexlASTHelper.getIdentifier(node);
         if (field == null || !indexedFields.contains(field)) {
-            return data; // do not execute iterators for non-indexed fields
+            return null; // do not execute iterators for non-indexed fields
         }
 
         Object value = JexlASTHelper.getLiteralValue(node);
         if (value == null) {
-            return data; // do not execute iterators for terms like 'FIELD == null'
+            return null; // do not execute iterators for terms like 'FIELD == null'
         }
 
         DocIdIterator iterator = new DocIdIterator(source, row, node);
@@ -296,6 +384,31 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return node.jjtGetChild(0).jjtAccept(this, data);
+    }
+
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        return node.jjtGetChild(0).jjtAccept(this, data);
+    }
+
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTMethodNode node, Object data) {
+        return null;
     }
 
     public DocumentIteratorStats getStats() {

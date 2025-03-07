@@ -21,6 +21,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.PushdownNegationVisitor;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 
 /**
  * Validates that a query is composed of indexed terms with simple boolean logic. No index-only fields or functions.
@@ -146,10 +148,29 @@ public class SimpleQueryVisitor extends BaseVisitor {
         return data;
     }
 
+    /**
+     * Negations are allowed provided the {@link RewriteNegationsVisitor} and {@link PushdownNegationVisitor} have run
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return the data
+     */
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        valid = false;
-        negationsExist = true;
+        if (valid) {
+            JexlNode source = JexlASTHelper.dereference(node.jjtGetChild(0));
+            if (source instanceof ASTEQNode) {
+                Object literal = JexlASTHelper.getLiteralValue(source);
+                if (literal == null) {
+                    // this is a not-null term like "!(FIELD == null)"
+                    return data;
+                }
+            }
+
+            node.childrenAccept(this, data);
+        }
         return data;
     }
 

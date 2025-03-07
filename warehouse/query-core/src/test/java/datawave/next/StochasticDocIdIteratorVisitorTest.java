@@ -17,19 +17,38 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
+/**
+ * This test exercises random terms are executable, not executable, and/or negated.
+ */
 public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(StochasticDocIdIteratorVisitorTest.class);
 
     private static final Set<String> fields = Set.of("FIELD_A", "FIELD_B");
     private static final Set<String> datatypes = Set.of("datatype-a");
 
-    private static final List<String> executableTerms = List.of("FIELD_A == 'value-1'", "FIELD_A == 'value-2'", "FIELD_B == 'value-3'", "FIELD_B == 'value-4'");
-    private static final List<String> nonExecutableTerms = List.of("FIELD_X == 'x'", "FIELD_Y == 'y'", "FIELD_Z == 'z'");
+    private static final List<String> executableTerms = new ArrayList<>();
+    private static final List<String> nonExecutableTerms = new ArrayList<>();
     private static final List<String> allTerms = new ArrayList<>();
 
     static {
+        executableTerms.add("FIELD_A == 'value-1'");
+        executableTerms.add("FIELD_A == 'value-2'");
+        executableTerms.add("FIELD_B == 'value-3'");
+        executableTerms.add("FIELD_B == 'value-4'");
+        nonExecutableTerms.add("FIELD_X == 'x'");
+        nonExecutableTerms.add("FIELD_Y == 'y'");
+        nonExecutableTerms.add("FIELD_Z == 'z'");
+        nonExecutableTerms.add("filter:isNull(FIELD_X, 'x')");
+        nonExecutableTerms.add("filter:isNotNull(FIELD_X, 'x')");
+        nonExecutableTerms.add("FIELD_X !~ 'ba.*'");
+        nonExecutableTerms.add("FIELD_X != 'x'");
         allTerms.addAll(executableTerms);
         allTerms.addAll(nonExecutableTerms);
     }
@@ -37,8 +56,13 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     private final Range range = new Range(row);
     private final Random rand = new Random();
 
-    private final List<String> termsForTest = new ArrayList<>();
+    private final Set<String> selectedTerms = new HashSet<>();
 
+    private String[] terms;
+    private Set<Integer>[] uids;
+    private Set<Integer> expected = null;
+
+    // the maximum number of iterations each test should run
     private final int max = 1_000;
 
     @Test
@@ -80,7 +104,6 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         }
     }
 
-    @Disabled
     @Test
     public void testIntersectionWithNegations() {
         for (int i = 0; i < max; i++) {
@@ -95,7 +118,6 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         // this cannot happen without outside context, see testNestedUnionWithNegations
     }
 
-    @Disabled
     @Test
     public void testNestedIntersectionWithNegations() {
         for (int i = 0; i < max; i++) {
@@ -122,203 +144,171 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
         SortedSet<Integer> uids = getRandomUids();
         writeUidsForTerm(term, uids);
-        driveTest(uids);
+        expected = uids;
+        driveTest();
     }
 
     // (A && B && ... && Z)
     private void driveSimpleIntersection(int termCount) {
         clearState();
+        createTermsAndUids(termCount);
+        buildExpectedForSimpleIntersection();
+        withQuery(Joiner.on(" && ").join(terms));
+        driveTest();
+    }
 
-        String[] termArray = new String[termCount];
-        Set<Integer>[] uidArray = new Set[termCount];
-
-        Set<String> terms = new HashSet<>();
-        Set<Integer> expectedUids = null;
-
-        for (int i = 0; i < termArray.length; i++) {
-            termArray[i] = selectRandomTerm();
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(termArray[i], uidArray[i]);
-
-            if (isTermExecutable(termArray[i])) {
-                if (expectedUids == null) {
-                    expectedUids = new HashSet<>(uidArray[i]);
+    private void buildExpectedForSimpleIntersection() {
+        for (int i = 0; i < terms.length; i++) {
+            String term = terms[i];
+            if (isTermExecutable(term)) {
+                if (expected == null) {
+                    expected = new HashSet<>(uids[i]);
                 } else {
-                    expectedUids.retainAll(uidArray[i]);
+                    expected.retainAll(uids[i]);
+                    if (expected.isEmpty()) {
+                        break;
+                    }
                 }
             }
-            terms.add(termArray[i]);
         }
 
         // possible no term was executable
-        if (expectedUids == null) {
-            expectedUids = new HashSet<>();
+        if (expected == null) {
+            expected = new HashSet<>();
         }
-
-        withQuery(Joiner.on(" && ").join(terms));
-
-        ASTJexlScript script = parse(query);
-        SortedKeyValueIterator<Key,Value> source = createSource();
-
-        Set<Key> results = DocIdIteratorVisitor.getDocIds(script, range, source, datatypes, null, fields);
-        SortedSet<Integer> resultUids = resultsToUids(results);
-
-        assertEquals(expectedUids, resultUids);
     }
 
     // (A || B || ... || Z)
     private void driveSimpleUnion(int termCount) {
         clearState();
+        createTermsAndUids(termCount);
+        withQuery(Joiner.on(" || ").join(terms));
+        buildExpectedForSimpleUnion();
+        driveTest();
+    }
 
-        String[] termArray = new String[termCount];
-        Set<Integer>[] uidArray = new Set[termCount];
-
-        Set<String> terms = new HashSet<>();
-        Set<Integer> expectedUids = new HashSet<>();
-
-        for (int i = 0; i < termArray.length; i++) {
-            termArray[i] = selectRandomTerm();
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(termArray[i], uidArray[i]);
-
-            terms.add(termArray[i]);
-            if (isTermExecutable(termArray[i])) {
-                expectedUids.addAll(uidArray[i]);
+    private void buildExpectedForSimpleUnion() {
+        expected = new HashSet<>();
+        for (int i = 0; i < terms.length; i++) {
+            if (isTermExecutable(terms[i])) {
+                expected.addAll(uids[i]);
             }
         }
-
-        withQuery(Joiner.on(" || ").join(terms));
-
-        driveTest(expectedUids);
     }
 
     // A || (B && C)
     private void driveNestedIntersection() {
         clearState();
-
-        String[] terms = new String[3];
-        Set<Integer>[] uidArray = new Set[3];
-
-        for (int i = 0; i < terms.length; i++) {
-            terms[i] = selectRandomTerm();
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(terms[i], uidArray[i]);
-        }
+        createTermsAndUids(3);
+        buildExpectedForNestedIntersection();
 
         // A || (B && C)
         withQuery(terms[0] + " || (" + terms[1] + " && " + terms[2] + ")");
+        driveTest();
+    }
 
-        Set<Integer> expectedUids = new HashSet<>();
-
+    private void buildExpectedForNestedIntersection() {
+        expected = new HashSet<>();
         if (isTermExecutable(terms[1]) && isTermExecutable(terms[2])) {
-            expectedUids.addAll(uidArray[2]);
-            expectedUids.retainAll(uidArray[1]);
+            expected.addAll(uids[2]);
+            expected.retainAll(uids[1]);
         } else if (isTermExecutable(terms[1])) {
-            expectedUids.addAll(uidArray[1]);
+            expected.addAll(uids[1]);
         } else if (isTermExecutable(terms[2])) {
-            expectedUids.addAll(uidArray[2]);
+            expected.addAll(uids[2]);
         }
 
         if (isTermExecutable(terms[0])) {
-            expectedUids.addAll(uidArray[0]);
+            expected.addAll(uids[0]);
         }
-
-        driveTest(expectedUids);
     }
 
     private void driveNestedUnion() {
         clearState();
-
-        String[] terms = new String[3];
-        Set<Integer>[] uidArray = new Set[3];
-
-        for (int i = 0; i < terms.length; i++) {
-            terms[i] = selectRandomTerm();
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(terms[i], uidArray[i]);
-        }
+        createTermsAndUids(3);
+        buildExpectedForNestedUnion();
 
         // A && (B || C)
         withQuery(terms[0] + " && (" + terms[1] + " || " + terms[2] + ")");
+        driveTest();
+    }
 
-        Set<Integer> expectedUids = new HashSet<>();
+    private void buildExpectedForNestedUnion() {
+        expected = new HashSet<>();
         if (isTermExecutable(terms[2])) {
-            expectedUids.addAll(uidArray[2]);
+            expected.addAll(uids[2]);
         }
         if (isTermExecutable(terms[1])) {
-            expectedUids.addAll(uidArray[1]);
+            expected.addAll(uids[1]);
         }
 
         if (isTermExecutable(terms[0])) {
-            if (!expectedUids.isEmpty()) {
-                expectedUids.retainAll(uidArray[0]);
+            if (!expected.isEmpty()) {
+                expected.retainAll(uids[0]);
             } else if (!isTermExecutable(terms[1]) && !isTermExecutable(terms[2])) {
-                expectedUids.addAll(uidArray[0]);
+                expected.addAll(uids[0]);
             }
         }
-
-        driveTest(expectedUids);
     }
 
     // (A && B && ... !Z)
     private void driveIntersectionWithNegations(int termCount) {
         clearState();
+        createTermsAndUids(termCount);
+        buildExpectedForIntersectionWithNegations();
+        negateLastTerm();
+        withQuery(Joiner.on(" && ").join(terms));
+        driveTest();
+    }
 
-        String[] termArray = new String[termCount];
-        Set<Integer>[] uidArray = new Set[termCount];
-
-        Set<String> terms = new HashSet<>();
-        Set<Integer> expectedUids = new HashSet<>();
-
-        for (int i = 0; i < termArray.length; i++) {
-            termArray[i] = selectRandomTerm();
-            if (i == termArray.length - 1) {
-                // just negate the last one, for now
-                termArray[i] = negateTerm(termArray[i]);
+    private void buildExpectedForIntersectionWithNegations() {
+        // process terms using intersection logic, except the last term
+        for (int i = 0; i < terms.length - 1; i++) {
+            if (isTermExecutable(terms[i])) {
+                if (expected == null) {
+                    expected = new TreeSet<>(uids[i]);
+                } else {
+                    expected.retainAll(uids[i]);
+                }
             }
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(termArray[i], uidArray[i]);
-
-            if (i == 0) {
-                expectedUids.addAll(uidArray[i]);
-            } else if (i == termArray.length - 1) {
-                expectedUids.removeAll(uidArray[i]);
-            } else {
-                expectedUids.retainAll(uidArray[i]);
-            }
-            terms.add(termArray[i]);
         }
 
-        withQuery(Joiner.on(" && ").join(terms));
-        driveTest(expectedUids);
+        // process negated intersection logic for last term, provided expected uids exist
+        // and last term is executable
+        if (expected != null && !expected.isEmpty() && isTermExecutable(terms[terms.length - 1])) {
+            expected.removeAll(uids[uids.length - 1]);
+        }
+
+        if (expected == null) {
+            expected = new TreeSet<>();
+        }
     }
 
     // A || (B && !C)
     private void driveNestedIntersectionWithNegation() {
         clearState();
+        createTermsAndUids(3);
+        buildExpectedForNestedIntersectionWithNegation();
+        negateLastTerm();
+        withQuery(terms[0] + " || (" + terms[1] + " && " + terms[2] + ")");
+        driveTest();
+    }
 
-        String[] termArray = new String[3];
-        Set<Integer>[] uidArray = new Set[3];
-
-        Set<String> terms = new HashSet<>();
-        for (int i = 0; i < termArray.length; i++) {
-            termArray[i] = selectRandomTerm();
-            if (i == termArray.length - 1) {
-                // just negate the last one, for now
-                termArray[i] = negateTerm(termArray[i]);
+    private void buildExpectedForNestedIntersectionWithNegation() {
+        // A || (B && !C)
+        expected = new HashSet<>();
+        if (isTermExecutable(terms[1])) {
+            expected.addAll(uids[1]);
+            if (isTermExecutable(terms[2])) {
+                expected.removeAll(uids[2]);
             }
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(termArray[i], uidArray[i]);
-            terms.add(termArray[i]);
         }
+        // If B term is not executable we actually have a union like (A || !C)
+        // in this case do nothing for the C term, it isn't executable. Visitor should ignore.
 
-        Set<Integer> expectedUids = new HashSet<>();
-        expectedUids.addAll(uidArray[1]);
-        expectedUids.removeAll(uidArray[2]);
-        expectedUids.addAll(uidArray[0]);
-
-        withQuery(termArray[0] + " || (" + termArray[1] + " && " + termArray[2] + ")");
-        driveTest(expectedUids);
+        if (isTermExecutable(terms[0])) {
+            expected.addAll(uids[0]);
+        }
     }
 
     // A && (B || !C)
@@ -326,50 +316,81 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     // (A && B) || (A && !C)
     private void driveNestedUnionWithNegation() {
         clearState();
-
-        String[] termArray = new String[3];
-        Set<Integer>[] uidArray = new Set[3];
-
-        Set<String> terms = new HashSet<>();
-        for (int i = 0; i < termArray.length; i++) {
-            termArray[i] = selectRandomTerm();
-            if (i == termArray.length - 1) {
-                // just negate the last one, for now
-                termArray[i] = negateTerm(termArray[i]);
-            }
-            uidArray[i] = getRandomUids();
-            writeUidsForTerm(termArray[i], uidArray[i]);
-            terms.add(termArray[i]);
-        }
-
-        Set<Integer> left = new HashSet<>(uidArray[0]);
-        left.retainAll(uidArray[1]);
-
-        Set<Integer> right = new HashSet<>(uidArray[0]);
-        right.removeAll(uidArray[2]);
-
-        Set<Integer> expectedUids = new HashSet<>();
-        expectedUids.addAll(left);
-        expectedUids.addAll(right);
-
-        withQuery(termArray[0] + " && (" + termArray[1] + " || " + termArray[2] + ")");
-        driveTest(expectedUids);
+        createTermsAndUids(3);
+        buildExpectedForNestedUnionWithNegation();
+        negateLastTerm();
+        withQuery(terms[0] + " && (" + terms[1] + " || " + terms[2] + ")");
+        driveTest();
     }
 
-    private void driveTest(Set<Integer> expectedUids) {
+    private void buildExpectedForNestedUnionWithNegation() {
+        Set<Integer> left = new HashSet<>(uids[0]);
+        left.retainAll(uids[1]);
+
+        Set<Integer> right = new HashSet<>(uids[0]);
+        right.removeAll(uids[2]);
+
+        expected = new HashSet<>();
+        expected.addAll(left);
+        expected.addAll(right);
+    }
+
+    private void driveTest() {
+        Preconditions.checkNotNull(query);
+        Preconditions.checkNotNull(expected);
+
         ASTJexlScript script = parse(query);
         SortedKeyValueIterator<Key,Value> source = createSource();
 
         Set<Key> results = DocIdIteratorVisitor.getDocIds(script, range, source, datatypes, null, fields);
         SortedSet<Integer> resultUids = resultsToUids(results);
 
-        assertEquals(expectedUids, resultUids);
+        assertEquals(expected, resultUids);
     }
 
     protected void clearState() {
         super.clearState();
-        termsForTest.clear();
+        selectedTerms.clear();
         query = null;
+        terms = null;
+        uids = null;
+        expected = null;
+    }
+
+    /**
+     * The number of positive terms to create
+     *
+     * @param count
+     *            the term count
+     */
+    @SuppressWarnings("unchecked")
+    protected void createTermsAndUids(int count) {
+        terms = new String[count];
+        uids = new Set[count];
+
+        for (int i = 0; i < count; i++) {
+            terms[i] = selectRandomTerm();
+            if (isTermExecutable(terms[i])) {
+                uids[i] = getRandomUids();
+            } else {
+                uids[i] = new HashSet<>();
+            }
+        }
+
+        writeData();
+    }
+
+    protected void negateLastTerm() {
+        Preconditions.checkNotNull(terms);
+        terms[terms.length - 1] = negateTerm(terms[terms.length - 1]);
+    }
+
+    protected void writeData() {
+        for (int i = 0; i < terms.length; i++) {
+            if (isTermExecutable(terms[i])) {
+                writeUidsForTerm(terms[i], uids[i]);
+            }
+        }
     }
 
     private void writeUidsForTerm(String term, Set<Integer> uids) {
@@ -390,8 +411,8 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         boolean found = false;
         while (!found) {
             term = allTerms.get(rand.nextInt(allTerms.size()));
-            if (!termsForTest.contains(term)) {
-                termsForTest.add(term);
+            if (!selectedTerms.contains(term)) {
+                selectedTerms.add(term);
                 found = true;
             }
         }
@@ -420,6 +441,13 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
             uids.add(Integer.parseInt(uid) - 1_000);
         }
         return uids;
+    }
+
+    private void logState() {
+        for (int i = 0; i < terms.length; i++) {
+            log.info("{} :: {}", terms[i], uids[i]);
+        }
+        log.info("expected: {}", expected);
     }
 
     @Override
