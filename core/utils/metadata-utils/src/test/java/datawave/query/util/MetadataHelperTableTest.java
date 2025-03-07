@@ -322,7 +322,7 @@ public class MetadataHelperTableTest {
     @Test
     public void testGetAllFields() throws Exception {
         Set<String> expected = Set.of("SHAPE", "COLOR", "DEFINITION", "EVENT_ONLY", "EVENT_DATE", "TITLE", "UUID", "HEADER", "DESIGNATION");
-        assertEquals(expected, helper.getAllFields(Collections.emptySet()));
+        assertEquals(expected, helper.getAllFields(null));
         
         // and with filter
         Set<String> filter = Collections.singleton("datatype-a");
@@ -339,7 +339,8 @@ public class MetadataHelperTableTest {
     @Test
     public void testGetNonEventFields() throws Exception {
         Set<String> expected = Set.of("DEFINITION", "EVENT_DATE", "HEADER", "TITLE", "UUID", "DESIGNATION");
-        assertEquals(expected, helper.getNonEventFields(Collections.emptySet()));
+        assertEquals(expected, helper.getNonEventFields(null));
+        assertEquals(Collections.emptySet(), helper.getNonEventFields(Collections.emptySet()));
         
         // then restrict the filter
         Set<String> filter = Collections.singleton("datatype-a");
@@ -365,7 +366,7 @@ public class MetadataHelperTableTest {
     @Test
     public void testGetIndexOnlyFields() throws Exception {
         Set<String> expected = Set.of("DEFINITION", "EVENT_DATE", "TITLE", "UUID", "HEADER", "DESIGNATION");
-        assertEquals(expected, helper.getIndexOnlyFields(Collections.emptySet()));
+        assertEquals(expected, helper.getIndexOnlyFields(null));
         
         // restrict filter
         Set<String> filter = Collections.singleton("datatype-b");
@@ -593,7 +594,7 @@ public class MetadataHelperTableTest {
     public void testGetTermFrequencyFields() throws Exception {
         Set<String> tokenizedFields = Set.of("DEFINITION");
         assertEquals(tokenizedFields, helper.getTermFrequencyFields(null));
-        assertEquals(tokenizedFields, helper.getTermFrequencyFields(Collections.emptySet()));
+        assertEquals(Collections.emptySet(), helper.getTermFrequencyFields(Collections.emptySet()));
         assertEquals(Collections.emptySet(), helper.getTermFrequencyFields(Set.of("datatype-c")));
     }
     
@@ -601,7 +602,7 @@ public class MetadataHelperTableTest {
     public void testGetIndexedFields() throws Exception {
         Set<String> indexedFields = Set.of("SHAPE", "COLOR", "DEFINITION", "EVENT_DATE", "DESIGNATION", "HEADER", "TITLE", "UUID");
         assertEquals(indexedFields, helper.getIndexedFields(null));
-        assertEquals(indexedFields, helper.getIndexedFields(Collections.emptySet()));
+        assertEquals(Collections.emptySet(), helper.getIndexedFields(Collections.emptySet()));
         assertEquals(Set.of("SHAPE", "DEFINITION", "EVENT_DATE", "TITLE", "UUID", "HEADER", "DESIGNATION"), helper.getIndexedFields(Set.of("datatype-a")));
         assertEquals(Set.of("COLOR", "DEFINITION"), helper.getIndexedFields(Set.of("datatype-b")));
         assertEquals(Collections.emptySet(), helper.getIndexedFields(Set.of("datatype-c")));
@@ -611,7 +612,7 @@ public class MetadataHelperTableTest {
     public void testGetReverseIndexedFields() throws Exception {
         Set<String> reverseIndexedFields = Set.of("SHAPE", "DEFINITION");
         assertEquals(reverseIndexedFields, helper.getReverseIndexedFields(null));
-        assertEquals(reverseIndexedFields, helper.getReverseIndexedFields(Collections.emptySet()));
+        assertEquals(Collections.emptySet(), helper.getReverseIndexedFields(Collections.emptySet()));
         assertEquals(Set.of("SHAPE", "DEFINITION"), helper.getReverseIndexedFields(Set.of("datatype-a")));
         assertEquals(Set.of("DEFINITION"), helper.getReverseIndexedFields(Set.of("datatype-b")));
         assertEquals(Collections.emptySet(), helper.getReverseIndexedFields(Set.of("datatype-c")));
@@ -621,7 +622,7 @@ public class MetadataHelperTableTest {
     public void testGetExpansionFields() throws Exception {
         Set<String> expansionFields = Set.of("EXP_1", "EXP_2");
         assertEquals(expansionFields, helper.getExpansionFields(null));
-        assertEquals(expansionFields, helper.getExpansionFields(Collections.emptySet()));
+        assertEquals(Collections.emptySet(), helper.getExpansionFields(Collections.emptySet()));
         assertEquals(Set.of("EXP_1"), helper.getExpansionFields(Set.of("datatype-a")));
         assertEquals(Set.of("EXP_2"), helper.getExpansionFields(Set.of("datatype-b")));
         assertEquals(Collections.emptySet(), helper.getExpansionFields(Set.of("datatype-c")));
@@ -631,7 +632,7 @@ public class MetadataHelperTableTest {
     public void testGetContentFields() throws Exception {
         Set<String> contentFields = Set.of("DEFINITION");
         assertEquals(contentFields, helper.getContentFields(null));
-        assertEquals(contentFields, helper.getContentFields(Collections.emptySet()));
+        assertEquals(Collections.emptySet(), helper.getContentFields(Collections.emptySet()));
         assertEquals(contentFields, helper.getContentFields(Set.of("datatype-a")));
         assertEquals(Collections.emptySet(), helper.getContentFields(Set.of("datatype-b")));
     }
@@ -702,13 +703,11 @@ public class MetadataHelperTableTest {
     @Test
     public void testGetCountsByFieldForDaysWithIngestTypeFilter() {
         // range of single day
-        assertThrows(NullPointerException.class, () -> helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), null));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Collections.emptySet()));
         assertEquals(23L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Set.of("datatype-b")));
         
         // full range
-        assertThrows(NullPointerException.class, () -> helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), null));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Collections.emptySet()));
         // 559 is wrong. Full count is 658.
         assertEquals(559L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Set.of("datatype-a")));
@@ -723,7 +722,6 @@ public class MetadataHelperTableTest {
     
     @Test
     public void testGetCountsByFieldInDayWithTypes() {
-        assertThrows(NullPointerException.class, () -> helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", null));
         assertEquals(0L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Collections.emptySet()));
         assertEquals(23L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240315", Set.of("datatype-a")));

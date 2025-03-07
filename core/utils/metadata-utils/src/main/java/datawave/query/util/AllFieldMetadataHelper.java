@@ -756,15 +756,7 @@ public class AllFieldMetadataHelper {
         
         Multimap<String,String> termFrequencyFields = loadTermFrequencyFields();
         
-        Set<String> fields = new HashSet<>();
-        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
-            fields.addAll(termFrequencyFields.values());
-        } else {
-            for (String datatype : ingestTypeFilter) {
-                fields.addAll(termFrequencyFields.get(datatype));
-            }
-        }
-        return Collections.unmodifiableSet(fields);
+        return getFields(termFrequencyFields, ingestTypeFilter);
     }
     
     /**
@@ -780,15 +772,7 @@ public class AllFieldMetadataHelper {
         
         Multimap<String,String> expansionFields = loadExpansionFields();
         
-        Set<String> fields = new HashSet<>();
-        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
-            fields.addAll(expansionFields.values());
-        } else {
-            for (String datatype : ingestTypeFilter) {
-                fields.addAll(expansionFields.get(datatype));
-            }
-        }
-        return Collections.unmodifiableSet(fields);
+        return getFields(expansionFields, ingestTypeFilter);
     }
     
     /**
@@ -804,15 +788,19 @@ public class AllFieldMetadataHelper {
         
         Multimap<String,String> contentFields = loadContentFields();
         
-        Set<String> fields = new HashSet<>();
-        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
-            fields.addAll(contentFields.values());
-        } else {
+        return getFields(contentFields, ingestTypeFilter);
+    }
+    
+    private Set<String> getFields(Multimap<String,String> fields, Set<String> ingestTypeFilter) {
+        Set<String> returnedFields = new HashSet<>();
+        if (ingestTypeFilter == TypeFilter.ALL.getDataTypes()) {
+            returnedFields.addAll(fields.values());
+        } else if (!ingestTypeFilter.equals(TypeFilter.NONE.getDataTypes())) {
             for (String datatype : ingestTypeFilter) {
-                fields.addAll(contentFields.get(datatype));
-            }
+                returnedFields.addAll(fields.get(datatype));
+            } // non-null but empty typeFilters allow nothing
         }
-        return Collections.unmodifiableSet(fields);
+        return Collections.unmodifiableSet(returnedFields);
     }
     
     /**
@@ -1300,7 +1288,7 @@ public class AllFieldMetadataHelper {
                     throws TableNotFoundException, IOException {
         // create local copies to avoid side effects
         fields = new HashSet<>(fields);
-        datatypes = new HashSet<>(datatypes);
+        datatypes = datatypes == TypeFilter.ALL.getDataTypes() ? TypeFilter.ALL.getDataTypes() : new HashSet<>(datatypes);
         
         // Handle null fields if given.
         if (fields == null) {

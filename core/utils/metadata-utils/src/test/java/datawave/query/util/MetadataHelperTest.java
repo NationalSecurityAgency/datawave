@@ -72,8 +72,8 @@ public class MetadataHelperTest {
         writeMutation("rowA", "t", "dataTypeA", new Value("value"));
         
         Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.singleton("dataTypeA")));
-        Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(null));
-        Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.emptySet()));
+        Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(TypeFilter.ALL.getDataTypes()));
+        Assertions.assertEquals(Collections.emptySet(), helper.getAllFields(TypeFilter.NONE.getDataTypes()));
     }
     
     @Test
@@ -82,8 +82,8 @@ public class MetadataHelperTest {
         writeMutation("rowB", "t", "dataTypeB", new Value("value"));
         
         Assertions.assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
-        Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(null));
-        Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(Collections.emptySet()));
+        Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(TypeFilter.ALL.getDataTypes()));
+        Assertions.assertEquals(Collections.emptySet(), helper.getAllFields(TypeFilter.NONE.getDataTypes()));
     }
     
     @Test
@@ -93,8 +93,8 @@ public class MetadataHelperTest {
         writeMutation("rowC", "t", "dataTypeC", new Value("value"));
         
         Assertions.assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
-        Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(null));
-        Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(Collections.emptySet()));
+        Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(TypeFilter.ALL.getDataTypes()));
+        Assertions.assertEquals(Collections.emptySet(), helper.getAllFields(TypeFilter.NONE.getDataTypes()));
     }
     
     private void writeMutation(String row, String columnFamily, String columnQualifier, Value value) throws TableNotFoundException {
