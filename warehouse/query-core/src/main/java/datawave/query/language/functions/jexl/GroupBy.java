@@ -32,7 +32,7 @@ public class GroupBy extends JexlQueryFunction {
             try {
                 GroupFields.from(parameters);
             } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, e,
                                 MessageFormat.format("Unable to parse fields from arguments for function {0}", this.name));
                 throw new IllegalArgumentException(qe);
             }

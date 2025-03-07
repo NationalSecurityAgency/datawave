@@ -3,6 +3,9 @@ package datawave.query.language.functions.jexl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import datawave.webservice.common.exception.BadRequestException;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
@@ -50,6 +53,12 @@ class GroupByTest {
         Exception exception = assertThrows(IllegalArgumentException.class, groupBy::validate);
         assertEquals("datawave.webservice.query.exception.BadRequestQueryException: Invalid arguments to function. Unable to parse fields from arguments for function groupby",
                         exception.getMessage());
+        Throwable childCause = exception.getCause();
+        // Verify that the original exception was not swallowed, and is present in the stack trace.
+        Assertions.assertInstanceOf(BadRequestQueryException.class, childCause);
+        Throwable grandchildCause = childCause.getCause();
+        Assertions.assertInstanceOf(IllegalArgumentException.class, grandchildCause);
+        Assertions.assertEquals("No TemporalGranularity exists with the name BAD_TRANSFORMER", grandchildCause.getMessage());
     }
 
     @Test
