@@ -34,6 +34,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.TypeFilter;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -398,7 +399,7 @@ public class IngestTypeVisitor extends BaseVisitor {
                 log.warn("could not get descriptor for function: " + JexlStringBuildingVisitor.buildQuery(node));
                 return new HashSet<>();
             }
-            return descriptor.fields(null, null);
+            return descriptor.fields(null, TypeFilter.ALL.getDataTypes());
         }
     }
 

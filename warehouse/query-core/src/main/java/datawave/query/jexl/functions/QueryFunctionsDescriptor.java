@@ -168,7 +168,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             try {
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
                 String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) fieldName).getName());
-                if (allFields.contains(field) || field.equals("_ANYFIELD_")) {
+                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
                     String literal = JexlNodes.getIdentifierOrLiteralAsString(fieldValue);
                     Set<String> values = getNormalizedValues(field, literal, helper);
                     for (String value : values) {

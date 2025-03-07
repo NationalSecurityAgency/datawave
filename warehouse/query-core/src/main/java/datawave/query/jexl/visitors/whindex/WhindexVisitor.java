@@ -53,6 +53,7 @@ import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 
 /**
  * The 'WhindexVisitor' is used to replace wide-scoped geowave fields with value-specific, narrow-scoped geowave fields where appropriate.
@@ -906,7 +907,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) leafKid);
                             if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor
                                             || descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-                                kidFieldNames.addAll(descriptor.fields(metadataHelper, null));
+                                kidFieldNames.addAll(descriptor.fields(metadataHelper, TypeFilter.ALL.getDataTypes()));
                             } else {
                                 if (otherNodes != null) {
                                     otherNodes.add(child);

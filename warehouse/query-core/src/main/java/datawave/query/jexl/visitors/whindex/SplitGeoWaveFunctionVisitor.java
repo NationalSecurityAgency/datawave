@@ -16,6 +16,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 
 /**
  * This is a visitor which is used to break up geowave functions which have multiple fields into separate geowave functions.
@@ -40,7 +41,7 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
         JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         Set<String> fields;
         if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-            fields = descriptor.fields(metadataHelper, null);
+            fields = descriptor.fields(metadataHelper, TypeFilter.ALL.getDataTypes());
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
 
@@ -63,7 +64,7 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                 return JexlNodeFactory.createOrNode(functionNodes);
             }
         } else if (descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-            fields = descriptor.fields(metadataHelper, null);
+            fields = descriptor.fields(metadataHelper, TypeFilter.ALL.getDataTypes());
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
 

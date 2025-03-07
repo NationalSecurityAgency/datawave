@@ -102,6 +102,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
+import datawave.query.util.TypeFilter;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.TableName;
@@ -329,8 +330,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             if (typeMetadata != null) {
                 JexlNode node = plan.getQueryTree();
                 JexlNode result;
-                if (ingestTypes == null) {
-                    // datatype filter was null signifying a search across all ingest types
+                if (ingestTypes == TypeFilter.ALL.getDataTypes()) {
+                    // datatype filter was set to ALL signifying a search across all ingest types
                     result = IngestTypePruningVisitor.prune(node, typeMetadata);
                 } else {
                     // datatype filter can be used to prune the resulting query tree

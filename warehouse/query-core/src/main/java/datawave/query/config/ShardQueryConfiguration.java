@@ -63,6 +63,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.TypeFilter;
 import datawave.util.TableName;
 
 /**
@@ -238,7 +239,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // A null filter will permit all dataTypes
     // A non-null empty filter will permit no dataTypes
     // A non-null populated filter will permit only those dataTypes contained within
-    private Set<String> datatypeFilter = null;
+    private Set<String> datatypeFilter = TypeFilter.ALL.getDataTypes();
     // A set of sorted index holes
     private List<IndexValueHole> indexValueHoles = new ArrayList<>();
     // a set of user specified mappings
@@ -1077,7 +1078,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public String getDatatypeFilterAsString() {
-        return this.getDatatypeFilter() == null ? "" : StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
+        return (this.getDatatypeFilter() == TypeFilter.ALL.getDataTypes() || this.getDatatypeFilter() == TypeFilter.NONE.getDataTypes()) ? ""
+                        : StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
 
     private Set<String> deconstruct(Collection<String> fields) {

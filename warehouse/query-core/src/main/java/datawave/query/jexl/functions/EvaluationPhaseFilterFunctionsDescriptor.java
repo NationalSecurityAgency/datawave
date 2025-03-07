@@ -32,6 +32,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeFilter;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
@@ -238,9 +239,9 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         private Set<String> filterFields(Set<String> fields, MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 Set<String> filteredFields = new HashSet<>();
-                if (datatypeFilter == null) {
+                if (datatypeFilter == TypeFilter.ALL.getDataTypes()) {
                     filteredFields.addAll(fields);
-                } else if (!datatypeFilter.isEmpty()) {
+                } else if (!datatypeFilter.equals(TypeFilter.NONE.getDataTypes())) {
                     for (String field : fields) {
                         if (!helper.getDatatypesForField(field, datatypeFilter).isEmpty()) {
                             filteredFields.add(field);

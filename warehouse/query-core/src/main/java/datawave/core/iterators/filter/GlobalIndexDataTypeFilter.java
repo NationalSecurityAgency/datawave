@@ -12,6 +12,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
+import datawave.query.util.TypeFilter;
+
 /**
  * The iterator skips entries in the global index for entries not in the specified set of data types
  */
@@ -19,7 +21,7 @@ public class GlobalIndexDataTypeFilter extends Filter {
 
     protected static final Logger log = Logger.getLogger(GlobalIndexDataTypeFilter.class);
     public static final String DATA_TYPE = "data.type.";
-    private Set<String> dataTypes = null;
+    private Set<String> dataTypes = TypeFilter.ALL.getDataTypes();
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
@@ -34,7 +36,7 @@ public class GlobalIndexDataTypeFilter extends Filter {
             i++;
         }
         if (log.isDebugEnabled()) {
-            if (dataTypes != null) {
+            if (dataTypes != TypeFilter.ALL.getDataTypes()) {
                 log.debug("Set the data type filter to " + dataTypes);
             } else {
                 log.debug("No data type filter set");
@@ -44,11 +46,11 @@ public class GlobalIndexDataTypeFilter extends Filter {
 
     @Override
     public boolean accept(Key k, Value v) {
-        if (dataTypes == null) {
+        if (dataTypes == TypeFilter.ALL.getDataTypes()) {
             return true;
         }
 
-        if (dataTypes.isEmpty()) { // accept none of the things
+        if (dataTypes.equals(TypeFilter.NONE.getDataTypes())) { // accept none of the things
             return false;
         }
 
