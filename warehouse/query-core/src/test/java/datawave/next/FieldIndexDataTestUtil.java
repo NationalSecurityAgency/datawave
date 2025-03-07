@@ -40,6 +40,9 @@ public abstract class FieldIndexDataTestUtil {
     protected LongRange timeFilter = null;
     protected final SortedSet<Key> results = new TreeSet<>();
 
+    protected Key min;
+    protected Key max;
+
     protected String query;
     protected DocumentIteratorStats stats;
 
@@ -49,6 +52,8 @@ public abstract class FieldIndexDataTestUtil {
         timeFilter = null;
         results.clear();
         stats = null;
+        min = null;
+        max = null;
     }
 
     protected void withQuery(String query) {
@@ -62,6 +67,24 @@ public abstract class FieldIndexDataTestUtil {
 
     public void withTimeFilter(LongRange timeFilter) {
         this.timeFilter = timeFilter;
+    }
+
+    /**
+     * Shim for ease of testing.
+     *
+     * @param min
+     *            the minimum datatype\0uid
+     * @param max
+     *            the maximum datatype\0uid
+     */
+    public void withMinMax(String min, String max) {
+        this.min = new Key(row, min);
+        this.max = new Key(row, max);
+    }
+
+    public void withMinMax(Key min, Key max) {
+        this.min = min;
+        this.max = max;
     }
 
     /**
@@ -118,6 +141,42 @@ public abstract class FieldIndexDataTestUtil {
         data.put(key, EMPTY_VALUE);
     }
 
+    /**
+     * Write an INCLUSIVE range of uids for the specified field and value, using the default datatype
+     *
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param min
+     *            the minimum uid
+     * @param max
+     *            the maximum uid
+     */
+    protected void writeRange(String field, String value, int min, int max) {
+        writeRange(field, value, DEFAULT_DATATYPE, min, max);
+    }
+
+    /**
+     * Write an INCLUSIVE range of uids for the specified field, value and datatype
+     *
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param datatype
+     *            the datatype
+     * @param min
+     *            the min
+     * @param max
+     *            the max
+     */
+    protected void writeRange(String field, String value, String datatype, int min, int max) {
+        for (int i = min; i <= max; i++) {
+            writeIndex(field, value, datatype, i);
+        }
+    }
+
     protected void drive() {
         // always clear results before each test iteration
         results.clear();
@@ -130,6 +189,11 @@ public abstract class FieldIndexDataTestUtil {
 
         if (timeFilter != null) {
             iter.withTimeFilter(timeFilter);
+        }
+
+        // set the min and max if provided. This simulates secondary scan bounded by an initial scan
+        if (min != null && max != null) {
+            iter.withMinMax(min, max);
         }
 
         while (iter.hasNext()) {

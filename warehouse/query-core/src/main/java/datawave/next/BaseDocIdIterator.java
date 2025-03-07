@@ -44,6 +44,10 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
     protected LongRange timeFilter;
     protected String suffix; // if executing within the context of a document range
 
+    // min and max 'datatype + null byte + uid'
+    protected String min;
+    protected String max;
+
     protected String field;
 
     protected Key tk;
@@ -109,6 +113,19 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
      */
     public void withSuffix(String suffix) {
         this.suffix = suffix;
+    }
+
+    /**
+     * Allows scan ranges to be bounded by the min and max of a previous scan. This type of scan bounding is more restricted than a datatype filter.
+     *
+     * @param min
+     *            the minimum key
+     * @param max
+     *            the maximum key
+     */
+    public void withMinMax(Key min, Key max) {
+        this.min = min.getColumnFamily().toString();
+        this.max = max.getColumnFamily().toString();
     }
 
     /**

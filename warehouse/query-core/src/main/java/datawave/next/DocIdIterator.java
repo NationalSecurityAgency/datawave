@@ -117,6 +117,13 @@ public class DocIdIterator extends BaseDocIdIterator {
 
     @Override
     protected Range createScanRange() {
+        if (min != null && max != null) {
+            // executing within the context of another scan
+            Key start = new Key(row, prefix, value + '\u0000' + min);
+            Key stop = new Key(row, prefix, value + '\u0000' + max + '\u0000');
+            return new Range(start, true, stop, true);
+        }
+
         // if this scan is executing in the context of a document range we can build the full key
         if (suffix != null) {
             // need to limit the range based on the document range

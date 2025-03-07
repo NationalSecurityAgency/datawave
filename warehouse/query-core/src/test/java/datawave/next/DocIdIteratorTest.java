@@ -155,6 +155,29 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         assertEquals(0, stats.getTimeFilterMiss());
     }
 
+    @Test
+    public void testBoundedScan() {
+        writeRange("FIELD_A", "value-a", 10, 30);
+        withQuery("FIELD_A == 'value-a'");
+        drive();
+
+        // assert full scan works
+        assertResultSize(21);
+        assertEquals(21, stats.getNextCount());
+
+        // assert bounded scan returns less data
+        withMinMax("datatype-a\u0000uid-1015", "datatype-a\u0000uid-1025");
+        drive();
+        assertResultSize(11);
+        assertEquals(11, stats.getNextCount());
+
+        // again, with a much smaller bound
+        withMinMax("datatype-a\u0000uid-1015", "datatype-a\u0000uid-1017");
+        drive();
+        assertResultSize(3);
+        assertEquals(3, stats.getNextCount());
+    }
+
     @Override
     protected DocIdIterator createIterator() {
         ASTJexlScript script = parse(query);

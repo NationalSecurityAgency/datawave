@@ -83,21 +83,20 @@ public class DocIdIteratorVisitor extends BaseVisitor {
      *            the time filter
      * @return the set of document ids that satisfy the query
      */
-    @SuppressWarnings("unchecked")
     public static Set<Key> getDocIds(ASTJexlScript script, Range range, SortedKeyValueIterator<Key,Value> source, Set<String> datatypeFilter,
                     LongRange timeFilter, Set<String> indexedFields) {
         DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypeFilter, timeFilter, indexedFields);
         Object o = script.jjtAccept(visitor, null);
-        if (o instanceof Set) {
-            return (Set<Key>) o;
+        if (o instanceof ScanResult) {
+            return ((ScanResult) o).getResults();
         }
         return Collections.emptySet();
     }
 
     public Set<Key> getDocIds(ASTJexlScript script) {
         Object o = script.jjtAccept(this, null);
-        if (o instanceof Set) {
-            return (Set<Key>) o;
+        if (o instanceof ScanResult) {
+            return ((ScanResult) o).getResults();
         }
         return Collections.emptySet();
     }
@@ -119,7 +118,6 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Object visit(ASTOrNode node, Object data) {
         List<JexlNode> positive = new ArrayList<>();
         List<JexlNode> negative = new ArrayList<>();
@@ -142,14 +140,17 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             return null;
         }
 
-        Set<Key> ids = null;
+        ScanResult result = null;
         for (JexlNode child : positive) {
-            Object o = child.jjtAccept(this, ids);
-            if (o instanceof Set) {
-                if (ids == null) {
-                    ids = (Set<Key>) o;
+            // union passes in external context
+            Object o = child.jjtAccept(this, data);
+            if (o instanceof ScanResult) {
+                ScanResult scanResult = (ScanResult) o;
+                if (result == null) {
+                    result = scanResult;
+                } else {
+                    result.addKeys(scanResult.getResults());
                 }
-                ids.addAll((Set<Key>) o);
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
@@ -157,7 +158,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
-        if (ids == null) {
+        if (result == null) {
             // no term was executable
             if (log.isDebugEnabled()) {
                 log.debug("union: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
@@ -166,9 +167,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), ids.size());
+            log.debug("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
         }
-        return ids;
+        return result;
     }
 
     /*
@@ -176,10 +177,11 @@ public class DocIdIteratorVisitor extends BaseVisitor {
      */
 
     @Override
-    @SuppressWarnings("unchecked")
     public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isAnyType()) {
+            // always pass context to a marker node. If the parent is a union, the only way context was passed in is because context exists from a grandparent
+            // intersection as in the case of (A and (B or marker))
             return handleMarker(node, data, instance);
         }
 
@@ -195,33 +197,34 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         // positive terms first
-        Set<Key> ids = null;
+        ScanResult result = null;
         for (JexlNode child : positive) {
-            Object o = child.jjtAccept(this, ids);
-            if (!(o instanceof Set)) {
+            // intersections drive their own context
+            Object o = child.jjtAccept(this, result);
+            if (!(o instanceof ScanResult)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
                 continue;
             }
 
-            Set<Key> childIds = (Set<Key>) o;
-            if (childIds.isEmpty()) {
+            ScanResult scanResult = (ScanResult) o;
+            if (scanResult.getResults().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("short circuit intersection, child returned zero hits");
                 }
                 return new HashSet<>();
             }
 
-            if (ids == null) {
-                ids = new HashSet<>(childIds);
+            if (result == null) {
+                result = scanResult;
             } else {
-                ids.retainAll(childIds);
-                if (ids.isEmpty()) {
+                result.getResults().retainAll(scanResult.getResults());
+                if (result.getResults().isEmpty()) {
                     if (log.isDebugEnabled()) {
                         log.debug("short circuit intersection, no ids exist after merge");
                     }
-                    return ids;
+                    return result;
                 }
             }
         }
@@ -230,16 +233,17 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
         // now process negations
         for (JexlNode child : negative) {
-            Object o = child.jjtAccept(this, ids);
-            if (!(o instanceof Set)) {
+            // intersections drive their own context
+            Object o = child.jjtAccept(this, result);
+            if (!(o instanceof ScanResult)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
                 continue;
             }
 
-            Set<Key> childIds = (Set<Key>) o;
-            if (childIds.isEmpty()) {
+            ScanResult scanResult = (ScanResult) o;
+            if (scanResult.getResults().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("negated term in intersection, child returned zero hits");
                 }
@@ -248,19 +252,19 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
             // uncomment for exceptions
             // Preconditions.checkNotNull(ids);
-            if (ids != null && !ids.isEmpty()) {
-                ids.removeAll(childIds);
+            if (result != null && !result.getResults().isEmpty()) {
+                result.getResults().removeAll(scanResult.getResults());
             }
 
-            if (ids != null && ids.isEmpty()) {
+            if (result != null && result.getResults().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("no ids exist for intersection after processing merge, short circuit return");
                 }
-                return ids;
+                return result;
             }
         }
 
-        if (ids == null) {
+        if (result == null) {
             // no terms were executable
             if (log.isDebugEnabled()) {
                 log.debug("intersection: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
@@ -268,9 +272,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             return data;
         }
         if (log.isDebugEnabled()) {
-            log.debug("intersection: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), ids.size());
+            log.debug("intersection: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
         }
-        return ids;
+        return result;
     }
 
     /**
@@ -321,12 +325,12 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     private Object handledBoundedRange(ASTAndNode node, Object data, QueryPropertyMarker.Instance instance) {
         RangeDocIdIterator iterator = new RangeDocIdIterator(source, row, node);
-        return configureAndDriveIterator(iterator);
+        return configureAndDriveIterator(iterator, data);
     }
 
     private Object handleListMarker(ASTAndNode node, Object data, QueryPropertyMarker.Instance instance) {
         ListDocIdIterator iterator = new ListDocIdIterator(source, row, node);
-        return configureAndDriveIterator(iterator);
+        return configureAndDriveIterator(iterator, data);
     }
 
     @Override
@@ -342,16 +346,16 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         DocIdIterator iterator = new DocIdIterator(source, row, node);
-        return configureAndDriveIterator(iterator);
+        return configureAndDriveIterator(iterator, data);
     }
 
     @Override
     public Object visit(ASTERNode node, Object data) {
         RegexDocIdIterator iterator = new RegexDocIdIterator(source, row, node);
-        return configureAndDriveIterator(iterator);
+        return configureAndDriveIterator(iterator, data);
     }
 
-    protected Set<Key> configureAndDriveIterator(BaseDocIdIterator iterator) {
+    protected ScanResult configureAndDriveIterator(BaseDocIdIterator iterator, Object data) {
         if (datatypeFilter != null) {
             iterator.withDatatypes(datatypeFilter);
         }
@@ -360,18 +364,24 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             iterator.withSuffix(getSuffix());
         }
 
+        // check to see if this scan exists within the bounds of another scan
+        if (data instanceof ScanResult) {
+            ScanResult scanResult = (ScanResult) data;
+            iterator.withMinMax(scanResult.getMin(), scanResult.getMax());
+        }
+
         // TODO: if another anchor term exists in the query, allow this scan to timeout
-        Set<Key> ids = new HashSet<>();
+        ScanResult result = new ScanResult();
         while (iterator.hasNext()) {
-            ids.add(iterator.next());
+            result.addKey(iterator.next());
         }
 
         stats.merge(iterator.getStats());
 
         if (log.isDebugEnabled()) {
-            log.debug("term: [{}] found {} hits", iterator.getNode(), ids.size());
+            log.debug("term: [{}] found {} hits", iterator.getNode(), result.getResults().size());
         }
-        return ids;
+        return result;
     }
 
     private String getSuffix() {
@@ -415,5 +425,62 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     public DocumentIteratorStats getStats() {
         return stats;
+    }
+
+    /**
+     * This class allows us to retain knowledge of the min and max keys from a scan without requiring an expensive sorted set. Future scan ranges are restricted
+     * by the min and max
+     */
+    public static class ScanResult {
+        private Key min;
+        private Key max;
+        private final Set<Key> results;
+
+        public ScanResult() {
+            results = new HashSet<>();
+        }
+
+        /**
+         * Bulk add method
+         *
+         * @param keys
+         *            the set of keys to add
+         */
+        public void addKeys(Set<Key> keys) {
+            for (Key key : keys) {
+                addKey(key);
+            }
+        }
+
+        /**
+         * Adds a key to the result set, checking the key against the existing min or max value.
+         */
+        public void addKey(Key key) {
+            if (min == null) {
+                min = key;
+            } else if (key.compareTo(min) < 0) {
+                min = key;
+            }
+
+            if (max == null) {
+                max = key;
+            } else if (key.compareTo(max) > 0) {
+                max = key;
+            }
+
+            results.add(key);
+        }
+
+        public Key getMin() {
+            return min;
+        }
+
+        public Key getMax() {
+            return max;
+        }
+
+        public Set<Key> getResults() {
+            return results;
+        }
     }
 }
