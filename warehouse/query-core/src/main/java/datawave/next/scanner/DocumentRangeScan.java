@@ -9,10 +9,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,6 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.next.async.RunnableWithContext;
 import datawave.next.stats.ScanTimeStats;
-import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
 
 public class DocumentRangeScan implements RunnableWithContext {
@@ -108,7 +107,7 @@ public class DocumentRangeScan implements RunnableWithContext {
 
     private Range createRange() {
         Key start = keyWithContext.getKey();
-        Key stop = new Key(start.getRow(), new Text(start.getColumnFamily().toString() + Constants.MAX_UNICODE_STRING));
+        Key stop = start.followingKey(PartialKey.ROW_COLFAM);
         return new Range(start, true, stop, false);
     }
 
