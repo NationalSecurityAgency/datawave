@@ -61,7 +61,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.2.0</version>
                 <configuration>
                     <filesets>
                         <fileset>
@@ -164,7 +163,6 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <version>0.40.1</version>
                         <configuration>
                             <verbose>true</verbose>
                             <images>

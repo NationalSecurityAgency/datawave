@@ -154,7 +154,20 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>3.1.12.2</version>
+                <version>4.9.2.0</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>High</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${spotbugs.excludes.file}</excludeFilterFile>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.doxia</groupId>
+                        <artifactId>doxia-sink-api</artifactId>
+                        <version>2.0.0</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <goals>
@@ -162,12 +175,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <effort>Max</effort>
-                    <threshold>High</threshold>
-                    <xmlOutput>true</xmlOutput>
-                    <excludeFilterFile>${spotbugs.excludes.file}</excludeFilterFile>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>net.revelc.code</groupId>
