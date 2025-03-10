@@ -1496,13 +1496,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>3.5.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>de.skuzzle.enforcer</groupId>
-                            <artifactId>restrict-imports-enforcer-rule</artifactId>
-                            <version>2.6.0</version>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
                             <id>enforce-maven</id>
@@ -1515,6 +1508,7 @@
                                         <version>3.6.3</version>
                                     </requireMavenVersion>
                                 </rules>
+                                <fail>true</fail>
                             </configuration>
                         </execution>
                         <execution>
@@ -1527,8 +1521,11 @@
                                     <bannedDependencies>
                                         <excludes>
                                             <exclude>log4j:log4j</exclude>
-                                            <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                            <exclude>ch.qos.reload4j:reload4j</exclude>
                                             <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <exclude>org.slf4j:slf4j-reload4j</exclude>
+                                            <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                            <exclude>joda-time:joda-time</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1609,24 +1606,6 @@
                     <configuration>
                         <doclint>none</doclint>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.7.4</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>log4j</groupId>
-                                    <artifactId>log4j</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1818,6 +1797,13 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>de.skuzzle.enforcer</groupId>
+                                <artifactId>restrict-imports-enforcer-rule</artifactId>
+                                <version>2.6.0</version>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <execution>
                                 <id>prevent-star-imports</id>
@@ -1839,6 +1825,7 @@
                                             <bannedImport>junit.framework.**</bannedImport>
                                         </RestrictImports>
                                     </rules>
+                                    <fail>true</fail>
                                 </configuration>
                             </execution>
                         </executions>
@@ -2161,6 +2148,7 @@
                                             </excludes>
                                         </dependencyConvergence>
                                     </rules>
+                                    <fail>true</fail>
                                 </configuration>
                             </execution>
                         </executions>
