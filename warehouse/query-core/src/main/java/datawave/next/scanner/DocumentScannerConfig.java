@@ -1,6 +1,7 @@
 package datawave.next.scanner;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,12 +25,14 @@ public class DocumentScannerConfig {
 
     private AccumuloClient client;
     private Authorizations authorizations;
-    private ArrayBlockingQueue<KeyWithContext> docIdQueue;
+    private BlockingQueue<KeyWithContext> docIdQueue;
     private ArrayBlockingQueue<Result> results;
     private ContextThreadFactory recordIdFactory;
     private ContextThreadFactory documentIdFactory;
     private ExecutorService docIdExecutorPool;
     private ExecutorService documentExecutorPool;
+
+    private boolean sortedCandidateQueue = false;
 
     // the number of document ids/result documents to buffer
     private int docIdQueueCapacity = 1;
@@ -76,11 +79,11 @@ public class DocumentScannerConfig {
         this.authorizations = authorizations;
     }
 
-    public ArrayBlockingQueue<KeyWithContext> getDocIdQueue() {
+    public BlockingQueue<KeyWithContext> getDocIdQueue() {
         return docIdQueue;
     }
 
-    public void setDocIdQueue(ArrayBlockingQueue<KeyWithContext> docIdQueue) {
+    public void setDocIdQueue(BlockingQueue<KeyWithContext> docIdQueue) {
         this.docIdQueue = docIdQueue;
     }
 
@@ -204,6 +207,7 @@ public class DocumentScannerConfig {
                     .append(maxDocumentThreads, other.maxDocumentThreads)
                     .append(maxDocIdTasks, other.maxDocIdTasks)
                     .append(maxDocumentTasks, other.maxDocumentTasks)
+                    .append(sortedCandidateQueue, other.sortedCandidateQueue)
                     .isEquals();
             //  @formatter:on
         }
@@ -220,6 +224,7 @@ public class DocumentScannerConfig {
                 .append(maxDocumentThreads)
                 .append(maxDocIdTasks)
                 .append(maxDocumentTasks)
+                .append(sortedCandidateQueue)
                 .hashCode();
         //  @formatter:on
     }
@@ -238,5 +243,13 @@ public class DocumentScannerConfig {
 
     public void setDocumentIdFactory(ContextThreadFactory documentIdFactory) {
         this.documentIdFactory = documentIdFactory;
+    }
+
+    public boolean isSortedCandidateQueue() {
+        return sortedCandidateQueue;
+    }
+
+    public void setSortedCandidateQueue(boolean sortedCandidateQueue) {
+        this.sortedCandidateQueue = sortedCandidateQueue;
     }
 }

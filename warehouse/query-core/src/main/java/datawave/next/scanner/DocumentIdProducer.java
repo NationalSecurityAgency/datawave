@@ -1,7 +1,7 @@
 package datawave.next.scanner;
 
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,7 +24,7 @@ public class DocumentIdProducer implements RunnableWithContext {
     private static final Logger log = LoggerFactory.getLogger(DocumentIdProducer.class);
 
     private final DocumentScannerConfig config;
-    private final ArrayBlockingQueue<KeyWithContext> results;
+    private final BlockingQueue<KeyWithContext> candidateQueue;
     private final Scanner scanner;
     private final QueryData context;
     private final AtomicInteger numFiScans;
@@ -35,7 +35,7 @@ public class DocumentIdProducer implements RunnableWithContext {
         this.config = config;
         this.scanner = scanner;
         this.context = context;
-        this.results = this.config.getDocIdQueue();
+        this.candidateQueue = this.config.getDocIdQueue();
         this.numFiScans = this.config.getNumFiScans();
     }
 
@@ -68,8 +68,9 @@ public class DocumentIdProducer implements RunnableWithContext {
                 }
 
                 offered = false;
+                KeyWithContext keyWithContext = new KeyWithContext(key, context, config.isSortedCandidateQueue());
                 while (!offered) {
-                    offered = results.offer(new KeyWithContext(key, context), 500, TimeUnit.MILLISECONDS);
+                    offered = candidateQueue.offer(keyWithContext, 500, TimeUnit.MILLISECONDS);
                 }
             }
 

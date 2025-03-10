@@ -147,7 +147,7 @@ public class QueryDataConsumer implements Runnable {
 
     private void putDocId(QueryData queryData, Range range) {
         stats.incrementNumDocScans();
-        KeyWithContext keyWithContext = new KeyWithContext(range.getStartKey(), queryData);
+        KeyWithContext keyWithContext = new KeyWithContext(range.getStartKey(), queryData, config.isSortedCandidateQueue());
 
         boolean accepted = false;
         while (!accepted) {

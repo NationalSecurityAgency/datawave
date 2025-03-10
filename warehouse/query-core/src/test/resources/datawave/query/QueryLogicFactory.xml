@@ -517,6 +517,7 @@
         <property name="maxDocumentThreads" value="5"/>
         <property name="maxDocIdTasks" value="7"/>
         <property name="maxDocumentTasks" value="7"/>
+        <property name="sortedCandidateQueue" value="true"/>
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

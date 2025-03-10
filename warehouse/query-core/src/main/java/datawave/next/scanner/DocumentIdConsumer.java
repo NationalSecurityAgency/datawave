@@ -1,6 +1,6 @@
 package datawave.next.scanner;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,7 +18,7 @@ public class DocumentIdConsumer implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(DocumentIdConsumer.class);
 
     private final DocumentScannerConfig config;
-    private final ArrayBlockingQueue<KeyWithContext> documentIdQueue;
+    private final BlockingQueue<KeyWithContext> documentIdQueue;
 
     private final ExecutorService executor;
     private final AtomicBoolean producerExecuting;

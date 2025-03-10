@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +74,11 @@ public class DocumentScheduler extends Scheduler {
         if (scanner == null) {
             // initialize some objects in the config object
             config.setResults(new ArrayBlockingQueue<>(config.getResultQueueCapacity()));
-            config.setDocIdQueue(new ArrayBlockingQueue<>(config.getDocIdQueueCapacity()));
+            if (config.isSortedCandidateQueue()) {
+                config.setDocIdQueue(new PriorityBlockingQueue<>(config.getDocIdQueueCapacity()));
+            } else {
+                config.setDocIdQueue(new ArrayBlockingQueue<>(config.getDocIdQueueCapacity()));
+            }
 
             config.setRecordIdFactory(new ContextThreadFactory("fi scan"));
             config.setDocumentIdFactory(new ContextThreadFactory("doc scan"));
