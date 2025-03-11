@@ -60,6 +60,7 @@ public class DocumentScannerConfig {
     private AtomicBoolean documentIdConsumerExecuting = new AtomicBoolean(false);
 
     private VisitorFunction visitorFunction;
+    private String queryId;
 
     private final DocumentSchedulerStats stats = new DocumentSchedulerStats();
 
@@ -265,5 +266,13 @@ public class DocumentScannerConfig {
 
     public void setCandidateBatchSize(int candidateBatchSize) {
         this.candidateBatchSize = candidateBatchSize;
+    }
+
+    public String getQueryId() {
+        return queryId;
+    }
+
+    public void setQueryId(String queryId) {
+        this.queryId = queryId;
     }
 }

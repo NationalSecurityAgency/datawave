@@ -46,6 +46,7 @@ public class DocumentScheduler extends Scheduler {
         this.config = config.getDocumentScannerConfig();
         this.config.setClient(config.getClient());
         this.config.setAuthorizations(AuthorizationsMinimizer.minimize(config.getAuthorizations()).iterator().next());
+        this.config.setQueryId(config.getQuery().getId().toString());
 
         this.queryDataIterator = config.getQueriesIter();
     }
@@ -112,6 +113,6 @@ public class DocumentScheduler extends Scheduler {
     }
 
     private void logSchedulerStats() {
-        log.info("{}", config.getStats().logStats());
+        log.info("{}", config.getStats().logStats(config.getQueryId()));
     }
 }

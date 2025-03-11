@@ -53,6 +53,7 @@ public class QueryDataConsumer implements Runnable {
     @Override
     public void run() {
         try {
+            Thread.currentThread().setName(config.getQueryId() + " query data consumer");
             if (log.isDebugEnabled()) {
                 log.debug("query data consumer started");
             }

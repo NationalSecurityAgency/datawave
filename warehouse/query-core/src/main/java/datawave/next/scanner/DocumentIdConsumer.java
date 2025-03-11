@@ -46,6 +46,7 @@ public class DocumentIdConsumer implements Runnable {
     @Override
     public void run() {
         try {
+            Thread.currentThread().setName(config.getQueryId() + " document id consumer");
             if (log.isDebugEnabled()) {
                 log.debug("document id consumer started");
             }
@@ -73,7 +74,7 @@ public class DocumentIdConsumer implements Runnable {
 
                         Key key = keyWithContext.getKey();
                         String context = key.getRow().toString() + "-" + key.getColumnFamily().toString();
-                        scan.setContext("doc scan " + ++totalIdsConsumed + " - " + context);
+                        scan.setContext(config.getQueryId() + " doc scan " + ++totalIdsConsumed + " - " + context);
                         executor.submit(scan);
                     }
                 } catch (Exception e) {

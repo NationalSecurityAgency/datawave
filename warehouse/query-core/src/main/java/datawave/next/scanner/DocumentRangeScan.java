@@ -25,6 +25,11 @@ import datawave.next.async.RunnableWithContext;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
 
+/**
+ * Retrieves the document specified by the {@link KeyWithContext}.
+ * <p>
+ * Multiple documents are fetched with the same scanner if a {@link BulkKeyWithContext} is provided instead.
+ */
 public class DocumentRangeScan implements RunnableWithContext {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentRangeScan.class);

@@ -56,9 +56,9 @@ public class DocumentSchedulerStats {
         this.retrievalStats.merge(retrievalStats);
     }
 
-    public String logStats() {
+    public String logStats(String queryId) {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n=== DocumentScheduler stats ===\n");
+        sb.append("\n=== ").append(queryId).append(" DocumentScheduler stats ===\n");
         if (consumerStats != null) {
             sb.append("query data seen: ").append(consumerStats.getQueryDataSeen()).append("\n");
             sb.append("doc/shard scans submitted: (").append(consumerStats.getNumDocScans()).append("/").append(consumerStats.getNumShardScans()).append(")\n");
