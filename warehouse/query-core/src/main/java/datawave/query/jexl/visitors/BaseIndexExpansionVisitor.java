@@ -23,6 +23,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.ExceededThresholdException;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.planner.pushdown.CostEstimator;
@@ -284,7 +285,11 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             } else if (lookupMap.get(field).isThresholdExceeded()) {
                 log.debug("{} expansion for term [{}] failed (threshold)", stage, term);
             } else {
-                log.debug("{} expansion for term [{}] success ({} values)", stage, term, lookupMap.get(field).size());
+                try {
+                    log.debug("{} expansion for term [{}] success ({} values)", stage, term, lookupMap.get(field).size());
+                } catch (ExceededThresholdException e) {
+                    log.error("{} expansion for term [{}] was successful, but more values were added to the set before expansion was completed", stage, term);
+                }
             }
         }
     }
