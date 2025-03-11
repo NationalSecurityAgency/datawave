@@ -115,6 +115,7 @@ public class QueryDataConsumer implements Runnable {
         if (settings.getOptions().containsKey(QueryOptions.DATATYPE_FILTER)) {
             next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
         }
+        next.addOption(DocIdQueryIterator.BATCH_SIZE, String.valueOf(config.getCandidateBatchSize()));
 
         // TODO: migrate to scanner factory to pick up configuration for scan hints and consistency level
         Scanner scanner = config.getClient().createScanner(queryData.getTableName(), config.getAuthorizations());

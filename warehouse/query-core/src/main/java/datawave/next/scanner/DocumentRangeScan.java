@@ -1,7 +1,10 @@
 package datawave.next.scanner;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,27 +65,30 @@ public class DocumentRangeScan implements RunnableWithContext {
                 log.debug("executing document range {}", keyWithContext.getKey().toStringNoTime());
             }
 
-            Range range = createRange();
+            Collection<Range> ranges = createRange();
             IteratorSetting setting = createScanIterator();
-            IteratorSetting appliedSettings = config.getVisitorFunction().apply(setting, Collections.singleton(range));
+            IteratorSetting appliedSettings = config.getVisitorFunction().apply(setting, ranges);
 
             int numResults = 0;
             try (Scanner scanner = config.getClient().createScanner(keyWithContext.getContext().getTableName(), auths)) {
-                scanner.setRange(range);
                 scanner.addScanIterator(appliedSettings);
 
-                // should only generate one entry because this is a document range
-                // but you know what they say about assumptions.
-                for (Map.Entry<Key,Value> entry : scanner) {
-                    numResults++;
-                    Result result = new Result(entry.getKey(), entry.getValue());
+                for (Range range : ranges) {
+                    scanner.setRange(range);
 
-                    boolean offered = false;
-                    while (!offered) {
-                        try {
-                            offered = queue.offer(result, 1, TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException("Interrupted while offering result", e);
+                    // should only generate one entry because this is a document range
+                    // but you know what they say about assumptions.
+                    for (Map.Entry<Key,Value> entry : scanner) {
+                        numResults++;
+                        Result result = new Result(entry.getKey(), entry.getValue());
+
+                        boolean offered = false;
+                        while (!offered) {
+                            try {
+                                offered = queue.offer(result, 1, TimeUnit.MILLISECONDS);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException("Interrupted while offering result", e);
+                            }
                         }
                     }
                 }
@@ -105,10 +111,20 @@ public class DocumentRangeScan implements RunnableWithContext {
         }
     }
 
-    private Range createRange() {
-        Key start = keyWithContext.getKey();
-        Key stop = start.followingKey(PartialKey.ROW_COLFAM);
-        return new Range(start, true, stop, false);
+    private Collection<Range> createRange() {
+        if (keyWithContext instanceof BulkKeyWithContext) {
+            Set<Range> ranges = new HashSet<>();
+            for (Key key : ((BulkKeyWithContext) keyWithContext).getKeys()) {
+                ranges.add(createRange(key));
+            }
+            return ranges;
+        }
+        return Collections.singleton(createRange(keyWithContext.getKey()));
+    }
+
+    protected Range createRange(Key key) {
+        Key stop = key.followingKey(PartialKey.ROW_COLFAM);
+        return new Range(key, true, stop, false);
     }
 
     private IteratorSetting createScanIterator() {

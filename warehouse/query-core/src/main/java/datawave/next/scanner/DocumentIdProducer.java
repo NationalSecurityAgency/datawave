@@ -1,6 +1,8 @@
 package datawave.next.scanner;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,26 +51,14 @@ public class DocumentIdProducer implements RunnableWithContext {
             boolean offered;
             for (Map.Entry<Key,Value> entry : scanner) {
                 Key key = entry.getKey();
+                String payload = entry.getValue().toString();
+                KeyWithContext keyWithContext = parseEntry(key, payload);
 
-                // check here for a final document key or stats key
-                if (entry.getValue().getSize() > 0) {
-                    String stat = entry.getValue().toString();
-                    String[] parts = stat.split(":");
-
-                    DocumentIteratorStats iteratorStats = DocumentIteratorStats.fromString(parts[0]);
-                    config.getStats().merge(iteratorStats);
-
-                    DocIdQueryIteratorStats queryStats = DocIdQueryIteratorStats.fromString(parts[1]);
-                    config.getStats().merge(queryStats);
-
-                    if (key.getColumnFamily().toString().equals("STATS")) {
-                        // skip this key
-                        continue;
-                    }
+                if (keyWithContext == null) {
+                    continue;
                 }
 
                 offered = false;
-                KeyWithContext keyWithContext = new KeyWithContext(key, context, config.isSortedCandidateQueue());
                 while (!offered) {
                     offered = candidateQueue.offer(keyWithContext, 500, TimeUnit.MILLISECONDS);
                 }
@@ -80,6 +70,63 @@ public class DocumentIdProducer implements RunnableWithContext {
             numFiScans.getAndDecrement();
             scanner.close();
         }
+    }
+
+    private KeyWithContext parseEntry(Key key, String payload) {
+        if (isBulkContext(payload)) {
+            // handle parsing bulk entry and any stats
+            String[] parts = payload.split(";");
+            String row = parts[0];
+            String columnFamilies = parts[1];
+
+            if (parts.length == 3) {
+                String stats = parts[2];
+                updateStats(stats);
+            }
+
+            Set<Key> bulk = new HashSet<>();
+            for (String columnFamily : columnFamilies.split(",")) {
+                bulk.add(new Key(row, columnFamily));
+            }
+
+            if (key.getColumnFamily().toString().equals("STATS")) {
+                // fake key was generated to return stats, return null so the producer skips this key
+                return null;
+            }
+
+            return new BulkKeyWithContext(key, bulk, context, config.isSortedCandidateQueue());
+        }
+
+        if (isStats(payload)) {
+            // parse any stats, might be final key
+            updateStats(payload);
+
+            if (key.getColumnFamily().toString().equals("STATS")) {
+                // fake key was generated to return stats, return null so the producer skips this key
+                return null;
+            }
+        }
+
+        // otherwise return a simple key with context;
+        return new KeyWithContext(key, context, config.isSortedCandidateQueue());
+    }
+
+    private boolean isBulkContext(String payload) {
+        return payload.contains(";");
+    }
+
+    private boolean isStats(String payload) {
+        return payload.contains(":");
+    }
+
+    private void updateStats(String stats) {
+        String[] parts = stats.split(":");
+
+        DocumentIteratorStats iteratorStats = DocumentIteratorStats.fromString(parts[0]);
+        config.getStats().merge(iteratorStats);
+
+        DocIdQueryIteratorStats queryStats = DocIdQueryIteratorStats.fromString(parts[1]);
+        config.getStats().merge(queryStats);
     }
 
     @Override

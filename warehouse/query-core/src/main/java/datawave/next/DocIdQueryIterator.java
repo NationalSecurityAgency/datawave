@@ -22,6 +22,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 
 import datawave.next.stats.DocIdQueryIteratorStats;
@@ -36,6 +37,8 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
     private final Logger log = LoggerFactory.getLogger(CountQueryIterator.class);
 
+    public static final String BATCH_SIZE = "batch.size";
+
     private Range range;
     private ASTJexlScript script;
     private Set<String> datatypeFilter;
@@ -46,6 +49,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private SortedKeyValueIterator<Key,Value> source;
     private Map<String,String> options;
     private IteratorEnvironment env;
+    private int batchSize = 1;
 
     private Key tk;
     private Value tv = new Value();
@@ -111,6 +115,12 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         } else {
             throw new RuntimeException("indexed fields not set");
         }
+
+        if (options.containsKey(BATCH_SIZE)) {
+            batchSize = Integer.parseInt(options.get(BATCH_SIZE));
+        } else {
+            batchSize = 1;
+        }
     }
 
     @Override
@@ -121,12 +131,13 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     @Override
     public void next() throws IOException {
         tk = null;
+
         if (data.hasNext()) {
             tk = data.next();
         }
 
         // if this is the last key,
-        if (!data.hasNext() && !statsReturned) {
+        if (batchSize == 1 && !data.hasNext() && !statsReturned) {
             statsReturned = true;
 
             // close enough
@@ -138,6 +149,59 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
                 tk = new Key(range.getStartKey().getRow(), new Text("STATS"));
             }
         }
+
+        if (batchSize > 1 && !statsReturned) {
+            int count = 0;
+            Set<Key> batch = new HashSet<>();
+            if (tk != null) {
+                count++;
+                batch.add(tk);
+            }
+
+            while (data.hasNext() && count < batchSize) {
+                count++;
+                batch.add(data.next());
+            }
+
+            String serialized = batchToString(batch);
+
+            if (!data.hasNext()) {
+                // add stats if this is the last key
+                statsReturned = true;
+                serialized += ";" + iteratorStats + ":" + timingStats;
+
+                if (tk == null) {
+                    // if no document keys were found, i.e. a scan that returned no results, then create a fake key
+                    tk = new Key(range.getStartKey().getRow(), new Text("STATS"));
+                }
+            }
+
+            tv = new Value(serialized);
+        }
+    }
+
+    /**
+     * Data structure <code>row;column-families;iter-stats:timing-stats</code>
+     *
+     * @param batch
+     *            the batch of record ids
+     * @return serialized data
+     */
+    private String batchToString(Set<Key> batch) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(range.getStartKey().getRow()).append(';');
+
+        Set<String> columnFamilies = columnFamiliesFromKeys(batch);
+        sb.append(Joiner.on(',').join(columnFamilies));
+        return sb.toString();
+    }
+
+    private Set<String> columnFamiliesFromKeys(Set<Key> batch) {
+        Set<String> columnFamilies = new HashSet<>();
+        for (Key key : batch) {
+            columnFamilies.add(key.getColumnFamily().toString());
+        }
+        return columnFamilies;
     }
 
     @Override

@@ -32,7 +32,11 @@ public class DocumentScannerConfig {
     private ExecutorService docIdExecutorPool;
     private ExecutorService documentExecutorPool;
 
+    // sort candidate queue by uid and datatype to prevent hot spotting during retrieval
     private boolean sortedCandidateQueue = false;
+
+    // batch ids to minimize new scanner connections
+    private int candidateBatchSize = 1;
 
     // the number of document ids/result documents to buffer
     private int docIdQueueCapacity = 1;
@@ -208,6 +212,7 @@ public class DocumentScannerConfig {
                     .append(maxDocIdTasks, other.maxDocIdTasks)
                     .append(maxDocumentTasks, other.maxDocumentTasks)
                     .append(sortedCandidateQueue, other.sortedCandidateQueue)
+                    .append(candidateBatchSize, other.candidateBatchSize)
                     .isEquals();
             //  @formatter:on
         }
@@ -225,6 +230,7 @@ public class DocumentScannerConfig {
                 .append(maxDocIdTasks)
                 .append(maxDocumentTasks)
                 .append(sortedCandidateQueue)
+                .append(candidateBatchSize)
                 .hashCode();
         //  @formatter:on
     }
@@ -251,5 +257,13 @@ public class DocumentScannerConfig {
 
     public void setSortedCandidateQueue(boolean sortedCandidateQueue) {
         this.sortedCandidateQueue = sortedCandidateQueue;
+    }
+
+    public int getCandidateBatchSize() {
+        return candidateBatchSize;
+    }
+
+    public void setCandidateBatchSize(int candidateBatchSize) {
+        this.candidateBatchSize = candidateBatchSize;
     }
 }
