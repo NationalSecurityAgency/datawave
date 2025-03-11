@@ -278,19 +278,19 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             return;
         }
 
-        if (lookupMap.containsKey(field)) {
-            String term = JexlStringBuildingVisitor.buildQuery(node);
-            if (lookupMap.get(field).isEmpty()) {
-                log.debug("{} expansion for term [{}] failed (no data)", stage, term);
-            } else if (lookupMap.get(field).isThresholdExceeded()) {
-                log.debug("{} expansion for term [{}] failed (threshold)", stage, term);
-            } else {
-                try {
+        String term = JexlStringBuildingVisitor.buildQuery(node);
+        try {
+            if (lookupMap.containsKey(field)) {
+                if (lookupMap.get(field).isEmpty()) {
+                    log.debug("{} expansion for term [{}] failed (no data)", stage, term);
+                } else if (lookupMap.get(field).isThresholdExceeded()) {
+                    log.debug("{} expansion for term [{}] failed (threshold)", stage, term);
+                } else {
                     log.debug("{} expansion for term [{}] success ({} values)", stage, term, lookupMap.get(field).size());
-                } catch (ExceededThresholdException e) {
-                    log.error("{} expansion for term [{}] was successful, but more values were added to the set before expansion was completed", stage, term);
                 }
             }
+        } catch (ExceededThresholdException e) {
+            log.error("{} expansion for term [{}] had an error, possible race condition.", stage, term);
         }
     }
 
