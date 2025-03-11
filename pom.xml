@@ -39,8 +39,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>2.1.2</version.accumulo>
-        <version.arquillian>1.4.1.Final</version.arquillian>
-        <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.arquillian>1.6.0.Final</version.arquillian>
+        <version.arquillian-weld-embedded>2.0.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.3</version.avro>
         <version.caffeine>3.1.0</version.caffeine>
@@ -89,7 +89,8 @@
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>4.0.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.13.4</version.jackson>
+        <version.jackson>2.12.7</version.jackson>
+        <version.jakarta-validation>3.0.0</version.jakarta-validation>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
         <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -100,7 +101,7 @@
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
-        <version.jjwt>0.11.2</version.jjwt>
+        <version.jjwt>0.11.5</version.jjwt>
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
@@ -114,8 +115,8 @@
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
-        <version.mysql-connector>8.0.28</version.mysql-connector>
-        <version.netty>4.1.42.Final</version.netty>
+        <version.mysql-connector>8.0.29</version.mysql-connector>
+        <version.netty>4.1.66.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
@@ -128,11 +129,12 @@
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.5.2</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
-        <version.weld>3.1.1.Final</version.weld>
-        <version.weld-se>3.1.1.Final</version.weld-se>
-        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
+        <version.weld>3.1.7.SP1</version.weld>
+        <!-- This version of weld ships with Wildfly 24.0.1.Final. It has the same coupling to the version of WildFly that the version of jackson does.  -->
+        <!-- This is the last version that includes picketbox, which we use for security, but also the first version that doesn't include the older verison
+	     of jackson (i.e. doesn't have org.codehaus.x) -->
         <version.weld-test>2.3.5.Final</version.weld-test>
-        <version.wildfly>17.0.1.Final</version.wildfly>
+        <version.wildfly>24.0.1.Final</version.wildfly>
         <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
@@ -709,6 +711,10 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>ch.qos.reload4j</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -1004,7 +1010,7 @@
             <dependency>
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
-                <version>${version.weld-se}</version>
+                <version>${version.weld}</version>
             </dependency>
             <dependency>
                 <groupId>org.jgroups</groupId>
@@ -1125,7 +1131,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-javaee8-with-tools</artifactId>
+                <artifactId>wildfly-jakartaee8</artifactId>
                 <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -1145,10 +1151,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.javax-validation}</version>
-                <scope>test</scope>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.jakarta-validation}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -1190,9 +1195,19 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
-                <version>${version.arquillian-weld-ee-embedded}</version>
+                <artifactId>arquillian-weld-embedded</artifactId>
+                <version>${version.arquillian-weld-embedded}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-test-spi</artifactId>
+                <version>${version.arquillian}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.junit</groupId>
+                <artifactId>arquillian-junit-container</artifactId>
+                <version>${version.arquillian}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>

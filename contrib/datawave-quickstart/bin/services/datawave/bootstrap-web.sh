@@ -1,6 +1,6 @@
 
 # You may override DW_WILDFLY_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_WILDFLY_VERSION="17.0.1"
+DW_WILDFLY_VERSION="24.0.1"
 # DW_WILDFLY_DIST_URI should, if possible, be using https. There are potential security risks by using http.
 DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/${DW_WILDFLY_VERSION}.Final/wildfly-${DW_WILDFLY_VERSION}.Final.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
@@ -12,7 +12,7 @@ DW_WILDFLY_SYMLINK="wildfly"
 export WILDFLY_HOME="$(readlink -f ${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK})"
 export JBOSS_HOME="${WILDFLY_HOME}"
 export PATH="${WILDFLY_HOME}/bin:${PATH}"
-export DW_DATAWAVE_WEB_JAVA_OPTS=${DW_DATAWAVE_WEB_JAVA_OPTS:-"-Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true"}
+export DW_DATAWAVE_WEB_JAVA_OPTS=${DW_DATAWAVE_WEB_JAVA_OPTS:-"-Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true -Dcom.sun.CORBA.ORBDynamicStubFactoryFactoryClass=com.sun.corba.se.impl.presentation.rmi.StubFactoryFactoryStaticImpl"}
 
 DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh -c standalone-full.xml & )"
 DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh --debug -c standalone-full.xml & )"
