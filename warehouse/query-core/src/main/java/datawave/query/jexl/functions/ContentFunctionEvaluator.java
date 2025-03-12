@@ -3,8 +3,10 @@ package datawave.query.jexl.functions;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -30,6 +32,7 @@ public abstract class ContentFunctionEvaluator {
     protected final boolean canProcess;
     protected final int maxScore;
     protected Set<String> eventIds;
+    protected Set<String> candidateFields;
 
     public ContentFunctionEvaluator(Set<String> fields, int distance, float maxScore, TermOffsetMap termOffsetMap, String... terms) {
         this.fields = fields;
@@ -103,6 +106,9 @@ public abstract class ContentFunctionEvaluator {
             return false;
         }
 
+        // ensure that all terms appear in the same field including any dot notation
+        Map<String,Integer> fieldTermTrackingMap = new HashMap<>();
+
         // generate an intersection of event ids that cover all the terms
         for (String term : terms) {
             if (term == null) {
@@ -127,6 +133,14 @@ public abstract class ContentFunctionEvaluator {
                 return false;
             }
 
+            for (String field : tfList.fields()) {
+                Integer fieldTermCount = fieldTermTrackingMap.get(field);
+                if (fieldTermCount == null) {
+                    fieldTermCount = 0;
+                }
+                fieldTermTrackingMap.put(field, fieldTermCount + 1);
+            }
+
             if (eventIds == null) {
                 eventIds = new HashSet<>(tfList.eventIds());
             } else {
@@ -137,6 +151,23 @@ public abstract class ContentFunctionEvaluator {
             if (eventIds.isEmpty()) {
                 break;
             }
+        }
+
+        // restrict to only the tfs that have a possibility of satisfying the query
+        for (String field : fieldTermTrackingMap.keySet()) {
+            Integer count = fieldTermTrackingMap.get(field);
+            if (count == terms.length) {
+                if (candidateFields == null) {
+                    candidateFields = new HashSet<>();
+                }
+                // add this to the field search list
+                candidateFields.add(field);
+            }
+        }
+
+        // if there are no candidate fields abort
+        if (candidateFields.isEmpty()) {
+            return false;
         }
 
         if (eventIds == null || eventIds.isEmpty()) {
@@ -167,7 +198,7 @@ public abstract class ContentFunctionEvaluator {
 
                     // Invert the map to take all the offsets for a term within a field
                     // and group the lists together
-                    for (String field : tfList.fields()) {
+                    for (String field : candidateFields) {
                         TermFrequencyList.Zone zone = new TermFrequencyList.Zone(field, true, eventId);
                         Collection<TermWeightPosition> offsets = tfList.fetchOffsets().get(zone);
                         // if no offsets, but we are explicitly looking for this field (i.e. not unfielded), then check for a non-content expansion zone
@@ -190,8 +221,16 @@ public abstract class ContentFunctionEvaluator {
 
                 // Iterate over each collection of offsets (grouped by field) and try to find one that satisfies the phrase/adjacency
                 for (String field : offsetsByField.keySet()) {
-                    if (!fields.isEmpty() && !fields.contains(field)) {
-                        continue;
+                    if (!fields.isEmpty()) {
+                        // account for trailing dot notation
+                        String compareField = field;
+                        int dotIndex = field.indexOf(".");
+                        if (dotIndex > -1) {
+                            compareField = field.substring(0, dotIndex);
+                        }
+                        if (!fields.contains(compareField)) {
+                            continue;
+                        }
                     }
                     List<List<TermWeightPosition>> offsets = offsetsByField.get(field);
                     if (offsets == null || offsets.isEmpty()) {

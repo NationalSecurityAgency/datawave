@@ -208,7 +208,13 @@ public class TermFrequencyIterator extends WrappingIterator {
     }
 
     private boolean fieldValueAccepted() {
-        return uidsAndValues.contains(tfKey.getUidAndValue()) && fields.contains(tfKey.getField());
+        // strip any context applied to the tf key for acceptance
+        String cleanField = tfKey.getField();
+        int dotIndex = cleanField.indexOf(".");
+        if (dotIndex > -1) {
+            cleanField = cleanField.substring(0, dotIndex);
+        }
+        return uidsAndValues.contains(tfKey.getUidAndValue()) && fields.contains(cleanField);
     }
 
     private boolean uidMatches() {

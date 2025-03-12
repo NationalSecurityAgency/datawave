@@ -246,6 +246,19 @@ public abstract class QueryFunctionQueryTest {
     }
 
     @Test
+    public void testPhraseFunctionsWithHashes() throws Exception {
+        String[] queryStrings = {"QUOTE == 'never' && QUOTE == 'refuse'",
+                "content:phrase(termOffsetMap, 'i', 'never', 'refuse') && QUOTE == 'i' && QUOTE == 'never' && QUOTE == 'refuse'",
+                "content:phrase(termOffsetMap, 'gonna', 'refuse') && QUOTE == 'gonna' && QUOTE == 'refuse'"};
+
+        List<String>[] expected = new List[] {List.of("CORLEONE"), List.of("CORLEONE"), Collections.emptyList()};
+
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expected[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), Collections.emptyMap());
+        }
+    }
+
+    @Test
     public void testIncludeText() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("hit.list", "true");

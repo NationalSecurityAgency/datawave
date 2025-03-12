@@ -431,6 +431,7 @@ public class WiseGuysIngest {
             bw.addMutation(mutation);
 
             // add some tokens
+            addTokens(bw, range, "QUOTE", "I never refuse", corleoneUID, corleoneTimeStampDelta); // these tokens will be added only to a hashed tf
             addTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID, corleoneTimeStampDelta);
             addTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
@@ -793,6 +794,7 @@ public class WiseGuysIngest {
 
             bw.addMutation(mutation);
 
+            addFiTfTokens(bw, range, "QUOTE", "I never refuse", corleoneUID, corleoneTimeStampDelta, "hash1");
             addFiTfTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID, corleoneTimeStampDelta);
             addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
@@ -1117,15 +1119,24 @@ public class WiseGuysIngest {
 
     private static void addTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta)
                     throws MutationsRejectedException {
+        addTokens(bw, range, field, phrase, uid, timeStampDelta, null);
+    }
+
+    private static void addTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta, String contentHash)
+                    throws MutationsRejectedException {
         Mutation mutation = new Mutation(lcNoDiacriticsType.normalize(phrase));
-        mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp + timeStampDelta,
+        String adjustedField = field.toUpperCase();
+        if (contentHash != null) {
+            adjustedField += "." + contentHash;
+        }
+        mutation.put(adjustedField, shard + "\u0000" + datatype, columnVisibility, timeStamp + timeStampDelta,
                         range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(uid));
         bw.addMutation(mutation);
 
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
             mutation = new Mutation(lcNoDiacriticsType.normalize(token));
-            mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp + timeStampDelta,
+            mutation.put(adjustedField, shard + "\u0000" + datatype, columnVisibility, timeStamp + timeStampDelta,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(uid));
             bw.addMutation(mutation);
         }
@@ -1133,7 +1144,16 @@ public class WiseGuysIngest {
 
     private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta)
                     throws MutationsRejectedException {
+        addFiTfTokens(bw, range, field, phrase, uid, timeStampDelta, null);
+    }
+
+    private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta, String contentHash)
+                    throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
+        String adjustedField = field.toUpperCase();
+        if (contentHash != null) {
+            adjustedField += "." + contentHash;
+        }
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
                         timeStamp + timeStampDelta, emptyValue);
         OffsetQueue<Integer> tokenOffsetCache = new BoundedOffsetQueue<>(500);
@@ -1142,7 +1162,7 @@ public class WiseGuysIngest {
         for (String token : tokens) {
             fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
                             timeStamp + timeStampDelta, emptyValue);
-            tokenOffsetCache.addOffset(new TermAndZone(token, field.toUpperCase()), i);
+            tokenOffsetCache.addOffset(new TermAndZone(token, adjustedField), i);
 
             i++;
         }
