@@ -137,6 +137,7 @@ public class QueryDataConsumer implements Runnable {
         while (numFiScans.get() >= maxFiScans) {
             // Note: the max field index tasks submitted may exceed the number of executor threads. This
             // effectively queues work and ensures the executor is always running at capacity.
+            Thread.onSpinWait();
         }
 
         numFiScans.incrementAndGet();
@@ -144,7 +145,7 @@ public class QueryDataConsumer implements Runnable {
 
         String context = range.getStartKey().getRow().toString();
         fiScan.setContext("fi scan " + ++fiScansSubmitted + " - " + context);
-        executor.submit(fiScan);
+        executor.execute(fiScan);
     }
 
     private void putDocId(QueryData queryData, Range range) {

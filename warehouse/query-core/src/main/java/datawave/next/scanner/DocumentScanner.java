@@ -23,7 +23,7 @@ import datawave.query.tables.async.event.VisitorFunction;
  * The {@link Scan} is replaced by the concept of a tablet worker. This worker operates two scanners in parallel, one scanner finds candidate documents and the
  * other scanner submits document-range queries.
  */
-public class DocumentScanner implements Iterator<Result>, Closeable {
+public class DocumentScanner implements Iterator<Result>, Closeable, Thread.UncaughtExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentScanner.class);
 
@@ -64,11 +64,17 @@ public class DocumentScanner implements Iterator<Result>, Closeable {
     public void start() {
         // takes query data and either submits fi scans or pushes document scans directly to the doc id queue
         QueryDataConsumer queryDataConsumer = new QueryDataConsumer(config, queryDataIterator);
-        consumerExecutorPool.execute(queryDataConsumer);
+        Thread searchThread = new Thread(queryDataConsumer);
+        searchThread.setDaemon(true);
+        searchThread.setUncaughtExceptionHandler(this);
+        consumerExecutorPool.execute(searchThread);
 
         // a document id consumer creates document range scans which push results onto the results queue
         DocumentIdConsumer docIdConsumer = new DocumentIdConsumer(config);
-        consumerExecutorPool.execute(docIdConsumer);
+        Thread retrievalThread = new Thread(docIdConsumer);
+        retrievalThread.setDaemon(true);
+        retrievalThread.setUncaughtExceptionHandler(this);
+        consumerExecutorPool.execute(retrievalThread);
     }
 
     public void setVisitorFunction(VisitorFunction visitorFunction) {
@@ -123,5 +129,17 @@ public class DocumentScanner implements Iterator<Result>, Closeable {
         consumerExecutorPool.shutdownNow();
         docIdExecutorPool.shutdownNow();
         documentExecutorPool.shutdownNow();
+    }
+
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        log.error("Uncaught exception in {}", t.getName(), e);
+        t.interrupt();
+        try {
+            close();
+        } catch (IOException ex) {
+            log.error("Exception while closing DocumentScanner: {}", ex.getMessage());
+            throw new RuntimeException("Exception while closing DocumentScanner", e);
+        }
     }
 }

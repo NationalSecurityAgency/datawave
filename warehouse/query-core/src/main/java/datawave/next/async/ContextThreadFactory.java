@@ -19,8 +19,8 @@ public class ContextThreadFactory implements ThreadFactory {
 
     public ContextThreadFactory(String context) {
         this.context = context;
-        threadFactory = Executors.defaultThreadFactory();
-        uncaughtExceptionHandler = new ContextualUncaughtExceptionHandler();
+        this.threadFactory = Executors.defaultThreadFactory();
+        this.uncaughtExceptionHandler = new ContextualUncaughtExceptionHandler();
     }
 
     @Override

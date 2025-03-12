@@ -61,6 +61,7 @@ public class DocumentIdConsumer implements Runnable {
                         while (numDocScans.get() >= maxDocScans) {
                             // Note: the max document tasks submitted may exceed the number of executor threads. This
                             // effectively queues work and ensures the executor is always running at capacity.
+                            Thread.onSpinWait();
                         }
 
                         if (log.isDebugEnabled()) {
@@ -75,7 +76,7 @@ public class DocumentIdConsumer implements Runnable {
                         Key key = keyWithContext.getKey();
                         String context = key.getRow().toString() + "-" + key.getColumnFamily().toString();
                         scan.setContext(config.getQueryId() + " doc scan " + ++totalIdsConsumed + " - " + context);
-                        executor.submit(scan);
+                        executor.execute(scan);
                     }
                 } catch (Exception e) {
                     log.error("exception while consuming document ids", e);
