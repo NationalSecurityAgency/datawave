@@ -29,6 +29,7 @@ public class DocumentScanner implements Iterator<Result>, Closeable, Thread.Unca
 
     protected Result result;
 
+    private final long resultQueuePollTimeMillis;
     private final ArrayBlockingQueue<Result> results;
 
     // special executor pool for our consumers
@@ -55,6 +56,7 @@ public class DocumentScanner implements Iterator<Result>, Closeable, Thread.Unca
     public DocumentScanner(DocumentScannerConfig config, Iterator<QueryData> queryDataIterator) {
         this.config = config;
         this.queryDataIterator = queryDataIterator;
+        this.resultQueuePollTimeMillis = this.config.getResultQueuePollTimeMillis();
         this.results = this.config.getResults();
 
         this.docIdExecutorPool = this.config.getDocIdExecutorPool();
@@ -91,7 +93,7 @@ public class DocumentScanner implements Iterator<Result>, Closeable, Thread.Unca
         while ((config.getDocumentIdConsumerExecuting().get() || !config.getDocIdQueue().isEmpty() || config.getNumFiScans().get() > 0
                         || config.getNumDocScans().get() > 0 || !config.getResults().isEmpty()) && result == null) {
             try {
-                result = results.poll(1, TimeUnit.MILLISECONDS);
+                result = results.poll(resultQueuePollTimeMillis, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 log.error("error while polling for next result", e);
                 throw new RuntimeException(e);

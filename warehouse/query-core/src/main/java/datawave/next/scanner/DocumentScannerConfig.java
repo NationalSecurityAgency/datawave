@@ -59,6 +59,11 @@ public class DocumentScannerConfig {
     private AtomicBoolean queryDataConsumerExecuting = new AtomicBoolean(false);
     private AtomicBoolean documentIdConsumerExecuting = new AtomicBoolean(false);
 
+    private long candidateQueueOfferTimeMillis = 5_000L;
+    private long candidateQueuePollTimeMillis = 5_000L;
+    private long resultQueueOfferTimeMillis = 25L;
+    private long resultQueuePollTimeMillis = 25L;
+
     private VisitorFunction visitorFunction;
     private String queryId;
 
@@ -274,5 +279,37 @@ public class DocumentScannerConfig {
 
     public void setQueryId(String queryId) {
         this.queryId = queryId;
+    }
+
+    public long getResultQueueOfferTimeMillis() {
+        return resultQueueOfferTimeMillis;
+    }
+
+    public void setResultQueueOfferTimeMillis(long resultQueueOfferTimeMillis) {
+        this.resultQueueOfferTimeMillis = resultQueueOfferTimeMillis;
+    }
+
+    public long getCandidateQueueOfferTimeMillis() {
+        return candidateQueueOfferTimeMillis;
+    }
+
+    public void setCandidateQueueOfferTimeMillis(long candidateQueueOfferTimeMillis) {
+        this.candidateQueueOfferTimeMillis = candidateQueueOfferTimeMillis;
+    }
+
+    public long getCandidateQueuePollTimeMillis() {
+        return candidateQueuePollTimeMillis;
+    }
+
+    public void setCandidateQueuePollTimeMillis(long candidateQueuePollTimeMillis) {
+        this.candidateQueuePollTimeMillis = candidateQueuePollTimeMillis;
+    }
+
+    public long getResultQueuePollTimeMillis() {
+        return resultQueuePollTimeMillis;
+    }
+
+    public void setResultQueuePollTimeMillis(long resultQueuePollTimeMillis) {
+        this.resultQueuePollTimeMillis = resultQueuePollTimeMillis;
     }
 }

@@ -91,6 +91,9 @@ public class DocumentScheduler extends Scheduler {
             config.getQueryDataConsumerExecuting().set(true);
             config.getDocumentIdConsumerExecuting().set(true);
 
+            log.info("created fi scanner with {} threads and {} max tasks", config.getMaxDocIdThreads(), config.getMaxDocIdTasks());
+            log.info("created doc scanner with {} threads and {} max tasks", config.getMaxDocumentThreads(), config.getMaxDocumentTasks());
+
             scanner = createScanner();
         }
         return scanner;

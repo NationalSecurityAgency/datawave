@@ -37,7 +37,9 @@ public class DocumentRangeScan implements RunnableWithContext {
     private final KeyWithContext keyWithContext;
     private final DocumentScannerConfig config;
     private final Authorizations auths;
-    private final ArrayBlockingQueue<Result> queue;
+
+    private final long resultQueueOfferTimeMillis;
+    private final ArrayBlockingQueue<Result> resultQueue;
     private final AtomicInteger numDocScans;
 
     private String context;
@@ -47,7 +49,8 @@ public class DocumentRangeScan implements RunnableWithContext {
     public DocumentRangeScan(KeyWithContext keyWithContext, DocumentScannerConfig config) {
         this.keyWithContext = keyWithContext;
         this.config = config;
-        this.queue = config.getResults();
+        this.resultQueueOfferTimeMillis = config.getResultQueueOfferTimeMillis();
+        this.resultQueue = config.getResults();
         this.auths = config.getAuthorizations();
         this.numDocScans = config.getNumDocScans();
 
@@ -90,7 +93,7 @@ public class DocumentRangeScan implements RunnableWithContext {
                         boolean offered = false;
                         while (!offered) {
                             try {
-                                offered = queue.offer(result, 1, TimeUnit.MILLISECONDS);
+                                offered = resultQueue.offer(result, resultQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
                             } catch (InterruptedException e) {
                                 throw new RuntimeException("Interrupted while offering result", e);
                             }

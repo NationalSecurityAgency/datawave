@@ -18,6 +18,8 @@ public class DocumentIdConsumer implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(DocumentIdConsumer.class);
 
     private final DocumentScannerConfig config;
+
+    private final long candidateQueuePollTimeMillis;
     private final BlockingQueue<KeyWithContext> documentIdQueue;
 
     private final ExecutorService executor;
@@ -31,6 +33,7 @@ public class DocumentIdConsumer implements Runnable {
 
     public DocumentIdConsumer(DocumentScannerConfig config) {
         this.config = config;
+        this.candidateQueuePollTimeMillis = config.getCandidateQueuePollTimeMillis();
         this.documentIdQueue = config.getDocIdQueue();
         this.executor = config.getDocumentExecutorPool();
 
@@ -54,7 +57,7 @@ public class DocumentIdConsumer implements Runnable {
             KeyWithContext keyWithContext;
             while (producerExecuting.get() || !documentIdQueue.isEmpty() || numFiScans.get() > 0) {
                 try {
-                    keyWithContext = documentIdQueue.poll(1, TimeUnit.MILLISECONDS);
+                    keyWithContext = documentIdQueue.poll(candidateQueuePollTimeMillis, TimeUnit.MILLISECONDS);
                     if (keyWithContext != null) {
 
                         // wait until there's room to run
@@ -69,8 +72,9 @@ public class DocumentIdConsumer implements Runnable {
                         }
                         // construct query iterator
                         config.getStats().incrementTotalDocumentScansSubmitted();
-                        numDocScans.getAndIncrement();
+                        long currentDocScanCount = numDocScans.incrementAndGet();
 
+                        log.info("current doc scans: {}", currentDocScanCount);
                         DocumentRangeScan scan = new DocumentRangeScan(keyWithContext, config);
 
                         Key key = keyWithContext.getKey();

@@ -26,6 +26,7 @@ public class DocumentIdProducer implements RunnableWithContext {
     private static final Logger log = LoggerFactory.getLogger(DocumentIdProducer.class);
 
     private final DocumentScannerConfig config;
+    private final long candidateQueueOfferTimeMillis;
     private final BlockingQueue<KeyWithContext> candidateQueue;
     private final Scanner scanner;
     private final QueryData context;
@@ -37,6 +38,7 @@ public class DocumentIdProducer implements RunnableWithContext {
         this.config = config;
         this.scanner = scanner;
         this.context = context;
+        this.candidateQueueOfferTimeMillis = this.config.getCandidateQueueOfferTimeMillis();
         this.candidateQueue = this.config.getDocIdQueue();
         this.numFiScans = this.config.getNumFiScans();
     }
@@ -60,7 +62,7 @@ public class DocumentIdProducer implements RunnableWithContext {
 
                 offered = false;
                 while (!offered) {
-                    offered = candidateQueue.offer(keyWithContext, 500, TimeUnit.MILLISECONDS);
+                    offered = candidateQueue.offer(keyWithContext, candidateQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
                 }
             }
 

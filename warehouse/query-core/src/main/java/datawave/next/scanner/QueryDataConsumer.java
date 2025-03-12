@@ -1,6 +1,7 @@
 package datawave.next.scanner;
 
 import java.util.Iterator;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +38,9 @@ public class QueryDataConsumer implements Runnable {
     private final DocumentScannerConfig config;
     private final int maxFiScans;
 
+    private final long candidateQueueOfferTimeMillis;
+    private final BlockingQueue<KeyWithContext> candidateQueue;
+
     private final QueryDataConsumerStats stats;
     private long fiScansSubmitted = 0L;
 
@@ -47,6 +51,8 @@ public class QueryDataConsumer implements Runnable {
         this.executing = this.config.getQueryDataConsumerExecuting();
         this.numFiScans = this.config.getNumFiScans();
         this.maxFiScans = this.config.getMaxDocIdTasks();
+        this.candidateQueueOfferTimeMillis = this.config.getCandidateQueueOfferTimeMillis();
+        this.candidateQueue = this.config.getDocIdQueue();
         this.stats = new QueryDataConsumerStats();
     }
 
@@ -140,7 +146,8 @@ public class QueryDataConsumer implements Runnable {
             Thread.onSpinWait();
         }
 
-        numFiScans.incrementAndGet();
+        int currentFiScanCount = numFiScans.incrementAndGet();
+        log.debug("current fi scans: {}", currentFiScanCount);
         DocumentIdProducer fiScan = new DocumentIdProducer(config, scanner, queryData);
 
         String context = range.getStartKey().getRow().toString();
@@ -155,7 +162,7 @@ public class QueryDataConsumer implements Runnable {
         boolean accepted = false;
         while (!accepted) {
             try {
-                accepted = config.getDocIdQueue().offer(keyWithContext, 5_000, TimeUnit.MILLISECONDS);
+                accepted = candidateQueue.offer(keyWithContext, candidateQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 log.error("Interrupted while waiting", e);
                 throw new RuntimeException(e);

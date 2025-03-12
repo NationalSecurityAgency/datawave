@@ -3362,6 +3362,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public DocumentScannerConfig getDocumentScannerConfig() {
         if (documentScannerConfig == null) {
+            log.warn("using default DocumentScannerConfig");
             documentScannerConfig = new DocumentScannerConfig();
         }
         return documentScannerConfig;
