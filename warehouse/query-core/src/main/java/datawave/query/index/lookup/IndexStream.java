@@ -50,11 +50,6 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         EXCEEDED_TERM_THRESHOLD,
         /**
-         * EXCEEDED_VALUE_THRESHOLD means that we exceeded a value threshold somewhere. The RangeStream will generate a list of day ranges that covers the date
-         * range of the query.
-         */
-        EXCEEDED_VALUE_THRESHOLD,
-        /**
          * At some point in the processing chain, we determined that a node (range or regex) did not need to be expanded to satisfy the query using the field
          * index
          */

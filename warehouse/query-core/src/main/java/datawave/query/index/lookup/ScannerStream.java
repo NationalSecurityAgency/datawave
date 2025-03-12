@@ -65,12 +65,6 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(itr, StreamContext.VARIABLE, currNode);
     }
 
-    // exceeded value threshold, so we can evaluate with data but may need special handling
-    public static ScannerStream exceededValueThreshold(Iterator<Tuple2<String,IndexInfo>> itr, JexlNode currNode) {
-        JexlNode resultNode = currNode;
-        return new ScannerStream(itr, StreamContext.EXCEEDED_VALUE_THRESHOLD, resultNode);
-    }
-
     public static ScannerStream delayedExpression(JexlNode currNode) {
         return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED_FIELD, currNode);
     }

@@ -4,7 +4,6 @@ import static datawave.query.index.lookup.IndexStream.StreamContext;
 import static datawave.query.index.lookup.IndexStream.StreamContext.ABSENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED_FIELD;
 import static datawave.query.index.lookup.IndexStream.StreamContext.EXCEEDED_TERM_THRESHOLD;
-import static datawave.query.index.lookup.IndexStream.StreamContext.EXCEEDED_VALUE_THRESHOLD;
 import static datawave.query.index.lookup.IndexStream.StreamContext.IGNORED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.UNINDEXED;
@@ -179,7 +178,7 @@ public class IndexStreamComparatorTest {
     }
 
     private ScannerStream exceededValue() {
-        return buildScannerStream("F9", "i", EXCEEDED_VALUE_THRESHOLD);
+        return buildScannerStream("F9", "i", PRESENT);
     }
 
     private ScannerStream buildScannerStream(String field, String value, StreamContext context) {
@@ -208,8 +207,6 @@ public class IndexStreamComparatorTest {
                 return ScannerStream.unknownField(node);
             case EXCEEDED_TERM_THRESHOLD:
                 return ScannerStream.exceededTermThreshold(node);
-            case EXCEEDED_VALUE_THRESHOLD:
-                return ScannerStream.exceededValueThreshold(elements.iterator(), node);
             default:
                 throw new IllegalStateException("unknown context: " + context);
         }

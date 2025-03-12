@@ -70,9 +70,7 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
                 return 20;
             case VARIABLE: // mix of PRESENT and some form of DELAYED
                 return 30;
-            case EXCEEDED_VALUE_THRESHOLD: // from here on down, all forms of DELAYED
-                return 40;
-            case EXCEEDED_TERM_THRESHOLD:
+            case EXCEEDED_TERM_THRESHOLD: // from here on down, all forms of DELAYED
                 return 50;
             case IGNORED:
                 return 60;

@@ -417,7 +417,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 case PRESENT:
                 case VARIABLE:
                 case EXCEEDED_TERM_THRESHOLD:
-                case EXCEEDED_VALUE_THRESHOLD:
                     return union;
                 case UNINDEXED:
                     return ScannerStream.unindexed(union.currentNode(), union);
@@ -505,7 +504,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     case IGNORED:
                         return ScannerStream.ignored(build.currentNode(), build);
                     case EXCEEDED_TERM_THRESHOLD:
-                    case EXCEEDED_VALUE_THRESHOLD:
                     case PRESENT:
                     case VARIABLE:
                         return build;

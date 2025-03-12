@@ -214,7 +214,7 @@ public class IntersectionTest {
     @Test
     public void testIntersection_EmptyExceededValueThreshold() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("THIS_FIELD == 20");
-        ScannerStream scannerStream = ScannerStream.exceededValueThreshold(Collections.emptyIterator(), script);
+        ScannerStream scannerStream = ScannerStream.noData(script);
         List<? extends IndexStream> iterable = Collections.singletonList(scannerStream);
 
         Intersection intersection = new Intersection(iterable, null);
