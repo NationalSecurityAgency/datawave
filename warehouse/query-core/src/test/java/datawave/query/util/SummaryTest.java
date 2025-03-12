@@ -69,6 +69,12 @@ public abstract class SummaryTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParams, Collection<String> goodResults,
                         boolean shouldReturnSomething) throws Exception {
@@ -91,6 +97,12 @@ public abstract class SummaryTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override

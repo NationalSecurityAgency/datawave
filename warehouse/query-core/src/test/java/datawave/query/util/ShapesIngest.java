@@ -15,7 +15,9 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.LongCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -133,6 +135,18 @@ public class ShapesIngest {
         tops.create(SHARD_INDEX);
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
+
+        IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
+        for (IteratorUtil.IteratorScope scope : scopes) {
+            String name = "table.iterator." + scope.name() + ".UIDAggregator";
+            String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
+
+            client.tableOperations().setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
+            client.tableOperations().setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+        }
+
+        // grant root user all auths so they can scan the tables
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
 
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation m;
@@ -316,6 +330,8 @@ public class ShapesIngest {
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rectangleUid));
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rhomboidUid));
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rhombusUid));
+            m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, trapezoidUid));
+            m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, kiteUid));
             bw.addMutation(m);
             m = new Mutation("pentagon");
             m.put("SHAPE", shard + '\u0000' + pentagon, cv, ts, getValue(type, pentagonUid));
