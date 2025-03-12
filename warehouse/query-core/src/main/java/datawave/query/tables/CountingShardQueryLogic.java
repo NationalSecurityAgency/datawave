@@ -74,7 +74,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
         if (planner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner dqp = (DefaultQueryPlanner) planner;
             boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
-            if (simple) {
+            if (simple && config.getDocumentScannerConfig() != null) {
                 CountScheduler countScheduler = new CountScheduler(config);
                 countScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
                 return countScheduler;

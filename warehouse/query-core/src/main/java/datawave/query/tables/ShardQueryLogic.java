@@ -1366,10 +1366,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             if (planner instanceof DefaultQueryPlanner) {
                 DefaultQueryPlanner dqp = (DefaultQueryPlanner) queryPlanner;
                 boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
-                if (simple) {
+                if (simple && config.getDocumentScannerConfig() != null) {
                     DocumentScheduler documentScheduler = new DocumentScheduler(config);
                     documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
                     return documentScheduler;
+                } else {
+                    log.warn("Query was not simple: " + simple + " or scheduler config was null:" + (config.getDocumentScannerConfig() == null));
                 }
             }
         }
