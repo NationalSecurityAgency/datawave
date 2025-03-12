@@ -416,7 +416,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.delayedExpression(union.currentNode());
                 case PRESENT:
                 case VARIABLE:
-                case EXCEEDED_TERM_THRESHOLD:
                     return union;
                 case UNINDEXED:
                     return ScannerStream.unindexed(union.currentNode(), union);
@@ -434,7 +433,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // if we have a term threshold marker, then we simply could not expand an _ANYFIELD_ identifier, so return EXCEEDED_THRESHOLD
         if (instance.isType(EXCEEDED_TERM)) {
-            return ScannerStream.exceededTermThreshold(node);
+            return ScannerStream.delayedExpression(node);
         } else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
             try {
                 // When we exceeded the expansion threshold for a regex, the field is an index-only field, and we can't
@@ -503,7 +502,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                         return ScannerStream.noData(build.currentNode(), build);
                     case IGNORED:
                         return ScannerStream.ignored(build.currentNode(), build);
-                    case EXCEEDED_TERM_THRESHOLD:
                     case PRESENT:
                     case VARIABLE:
                         return build;

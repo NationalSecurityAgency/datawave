@@ -83,7 +83,6 @@ public class Union extends BaseIndexStream {
                 case IGNORED:
                 case DELAYED_FIELD:
                 case UNKNOWN_FIELD:
-                case EXCEEDED_TERM_THRESHOLD:
                     // these nodes need to be persisted via the set of delayedNodes
                     delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                     continue;

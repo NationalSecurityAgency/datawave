@@ -34,7 +34,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         NO_OP,
         /**
-         * DELAYED_FIELD means this term or junction of terms is delayed
+         * DELAYED_FIELD means this term or junction of terms is delayed for any number of reasons
          */
         DELAYED_FIELD,
         /**
@@ -45,10 +45,6 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          * UKNOWN_FIELD means that the field has never been tracked by the system.
          */
         UNKNOWN_FIELD,
-        /**
-         * EXCEEDED_TERM_THRESHOLD means that we exceeded a term threshold somewhere
-         */
-        EXCEEDED_TERM_THRESHOLD,
         /**
          * At some point in the processing chain, we determined that a node (range or regex) did not need to be expanded to satisfy the query using the field
          * index

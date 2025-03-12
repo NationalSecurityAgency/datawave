@@ -3023,12 +3023,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             switch (stream.context()) {
-                case EXCEEDED_TERM_THRESHOLD:
-                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
-                    if (!config.canHandleExceededTermThreshold()) {
-                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
-                    }
-                    break;
+                // case EXCEEDED_TERM_THRESHOLD:
+                // // throw an unsupported exception if the planner cannot handle term threshold exceeded
+                // if (!config.canHandleExceededTermThreshold()) {
+                // throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+                // }
+                // break;
                 case UNINDEXED:
                     if (log.isDebugEnabled()) {
                         log.debug("Full table scan required because of unindexed fields");

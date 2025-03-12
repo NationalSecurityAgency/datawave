@@ -3,7 +3,6 @@ package datawave.query.index.lookup;
 import static datawave.query.index.lookup.IndexStream.StreamContext;
 import static datawave.query.index.lookup.IndexStream.StreamContext.ABSENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED_FIELD;
-import static datawave.query.index.lookup.IndexStream.StreamContext.EXCEEDED_TERM_THRESHOLD;
 import static datawave.query.index.lookup.IndexStream.StreamContext.IGNORED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.UNINDEXED;
@@ -174,7 +173,7 @@ public class IndexStreamComparatorTest {
     }
 
     private ScannerStream exceededTerm() {
-        return buildScannerStream("F8", "h", EXCEEDED_TERM_THRESHOLD);
+        return buildScannerStream("F8", "h", DELAYED_FIELD);
     }
 
     private ScannerStream exceededValue() {
@@ -205,8 +204,6 @@ public class IndexStreamComparatorTest {
                 return ScannerStream.delayedExpression(node);
             case UNKNOWN_FIELD:
                 return ScannerStream.unknownField(node);
-            case EXCEEDED_TERM_THRESHOLD:
-                return ScannerStream.exceededTermThreshold(node);
             default:
                 throw new IllegalStateException("unknown context: " + context);
         }

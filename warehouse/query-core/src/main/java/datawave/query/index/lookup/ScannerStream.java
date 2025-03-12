@@ -85,11 +85,6 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(Collections.emptyIterator(), StreamContext.IGNORED, currNode, debugDelegate);
     }
 
-    // exceeded term threshold, so we cannot evaluate
-    public static ScannerStream exceededTermThreshold(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.EXCEEDED_TERM_THRESHOLD, currNode);
-    }
-
     /**
      * Create a stream in the initialized state
      *
