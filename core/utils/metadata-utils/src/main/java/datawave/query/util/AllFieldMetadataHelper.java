@@ -64,6 +64,7 @@ import datawave.query.model.IndexFieldHole;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
 import datawave.util.time.DateHelper;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 @EnableCaching
 @Component("allFieldMetadataHelper")
@@ -1261,6 +1262,8 @@ public class AllFieldMetadataHelper {
      *            range 0.0 to 1.0
      * @return a map of field names and datatype pairs to field index holes
      */
+    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#fields,#datatypes,#minThreshold}",
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         return getFieldIndexHoles(ColumnFamilyConstants.COLF_I, fields, datatypes, minThreshold);
@@ -1279,6 +1282,8 @@ public class AllFieldMetadataHelper {
      *            range 0.0 to 1.0
      * @return a map of field names and datatype pairs to field index holes
      */
+    @Cacheable(value = "getReverseFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#fields,#datatypes,#minThreshold}",
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         return getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, fields, datatypes, minThreshold);
@@ -1355,7 +1360,13 @@ public class AllFieldMetadataHelper {
         }
         
         Map<String,Map<String,IndexFieldHole>> indexHoles;
-        try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
+        
+        // Have to use the real client to get the F entries as they are not being cached
+        AccumuloClient clientToUse = accumuloClient;
+        if (clientToUse instanceof WrappedAccumuloClient) {
+            clientToUse = ((WrappedAccumuloClient) clientToUse).getReal();
+        }
+        try (Scanner bs = ScannerHelper.createScanner(clientToUse, metadataTableName, auths)) {
             
             // Fetch the frequency column and the specified index column.
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
