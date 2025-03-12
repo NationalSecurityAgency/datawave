@@ -1262,8 +1262,6 @@ public class AllFieldMetadataHelper {
      *            range 0.0 to 1.0
      * @return a map of field names and datatype pairs to field index holes
      */
-    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#fields,#datatypes,#minThreshold}",
-                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         return getFieldIndexHoles(ColumnFamilyConstants.COLF_I, fields, datatypes, minThreshold);
@@ -1282,8 +1280,6 @@ public class AllFieldMetadataHelper {
      *            range 0.0 to 1.0
      * @return a map of field names and datatype pairs to field index holes
      */
-    @Cacheable(value = "getReverseFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#fields,#datatypes,#minThreshold}",
-                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         return getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, fields, datatypes, minThreshold);
@@ -1306,7 +1302,9 @@ public class AllFieldMetadataHelper {
      * @throws IOException
      *             if a value fails to deserialize
      */
-    private Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
+    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#fields,#datatypes,#minThreshold}",
+            cacheManager = "metadataHelperCacheManager", sync = true)
+    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         // create local copies to avoid side effects
         fields = new HashSet<>(fields);
