@@ -35,7 +35,7 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
-    private final Logger log = LoggerFactory.getLogger(CountQueryIterator.class);
+    private final Logger log = LoggerFactory.getLogger(DocIdQueryIterator.class);
 
     public static final String BATCH_SIZE = "batch.size";
 

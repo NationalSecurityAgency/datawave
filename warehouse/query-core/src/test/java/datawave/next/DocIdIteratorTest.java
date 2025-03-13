@@ -178,6 +178,76 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         assertEquals(3, stats.getNextCount());
     }
 
+    @Test
+    public void testBoundedScanAddsSingletonDatatypeFilter() {
+        writeIndex("FIELD_A", "value-a", "datatype-a", 1);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 2);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 3);
+        writeIndex("FIELD_A", "value-a", "datatype-d", 4);
+        writeIndex("FIELD_A", "value-a", "datatype-e", 5);
+        withQuery("FIELD_A == 'value-a'");
+
+        // should trigger case 0 reduction
+        withMinMax("datatype-c\u0000uid-1000", "datatype-c\u0000uid-1111");
+        drive();
+        assertResultSize(1);
+        assertEquals(1, stats.getNextCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+    }
+
+    @Test
+    public void testBoundedScanAddsMinMaxDatatypeFilter() {
+        writeIndex("FIELD_A", "value-a", "datatype-a", 1);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 2);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 3);
+        writeIndex("FIELD_A", "value-a", "datatype-d", 4);
+        writeIndex("FIELD_A", "value-a", "datatype-e", 5);
+        withQuery("FIELD_A == 'value-a'");
+
+        // should trigger case 1 reduction
+        withMinMax("datatype-b\u0000uid-1000", "datatype-d\u0000uid-1111");
+        drive();
+        assertResultSize(3);
+        assertEquals(3, stats.getNextCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+    }
+
+    @Test
+    public void testBoundedScanOverridesExistingDatatypeFilterWithSingleton() {
+        writeIndex("FIELD_A", "value-a", "datatype-a", 1);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 2);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 3);
+        writeIndex("FIELD_A", "value-a", "datatype-d", 4);
+        writeIndex("FIELD_A", "value-a", "datatype-e", 5);
+        withQuery("FIELD_A == 'value-a'");
+
+        // should trigger case 2 reduction
+        withDataTypes("datatype-a", "datatype-b", "datatype-c");
+        withMinMax("datatype-c\u0000uid-1000", "datatype-c\u0000uid-1111");
+        drive();
+        assertResultSize(1);
+        assertEquals(1, stats.getNextCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+    }
+
+    @Test
+    public void testBoundedScanReducesExistingDatatypeFilter() {
+        writeIndex("FIELD_A", "value-a", "datatype-a", 1);
+        writeIndex("FIELD_A", "value-a", "datatype-b", 2);
+        writeIndex("FIELD_A", "value-a", "datatype-c", 3);
+        writeIndex("FIELD_A", "value-a", "datatype-d", 4);
+        writeIndex("FIELD_A", "value-a", "datatype-e", 5);
+        withQuery("FIELD_A == 'value-a'");
+
+        // should trigger case 3 reduction
+        withDataTypes("datatype-a", "datatype-b", "datatype-c");
+        withMinMax("datatype-b\u0000uid-1000", "datatype-c\u0000uid-1111");
+        drive();
+        assertResultSize(2);
+        assertEquals(2, stats.getNextCount());
+        assertEquals(0, stats.getDatatypeFilterMiss());
+    }
+
     @Override
     protected DocIdIterator createIterator() {
         ASTJexlScript script = parse(query);

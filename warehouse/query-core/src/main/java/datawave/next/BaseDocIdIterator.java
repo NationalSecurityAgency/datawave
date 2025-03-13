@@ -16,6 +16,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.LongRange;
 import org.apache.hadoop.io.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -33,6 +35,8 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
  */
 public abstract class BaseDocIdIterator implements Iterator<Key> {
 
+    private static final Logger log = LoggerFactory.getLogger(BaseDocIdIterator.class);
+
     protected final JexlNode node;
     protected String nodeString;
 
@@ -41,6 +45,8 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
     protected Collection<ByteSequence> columnFamilies;
 
     protected TreeSet<String> datatypeFilter;
+    protected String minDatatype;
+    protected String maxDatatype;
     protected LongRange timeFilter;
     protected String suffix; // if executing within the context of a document range
 
@@ -126,6 +132,62 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
     public void withMinMax(Key min, Key max) {
         this.min = min.getColumnFamily().toString();
         this.max = max.getColumnFamily().toString();
+        attemptDatatypeFilterReduction();
+    }
+
+    /**
+     * Attempt to reduce the datatype filter if one exists.
+     * <p>
+     * If no datatype filter exists then the min/max datatypes are recorded.
+     * <p>
+     * If the min/max match the filter is a singleton. Otherwise, the filter becomes a range.
+     */
+    protected void attemptDatatypeFilterReduction() {
+        String minDatatype = this.min.substring(0, this.min.indexOf('\u0000'));
+        String maxDatatype = this.max.substring(0, this.max.indexOf('\u0000'));
+
+        if (datatypeFilter == null) {
+            // case 0: no filter requested, external context can set a singleton filter
+            if (minDatatype.equals(maxDatatype)) {
+                log.debug("no datatype filter requested but external context only contained a single datatype: {}", minDatatype);
+                datatypeFilter = new TreeSet<>();
+                datatypeFilter.add(minDatatype);
+            } else {
+                // case 1: no filter requested, external context can set a singleton filter
+                this.minDatatype = minDatatype;
+                this.maxDatatype = maxDatatype;
+            }
+        }
+
+        // attempt to restrict the datatype filter based on external context
+        if (datatypeFilter != null && datatypeFilter.size() != 1) {
+
+            // case 2: multiple datatypes requested but context can restrict to singleton filter
+            if (minDatatype.equals(maxDatatype)) {
+                log.debug("multiple datatypes requested but external context only contained a single datatype: {}", minDatatype);
+                datatypeFilter.clear();
+                datatypeFilter.add(minDatatype);
+                return;
+            }
+
+            // case 3: requested filter and context both have multiple datatypes.
+            int prevSize = datatypeFilter.size();
+
+            // unwind the first
+            while (datatypeFilter.first().compareTo(minDatatype) < 0) {
+                datatypeFilter.pollFirst();
+            }
+
+            // unwind the last
+            while (datatypeFilter.last().compareTo(maxDatatype) > 0) {
+                datatypeFilter.pollLast();
+            }
+
+            int nextSize = datatypeFilter.size();
+            if (nextSize < prevSize) {
+                log.debug("reduced datatype filter from {} to {}", prevSize, nextSize);
+            }
+        }
     }
 
     /**

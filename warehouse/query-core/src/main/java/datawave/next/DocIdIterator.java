@@ -69,7 +69,7 @@ public class DocIdIterator extends BaseDocIdIterator {
             parser.parse(top);
 
             // apply time and datatype filter
-            if (datatypeFilter != null && !datatypeFilter.isEmpty() && !datatypeFilter.contains(parser.getDatatype())) {
+            if (!acceptDatatype(parser.getDatatype())) {
                 handleDatatypeMiss();
                 continue;
             }
@@ -145,11 +145,43 @@ public class DocIdIterator extends BaseDocIdIterator {
         return new Range(start, true, stop, false);
     }
 
+    /**
+     * Determine if the datatype is accepted. This method will use the datatype filter, or the min/max datatype
+     *
+     * @param datatype
+     *            the datatype
+     * @return true if the datatype is accepted
+     */
+    protected boolean acceptDatatype(String datatype) {
+        if (datatypeFilter != null && !datatypeFilter.isEmpty() && !datatypeFilter.contains(datatype)) {
+            return false;
+        }
+
+        if (minDatatype != null && maxDatatype != null) {
+            return datatype.compareTo(minDatatype) >= 0 && datatype.compareTo(maxDatatype) <= 0;
+        }
+
+        return true;
+    }
+
     @Override
     protected void handleDatatypeMiss() {
         stats.incrementDatatypeFilterMiss();
-        String nextDatatype = datatypeFilter.higher(parser.getDatatype());
+        if (datatypeFilter != null) {
+            handleDatatypeFilterMiss(parser.getDatatype());
+        } else {
+            handleMinMaxDatatypeFilterMiss(parser.getDatatype());
+        }
+    }
 
+    /**
+     * Handle a datatype miss using the full set of requested datatypes
+     *
+     * @param datatype
+     *            the current datatype
+     */
+    protected void handleDatatypeFilterMiss(String datatype) {
+        String nextDatatype = datatypeFilter.higher(datatype);
         if (nextDatatype == null) {
             // rollover range?
             Key start = new Key(row, prefix, value + '\u0000' + '\uffff');
@@ -164,5 +196,27 @@ public class DocIdIterator extends BaseDocIdIterator {
         Key stop = new Key(row, prefix, value + '\u0000' + '\uffff');
         Range range = new Range(start, false, stop, true);
         safeSeek(range, false);
+    }
+
+    /**
+     * Handle a datatype miss using just a minimum and maximum datatype
+     *
+     * @param datatype
+     *            the current datatype
+     */
+    protected void handleMinMaxDatatypeFilterMiss(String datatype) {
+        if (datatype.compareTo(minDatatype) < 0) {
+            // seek to minimum
+            Key start = new Key(row, prefix, value + '\u0000' + minDatatype + '\u0000');
+            Key stop = new Key(row, prefix, value + '\u0000' + '\uffff');
+            Range range = new Range(start, false, stop, true);
+            safeSeek(range, false);
+        } else if (datatype.compareTo(maxDatatype) > 0) {
+            // rollover seek. For the EQ case generate a rollover range which causes hasNext() to be false
+            Key start = new Key(row, prefix, value + '\u0000' + maxDatatype + '\uffff');
+            Key stop = new Key(row, prefix, value + '\u0000' + '\uffff' + '\uffff');
+            Range range = new Range(start, false, stop, true);
+            safeSeek(range, false);
+        }
     }
 }
