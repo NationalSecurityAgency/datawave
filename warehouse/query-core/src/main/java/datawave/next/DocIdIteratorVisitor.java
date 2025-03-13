@@ -67,6 +67,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     private final String row;
     private boolean isDocRange = false;
 
+    private long maxScanTimeMillis = 15_000L;
+    private long resultInterval = 500;
+
     private final DocumentIteratorStats stats = new DocumentIteratorStats();
 
     /**
@@ -218,6 +221,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
             if (result == null) {
                 result = scanResult;
+            } else if (scanResult.isTimeout()) {
+                log.debug("scan timed out");
+                // TODO: partial intersection with sorted sets
             } else {
                 result.getResults().retainAll(scanResult.getResults());
                 if (result.getResults().isEmpty()) {
@@ -370,10 +376,25 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             iterator.withMinMax(scanResult.getMin(), scanResult.getMax());
         }
 
+        boolean checkForTimeout = data instanceof ScanResult;
+        long scanStart = System.currentTimeMillis();
+        long elapsedScanTime;
+
         // TODO: if another anchor term exists in the query, allow this scan to timeout
+        int count = 0;
         ScanResult result = new ScanResult();
         while (iterator.hasNext()) {
+            count++;
             result.addKey(iterator.next());
+            if (checkForTimeout && count % resultInterval == 0) {
+                elapsedScanTime = System.currentTimeMillis() - scanStart;
+                if (elapsedScanTime >= maxScanTimeMillis) {
+                    result.setTimeout(true);
+                    log.warn("term: [{}] founds {} hits before hitting timeout threshold: {}", iterator.getNode(), result.getResults().size(),
+                                    maxScanTimeMillis);
+                    break;
+                }
+            }
         }
 
         stats.merge(iterator.getStats());
@@ -436,6 +457,8 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         private Key max;
         private final Set<Key> results;
 
+        private boolean timeout = false;
+
         public ScanResult() {
             results = new HashSet<>();
         }
@@ -469,6 +492,14 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
 
             results.add(key);
+        }
+
+        public void setTimeout(boolean timeout) {
+            this.timeout = timeout;
+        }
+
+        public boolean isTimeout() {
+            return timeout;
         }
 
         public Key getMin() {
