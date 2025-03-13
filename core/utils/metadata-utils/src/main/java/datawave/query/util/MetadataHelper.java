@@ -483,11 +483,13 @@ public class MetadataHelper {
      * @return
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName,#unevaluatedFields,#ingestTypeFilter}",
+    @Cacheable(value = "getQueryModel",
+                    key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName,#unevaluatedFields,#ingestTypeFilter}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
-        log.debug("cache fault for getQueryModel({}, {}, {}, {}, {}, {})", this.auths, this.evaluationOnlyFields, modelTableName, modelName, unevaluatedFields, ingestTypeFilter);
+        log.debug("cache fault for getQueryModel({}, {}, {}, {}, {}, {})", this.auths, this.evaluationOnlyFields, modelTableName, modelName, unevaluatedFields,
+                        ingestTypeFilter);
         Preconditions.checkNotNull(modelTableName);
         Preconditions.checkNotNull(modelName);
         
