@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git
 	branch = main
-	commit = 709957100d4422c4488dc301efde8a38fc05ee1f
-	parent = 25f6bdddce946ae353a7ab93f541de318e5d5825
+	commit = 1d1f053f84867069451839036b1ed3582bcab4ea
+	parent = 0e918e3540dc947fd5e2b6119a3f64e580fbd08d
 	method = merge
 	cmdver = 0.4.9
