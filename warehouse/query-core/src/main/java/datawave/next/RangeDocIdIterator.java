@@ -89,25 +89,65 @@ public class RangeDocIdIterator extends DocIdIterator {
         return new Key(row, prefix, sb.toString());
     }
 
-    /**
-     * Scan range for bounded ranges handle datatype misses a little differently
-     */
-    protected void handleDatatypeMiss() {
-        stats.incrementDatatypeFilterMiss();
+
+    protected void handleDatatypeFilterMiss(String datatype){
         String nextDatatype = datatypeFilter.higher(parser.getDatatype());
 
         if (nextDatatype == null) {
-            // rollover range?
-            Key start = new Key(row, prefix, parser.getValue() + '\u0000' + '\uffff');
-            Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff' + '\uffff');
-            Range range = new Range(start, false, stop, true);
-            safeSeek(range, true);
+            seekToNextValue();
             return; // no further datatypes exist, so we're done
         }
 
         // otherwise seek to the next datatype and continue iterating
         Key start = new Key(row, prefix, parser.getValue() + '\u0000' + nextDatatype);
         Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff');
+        Range range = new Range(start, false, stop, true);
+        safeSeek(range, true);
+    }
+
+    /**
+     * Handle a datatype miss when using a min/max datatype range
+     *
+     * @param datatype
+     *            the current datatype
+     */
+    protected void handleMinMaxDatatypeFilterMiss(String datatype) {
+        if(datatype.compareTo(minDatatype) < 0){
+            seekToMostSelectiveMinimum();
+        } else if(datatype.compareTo(maxDatatype) > 0){
+            seekToNextValue();
+        } else{
+            throw new IllegalStateException("Unhandled min/max datatype case");
+        }
+    }
+
+    protected void seekToMostSelectiveMinimum() {
+        if (minDatatypeUid != null) {
+            seekToMinimumDatatypeUid();
+        } else if (minDatatype != null) {
+            seekToMinimumDatatype();
+        } else {
+            throw new IllegalStateException("Cannot seek to most selective minimum");
+        }
+    }
+
+    protected void seekToMinimumDatatype(){
+        Key start = new Key(row, prefix, parser.getValue() + '\u0000' + minDatatype);
+        Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff');
+        Range range = new Range(start, false, stop, true);
+        safeSeek(range, true);
+    }
+
+    protected void seekToMinimumDatatypeUid(){
+        Key start = new Key(row, prefix, parser.getValue() + '\u0000' + minDatatypeUid);
+        Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff');
+        Range range = new Range(start, false, stop, true);
+        safeSeek(range, true);
+    }
+
+    protected void seekToNextValue(){
+        Key start = new Key(row, prefix, parser.getValue() + '\u0000' + '\uffff');
+        Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff' + '\uffff');
         Range range = new Range(start, false, stop, true);
         safeSeek(range, true);
     }

@@ -135,6 +135,66 @@ public class RangeDocIdIteratorTest extends FieldIndexDataTestUtil {
         assertEquals(0, stats.getTimeFilterMiss());
     }
 
+    @Test
+    public void testBoundedScanCreatesSingletonFilter(){
+        writeIndex("FIELD_A", "abc", "datatype-a", 1);
+        writeIndex("FIELD_A", "abc", "datatype-b", 2);
+        writeIndex("FIELD_A", "abc", "datatype-c", 3);
+        withQuery("((_Bounded_ = true) && (FIELD_A >= 'ab' && FIELD_A <= 'ac'))");
+        withMinMax("datatype-b\0uid-1001", "datatype-b\0uid-1003");
+        drive();
+        assertResultSize(1);
+        assertEquals(1, stats.getNextCount());
+        assertEquals(3, stats.getSeekCount());
+        assertEquals(2, stats.getDatatypeFilterMiss());
+    }
+
+    @Test
+    public void testBoundedScanCreatesRangeFilter(){
+        writeIndex("FIELD_A", "abc", "datatype-a", 1);
+        writeIndex("FIELD_A", "abc", "datatype-b", 2);
+        writeIndex("FIELD_A", "abc", "datatype-c", 3);
+        writeIndex("FIELD_A", "abc", "datatype-d", 4);
+        writeIndex("FIELD_A", "abc", "datatype-e", 5);
+        withQuery("((_Bounded_ = true) && (FIELD_A >= 'ab' && FIELD_A <= 'ac'))");
+        withMinMax("datatype-b\0uid-1001", "datatype-c\0uid-1003");
+        drive();
+        assertResultSize(2);
+        assertEquals(2, stats.getNextCount());
+        assertEquals(3, stats.getSeekCount());
+        assertEquals(2, stats.getDatatypeFilterMiss());
+    }
+
+    @Test
+    public void testBoundedScanReducesExistingFilterToSingleton(){
+        writeIndex("FIELD_A", "abc", "datatype-a", 1);
+        writeIndex("FIELD_A", "abc", "datatype-b", 2);
+        writeIndex("FIELD_A", "abc", "datatype-c", 3);
+        withQuery("((_Bounded_ = true) && (FIELD_A >= 'ab' && FIELD_A <= 'ac'))");
+        withDataTypes("datatype-a", "datatype-b", "datatype-c");
+        withMinMax("datatype-a\0uid-1001", "datatype-a\0uid-1003");
+        drive();
+        assertResultSize(1);
+        assertEquals(1, stats.getNextCount());
+        assertEquals(2, stats.getSeekCount());
+        assertEquals(1, stats.getDatatypeFilterMiss());
+    }
+
+    @Test
+    public void testBoundedScanReducesExistingFilter(){
+        writeIndex("FIELD_A", "abc", "datatype-a", 1);
+        writeIndex("FIELD_A", "abc", "datatype-b", 2);
+        writeIndex("FIELD_A", "abc", "datatype-c", 3);
+        withQuery("((_Bounded_ = true) && (FIELD_A >= 'ab' && FIELD_A <= 'ac'))");
+        withDataTypes("datatype-a", "datatype-b", "datatype-c");
+        withMinMax("datatype-c\0uid-1001", "datatype-z\0uid-1003");
+        drive();
+        assertResultSize(1);
+        assertEquals(1, stats.getNextCount());
+        assertEquals(2, stats.getSeekCount());
+        assertEquals(1, stats.getDatatypeFilterMiss());
+    }
+
     public void withQuery(String query) {
         this.query = query;
     }

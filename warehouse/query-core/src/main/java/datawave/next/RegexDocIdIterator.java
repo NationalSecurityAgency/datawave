@@ -228,6 +228,8 @@ public class RegexDocIdIterator extends DocIdIterator {
             seekToMinDatatypeUid();
         } else if (minDatatype != null) {
             seekToMinDatatype();
+        } else {
+            throw new IllegalStateException("Cannot seek to most selective minimum");
         }
     }
 
