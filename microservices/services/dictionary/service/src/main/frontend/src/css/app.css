@@ -40,6 +40,17 @@
   margin-top: 1em;
 }
 
+.tooltip-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.tooltip-text {
+  font-size: 12px;
+  word-break: break-word;
+  text-align: center;
+}
+
 ::-webkit-scrollbar {
     height: 12px;
     width: 14px;
@@ -65,33 +76,33 @@
     background: #c1c1c1;
 }
 
+/* Sets a fixed height for the table container */
 .datawave-dictionary-sticky-sass {
-  /* height or max-height is important */
   height: 310px;
 }
 
+/* Applies a blur effect to the first row's headers for a frosted look */
 .datawave-dictionary-sticky-sass thead tr:first-child th {
-  /* bg color is important for th; just specify one */
   backdrop-filter: blur(2.5px);
 }
 
+/* Makes all table headers sticky to keep them visible while scrolling */
 .datawave-dictionary-sticky-sass thead tr th {
   position: sticky;
   z-index: 1;
 }
 
+/* Keeps the first row of headers stuck to the top of the table */
 .datawave-dictionary-sticky-sass thead tr:first-child th {
   top: 0;
 }
 
-/* this is when the loading indicator appears */
+/* Adjusts the position of the last row of headers when the table is in loading state */
 .datawave-dictionary-sticky-sass.q-table--loading thead tr:last-child th {
-  /* height of all previous header rows */
   top: 48px;
 }
 
-/* prevent scrolling behind sticky top row on focus */
+/* Ensures the body content scrolls without overlapping sticky headers */
 .datawave-dictionary-sticky-sass tbody {
-  /* height of all previous header rows */
   scroll-margin-top: 48px;
 }
