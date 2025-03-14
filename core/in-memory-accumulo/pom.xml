@@ -126,6 +126,7 @@
                     <artifactId>sortpom-maven-plugin</artifactId>
                     <version>4.0.0</version>
                     <configuration>
+                        <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
                         <createBackupFile>false</createBackupFile>
                         <lineSeparator>\n</lineSeparator>
                         <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
