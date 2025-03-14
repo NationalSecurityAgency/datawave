@@ -124,6 +124,8 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         StatsMonkey monkey = new StatsMonkey();
         monkey.client = client;
         monkey.table = TableName.INDEX_STATS;
+        monkey.config = config;
+
         List<FieldStat> stats = monkey.getStat(fields, qConf.getDatatypeFilter(), qConf.getBeginDate(), qConf.getEndDate());
         this.iterator = stats.iterator();
     }
@@ -136,6 +138,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     private static class StatsMonkey {
         AccumuloClient client;
         String table;
+        GenericQueryConfiguration config;
 
         public List<FieldStat> getStat(Set<String> fields, Set<String> dataTypes, Date start, Date end) throws IOException {
             TreeSet<String> dates = new TreeSet<>();
@@ -154,11 +157,29 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 Set<Authorizations> auths = Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami()));
                 if (fields.isEmpty()) {
                     Scanner simpleScanner = ScannerHelper.createScanner(client, table, auths);
+
+                    if (config.getTableConsistencyLevels() != null && !config.getTableConsistencyLevels().isEmpty() && config.getTableConsistencyLevels().containsKey(table)) {
+                        simpleScanner.setConsistencyLevel(config.getTableConsistencyLevels().get(table));
+                    }
+
+                    if (config.getTableHints() != null && !config.getTableHints().isEmpty() && config.getTableHints().containsKey(table)) {
+                        simpleScanner.setExecutionHints(config.getTableHints().get(table));
+                    }
+
                     dataSource = simpleScanner;
                     scanner = simpleScanner;
                 } else {
                     BatchScanner bScanner = ScannerHelper.createBatchScanner(client, table, auths, fields.size());
                     bScanner.setRanges(buildRanges(fields));
+
+                    if (config.getTableConsistencyLevels() != null && !config.getTableConsistencyLevels().isEmpty() && config.getTableConsistencyLevels().containsKey(table)) {
+                        bScanner.setConsistencyLevel(config.getTableConsistencyLevels().get(table));
+                    }
+
+                    if (config.getTableHints() != null && !config.getTableHints().isEmpty() && config.getTableHints().containsKey(table)) {
+                        bScanner.setExecutionHints(config.getTableHints().get(table));
+                    }
+
                     scanner = bScanner;
                     dataSource = bScanner;
                 }
