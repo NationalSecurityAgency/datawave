@@ -523,7 +523,7 @@ public class MetadataHelper {
             scan.setRange(new Range());
             scan.fetchColumnFamily(new Text(modelName));
             // We need the entire Model so we can do both directions.
-            final Set<String> allFields = this.getAllFields(modelTableName, null);
+            final Set<String> allFields = this.getAllFields(modelTableName, ingestTypeFilter);
             
             for (Entry<Key,Value> entry : scan) {
                 try {
