@@ -471,12 +471,10 @@ public class MetadataHelper {
      * @return the QueryModel
      * @throws TableNotFoundException
      *             if no table exists
-     * @throws ExecutionException
-     *             it can't, remove this
      */
     @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
-    public QueryModel getQueryModel(String modelTableName, String modelName) throws TableNotFoundException, ExecutionException {
+    public QueryModel getQueryModel(String modelTableName, String modelName) throws TableNotFoundException {
         return getQueryModel(modelTableName, modelName, null);
     }
     
@@ -492,8 +490,6 @@ public class MetadataHelper {
      * @return the QueryModel
      * @throws TableNotFoundException
      *             if no table exists
-     * @throws ExecutionException
-     *             it can't, remove this
      */
     @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
@@ -515,8 +511,6 @@ public class MetadataHelper {
      * @return the QueryModel
      * @throws TableNotFoundException
      *             if no table exists
-     * @throws ExecutionException
-     *             it can't, remove this
      */
     @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName,#ingestTypeFilter}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
