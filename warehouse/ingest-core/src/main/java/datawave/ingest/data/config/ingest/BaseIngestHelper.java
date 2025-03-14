@@ -46,7 +46,7 @@ import datawave.util.StringUtils;
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
  * fields values from the datatypes that they represent.
  */
-public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
+public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest, WhindexIngest {
 
     /**
      * Configuration parameter to specify that data should be marked for delete on ingest.
@@ -173,6 +173,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
+    private WhindexIngest whindexIngest;
 
     protected boolean useMostPreciseFieldTypeRegex = false;
 
@@ -230,6 +231,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (this.compositeIngest == null)
             this.compositeIngest = new CompositeFieldIngestHelper(this.getType());
         this.getCompositeIngest().setup(config);
+
+        // Set up the whindex ingest.
+        this.getWhindexIngest().setup(config);
 
         IngestConfiguration ingestConfiguration = IngestConfigurationFactory.getIngestConfiguration();
         markingsHelper = ingestConfiguration.getMarkingsHelper(config, getType());
@@ -462,12 +466,22 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     /**
-     * lazy instantiation
-     *
      * @return a {@link CompositeIngest}
      */
     public CompositeIngest getCompositeIngest() {
         return this.compositeIngest;
+    }
+
+    /**
+     * Returns the whindex ingest (lazily instantiated).
+     *
+     * @return a {@link WhindexIngest}
+     */
+    public WhindexIngest getWhindexIngest() {
+        if (this.whindexIngest == null) {
+            this.whindexIngest = new WhindexFieldIngestHelper(this.getType());
+        }
+        return this.whindexIngest;
     }
 
     /**
@@ -607,6 +621,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public boolean isDataTypeField(String fieldName) {
         return this.typeFieldMap.containsKey(fieldName);
 
+    }
+
+    @Override
+    public boolean isWhindexField(String fieldName) {
+        return this.getWhindexIngest().isWhindexField(fieldName);
+    }
+
+    @Override
+    public boolean isOverloadedWhindexField(String fieldName) {
+        return this.getWhindexIngest().isOverloadedWhindexField(fieldName);
     }
 
     private void compilePatterns() {
@@ -1194,7 +1218,17 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     @Override
     public Multimap<String,NormalizedContentInterface> getVirtualFields(Multimap<String,NormalizedContentInterface> values) {
-        return normalizeMap(getVirtualIngest().getVirtualFields(values));
+        return getVirtualFields(getVirtualIngest().getVirtualFields(values));
+    }
+
+    @Override
+    public Multimap<String,String> getWhindexFieldDefinitions() {
+        return getWhindexIngest().getWhindexFieldDefinitions();
+    }
+
+    @Override
+    public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> values) {
+        return getWhindexIngest().getWhindexFields(values);
     }
 
     /**

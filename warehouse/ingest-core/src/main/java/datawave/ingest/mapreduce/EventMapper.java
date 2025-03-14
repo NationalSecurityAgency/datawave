@@ -46,6 +46,7 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.FilterIngest;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.data.config.ingest.VirtualIngest;
+import datawave.ingest.data.config.ingest.WhindexIngest;
 import datawave.ingest.input.reader.event.EventErrorSummary;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -792,18 +793,33 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         if (handler.getHelper(value.getDataType()) instanceof VirtualIngest) {
             VirtualIngest vHelper = (VirtualIngest) handler.getHelper(value.getDataType());
             Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(newFields);
-            for (Entry<String,NormalizedContentInterface> v : virtualFields.entries())
+            for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
                 newFields.put(v.getKey(), v.getValue());
+            }
         }
+
         // Also get the composite fields, if applicable
         if (handler.getHelper(value.getDataType()) instanceof CompositeIngest) {
             CompositeIngest vHelper = (CompositeIngest) handler.getHelper(value.getDataType());
             Multimap<String,NormalizedContentInterface> compositeFields = vHelper.getCompositeFields(newFields);
             for (String fieldName : compositeFields.keySet()) {
                 // if this is an overloaded composite field, we are replacing the existing field data
-                if (vHelper.isOverloadedCompositeField(fieldName))
+                if (vHelper.isOverloadedCompositeField(fieldName)) {
                     newFields.removeAll(fieldName);
+                }
                 newFields.putAll(fieldName, compositeFields.get(fieldName));
+            }
+        }
+
+        // Also get whindex fields, if applicable
+        if (handler.getHelper(value.getDataType()) instanceof WhindexIngest) {
+            WhindexIngest vHelper = (WhindexIngest) handler.getHelper(value.getDataType());
+            Multimap<String,NormalizedContentInterface> whindexFields = vHelper.getWhindexFields(newFields);
+            for (String fieldName : whindexFields.keySet()) {
+                if (vHelper.isOverloadedWhindexField(fieldName)) {
+                    newFields.removeAll(fieldName);
+                }
+                newFields.putAll(fieldName, whindexFields.get(fieldName));
             }
         }
 

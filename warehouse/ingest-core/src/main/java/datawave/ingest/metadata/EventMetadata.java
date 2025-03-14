@@ -2,6 +2,7 @@ package datawave.ingest.metadata;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.text.DateFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -109,6 +110,8 @@ public class EventMetadata implements RawRecordMetadata {
     private final MetadataCounterGroup indexedCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_I);
     private final MetadataCounterGroup reverseIndexedCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_RI);
 
+    private final MetadataWithEarliestDate whindexFieldsInfo = new MetadataWithEarliestDate(ColumnFamilyConstants.COLF_WCD);
+
     private boolean writeFrequencyCounts = false;
 
     /**
@@ -203,6 +206,11 @@ public class EventMetadata implements RawRecordMetadata {
                 this.compositeSeparators.createOrUpdate(fieldName, event.getDataType().outputName(), helper.getCompositeFieldSeparators().get(fieldName),
                                 event.getDate());
             }
+
+            if (helper.isWhindexField(fieldName)) {
+                this.whindexFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), event.getDate());
+            }
+
         }
 
         addTokenizedContent(helper, event, fields, countDelta, loadDateStr);
@@ -416,6 +424,8 @@ public class EventMetadata implements RawRecordMetadata {
         addIndexedFieldToMetadata(bulkData, this.compositeFieldsInfo);
         addIndexedFieldToMetadata(bulkData, this.compositeSeparators);
 
+        addIndexedFieldToMetadata(bulkData, this.whindexFieldsInfo);
+
         addToLoadDates(bulkData, this.indexedFieldsLoadDateCounts);
         addToLoadDates(bulkData, this.reverseIndexedFieldsLoadDateCounts);
 
@@ -464,6 +474,17 @@ public class EventMetadata implements RawRecordMetadata {
         }
     }
 
+    protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithEarliestDate earliestDates) {
+        for (MetadataWithEarliestDate.Components entry : earliestDates.entries()) {
+            long earliestDate = entry.getEarliestDate();
+            Text fieldName = new Text(entry.getFieldName());
+            Text colq = new Text(entry.getDataType() + DELIMITER + DateHelper.format(earliestDate));
+            Key k = new Key(fieldName, earliestDates.getColumnFamily(), colq, earliestDate);
+            BulkIngestKey bk = new BulkIngestKey(metadataTableName, k);
+            results.put(bk, DataTypeHandler.NULL_VALUE);
+        }
+    }
+
     @Override
     public void clear() {
         this.eventFieldsInfo.clear();
@@ -474,5 +495,6 @@ public class EventMetadata implements RawRecordMetadata {
         this.reverseIndexedCounts.clear();
 
         this.reverseIndexedFieldsLoadDateCounts.clear();
+        this.whindexFieldsInfo.clear();
     }
 }
