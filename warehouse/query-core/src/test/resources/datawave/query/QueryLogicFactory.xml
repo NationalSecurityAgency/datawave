@@ -523,6 +523,7 @@
         <property name="candidateQueuePollTimeMillis" value="25"/>
         <property name="resultQueueOfferTimeMillis" value="25"/>
         <property name="resultQueuePollTimeMillis" value="25"/>
+        <property name="scanTimeoutMillis" value="10000"/>
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

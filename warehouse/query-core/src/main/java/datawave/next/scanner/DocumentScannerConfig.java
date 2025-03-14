@@ -64,6 +64,8 @@ public class DocumentScannerConfig {
     private long resultQueueOfferTimeMillis = 25L;
     private long resultQueuePollTimeMillis = 25L;
 
+    private long scanTimeoutMillis = 10_000L;
+
     private VisitorFunction visitorFunction;
     private String queryId;
 
@@ -311,5 +313,13 @@ public class DocumentScannerConfig {
 
     public void setResultQueuePollTimeMillis(long resultQueuePollTimeMillis) {
         this.resultQueuePollTimeMillis = resultQueuePollTimeMillis;
+    }
+
+    public long getScanTimeoutMillis() {
+        return scanTimeoutMillis;
+    }
+
+    public void setScanTimeoutMillis(long scanTimeoutMillis) {
+        this.scanTimeoutMillis = scanTimeoutMillis;
     }
 }

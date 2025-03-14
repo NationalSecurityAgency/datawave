@@ -38,6 +38,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private final Logger log = LoggerFactory.getLogger(DocIdQueryIterator.class);
 
     public static final String BATCH_SIZE = "batch.size";
+    public static final String SCAN_TIMEOUT = "scan.timeout";
 
     private Range range;
     private ASTJexlScript script;
@@ -50,6 +51,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private Map<String,String> options;
     private IteratorEnvironment env;
     private int batchSize = 1;
+    private long scanTimeout = -1;
 
     private Key tk;
     private Value tv = new Value();
@@ -120,6 +122,10 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             batchSize = Integer.parseInt(options.get(BATCH_SIZE));
         } else {
             batchSize = 1;
+        }
+
+        if (options.containsKey(SCAN_TIMEOUT)) {
+            scanTimeout = Long.parseLong(options.get(SCAN_TIMEOUT));
         }
     }
 
@@ -210,6 +216,10 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         this.range = range;
 
         DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypeFilter, timeFilter, indexedFields);
+        if (scanTimeout > 0) {
+            visitor.setMaxScanTimeMillis(scanTimeout);
+        }
+
         Set<Key> docIds = visitor.getDocIds(script);
         data = new TreeSet<>(docIds).iterator();
 

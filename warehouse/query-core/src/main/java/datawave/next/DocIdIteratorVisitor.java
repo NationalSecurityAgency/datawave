@@ -448,6 +448,10 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         return stats;
     }
 
+    public void setMaxScanTimeMillis(long maxScanTimeMillis) {
+        this.maxScanTimeMillis = maxScanTimeMillis;
+    }
+
     /**
      * This class allows us to retain knowledge of the min and max keys from a scan without requiring an expensive sorted set. Future scan ranges are restricted
      * by the min and max
