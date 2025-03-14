@@ -47,10 +47,6 @@ jobs:
       if: env.is_merge_queue != 'true'
       shell: bash
       run: |
-        if [ ${{ github.event_name }} == 'merge_group' ]; then
-          echo "Does not need to run on merge_group event."
-          exit 0
-        fi
         echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
       id: extract_branch
     - name: Format code
