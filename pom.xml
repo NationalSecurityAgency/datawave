@@ -1409,9 +1409,9 @@
                     <artifactId>formatter-maven-plugin</artifactId>
                     <version>2.23.0</version>
                     <configuration>
-                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
+                        <removeTrailingWhitespace>false</removeTrailingWhitespace>
                         <compilerSource>${maven.compiler.source}</compilerSource>
                         <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                         <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
