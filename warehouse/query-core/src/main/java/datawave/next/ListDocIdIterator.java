@@ -164,7 +164,7 @@ public class ListDocIdIterator extends DocIdIterator {
             Key start = new Key(row, prefix, parser.getValue() + "\0");
             Key stop = new Key(row, prefix, value + '\u0000' + '\uffff' + '\uffff');
             Range range = new Range(start, false, stop, true);
-            safeSeek(range, false);
+            safeSeek(range, true);
             return; // no further datatypes exist, so we're done
         }
 
@@ -172,6 +172,6 @@ public class ListDocIdIterator extends DocIdIterator {
         Key start = new Key(row, prefix, value + '\u0000' + nextDatatype);
         Key stop = new Key(row, prefix, value + '\u0000' + '\uffff');
         Range range = new Range(start, false, stop, true);
-        safeSeek(range, false);
+        safeSeek(range, true);
     }
 }

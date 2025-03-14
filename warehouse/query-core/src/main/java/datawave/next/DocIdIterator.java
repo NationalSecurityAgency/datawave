@@ -117,10 +117,10 @@ public class DocIdIterator extends BaseDocIdIterator {
 
     @Override
     protected Range createScanRange() {
-        if (min != null && max != null) {
+        if (minDatatypeUid != null && maxDatatypeUid != null) {
             // executing within the context of another scan
-            Key start = new Key(row, prefix, value + '\u0000' + min);
-            Key stop = new Key(row, prefix, value + '\u0000' + max + '\u0000');
+            Key start = new Key(row, prefix, value + '\u0000' + minDatatypeUid);
+            Key stop = new Key(row, prefix, value + '\u0000' + maxDatatypeUid + '\u0000');
             return new Range(start, true, stop, true);
         }
 
@@ -187,7 +187,7 @@ public class DocIdIterator extends BaseDocIdIterator {
             Key start = new Key(row, prefix, value + '\u0000' + '\uffff');
             Key stop = new Key(row, prefix, value + '\u0000' + '\uffff' + '\uffff');
             Range range = new Range(start, false, stop, true);
-            safeSeek(range, false);
+            safeSeek(range, true);
             return; // no further datatypes exist, so we're done
         }
 
@@ -195,7 +195,7 @@ public class DocIdIterator extends BaseDocIdIterator {
         Key start = new Key(row, prefix, value + '\u0000' + nextDatatype);
         Key stop = new Key(row, prefix, value + '\u0000' + '\uffff');
         Range range = new Range(start, false, stop, true);
-        safeSeek(range, false);
+        safeSeek(range, true);
     }
 
     /**
@@ -210,13 +210,13 @@ public class DocIdIterator extends BaseDocIdIterator {
             Key start = new Key(row, prefix, value + '\u0000' + minDatatype + '\u0000');
             Key stop = new Key(row, prefix, value + '\u0000' + '\uffff');
             Range range = new Range(start, false, stop, true);
-            safeSeek(range, false);
+            safeSeek(range, true);
         } else if (datatype.compareTo(maxDatatype) > 0) {
             // rollover seek. For the EQ case generate a rollover range which causes hasNext() to be false
             Key start = new Key(row, prefix, value + '\u0000' + maxDatatype + '\uffff');
             Key stop = new Key(row, prefix, value + '\u0000' + '\uffff' + '\uffff');
             Range range = new Range(start, false, stop, true);
-            safeSeek(range, false);
+            safeSeek(range, true);
         }
     }
 }

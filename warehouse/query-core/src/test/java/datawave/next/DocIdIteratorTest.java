@@ -166,13 +166,13 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         assertEquals(21, stats.getNextCount());
 
         // assert bounded scan returns less data
-        withMinMax("datatype-a\u0000uid-1015", "datatype-a\u0000uid-1025");
+        withMinMax("datatype-a\0uid-1015", "datatype-a\0uid-1025");
         drive();
         assertResultSize(11);
         assertEquals(11, stats.getNextCount());
 
         // again, with a much smaller bound
-        withMinMax("datatype-a\u0000uid-1015", "datatype-a\u0000uid-1017");
+        withMinMax("datatype-a\0uid-1015", "datatype-a\0uid-1017");
         drive();
         assertResultSize(3);
         assertEquals(3, stats.getNextCount());
@@ -188,7 +188,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         withQuery("FIELD_A == 'value-a'");
 
         // should trigger case 0 reduction
-        withMinMax("datatype-c\u0000uid-1000", "datatype-c\u0000uid-1111");
+        withMinMax("datatype-c\0uid-1000", "datatype-c\0uid-1111");
         drive();
         assertResultSize(1);
         assertEquals(1, stats.getNextCount());
@@ -205,7 +205,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
         withQuery("FIELD_A == 'value-a'");
 
         // should trigger case 1 reduction
-        withMinMax("datatype-b\u0000uid-1000", "datatype-d\u0000uid-1111");
+        withMinMax("datatype-b\0uid-1000", "datatype-d\0uid-1111");
         drive();
         assertResultSize(3);
         assertEquals(3, stats.getNextCount());
@@ -223,7 +223,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
 
         // should trigger case 2 reduction
         withDataTypes("datatype-a", "datatype-b", "datatype-c");
-        withMinMax("datatype-c\u0000uid-1000", "datatype-c\u0000uid-1111");
+        withMinMax("datatype-c\0uid-1000", "datatype-c\0uid-1111");
         drive();
         assertResultSize(1);
         assertEquals(1, stats.getNextCount());
@@ -241,7 +241,7 @@ public class DocIdIteratorTest extends FieldIndexDataTestUtil {
 
         // should trigger case 3 reduction
         withDataTypes("datatype-a", "datatype-b", "datatype-c");
-        withMinMax("datatype-b\u0000uid-1000", "datatype-c\u0000uid-1111");
+        withMinMax("datatype-b\0uid-1000", "datatype-c\0uid-1111");
         drive();
         assertResultSize(2);
         assertEquals(2, stats.getNextCount());

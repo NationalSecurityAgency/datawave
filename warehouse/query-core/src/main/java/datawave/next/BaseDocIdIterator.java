@@ -45,14 +45,14 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
     protected Collection<ByteSequence> columnFamilies;
 
     protected TreeSet<String> datatypeFilter;
-    protected String minDatatype;
-    protected String maxDatatype;
     protected LongRange timeFilter;
     protected String suffix; // if executing within the context of a document range
 
-    // min and max 'datatype + null byte + uid'
-    protected String min;
-    protected String max;
+    protected String minDatatype;
+    protected String maxDatatype;
+
+    protected String minDatatypeUid;
+    protected String maxDatatypeUid;
 
     protected String field;
 
@@ -130,8 +130,8 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
      *            the maximum key
      */
     public void withMinMax(Key min, Key max) {
-        this.min = min.getColumnFamily().toString();
-        this.max = max.getColumnFamily().toString();
+        this.minDatatypeUid = min.getColumnFamily().toString();
+        this.maxDatatypeUid = max.getColumnFamily().toString();
         attemptDatatypeFilterReduction();
     }
 
@@ -143,8 +143,8 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
      * If the min/max match the filter is a singleton. Otherwise, the filter becomes a range.
      */
     protected void attemptDatatypeFilterReduction() {
-        String minDatatype = this.min.substring(0, this.min.indexOf('\u0000'));
-        String maxDatatype = this.max.substring(0, this.max.indexOf('\u0000'));
+        String minDatatype = this.minDatatypeUid.substring(0, this.minDatatypeUid.indexOf('\u0000'));
+        String maxDatatype = this.maxDatatypeUid.substring(0, this.maxDatatypeUid.indexOf('\u0000'));
 
         if (datatypeFilter == null) {
             // case 0: no filter requested, external context can set a singleton filter
