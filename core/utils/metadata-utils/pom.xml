@@ -26,10 +26,10 @@
         <spotbugs.excludes.file>${project.basedir}/src/main/spotbugs/excludes.xml</spotbugs.excludes.file>
         <version.accumulo-utils>4.0.0</version.accumulo-utils>
         <version.caffeine>2.8.0</version.caffeine>
-        <version.easymock>4.0.2</version.easymock>
+        <version.datawave.type-utils>3.1.2</version.datawave.type-utils>
+        <version.easymock>5.5.0</version.easymock>
         <version.kryo>2.20</version.kryo>
-        <version.powermock>2.0.2</version.powermock>
-        <version.type-utils>3.0.2</version.type-utils>
+        <version.powermock>2.0.9</version.powermock>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -56,7 +56,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>type-utils</artifactId>
-                <version>${version.type-utils}</version>
+                <version>${version.datawave.type-utils}</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>slf4j-log4j12</artifactId>
@@ -99,6 +99,12 @@
                 <artifactId>powermock-module-junit4</artifactId>
                 <version>${version.powermock}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -148,17 +154,7 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
