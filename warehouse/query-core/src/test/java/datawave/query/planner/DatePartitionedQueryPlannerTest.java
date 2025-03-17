@@ -78,6 +78,12 @@ public abstract class DatePartitionedQueryPlannerTest {
     @RunWith(Arquillian.class)
     public static class ShardRange extends DatePartitionedQueryPlannerTest {
 
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected IndexFieldHoleDataIngest.Range getRange() {
             return IndexFieldHoleDataIngest.Range.SHARD;
@@ -86,6 +92,12 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends DatePartitionedQueryPlannerTest {
+
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected IndexFieldHoleDataIngest.Range getRange() {
