@@ -634,7 +634,7 @@ public class DocumentGrouper {
                 // Parse the group from the substring directly following the name.
                 groupingContext = field.substring(firstPeriod + 1, secondPeriod);
                 // Parse the instance from the substring after the last period.
-                instance = field.substring(field.lastIndexOf(".") + 1);
+                instance = field.substring(field.lastIndexOf('.') + 1);
             } else {
                 // If there is no second period present, the field's format is <NAME>.<INSTANCE>.
                 instance = field.substring(firstPeriod + 1);
