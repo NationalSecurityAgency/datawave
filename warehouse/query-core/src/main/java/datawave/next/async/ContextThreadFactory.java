@@ -1,7 +1,11 @@
 package datawave.next.async;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.next.scanner.DocumentRangeScan;
 import datawave.next.scanner.QueryDataConsumer;
@@ -13,22 +17,36 @@ import datawave.next.scanner.QueryDataConsumer;
  */
 public class ContextThreadFactory implements ThreadFactory {
 
+    private static final Logger log = LoggerFactory.getLogger(ContextThreadFactory.class);
+
     private final String context;
     private final ThreadFactory threadFactory;
-    private final ContextualUncaughtExceptionHandler uncaughtExceptionHandler;
+    private UncaughtExceptionHandler uncaughtExceptionHandler;
+
+    private long threadsCreated = 0L;
 
     public ContextThreadFactory(String context) {
         this.context = context;
         this.threadFactory = Executors.defaultThreadFactory();
-        this.uncaughtExceptionHandler = new ContextualUncaughtExceptionHandler();
+        this.uncaughtExceptionHandler = null;
     }
 
     @Override
     public Thread newThread(Runnable r) {
+        log.info("creating new thread");
+        threadsCreated++;
         Thread thread = threadFactory.newThread(r);
         thread.setName(context);
         thread.setDaemon(true);
         thread.setUncaughtExceptionHandler(uncaughtExceptionHandler);
         return thread;
+    }
+
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+        this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+    }
+
+    public void logThreadsCreated() {
+        log.info("created {} threads for context: {}", threadsCreated, context);
     }
 }

@@ -34,9 +34,9 @@ public class QueryDataConsumer implements Runnable {
     private final Iterator<QueryData> iterator;
     private final ExecutorService executor;
     private final AtomicBoolean executing;
-    private final AtomicInteger numFiScans;
+    private final AtomicInteger numSearchScans;
     private final DocumentScannerConfig config;
-    private final int maxFiScans;
+    private final int maxSearchTasks;
 
     private final long candidateQueueOfferTimeMillis;
     private final BlockingQueue<KeyWithContext> candidateQueue;
@@ -47,12 +47,12 @@ public class QueryDataConsumer implements Runnable {
     public QueryDataConsumer(DocumentScannerConfig config, Iterator<QueryData> iterator) {
         this.config = config;
         this.iterator = iterator;
-        this.executor = this.config.getDocIdExecutorPool();
+        this.executor = this.config.getSearchExecutorPool();
         this.executing = this.config.getQueryDataConsumerExecuting();
-        this.numFiScans = this.config.getNumFiScans();
-        this.maxFiScans = this.config.getMaxDocIdTasks();
+        this.numSearchScans = this.config.getNumSearchScans();
+        this.maxSearchTasks = this.config.getMaxSearchTasks();
         this.candidateQueueOfferTimeMillis = this.config.getCandidateQueueOfferTimeMillis();
-        this.candidateQueue = this.config.getDocIdQueue();
+        this.candidateQueue = this.config.getCandidateQueue();
         this.stats = new QueryDataConsumerStats();
     }
 
@@ -140,13 +140,13 @@ public class QueryDataConsumer implements Runnable {
         scanner.addScanIterator(next);
 
         // wait until there's room to run
-        while (numFiScans.get() >= maxFiScans) {
+        while (numSearchScans.get() >= maxSearchTasks) {
             // Note: the max field index tasks submitted may exceed the number of executor threads. This
             // effectively queues work and ensures the executor is always running at capacity.
             Thread.onSpinWait();
         }
 
-        int currentFiScanCount = numFiScans.incrementAndGet();
+        int currentFiScanCount = numSearchScans.incrementAndGet();
         log.debug("current fi scans: {}", currentFiScanCount);
         DocumentIdProducer fiScan = new DocumentIdProducer(config, scanner, queryData);
 

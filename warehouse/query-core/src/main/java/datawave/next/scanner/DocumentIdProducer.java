@@ -30,7 +30,7 @@ public class DocumentIdProducer implements RunnableWithContext {
     private final BlockingQueue<KeyWithContext> candidateQueue;
     private final Scanner scanner;
     private final QueryData context;
-    private final AtomicInteger numFiScans;
+    private final AtomicInteger numSearchScans;
 
     private String runnableContext;
 
@@ -39,8 +39,8 @@ public class DocumentIdProducer implements RunnableWithContext {
         this.scanner = scanner;
         this.context = context;
         this.candidateQueueOfferTimeMillis = this.config.getCandidateQueueOfferTimeMillis();
-        this.candidateQueue = this.config.getDocIdQueue();
-        this.numFiScans = this.config.getNumFiScans();
+        this.candidateQueue = this.config.getCandidateQueue();
+        this.numSearchScans = this.config.getNumSearchScans();
     }
 
     @Override
@@ -48,7 +48,7 @@ public class DocumentIdProducer implements RunnableWithContext {
         try {
             Thread.currentThread().setName(getContext());
             if (log.isDebugEnabled()) {
-                log.debug("scanning shard {} for document ids", context.getRanges().iterator().next().getStartKey());
+                log.debug("scanning shard {} for candidates", context.getRanges().iterator().next().getStartKey());
             }
             boolean offered;
             for (Map.Entry<Key,Value> entry : scanner) {
@@ -68,8 +68,9 @@ public class DocumentIdProducer implements RunnableWithContext {
 
         } catch (Exception e) {
             log.error("exception found while scanning the field index", e);
+            throw new RuntimeException("exception found while scanning the field index", e);
         } finally {
-            numFiScans.getAndDecrement();
+            numSearchScans.getAndDecrement();
             scanner.close();
         }
     }

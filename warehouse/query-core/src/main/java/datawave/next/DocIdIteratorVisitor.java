@@ -397,10 +397,11 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
+        elapsedScanTime = System.currentTimeMillis() - scanStart;
         stats.merge(iterator.getStats());
 
         if (log.isDebugEnabled()) {
-            log.debug("term: [{}] found {} hits", iterator.getNode(), result.getResults().size());
+            log.debug("term: [{}] found {} hits in {} ms", iterator.getNode(), result.getResults().size(), elapsedScanTime);
         }
         return result;
     }

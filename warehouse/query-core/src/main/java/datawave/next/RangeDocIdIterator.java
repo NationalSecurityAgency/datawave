@@ -89,8 +89,7 @@ public class RangeDocIdIterator extends DocIdIterator {
         return new Key(row, prefix, sb.toString());
     }
 
-
-    protected void handleDatatypeFilterMiss(String datatype){
+    protected void handleDatatypeFilterMiss(String datatype) {
         String nextDatatype = datatypeFilter.higher(parser.getDatatype());
 
         if (nextDatatype == null) {
@@ -112,11 +111,11 @@ public class RangeDocIdIterator extends DocIdIterator {
      *            the current datatype
      */
     protected void handleMinMaxDatatypeFilterMiss(String datatype) {
-        if(datatype.compareTo(minDatatype) < 0){
+        if (datatype.compareTo(minDatatype) < 0) {
             seekToMostSelectiveMinimum();
-        } else if(datatype.compareTo(maxDatatype) > 0){
+        } else if (datatype.compareTo(maxDatatype) > 0) {
             seekToNextValue();
-        } else{
+        } else {
             throw new IllegalStateException("Unhandled min/max datatype case");
         }
     }
@@ -131,21 +130,21 @@ public class RangeDocIdIterator extends DocIdIterator {
         }
     }
 
-    protected void seekToMinimumDatatype(){
+    protected void seekToMinimumDatatype() {
         Key start = new Key(row, prefix, parser.getValue() + '\u0000' + minDatatype);
         Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff');
         Range range = new Range(start, false, stop, true);
         safeSeek(range, true);
     }
 
-    protected void seekToMinimumDatatypeUid(){
+    protected void seekToMinimumDatatypeUid() {
         Key start = new Key(row, prefix, parser.getValue() + '\u0000' + minDatatypeUid);
         Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff');
         Range range = new Range(start, false, stop, true);
         safeSeek(range, true);
     }
 
-    protected void seekToNextValue(){
+    protected void seekToNextValue() {
         Key start = new Key(row, prefix, parser.getValue() + '\u0000' + '\uffff');
         Key stop = new Key(row, prefix, upperBound + '\u0000' + '\uffff' + '\uffff');
         Range range = new Range(start, false, stop, true);

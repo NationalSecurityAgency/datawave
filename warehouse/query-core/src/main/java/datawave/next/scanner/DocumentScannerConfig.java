@@ -25,12 +25,12 @@ public class DocumentScannerConfig {
 
     private AccumuloClient client;
     private Authorizations authorizations;
-    private BlockingQueue<KeyWithContext> docIdQueue;
+    private BlockingQueue<KeyWithContext> candidateQueue;
     private ArrayBlockingQueue<Result> results;
-    private ContextThreadFactory recordIdFactory;
-    private ContextThreadFactory documentIdFactory;
-    private ExecutorService docIdExecutorPool;
-    private ExecutorService documentExecutorPool;
+    private ContextThreadFactory searchThreadFactory;
+    private ContextThreadFactory retrievalThreadFactory;
+    private ExecutorService searchExecutorPool;
+    private ExecutorService retrievalExecutorPool;
 
     // sort candidate queue by uid and datatype to prevent hot spotting during retrieval
     private boolean sortedCandidateQueue = false;
@@ -39,22 +39,22 @@ public class DocumentScannerConfig {
     private int candidateBatchSize = 1;
 
     // the number of document ids/result documents to buffer
-    private int docIdQueueCapacity = 1;
+    private int candidateQueueCapacity = 1;
     private int resultQueueCapacity = 1;
 
     // the number of field index/document scans to conduct in parallel
-    private int maxDocIdThreads = 1;
-    private int maxDocumentThreads = 1;
+    private int searchThreads = 1;
+    private int retrievalThreads = 1;
 
     // the maximum number of doc id/document tasks to submit. The FixedThreadPool constructor uses
     // an unbounded queue, so we can submit more tasks than exist execution threads -- effectively
     // queuing up work
-    private int maxDocIdTasks = 2;
-    private int maxDocumentTasks = 2;
+    private int maxSearchTasks = 2;
+    private int maxRetrievalTasks = 2;
 
     // the current number of field index/document scans
-    private final AtomicInteger numFiScans = new AtomicInteger(0);
-    private final AtomicInteger numDocScans = new AtomicInteger(0);
+    private final AtomicInteger numSearchScans = new AtomicInteger(0);
+    private final AtomicInteger numRetrievalScans = new AtomicInteger(0);
 
     private AtomicBoolean queryDataConsumerExecuting = new AtomicBoolean(false);
     private AtomicBoolean documentIdConsumerExecuting = new AtomicBoolean(false);
@@ -91,12 +91,12 @@ public class DocumentScannerConfig {
         this.authorizations = authorizations;
     }
 
-    public BlockingQueue<KeyWithContext> getDocIdQueue() {
-        return docIdQueue;
+    public BlockingQueue<KeyWithContext> getCandidateQueue() {
+        return candidateQueue;
     }
 
-    public void setDocIdQueue(BlockingQueue<KeyWithContext> docIdQueue) {
-        this.docIdQueue = docIdQueue;
+    public void setCandidateQueue(BlockingQueue<KeyWithContext> candidateQueue) {
+        this.candidateQueue = candidateQueue;
     }
 
     public ArrayBlockingQueue<Result> getResults() {
@@ -107,28 +107,28 @@ public class DocumentScannerConfig {
         this.results = results;
     }
 
-    public ExecutorService getDocIdExecutorPool() {
-        return docIdExecutorPool;
+    public ExecutorService getSearchExecutorPool() {
+        return searchExecutorPool;
     }
 
-    public void setDocIdExecutorPool(ExecutorService docIdExecutorPool) {
-        this.docIdExecutorPool = docIdExecutorPool;
+    public void setSearchExecutorPool(ExecutorService searchExecutorPool) {
+        this.searchExecutorPool = searchExecutorPool;
     }
 
-    public ExecutorService getDocumentExecutorPool() {
-        return documentExecutorPool;
+    public ExecutorService getRetrievalExecutorPool() {
+        return retrievalExecutorPool;
     }
 
-    public void setDocumentExecutorPool(ExecutorService documentExecutorPool) {
-        this.documentExecutorPool = documentExecutorPool;
+    public void setRetrievalExecutorPool(ExecutorService retrievalExecutorPool) {
+        this.retrievalExecutorPool = retrievalExecutorPool;
     }
 
-    public int getDocIdQueueCapacity() {
-        return docIdQueueCapacity;
+    public int getCandidateQueueCapacity() {
+        return candidateQueueCapacity;
     }
 
-    public void setDocIdQueueCapacity(int docIdQueueCapacity) {
-        this.docIdQueueCapacity = docIdQueueCapacity;
+    public void setCandidateQueueCapacity(int candidateQueueCapacity) {
+        this.candidateQueueCapacity = candidateQueueCapacity;
     }
 
     public int getResultQueueCapacity() {
@@ -139,44 +139,44 @@ public class DocumentScannerConfig {
         this.resultQueueCapacity = resultQueueCapacity;
     }
 
-    public int getMaxDocIdThreads() {
-        return maxDocIdThreads;
+    public int getSearchThreads() {
+        return searchThreads;
     }
 
-    public void setMaxDocIdThreads(int maxDocIdThreads) {
-        this.maxDocIdThreads = maxDocIdThreads;
+    public void setSearchThreads(int searchThreads) {
+        this.searchThreads = searchThreads;
     }
 
-    public int getMaxDocumentThreads() {
-        return maxDocumentThreads;
+    public int getRetrievalThreads() {
+        return retrievalThreads;
     }
 
-    public void setMaxDocumentThreads(int maxDocumentThreads) {
-        this.maxDocumentThreads = maxDocumentThreads;
+    public void setRetrievalThreads(int retrievalThreads) {
+        this.retrievalThreads = retrievalThreads;
     }
 
-    public int getMaxDocIdTasks() {
-        return maxDocIdTasks;
+    public int getMaxSearchTasks() {
+        return maxSearchTasks;
     }
 
-    public void setMaxDocIdTasks(int maxDocIdTasks) {
-        this.maxDocIdTasks = maxDocIdTasks;
+    public void setMaxSearchTasks(int maxSearchTasks) {
+        this.maxSearchTasks = maxSearchTasks;
     }
 
-    public int getMaxDocumentTasks() {
-        return maxDocumentTasks;
+    public int getMaxRetrievalTasks() {
+        return maxRetrievalTasks;
     }
 
-    public void setMaxDocumentTasks(int maxDocumentTasks) {
-        this.maxDocumentTasks = maxDocumentTasks;
+    public void setMaxRetrievalTasks(int maxRetrievalTasks) {
+        this.maxRetrievalTasks = maxRetrievalTasks;
     }
 
-    public AtomicInteger getNumFiScans() {
-        return numFiScans;
+    public AtomicInteger getNumSearchScans() {
+        return numSearchScans;
     }
 
-    public AtomicInteger getNumDocScans() {
-        return numDocScans;
+    public AtomicInteger getNumRetrievalScans() {
+        return numRetrievalScans;
     }
 
     public AtomicBoolean getQueryDataConsumerExecuting() {
@@ -213,12 +213,12 @@ public class DocumentScannerConfig {
             DocumentScannerConfig other = (DocumentScannerConfig) obj;
             //  @formatter:off
             return new EqualsBuilder()
-                    .append(docIdQueueCapacity, other.docIdQueueCapacity)
+                    .append(candidateQueueCapacity, other.candidateQueueCapacity)
                     .append(resultQueueCapacity, other.resultQueueCapacity)
-                    .append(maxDocIdThreads, other.maxDocIdThreads)
-                    .append(maxDocumentThreads, other.maxDocumentThreads)
-                    .append(maxDocIdTasks, other.maxDocIdTasks)
-                    .append(maxDocumentTasks, other.maxDocumentTasks)
+                    .append(searchThreads, other.searchThreads)
+                    .append(retrievalThreads, other.retrievalThreads)
+                    .append(maxSearchTasks, other.maxSearchTasks)
+                    .append(maxRetrievalTasks, other.maxRetrievalTasks)
                     .append(sortedCandidateQueue, other.sortedCandidateQueue)
                     .append(candidateBatchSize, other.candidateBatchSize)
                     .isEquals();
@@ -231,32 +231,32 @@ public class DocumentScannerConfig {
     public int hashCode() {
         //  @formatter:off
         return new HashCodeBuilder()
-                .append(docIdQueueCapacity)
+                .append(candidateQueueCapacity)
                 .append(resultQueueCapacity)
-                .append(maxDocIdThreads)
-                .append(maxDocumentThreads)
-                .append(maxDocIdTasks)
-                .append(maxDocumentTasks)
+                .append(searchThreads)
+                .append(retrievalThreads)
+                .append(maxSearchTasks)
+                .append(maxRetrievalTasks)
                 .append(sortedCandidateQueue)
                 .append(candidateBatchSize)
                 .hashCode();
         //  @formatter:on
     }
 
-    public ContextThreadFactory getRecordIdFactory() {
-        return recordIdFactory;
+    public ContextThreadFactory getSearchThreadFactory() {
+        return searchThreadFactory;
     }
 
-    public void setRecordIdFactory(ContextThreadFactory recordIdFactory) {
-        this.recordIdFactory = recordIdFactory;
+    public void setSearchThreadFactory(ContextThreadFactory searchThreadFactory) {
+        this.searchThreadFactory = searchThreadFactory;
     }
 
-    public ContextThreadFactory getDocumentIdFactory() {
-        return documentIdFactory;
+    public ContextThreadFactory getRetrievalThreadFactory() {
+        return retrievalThreadFactory;
     }
 
-    public void setDocumentIdFactory(ContextThreadFactory documentIdFactory) {
-        this.documentIdFactory = documentIdFactory;
+    public void setRetrievalThreadFactory(ContextThreadFactory retrievalThreadFactory) {
+        this.retrievalThreadFactory = retrievalThreadFactory;
     }
 
     public boolean isSortedCandidateQueue() {

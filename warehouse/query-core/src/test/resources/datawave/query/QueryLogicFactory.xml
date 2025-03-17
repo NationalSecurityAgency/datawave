@@ -511,12 +511,12 @@
 
     <bean id="DocumentScannerConfig" scope="prototype" class="datawave.next.scanner.DocumentScannerConfig">
         <!-- configure queue capacities, thread pool sizes, and max tasks per thread pool-->
-        <property name="docIdQueueCapacity" value="3"/>
+        <property name="candidateQueueCapacity" value="3"/>
         <property name="resultQueueCapacity" value="3"/>
-        <property name="maxDocIdThreads" value="5"/>
-        <property name="maxDocumentThreads" value="5"/>
-        <property name="maxDocIdTasks" value="7"/>
-        <property name="maxDocumentTasks" value="7"/>
+        <property name="searchThreads" value="5"/>
+        <property name="retrievalThreads" value="5"/>
+        <property name="maxSearchTasks" value="7"/>
+        <property name="maxRetrievalTasks" value="7"/>
         <property name="sortedCandidateQueue" value="true"/>
         <property name="candidateBatchSize" value="25"/>
         <property name="candidateQueueOfferTimeMillis" value="25"/>

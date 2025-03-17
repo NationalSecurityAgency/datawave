@@ -40,7 +40,7 @@ public class DocumentRangeScan implements RunnableWithContext {
 
     private final long resultQueueOfferTimeMillis;
     private final ArrayBlockingQueue<Result> resultQueue;
-    private final AtomicInteger numDocScans;
+    private final AtomicInteger numRetrievalScans;
 
     private String context;
 
@@ -52,7 +52,7 @@ public class DocumentRangeScan implements RunnableWithContext {
         this.resultQueueOfferTimeMillis = config.getResultQueueOfferTimeMillis();
         this.resultQueue = config.getResults();
         this.auths = config.getAuthorizations();
-        this.numDocScans = config.getNumDocScans();
+        this.numRetrievalScans = config.getNumRetrievalScans();
 
         String context = getRecordId(keyWithContext.getKey());
         this.stats = new ScanTimeStats();
@@ -110,10 +110,11 @@ public class DocumentRangeScan implements RunnableWithContext {
                 if (log.isDebugEnabled()) {
                     log.debug("num results: {} in {} ms", numResults, elapsed);
                 }
-                numDocScans.getAndDecrement();
+                numRetrievalScans.getAndDecrement();
             }
         } catch (Exception e) {
             log.error("error executing document range {}", keyWithContext.getKey().toStringNoTime(), e);
+            throw new RuntimeException("error retrieving document: " + keyWithContext.getKey().toStringNoTime(), e);
         } finally {
             config.getStats().merge(stats);
         }

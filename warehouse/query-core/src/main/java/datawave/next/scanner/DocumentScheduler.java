@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -18,7 +15,6 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
-import datawave.next.async.ContextThreadFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
@@ -76,23 +72,10 @@ public class DocumentScheduler extends Scheduler {
             // initialize some objects in the config object
             config.setResults(new ArrayBlockingQueue<>(config.getResultQueueCapacity()));
             if (config.isSortedCandidateQueue()) {
-                config.setDocIdQueue(new PriorityBlockingQueue<>(config.getDocIdQueueCapacity()));
+                config.setCandidateQueue(new PriorityBlockingQueue<>(config.getCandidateQueueCapacity()));
             } else {
-                config.setDocIdQueue(new ArrayBlockingQueue<>(config.getDocIdQueueCapacity()));
+                config.setCandidateQueue(new ArrayBlockingQueue<>(config.getCandidateQueueCapacity()));
             }
-
-            config.setRecordIdFactory(new ContextThreadFactory("fi scan"));
-            config.setDocumentIdFactory(new ContextThreadFactory("doc scan"));
-
-            config.setDocIdExecutorPool(new ThreadPoolExecutor(0, config.getMaxDocIdThreads(), 15, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
-                            config.getRecordIdFactory()));
-            config.setDocumentExecutorPool(new ThreadPoolExecutor(0, config.getMaxDocumentThreads(), 15, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
-                            config.getDocumentIdFactory()));
-            config.getQueryDataConsumerExecuting().set(true);
-            config.getDocumentIdConsumerExecuting().set(true);
-
-            log.info("created fi scanner with {} threads and {} max tasks", config.getMaxDocIdThreads(), config.getMaxDocIdTasks());
-            log.info("created doc scanner with {} threads and {} max tasks", config.getMaxDocumentThreads(), config.getMaxDocumentTasks());
 
             scanner = createScanner();
         }

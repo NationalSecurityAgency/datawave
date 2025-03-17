@@ -136,7 +136,7 @@ public class RangeDocIdIteratorTest extends FieldIndexDataTestUtil {
     }
 
     @Test
-    public void testBoundedScanCreatesSingletonFilter(){
+    public void testBoundedScanCreatesSingletonFilter() {
         writeIndex("FIELD_A", "abc", "datatype-a", 1);
         writeIndex("FIELD_A", "abc", "datatype-b", 2);
         writeIndex("FIELD_A", "abc", "datatype-c", 3);
@@ -150,7 +150,7 @@ public class RangeDocIdIteratorTest extends FieldIndexDataTestUtil {
     }
 
     @Test
-    public void testBoundedScanCreatesRangeFilter(){
+    public void testBoundedScanCreatesRangeFilter() {
         writeIndex("FIELD_A", "abc", "datatype-a", 1);
         writeIndex("FIELD_A", "abc", "datatype-b", 2);
         writeIndex("FIELD_A", "abc", "datatype-c", 3);
@@ -166,7 +166,7 @@ public class RangeDocIdIteratorTest extends FieldIndexDataTestUtil {
     }
 
     @Test
-    public void testBoundedScanReducesExistingFilterToSingleton(){
+    public void testBoundedScanReducesExistingFilterToSingleton() {
         writeIndex("FIELD_A", "abc", "datatype-a", 1);
         writeIndex("FIELD_A", "abc", "datatype-b", 2);
         writeIndex("FIELD_A", "abc", "datatype-c", 3);
@@ -181,7 +181,7 @@ public class RangeDocIdIteratorTest extends FieldIndexDataTestUtil {
     }
 
     @Test
-    public void testBoundedScanReducesExistingFilter(){
+    public void testBoundedScanReducesExistingFilter() {
         writeIndex("FIELD_A", "abc", "datatype-a", 1);
         writeIndex("FIELD_A", "abc", "datatype-b", 2);
         writeIndex("FIELD_A", "abc", "datatype-c", 3);
