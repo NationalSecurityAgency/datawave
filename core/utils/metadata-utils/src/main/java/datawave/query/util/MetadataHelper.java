@@ -355,7 +355,11 @@ public class MetadataHelper {
      *             if no table exists
      */
     public Set<String> getAllFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
-        Multimap<String,String> allFields = this.allFieldMetadataHelper.loadAllFields();
+        return getAllFields(this.metadataTableName, ingestTypeFilter);
+    }
+    
+    public Set<String> getAllFields(String metadataTableName, Set<String> ingestTypeFilter) throws TableNotFoundException {
+        Multimap<String,String> allFields = this.allFieldMetadataHelper.loadAllFields(metadataTableName);
         if (log.isTraceEnabled()) {
             log.trace("loadAllFields() with auths: {} returned {}", allFieldMetadataHelper.getAuths(), allFields);
         }
@@ -467,34 +471,57 @@ public class MetadataHelper {
      * @return the QueryModel
      * @throws TableNotFoundException
      *             if no table exists
-     * @throws ExecutionException
-     *             it can't, remove this
      */
-    public QueryModel getQueryModel(String modelTableName, String modelName) throws TableNotFoundException, ExecutionException {
-        return getQueryModel(modelTableName, modelName, this.getIndexOnlyFields(null));
-    }
-    
-    public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields) throws TableNotFoundException {
-        return getQueryModel(modelTableName, modelName, unevaluatedFields, null);
-    }
-    
-    /***
-     * @param modelName
-     * @return
-     * @throws TableNotFoundException
-     */
-    @Cacheable(value = "getQueryModel",
-                    key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName,#unevaluatedFields,#ingestTypeFilter}",
+    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
-    public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
+    public QueryModel getQueryModel(String modelTableName, String modelName) throws TableNotFoundException {
+        return getQueryModel(modelTableName, modelName, null);
+    }
+    
+    /**
+     * Get a QueryModel from the specified table
+     *
+     * @param modelTableName
+     *            the query model table
+     * @param modelName
+     *            the query model name
+     * @param unused
+     *            unused, kept for backward compatibility
+     * @return the QueryModel
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
+    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName}",
+                    cacheManager = "metadataHelperCacheManager", sync = true)
+    public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unused) throws TableNotFoundException {
+        return getQueryModel(modelTableName, modelName, unused, null);
+    }
+    
+    /**
+     * Get a QueryModel from the specified table
+     *
+     * @param modelTableName
+     *            the query model table
+     * @param modelName
+     *            the query model name
+     * @param unused
+     *            unused, kept for backward compatibility
+     * @param ingestTypeFilter
+     *            the ingest datatypes of interest
+     * @return the QueryModel
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
+    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#root.target.evaluationOnlyFields,#modelTableName,#modelName,#ingestTypeFilter}",
+                    cacheManager = "metadataHelperCacheManager", sync = true)
+    public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unused, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
-        log.debug("cache fault for getQueryModel({}, {}, {}, {}, {}, {})", this.auths, this.evaluationOnlyFields, modelTableName, modelName, unevaluatedFields,
-                        ingestTypeFilter);
+        log.debug("cache fault for getQueryModel({}, {}, {}, {}, {})", this.auths, this.evaluationOnlyFields, modelTableName, modelName, ingestTypeFilter);
         Preconditions.checkNotNull(modelTableName);
         Preconditions.checkNotNull(modelName);
         
         if (log.isTraceEnabled()) {
-            log.trace("getQueryModel({}, {}, {}, {})", modelTableName, modelName, unevaluatedFields, ingestTypeFilter);
+            log.trace("getQueryModel({}, {}, {})", modelTableName, modelName, ingestTypeFilter);
         }
         
         QueryModel queryModel = new QueryModel();
@@ -503,15 +530,15 @@ public class MetadataHelper {
         stopWatch.start();
         
         if (log.isTraceEnabled()) {
-            log.trace("using client: {} with auths: {} and model table name: {} looking at model {}} unevaluatedFields {}",
-                            accumuloClient.getClass().getCanonicalName(), auths, modelTableName, modelName, unevaluatedFields);
+            log.trace("using client: {} with auths: {} and model table name: {} looking at model {}", accumuloClient.getClass().getCanonicalName(), auths,
+                            modelTableName, modelName);
         }
         
         try (Scanner scan = ScannerHelper.createScanner(accumuloClient, modelTableName, auths)) {
             scan.setRange(new Range());
             scan.fetchColumnFamily(new Text(modelName));
             // We need the entire Model so we can do both directions.
-            final Set<String> allFields = this.getAllFields(ingestTypeFilter);
+            final Set<String> allFields = this.getAllFields(modelTableName, ingestTypeFilter);
             
             for (Entry<Key,Value> entry : scan) {
                 try {
