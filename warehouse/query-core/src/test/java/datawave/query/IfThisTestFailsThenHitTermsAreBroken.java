@@ -113,6 +113,12 @@ public abstract class IfThisTestFailsThenHitTermsAreBroken {
                 PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
             }
         }
+
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
     }
 
     @RunWith(Arquillian.class)
@@ -130,6 +136,12 @@ public abstract class IfThisTestFailsThenHitTermsAreBroken {
                 PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
                 PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
             }
+        }
+
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(false);
         }
     }
 
