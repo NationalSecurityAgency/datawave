@@ -229,7 +229,6 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields, false);
         }
 
-        @SuppressWarnings("unchecked")
         public FieldTerms fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields,
                         boolean validateFields) {
             if (this.args.isEmpty()) {
@@ -271,9 +270,12 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             // If the fields were not established above, ensure that the fields at least contain any term frequency fields that are indexed and, if any content
             // fields were specified, present within there as well.
             if (fieldTerms.fields == null) {
-                Set<String> fields = termFrequencyFields.stream()
-                                .filter(f -> indexedFields.contains(f) && (contentFields.isEmpty() || contentFields.contains(f))).collect(Collectors.toSet());
-                fieldTerms.fields = fields;
+                // @formatter:off
+                fieldTerms.fields = termFrequencyFields
+                        .stream()
+                        .filter(f -> indexedFields.contains(f) && (contentFields.isEmpty() || contentFields.contains(f)))
+                        .collect(Collectors.toSet());
+                // @formatter:on
             }
 
             // Moving this validation later in the call stack, since it requires other processing (i.e. apply query model)
@@ -309,7 +311,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 return argsIterator.next();
             } else {
                 JexlNode nextArg = argsIterator.peek();
-                // The zones may (more likely) be specified as an idenfifier
+                // The zones may (more likely) be specified as an identifier
                 if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
                     if (oredFields != null && firstArg instanceof ASTAndNode) {
                         oredFields.setValue(false);
@@ -344,7 +346,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
         }
 
-        // Finds and sets the fields for a content:scoredPhrase functions, and returns the anticpatated terms offset map node.
+        // Finds and sets the fields for a content:scoredPhrase functions, and returns the anticipated terms offset map node.
         private JexlNode examineContentScoredPhraseFunction(PeekingIterator<JexlNode> argsIterator, FieldTerms fieldTerms, MutableBoolean oredFields) {
             JexlNode firstArg = argsIterator.next();
             if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
@@ -430,7 +432,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
          * <pre>
          * content:phrase(termOffsetMap, 'foo', 'bar')
          * </pre>
-         *
+         * <p>
          * becomes
          *
          * <pre>

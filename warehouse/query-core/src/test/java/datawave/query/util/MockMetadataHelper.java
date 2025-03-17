@@ -126,9 +126,11 @@ public class MockMetadataHelper extends MetadataHelper {
         getMetadata().allFields.addAll(fieldsToDatatype.keySet());
         for (Map.Entry<String,String> field : fieldsToDatatype.entries()) {
             try {
-                this.dataTypes.put(field.getKey(), Class.forName(field.getValue()).asSubclass(Type.class).newInstance());
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                this.dataTypes.put(field.getKey(), Class.forName(field.getValue()).asSubclass(Type.class).getDeclaredConstructor().newInstance());
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException e) {
                 this.fieldsToDatatype.putAll(fieldsToDatatype);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
             }
         }
     }
