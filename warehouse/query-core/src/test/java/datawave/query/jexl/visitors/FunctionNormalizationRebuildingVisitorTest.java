@@ -33,12 +33,14 @@ public class FunctionNormalizationRebuildingVisitorTest {
     @BeforeEach
     public void setup() {
         helper = new MockMetadataHelper();
-        ((MockMetadataHelper) helper).addFields(Set.of("FOO", "NUM"));
-        ((MockMetadataHelper) helper).addTermFrequencyFields(Set.of("FOO", "NUM"));
+        ((MockMetadataHelper) helper).addFields(Set.of("FOO", "NUM", "123_A"));
+        ((MockMetadataHelper) helper).addTermFrequencyFields(Set.of("FOO", "NUM", "123_A"));
 
         normalizers = LinkedListMultimap.create();
         normalizers.putAll("FOO", List.of(new NoOpType(), new LcNoDiacriticsType()));
         normalizers.putAll("NUM", List.of(new NoOpType(), new NumberType()));
+        normalizers.putAll("123_A", List.of(new NoOpType(), new NumberType()));
+
     }
 
     @Test
@@ -99,6 +101,12 @@ public class FunctionNormalizationRebuildingVisitorTest {
 
         query = "content:phrase(NUM, termOffsetMap, '12', '23')";
         test(query, "(content:phrase(NUM, termOffsetMap, '+bE1.2', '+bE2.3') || content:phrase(NUM, termOffsetMap, '12', '23'))");
+    }
+
+    @Test
+    public void testRemoveIdentifiers_Normalized() {
+        String query = "content:phrase($123_A, termOffsetMap, '12', '23')";
+        test(query, "(content:phrase($123_A, termOffsetMap, '+bE1.2', '+bE2.3') || content:phrase($123_A, termOffsetMap, '12', '23'))");
     }
 
     @Test
