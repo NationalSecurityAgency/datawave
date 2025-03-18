@@ -262,7 +262,7 @@ public class DefaultTokenSearch implements TokenSearch {
     }
 
     protected static String[] dezone(String term) {
-        int pos = term.lastIndexOf(":");
+        int pos = term.lastIndexOf(':');
         String word = "";
         String zone = "";
         if (pos > -1) {
@@ -344,7 +344,7 @@ public class DefaultTokenSearch implements TokenSearch {
             getTokenWords(lcaddr, zone, synonyms);
         }
 
-        if (lcaddr.lastIndexOf(".") <= lcaddr.length() - 7) {
+        if (lcaddr.lastIndexOf('.') <= lcaddr.length() - 7) {
             // hedge against things improperly identified as e-mail addresses
             // by always tokenizing e-mail addresses with long ending domains.
             getTokenWords(lcaddr, zone, synonyms);
@@ -879,7 +879,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public boolean isStop(String term) {
-        int pos = term.lastIndexOf(":");
+        int pos = term.lastIndexOf(':');
         if (pos > -1) {
             term = term.substring(0, pos);
         }
