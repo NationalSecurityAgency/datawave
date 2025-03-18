@@ -101,7 +101,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         String jobName = keySplit[1].trim();
 
         if (jobName.startsWith((jobNamePrefix))) {
-            int end = jobName.lastIndexOf(".");
+            int end = jobName.lastIndexOf('.');
             if (end < 0)
                 end = jobName.length();
             jobName = jobName.substring(jobNamePrefix.length(), end);

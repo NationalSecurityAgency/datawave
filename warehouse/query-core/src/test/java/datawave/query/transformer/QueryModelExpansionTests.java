@@ -54,6 +54,12 @@ public abstract class QueryModelExpansionTests {
     @RunWith(Arquillian.class)
     public static class ShardRange extends QueryModelExpansionTests {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
             return VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD;
@@ -62,6 +68,12 @@ public abstract class QueryModelExpansionTests {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends QueryModelExpansionTests {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {

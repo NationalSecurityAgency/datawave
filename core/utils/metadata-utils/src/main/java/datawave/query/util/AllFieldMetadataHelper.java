@@ -933,7 +933,12 @@ public class AllFieldMetadataHelper {
      */
     @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
     public Multimap<String,String> loadAllFields() throws TableNotFoundException {
-        log.debug("cache fault for loadAllFields({}, {})", this.auths, this.metadataTableName);
+        return loadAllFields(this.metadataTableName);
+    }
+    
+    @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
+    public Multimap<String,String> loadAllFields(String metadataTableName) throws TableNotFoundException {
+        log.debug("cache fault for loadAllFields({}, {})", this.auths, metadataTableName);
         if (log.isTraceEnabled()) {
             log.trace("Using these minimized auths: {}", AuthorizationsMinimizer.minimize(this.auths).iterator().next());
             log.trace("loadAllFields from table: {}", metadataTableName);
