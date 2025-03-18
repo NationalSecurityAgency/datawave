@@ -1011,6 +1011,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedApplyNodeTransformRules(timers, "Apply Node Transform Rules - Pre Regex/Range Expansions", config.getQueryTree(), config,
                         metadataHelper, getTransformRules()));
 
+        // need to fetch an updated field to datatype map post-expansion and manipulation
+        timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
         config.setQueryTree(timedFixUnindexedNumerics(timers, config.getQueryTree(), config));
 
         // if we have any index holes, then mark em
