@@ -24,6 +24,7 @@
         <version.junit.bom>5.9.1</version.junit.bom>
         <version.log4j.bom>2.17.2</version.log4j.bom>
         <version.spring.boot>2.7.1</version.spring.boot>
+        <version.junit.jupiter>5.12.0</version.junit.jupiter>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -56,25 +57,25 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
-                <version>5.12.0</version>
+                <version>${version.junit.jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>5.12.0</version>
+                <version>${version.junit.jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.12.0</version>
+                <version>${version.junit.jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>5.12.0</version>
+                <version>${version.junit.jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -247,7 +248,7 @@
                 <configuration>
                     <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                     <lineEnding>LF</lineEnding>
-                    <removeTrailingWhitespace>false</removeTrailingWhitespace>
+                    <removeTrailingWhitespace>true</removeTrailingWhitespace>
                     <compilerSource>${maven.compiler.source}</compilerSource>
                     <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                     <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
