@@ -238,7 +238,7 @@ public class MetricsIngester extends Configured implements Tool {
                 }
 
                 if (jobName.startsWith((jobNamePrefix))) {
-                    int end = jobName.lastIndexOf(".");
+                    int end = jobName.lastIndexOf('.');
                     if (end < 0)
                         end = jobName.length();
                     date = jobName.substring(jobNamePrefix.length(), end);
