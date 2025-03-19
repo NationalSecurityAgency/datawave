@@ -446,6 +446,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the summary iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
+    // The name of the field to write a summary to when requested
+    private String summaryFieldName = null;
+
     /**
      * A bloom filter to avoid duplicate results if needed
      */
@@ -762,6 +765,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptIterator(other.getExcerptIterator());
         this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
         this.setSummaryIterator(other.getSummaryIterator());
+        this.setSummaryFieldName(other.getSummaryFieldName());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
@@ -2655,6 +2659,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
         this.summaryIterator = summaryIterator;
+    }
+
+    public String getSummaryFieldName() {
+        return summaryFieldName;
+    }
+
+    public void setSummaryFieldName(String summaryFieldName) {
+        this.summaryFieldName = summaryFieldName;
     }
 
     public int getFiFieldSeek() {
