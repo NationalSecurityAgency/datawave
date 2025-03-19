@@ -252,35 +252,39 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>com.spotify</groupId>
+                    <groupId>io.fabric8</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>${version.docker.plugin}</version>
+                    <version>0.45.1</version>
                     <configuration>
-                        <imageName>${docker.image.prefix}${project.artifactId}</imageName>
-                        <forceTags>true</forceTags>
-                        <imageTags>
-                            <imageTag>latest</imageTag>
-                            <imageTag>${project.version}</imageTag>
-                        </imageTags>
-                        <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
-                        <resources>
-                            <resource>
-                                <targetPath>/</targetPath>
-                                <directory>${project.build.directory}</directory>
-                                <include>${project.build.finalName}-exec.jar</include>
-                            </resource>
-                        </resources>
+                        <verbose>true</verbose>
+                        <images>
+                            <image>
+                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <build>
+                                    <buildOptions>
+                                        <memory>8589934592</memory>
+                                    </buildOptions>
+                                    <cleanup>none</cleanup>
+                                    <contextDir>${project.build.directory}/docker-context</contextDir>
+                                    <dockerFile>${project.build.directory}/docker-context/Dockerfile</dockerFile>
+                                    <tags>
+                                        <tag>latest</tag>
+                                        <tag>${project.version}</tag>
+                                    </tags>
+                                </build>
+                            </image>
+                        </images>
                     </configuration>
                     <executions>
                         <execution>
-                            <id>tag-image</id>
+                            <id>build</id>
                             <goals>
                                 <goal>build</goal>
                             </goals>
-                            <phase>package</phase>
+                            <phase>install</phase>
                         </execution>
                         <execution>
-                            <id>push-image</id>
+                            <id>push</id>
                             <goals>
                                 <goal>push</goal>
                             </goals>
@@ -325,7 +329,7 @@
                         <dependency>
                             <groupId>gov.nsa.datawave</groupId>
                             <artifactId>datawave-code-style</artifactId>
-                            <version>1.0</version>
+                            <version>1.0.1-SNAPSHOT</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -567,7 +571,7 @@
                                 </goals>
                                 <phase>generate-sources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/docker-filtered</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.basedir}/src/main/docker</directory>
@@ -579,6 +583,26 @@
                                         <delimiter>${*}</delimiter>
                                     </delimiters>
                                     <useDefaultDelimiters>false</useDefaultDelimiters>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-spring-repackaged-jar</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <filtering>false</filtering>
+                                            <includes>
+                                                <include>${project.build.finalName}-exec.jar</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
                         </executions>

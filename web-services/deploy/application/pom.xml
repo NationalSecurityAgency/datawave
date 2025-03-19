@@ -336,32 +336,43 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
+                        <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <version>1.1.1</version>
+                        <version>0.45.1</version>
                         <configuration>
-                            <imageName>${docker.image.prefix}datawave/webservice-${build.env}</imageName>
-                            <forceTags>true</forceTags>
-                            <imageTags>
-                                <imageTag>latest</imageTag>
-                                <imageTag>${project.version}</imageTag>
-                            </imageTags>
-                            <dockerDirectory>${project.build.directory}/wildfly</dockerDirectory>
-                            <resources>
-                                <resource>
-                                    <targetPath>/</targetPath>
-                                    <directory>${project.build.directory}</directory>
-                                    <include>${project.build.finalName}-${build.env}.ear</include>
-                                </resource>
-                            </resources>
+                            <verbose>true</verbose>
+                            <images>
+                                <image>
+                                    <name>${docker.image.prefix}datawave/webservice-${build.env}</name>
+                                    <build>
+                                        <buildOptions>
+                                            <memory>8589934592</memory>
+                                        </buildOptions>
+                                        <cleanup>none</cleanup>
+                                        <contextDir>${project.build.directory}/docker-context</contextDir>
+                                        <dockerFile>${project.build.directory}/docker-context/Dockerfile</dockerFile>
+                                        <tags>
+                                            <tag>latest</tag>
+                                            <tag>${project.version}</tag>
+                                        </tags>
+                                    </build>
+                                </image>
+                            </images>
                         </configuration>
                         <executions>
                             <execution>
-                                <id>tag-image</id>
+                                <id>build</id>
                                 <goals>
                                     <goal>build</goal>
                                 </goals>
-                                <phase>package</phase>
+                                <phase>install</phase>
+                            </execution>
+                            <execution>
+                                <id>push</id>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                                <phase>deploy</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -375,7 +386,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/mysql</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context/mysql</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                     <artifactItems>
                                         <artifactItem>
@@ -396,9 +407,9 @@
                                 <goals>
                                     <goal>copy-resources</goal>
                                 </goals>
-                                <phase>process-resources</phase>
+                                <phase>generate-sources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.basedir}/src/main/docker</directory>
@@ -416,6 +427,26 @@
                                             </includes>
                                         </resource>
                                     </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-ear</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <filtering>false</filtering>
+                                            <includes>
+                                                <include>${project.build.finalName}-${build.env}.ear</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
                         </executions>
@@ -543,7 +574,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/mysql</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context/mysql</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                     <artifactItems>
                                         <artifactItem>
@@ -563,7 +594,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/org/apache/hadoop/common/main</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context/overlay/modules/org/apache/hadoop/common/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
@@ -641,7 +672,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/tools/mapreduce/lib</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context/overlay/tools/mapreduce/lib</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>javax.inject</groupId>
@@ -719,7 +750,7 @@
                                         </artifactItem>
                                     </artifactItems>
                                     <excludes>META-INF/**</excludes>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/webservice/configuration/main/conf</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context/overlay/modules/datawave/webservice/configuration/main/conf</outputDirectory>
                                 </configuration>
                             </execution>
                             <!--
@@ -740,7 +771,7 @@
                                         </artifactItem>
                                     </artifactItems>
                                     <includes>replication_scripts/**</includes>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context/overlay</outputDirectory>
                                 </configuration>
                             </execution>
                         </executions>
@@ -755,7 +786,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.basedir}/src/main/wildfly</directory>

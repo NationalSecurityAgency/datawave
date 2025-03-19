@@ -427,7 +427,7 @@
                                 </goals>
                                 <phase>verify</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.build.directory}/rpm/datawave-dw-${build.env}/RPMS/noarch/</directory>
@@ -443,7 +443,7 @@
                                 </goals>
                                 <phase>verify</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.basedir}/src/main/docker</directory>
@@ -482,32 +482,43 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
+                        <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <version>1.2.2</version>
+                        <version>0.45.1</version>
                         <configuration>
-                            <imageName>${docker.image.prefix}datawave/ingest-${build.env}</imageName>
-                            <forceTags>true</forceTags>
-                            <imageTags>
-                                <imageTag>latest</imageTag>
-                                <imageTag>${project.version}</imageTag>
-                            </imageTags>
-                            <dockerDirectory>${project.build.directory}/docker</dockerDirectory>
-                            <resources>
-                                <resource>
-                                    <targetPath>/</targetPath>
-                                    <directory>${project.build.directory}</directory>
-                                    <include>rpm/RPMS/noarch/${project.build.finalName}-${build.env}.rpm</include>
-                                </resource>
-                            </resources>
+                            <verbose>true</verbose>
+                            <images>
+                                <image>
+                                    <name>${docker.image.prefix}datawave/ingest-${build.env}</name>
+                                    <build>
+                                        <buildOptions>
+                                            <memory>8589934592</memory>
+                                        </buildOptions>
+                                        <cleanup>none</cleanup>
+                                        <contextDir>${project.build.directory}/docker-context</contextDir>
+                                        <dockerFile>${project.build.directory}/docker-context/Dockerfile</dockerFile>
+                                        <tags>
+                                            <tag>latest</tag>
+                                            <tag>${project.version}</tag>
+                                        </tags>
+                                    </build>
+                                </image>
+                            </images>
                         </configuration>
                         <executions>
                             <execution>
-                                <id>tag-image</id>
+                                <id>build</id>
                                 <goals>
                                     <goal>build</goal>
                                 </goals>
                                 <phase>install</phase>
+                            </execution>
+                            <execution>
+                                <id>push</id>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                                <phase>deploy</phase>
                             </execution>
                         </executions>
                     </plugin>

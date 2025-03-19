@@ -193,7 +193,7 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
+                        <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
@@ -212,7 +212,7 @@
                                             <artifactId>mapreduce-query-core-job</artifactId>
                                             <version>${version.datawave.mapreduce-query-core-job}</version>
                                             <type>jar</type>
-                                            <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                            <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
