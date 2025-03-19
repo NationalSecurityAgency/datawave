@@ -115,28 +115,29 @@
                 <td>Query Plan (<a th:onClick="|toggleVisibility('query-plan', ${metricIter.index + 1})|">hide</a>)</td>
                 <td th:id="'query-plan' + ${metricIter.index + 1}" style="white-space:pre-wrap; overflow-wrap:anywhere;"/>
             </tr>
-            <tr class="highlight"><td>Predictions</td><td th:text="${metric.predictionsStr}"></td></tr>
-            <tr><td>Server</td><td th:text="${metric.host}"></td></tr>
-            <tr class="highlight"><td>Elapsed Time</td><td th:text="${metric.elapsedTimeStr}"></td></tr>
-            <tr><td>Lifecycle</td><td th:text="${metric.lifecycle}"></td></tr>
-            <tr class="highlight"><td>Number Pages</td><td th:text="${metric.numPagesStr}"></td></tr>
-            <tr><td>Number Results</td><td th:text="${metric.numResultsStr}"></td></tr>
-            <tr class="highlight"><td>Error Code</td><td style="overflow-wrap: anywhere;" th:text="${metric.errorCode}"></td></tr>
-            <tr><td>Error Message</td><td style="overflow-wrap: anywhere;" th:text="${metric.errorMessage}"></td></tr>
-            <tr class="highlight"><td>Login Time (ms)</td><td th:text="${metric.loginTimeStr}"></td></tr>
-            <tr><td>Query Setup Time (ms)</td><td th:text="${metric.setupTimeStr}"></td></tr>
-            <tr class="highlight"><td>Query Setup Call Time (ms)</td><td th:text="${metric.createCallTimeStr}"></td></tr>
-            <tr><td>Doc Size</td><td th:text="${metric.docSizeStr}"></td></tr>
-            <tr class="highlight"><td>Doc Ranges</td><td th:text="${metric.docRangesStr}"></td></tr>
-            <tr><td>FI Ranges</td><td th:text="${metric.fiRangesStr}"></td></tr>
-            <tr class="highlight"><td>Sources</td><td th:text="${metric.sourceCountStr}"></td></tr>
-            <tr><td>Next Calls</td><td th:text="${metric.nextCountStr}"></td>
-            <tr class="highlight"><td>Seek Calls</td><td th:text="${metric.seekCountStr}"></td></tr>
-            <tr><td>Yield Count</td><td th:text="${metric.yieldCountStr}"></td></tr>
-            <tr class="highlight"><td>Total Page Time (ms)</td><td th:text="${metric.totalPageTimeStr}"></td></tr>
-            <tr><td>Total Page Call Time (ms)</td><td th:text="${metric.totalPageCallTimeStr}"></td></tr>
-            <tr class="highlight"><td>Total Page Serialization Time (ms)</td><td th:text="${metric.totalSerializationTimeStr}"></td>
-            <tr><td>Total Page Bytes Sent (uncompressed)</td><td th:text="${metric.totalBytesSentStr}"></td></tr>
+            <tr class="highlight"><td>Query SubPlans</td><td><a th:href="${metric.querySubplansUrl}" th:text="${metric.queryId}"></a></td></tr>
+            <tr><td>Predictions</td><td th:text="${metric.predictionsStr}"></td></tr>
+            <tr class="highlight"><td>Server</td><td th:text="${metric.host}"></td></tr>
+            <tr><td>Elapsed Time</td><td th:text="${metric.elapsedTimeStr}"></td></tr>
+            <tr class="highlight"><td>Lifecycle</td><td th:text="${metric.lifecycle}"></td></tr>
+            <tr><td>Number Pages</td><td th:text="${metric.numPagesStr}"></td></tr>
+            <tr class="highlight"><td>Number Results</td><td th:text="${metric.numResultsStr}"></td></tr>
+            <tr><td>Error Code</td><td style="overflow-wrap: anywhere;" th:text="${metric.errorCode}"></td></tr>
+            <tr class="highlight"><td>Error Message</td><td style="overflow-wrap: anywhere;" th:text="${metric.errorMessage}"></td></tr>
+            <tr><td>Login Time (ms)</td><td th:text="${metric.loginTimeStr}"></td></tr>
+            <tr class="highlight"><td>Query Setup Time (ms)</td><td th:text="${metric.setupTimeStr}"></td></tr>
+            <tr><td>Query Setup Call Time (ms)</td><td th:text="${metric.createCallTimeStr}"></td></tr>
+            <tr class="highlight"><td>Doc Size</td><td th:text="${metric.docSizeStr}"></td></tr>
+            <tr><td>Doc Ranges</td><td th:text="${metric.docRangesStr}"></td></tr>
+            <tr class="highlight"><td>FI Ranges</td><td th:text="${metric.fiRangesStr}"></td></tr>
+            <tr><td>Sources</td><td th:text="${metric.sourceCountStr}"></td></tr>
+            <tr class="highlight"><td>Next Calls</td><td th:text="${metric.nextCountStr}"></td>
+            <tr><td>Seek Calls</td><td th:text="${metric.seekCountStr}"></td></tr>
+            <tr class="highlight"><td>Yield Count</td><td th:text="${metric.yieldCountStr}"></td></tr>
+            <tr><td>Total Page Time (ms)</td><td th:text="${metric.totalPageTimeStr}"></td></tr>
+            <tr class="highlight"><td>Total Page Call Time (ms)</td><td th:text="${metric.totalPageCallTimeStr}"></td></tr>
+            <tr><td>Total Page Serialization Time (ms)</td><td th:text="${metric.totalSerializationTimeStr}"></td>
+            <tr class="highlight"><td>Total Page Bytes Sent (uncompressed)</td><td th:text="${metric.totalBytesSentStr}"></td></tr>
 
             <script type="text/javascript">
                 // Makes the metric's query and the metric's query plan interactive (highlight

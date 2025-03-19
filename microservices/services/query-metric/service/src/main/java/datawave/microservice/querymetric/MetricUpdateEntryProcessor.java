@@ -45,6 +45,7 @@ public class MetricUpdateEntryProcessor implements EntryProcessor<String,QueryMe
             storedHolder.addValue("docSize", updatedMetric.getDocSize());
             storedHolder.addValue("docRanges", updatedMetric.getDocRanges());
             storedHolder.addValue("fiRanges", updatedMetric.getFiRanges());
+            //storedHolder.addValue("subPlans", updatedMetric.getSubPlans());
         }
         entry.setValue(storedHolder);
         return Long.valueOf(System.currentTimeMillis() - start);

@@ -422,6 +422,8 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         assertNoDuplicateFields(queryId);
     }
     
+    // TODO Create a test(s) for subplans
+    
     private String fieldSplit(Map.Entry<Key,Value> entry, int part) {
         String cq = entry.getKey().getColumnQualifier().toString();
         return StringUtils.split(cq, "\u0000")[part];

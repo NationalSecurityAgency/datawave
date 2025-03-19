@@ -484,6 +484,31 @@ public class QueryMetricOperations {
         }
     }
     
+    /**
+     * Returns subplans for the current user's query that is identified by the id
+     *
+     * @param currentUser
+     *            the current user
+     * @param queryId
+     *            the query id
+     * @return the ModelAndView for the webpage
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     */
+    @Operation(summary = "Get the subplans for a given query ID.")
+    @PermitAll
+    @RequestMapping(path = "/id/{queryId}/subplans", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
+    public ModelAndView querySubplanWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
+                    @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId,
+                    @Parameter(description = "queryId to return") @RequestParam(name = "display", required = false) String display) {
+        
+        BaseQueryMetricListResponse response = query(currentUser, queryId);
+        if (StringUtils.isNotBlank(display) && display.equalsIgnoreCase("horizontal")) {
+            response.setViewName("querysubplans");
+        }
+        return response.createSubplanModelAndView();
+    }
+    
     /*
      * Pages could be missing if the metric was updated since being written to Accumulo
      */
@@ -505,6 +530,7 @@ public class QueryMetricOperations {
                     metricFromCache.setDocSize(metricUpdateHolderFromCache.getValue("docSize"));
                     metricFromCache.setDocRanges(metricUpdateHolderFromCache.getValue("docRanges"));
                     metricFromCache.setFiRanges(metricUpdateHolderFromCache.getValue("fiRanges"));
+                    metricFromCache.setSubPlans(metricUpdateHolderFromCache.getMetric().getSubPlans()); // is this needed?
                 }
                 updatedMetric = this.handler.combineMetrics(metricFromCache, metricFromAccumulo, metricUpdateHolderFromCache.getMetricType());
             } catch (Exception e) {

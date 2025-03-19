@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.QueryMetricType;
+import datawave.microservice.querymetric.RangeCounts;
 
 public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializable {
     private static final long serialVersionUID = -5388075643256402640L;
@@ -204,6 +205,16 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             if (combinedMetric.getPredictions() == null && updatedQueryMetric.getPredictions() != null) {
                 combinedMetric.setPredictions(updatedQueryMetric.getPredictions());
             }
+            // possibly need to change this logic
+            // Check to see if we should be adding or setting the subPlans to combineMetric
+            if (shouldAddSubplan(updatedQueryMetric.getSubPlans(), combinedMetric.getSubPlans())) {
+                combinedMetric.addSubPlans(updatedQueryMetric.getSubPlans());
+            } else {
+                if ((updatedQueryMetric.getSubPlans().size() > combinedMetric.getSubPlans().size())
+                                && (!updatedQueryMetric.getSubPlans().isEmpty() && combinedMetric.getSubPlans().isEmpty())) {
+                    combinedMetric.setSubPlans(updatedQueryMetric.getSubPlans());
+                }
+            }
             // use the max numUpdates
             combinedMetric.setNumUpdates(Math.max(combinedMetric.getNumUpdates(), updatedQueryMetric.getNumUpdates()));
         }
@@ -265,6 +276,15 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
     
     protected boolean isChanged(String updated, String stored) {
         if ((StringUtils.isBlank(stored) && StringUtils.isNotBlank(updated)) || (stored != null && updated != null && !stored.equals(updated))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    // check to see if we should be adding the updated subplans to the stored subplans. If false, set them instead of adding
+    protected boolean shouldAddSubplan(Map<String,RangeCounts> updated, Map<String,RangeCounts> stored) {
+        if ((updated != null && stored != null) && (updated.size() == 1)) {
             return true;
         } else {
             return false;
