@@ -450,6 +450,14 @@
         </property>
     </bean>
 
+    <!-- Query Logic that returns document term frequency information -->
+    <bean id="TermFrequencyQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.term.TermFrequencyQueryTable">
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns data from the term frequency query table" />
+    </bean>
+
     <util:list id="IvaratorCacheDirConfigs">
         <bean class="datawave.query.iterator.ivarator.IvaratorCacheDirConfig">
             <constructor-arg value="file:///tmp/IvaratorCache" />

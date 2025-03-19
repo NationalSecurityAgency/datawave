@@ -8,7 +8,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableList;
 
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
@@ -50,6 +49,22 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         return response;
     }
 
+    private String getBaseFieldName(int dotIndex, TermFrequencyKeyValue tfkv) {
+        if (dotIndex > -1) {
+            return tfkv.getFieldName().substring(0, dotIndex);
+        }
+
+        return tfkv.getFieldName();
+    }
+
+    private String getExtendedFieldName(int dotIndex, TermFrequencyKeyValue tfkv) {
+        if (dotIndex > -1 && dotIndex + 1 < tfkv.getFieldName().length()) {
+            return tfkv.getFieldName().substring(dotIndex + 1);
+        }
+
+        return null;
+    }
+
     @Override
     public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
         if (entry.getKey() == null && entry.getValue() == null) {
@@ -76,10 +91,22 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         m.setInternalId(tfkv.getUid());
         e.setMetadata(m);
 
-        List<FieldBase> fields = ImmutableList.of(createField(tfkv, entry, "FIELD_NAME", tfkv.getFieldName()),
-                        createField(tfkv, entry, "FIELD_VALUE", tfkv.getFieldValue()),
-                        createField(tfkv, entry, "OFFSET_COUNT", String.valueOf(tfkv.getCount())),
-                        createField(tfkv, entry, "OFFSETS", tfkv.getOffsets().toString()));
+        int dotIndex = tfkv.getFieldName().indexOf(".");
+        String baseFieldName = getBaseFieldName(dotIndex, tfkv);
+        String extendedFieldName = getExtendedFieldName(dotIndex, tfkv);
+        List<FieldBase> fields = new ArrayList<>();
+        fields.add(createField(tfkv, entry, "FIELD_NAME", baseFieldName));
+        fields.add(createField(tfkv, entry, "FIELD_VALUE", tfkv.getFieldValue()));
+        fields.add(createField(tfkv, entry, "OFFSET_COUNT", String.valueOf(tfkv.getCount())));
+        fields.add(createField(tfkv, entry, "OFFSETS", tfkv.getOffsets().toString()));
+
+        if (extendedFieldName != null) {
+            fields.add(createField(tfkv, entry, "EXTENDED_FIELD_NAME", extendedFieldName));
+        }
+
+        // maintain unmodifiable
+        fields = List.copyOf(fields);
+
         e.setFields(fields);
 
         return e;

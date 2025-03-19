@@ -247,11 +247,34 @@ public abstract class QueryFunctionQueryTest {
 
     @Test
     public void testPhraseFunctionsWithHashes() throws Exception {
-        String[] queryStrings = {"QUOTE == 'never' && QUOTE == 'refuse'",
-                "content:phrase(termOffsetMap, 'i', 'never', 'refuse') && QUOTE == 'i' && QUOTE == 'never' && QUOTE == 'refuse'",
-                "content:phrase(termOffsetMap, 'gonna', 'refuse') && QUOTE == 'gonna' && QUOTE == 'refuse'"};
+        // @formatter:off
+        String[] queryStrings = {
+            // this is added to the new tfs added with dot notation check if they can even be queried
+            "QUOTE == 'never' && QUOTE == 'refuse'",
+            // check if a content phrase across these same dot notation fields can get a hit
+            "content:phrase(termOffsetMap, 'i', 'never', 'refuse') && QUOTE == 'i' && QUOTE == 'never' && QUOTE == 'refuse'",
+            // check that there is no cross contamination between the dot notation tfs and normal tfs
+            "content:phrase(termOffsetMap, 'gonna', 'refuse') && QUOTE == 'gonna' && QUOTE == 'refuse'",
+            // check that if no tf set with dot notation satisfies a query it will be short circuited in tf eval
+            "content:phrase(termOffsetMap, 'never', 'offer') && QUOTE == 'never' && QUOTE == 'offer'",
+            // verify tfs from another section of the query don't help this resolve
+            "content:phrase(QUOTE, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(PHILOSOPHY, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'",
+            // invert the targets
+            "content:phrase(PHILOSOPHY, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(QUOTE, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'",
+        };
 
-        List<String>[] expected = new List[] {List.of("CORLEONE"), List.of("CORLEONE"), Collections.emptyList()};
+        List<String>[] expected = new List[] {
+            List.of("CORLEONE"),
+            List.of("CORLEONE"),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            List.of("CORLEONE"),
+            Collections.emptyList(),
+        };
+        // @formatter:on
+        eventQueryLogic.setInitialMaxTermThreshold(20);
+        eventQueryLogic.setIntermediateMaxTermThreshold(20);
+        eventQueryLogic.setFinalMaxTermThreshold(20);
 
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expected[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), Collections.emptyMap());

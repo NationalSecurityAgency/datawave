@@ -433,6 +433,9 @@ public class WiseGuysIngest {
             // add some tokens
             addTokens(bw, range, "QUOTE", "I never refuse", corleoneUID, corleoneTimeStampDelta); // these tokens will be added only to a hashed tf
             addTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID, corleoneTimeStampDelta);
+            addTokens(bw, range, "PHILOSOPHY",
+                            "He prioritized absolute power and control, ruthlessly eliminating any threats to his dominance over Chicago's criminal operations. He ran his illegal enterprises with business-like efficiency, focusing on maximizing profits and maintaining a structured organization. While notorious for violence, he also attempted to project an image of a respectable citizen, engaging in charitable acts and seeking public favor.",
+                            corleoneUID, corleoneTimeStampDelta);
             addTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
                             caponeTimeStampDelta);
@@ -796,6 +799,9 @@ public class WiseGuysIngest {
 
             addFiTfTokens(bw, range, "QUOTE", "I never refuse", corleoneUID, corleoneTimeStampDelta, "hash1");
             addFiTfTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID, corleoneTimeStampDelta);
+            addFiTfTokens(bw, range, "PHILOSOPHY",
+                            "He prioritized absolute power and control, ruthlessly eliminating any threats to his dominance over Chicago's criminal operations. He ran his illegal enterprises with business-like efficiency, focusing on maximizing profits and maintaining a structured organization. While notorious for violence, he also attempted to project an image of a respectable citizen, engaging in charitable acts and seeking public favor.",
+                            corleoneUID, corleoneTimeStampDelta);
             addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
                             caponeTimeStampDelta);
@@ -993,6 +999,14 @@ public class WiseGuysIngest {
             // add a field to test tokens
             mutation = new Mutation("QUOTE");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
+            bw.addMutation(mutation);
+
+            // add another field for mutations
+            mutation = new Mutation("PHILOSOPHY");
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);

@@ -154,12 +154,10 @@ public abstract class ContentFunctionEvaluator {
         }
 
         // restrict to only the tfs that have a possibility of satisfying the query
+        candidateFields = new HashSet<>();
         for (String field : fieldTermTrackingMap.keySet()) {
             Integer count = fieldTermTrackingMap.get(field);
             if (count == terms.length) {
-                if (candidateFields == null) {
-                    candidateFields = new HashSet<>();
-                }
                 // add this to the field search list
                 candidateFields.add(field);
             }
