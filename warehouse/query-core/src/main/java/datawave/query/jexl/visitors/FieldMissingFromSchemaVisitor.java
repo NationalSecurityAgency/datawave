@@ -151,12 +151,16 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         Set<String> fields = desc.fields(this.helper, this.datatypeFilter);
+
         if (!fields.isEmpty()) {
             for (String fieldName : fields) {
                 // deconstruct the identifier
                 final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
                 // changed to allow _ANYFIELD_ in functions
                 addField(testFieldName, fieldName, nonExistentFieldNames);
+                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
+                    nonExistentFieldNames.add(testFieldName);
+                }
             }
         } else {
             genericVisit(node, data);
