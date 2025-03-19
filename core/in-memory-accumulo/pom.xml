@@ -242,7 +242,6 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
-                    <optimize>true</optimize>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>

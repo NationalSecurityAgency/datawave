@@ -558,7 +558,6 @@
                         <configuration>
                             <name>datawave-dw-${build.env}</name>
                             <group>Applications/File</group>
-                            <copyright>TODO.org</copyright>
                             <autoRequires>false</autoRequires>
                             <defaultDirmode>0755</defaultDirmode>
                             <defaultFilemode>0444</defaultFilemode>
