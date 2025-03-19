@@ -565,7 +565,7 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>prepare-dockerfile</id>
+                                <id>copy-dockerfile</id>
                                 <goals>
                                     <goal>copy-resources</goal>
                                 </goals>
