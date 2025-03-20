@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -204,7 +205,8 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            printQuery(parser.parse(null, jexlFeatures(), query, null));
+            JexlInfo jexlInfo = new JexlInfo("printQuery", 1, 1);
+            printQuery(parser.parse(jexlInfo, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
             throw new IllegalArgumentException(qe);
@@ -266,7 +268,8 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            return formattedQueryString(parser.parse(null, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
+            JexlInfo jexlInfo = new JexlInfo("formattedQueryString", 1, 1);
+            return formattedQueryString(parser.parse(jexlInfo, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
         } catch (TokenMgrException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
             throw new IllegalArgumentException(qe);
