@@ -23,8 +23,8 @@ import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,7 +151,7 @@ public class FindWorkTest {
             System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
         } catch (URISyntaxException se) {
             log.error("failed to get URI for .", se);
-            Assert.fail();
+            Assertions.fail();
         }
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
@@ -160,7 +160,7 @@ public class FindWorkTest {
             dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         } catch (Exception e) {
             log.error("Failed to load cities data type", e);
-            Assert.fail();
+            Assertions.fail();
         }
     }
     

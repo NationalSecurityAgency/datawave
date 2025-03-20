@@ -44,9 +44,9 @@
         <!-- NOTE: The Junit and log4j management here will NOT override the management provided via spring boot.  Make
         sure to update these versions as you update the spring-boot version so that we don't get out of date. -->
         <version.junit.bom>5.8.2</version.junit.bom>
+        <version.junit.jupiter>5.12.0</version.junit.jupiter>
         <version.log4j.bom>2.17.2</version.log4j.bom>
         <version.lombok>1.18.36</version.lombok>
-        <version.junit.jupiter>5.12.0</version.junit.jupiter>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -162,16 +162,29 @@
                 <version>1.12.0</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${version.junit.jupiter}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <repositories>
