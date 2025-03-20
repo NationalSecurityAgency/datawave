@@ -790,6 +790,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getSummaryOptions().getSummarySize() != 0) {
             addOption(cfg, QueryOptions.SUMMARY_OPTIONS, config.getSummaryOptions().toString(), true);
             addOption(cfg, QueryOptions.SUMMARY_ITERATOR, config.getSummaryIterator().getName(), false);
+            addOption(cfg, QueryOptions.SUMMARY_FIELD_NAME, config.getSummaryFieldName(), false);
         }
     }
 
