@@ -2881,6 +2881,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setSpeculativeScanning(speculativeScanning);
     }
 
+    public boolean getSerializeQueryIterator() {
+        return getConfig().getSerializeQueryIterator();
+    }
+
+    public void setSerializeQueryIterator(boolean serializeQueryIterator) {
+        getConfig().setSerializeQueryIterator(serializeQueryIterator);
+    }
+
     public boolean getAllowShortcutEvaluation() {
         return getConfig().getAllowShortcutEvaluation();
     }

@@ -3,13 +3,13 @@ package datawave.next.scanner;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Queues;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
@@ -70,12 +70,16 @@ public class DocumentScheduler extends Scheduler {
     public Iterator<Result> iterator() {
         if (scanner == null) {
             // initialize some objects in the config object
-            config.setResults(new ArrayBlockingQueue<>(config.getResultQueueCapacity()));
-            if (config.isSortedCandidateQueue()) {
-                config.setCandidateQueue(new PriorityBlockingQueue<>(config.getCandidateQueueCapacity()));
-            } else {
-                config.setCandidateQueue(new ArrayBlockingQueue<>(config.getCandidateQueueCapacity()));
-            }
+
+            config.setResults(Queues.newLinkedBlockingDeque());
+            config.setCandidateQueue(Queues.newLinkedBlockingDeque());
+
+            // config.setResults(new ArrayBlockingQueue<>(config.getResultQueueCapacity()));
+            // if (config.isSortedCandidateQueue()) {
+            // config.setCandidateQueue(new PriorityBlockingQueue<>(config.getCandidateQueueCapacity()));
+            // } else {
+            // config.setCandidateQueue(new ArrayBlockingQueue<>(config.getCandidateQueueCapacity()));
+            // }
 
             scanner = createScanner();
         }

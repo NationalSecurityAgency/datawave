@@ -1,6 +1,5 @@
 package datawave.next.scanner;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +25,7 @@ public class DocumentScannerConfig {
     private AccumuloClient client;
     private Authorizations authorizations;
     private BlockingQueue<KeyWithContext> candidateQueue;
-    private ArrayBlockingQueue<Result> results;
+    private BlockingQueue<Result> results;
     private ContextThreadFactory searchThreadFactory;
     private ContextThreadFactory retrievalThreadFactory;
     private ExecutorService searchExecutorPool;
@@ -99,11 +98,11 @@ public class DocumentScannerConfig {
         this.candidateQueue = candidateQueue;
     }
 
-    public ArrayBlockingQueue<Result> getResults() {
+    public BlockingQueue<Result> getResults() {
         return results;
     }
 
-    public void setResults(ArrayBlockingQueue<Result> results) {
+    public void setResults(BlockingQueue<Result> results) {
         this.results = results;
     }
 

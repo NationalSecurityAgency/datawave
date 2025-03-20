@@ -64,6 +64,7 @@ public class DocumentIdConsumer implements Runnable {
                         // Note: the max document tasks submitted may exceed the number of executor threads. This
                         // effectively queues work and ensures the executor is always running at capacity.
                         Thread.onSpinWait();
+                        Thread.sleep(10);
                     }
 
                     if (log.isDebugEnabled()) {
@@ -73,7 +74,10 @@ public class DocumentIdConsumer implements Runnable {
                     config.getStats().incrementTotalDocumentScansSubmitted();
                     long currentRetrievalScans = numRetrievalScans.incrementAndGet();
 
-                    log.info("retrieval scans: {}", currentRetrievalScans);
+                    if (log.isDebugEnabled()) {
+                        log.debug("retrieval scans: {}", currentRetrievalScans);
+                    }
+
                     DocumentRangeScan scan = new DocumentRangeScan(keyWithContext, config);
 
                     Key key = keyWithContext.getKey();

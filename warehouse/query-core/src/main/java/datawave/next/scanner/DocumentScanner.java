@@ -3,7 +3,7 @@ package datawave.next.scanner;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,7 +33,7 @@ public class DocumentScanner implements Iterator<Result>, Closeable, Thread.Unca
     protected Result result;
 
     private final long resultQueuePollTimeMillis;
-    private final ArrayBlockingQueue<Result> results;
+    private final BlockingQueue<Result> results;
 
     // special executor pool for our consumers
     private final ExecutorService consumerExecutorPool = Executors.newFixedThreadPool(2);

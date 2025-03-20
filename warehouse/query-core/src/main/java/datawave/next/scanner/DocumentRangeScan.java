@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,7 +39,7 @@ public class DocumentRangeScan implements RunnableWithContext {
     private final Authorizations auths;
 
     private final long resultQueueOfferTimeMillis;
-    private final ArrayBlockingQueue<Result> resultQueue;
+    private final BlockingQueue<Result> resultQueue;
     private final AtomicInteger numRetrievalScans;
 
     private String context;
@@ -143,6 +143,7 @@ public class DocumentRangeScan implements RunnableWithContext {
 
         // copy original iterator setting
         IteratorSetting setting = new IteratorSetting(orig.getPriority(), orig.getName(), orig.getIteratorClass());
+        // IteratorSetting setting = new IteratorSetting(orig.getPriority(), DocumentIterator.class.getSimpleName(), DocumentIterator.class);
         setting.addOptions(orig.getOptions());
 
         // set the query from the query data

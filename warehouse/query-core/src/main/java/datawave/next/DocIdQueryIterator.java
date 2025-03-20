@@ -225,11 +225,11 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
         timingStats.markScanStop();
 
-        long elapsedNS = timingStats.getScanTime();
-        long elapsedMS = TimeUnit.NANOSECONDS.toMillis(elapsedNS);
-
-        log.info("scanned {} ids in {} ns or {} ms", docIds.size(), elapsedNS, elapsedMS);
-
+        if (log.isDebugEnabled()) {
+            long elapsedNS = timingStats.getScanTime();
+            long elapsedMS = TimeUnit.NANOSECONDS.toMillis(elapsedNS);
+            log.debug("scanned {} ids in {} ns or {} ms", docIds.size(), elapsedNS, elapsedMS);
+        }
         iteratorStats.merge(visitor.getStats());
         timingStats.incrementTotalDocumentIds(docIds.size());
 
