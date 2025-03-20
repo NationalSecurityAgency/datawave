@@ -3,11 +3,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>gov.nsa.datawave.plugins</groupId>
     <artifactId>assert-properties</artifactId>
     <version>2.0.2-SNAPSHOT</version>
-
     <packaging>maven-plugin</packaging>
     <name>DataWave Assert Properties Plugin</name>
     <description>Asserts that required maven properties have been defined.</description>
@@ -30,7 +28,6 @@
             <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </repository>
     </distributionManagement>
-
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
@@ -95,9 +92,16 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>3.15.1</version>
+                <configuration>
+                   <goalPrefix>datawave</goalPrefix>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -115,5 +119,4 @@
             <version>2.6</version>
         </dependency>      
     </dependencies>
-
 </project>
