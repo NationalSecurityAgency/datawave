@@ -1,7 +1,6 @@
 package datawave.data.type.util;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Class to hold a MAC Address

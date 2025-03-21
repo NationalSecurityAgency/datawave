@@ -9,7 +9,6 @@ import org.locationtech.jts.geom.Polygon;
 
 import datawave.data.normalizer.DiscreteIndexNormalizer;
 import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.OneToManyNormalizer;
 import datawave.data.type.util.AbstractGeometry;
 
 /**

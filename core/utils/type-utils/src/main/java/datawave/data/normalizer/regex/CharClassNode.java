@@ -1,7 +1,6 @@
 package datawave.data.normalizer.regex;
 
 import java.util.Map;
-import java.util.Objects;
 
 import datawave.data.normalizer.regex.visitor.Visitor;
 

@@ -18,27 +18,27 @@ import datawave.query.composite.CompositeMetadataHelper;
 
 @Component
 public class MetadataHelperFactory {
-    
+
     public static final String ALL_AUTHS_PROPERTY = "dw.metadatahelper.all.auths";
-    
+
     public static final Logger log = LoggerFactory.getLogger(MetadataHelperFactory.class);
-    
+
     private final BeanFactory beanFactory;
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
-    
+
     public MetadataHelperFactory() {
         this(null, null);
     }
-    
+
     public MetadataHelperFactory(BeanFactory beanFactory, TypeMetadataHelper.Factory typeMetadataHelperFactory) {
         this.beanFactory = beanFactory;
         this.typeMetadataHelperFactory = typeMetadataHelperFactory;
     }
-    
+
     public MetadataHelper createMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> fullUserAuths) {
         return createMetadataHelper(client, metadataTableName, fullUserAuths, false);
     }
-    
+
     /**
      * Creates a {@link MetadataHelper} by retrieving the necessary beans from the injected {@link BeanFactory} and passing along the additional supplied
      * arguments to the constructor(s). The returned bean will be a Spring-managed proxy that wraps certain methods with caching.
@@ -49,7 +49,7 @@ public class MetadataHelperFactory {
      *            the name of the metadata table in Accumulo
      * @param fullUserAuths
      *            the authorizations for the proxied entity chain that is calling this method
-     *            
+     *
      * @return a new MetadataHelper
      */
     @SuppressWarnings("unchecked")
@@ -60,7 +60,7 @@ public class MetadataHelperFactory {
                             ResolvableType.forClassWithGenerics(Set.class, Authorizations.class).resolve());
             Collection<String> mergedAuths = MetadataHelper.getUsersMetadataAuthorizationSubset(fullUserAuths, allMetadataAuths);
             Set<Authorizations> authSubset = Collections.singleton(new Authorizations(mergedAuths.toArray(new String[0])));
-            
+
             TypeMetadataHelper typeMetadataHelper = typeMetadataHelperFactory.createTypeMetadataHelper(client, metadataTableName, authSubset,
                             useTypeSubstitution);
             CompositeMetadataHelper compositeMetadataHelper = beanFactory.getBean(CompositeMetadataHelper.class, client, metadataTableName, authSubset);
@@ -72,7 +72,7 @@ public class MetadataHelperFactory {
             if (log.isDebugEnabled())
                 log.debug("MetadataHelper created outside of dependency-injection context. This is fine for unit testing, but this is an error in production code",
                                 new Exception("exception for debug purposes"));
-            
+
             Map<String,String> typeSubstitutions = new HashMap<>();
             typeSubstitutions.put("datawave.data.type.DateType", "datawave.data.type.RawDateType");
             Set<Authorizations> allMetadataAuths = Collections.singleton(MetadataDefaultsFactory.getDefaultAuthorizations());
@@ -85,7 +85,7 @@ public class MetadataHelperFactory {
             return new MetadataHelper(allFieldMetadataHelper, allMetadataAuths, client, metadataTableName, authSubset, fullUserAuths);
         }
     }
-    
+
     /**
      * Factory primarily for injecting default authorizations that may be needed when there is no Spring injection to fall back on. Previously default auths
      * were hard-coded above, limiting portability of the code.
@@ -101,5 +101,5 @@ public class MetadataHelperFactory {
             }
         }
     }
-    
+
 }
