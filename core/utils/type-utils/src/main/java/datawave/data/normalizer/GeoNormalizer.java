@@ -28,17 +28,17 @@ import datawave.data.type.util.NumericalEncoder;
  */
 public class GeoNormalizer extends AbstractNormalizer<String> {
     private static final long serialVersionUID = -1212607537051869786L;
-    
+
     private static final Logger log = LoggerFactory.getLogger(GeoNormalizer.class);
-    
+
     /*
      * The z-order value that this normalize produces has no regard for precision. The prefix is always six digits and the suffix is always 16 digits
      */
     private static final Pattern normalizedZRef = Pattern.compile("\\d{6}\\.\\.\\d+");
-    
+
     private static final LoadingCache<String,Boolean> isNormalizedCache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(10 * 1024)
                     .build(new CacheLoader<String,Boolean>() {
-                        
+
                         @Override
                         public Boolean load(String key) {
                             boolean m = normalizedZRef.matcher(key).matches();
@@ -46,20 +46,20 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                                 log.trace(key + " is " + (m ? "" : "not") + " a z-ref.");
                             return m;
                         }
-                        
+
                     });
-    
+
     public static boolean isNormalized(String s) {
         try {
             return isNormalizedCache.get(s);
         } catch (ExecutionException e) {
-            
+
         }
         return false;
     }
-    
+
     public static final String separator = "|";
-    
+
     /**
      * Expects to receive a concatenated string. The string should be of the form:
      *
@@ -85,7 +85,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         }
         return normalized;
     }
-    
+
     /**
      * Expects to receive a concatenated string. The string should be of the form:
      *
@@ -106,7 +106,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             throw new IllegalArgumentException("Failed to normalize value as a Geo: " + fieldValue);
         }
     }
-    
+
     /**
      * We cannot support regex against numbers
      */
@@ -114,32 +114,32 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
     public String normalizeRegex(String fieldRegex) throws IllegalArgumentException {
         throw new IllegalArgumentException("Cannot normalize a regex against a numeric field");
     }
-    
+
     @Override
     public String normalizeDelegateType(String delegateIn) {
         return normalize(delegateIn);
     }
-    
+
     @Override
     public String denormalize(String in) {
         return in;
     }
-    
+
     public String combineLatLon(String lat, String lon) throws OutOfRangeException, ParseException {
         return combineLatLon(parseLatOrLon(lat), parseLatOrLon(lon));
     }
-    
+
     private static final List<Character> DMS_DESIGNATORS = Arrays.asList('n', 's', 'e', 'w');
-    
+
     public static double parseLatOrLon(String value) throws ParseException {
         value = value.trim();
-        
+
         // If we were given a zero-length value, catch this ahead of time so we
         // can throw a ParseException instead of an IndexOutOfBoundsException
         if (value.isEmpty()) {
             throw new ParseException("Could not normalize empty value as latitute or longitude");
         }
-        
+
         // value may have been encoded
         try {
             if (NumericalEncoder.isPossiblyEncoded(value)) {
@@ -148,7 +148,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         } catch (Exception nfe) {
             // ok, assume not normalized
         }
-        
+
         char end = Character.toLowerCase(value.charAt(value.length() - 1));
         if (DMS_DESIGNATORS.contains(end)) {
             try {
@@ -164,7 +164,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             }
         }
     }
-    
+
     /**
      * Convert a Degrees / Minutes / Seconds latitude or longitude into decimal degrees.
      *
@@ -177,7 +177,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             double degrees = 0.0d;
             double minutes = 0.0d;
             double seconds = 0.0d;
-            
+
             val = val.trim();
             char end = Character.toLowerCase(val.charAt(val.length() - 1));
             if (end == 'n' || end == 'e') {
@@ -186,7 +186,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                 val = val.substring(0, val.length() - 1).trim();
                 negate = true;
             }
-            
+
             // see if it is already split up
             if (val.indexOf(':') >= 0) {
                 String[] parts = Iterables.toArray(Splitter.on(':').split(val), String.class);
@@ -219,18 +219,18 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                     degrees = Double.parseDouble(val);
                 }
             }
-            
+
             double dd = degrees + (minutes / 60.0d) + (seconds / 3600.0d);
             if (negate) {
                 dd = (0.0d - dd);
             }
-            
+
             return dd;
         } catch (Exception nfe) {
             throw new NormalizationException("Failed to convert numeric value part of a lat or lon " + val, nfe);
         }
     }
-    
+
     public static double parseDouble(String val) throws ParseException {
         double value = 0.0d;
         try {
@@ -250,11 +250,11 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         }
         return value;
     }
-    
+
     public String combineLatLon(double lat, double lon) throws OutOfRangeException {
         return GeoPoint.getZRefStr(new GeoPoint(lat, lon));
     }
-    
+
     /**
      * Finds the first non numeric and non '.' character and returns its position.
      *
@@ -283,10 +283,10 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         }
         return -1;
     }
-    
+
     public static class GeoPoint {
         private double latitude, longitude;
-        
+
         /**
          * Creates a GeoPoint with a custom fraction precision.
          *
@@ -298,7 +298,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             this.longitude = longitude;
             validate();
         }
-        
+
         /**
          * Creates a GeoPoint with a custom fraction precision.
          *
@@ -311,7 +311,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             this.longitude = GeoNormalizer.parseDouble(longitude);
             validate();
         }
-        
+
         /**
          * A validation routine that check the latitude and longitude ranges
          *
@@ -326,7 +326,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                 throw new OutOfRangeException("Longitude is outside of valid range [-180, 180]: " + this.latitude + ", " + this.longitude);
             }
         }
-        
+
         /**
          * Returns an interlaced representation of the latitude and longitude. The latitude's normal range of -90:90 is shifted to 0:180 (+90) and the
          * logitude's normal range of -180:180 has been shifted to 0:360.
@@ -340,25 +340,25 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         public static Text getZRef(GeoPoint p) {
             double latShift = p.latitude + 90.0;
             double lonShift = p.longitude + 180.0;
-            
+
             NumberFormat formatter = NumberFormat.getInstance();
             formatter.setMaximumIntegerDigits(3);
             formatter.setMinimumIntegerDigits(3);
             formatter.setMaximumFractionDigits(5);
             formatter.setMinimumFractionDigits(5);
-            
+
             String latS = formatter.format(latShift);
             String lonS = formatter.format(lonShift);
-            
+
             byte[] buf = new byte[latS.length() * 2];
             for (int i = 0; i < latS.length(); ++i) {
                 buf[2 * i] = (byte) latS.charAt(i);
                 buf[2 * i + 1] = (byte) lonS.charAt(i);
             }
-            
+
             return new Text(buf);
         }
-        
+
         /**
          * Returns an interlaced representation of the latitude and longitude. The latitude's normal range of -90:90 is shifted to 0:180 (+90) and the
          * logitude's normal range of -180:180 has been shifted to 0:360.
@@ -372,25 +372,25 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         public static String getZRefStr(GeoPoint p) {
             double latShift = p.latitude + 90.0;
             double lonShift = p.longitude + 180.0;
-            
+
             NumberFormat formatter = NumberFormat.getInstance();
             formatter.setMaximumIntegerDigits(3);
             formatter.setMinimumIntegerDigits(3);
             formatter.setMaximumFractionDigits(5);
             formatter.setMinimumFractionDigits(5);
-            
+
             String latS = formatter.format(latShift);
             String lonS = formatter.format(lonShift);
             StringBuilder sb = new StringBuilder(latS.length() * 2);
-            
+
             for (int i = 0; i < latS.length(); ++i) {
                 sb.append(latS.charAt(i));
                 sb.append(lonS.charAt(i));
             }
-            
+
             return sb.toString();
         }
-        
+
         /**
          * Factory method for decoding a zReference from a Text object.
          *
@@ -400,7 +400,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         public static GeoPoint decodeZRef(Text zref) throws OutOfRangeException, ParseException {
             StringBuilder latB = new StringBuilder();
             StringBuilder lonB = new StringBuilder();
-            
+
             ByteBuffer data = ByteBuffer.wrap(zref.getBytes(), 0, zref.getLength());
             boolean isLat = true;
             while (data.hasRemaining()) {
@@ -411,13 +411,13 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                 }
                 isLat = !isLat;
             }
-            
+
             double lat = GeoNormalizer.parseDouble(latB.toString());
             double lon = GeoNormalizer.parseDouble(lonB.toString());
-            
+
             return new GeoPoint(lat - 90.0, lon - 180.0);
         }
-        
+
         /**
          * Factory method for decoding a zReference from a Text object.
          *
@@ -428,7 +428,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         public static GeoPoint decodeZRef(String zref) throws OutOfRangeException, ParseException {
             StringBuilder latB = new StringBuilder();
             StringBuilder lonB = new StringBuilder();
-            
+
             CharBuffer data = CharBuffer.wrap(zref);
             boolean isLat = true;
             while (data.hasRemaining()) {
@@ -439,13 +439,13 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                 }
                 isLat = !isLat;
             }
-            
+
             double lat = GeoNormalizer.parseDouble(latB.toString());
             double lon = GeoNormalizer.parseDouble(lonB.toString());
-            
+
             return new GeoPoint(lat - 90.0, lon - 180.0);
         }
-        
+
         /**
          * Given a bounding box described by the lower left corner (boundMind) and the upper right corner (boundMax), this method tests whether or not the point
          * is within that box.
@@ -458,20 +458,20 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
             return getLatitude() >= boundMin.getLatitude() && getLatitude() <= boundMax.getLatitude() && getLongitude() >= boundMin.getLongitude()
                             && getLongitude() <= boundMax.getLongitude();
         }
-        
+
         public double getLatitude() {
             return latitude;
         }
-        
+
         public double getLongitude() {
             return longitude;
         }
-        
+
         @Override
         public String toString() {
             return "(" + getLongitude() + ", " + getLatitude() + ")";
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (o == null) {
@@ -483,51 +483,51 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
                 return super.equals(o);
             }
         }
-        
+
         @Override
         public int hashCode() {
             return Objects.hash(getLatitude(), getLongitude());
         }
     }
-    
+
     public static class OutOfRangeException extends Exception {
-        
+
         public OutOfRangeException() {
             super();
         }
-        
+
         public OutOfRangeException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
         public OutOfRangeException(String message) {
             super(message);
         }
-        
+
         public OutOfRangeException(Throwable cause) {
             super(cause);
         }
-        
+
     }
-    
+
     public static class ParseException extends Exception {
-        
+
         public ParseException() {
             super();
         }
-        
+
         public ParseException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
         public ParseException(String message) {
             super(message);
         }
-        
+
         public ParseException(Throwable cause) {
             super(cause);
         }
-        
+
     }
-    
+
 }

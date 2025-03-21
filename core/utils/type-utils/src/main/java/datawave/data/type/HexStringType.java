@@ -3,17 +3,17 @@ package datawave.data.type;
 import datawave.data.normalizer.Normalizer;
 
 public class HexStringType extends BaseType<String> {
-    
+
     private static final long serialVersionUID = -3480716807342380164L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE;
-    
+
     public HexStringType() {
         super(Normalizer.HEX_STRING_NORMALIZER);
     }
-    
+
     /**
      * Two String + normalizer reference
-     * 
+     *
      * @return
      */
     @Override

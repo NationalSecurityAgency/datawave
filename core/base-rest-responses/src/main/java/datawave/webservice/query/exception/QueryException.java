@@ -10,33 +10,33 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  *
  */
 public class QueryException extends Exception {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     protected String errorCode = "500-1";
-    
+
     public QueryException() {
         super();
     }
-    
+
     public QueryException(String message) {
         super(message);
     }
-    
+
     public QueryException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     public QueryException(Throwable cause, String errorCode) {
         super(cause);
         this.errorCode = errorCode;
     }
-    
+
     public QueryException(DatawaveErrorCode code, Throwable cause) {
         super(code.toString(), cause);
         this.errorCode = code.getErrorCode();
     }
-    
+
     /**
      *
      * @param code
@@ -48,7 +48,7 @@ public class QueryException extends Exception {
         super(code + " " + debugMessage);
         this.errorCode = code.getErrorCode();
     }
-    
+
     /**
      *
      * @param code
@@ -62,37 +62,37 @@ public class QueryException extends Exception {
         super(code + " " + debugMessage, cause);
         this.errorCode = code.getErrorCode();
     }
-    
+
     public QueryException(DatawaveErrorCode code) {
         super(code.toString());
         this.errorCode = code.getErrorCode();
     }
-    
+
     public QueryException(String message, int httpCode) {
         super(message);
         // We don't know how to map this so... just use the default stuff.
         this.errorCode = Integer.toString(httpCode);
     }
-    
+
     public QueryException(String message, Throwable cause, String errorCode) {
         super(message, cause);
         this.errorCode = errorCode;
     }
-    
+
     public QueryException(String message, String debugMessage, String errorCode) {
         super(message + " " + debugMessage);
         this.errorCode = errorCode;
     }
-    
+
     public QueryException(String message, String errorCode) {
         super(message);
         this.errorCode = errorCode;
     }
-    
+
     public QueryException(Throwable cause) {
         super(cause);
     }
-    
+
     /**
      * Method to strip off our additional mapping nonsense and get the actual HTTP response code.
      *
@@ -111,7 +111,7 @@ public class QueryException extends Exception {
         }
         return status;
     }
-    
+
     /**
      * Returns all QueryExceptions in the stack.
      *
@@ -121,7 +121,7 @@ public class QueryException extends Exception {
         List<Throwable> throwables = ExceptionUtils.getThrowableList(this);
         return throwables.stream().filter(QueryException.class::isInstance).map(QueryException.class::cast).collect(Collectors.toList());
     }
-    
+
     /**
      * Returns the bottom-most QueryException in the stack.
      *
@@ -131,11 +131,11 @@ public class QueryException extends Exception {
         List<QueryException> queryExceptionList = getQueryExceptionsInStack();
         return queryExceptionList.get(queryExceptionList.size() - 1);
     }
-    
+
     public String getErrorCode() {
         return errorCode;
     }
-    
+
     public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
     }

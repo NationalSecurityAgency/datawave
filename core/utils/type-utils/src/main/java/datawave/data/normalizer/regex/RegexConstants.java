@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class RegexConstants {
-    
+
     public static final char ZERO = '0';
     public static final char ONE = '1';
     public static final char TWO = '2';
@@ -39,26 +39,26 @@ public class RegexConstants {
     public static final char CARET = '^';
     public static final char DOLLAR_SIGN = '$';
     public static final char CAPITAL_E = 'E';
-    
+
     public static final String ESCAPED_BACKSLASH = "\\\\";
-    
+
     /**
      * Use base 10 when parsing characters to ints.
      */
     public static final int DECIMAL_RADIX = 10;
-    
+
     /**
      * The set of all digits. This reflects all possible permutations for any \d found in the regex.
      */
     public static final List<Character> ALL_DIGITS = ImmutableList.of(ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE);
-    
+
     public static final Set<Class<? extends Node>> QUANTIFIER_TYPES = ImmutableSet.of(ZeroOrMoreNode.class, OneOrMoreNode.class, RepetitionNode.class);
-    
+
     public static final Set<Class<? extends Node>> SIMPLE_NUMBER_TYPES = ImmutableSet.of(SingleCharNode.class, EscapedSingleCharNode.class,
                     StartAnchorNode.class, EndAnchorNode.class);
-    
+
     public static final Pattern SIMPLE_NUMBER_REGEX_PATTERN = Pattern.compile("^\\^?(\\\\?-)?\\d*(\\\\\\.)?\\d+\\$?$");
-    
+
     private RegexConstants() {
         throw new UnsupportedOperationException();
     }
