@@ -17,6 +17,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -29,10 +33,6 @@
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-connection-pool</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

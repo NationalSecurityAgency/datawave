@@ -56,22 +56,18 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
+        <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
-        <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
-        <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
         <version.datawave.dictionary-api>4.0.1</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
-        <version.datawave.metadata-utils>4.0.13</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
-        <version.datawave.type-utils>3.1.2</version.datawave.type-utils>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
@@ -94,6 +90,7 @@
         <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
+        <version.javax-annotation>1.3.2</version.javax-annotation>
         <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
@@ -119,7 +116,8 @@
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
-        <version.protobuf>3.16.3</version.protobuf>
+        <version.protobuf>2.5.0</version.protobuf>
+        <version.protobuf.orig>3.16.3</version.protobuf.orig>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -333,61 +331,162 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>accumulo-api</artifactId>
-                <version>${version.datawave.accumulo-api}</version>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>accumulo-utils</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>common-utils</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>metadata-utils</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>type-utils</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave.accumulo-utils}</version>
+                <artifactId>accumulo-api</artifactId>
+                <version>${version.datawave.accumulo-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>audit-api</artifactId>
                 <version>${version.datawave.audit-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
                 <version>${version.datawave.authorization-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave.base-rest-responses}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>common-utils</artifactId>
-                <version>${version.datawave.common-utils}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>dictionary-api</artifactId>
                 <version>${version.datawave.dictionary-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>mapreduce-query-api</artifactId>
                 <version>${version.datawave.mapreduce-query-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>metadata-utils</artifactId>
-                <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-reload4j</artifactId>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>ch.qos.reload4j</groupId>
-                        <artifactId>reload4j</artifactId>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -400,12 +499,56 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.datawave.query-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.datawave.query-api}</version>
                 <classifier>jboss</classifier>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -418,7 +561,23 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>base-rest-responses</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>accumulo-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>common-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>metadata-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>type-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.webservices</groupId>
@@ -439,25 +598,6 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-reload4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>type-utils</artifactId>
-                <version>${version.datawave.type-utils}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-common</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -514,6 +654,11 @@
                         <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${version.javax-annotation}</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -650,6 +795,17 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-jexl3</artifactId>
                 <version>${version.commons-jexl3}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${version.commons-pool2}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1046,6 +1202,30 @@
                         <groupId>org.apache.commons</groupId>
                         <artifactId>commons-lang3</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.emf</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.sf.json-lib</groupId>
+                        <artifactId>json-lib</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1151,9 +1331,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave.base-rest-responses}</version>
+                <version>${project.version}</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
                 <scope>test</scope>

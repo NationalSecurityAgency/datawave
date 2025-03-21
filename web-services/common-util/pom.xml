@@ -33,6 +33,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -53,10 +57,6 @@
             <artifactId>datawave-core-connection-pool</artifactId>
             <version>${project.version}</version>
             <classifier>jboss</classifier>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

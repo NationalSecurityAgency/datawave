@@ -46,7 +46,6 @@
         <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.9.0</version.commons-net>
-        <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.dnsjava>2.1.8</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
@@ -272,17 +271,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-digester3</artifactId>
                 <version>${version.commons-digester}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-pool2</artifactId>
-                <version>${version.commons-pool2}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>

@@ -15,12 +15,12 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>datawave-core-connection-pool</artifactId>
-            <version>${project.version}</version>
+            <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>accumulo-utils</artifactId>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-connection-pool</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

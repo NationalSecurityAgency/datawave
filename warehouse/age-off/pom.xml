@@ -29,7 +29,7 @@
         </dependency>
         <!-- Needed for StringUtils and DateHelper -->
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
             <scope>compile</scope>
         </dependency>

@@ -19,6 +19,7 @@
         <module>modification</module>
         <module>query</module>
         <module>utils</module>
+        <module>base-rest-responses</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/core/</connection>
@@ -87,17 +88,6 @@
     </build>
     <profiles>
         <profile>
-            <id>base-rest-responses</id>
-            <activation>
-                <property>
-                    <name>base-rest-responses</name>
-                </property>
-            </activation>
-            <modules>
-                <module>base-rest-responses</module>
-            </modules>
-        </profile>
-        <profile>
             <id>in-memory-accumulo</id>
             <activation>
                 <property>
@@ -127,7 +117,6 @@
                 </property>
             </activation>
             <modules>
-                <module>base-rest-responses</module>
                 <module>in-memory-accumulo</module>
                 <module>metrics-reporter</module>
             </modules>
