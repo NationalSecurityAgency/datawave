@@ -665,7 +665,6 @@
                                 <configuration>
                                     <encoding>UTF-8</encoding>
                                     <outputDirectory>${project.build.directory}/javadoc</outputDirectory>
-                                    <javadocVersion>11</javadocVersion>
                                     <additionalJOptions>
                                         <additionalJOption>-J-Xmx768m</additionalJOption>
                                     </additionalJOptions>

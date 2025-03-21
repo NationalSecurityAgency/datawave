@@ -278,7 +278,6 @@
                         <configuration>
                             <encoding>UTF-8</encoding>
                             <destDir>${project.build.directory}/apidocs</destDir>
-                            <javadocVersion>1.8.0</javadocVersion>
                             <additionalJOption>-J-Xmx768m</additionalJOption>
                             <show>private</show>
                             <quiet>true</quiet>
@@ -393,7 +392,6 @@
                                 <configuration>
                                     <encoding>UTF-8</encoding>
                                     <destDir>${project.build.directory}/apidocs</destDir>
-                                    <javadocVersion>1.8.0</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <tags>
                                         <tag>
