@@ -26,9 +26,6 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
  */
 public class DatawaveJexlEngine extends Engine {
 
-    private final JexlFeatures jexlFeatures = JexlASTHelper.jexlFeatures();
-    private final JexlInfo jexlInfo = new JexlInfo("DatawaveJexlEngine", 1, 1);
-
     /**
      * Default constructor that should not be used
      */
@@ -70,7 +67,25 @@ public class DatawaveJexlEngine extends Engine {
     public Script createScript(JexlFeatures features, JexlInfo info, String source, String... names) {
         // Passing in JexlFeatures can cut parse time by 50%
         // Passing JexlInfo can cut parse time by 10%
-        return super.createScript(jexlFeatures, jexlInfo, source, names);
+        if (features == null) {
+            features = JexlASTHelper.jexlFeatures();
+        }
+        if (info == null) {
+            info = jexlInfo();
+        }
+        return super.createScript(features, info, source, names);
+    }
+
+    /**
+     * Create a Script that supports complex functions
+     *
+     * @param expression
+     *            the jexl expression
+     * @return a Script
+     */
+    public Script createComplexScript(String expression) {
+        JexlFeatures features = new JexlFeatures();
+        return super.createScript(features, jexlInfo(), expression, (String[]) null);
     }
 
     /**
@@ -82,6 +97,10 @@ public class DatawaveJexlEngine extends Engine {
      */
     public ASTJexlScript parse(String expression) {
         // Passing JexlInfo can cut parse time by two orders of magnitude
-        return super.parse(jexlInfo, true, expression, null);
+        return super.parse(jexlInfo(), true, expression, null);
+    }
+
+    protected JexlInfo jexlInfo() {
+        return new JexlInfo("DatawaveJexlEngine", 1, 1);
     }
 }

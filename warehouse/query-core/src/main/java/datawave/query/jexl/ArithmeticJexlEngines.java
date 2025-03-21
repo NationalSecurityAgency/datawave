@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.JexlBuilder;
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +20,6 @@ public class ArithmeticJexlEngines {
     private static final Logger log = LoggerFactory.getLogger(ArithmeticJexlEngines.class);
     private static final Map<Class<? extends JexlArithmetic>,DatawaveJexlEngine> engineCache = new ConcurrentHashMap<>();
     private static final Map<String,Object> registeredFunctions = JexlFunctionNamespaceRegistry.getConfiguredFunctions();
-
-    private static final JexlFeatures jexlFeatures = JexlASTHelper.jexlFeatures();
 
     private ArithmeticJexlEngines() {}
 
@@ -66,8 +63,6 @@ public class ArithmeticJexlEngines {
                 .cache(1024)
                 .silent(false)
                 .strict(false)
-                //  pass in the JexlFeatures configured via JexlAstHelper.jexlFeatures()
-                .features(jexlFeatures)
                 .permissions(JexlPermissions.UNRESTRICTED);
         //  @formatter:on
 
