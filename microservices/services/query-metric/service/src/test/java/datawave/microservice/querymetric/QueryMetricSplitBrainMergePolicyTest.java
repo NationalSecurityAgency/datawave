@@ -33,11 +33,7 @@ public class QueryMetricSplitBrainMergePolicyTest {
     
     private final static QueryMetricFactory queryMetricFactory = new QueryMetricFactoryImpl();
     
-<<<<<<< HEAD
     @Disabled
-=======
-    @Ignore
->>>>>>> release/version7.17
     @Test
     public void testAllPagesMerged() {
         String mapName = HazelcastUtils.randomMapName();
