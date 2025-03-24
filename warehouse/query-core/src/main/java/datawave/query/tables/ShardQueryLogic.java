@@ -1865,6 +1865,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
     }
 
+    public String getSummaryFieldName() {
+        return getConfig().getSummaryFieldName();
+    }
+
+    public void setSummaryFieldName(String summaryFieldname) {
+        getConfig().setSummaryFieldName(summaryFieldname);
+    }
+
     public int getFiFieldSeek() {
         return getConfig().getFiFieldSeek();
     }

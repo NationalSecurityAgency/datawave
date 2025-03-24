@@ -135,7 +135,8 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("CITY; rome -- rome//8"); // although there are 8 entries for rome, only 7 doc ids are unique in the test data.
         expected.add("CITY; turin -- turin//1");
         expected.add("CITY; venice -- venice//1");
-        expected.add("CONTINENT; europe -- europe//26");
+        expected.add("CITY; 12345 -- 12345//1");
+        expected.add("CONTINENT; europe -- europe//27");
         expected.add("STATE; campania -- campania//1");
         expected.add("STATE; castilla y leon -- castilla y leon//1");
         expected.add("STATE; gelderland -- gelderland//1");
@@ -151,6 +152,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("STATE; toscana -- toscana//1");
         expected.add("STATE; veneto -- veneto//1");
         expected.add("STATE; viana do castelo -- viana do castelo//1");
+        expected.add("STATE; 12345 -- 12345//1");
 
         String query = CityField.CONTINENT.name() + " == 'Europe'";
 

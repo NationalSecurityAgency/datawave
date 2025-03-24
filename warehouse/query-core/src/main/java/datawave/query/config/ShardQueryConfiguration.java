@@ -446,6 +446,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the summary iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
+    // The name of the field to write a summary to when requested
+    private String summaryFieldName = null;
+
     /**
      * A bloom filter to avoid duplicate results if needed
      */
@@ -534,12 +537,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * SHARDS_AND_DAYS hint.
      */
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
-
-    /**
-     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
-     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
-     */
-    private boolean shardsAndDaysHintAllowed = true;
 
     /**
      * Default constructor
@@ -762,6 +759,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptIterator(other.getExcerptIterator());
         this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
         this.setSummaryIterator(other.getSummaryIterator());
+        this.setSummaryFieldName(other.getSummaryFieldName());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
@@ -786,7 +784,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
-        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
     /**
@@ -2657,6 +2654,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.summaryIterator = summaryIterator;
     }
 
+    public String getSummaryFieldName() {
+        return summaryFieldName;
+    }
+
+    public void setSummaryFieldName(String summaryFieldName) {
+        this.summaryFieldName = summaryFieldName;
+    }
+
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -3066,8 +3071,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
- isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
 
         // @formatter:on
     }
@@ -3276,8 +3280,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes(),
-                isShardsAndDaysHintAllowed()
+                getNoExpansionIfCurrentDateTypes()
         );
         // @formatter:on
     }
@@ -3319,13 +3322,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
-    }
-
-    public boolean isShardsAndDaysHintAllowed() {
-        return shardsAndDaysHintAllowed;
-    }
-
-    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
-        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 }

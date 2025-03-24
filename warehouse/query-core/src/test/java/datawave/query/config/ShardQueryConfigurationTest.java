@@ -475,6 +475,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("summaryOptions", SummaryOptions.from(String.valueOf(SummaryOptions.DEFAULT_SIZE)));
         defaultValues.put("summaryIterator", ContentSummaryIterator.class);
         updatedValues.put("summaryIterator", ContentSummaryIterator.class);
+        defaultValues.put("summaryFieldName", null);
+        updatedValues.put("summaryFieldName", "SUMMARY");
         defaultValues.put("fiFieldSeek", -1);
         updatedValues.put("fiFieldSeek", 10);
         defaultValues.put("fiNextSeek", -1);
@@ -609,9 +611,6 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("noExpansionIfCurrentDateTypes", Collections.emptySet());
         updatedValues.put("noExpansionIfCurrentDateTypes", Collections.singleton("EVENT"));
-
-        defaultValues.put("shardsAndDaysHintAllowed", true);
-        updatedValues.put("shardsAndDaysHintAllowed", false);
     }
 
     private Query createQuery(String query) {
