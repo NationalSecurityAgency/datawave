@@ -13,23 +13,25 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
-import org.springframework.context.support.GenericGroovyApplicationContext;
 
 import com.google.common.base.Preconditions;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.data.parsers.EventKey;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.DatawaveArithmetic;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -103,16 +105,26 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
         DatawaveJexlEngine engine = ArithmeticJexlEngines.getEngine(arithmetic);
         JexlScript script = engine.createScript(query);
 
+        ASTJexlScript queryTree = parse(query);
+        Set<String> identifiers = JexlASTHelper.getIdentifierNames(queryTree);
+
         DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Set.of("COLOR"), context);
+        d.visit(identifiers, context);
 
         boolean result = (boolean) script.execute(context);
+        if (!result) {
+            return;
+        }
 
         if (d.size() > 0 && key != null) {
             Text cf = new Text(parser.getDatatype() + "\0" + parser.getUid());
             Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
             Attribute<?> attr = new DocumentKey(recordId, false);
             d.put(Document.DOCKEY_FIELD_NAME, attr);
+
+            // Content hitTerm = new Content("COLOR:red", recordId, true);
+            // d.put("HIT_TERM", hitTerm);
+            // TODO: hit terms or proper evaluation
         }
 
         if (d.size() > 0) {
@@ -120,6 +132,14 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
             Map.Entry<Key,Value> e2 = new KryoDocumentSerializer().apply(entry);
             tk = e2.getKey();
             tv = e2.getValue();
+        }
+    }
+
+    private ASTJexlScript parse(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 

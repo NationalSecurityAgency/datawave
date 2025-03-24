@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.clientImpl.bulk.Bulk;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -82,16 +81,8 @@ public class DocumentRangeScan implements RunnableWithContext {
                 }
             }
 
-            // QI: 713, 749, 791
-            // executeScan();
-
-            // DI: 105, 119, 138 = 82% faster
-            // DI: 630, 641, 691 (added simple Jexl evaluation)
-            // executeScan();
-
-            // Batched: 83, 85, 89 = 88% faster
-            // Batched: 175, 205, 239 (added simple Jexl evaluation)
-            executeBatchScan();
+            executeScan();
+            // executeBatchScan();
 
         } catch (Exception e) {
             log.error("error executing document range {}", keyWithContext.getKey().toStringNoTime(), e);
@@ -120,7 +111,6 @@ public class DocumentRangeScan implements RunnableWithContext {
     private void executeScan() {
         Collection<Range> ranges = createRange();
         IteratorSetting setting = createScanIterator();
-        // 10, 10, 10, 20 ms
         IteratorSetting appliedSettings = config.getVisitorFunction().apply(setting, ranges);
 
         int numResults = 0;
@@ -152,8 +142,8 @@ public class DocumentRangeScan implements RunnableWithContext {
             throw new RuntimeException(e);
         } finally {
             stats.markStop();
-            long elapsed = TimeUnit.NANOSECONDS.toMillis(stats.getScanTime());
             if (log.isDebugEnabled()) {
+                long elapsed = TimeUnit.NANOSECONDS.toMillis(stats.getScanTime());
                 log.debug("num results: {} in {} ms", numResults, elapsed);
             }
             numRetrievalScans.getAndDecrement();
@@ -210,8 +200,8 @@ public class DocumentRangeScan implements RunnableWithContext {
             throw new RuntimeException(e);
         } finally {
             stats.markStop();
-            long elapsed = TimeUnit.NANOSECONDS.toMillis(stats.getScanTime());
             if (log.isDebugEnabled()) {
+                long elapsed = TimeUnit.NANOSECONDS.toMillis(stats.getScanTime());
                 log.debug("num results: {} in {} ms", numResults, elapsed);
             }
             numRetrievalScans.getAndDecrement();
@@ -224,7 +214,7 @@ public class DocumentRangeScan implements RunnableWithContext {
         IteratorSetting orig = queryData.getSettings().get(0);
 
         // copy original iterator setting
-        boolean useDocumentIterator = true;
+        boolean useDocumentIterator = false;
         IteratorSetting setting;
         if (useDocumentIterator) {
             setting = new IteratorSetting(orig.getPriority(), DocumentIterator.class.getSimpleName(), DocumentIterator.class);

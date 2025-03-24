@@ -17,6 +17,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.base.Preconditions;
@@ -24,6 +26,7 @@ import com.google.common.base.Splitter;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.data.parsers.EventKey;
@@ -33,6 +36,7 @@ import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
 
 public class BatchDocumentIterator implements SortedKeyValueIterator<Key,Value> {
@@ -86,7 +90,6 @@ public class BatchDocumentIterator implements SortedKeyValueIterator<Key,Value> 
                 Map.Entry<Key,Value> entry = results.remove(0);
                 tk = entry.getKey();
                 tv = entry.getValue();
-                int i = 0;
             }
         }
         return tk != null;
@@ -109,6 +112,15 @@ public class BatchDocumentIterator implements SortedKeyValueIterator<Key,Value> 
         AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
         EventKey parser = new EventKey();
 
+        HitListArithmetic arithmetic = new HitListArithmetic();
+        DatawaveJexlEngine engine = ArithmeticJexlEngines.getEngine(arithmetic);
+        JexlScript script = engine.createScript(query);
+
+        DatawaveJexlContext context = new DatawaveJexlContext();
+
+        ASTJexlScript queryTree = parse(query);
+        Set<String> identifiers = JexlASTHelper.getIdentifierNames(queryTree);
+
         for (String candidate : candidates) {
             Range candidateRange = rangeForCandidate(candidate);
             source.seek(candidateRange, columnFamilies, inclusive);
@@ -125,20 +137,22 @@ public class BatchDocumentIterator implements SortedKeyValueIterator<Key,Value> 
             }
 
             // do an evaluation just to see the effect
-            HitListArithmetic arithmetic = new HitListArithmetic();
-            DatawaveJexlEngine engine = ArithmeticJexlEngines.getEngine(arithmetic);
-            JexlScript script = engine.createScript(query);
-
-            DatawaveJexlContext context = new DatawaveJexlContext();
-            d.visit(Set.of("COLOR"), context);
-
-            boolean excutionResult = (boolean) script.execute(context);
+            context.clear();
+            d.visit(identifiers, context);
+            boolean executionResult = (boolean) script.execute(context);
+            if (!executionResult) {
+                continue;
+            }
 
             if (d.size() > 0 && key != null) {
                 Text cf = new Text(parser.getDatatype() + "\0" + parser.getUid());
                 Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
                 Attribute<?> attr = new DocumentKey(recordId, false);
                 d.put(Document.DOCKEY_FIELD_NAME, attr);
+
+                // Content hitTerm = new Content("COLOR:red", recordId, true);
+                // d.put("HIT_TERM", hitTerm);
+                // TODO: hit terms or proper evaluation
             }
 
             if (d.size() > 0) {
@@ -146,6 +160,14 @@ public class BatchDocumentIterator implements SortedKeyValueIterator<Key,Value> 
                 Map.Entry<Key,Value> result = serializer.apply(entry);
                 results.add(result);
             }
+        }
+    }
+
+    private ASTJexlScript parse(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 
