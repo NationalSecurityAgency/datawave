@@ -33,7 +33,7 @@ public class ContextThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(Runnable r) {
-        log.info("creating new thread");
+        log.trace("creating new thread");
         threadsCreated++;
         Thread thread = threadFactory.newThread(r);
         thread.setName(context);

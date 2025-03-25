@@ -164,7 +164,9 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
 
             // case 2: multiple datatypes requested but context can restrict to singleton filter
             if (minDatatype.equals(maxDatatype)) {
-                log.debug("multiple datatypes requested but external context only contained a single datatype: {}", minDatatype);
+                if (log.isDebugEnabled()) {
+                    log.debug("multiple datatypes requested but external context only contained a single datatype: {}", minDatatype);
+                }
                 datatypeFilter.clear();
                 datatypeFilter.add(minDatatype);
                 return;
@@ -184,7 +186,7 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
             }
 
             int nextSize = datatypeFilter.size();
-            if (nextSize < prevSize) {
+            if (nextSize < prevSize && log.isDebugEnabled()) {
                 log.debug("reduced datatype filter from {} to {}", prevSize, nextSize);
             }
         }

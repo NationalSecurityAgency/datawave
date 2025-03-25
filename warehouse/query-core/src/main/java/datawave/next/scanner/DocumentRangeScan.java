@@ -81,8 +81,8 @@ public class DocumentRangeScan implements RunnableWithContext {
                 }
             }
 
-            executeScan();
-            // executeBatchScan();
+             executeScan();
+//            executeBatchScan();
 
         } catch (Exception e) {
             log.error("error executing document range {}", keyWithContext.getKey().toStringNoTime(), e);
@@ -151,13 +151,14 @@ public class DocumentRangeScan implements RunnableWithContext {
     }
 
     private void executeBatchScan() {
-        if (!(keyWithContext instanceof BulkKeyWithContext)) {
-            throw new RuntimeException("batch retrieval requires a BulkKeyWithContext");
-        }
 
         Set<String> candidates = new HashSet<>();
-        for (Key key : ((BulkKeyWithContext) keyWithContext).getKeys()) {
-            candidates.add(key.getColumnFamily().toString());
+        if (keyWithContext instanceof BulkKeyWithContext) {
+            for (Key key : ((BulkKeyWithContext) keyWithContext).getKeys()) {
+                candidates.add(key.getColumnFamily().toString());
+            }
+        } else {
+            candidates.add(keyWithContext.getKey().getColumnFamily().toString());
         }
 
         QueryData queryData = keyWithContext.getContext();

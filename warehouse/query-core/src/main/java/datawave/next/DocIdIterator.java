@@ -104,8 +104,8 @@ public class DocIdIterator extends BaseDocIdIterator {
         Range range = createScanRange();
 
         if (log.isDebugEnabled()) {
-            log.info("first seek for term: {}, suffix: {}, datatypes: {}, timeFilter: {}", getNode(), suffix, datatypeFilter, timeFilter);
-            log.info("seeking to range: {}", range);
+            log.debug("first seek for term: {}, suffix: {}, datatypes: {}, timeFilter: {}", getNode(), suffix, datatypeFilter, timeFilter);
+            log.debug("seeking to range: {}", range);
         }
 
         safeSeek(range, true);

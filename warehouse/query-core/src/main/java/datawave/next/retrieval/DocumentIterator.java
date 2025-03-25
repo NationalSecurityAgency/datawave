@@ -6,32 +6,32 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.JexlScript;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.data.parsers.EventKey;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.iterator.QueryOptions;
-import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -52,6 +52,9 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
 
     // new vars
     private String query;
+
+    // exclusive scan with these column families exclude them
+    protected final Collection<ByteSequence> excludeCFs = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
@@ -83,7 +86,7 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
 
-        source.seek(range, columnFamilies, inclusive);
+        source.seek(range, excludeCFs, false);
 
         // aggregate document
         Document d = new Document();
@@ -100,10 +103,7 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
             source.next();
         }
 
-        // do an evaluation just to see the effect
-        HitListArithmetic arithmetic = new HitListArithmetic();
-        DatawaveJexlEngine engine = ArithmeticJexlEngines.getEngine(arithmetic);
-        JexlScript script = engine.createScript(query);
+        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
 
         ASTJexlScript queryTree = parse(query);
         Set<String> identifiers = JexlASTHelper.getIdentifierNames(queryTree);
@@ -111,8 +111,8 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(identifiers, context);
 
-        boolean result = (boolean) script.execute(context);
-        if (!result) {
+        boolean matched = evaluation.apply(new Tuple3<>(tk, d, context));
+        if (!matched) {
             return;
         }
 
@@ -121,10 +121,6 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
             Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
             Attribute<?> attr = new DocumentKey(recordId, false);
             d.put(Document.DOCKEY_FIELD_NAME, attr);
-
-            // Content hitTerm = new Content("COLOR:red", recordId, true);
-            // d.put("HIT_TERM", hitTerm);
-            // TODO: hit terms or proper evaluation
         }
 
         if (d.size() > 0) {

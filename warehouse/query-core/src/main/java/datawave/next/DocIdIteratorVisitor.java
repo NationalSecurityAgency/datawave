@@ -134,12 +134,12 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         if (!positive.isEmpty() && !negative.isEmpty()) {
-            log.warn("union of negated and positive terms will not be executed");
+            log.trace("union of negated and positive terms will not be executed");
             return null;
         }
 
         if (positive.isEmpty() && !negative.isEmpty()) {
-            log.warn("union of negated terms will not be executed");
+            log.trace("union of negated terms will not be executed");
             return null;
         }
 
@@ -155,22 +155,22 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                     result.addKeys(scanResult.getResults());
                 }
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
+                if (log.isTraceEnabled()) {
+                    log.trace("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
             }
         }
 
         if (result == null) {
             // no term was executable
-            if (log.isDebugEnabled()) {
-                log.debug("union: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
+            if (log.isTraceEnabled()) {
+                log.trace("union: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
             }
             return data;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
+        if (log.isTraceEnabled()) {
+            log.trace("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
         }
         return result;
     }

@@ -50,8 +50,8 @@ public class DocumentIdConsumer implements Runnable {
     public void run() {
         try {
             Thread.currentThread().setName(config.getQueryId() + " document id consumer");
-            if (log.isDebugEnabled()) {
-                log.debug("document id consumer started");
+            if (log.isTraceEnabled()) {
+                log.trace("document id consumer started");
             }
 
             KeyWithContext keyWithContext;
@@ -67,15 +67,15 @@ public class DocumentIdConsumer implements Runnable {
                         Thread.sleep(10);
                     }
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("found key with context: {}", keyWithContext.getKey());
+                    if (log.isTraceEnabled()) {
+                        log.trace("found key with context: {}", keyWithContext.getKey());
                     }
                     // construct query iterator
                     config.getStats().incrementTotalDocumentScansSubmitted();
                     long currentRetrievalScans = numRetrievalScans.incrementAndGet();
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("retrieval scans: {}", currentRetrievalScans);
+                    if (log.isTraceEnabled()) {
+                        log.trace("retrieval scans: {}", currentRetrievalScans);
                     }
 
                     DocumentRangeScan scan = new DocumentRangeScan(keyWithContext, config);
@@ -91,8 +91,8 @@ public class DocumentIdConsumer implements Runnable {
             throw new RuntimeException("exception while consuming document ids", e);
         } finally {
             executing.set(false);
-            if (log.isDebugEnabled()) {
-                log.debug("document id consumer stopped");
+            if (log.isTraceEnabled()) {
+                log.trace("document id consumer stopped");
             }
         }
     }
