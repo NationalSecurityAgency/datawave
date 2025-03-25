@@ -73,6 +73,8 @@ public class Scan implements Callable<Scan> {
 
     private AccumuloResource delegatedResource = null;
 
+    private volatile boolean cancelled;
+
     public Scan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, ResourceQueue delegatorReference,
                     Class<? extends AccumuloResource> delegatedResourceInitializer, BlockingQueue<Result> results, ExecutorService callingService) {
         myScan = chunk;
@@ -87,6 +89,10 @@ public class Scan implements Callable<Scan> {
         this.caller = callingService;
         myStats = new ScanSessionStats();
         myStats.initializeTimers();
+    }
+
+    public void cancel() {
+        cancelled = true;
     }
 
     public void setTimeout(long timeout) {
@@ -293,7 +299,7 @@ public class Scan implements Callable<Scan> {
             // this is okay. This means that we are being timesliced.
             myScan.addRange(currentRange);
         } catch (Exception e) {
-            if (isInterruptedException(e)) {
+            if (cancelled || isInterruptedException(e)) {
                 log.info("Scan interrupted");
             } else {
                 log.error("Scan failed", e);

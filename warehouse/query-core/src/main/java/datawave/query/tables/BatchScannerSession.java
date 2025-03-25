@@ -18,6 +18,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
@@ -54,6 +57,8 @@ import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
 
 public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
+
+    private static final int WAIT_SHUTDOWN_MILLIS = 50;
 
     private static final double RANGE_MULTIPLIER = 5;
 
@@ -95,11 +100,13 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     // set when the processing is at a place where we can checkpoint
     protected volatile boolean readyToCheckpoint = false;
 
-    protected ExecutorService service = null;
-
     protected StringBuilder threadId = new StringBuilder();
 
     protected List<Function<ScannerChunk,ScannerChunk>> visitorFunctions = Lists.newArrayList();
+
+    protected ScanManager scanManager;
+
+    protected ExecutorService executorService;
 
     protected long scanLimitTimeout = -1;
 
@@ -215,9 +222,13 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     }
 
     public BatchScannerSession updateThreadService(ExecutorService service) {
-        if (service != null)
-            this.service.shutdownNow();
-        this.service = service;
+        if (scanManager != null) {
+            scanManager.cancelAllAndLock();
+        }
+        if (executorService != null) {
+            executorService.shutdownNow();
+        }
+        scanManager = new ScanManager(service);
         return this;
     }
 
@@ -226,11 +237,17 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     }
 
     public BatchScannerSession setThreads(int threads) {
-        if (service != null)
-            service.shutdownNow();
+        if (scanManager != null) {
+            this.scanManager.cancelAllAndLock();
+        }
+        if (executorService != null) {
+            this.executorService.shutdownNow();
+        }
+        this.executorService = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<>(),
+                        new BatchReaderThreadFactory(threadId, this));
+        this.executorService = MoreExecutors.listeningDecorator(this.executorService);
         this.threadCount = threads;
-        service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new BatchReaderThreadFactory(threadId, this));
-        service = MoreExecutors.listeningDecorator(service);
+        this.scanManager = new ScanManager(executorService);
         return this;
     }
 
@@ -347,7 +364,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                     }
                     Thread.sleep(10);
                     if (Thread.interrupted() || !isRunning()) {
-                        service.shutdownNow();
+                        scanManager.cancelAllAndLock();
+                        executorService.shutdownNow();
                         throw new InterruptedException("Interrupted while parking");
                     }
                 }
@@ -366,18 +384,20 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                 if (isRunning()) {
 
                     if (Thread.interrupted()) {
-                        service.shutdownNow();
+                        scanManager.cancelAllAndLock();
+                        executorService.shutdownNow();
                         throw new InterruptedException("Interrupted while parking");
                     }
                 } else {
                     if (log.isTraceEnabled())
                         log.trace(" no longer running");
-                    service.shutdownNow();
+                    scanManager.cancelAllAndLock();
+                    executorService.shutdownNow();
                     return;
                 }
             }
-            service.shutdown();
-            while (!service.awaitTermination(250, TimeUnit.MILLISECONDS)) {}
+            executorService.shutdown();
+            while (!executorService.awaitTermination(250, TimeUnit.MILLISECONDS)) {}
         } catch (Exception e) {
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), e);
             Throwables.propagate(e);
@@ -417,26 +437,26 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
                 chunk.setQueryId(settings.getId().toString());
 
-                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
+                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, executorService);
 
                 scan.setVisitors(visitorFunctions);
 
                 Scan childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                                ((SpeculativeScan) scan).getQueue(), service);
+                                ((SpeculativeScan) scan).getQueue(), executorService);
 
                 childScan.setVisitors(visitorFunctions);
 
                 ((SpeculativeScan) scan).addScan(childScan);
 
                 childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
-                                ((SpeculativeScan) scan).getQueue(), service);
+                                ((SpeculativeScan) scan).getQueue(), executorService);
 
                 childScan.setVisitors(visitorFunctions);
 
                 ((SpeculativeScan) scan).addScan(childScan);
 
             } else {
-                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
+                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, executorService);
             }
 
             if (backoffEnabled) {
@@ -477,16 +497,16 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
                 }
-                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
+                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, executorService);
 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                                ((SpeculativeScan) scan).getQueue(), service));
+                                ((SpeculativeScan) scan).getQueue(), executorService));
 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
-                                ((SpeculativeScan) scan).getQueue(), service));
+                                ((SpeculativeScan) scan).getQueue(), executorService));
 
             } else {
-                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
+                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, executorService);
             }
 
             if (backoffEnabled) {
@@ -503,12 +523,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     }
 
     protected void submitScan(Scan scan, boolean increment) {
-        ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
-        if (increment) {
-            runnableCount.incrementAndGet();
-            runningQueries.add((scan.getScannerChunk().getContext()));
+        if (!scanManager.submit(this, scan, increment)) {
+            log.info("No scan dispatched, manager was invalid/locked: " + scan.getScanLocation());
         }
-        Futures.addCallback(future, this, MoreExecutors.newDirectExecutorService());
     }
 
     /**
@@ -558,18 +575,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         /**
          * In the event that we are not finished (i.e. time sliced ) we should resubmit
          */
-
         if (finishedScan.finished()) {
-            runnableCount.decrementAndGet();
-
-            // if we have pulled all of the results of the front end for this query, then and only then can we remove it.
-            // otherwise we still need it for checkpointing
-            if (finishedScan.getScannerChunk().getContext().isFinished()) {
-                runningQueries.remove(finishedScan.getScannerChunk().getContext());
-            }
-
-            finishedScan.close();
-
             if (null != stats && null != finishedScan.getStats()) {
                 synchronized (stats) {
                     stats.merge(finishedScan.getStats());
@@ -588,7 +594,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
             submitScan(finishedScan, false);
         }
-
     }
 
     /*
@@ -702,10 +707,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
          *
          */
         protected void shutdownServices() {
-            service.shutdownNow();
+            scanManager.cancelAllAndLock();
+            executorService.shutdownNow();
             int count = 0;
             try {
-                while (!service.awaitTermination(250, TimeUnit.MILLISECONDS) && count < MAX_WAIT) {
+                while (!executorService.awaitTermination(250, TimeUnit.MILLISECONDS) && count < MAX_WAIT) {
                     count++;
                 }
                 if (count >= MAX_WAIT) {
@@ -727,7 +733,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         } catch (Exception e) {
 
         }
-        service.shutdownNow();
+        scanManager.cancelAllAndLock();
+        executorService.shutdownNow();
     }
 
     public void addVisitor(Function<ScannerChunk,ScannerChunk> visitorFunction) {
@@ -775,5 +782,112 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         t.interrupt();
         close();
         uncaughtExceptionHandler.uncaughtException(t, e);
+    }
+
+    /**
+     * Manages scans execution and cancellation/invalidation
+     */
+    protected static class ScanManager implements FutureCallback<Scan> {
+        private final ExecutorService executor;
+        private final AtomicInteger runnableCount;
+        private final Set<ResultContext> runningQueries;
+        private final Set<Scan> runningScans;
+        private final ReadWriteLock stateRw;
+        private final Lock stateReadLock;
+        private final Lock stateWriteLock;
+        private volatile boolean shutdown;
+
+        ScanManager(ExecutorService executor) {
+            this.executor = executor;
+            this.runnableCount = new AtomicInteger(0);
+            this.runningQueries = Collections.synchronizedSet(new HashSet<>());
+            this.runningScans = Collections.synchronizedSet(new HashSet<>());
+            this.stateRw = new ReentrantReadWriteLock();
+            this.stateReadLock = stateRw.readLock();
+            this.stateWriteLock = stateRw.writeLock();
+        }
+
+        public boolean submit(BatchScannerSession session, Scan scan, boolean increment) {
+            boolean submittedScan = false;
+            stateReadLock.lock();
+            try {
+                if (!shutdown) {
+                    ListenableFuture<Scan> future = (ListenableFuture<Scan>) executor.submit(scan);
+                    if (increment) {
+                        runnableCount.incrementAndGet();
+                        runningScans.add(scan);
+                        runningQueries.add((scan.getScannerChunk().getContext()));
+                    }
+                    Futures.addCallback(future, this, MoreExecutors.newDirectExecutorService());
+                    Futures.addCallback(future, session, MoreExecutors.newDirectExecutorService());
+                    submittedScan = true;
+                }
+            } finally {
+                stateReadLock.unlock();
+            }
+            return submittedScan;
+        }
+
+        public void cancelAllAndLock() {
+            stateWriteLock.lock();
+            try {
+                if (shutdown) {
+                    return;
+                } else {
+                    shutdown = true;
+                }
+            } finally {
+                stateWriteLock.unlock();
+            }
+
+            Collection<Scan> localRunningScans;
+            synchronized (runningScans) {
+                localRunningScans = new ArrayList<>(runningScans);
+            }
+
+            localRunningScans.forEach(scan -> {
+                // Signal to the scanner (datawave construct) that we would like to cancel the current running call.
+                scan.cancel();
+                // Call close on the scanner (datawave construct) which will call close() on the Accumulo
+                // underlying Scanner.
+                // Note in Accumulo - if the scanner is closed and then interrupted, then there is an underlying
+                // detail that the cache will not be invalidated - because we explicitly closed the scanner.
+                // The close() in Accumulo sets a state variable, and in the case an interrupted exception is raised
+                // then the cache will not be invalidated.
+                scan.close();
+            });
+            runningScans.clear();
+        }
+
+        /*
+         * (non-Javadoc)
+         *
+         * @see com.google.common.util.concurrent.FutureCallback#onSuccess(java.lang. Object)
+         */
+        @Override
+        public void onSuccess(Scan finishedScan) {
+            if (finishedScan.finished()) {
+                runnableCount.decrementAndGet();
+
+                // if we have pulled all of the results of the front end for this query, then and only then can we remove it.
+                // otherwise we still need it for checkpointing
+                if (finishedScan.getScannerChunk().getContext().isFinished()) {
+                    runningQueries.remove(finishedScan.getScannerChunk().getContext());
+                }
+
+                finishedScan.close();
+                runningScans.remove(finishedScan);
+            }
+        }
+
+        /*
+         * (non-Javadoc)
+         *
+         * @see com.google.common.util.concurrent.FutureCallback#onFailure(java.lang. Throwable)
+         */
+        @Override
+        public void onFailure(Throwable t) {
+            // no code
+        }
     }
 }
