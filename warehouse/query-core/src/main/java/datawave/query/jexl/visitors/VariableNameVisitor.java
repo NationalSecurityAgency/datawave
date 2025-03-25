@@ -16,6 +16,7 @@ import org.apache.commons.jexl3.parser.TokenMgrException;
 
 import com.google.common.collect.Sets;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -45,7 +46,7 @@ public class VariableNameVisitor extends BaseVisitor {
 
         // Parse the query
         try {
-            JexlInfo jexlInfo = new JexlInfo("parseQuery", 1, 1);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("parseQuery");
             return parseQuery(parser.parse(jexlInfo, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());

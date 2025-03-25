@@ -383,7 +383,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            JexlInfo jexlInfo = new JexlInfo("configureRanges", 1, 1);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("configureRanges");
             script = parser.parse(jexlInfo, jexlFeatures(), queryString, null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());

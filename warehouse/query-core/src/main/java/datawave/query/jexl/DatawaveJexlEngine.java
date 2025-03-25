@@ -71,7 +71,7 @@ public class DatawaveJexlEngine extends Engine {
             features = JexlASTHelper.jexlFeatures();
         }
         if (info == null) {
-            info = jexlInfo();
+            info = JexlASTHelper.jexlInfo("DatawaveJexlEngine");
         }
         return super.createScript(features, info, source, names);
     }
@@ -85,7 +85,8 @@ public class DatawaveJexlEngine extends Engine {
      */
     public Script createComplexScript(String expression) {
         JexlFeatures features = new JexlFeatures();
-        return super.createScript(features, jexlInfo(), expression, (String[]) null);
+        JexlInfo info = JexlASTHelper.jexlInfo("DatawaveJexlEngine");
+        return super.createScript(features, info, expression, (String[]) null);
     }
 
     /**
@@ -97,10 +98,7 @@ public class DatawaveJexlEngine extends Engine {
      */
     public ASTJexlScript parse(String expression) {
         // Passing JexlInfo can cut parse time by two orders of magnitude
-        return super.parse(jexlInfo(), true, expression, null);
-    }
-
-    protected JexlInfo jexlInfo() {
-        return new JexlInfo("DatawaveJexlEngine", 1, 1);
+        JexlInfo info = JexlASTHelper.jexlInfo("DatawaveJexlEngine");
+        return super.parse(info, true, expression, null);
     }
 }

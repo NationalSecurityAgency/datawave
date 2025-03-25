@@ -25,9 +25,7 @@ public class DatawaveJexlEngineTest {
     }
 
     @Test
-    public void testScript() {
-        String query = "if (FIELD_A == FIELD_B) FIELD_A = 'repeat';";
-
+    public void testScriptWithComplexFeatures() {
         Key key = new Key("row", "dt\0uid");
 
         Document doc = new Document();
@@ -37,8 +35,8 @@ public class DatawaveJexlEngineTest {
         DatawaveJexlContext context = new DatawaveJexlContext();
         doc.visit(List.of("FIELD_A", "FIELD_B"), context);
 
-        assertThrows(JexlException.class, () -> engine.createScript(query));
-
+        // for complex script features use the DatawaveJexlEngine#createComplexScript()
+        String query = "if (FIELD_A == FIELD_B) FIELD_A = 'repeat';";
         Script script = engine.createComplexScript(query);
         Object result = script.execute(context);
 
@@ -47,5 +45,12 @@ public class DatawaveJexlEngineTest {
 
         assertEquals("value", doc.get("FIELD_A").getData());
         assertEquals("repeat", context.get("FIELD_A"));
+    }
+
+    @Test
+    public void testScriptWithComplexFeaturesNotSupported() {
+        // complex jexl features are disabled via DatawaveJexlEngine#createScript()
+        String query = "if (FIELD_A == FIELD_B) FIELD_A = 'repeat';";
+        assertThrows(JexlException.class, () -> engine.createScript(query));
     }
 }

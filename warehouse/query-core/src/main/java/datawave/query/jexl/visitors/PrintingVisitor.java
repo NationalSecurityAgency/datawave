@@ -105,6 +105,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
@@ -205,7 +206,7 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            JexlInfo jexlInfo = new JexlInfo("printQuery", 1, 1);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("printQuery");
             printQuery(parser.parse(jexlInfo, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
@@ -268,7 +269,7 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            JexlInfo jexlInfo = new JexlInfo("formattedQueryString", 1, 1);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("formattedQueryString");
             return formattedQueryString(parser.parse(jexlInfo, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
         } catch (TokenMgrException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
