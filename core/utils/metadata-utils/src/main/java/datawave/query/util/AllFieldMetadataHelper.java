@@ -1303,7 +1303,7 @@ public class AllFieldMetadataHelper {
      *             if a value fails to deserialize
      */
     @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#fields,#datatypes,#minThreshold}",
-            cacheManager = "metadataHelperCacheManager", sync = true)
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
         // create local copies to avoid side effects
