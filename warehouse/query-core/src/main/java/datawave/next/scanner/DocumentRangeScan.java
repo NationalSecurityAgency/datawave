@@ -24,7 +24,6 @@ import com.google.common.base.Joiner;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.next.async.RunnableWithContext;
-import datawave.next.retrieval.BatchDocumentIterator;
 import datawave.next.retrieval.DocumentIterator;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
@@ -45,6 +44,7 @@ public class DocumentRangeScan implements RunnableWithContext {
     private final long resultQueueOfferTimeMillis;
     private final BlockingQueue<Result> resultQueue;
     private final AtomicInteger numRetrievalScans;
+    private final boolean useQueryIterator;
 
     private String context;
 
@@ -57,6 +57,7 @@ public class DocumentRangeScan implements RunnableWithContext {
         this.resultQueue = config.getResults();
         this.auths = config.getAuthorizations();
         this.numRetrievalScans = config.getNumRetrievalScans();
+        this.useQueryIterator = config.isUseQueryIterator();
 
         String context = getRecordId(keyWithContext.getKey());
         this.stats = new ScanTimeStats();
@@ -81,13 +82,18 @@ public class DocumentRangeScan implements RunnableWithContext {
                 }
             }
 
-             executeScan();
-//            executeBatchScan();
+            if (useQueryIterator) {
+                executeQueryIteratorScan();
+            } else {
+                executeDocumentScan();
+            }
 
         } catch (Exception e) {
             log.error("error executing document range {}", keyWithContext.getKey().toStringNoTime(), e);
             throw new RuntimeException("error retrieving document: " + keyWithContext.getKey().toStringNoTime(), e);
         } finally {
+            stats.markStop();
+            numRetrievalScans.getAndDecrement();
             config.getStats().merge(stats);
         }
     }
@@ -108,49 +114,26 @@ public class DocumentRangeScan implements RunnableWithContext {
         return new Range(key, true, stop, false);
     }
 
-    private void executeScan() {
+    private void executeQueryIteratorScan() {
         Collection<Range> ranges = createRange();
         IteratorSetting setting = createScanIterator();
         IteratorSetting appliedSettings = config.getVisitorFunction().apply(setting, ranges);
 
-        int numResults = 0;
         try (Scanner scanner = config.getClient().createScanner(keyWithContext.getContext().getTableName(), auths)) {
             scanner.addScanIterator(appliedSettings);
 
             for (Range range : ranges) {
                 scanner.setRange(range);
-
-                // should only generate one entry because this is a document range
-                // but you know what they say about assumptions.
-                for (Map.Entry<Key,Value> entry : scanner) {
-                    numResults++;
-                    Result result = new Result(entry.getKey(), entry.getValue());
-
-                    boolean offered = false;
-                    while (!offered) {
-                        try {
-                            offered = resultQueue.offer(result, resultQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException("Interrupted while offering result", e);
-                        }
-                    }
-                }
+                driveScanner(scanner);
             }
 
         } catch (Exception e) {
             log.error("exception while fetching document", e);
             throw new RuntimeException(e);
-        } finally {
-            stats.markStop();
-            if (log.isDebugEnabled()) {
-                long elapsed = TimeUnit.NANOSECONDS.toMillis(stats.getScanTime());
-                log.debug("num results: {} in {} ms", numResults, elapsed);
-            }
-            numRetrievalScans.getAndDecrement();
         }
     }
 
-    private void executeBatchScan() {
+    private void executeDocumentScan() {
 
         Set<String> candidates = new HashSet<>();
         if (keyWithContext instanceof BulkKeyWithContext) {
@@ -163,8 +146,8 @@ public class DocumentRangeScan implements RunnableWithContext {
 
         QueryData queryData = keyWithContext.getContext();
         IteratorSetting orig = queryData.getSettings().get(0);
-        IteratorSetting setting = new IteratorSetting(orig.getPriority(), BatchDocumentIterator.class.getSimpleName(), BatchDocumentIterator.class);
-        setting.addOption(BatchDocumentIterator.CANDIDATES, Joiner.on(',').join(candidates));
+        IteratorSetting setting = new IteratorSetting(orig.getPriority(), DocumentIterator.class.getSimpleName(), DocumentIterator.class);
+        setting.addOption(DocumentIterator.CANDIDATES, Joiner.on(',').join(candidates));
 
         setting.addOptions(orig.getOptions());
 
@@ -173,39 +156,32 @@ public class DocumentRangeScan implements RunnableWithContext {
             setting.addOption(QueryOptions.QUERY, queryData.getQuery());
         }
 
-        int numResults = 0;
         try (Scanner scanner = config.getClient().createScanner(keyWithContext.getContext().getTableName(), auths)) {
             scanner.addScanIterator(setting);
 
             Key start = new Key(keyWithContext.getKey().getRow());
             scanner.setRange(new Range(start, true, start.followingKey(PartialKey.ROW), false));
 
-            // should only generate one entry because this is a document range
-            // but you know what they say about assumptions.
-            for (Map.Entry<Key,Value> entry : scanner) {
-                numResults++;
-                Result result = new Result(entry.getKey(), entry.getValue());
-
-                boolean offered = false;
-                while (!offered) {
-                    try {
-                        offered = resultQueue.offer(result, resultQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException("Interrupted while offering result", e);
-                    }
-                }
-            }
+            driveScanner(scanner);
 
         } catch (Exception e) {
             log.error("exception while fetching document", e);
             throw new RuntimeException(e);
-        } finally {
-            stats.markStop();
-            if (log.isDebugEnabled()) {
-                long elapsed = TimeUnit.NANOSECONDS.toMillis(stats.getScanTime());
-                log.debug("num results: {} in {} ms", numResults, elapsed);
+        }
+    }
+
+    protected void driveScanner(Scanner scanner) {
+        for (Map.Entry<Key,Value> entry : scanner) {
+            Result result = new Result(entry.getKey(), entry.getValue());
+
+            boolean offered = false;
+            while (!offered) {
+                try {
+                    offered = resultQueue.offer(result, resultQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Interrupted while offering result", e);
+                }
             }
-            numRetrievalScans.getAndDecrement();
         }
     }
 

@@ -525,6 +525,7 @@
         <property name="resultQueueOfferTimeMillis" value="25"/>
         <property name="resultQueuePollTimeMillis" value="5"/>
         <property name="scanTimeoutMillis" value="10000"/>
+        <property name="useQueryIterator" value="false" />
     </bean>
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">

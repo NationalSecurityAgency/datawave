@@ -3,12 +3,16 @@ package datawave.next.retrieval;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -27,50 +31,46 @@ import datawave.query.attributes.DocumentKey;
 import datawave.query.data.parsers.EventKey;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.Tuple3;
-import datawave.query.util.TypeMetadata;
 
 /**
- * An extremely simple iterator that retrieves a document.
+ * An iterator that retrieves documents from the shard table.
  */
-public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
+public class DocumentIterator extends DocumentIteratorOptions implements SortedKeyValueIterator<Key,Value> {
 
     private Key tk = null;
     private Value tv = null;
-
-    private SortedKeyValueIterator<Key,Value> source = null;
-    private Map<String,String> options = null;
-    private IteratorEnvironment env;
 
     private Range range = null;
     private Collection<ByteSequence> columnFamilies = null;
     private boolean inclusive = false;
 
-    // new vars
-    private String query;
-
     // exclusive scan with these column families exclude them
     protected final Collection<ByteSequence> excludeCFs = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
+
+    private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
+    private final List<Entry<Key,Value>> results = new LinkedList<>();
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.source = source;
         this.options = options;
         this.env = env;
-
-        if (options.containsKey(QueryOptions.QUERY)) {
-            query = options.get(QueryOptions.QUERY);
-        } else {
-            throw new RuntimeException("DocumentIterator requires a query option");
-        }
+        validateOptions(this.options);
     }
 
     @Override
     public boolean hasTop() {
+        if (tk == null) {
+            if (!results.isEmpty()) {
+                Entry<Key,Value> entry = results.remove(0);
+                tk = entry.getKey();
+                tv = entry.getValue();
+            }
+        }
         return tk != null;
     }
 
@@ -86,48 +86,50 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
 
-        source.seek(range, excludeCFs, false);
-
         // aggregate document
-        Document d = new Document();
-        TypeMetadata typeMetadata = new TypeMetadata();
         AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
         EventKey parser = new EventKey();
-        Key key = null;
-        while (source.hasTop()) {
-            key = source.getTopKey();
-            tk = key;
-            parser.parse(key);
-            Attribute<?> attr = attributeFactory.create(parser.getField(), parser.getValue(), key, true);
-            d.put(parser.getField(), attr);
-            source.next();
-        }
 
-        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
+        for (String candidate : candidates) {
 
-        ASTJexlScript queryTree = parse(query);
-        Set<String> identifiers = JexlASTHelper.getIdentifierNames(queryTree);
+            Range candidateRange = rangeForCandidate(candidate);
+            source.seek(candidateRange, excludeCFs, false);
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(identifiers, context);
+            Document d = new Document();
+            Key key = null;
+            while (source.hasTop()) {
+                key = source.getTopKey();
+                parser.parse(key);
+                Attribute<?> attr = attributeFactory.create(parser.getField(), parser.getValue(), key, true);
+                d.put(parser.getField(), attr);
+                source.next();
+            }
 
-        boolean matched = evaluation.apply(new Tuple3<>(tk, d, context));
-        if (!matched) {
-            return;
-        }
+            JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
 
-        if (d.size() > 0 && key != null) {
-            Text cf = new Text(parser.getDatatype() + "\0" + parser.getUid());
-            Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
-            Attribute<?> attr = new DocumentKey(recordId, false);
-            d.put(Document.DOCKEY_FIELD_NAME, attr);
-        }
+            ASTJexlScript queryTree = parse(query);
+            Set<String> identifiers = JexlASTHelper.getIdentifierNames(queryTree);
 
-        if (d.size() > 0) {
-            Map.Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(key, d);
-            Map.Entry<Key,Value> e2 = new KryoDocumentSerializer().apply(entry);
-            tk = e2.getKey();
-            tv = e2.getValue();
+            DatawaveJexlContext context = new DatawaveJexlContext();
+            d.visit(identifiers, context);
+
+            boolean matched = evaluation.apply(new Tuple3<>(tk, d, context));
+            if (!matched) {
+                continue;
+            }
+
+            if (d.size() > 0 && key != null) {
+                Text cf = new Text(parser.getDatatype() + "\0" + parser.getUid());
+                Key recordId = new Key(key.getRow(), cf, new Text(), key.getColumnVisibility(), key.getTimestamp());
+                Attribute<?> attr = new DocumentKey(recordId, false);
+                d.put(Document.DOCKEY_FIELD_NAME, attr);
+            }
+
+            if (d.size() > 0) {
+                Map.Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(key, d);
+                Map.Entry<Key,Value> result = serializer.apply(entry);
+                results.add(result);
+            }
         }
     }
 
@@ -137,6 +139,12 @@ public class DocumentIterator implements SortedKeyValueIterator<Key,Value> {
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Range rangeForCandidate(String candidate) {
+        Key start = new Key(range.getStartKey().getRow(), new Text(candidate));
+        Key stop = start.followingKey(PartialKey.ROW_COLFAM);
+        return new Range(start, true, stop, false);
     }
 
     @Override

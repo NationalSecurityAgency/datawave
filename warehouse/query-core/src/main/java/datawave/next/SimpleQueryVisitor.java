@@ -213,7 +213,8 @@ public class SimpleQueryVisitor extends BaseVisitor {
         }
 
         for (String field : fields) {
-            validateField(field);
+            String deconstructed = JexlASTHelper.deconstructIdentifier(field);
+            validateField(deconstructed);
         }
     }
 

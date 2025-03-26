@@ -65,6 +65,9 @@ public class DocumentScannerConfig {
 
     private long scanTimeoutMillis = 10_000L;
 
+    // should the scheduler use the query iterator or a document iterator?
+    private boolean useQueryIterator = true;
+
     private VisitorFunction visitorFunction;
     private String queryId;
 
@@ -320,5 +323,13 @@ public class DocumentScannerConfig {
 
     public void setScanTimeoutMillis(long scanTimeoutMillis) {
         this.scanTimeoutMillis = scanTimeoutMillis;
+    }
+
+    public boolean isUseQueryIterator() {
+        return useQueryIterator;
+    }
+
+    public void setUseQueryIterator(boolean useQueryIterator) {
+        this.useQueryIterator = useQueryIterator;
     }
 }
