@@ -99,10 +99,20 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             Key key = null;
             while (source.hasTop()) {
                 key = source.getTopKey();
-                parser.parse(key);
-                Attribute<?> attr = attributeFactory.create(parser.getField(), parser.getValue(), key, true);
-                d.put(parser.getField(), attr);
                 source.next();
+                parser.parse(key);
+
+                String field = JexlASTHelper.deconstructIdentifier(parser.getField());
+                if (includeFields != null && !includeFields.contains(field)) {
+                    // field was not present in inclusive filter
+                    continue;
+                } else if (excludeFields != null && excludeFields.contains(field)) {
+                    // field matched the exclusive filter
+                    continue;
+                }
+
+                Attribute<?> attr = attributeFactory.create(field, parser.getValue(), key, true);
+                d.put(field, attr);
             }
 
             JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());

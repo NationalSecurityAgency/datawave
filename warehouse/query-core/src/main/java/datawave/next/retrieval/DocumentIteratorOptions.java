@@ -50,6 +50,8 @@ public class DocumentIteratorOptions implements OptionDescriber {
     protected String query;
     protected boolean compressedOptions = false;
     protected TypeMetadata typeMetadata;
+    protected Set<String> includeFields = null;
+    protected Set<String> excludeFields = null;
     protected final List<String> candidates = new ArrayList<>();
 
     @Override
@@ -66,8 +68,8 @@ public class DocumentIteratorOptions implements OptionDescriber {
         }
 
         if (options.containsKey(CANDIDATES)) {
-            String opt = options.get(CANDIDATES);
-            candidates.addAll(Splitter.on(',').splitToList(opt));
+            String option = options.get(CANDIDATES);
+            candidates.addAll(Splitter.on(',').splitToList(option));
             // candidates are sorted to avoid expensive re-seeks
             Collections.sort(candidates);
         } else {
@@ -92,6 +94,25 @@ public class DocumentIteratorOptions implements OptionDescriber {
             }
         } else {
             throw new RuntimeException("Cannot execute query without TypeMetadata");
+        }
+
+        // include fields are optional
+        if (options.containsKey(QueryOptions.PROJECTION_FIELDS)) {
+            String option = options.get(QueryOptions.PROJECTION_FIELDS);
+            // if the user requested everything with a star then leave include fields as null
+            // this signifies that all fields are allowed
+            if (!option.equals("*")) {
+                includeFields = new HashSet<>();
+                includeFields.addAll(Splitter.on(',').splitToList(option));
+            }
+        }
+
+        // technically cannot have both include and exclude fields...but this iterator does not validate optional
+        // options, that is the responsibility of the caller
+        if (options.containsKey(QueryOptions.DISALLOWLISTED_FIELDS)) {
+            String option = options.get(QueryOptions.DISALLOWLISTED_FIELDS);
+            excludeFields = new HashSet<>();
+            excludeFields.addAll(Splitter.on(',').splitToList(option));
         }
 
         return true;
