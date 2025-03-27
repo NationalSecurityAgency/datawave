@@ -25,6 +25,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.next.async.RunnableWithContext;
 import datawave.next.retrieval.DocumentIterator;
+import datawave.next.retrieval.DocumentIteratorOptions;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
 
@@ -149,7 +150,8 @@ public class DocumentRangeScan implements RunnableWithContext {
         IteratorSetting setting = new IteratorSetting(orig.getPriority(), DocumentIterator.class.getSimpleName(), DocumentIterator.class);
         setting.addOption(DocumentIterator.CANDIDATES, Joiner.on(',').join(candidates));
 
-        setting.addOptions(orig.getOptions());
+        // only copy over the options we need
+        copyRequiredOptions(setting, orig);
 
         // set the query from the query data
         if (setting.getOptions().containsKey(QueryOptions.QUERY)) {
@@ -167,6 +169,17 @@ public class DocumentRangeScan implements RunnableWithContext {
         } catch (Exception e) {
             log.error("exception while fetching document", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void copyRequiredOptions(IteratorSetting target, IteratorSetting source) {
+        Set<String> requiredOptions = DocumentIteratorOptions.getRequiredOptionNames();
+        Map<String,String> sourceOptions = source.getOptions();
+        for (String requiredOption : requiredOptions) {
+            String option = sourceOptions.get(requiredOption);
+            if (option != null) {
+                target.addOption(requiredOption, option);
+            }
         }
     }
 

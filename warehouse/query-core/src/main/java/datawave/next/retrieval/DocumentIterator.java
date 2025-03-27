@@ -48,9 +48,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
     private Collection<ByteSequence> columnFamilies = null;
     private boolean inclusive = false;
 
-    // exclusive scan with these column families exclude them
-    protected final Collection<ByteSequence> excludeCFs = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
-
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
     private final List<Entry<Key,Value>> results = new LinkedList<>();
 

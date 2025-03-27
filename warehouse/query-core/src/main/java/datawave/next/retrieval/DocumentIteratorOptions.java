@@ -1,5 +1,8 @@
 package datawave.next.retrieval;
 
+import static datawave.query.iterator.QueryOptions.DISALLOWLISTED_FIELDS;
+import static datawave.query.iterator.QueryOptions.PROJECTION_FIELDS;
+import static datawave.query.iterator.QueryOptions.QUERY;
 import static datawave.query.iterator.QueryOptions.QUERY_MAPPING_COMPRESS;
 import static datawave.query.iterator.QueryOptions.TYPE_METADATA;
 
@@ -10,6 +13,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,15 +58,33 @@ public class DocumentIteratorOptions implements OptionDescriber {
     protected Set<String> excludeFields = null;
     protected final List<String> candidates = new ArrayList<>();
 
+    protected static final Set<String> optionNames = Set.of(QUERY, QUERY_MAPPING_COMPRESS, TYPE_METADATA, PROJECTION_FIELDS, DISALLOWLISTED_FIELDS, CANDIDATES);
+
+    /**
+     * Get the set of required option names. Useful when down-selecting from an existing set of options
+     *
+     * @return option names
+     */
+    public static Set<String> getRequiredOptionNames() {
+        return optionNames;
+    }
+
     @Override
     public IteratorOptions describeOptions() {
-        return null;
+        Map<String,String> options = new HashMap<>();
+        options.put(QUERY, "the query string");
+        options.put(QUERY_MAPPING_COMPRESS, "true if the type metadata is base64 encoded");
+        options.put(TYPE_METADATA, "true if the type metadata is base64 encoded");
+        options.put(PROJECTION_FIELDS, "the set of fields to include");
+        options.put(DISALLOWLISTED_FIELDS, "the set of fields to exclude");
+        options.put(CANDIDATES, "the set of candidate record ids to fetch");
+        return new IteratorOptions(getClass().getSimpleName(), "Retrieves documents", options, null);
     }
 
     @Override
     public boolean validateOptions(Map<String,String> options) {
-        if (options.containsKey(QueryOptions.QUERY)) {
-            query = options.get(QueryOptions.QUERY);
+        if (options.containsKey(QUERY)) {
+            query = options.get(QUERY);
         } else {
             throw new RuntimeException("DocumentIterator requires a query option");
         }
@@ -118,6 +140,17 @@ public class DocumentIteratorOptions implements OptionDescriber {
         return true;
     }
 
+    /**
+     * Direct lift from the QueryIterator
+     *
+     * @param buffer
+     *            the data
+     * @param characterSet
+     *            the character set
+     * @return the decompressed data
+     * @throws IOException
+     *             if there is a deserialization exception
+     */
     protected String decompressOption(final String buffer, Charset characterSet) throws IOException {
         final byte[] inBase64 = Base64.decodeBase64(buffer.getBytes());
 
