@@ -97,7 +97,7 @@ public class MultiValueCompositeIndexTest {
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final int NUM_SHARDS = 241;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
@@ -311,6 +311,12 @@ public class MultiValueCompositeIndexTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_" + NUM_SHARDS, new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Test
@@ -324,7 +330,7 @@ public class MultiValueCompositeIndexTest {
         // @formatter:on
 
         List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(3, queries.size());
+        Assert.assertEquals(2, queries.size());
 
         List<DefaultEvent> events = getQueryResults(query, false);
         Assert.assertEquals(3, events.size());
@@ -358,7 +364,7 @@ public class MultiValueCompositeIndexTest {
         // @formatter:on
 
         List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(732, queries.size());
+        Assert.assertEquals(2196, queries.size());
 
         List<DefaultEvent> events = getQueryResults(query, true);
         Assert.assertEquals(3, events.size());

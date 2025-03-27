@@ -101,7 +101,7 @@ public class CompositeIndexTest {
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final int NUM_SHARDS = 241;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
@@ -338,6 +338,12 @@ public class CompositeIndexTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_" + NUM_SHARDS, new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Test
@@ -355,7 +361,7 @@ public class CompositeIndexTest {
         logic.setIntermediateMaxTermThreshold(50);
         logic.setIndexedMaxTermThreshold(50);
         List<QueryData> queries = getQueryRanges(logic, query, false);
-        Assert.assertEquals(12, queries.size());
+        Assert.assertEquals(10, queries.size());
 
         List<DefaultEvent> events = getQueryResults(logic, query, false);
         Assert.assertEquals(9, events.size());
@@ -448,7 +454,7 @@ public class CompositeIndexTest {
         // @formatter:on
 
         List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(732, queries.size());
+        Assert.assertEquals(2196, queries.size());
 
         List<DefaultEvent> events = getQueryResults(query, true);
         Assert.assertEquals(9, events.size());
