@@ -29,6 +29,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
@@ -382,7 +383,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            script = parser.parse(null, jexlFeatures(), queryString, null);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("configureRanges");
+            script = parser.parse(jexlInfo, jexlFeatures(), queryString, null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
