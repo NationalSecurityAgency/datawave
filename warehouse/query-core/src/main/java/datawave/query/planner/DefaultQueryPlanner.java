@@ -752,11 +752,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-        if (config.getUniqueFields().isMostRecent()) {
-            // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
-            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        if (!config.isDisableIteratorUniqueFields()) {
+            addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+            if (config.getUniqueFields().isMostRecent()) {
+                // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+                addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+                addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+            }
         }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
@@ -1258,13 +1260,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * This is used to reprocess a query plan to ensure it is executable. I may expand pulled up unexpanded regex or ranges if required.
      *
-     * @see DatePartitionedQueryPlanner
      * @param config
      * @param metadataHelper
      * @param timers
      * @param scannerFactory
      * @return An adjusted query tree.
      * @throws DatawaveQueryException
+     * @see DatePartitionedQueryPlanner
      */
     protected ASTJexlScript reprocessTree(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryStopwatch timers, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {

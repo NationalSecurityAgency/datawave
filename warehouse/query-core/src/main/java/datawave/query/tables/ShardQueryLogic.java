@@ -1793,6 +1793,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return getConfig().getGroupFieldsBatchSize();
     }
 
+    public boolean isDisableIteratorUniqueFields() {
+        return getConfig().isDisableIteratorUniqueFields();
+    }
+
+    public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
+        getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
