@@ -22,7 +22,9 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,7 +32,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -60,12 +66,15 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
+import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -84,6 +93,7 @@ import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
@@ -94,8 +104,8 @@ import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -143,6 +153,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
+    protected NumShardFinder numShardFinder;
+
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
         this.scanners = scanners;
@@ -154,8 +166,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         streamExecutor = new ThreadPoolExecutor(executeLookupMin, maxLookup, 100, TimeUnit.MILLISECONDS, runnables);
         fieldDataTypes = config.getQueryFieldsDatatypes();
         collapseUids = config.getCollapseUids();
-        fieldCounts = config.getUseFieldCounts();
-        termCounts = config.getUseTermCounts();
+        fieldCounts = config.isSortQueryPostIndexWithFieldCounts();
+        termCounts = config.isSortQueryPostIndexWithTermCounts();
         try {
             Set<String> ioFields = metadataHelper.getIndexOnlyFields(null);
             if (null != ioFields) {
@@ -258,7 +270,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
 
-                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), getEmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
+                                getEmptyPlanPruner());
+
+                if (config.isSortQueryPostIndexWithFieldCounts() || config.isSortQueryPostIndexWithTermCounts()) {
+                    this.itr = transform(itr, new OrderingTransform(config.isSortQueryPostIndexWithFieldCounts(), config.isSortQueryPostIndexWithTermCounts()));
+                }
             }
         } finally {
             // shut down the executor as all threads have completed
@@ -330,6 +347,34 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             }
 
             return true;
+        }
+    }
+
+    /**
+     * Transform that reorders a query tree according to field or term counts.
+     * <p>
+     * If both flags are set then the more precise term counts are used.
+     */
+    public static class OrderingTransform implements Function<QueryPlan,QueryPlan> {
+
+        private final boolean useFieldCounts;
+        private final boolean useTermCounts;
+
+        public OrderingTransform(boolean useFieldCounts, boolean useTermCounts) {
+            this.useFieldCounts = useFieldCounts;
+            this.useTermCounts = useTermCounts;
+        }
+
+        @Override
+        public QueryPlan apply(QueryPlan plan) {
+            if (useTermCounts) {
+                Map<String,Long> counts = plan.getTermCounts().getCounts();
+                OrderByCostVisitor.orderByTermCount(plan.getQueryTree(), counts);
+            } else if (useFieldCounts) {
+                Map<String,Long> counts = plan.getFieldCounts().getCounts();
+                OrderByCostVisitor.orderByFieldCount(plan.getQueryTree(), counts);
+            }
+            return plan;
         }
     }
 
@@ -414,8 +459,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     log.debug("{\"" + JexlASTHelper.getLiterals(node) + "\"} requires a full field index scan.");
                 }
             }
-            JexlNode wrappedNode = JexlNodes.wrap(node);
-            return ScannerStream.exceededValueThreshold(createFullFieldIndexScanList(config, wrappedNode).iterator(), wrappedNode);
+
+            JexlNode wrapped = JexlNodes.wrap(node);
+            ShardSpecificIndexIterator iter = new ShardSpecificIndexIterator(wrapped, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
+            return ScannerStream.withData(iter, wrapped);
+
         } else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
             return ScannerStream.ignored(node);
         } else if (instance.isType(DROPPED)) {
@@ -534,8 +582,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
@@ -545,8 +592,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));
@@ -567,6 +613,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             String queryString = fieldName + "=='" + literal + "'";
             options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
+
+            // easier to apply hints to new options than deal with copying existing hints between
+            options.applyExecutionHints(config.getIndexTableName(), config.getTableHints());
+            options.applyConsistencyLevel(config.getIndexTableName(), config.getTableConsistencyLevels());
 
             scannerSession.setOptions(options);
             scannerSession.setMaxResults(config.getMaxIndexBatchSize());
@@ -771,13 +821,99 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (Constants.SHARD_DAY_HINT.equals(identifier)) {
             JexlNode myNode = JexlNodeFactory.createExpression(node);
             String[] shardsAndDays = StringUtils.split(JexlASTHelper.getLiteralValue(node).toString(), ',');
-            if (shardsAndDays.length > 0) {
-                return ScannerStream.withData(createIndexScanList(shardsAndDays).iterator(), myNode);
-            } else {
+
+            if (shardsAndDays.length == 0) {
                 return ScannerStream.noData(myNode);
             }
+
+            // it is important that we check for a day range. in that case we need to build a different iterator
+            // to preserve search parallelism.
+            boolean hintContainsDays = checkHintForDays(shardsAndDays);
+            if (hintContainsDays) {
+                // need to create special purpose iterator
+                HintToShardIterator shim = new HintToShardIterator(shardsAndDays, getNumShardFinder());
+                return ScannerStream.withData(shim, myNode);
+            }
+
+            return ScannerStream.withData(createIndexScanList(shardsAndDays).iterator(), myNode);
         }
         return null;
+    }
+
+    /**
+     * Checks an array of shard and day hints to see if it contains a day (i.e., no underscore)
+     *
+     * @param shardsAndDays
+     *            an array of shards and days hints
+     * @return true if a day hint is present
+     */
+    private boolean checkHintForDays(String[] shardsAndDays) {
+        for (String hint : shardsAndDays) {
+            if (!hint.contains("_")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected synchronized NumShardFinder getNumShardFinder() {
+        if (numShardFinder == null) {
+            numShardFinder = new NumShardFinder(config.getClient());
+        }
+        return numShardFinder;
+    }
+
+    /**
+     * Minimal code required to populate the num shards cache
+     */
+    public static class NumShardFinder {
+
+        protected final AccumuloClient client;
+        protected final TreeMap<String,Integer> cache = new TreeMap<>();
+
+        public NumShardFinder(AccumuloClient client) {
+            this.client = client;
+            // prepopulate the cache
+            populateCache();
+        }
+
+        public int getNumShards(String day) {
+            // this object could be called from multiple threads via the concurrent scanner initializer
+            // so synchronize for safety
+            synchronized (cache) {
+                Map.Entry<String,Integer> entry = cache.floorEntry(day);
+                if (entry != null) {
+                    return entry.getValue();
+                }
+                return 0;
+            }
+        }
+
+        private void populateCache() {
+            if (client == null) {
+                log.warn("no client configured, will not populate num shards");
+                return;
+            }
+            try (Scanner scanner = client.createScanner(TableName.METADATA)) {
+                scanner.setRange(Range.exact(NumShards.NUM_SHARDS, NumShards.NUM_SHARDS_CF));
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    // num_shards ns:date_shards
+                    // num_shards ns:20050207_17
+                    String cq = entry.getKey().getColumnQualifier().toString();
+                    if (!cq.contains("_")) {
+                        log.warn("invalid num_shards entry");
+                        continue;
+                    }
+
+                    String[] parts = cq.split("_");
+                    cache.put(parts[0], Integer.parseInt(parts[1]));
+                }
+            } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+                // an exception here shouldn't kill the query
+                log.warn("exception thrown while trying to scan num shards cache: " + e.getMessage());
+            }
+        }
+
     }
 
     public Range rangeForTerm(String term, String field, ShardQueryConfiguration config) {
@@ -819,6 +955,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      *            a JexlNode
      * @return The list of index info ranges
      */
+    @Deprecated(forRemoval = true)
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
 

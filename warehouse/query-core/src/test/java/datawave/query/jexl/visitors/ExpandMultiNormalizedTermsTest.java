@@ -572,12 +572,12 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "((" + LENIENT + " = true) && (FOO =~ '32'))";
-        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E')";
+        String expected = "(FOO =~ '\\+bE3\\.2' || FOO =~ '32')";
         expandTerms(original, expected);
 
-        // in this case the numeric normalization fails, so keep only the text normalization
+        // This case used to fail numeric normalization, but is now supported.
         original = "((" + LENIENT + " = true) && (FOO =~ '3.*2'))";
-        expected = "(FOO =~ '3.*2')";
+        expected = "(FOO =~ '\\+[a-z]E3\\..*2' || FOO =~ '3.*2')";
         expandTerms(original, expected);
     }
 
@@ -645,12 +645,12 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "FOO =~ '32' && FOO !~ '42'";
-        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E') && (FOO !~ '\\Q+bE4.2\\E' && FOO !~ '42')";
+        String expected = "(FOO =~ '32' || FOO =~ '\\+bE3\\.2') && (FOO !~ '\\+bE4\\.2' && FOO !~ '42')";
         expandTerms(original, expected);
 
-        // in this case the numeric normalization fails but others succeed (e.g. lcnodiacritics)
+        // Where this case the numeric normalization used to fail, but should now support more complex numeric normalization.
         original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
-        expected = "((_Eval_ = true) && (FOO =~ '3.*2')) && ((_Eval_ = true) && (FOO !~ '3.*22'))";
+        expected = "(FOO =~ '\\+[a-z]E3\\..*2' || FOO =~ '3.*2') && FOO !~ '\\+[a-z]E3\\..*22' && FOO !~ '3.*22'";
         expandTerms(original, expected);
     }
 
@@ -667,12 +667,12 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "FOO =~ '32' && FOO !~ '42'";
-        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E') && (FOO !~ '\\Q+bE4.2\\E' && FOO !~ '42')";
+        String expected = "(FOO =~ '\\+bE3\\.2' || FOO =~ '32') && FOO !~ '\\+bE4\\.2' && FOO !~ '42'";
         expandTerms(original, expected);
 
-        // in this case the numeric normalization fails but others succeed (e.g. lcnodiacritics)
+        // This case used to fail numeric normalization, but should now be supported.
         original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
-        expected = "FOO =~ '3.*2' && FOO !~ '3.*22'";
+        expected = "(FOO =~ '\\+[a-z]E3\\..*2' || FOO =~ '3.*2') && FOO !~ '\\+[a-z]E3\\..*22' && FOO !~ '3.*22'";
         expandTerms(original, expected);
     }
 
@@ -690,6 +690,60 @@ public class ExpandMultiNormalizedTermsTest {
         String original = "FOO != '32' && FOO != '42'";
         String expected = "(FOO != '+bE3.2' && FOO != '32') && (FOO != '42' && FOO != '+bE4.2')";
         expandTerms(original, expected);
+    }
+
+    /**
+     * For each node type test all lowercase, mixed case, and numeric
+     *
+     * @throws ParseException
+     *             if the query fails to parse
+     */
+    @Test
+    public void testAnyFieldTerms() throws ParseException {
+
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType(), new NoOpType()));
+        helper.setDataTypes(dataTypes);
+
+        // EQ
+        expandTerms("_ANYFIELD_ == 'anywhere'", "_ANYFIELD_ == 'anywhere'");
+        expandTerms("_ANYFIELD_ == 'oHIo'", "_ANYFIELD_ == 'ohio' || _ANYFIELD_ == 'oHIo'");
+        expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '+cE1.23' || _ANYFIELD_ == '123'");
+
+        // NE
+        expandTerms("_ANYFIELD_ != 'anywhere'", "_ANYFIELD_ != 'anywhere'");
+        expandTerms("_ANYFIELD_ != 'oHIo'", "_ANYFIELD_ != 'ohio' && _ANYFIELD_ != 'oHIo'");
+        expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '+cE1.23' && _ANYFIELD_ != '123'");
+
+        // ER
+        expandTerms("_ANYFIELD_ =~ 'anywhere'", "_ANYFIELD_ =~ 'anywhere'");
+        expandTerms("_ANYFIELD_ =~ 'oHIo'", "_ANYFIELD_ =~ 'ohio' || _ANYFIELD_ =~ 'oHIo'");
+        expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '\\+cE1\\.23' || _ANYFIELD_ =~ '123'");
+
+        // NR
+        expandTerms("_ANYFIELD_ !~ 'anywhere'", "_ANYFIELD_ !~ 'anywhere'");
+        expandTerms("_ANYFIELD_ !~ 'oHIo'", "_ANYFIELD_ !~ 'ohio' && _ANYFIELD_ !~ 'oHIo'");
+        expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '\\+cE1\\.23' && _ANYFIELD_ !~ '123'");
+
+        // LT
+        expandTerms("_ANYFIELD_ < 'anywhere'", "_ANYFIELD_ < 'anywhere'");
+        expandTerms("_ANYFIELD_ < 'oHIo'", "_ANYFIELD_ < 'ohio' || _ANYFIELD_ < 'oHIo'");
+        expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '+cE1.23' || _ANYFIELD_ < '123'");
+
+        // LE
+        expandTerms("_ANYFIELD_ <= 'anywhere'", "_ANYFIELD_ <= 'anywhere'");
+        expandTerms("_ANYFIELD_ <= 'oHIo'", "_ANYFIELD_ <= 'ohio' || _ANYFIELD_ <= 'oHIo'");
+        expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '+cE1.23' || _ANYFIELD_ <= '123'");
+
+        // GT
+        expandTerms("_ANYFIELD_ > 'anywhere'", "_ANYFIELD_ > 'anywhere'");
+        expandTerms("_ANYFIELD_ > 'oHIo'", "_ANYFIELD_ > 'ohio' || _ANYFIELD_ > 'oHIo'");
+        expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '+cE1.23' || _ANYFIELD_ > '123'");
+
+        // GE
+        expandTerms("_ANYFIELD_ >= 'anywhere'", "_ANYFIELD_ >= 'anywhere'");
+        expandTerms("_ANYFIELD_ >= 'oHIo'", "_ANYFIELD_ >= 'ohio' || _ANYFIELD_ >= 'oHIo'");
+        expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '+cE1.23' || _ANYFIELD_ >= '123'");
     }
 
     private void expandTerms(String original, String expected) throws ParseException {

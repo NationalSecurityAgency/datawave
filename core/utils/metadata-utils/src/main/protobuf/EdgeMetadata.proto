@@ -1,0 +1,22 @@
+// compile with protoc --java_out ../java
+//      classpath for compile command should include ../../../target/classes and protobuf-java-2.2.0.jar
+
+package datawave.metadata.protobuf;
+
+option java_package = "datawave.metadata.protobuf";
+option optimize_for = SPEED;
+
+// moved this out because no need for Metadata values to appear in the standard edge table.
+// this would be fixed if packed=true worked on strings, but meh
+message MetadataValue {
+  message Metadata {
+      required string source = 1;
+      required string sink = 2;
+      optional string enrichment = 3;
+      optional string enrichmentIndex = 4;
+      optional string date = 5;
+      optional string jexlPrecondition = 6;
+  }
+  repeated Metadata metadata = 1;
+}
+

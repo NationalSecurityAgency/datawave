@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -338,7 +339,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         String city = TestCities.rome.name();
         String query = CityField.NUM.name() + LTE_OP + "100" + AND_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city + "'" + OR_OP + CityField.NUM.name()
                         + GTE_OP + "100)";
-        ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
 
         // Test the plan with all expansions
         try {

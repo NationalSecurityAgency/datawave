@@ -146,7 +146,7 @@ public class PartitionerCache {
         return defaultDelegatePartitioner;
     }
 
-    private boolean hasPartitionerOverride(Text tableName) {
+    public boolean hasPartitionerOverride(Text tableName) {
         return isMemberOfACategory(tableName) || hasDedicatedPartitioner(tableName);
     }
 

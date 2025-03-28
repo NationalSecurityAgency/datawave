@@ -53,4 +53,10 @@ public interface FieldConfig {
     void addMultiValueField(String field);
 
     void removeMultiValueField(String field);
+
+    Set<String> getTokenizedFields();
+
+    void addTokenizedField(String field);
+
+    void removeTokenizedField(String field);
 }

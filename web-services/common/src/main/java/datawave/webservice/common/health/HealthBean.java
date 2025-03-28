@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 import com.sun.management.OperatingSystemMXBean;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactoryBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.GenericResponse;
 
 @PermitAll
@@ -66,7 +66,7 @@ public class HealthBean {
     private static String status = "ready";
 
     @Inject
-    private AccumuloConnectionFactoryBean accumuloConnectionFactoryBean;
+    private AccumuloConnectionFactory accumuloConnectionFactoryBean;
 
     @Inject
     @ConfigProperty(name = "dw.health.connection.percent.limit", defaultValue = "200")

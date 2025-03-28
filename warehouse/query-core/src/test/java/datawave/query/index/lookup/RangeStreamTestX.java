@@ -1,6 +1,5 @@
 package datawave.query.index.lookup;
 
-import static datawave.common.test.utils.query.RangeFactoryForTests.makeDayRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.util.TableName.SHARD_INDEX;
@@ -18,8 +17,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -51,17 +48,17 @@ import datawave.query.util.MockMetadataHelper;
 /**
  * Cover some basic tests involving streams of shards for a basic set of query structures. Only tests for correctness of shard intersection, not that the
  * underlying IndexInfo objects correctly intersect.
- *
+ * <p>
  * 6 Basic Types of Query Structures
- *
+ * <p>
  * 3 Stream Type Combinations (All shards, shards and days, all days)
- *
+ * <p>
  * 2 Types of Unequal Stream Start/Stop (different start/end day)
- *
+ * <p>
  * 2 Types of Uneven Stream Start/Stop (same start/end day, different shard)
- *
+ * <p>
  * 1 Type of Tick-Tock Shards (alternating shards such that no hits are produced for a day)
- *
+ * <p>
  * 1 Type of Missing Shards (missing shards should drop terms from query)
  */
 public class RangeStreamTestX {
@@ -73,7 +70,6 @@ public class RangeStreamTestX {
     // (A && B) || (C && D)
     // (A || B) && (C || D)
 
-    private static InMemoryInstance instance = new InMemoryInstance(RangeStreamTestX.class.toString());
     private static AccumuloClient client;
     private ShardQueryConfiguration config;
 
@@ -347,6 +343,44 @@ public class RangeStreamTestX {
         m.put(new Text("F4"), new Text("20200101_13\0datatype1"), valueForShard);
         bw.addMutation(m);
 
+        // --------------- some entries for post-index sorting via field or term counts
+
+        m = new Mutation("23");
+        m.put(new Text("FIELD_A"), new Text("20200101_10\0sort-type"), createValue(23L));
+        m.put(new Text("FIELD_B"), new Text("20200101_10\0sort-type"), createValue(23L));
+        m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(23L));
+        bw.addMutation(m);
+
+        m = new Mutation("34");
+        m.put(new Text("FIELD_A"), new Text("20200101_10\0sort-type"), createValue(34L));
+        m.put(new Text("FIELD_B"), new Text("20200101_10\0sort-type"), createValue(34L));
+        m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(34L));
+        bw.addMutation(m);
+
+        m = new Mutation("45");
+        m.put(new Text("FIELD_A"), new Text("20200101_10\0sort-type"), createValue(45L));
+        m.put(new Text("FIELD_B"), new Text("20200101_10\0sort-type"), createValue(45L));
+        m.put(new Text("FIELD_C"), new Text("20200101_10\0sort-type"), createValue(45L));
+        bw.addMutation(m);
+
+        // --------------- some entries to verify that proper merges happen when the count hits zero or below
+
+        m = new Mutation("negative one");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(-1));
+        bw.addMutation(m);
+
+        m = new Mutation("zero");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(0));
+        bw.addMutation(m);
+
+        m = new Mutation("one");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), buildValueForShard());
+        bw.addMutation(m);
+
+        m = new Mutation("one billion");
+        m.put(new Text("F1"), new Text("20200101_117\0datatype1"), createValue(1_000_000_000L));
+        bw.addMutation(m);
+
         // ---------------
 
         bw.flush();
@@ -358,6 +392,21 @@ public class RangeStreamTestX {
         builder.addUID("a.b.c");
         builder.setIGNORE(false);
         builder.setCOUNT(1);
+        Uid.List list = builder.build();
+        return new Value(list.toByteArray());
+    }
+
+    /**
+     * Create a value with a count
+     *
+     * @param count
+     *            the count
+     * @return a value
+     */
+    private static Value createValue(long count) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setIGNORE(true);
+        builder.setCOUNT(count);
         Uid.List list = builder.build();
         return new Value(list.toByteArray());
     }
@@ -374,7 +423,11 @@ public class RangeStreamTestX {
     @Before
     public void setupTest() {
         config = new ShardQueryConfiguration();
-        config.setShardsPerDayThreshold(20);
+        config.setClient(client);
+
+        // disable all post-index sort options by default
+        config.setSortQueryPostIndexWithFieldCounts(false);
+        config.setSortQueryPostIndexWithTermCounts(false);
     }
 
     // A && B
@@ -517,7 +570,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("(B == 'all' && ((_Delayed_ = true) && (A == 'all_day')))");
+                expectedQueryStrings.add("(B == 'all' && A == 'all_day')");
             }
         }
 
@@ -535,7 +588,7 @@ public class RangeStreamTestX {
         for (int ii = 2; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("(A == 'unequal_start' && ((_Delayed_ = true) && (B == 'all_day')))");
+                expectedQueryStrings.add("(A == 'unequal_start' && B == 'all_day')");
             }
         }
 
@@ -553,7 +606,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 4; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("(A == 'unequal_stop' && ((_Delayed_ = true) && (B == 'all_day')))");
+                expectedQueryStrings.add("(A == 'unequal_stop' && B == 'all_day')");
             }
         }
 
@@ -571,7 +624,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 1; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("(A == 'uneven_start' && ((_Delayed_ = true) && (B == 'all_day')))");
+                expectedQueryStrings.add("(A == 'uneven_start' && B == 'all_day')");
             }
         }
 
@@ -589,7 +642,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 9; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("(A == 'uneven_stop' && ((_Delayed_ = true) && (B == 'all_day')))");
+                expectedQueryStrings.add("(A == 'uneven_stop' && B == 'all_day')");
             }
         }
 
@@ -609,7 +662,7 @@ public class RangeStreamTestX {
                 continue;
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) && B == 'missing_shards'");
+                expectedQueryStrings.add("A == 'all_day' && B == 'missing_shards'");
             }
         }
 
@@ -629,7 +682,7 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 if (ii != 3) {
                     expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                    expectedQueryStrings.add("(A == 'tick_tock' && ((_Delayed_ = true) && (B == 'tick_tock_day')))");
+                    expectedQueryStrings.add("(A == 'tick_tock' && B == 'tick_tock_day')");
                 }
             }
         }
@@ -645,8 +698,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -661,8 +716,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 2; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'unequal_start_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && B == 'unequal_start_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -677,8 +734,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 4; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'unequal_stop_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && B == 'unequal_stop_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -693,8 +752,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'uneven_start_day')))");
+            for (int jj = 1; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && B == 'uneven_start_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -709,8 +770,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'uneven_stop_day')))");
+            for (int jj = 0; jj < 9; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && B == 'uneven_stop_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -725,10 +788,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 3)
+            if (ii == 3) {
                 continue;
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'missing_shards_day')))");
+            }
+
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && B == 'missing_shards_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -745,8 +812,10 @@ public class RangeStreamTestX {
 
         for (int ii = 1; ii <= 5; ii++) {
             if (ii != 3) {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'tick_tock_day')) && ((_Delayed_ = true) && (B == 'tick_tock_day')))");
+                for (int jj = 0; jj < 10; jj++) {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("(A == 'tick_tock_day' && B == 'tick_tock_day')");
+                }
             }
         }
 
@@ -943,8 +1012,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(A == 'all' || ((_Delayed_ = true) && (B == 'all_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("(A == 'all' || B == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -959,14 +1030,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 1) {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 1) {
                     expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                     expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || B == 'unequal_start_day'");
                 }
-            } else {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'unequal_start_day'))");
             }
         }
 
@@ -982,14 +1053,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 5) {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 5) {
                     expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                     expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || B == 'unequal_stop_day'");
                 }
-            } else {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'unequal_stop_day'))");
             }
         }
 
@@ -1005,8 +1076,15 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'uneven_start_day'))");
+            for (int jj = 0; jj < 10; jj++) {
+                if (jj == 0) {
+                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\u0000a.b.c"));
+                    expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || B == 'uneven_start_day'");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1021,8 +1099,15 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'uneven_stop_day'))");
+            for (int jj = 0; jj < 10; jj++) {
+                if (jj == 9) {
+                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\u0000a.b.c"));
+                    expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || B == 'uneven_stop_day'");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1037,14 +1122,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 3) {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 3) {
                     expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                     expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || B == 'missing_shards_day'");
                 }
-            } else {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'missing_shards_day'))");
             }
         }
 
@@ -1059,36 +1144,17 @@ public class RangeStreamTestX {
         // Shards are missing for day 3
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
-
-        expectedRanges.add(makeDayRange("20200101"));
-        expectedRanges.add(makeDayRange("20200102"));
-        expectedRanges.add(makeTestRange("20200103_0", "datatype1\0a.b.c"));
-        expectedRanges.add(makeShardedRange("20200103_1"));
-        expectedRanges.add(makeTestRange("20200103_2", "datatype1\0a.b.c"));
-        expectedRanges.add(makeTestRange("20200103_3", "datatype1\0a.b.c"));
-        expectedRanges.add(makeTestRange("20200103_4", "datatype1\0a.b.c"));
-        expectedRanges.add(makeShardedRange("20200103_5"));
-        expectedRanges.add(makeTestRange("20200103_6", "datatype1\0a.b.c"));
-        expectedRanges.add(makeTestRange("20200103_7", "datatype1\0a.b.c"));
-        expectedRanges.add(makeTestRange("20200103_8", "datatype1\0a.b.c"));
-        expectedRanges.add(makeShardedRange("20200103_9"));
-        expectedRanges.add(makeDayRange("20200104"));
-        expectedRanges.add(makeDayRange("20200105"));
-
-        expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'tick_tock_day'))");
-        expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'tick_tock_day'))");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all' || B == 'tick_tock_day'");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all' || B == 'tick_tock_day'");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all'");
-        expectedQueryStrings.add("A == 'all' || B == 'tick_tock_day'");
-        expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'tick_tock_day'))");
-        expectedQueryStrings.add("A == 'all' || ((_Delayed_ = true) && (B == 'tick_tock_day'))");
+        for (int ii = 1; ii <= 5; ii++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 3 && jj % 4 != 1) {
+                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\u0000a.b.c"));
+                    expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || B == 'tick_tock_day'");
+                }
+            }
+        }
 
         runTest(query, expectedRanges, expectedQueryStrings);
     }
@@ -1101,8 +1167,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' || B == 'all_day'");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1117,11 +1185,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 1) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'unequal_start_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 1) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || B == 'unequal_start_day'");
+                }
             }
         }
 
@@ -1137,11 +1207,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 5) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'unequal_stop_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 5) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || B == 'unequal_stop_day'");
+                }
             }
         }
 
@@ -1157,8 +1229,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'uneven_start_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || B == 'uneven_start_day'");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1173,8 +1251,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'uneven_stop_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || B == 'uneven_stop_day'");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1189,11 +1273,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'missing_shards_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || B == 'missing_shards_day'");
+                }
             }
         }
 
@@ -1210,22 +1296,19 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
 
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii != 3) {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'tick_tock_day')) || ((_Delayed_ = true) && (B == 'tick_tock_day')))");
-            } else {
-                expectedRanges.add(makeShardedRange("20200103_0"));
-                expectedRanges.add(makeShardedRange("20200103_1"));
-                expectedRanges.add(makeShardedRange("20200103_4"));
-                expectedRanges.add(makeShardedRange("20200103_5"));
-                expectedRanges.add(makeShardedRange("20200103_8"));
-                expectedRanges.add(makeShardedRange("20200103_9"));
-                expectedQueryStrings.add("A == 'tick_tock_day'");
-                expectedQueryStrings.add("B == 'tick_tock_day'");
-                expectedQueryStrings.add("A == 'tick_tock_day'");
-                expectedQueryStrings.add("B == 'tick_tock_day'");
-                expectedQueryStrings.add("A == 'tick_tock_day'");
-                expectedQueryStrings.add("B == 'tick_tock_day'");
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii != 3) {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("(A == 'tick_tock_day' || B == 'tick_tock_day')");
+                } else {
+                    if (jj % 4 == 0) {
+                        expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                        expectedQueryStrings.add("A == 'tick_tock_day'");
+                    } else if (jj % 4 == 1) {
+                        expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                        expectedQueryStrings.add("B == 'tick_tock_day'");
+                    }
+                }
             }
         }
 
@@ -1383,9 +1466,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'all_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1399,12 +1483,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 1) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'unequal_start_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 1) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'unequal_start_day')");
+                }
             }
         }
 
@@ -1419,12 +1504,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 5) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'unequal_stop_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 5) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'unequal_stop_day')");
+                }
             }
         }
 
@@ -1439,9 +1525,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'uneven_start_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'uneven_start_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1455,9 +1546,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'uneven_stop_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'uneven_stop_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1471,12 +1567,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'missing_shards_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3) {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'missing_shards_day')");
+                }
             }
         }
 
@@ -1491,8 +1588,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (((_Delayed_ = true) && (B == 'all_day')) || C == 'tick_tock'))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3 && jj % 4 != 2) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all_day' || C == 'tick_tock')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1508,7 +1611,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'all'))");
+                expectedQueryStrings.add("(A == 'all_day') && (B == 'all' || C == 'all')");
             }
         }
 
@@ -1526,9 +1629,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 1) {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all'");
                 } else {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'unequal_start'))");
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all' || C == 'unequal_start')");
                 }
             }
         }
@@ -1547,9 +1650,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 5) {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all'");
                 } else {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'unequal_stop'))");
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all' || C == 'unequal_stop')");
                 }
             }
         }
@@ -1568,9 +1671,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (jj == 0) {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all'");
                 } else {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'uneven_start'))");
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all' || C == 'uneven_start')");
                 }
             }
         }
@@ -1589,9 +1692,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (jj == 9) {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all'");
                 } else {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'uneven_stop'))");
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all' || C == 'uneven_stop')");
                 }
             }
         }
@@ -1609,9 +1712,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all'");
                 } else {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'missing_shards'))");
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all' || C == 'missing_shards')");
                 }
             }
         }
@@ -1630,9 +1733,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii != 3 || jj == 2 || jj == 6) {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'tick_tock'))");
+                    expectedQueryStrings.add("A == 'all_day' && (B == 'all' || C == 'tick_tock')");
                 } else {
-                    expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all'");
                 }
             }
         }
@@ -1650,7 +1753,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'all_day')))");
+                expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'all_day')");
             }
         }
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1667,9 +1770,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 1) {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("A == 'all' && B == 'all_day'");
                 } else {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'unequal_start_day')))");
+                    expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'unequal_start_day')");
                 }
             }
         }
@@ -1687,9 +1790,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 5) {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("A == 'all' && B == 'all_day'");
                 } else {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'unequal_stop_day')))");
+                    expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'unequal_stop_day')");
                 }
             }
         }
@@ -1706,7 +1809,11 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'uneven_start_day')))");
+                if (jj == 0) {
+                    expectedQueryStrings.add("A == 'all' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'uneven_start_day')");
+                }
             }
         }
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1722,7 +1829,11 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'uneven_stop_day')))");
+                if (jj == 9) {
+                    expectedQueryStrings.add("A == 'all' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'uneven_stop_day')");
+                }
             }
         }
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1739,9 +1850,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("A == 'all' && B == 'all_day'");
                 } else {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'missing_shards_day')))");
+                    expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'missing_shards_day')");
                 }
             }
         }
@@ -1759,11 +1870,10 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                if (ii == 3) {
-                    // Not enough shards to force rolling the C-term to a day range, thus no delay.
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || (C == 'tick_tock_day'))");
+                if (ii == 3 && jj % 4 != 2) {
+                    expectedQueryStrings.add("A == 'all' && B == 'all_day'");
                 } else {
-                    expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'tick_tock_day')))");
+                    expectedQueryStrings.add("A == 'all' && (B == 'all_day' || C == 'tick_tock_day')");
                 }
             }
         }
@@ -1925,9 +2035,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'all_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1941,12 +2052,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 1) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'unequal_start_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 1) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'unequal_start_day')");
+                }
             }
         }
 
@@ -1961,12 +2073,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 5) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'unequal_stop_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 5) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'unequal_stop_day')");
+                }
             }
         }
 
@@ -1981,9 +2094,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'uneven_start_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'uneven_start_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -1997,9 +2115,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'uneven_stop_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'uneven_stop_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2013,12 +2136,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'missing_shards_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'missing_shards_day')");
+                }
             }
         }
 
@@ -2033,12 +2157,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && C == 'tick_tock_day'))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'tick_tock_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3 && jj % 4 != 2) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all_day' && C == 'tick_tock_day')");
+                }
             }
         }
 
@@ -2053,8 +2178,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'all')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'all')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2068,11 +2195,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 1) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'unequal_start')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 1) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'unequal_start')");
+                }
             }
         }
 
@@ -2087,11 +2216,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 5) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'unequal_stop')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 5) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'unequal_stop')");
+                }
             }
         }
 
@@ -2106,11 +2237,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 0) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'uneven_start')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'uneven_start')");
+                }
             }
         }
 
@@ -2125,11 +2258,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 0) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'uneven_stop')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'uneven_stop')");
+                }
             }
         }
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2143,11 +2278,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
-            } else {
-                expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'missing_shards')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'missing_shards')");
+                }
             }
         }
 
@@ -2162,8 +2299,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) || (B == 'all' && C == 'tick_tock')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3 && jj % 4 != 2) {
+                    expectedQueryStrings.add("A == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("A == 'all_day' || (B == 'all' && C == 'tick_tock')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2177,8 +2320,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'all_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2192,11 +2337,11 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii != 1) {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'unequal_start_day')))");
-            } else {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii != 1) {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'unequal_start_day')");
+                } else {
                     expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                     expectedQueryStrings.add("A == 'all'");
                 }
@@ -2214,11 +2359,12 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii != 5) {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'unequal_stop_day')))");
-            } else {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii != 5) {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'unequal_stop_day')");
+                } else {
+
                     expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                     expectedQueryStrings.add("A == 'all'");
                 }
@@ -2236,8 +2382,15 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'uneven_start_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                if (jj == 0) {
+                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\u0000a.b.c"));
+                    expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'uneven_start_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2251,8 +2404,15 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'uneven_stop_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                if (jj == 9) {
+                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\u0000a.b.c"));
+                    expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'uneven_stop_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2266,14 +2426,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 3) {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 3) {
                     expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                     expectedQueryStrings.add("A == 'all'");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'missing_shards_day')");
                 }
-            } else {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'missing_shards_day')))");
             }
         }
 
@@ -2288,14 +2448,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii != 3) {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && ((_Delayed_ = true) && (C == 'tick_tock_day')))");
-            } else {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii != 3) {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("A == 'all' || (B == 'all_day' && C == 'tick_tock_day')");
+                } else {
                     if (jj == 2 || jj == 6) {
                         expectedRanges.add(makeShardedRange("20200103_" + jj));
-                        expectedQueryStrings.add("A == 'all' || (((_Delayed_ = true) && (B == 'all_day')) && (C == 'tick_tock_day'))");
+                        expectedQueryStrings.add("A == 'all' || (B == 'all_day' && (C == 'tick_tock_day'))");
                     } else {
                         expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                         expectedQueryStrings.add("A == 'all'");
@@ -2458,9 +2618,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && ((_Delayed_ = true) && (D == 'all_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2474,12 +2635,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 1) {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && D == 'unequal_start')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 1) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'unequal_start')");
+                }
             }
         }
 
@@ -2494,12 +2656,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 5) {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && D == 'unequal_stop')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 5) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'unequal_stop')");
+                }
             }
         }
 
@@ -2514,9 +2677,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && D == 'uneven_start')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'uneven_start')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2530,9 +2698,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && D == 'uneven_stop')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'uneven_stop')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2546,12 +2719,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && (((_Delayed_ = true) && (D == 'missing_shards_day'))))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3) {
+                    expectedQueryStrings.add("A == 'all_day' && B == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'missing_shards_day')");
+                }
             }
         }
 
@@ -2566,9 +2740,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) && ((_Delayed_ = true) && (B == 'all_day'))) || (((_Delayed_ = true) && (C == 'all_day')) && D == 'tick_tock')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3 && jj % 4 != 3) {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' && B == 'all_day') || (C == 'all_day' && D == 'tick_tock')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2584,8 +2763,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings
-                                .add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'all_day')))");
+                expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'all_day')");
             }
         }
 
@@ -2603,10 +2781,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 1) {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day')");
                 } else {
-                    expectedQueryStrings.add(
-                                    "(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'unequal_start_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'unequal_start_day')");
                 }
             }
         }
@@ -2625,10 +2802,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 5) {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day')");
                 } else {
-                    expectedQueryStrings.add(
-                                    "(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'unequal_stop_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'unequal_stop_day')");
                 }
             }
         }
@@ -2646,11 +2822,10 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                if (ii == 0) {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
+                if (jj == 0) {
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day')");
                 } else {
-                    expectedQueryStrings.add(
-                                    "(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'uneven_start_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'uneven_start_day')");
                 }
             }
         }
@@ -2668,11 +2843,10 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                if (ii == 0) {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
+                if (jj == 9) {
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day')");
                 } else {
-                    expectedQueryStrings.add(
-                                    "(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'uneven_stop_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'uneven_stop_day')");
                 }
             }
         }
@@ -2691,10 +2865,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day')");
                 } else {
-                    expectedQueryStrings.add(
-                                    "(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'missing_shards_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'missing_shards_day')");
                 }
             }
         }
@@ -2713,9 +2886,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii != 3 || jj == 3 || jj == 7) {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && D == 'tick_tock')");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day') || (C == 'all' && D == 'tick_tock')");
                 } else {
-                    expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
+                    expectedQueryStrings.add("(A == 'all' && B == 'all_day')");
                 }
             }
         }
@@ -2874,9 +3047,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || ((_Delayed_ = true) && (D == 'all_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2890,13 +3064,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 1) {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || ((_Delayed_ = true) && (D == 'unequal_start_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 1) {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'unequal_start_day')");
+                }
             }
         }
 
@@ -2911,13 +3085,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 5) {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || ((_Delayed_ = true) && (D == 'unequal_stop_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 5) {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'unequal_stop_day')");
+                }
             }
         }
 
@@ -2932,9 +3106,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || ((_Delayed_ = true) && (D == 'uneven_start_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && C == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'uneven_start_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2948,14 +3127,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            // if(ii == 5){
-            // expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C ==
-            // 'all_day')))");
-            // } else {
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || ((_Delayed_ = true) && (D == 'uneven_stop_day')))");
-            // }
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && C == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'uneven_stop_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -2969,13 +3148,13 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            if (ii == 3) {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')))");
-            } else {
-                expectedQueryStrings.add(
-                                "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || ((_Delayed_ = true) && (D == 'missing_shards_day')))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3) {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day')");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'missing_shards_day')");
+                }
             }
         }
 
@@ -2990,9 +3169,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "(((_Delayed_ = true) && (A == 'all_day')) || ((_Delayed_ = true) && (B == 'all_day'))) && (((_Delayed_ = true) && (C == 'all_day')) || D == 'tick_tock')");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (ii == 3 && jj % 4 != 3) {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && C == 'all_day'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all_day' || B == 'all_day') && (C == 'all_day' || D == 'tick_tock')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -3006,8 +3190,10 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all') || (_Delayed_ = true) && (D == 'all_day'))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all' || D == 'all_day')");
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -3021,15 +3207,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 1) {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 1) {
                     expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                    expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all'))");
+                    expectedQueryStrings.add("((A == 'all') || B == 'all_day') && ((C == 'all'))");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all' || D == 'unequal_start_day')");
                 }
-            } else {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add(
-                                "((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all') || (_Delayed_ = true) && (D == 'unequal_start_day'))");
             }
         }
 
@@ -3044,15 +3229,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            if (ii == 5) {
-                for (int jj = 0; jj < 10; jj++) {
+            for (int jj = 0; jj < 10; jj++) {
+                if (ii == 5) {
                     expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                    expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all'))");
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all')");
+                } else {
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all' || D == 'unequal_stop_day')");
                 }
-            } else {
-                expectedRanges.add(makeDayRange("2020010" + ii));
-                expectedQueryStrings.add(
-                                "((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all') || (_Delayed_ = true) && (D == 'unequal_stop_day'))");
             }
         }
 
@@ -3067,9 +3251,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all') || (_Delayed_ = true) && (D == 'uneven_start_day'))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 0) {
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && C == 'all'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all' || D == 'uneven_start_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -3083,9 +3272,14 @@ public class RangeStreamTestX {
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
-            expectedRanges.add(makeDayRange("2020010" + ii));
-            expectedQueryStrings.add(
-                            "((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all') || (_Delayed_ = true) && (D == 'uneven_stop_day'))");
+            for (int jj = 0; jj < 10; jj++) {
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
+                if (jj == 9) {
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && C == 'all'");
+                } else {
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all' || D == 'uneven_stop_day')");
+                }
+            }
         }
 
         runTest(query, expectedRanges, expectedQueryStrings);
@@ -3101,7 +3295,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
-                expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all'))");
+                expectedQueryStrings.add("((A == 'all') || B == 'all_day') && ((C == 'all'))");
             }
         }
 
@@ -3119,9 +3313,9 @@ public class RangeStreamTestX {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii != 3 || jj == 3 || jj == 7) {
-                    expectedQueryStrings.add("(A == 'all' || ((_Delayed_ = true) && (B == 'all_day'))) && (C == 'all' || D == 'tick_tock')");
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && (C == 'all' || D == 'tick_tock')");
                 } else {
-                    expectedQueryStrings.add("(A == 'all' || ((_Delayed_ = true) && (B == 'all_day'))) && C == 'all'");
+                    expectedQueryStrings.add("(A == 'all' || B == 'all_day') && C == 'all'");
                 }
             }
         }
@@ -3150,20 +3344,20 @@ public class RangeStreamTestX {
 
     @Test
     public void testDelayedNestedPruningWithTopLevelIntersection() throws Exception {
-        String query = "F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))";
+        String query = "F1 == '1' && (F3 == '3' || F4 == '4')";
 
         List<Range> expectedRanges = new ArrayList<>();
         expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
         // F3 skips shard _12, this forces the intersection into a shard range
-        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
 
         List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
-        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
-        expectedQueries.add("F1 == '1' && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
-        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
 
         runTest(query, expectedRanges, expectedQueries);
     }
@@ -3189,38 +3383,38 @@ public class RangeStreamTestX {
 
     @Test
     public void testIntersectionOfNestedUnionsOnHasDelayedTerm() throws Exception {
-        String query = "(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))";
+        String query = "(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')";
 
         List<Range> expectedRanges = new ArrayList<>();
         expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
-        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
 
         List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
-        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))"); // F2 skips shard_11
-        expectedQueries.add("(F1 == '1' || F2 == '2') && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
-        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')"); // F2 skips shard_11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
 
         runTest(query, expectedRanges, expectedQueries);
     }
 
     @Test
     public void testIntersectionOfNestedUnionsOnHasDelayedTerm_flipped() throws Exception {
-        String query = "(F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))) && (F1 == '1' || F2 == '2')";
+        String query = "(F3 == '3' || F4 == '4') && (F1 == '1' || F2 == '2')";
 
         List<Range> expectedRanges = new ArrayList<>();
         expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
-        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
 
         List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
-        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))"); // F2 skips shard_11
-        expectedQueries.add("(F1 == '1' || F2 == '2') && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
-        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')"); // F2 skips shard_11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
 
         runTest(query, expectedRanges, expectedQueries);
     }
@@ -3246,21 +3440,87 @@ public class RangeStreamTestX {
 
     @Test
     public void testOrAndOrWithDeeplyNestedDelayedTerm() throws Exception {
-        String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))";
+        String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))";
 
         List<Range> expectedRanges = new ArrayList<>();
         expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
-        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
 
         List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))");
-        expectedQueries.add("(F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))"); // F2 skips shard _11
-        expectedQueries.add("F2 == '2' || (F1 == '1' && ((_Delayed_ = true) && (F4 == '4')))"); // F3 skips shard _12
-        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))");
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))");
+        expectedQueries.add("(F1 == '1' && (F3 == '3' || F4 == '4'))"); // F2 skips shard _11
+        expectedQueries.add("F2 == '2' || (F1 == '1' && F4 == '4')"); // F3 skips shard _12
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))");
 
         runTest(query, expectedRanges, expectedQueries);
+    }
+
+    @Test
+    public void testSortingByFieldCardinality() {
+        String query = "FIELD_A == '45' || FIELD_B == '34' || FIELD_C == '23'";
+        String expected = "(FIELD_C == '23' || FIELD_B == '34' || FIELD_A == '45')";
+
+        config.setSortQueryPostIndexWithFieldCounts(true);
+        drive(query, expected);
+    }
+
+    @Test
+    public void testSortingByTermCardinality() {
+        String query = "FIELD_A == '45' || FIELD_B == '34' || FIELD_C == '23'";
+        String expected = "(FIELD_C == '23' || FIELD_B == '34' || FIELD_A == '45')";
+
+        config.setSortQueryPostIndexWithTermCounts(true);
+        drive(query, expected);
+    }
+
+    @Test
+    public void testIntersectionsOfVariousCounts() {
+        String query = "(F1 == 'negative one' && F1 == 'negative one')";
+        drive(query, "F1 == 'negative one'");
+
+        query = "(F1 == 'negative one' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'negative one')";
+        drive(query, query);
+
+        query = "(F1 == 'negative one' && F1 == 'one billion')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one billion' && F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' && F1 == 'one billion')";
+        drive(query, query);
+    }
+
+    @Test
+    public void testUnionsOfVariousCounts() {
+        String query = "(F1 == 'negative one' || F1 == 'negative one')";
+        drive(query, "(F1 == 'negative one')");
+
+        query = "(F1 == 'negative one' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'negative one')";
+        drive(query, query);
+
+        query = "(F1 == 'negative one' || F1 == 'one billion')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one billion' || F1 == 'zero')";
+        drive(query, query);
+
+        query = "(F1 == 'one' || F1 == 'one billion')";
+        drive(query, query);
     }
 
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
@@ -3288,18 +3548,18 @@ public class RangeStreamTestX {
 
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
-        config.setShardsPerDayThreshold(2);
 
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
 
         // Run a standard limited-scanner range stream.
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
+        ScannerFactory scannerFactory = new ScannerFactory(config);
+        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
         rangeStream.setLimitScanners(true);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
         // Run a default range stream.
-        rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
+        rangeStream = new RangeStream(config, scannerFactory, helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
@@ -3347,5 +3607,55 @@ public class RangeStreamTestX {
             fail("Expected ranges still exist after test: " + shardIter.next());
         if (queryIter.hasNext())
             fail("Expected queries still exist after test: " + queryIter.next());
+    }
+
+    /**
+     * Drives a query against a subset of the index data to verify post-index sorting options
+     *
+     * @param query
+     *            the input query
+     * @param expected
+     *            the expected query
+     */
+    private void drive(String query, String expected) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            config.setBeginDate(sdf.parse("20200101"));
+            config.setEndDate(sdf.parse("20200105"));
+
+            config.setDatatypeFilter(Sets.newHashSet("sort-type", "datatype1"));
+
+            Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+            dataTypes.putAll("FIELD_A", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("FIELD_B", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("FIELD_C", Sets.newHashSet(new LcNoDiacriticsType()));
+            dataTypes.putAll("F1", Sets.newHashSet(new LcNoDiacriticsType()));
+
+            config.setQueryFieldsDatatypes(dataTypes);
+            config.setIndexedFields(dataTypes);
+
+            MockMetadataHelper helper = new MockMetadataHelper();
+            helper.setIndexedFields(dataTypes.keySet());
+
+            // Run a standard limited-scanner range stream.
+            ScannerFactory scannerFactory = new ScannerFactory(config);
+            try (RangeStream rangeStream = new RangeStream(config, scannerFactory, helper)) {
+                rangeStream.setLimitScanners(true);
+
+                Iterator<QueryPlan> plans = rangeStream.streamPlans(script).iterator();
+
+                assertTrue(plans.hasNext());
+                QueryPlan plan = plans.next();
+
+                String plannedQuery = plan.getQueryString();
+                assertEquals(expected, plannedQuery);
+
+                assertFalse(plans.hasNext());
+            }
+        } catch (Exception e) {
+            fail("test failed: " + e.getMessage());
+        }
     }
 }

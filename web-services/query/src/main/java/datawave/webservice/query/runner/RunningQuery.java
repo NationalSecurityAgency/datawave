@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -23,6 +22,15 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesResultCardinalities;
+import datawave.core.query.predict.QueryPredictor;
+import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
@@ -30,20 +38,13 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.WritesQueryMetrics;
-import datawave.webservice.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -128,11 +129,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } else {
             logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
         }
-        DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
-                        : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+        DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
+                        : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-        DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
-                        : userOperations.getRemoteUser((DatawavePrincipal) principal);
+        // don't call remote user operations if it's asked not to
+        DatawavePrincipal overallPrincipal = (userOperations == null
+                        || "false".equalsIgnoreCase(settings.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).getParameterValue()))
+                                        ? (DatawavePrincipal) principal
+                                        : userOperations.getRemoteUser((DatawavePrincipal) principal);
         this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
@@ -191,6 +195,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             addNDC();
             applyPrediction(null);
             this.client = client;
+            if (this.client instanceof WrappedAccumuloClient && this.logic.getClientConfig() != null) {
+                ((WrappedAccumuloClient) this.client).updateClientConfig(this.logic.getClientConfig());
+            }
             long start = System.currentTimeMillis();
             GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
             this.lastPageNumber = 0;
@@ -579,7 +586,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 log.info("Returning final empty page");
                 terminateResultsThread();
                 // This query is done, we have no more results to return.
-                return new ResultsPage();
+                return new ResultsPage(Collections.emptyList(), ResultsPage.Status.NONE);
             }
         }
     }

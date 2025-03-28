@@ -35,7 +35,8 @@ public class QueryPropertyMarker {
         EXCEEDED_VALUE("_Value_", true, true),
         BOUNDED_RANGE("_Bounded_", false, false),
         LENIENT("_Lenient_", false, false),
-        STRICT("_Strict_", false, false);
+        STRICT("_Strict_", false, false),
+        PLAN("plan", false, false);
 
         private final String label;
         private final boolean ivarator;
@@ -95,6 +96,10 @@ public class QueryPropertyMarker {
 
         DELAYED_TYPES = Collections.unmodifiableSet(delayedTypes);
         IVARATOR_TYPES = Collections.unmodifiableSet(ivaratorTypes);
+    }
+
+    public static Set<MarkerType> getIvaratorTypes() {
+        return Collections.unmodifiableSet(IVARATOR_TYPES);
     }
 
     public static JexlNode create(JexlNode source, MarkerType type) {

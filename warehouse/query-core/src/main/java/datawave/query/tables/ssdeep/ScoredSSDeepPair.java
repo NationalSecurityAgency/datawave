@@ -1,11 +1,15 @@
 package datawave.query.tables.ssdeep;
 
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
+import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 
 /**
- * Captures a scored pair of query hash and matching hash.
+ * Captures a scored pair of query hash and matching hash and a record of which ngrams appear in each.
  */
 public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
 
@@ -14,13 +18,13 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
     private final SSDeepHash queryHash;
     private final SSDeepHash matchingHash;
 
-    int overlapScore;
+    Set<NGramTuple> overlappingNgrams;
     int weightedScore;
 
-    public ScoredSSDeepPair(SSDeepHash queryHash, SSDeepHash matchingHash, int overlapScore, int weightedScore) {
+    public ScoredSSDeepPair(SSDeepHash queryHash, SSDeepHash matchingHash, Set<NGramTuple> overlappingNgrams, int weightedScore) {
         this.queryHash = queryHash;
         this.matchingHash = matchingHash;
-        this.overlapScore = overlapScore;
+        this.overlappingNgrams = overlappingNgrams;
         this.weightedScore = weightedScore;
     }
 
@@ -37,7 +41,16 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
     }
 
     public int getOverlapScore() {
-        return overlapScore;
+        return overlappingNgrams.size();
+    }
+
+    public Set<NGramTuple> getOverlappingNgrams() {
+        return overlappingNgrams;
+    }
+
+    /** Return a String representing the sorted list of ngrams that are shared by both the query and the matching ssdeep */
+    public String getOverlapsAsString() {
+        return String.join(", ", getOverlappingNgrams().stream().map(NGramTuple::toString).collect(Collectors.toCollection(TreeSet::new)));
     }
 
     @Override
@@ -49,7 +62,7 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
 
         ScoredSSDeepPair that = (ScoredSSDeepPair) o;
 
-        if (overlapScore != that.overlapScore)
+        if (!Objects.equals(overlappingNgrams, that.overlappingNgrams))
             return false;
         if (weightedScore != that.weightedScore)
             return false;
@@ -60,7 +73,7 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryHash, matchingHash, weightedScore, overlapScore);
+        return Objects.hash(queryHash, matchingHash, weightedScore, overlappingNgrams);
     }
 
     @Override

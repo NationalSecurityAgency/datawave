@@ -5,13 +5,13 @@ import static java.util.Collections.emptyList;
 import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import static org.junit.Assert.assertThrows;
 
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.Parser;
 import org.apache.commons.jexl3.parser.StringProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.query.tables.edge.EdgeQueryLogic;
 
 public class EdgeTableRangeBuildingVisitorTest {
@@ -25,7 +25,7 @@ public class EdgeTableRangeBuildingVisitorTest {
     public void setup() {
         parser = new Parser(new StringProvider(";"));
 
-        visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList());
+        visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList(), new DefaultEdgeModelFieldsFactory().createFields());
     }
 
     @Test

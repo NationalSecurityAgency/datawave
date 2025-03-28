@@ -331,7 +331,7 @@ public class CreateUidsIteratorTest {
 
         Map<String,Long> expected = new HashMap<>();
         expected.put("NO_FIELD", 3L); // NO_FIELD because the test framework didn't pass in a real seek range
-        assertEquals(expected, info.getFieldCounts());
+        assertEquals(expected, info.getFieldCounts().getCounts());
     }
 
     private Value valueForUids(Collection<String> uids) {

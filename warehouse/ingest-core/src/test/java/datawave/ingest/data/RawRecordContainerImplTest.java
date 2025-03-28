@@ -377,15 +377,16 @@ public class RawRecordContainerImplTest {
             if (getAltIds() == null || getAltIds().isEmpty()) {
                 addError(RawDataErrorNames.UUID_MISSING);
             }
-            if (Long.MIN_VALUE == getDate()) {
+            if (!isTimestampSet()) {
                 addError(RawDataErrorNames.EVENT_DATE_MISSING);
-            }
-            if (0 == getRawRecordNumber()) {
-                addError(RawDataErrorNames.INVALID_RECORD_NUMBER);
+            } else {
+                if (0L == getRawFileTimestamp()) {
+                    setRawFileTimestamp(getDate());
+                }
             }
 
-            if (0L == getRawFileTimestamp()) {
-                setRawFileTimestamp(getDate());
+            if (0 == getRawRecordNumber()) {
+                addError(RawDataErrorNames.INVALID_RECORD_NUMBER);
             }
 
             try {

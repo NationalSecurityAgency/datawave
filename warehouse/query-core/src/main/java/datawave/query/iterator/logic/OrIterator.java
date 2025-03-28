@@ -1,5 +1,6 @@
 package datawave.query.iterator.logic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +14,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
+
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
@@ -21,7 +25,6 @@ import datawave.query.iterator.Util;
 
 /**
  * Performs a deduping merge of iterators.
- *
  *
  * @param <T>
  *            type cast
@@ -225,6 +228,13 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         }
     }
 
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        for (NestedIterator<T> child : children()) {
+            child.seek(range, columnFamilies, inclusive);
+        }
+    }
+
     /**
      * Advances all iterators associated with the supplied key and adds them back into the sorted multimap. If any of the sub-trees returns false, then they are
      * dropped.
@@ -353,5 +363,28 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     @Override
     public void setContext(T context) {
         this.evaluationContext = context;
+    }
+
+    @Override
+    public boolean isNonEventField() {
+        for (NestedIterator<T> include : includes) {
+            if (include.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : contextIncludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : contextExcludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

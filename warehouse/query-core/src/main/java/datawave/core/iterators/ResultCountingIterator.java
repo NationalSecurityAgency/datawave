@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.BatchScanner;
@@ -65,7 +66,6 @@ public class ResultCountingIterator extends WrappingIterator {
 
     private String threadName = null;
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-    private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     public ResultCountingIterator() {
         threadName = Thread.currentThread().getName();
@@ -146,7 +146,7 @@ public class ResultCountingIterator extends WrappingIterator {
                     ColumnVisibility cv = CV_CACHE.get(cvholder, () -> new ColumnVisibility(cvholder));
 
                     columnVisibilities.add(cv);
-                } catch (Exception e) {
+                } catch (ExecutionException e) {
                     log.error("Error parsing ColumnVisibility of key", e);
                     continue;
                 }
@@ -209,8 +209,8 @@ public class ResultCountingIterator extends WrappingIterator {
         ColumnVisibility cv = null;
 
         try {
-            cv = markingFunctions.combine(columnVisibilities);
-        } catch (Exception e) {
+            cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+        } catch (MarkingFunctions.Exception e) {
             log.error("Could not create combined columnVisibility for the count", e);
             return null;
         }

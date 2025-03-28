@@ -3,13 +3,16 @@ package datawave.query.tables.edge;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
+import datawave.microservice.query.Query;
 import datawave.query.QueryParameters;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -18,9 +21,6 @@ import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * This Logic highjacks the Query string, and transforms it into a ShardQueryLogic query The query string is of the form:
@@ -37,8 +37,9 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
 
     protected EdgeDictionaryBase<?,? extends MetadataBase<?>> dict;
 
-    @Inject
-    protected RemoteEdgeDictionary remoteEdgeDictionary;
+    protected EdgeDictionaryProvider edgeDictionaryProvider;
+
+    protected EdgeModelFields edgeFields;
 
     public DefaultEdgeEventQueryLogic() {}
 
@@ -50,7 +51,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         this.dict = other.dict;
         this.edgeModelName = other.edgeModelName;
         this.edgeQueryModel = other.edgeQueryModel;
-        this.remoteEdgeDictionary = other.remoteEdgeDictionary;
+        this.edgeDictionaryProvider = other.edgeDictionaryProvider;
     }
 
     @Override
@@ -59,18 +60,18 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     }
 
     @SuppressWarnings("unchecked")
-    protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(String queryAuths) {
-        return remoteEdgeDictionary.getEdgeDictionary(getMetadataTableName(), queryAuths);
+    protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(Query settings) {
+        return edgeDictionaryProvider.getEdgeDictionary(settings, getMetadataTableName());
     }
 
     protected DefaultEventQueryBuilder getEventQueryBuilder() {
-        return new DefaultEventQueryBuilder(dict);
+        return new DefaultEventQueryBuilder(dict, getEdgeFields());
     }
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
 
-        setEdgeDictionary(getEdgeDictionary(settings.getQueryAuthorizations())); // TODO grab threads from somewhere
+        setEdgeDictionary(getEdgeDictionary(settings)); // TODO grab threads from somewhere
 
         // Load and apply the configured edge query model
         loadEdgeQueryModel(client, auths);
@@ -102,7 +103,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
                 setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(client, getConfig().getMetadataTableName(), auths)
-                                .getQueryModel(getConfig().getModelTableName(), getConfig().getModelName())));
+                                .getQueryModel(getConfig().getModelTableName(), getConfig().getModelName()), getEdgeFields()));
             } catch (Throwable t) {
                 log.error("Unable to load edgeQueryModel from metadata table", t);
             }
@@ -156,4 +157,23 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         return getEventQueryBuilder().getEventQuery(getJexlQueryString(settings));
     }
 
+    public EdgeDictionaryProvider getEdgeDictionaryProvider() {
+        return edgeDictionaryProvider;
+    }
+
+    public void setEdgeDictionaryProvider(EdgeDictionaryProvider edgeDictionaryProvider) {
+        this.edgeDictionaryProvider = edgeDictionaryProvider;
+    }
+
+    public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
+        this.edgeFields = edgeModelFieldsFactory.createFields();
+    }
+
+    public EdgeModelFields getEdgeFields() {
+        return edgeFields;
+    }
+
+    public void setEdgeFields(EdgeModelFields edgeFields) {
+        this.edgeFields = edgeFields;
+    }
 }

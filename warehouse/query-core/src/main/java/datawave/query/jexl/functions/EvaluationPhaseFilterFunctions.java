@@ -32,6 +32,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class
@@ -1611,7 +1613,9 @@ public class EvaluationPhaseFilterFunctions {
                 // try the next one
             }
         }
-        throw new ParseException("Unable to parse value using known date formats: " + value, 0);
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse value using known date formats: " + value + " [Error offset: 0]");
+        throw new IllegalArgumentException(qe);
     }
 
     /**
@@ -1649,7 +1653,7 @@ public class EvaluationPhaseFilterFunctions {
      * Given the string "FIRST.SECOND.THIRD.FOURTH"
      * - A value of 0 for pos will result in the substring 'SECOND.THIRD'
      * - A value of 1 for pos will result in the substring 'SECOND'
-     * - A value of 2 for pos will result in an exception being thrown
+     * - A value of 2 for pos will result in null being returned
      * </pre>
      *
      * @param input
@@ -1663,7 +1667,10 @@ public class EvaluationPhaseFilterFunctions {
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = getIndicesOfPeriods(input);
         if (indices.length < pos + 1) {
-            throw new IllegalArgumentException("Input " + input + " does not have a '.' at position " + pos + " from the left.");
+            if (log.isTraceEnabled()) {
+                log.trace("Not enough grouping info to extract group " + pos + " from the left for input " + input);
+            }
+            return null;
         }
         return input.substring(0, indices[indices.length - pos - 1]);
     }
@@ -1677,7 +1684,7 @@ public class EvaluationPhaseFilterFunctions {
      * - A value of 0 for pos will result in the substring 'FOURTH'
      * - A value of 1 for pos will result in the substring 'THIRD.FOURTH'
      * - A value of 2 for pos will result in the substring 'SECOND.THIRD.FOURTH'
-     * - A value of 3 for pos will result in an exception being thrown
+     * - A value of 3 for pos will result in null being returned
      * </pre>
      *
      * @param input
@@ -1689,7 +1696,10 @@ public class EvaluationPhaseFilterFunctions {
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = getIndicesOfPeriods(input);
         if (indices.length < pos + 1) {
-            throw new IllegalArgumentException("Input " + input + " does not have a '.' at position " + pos + " from the right.");
+            if (log.isTraceEnabled()) {
+                log.trace("Not enough grouping info to extract group " + pos + " from the right for input " + input);
+            }
+            return null;
         }
         return input.substring(indices[indices.length - pos - 1] + 1);
     }

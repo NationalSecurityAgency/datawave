@@ -44,8 +44,6 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import net.bytebuddy.build.Plugin;
-
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");
     private static long ts = -1;
@@ -391,6 +389,11 @@ public class SourceManagerTest {
         @Override
         public boolean isFullMajorCompaction() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isUserCompaction() {
+            return false;
         }
 
         @Override

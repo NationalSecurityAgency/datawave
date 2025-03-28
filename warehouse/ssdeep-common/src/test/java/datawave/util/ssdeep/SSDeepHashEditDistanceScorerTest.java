@@ -29,7 +29,7 @@ public class SSDeepHashEditDistanceScorerTest {
 
     @Test
     public void testCompare() {
-        SSDeepHashScorer scorer = new SSDeepHashEditDistanceScorer();
+        SSDeepHashScorer<Integer> scorer = new SSDeepHashEditDistanceScorer(SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS);
         for (int i = 0; i < testData.length; i++) {
             SSDeepHash queryHash = SSDeepHash.parse(testData[i][0]);
             SSDeepHash targetHash = SSDeepHash.parse(testData[i][1]);

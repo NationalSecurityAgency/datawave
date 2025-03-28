@@ -1,0 +1,76 @@
+name: Tests
+
+on:
+  workflow_call:
+    secrets:
+      USER_NAME:
+        description: "User Name for maven pulls"
+        required: true
+      ACCESS_TOKEN:
+        description: "Access token for maven pulls"
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
+
+jobs:
+  # Runs the pom sorter and code formatter to ensure that the code
+  # is formatted and poms are sorted according to project rules. This
+  # will fail if the formatter makes any changes.
+  check-code-formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: 11
+        distribution: 'zulu'
+    - uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-format-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
+    - name: Format code
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e clean formatter:format sortpom:sort -Pautoformat
+        git status
+        git diff-index --quiet HEAD || (echo "Error! There are modified files after formatting." && false)
+      env:
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+  # Build the code and run the unit/integration tests.
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: 11
+        distribution: 'zulu'
+    - uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-build-
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
+    - name: Build and Run Unit Tests
+      run: mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Ddist clean verify
+      env:
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+

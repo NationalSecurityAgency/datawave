@@ -9,17 +9,15 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 
+import datawave.core.query.configuration.Result;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -33,7 +31,7 @@ import datawave.query.util.Tuples;
  *
  * A delayed predicate node is build if the IndexInfo does not have any document ids or if the column qualifier indicates a day range.
  */
-public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,IndexInfo>> {
+public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     protected ASTEQNode currNode;
 
     protected String fieldName;
@@ -63,7 +61,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
     }
 
     @Override
-    public Tuple2<String,IndexInfo> apply(Entry<Key,Value> entry) {
+    public Tuple2<String,IndexInfo> apply(Result entry) {
         IndexInfo info = new IndexInfo();
         try {
             info.readFields(new DataInputStream(new ByteArrayInputStream(entry.getValue().get())));

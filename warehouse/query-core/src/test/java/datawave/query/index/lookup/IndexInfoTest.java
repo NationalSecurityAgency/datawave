@@ -11,10 +11,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -28,6 +26,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.util.count.CountMap;
 
 /**
  * Test basic functionality of the {@link IndexInfo} class.
@@ -353,7 +352,7 @@ public class IndexInfoTest {
     @Test
     public void testFieldCountSerialization() throws IOException {
 
-        Map<String,Long> counts = new HashMap<>();
+        CountMap counts = new CountMap();
         counts.put("FIELD_A", 23L);
         counts.put("FIELD_B", 2077L);
 
@@ -377,10 +376,10 @@ public class IndexInfoTest {
 
     @Test
     public void testMergeFieldCounts() {
-        Map<String,Long> firstCounts = new HashMap<>();
+        CountMap firstCounts = new CountMap();
         firstCounts.put("FOO", 17L);
 
-        Map<String,Long> secondCounts = new HashMap<>();
+        CountMap secondCounts = new CountMap();
         secondCounts.put("FOO", 23L);
 
         IndexInfo first = new IndexInfo();

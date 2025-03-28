@@ -47,6 +47,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
@@ -111,8 +112,9 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     datawaveVerifier = true;
                 }
             } catch (Throwable e) {
-                if (trace)
+                if (trace) {
                     log.trace("Failed to create X509CertificateVerifier", e);
+                }
                 throw new IllegalArgumentException("Invalid verifier: " + option, e);
             }
         }
@@ -170,8 +172,9 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             throw new RuntimeException(e.getMessage(), e);
         }
 
-        if (trace)
+        if (trace) {
             log.trace("exit: initialize(Subject, CallbackHandler, Map, Map)");
+        }
     }
 
     protected void performFieldInjection() {
@@ -300,31 +303,38 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 Object username = sharedState.get("javax.security.auth.login.name");
                 if (username instanceof Principal) {
                     identity = (Principal) username;
-                    if (trace)
-                        log.trace("**** Username is a principle");
+                    if (trace) {
+                        log.trace("**** Username is a principal");
+                    }
                 } else {
-                    if (trace)
-                        log.trace("**** Username is not a principle");
+                    if (trace) {
+                        log.trace("**** Username is not a principal");
+                    }
                     String name = username.toString();
                     try {
                         identity = createIdentity(name);
                     } catch (Exception e) {
+                        loginOk = false;
                         log.debug("Failed to create principal", e);
-                        throw new LoginException("Failed to create principal: " + e.getMessage());
+                        // should result in a FORBIDDEN (403) response code in DatawaveAuthenticationMechanism.sendChallenge
+                        throw new FailedLoginException("Failed to create principal: " + e.getMessage());
                     }
                 }
                 Object password = sharedState.get("javax.security.auth.login.password");
                 if (password instanceof X509Certificate) {
-                    if (trace)
+                    if (trace) {
                         log.trace("**** Credential is a X509Certificate");
+                    }
                     certificateCredential = (X509Certificate) password;
                 } else if (password instanceof X509Certificate[]) {
-                    if (trace)
+                    if (trace) {
                         log.trace("**** Credential is an X509Certificate array");
+                    }
                     certificateCredential = ((X509Certificate[]) password)[0];
                 } else if (password instanceof DatawaveCredential) {
-                    if (trace)
+                    if (trace) {
                         log.trace("**** Credential is a DatawaveCredential");
+                    }
                     datawaveCredential = (DatawaveCredential) password;
                     certificateCredential = datawaveCredential.getCertificate();
                 } else {
@@ -347,6 +357,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     loginOk = false; // this is critical as it is what the parent class uses to actually deny login
                     String message = "Login denied for " + principal.getUserDN() + " due to membership in the deny-access group " + disallowlistUserRole;
                     log.debug(message);
+                    // should result in a FORBIDDEN (403) response code in DatawaveAuthenticationMechanism.sendChallenge
                     throw new AccountLockedException(message);
                 }
             }
@@ -367,21 +378,24 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 String message = "Login denied for terminal server " + terminalServer.getDn() + " due to missing role. Needs one of: " + directRoles
                                 + " but has roles: " + terminalServer.getRoles();
                 log.debug(message);
-                throw new CredentialException(message);
-
+                // should result in a FORBIDDEN (403) response code in DatawaveAuthenticationMechanism.sendChallenge
+                throw new FailedLoginException(message);
             }
-
+        } catch (LoginException e) {
+            log.warn("Login failed due to LoginException: " + e.getMessage(), e);
+            throw e;
         } catch (RuntimeException e) {
-
-            log.warn("Login failed due to exception: " + e.getMessage(), e);
-            throw new FailedLoginException(e.getMessage());
+            log.warn("Login failed due to RuntimeException: " + e.getMessage(), e);
+            // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge
+            throw new LoginException(e.getMessage());
         }
         return true;
     }
 
     protected DatawaveCredential getDatawaveCredential() throws LoginException {
-        if (trace)
+        if (trace) {
             log.trace("enter: getDatawaveCredential()");
+        }
         if (callbackHandler == null) {
             log.error("Error: no CallbackHandler available to collect authentication information");
             throw new LoginException("Error: no CallbackHandler available to collect authentication information");
@@ -412,49 +426,60 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             log.debug("CallbackHandler does not support: " + uce.getCallback());
             throw new LoginException("CallbackHandler does not support: " + uce.getCallback());
         } finally {
-            if (trace)
+            if (trace) {
                 log.trace("exit: getDatawaveCredential()");
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
     protected boolean validateCredential(DatawaveCredential credential) throws LoginException {
-        if (trace)
+        if (trace) {
             log.trace("enter: validateCredential");
+        }
 
         datawaveCredential = credential;
 
         String alias = credential.getUserName();
-        if (trace)
+        if (trace) {
             log.trace("alias = " + alias);
+        }
         if (StringUtil.isNullOrEmpty(alias)) {
             identity = unauthenticatedIdentity;
             log.trace("Authenticating as unauthenticatedIdentity=" + identity);
         }
-        if (trace)
+        if (trace) {
             log.trace("identity = " + identity);
+        }
         if (identity == null) {
-
             if (credential.getCertificate() != null || (!trustedHeaderLogin && !jwtHeaderLogin)) {
                 if (!validateCertificateCredential(credential)) {
                     log.debug("Bad credential for alias=" + credential.getUserName());
-                    throw new FailedLoginException("Supplied Credential did not match existing credential for " + credential.getUserName());
+                    throw new CredentialException("Validation of credential failed");
                 }
             }
 
             if (!jwtHeaderLogin || credential.getJwtToken() == null) {
                 try {
                     identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
+                } catch (AuthorizationException e) {
+                    Throwable cause = e.getCause();
+                    String message = cause != null ? cause.getMessage() : e.getMessage();
+                    log.debug("Failing login due to datawave user service exception " + e.getMessage(), e);
+                    // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge
+                    throw new LoginException("Unable to authenticate: " + message);
                 } catch (Exception e) {
                     log.debug("Failing login due to datawave user service exception " + e.getMessage(), e);
-                    throw new FailedLoginException("Unable to authenticate: " + e.getMessage());
+                    // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge
+                    throw new LoginException("Unable to authenticate: " + e.getMessage());
                 }
             } else {
                 try {
                     identity = new DatawavePrincipal(jwtTokenHandler.createUsersFromToken(credential.getJwtToken()));
                 } catch (Exception e) {
                     log.debug("Failing login due to JWT token exception " + e.getMessage(), e);
-                    throw new FailedLoginException("Unable to authenticate: " + e.getMessage());
+                    // should result in an UNAUTHORIZED (401) response code in DatawaveAuthenticationMechanism.sendChallenge
+                    throw new CredentialException("Unable to authenticate: " + e.getMessage());
                 }
             }
         }
@@ -462,14 +487,16 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             sharedState.put("javax.security.auth.login.name", alias);
             sharedState.put("javax.security.auth.login.password", credential.getCertificate());
         }
-        if (trace)
+        if (trace) {
             log.trace("exit: validateCredential");
+        }
         return true;
     }
 
     protected boolean validateCertificateCredential(DatawaveCredential credential) {
-        if (trace)
+        if (trace) {
             log.trace("enter: validateCertificateCredential(DatawaveCredential)[" + verifier + "]");
+        }
         boolean isValid = false;
         KeyStore keyStore = null;
         KeyStore trustStore = null;
@@ -477,29 +504,36 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             keyStore = domain.getKeyStore();
             trustStore = domain.getTrustStore();
         }
-        if (trustStore == null)
+        if (trustStore == null) {
             trustStore = keyStore;
+        }
         if (verifier != null) {
             String issuerSubjectDn = credential.getCertificate().getIssuerX500Principal().getName();
             if (datawaveVerifier) {
                 if (((DatawaveCertVerifier) verifier).isIssuerSupported(issuerSubjectDn, trustStore)) {
                     isValid = verifier.verify(credential.getCertificate(), issuerSubjectDn, keyStore, trustStore);
-                } else if (trace) {
-                    log.trace("Unsupported issuer: " + issuerSubjectDn);
+                } else {
+                    if (trace) {
+                        log.trace("Unsupported issuer: " + issuerSubjectDn);
+                    }
                 }
             } else {
-                if (trace)
+                if (trace) {
                     log.trace("Validating using non datawave cert verifier.");
+                }
                 isValid = verifier.verify(credential.getCertificate(), issuerSubjectDn, keyStore, trustStore);
             }
-            if (trace)
+            if (trace) {
                 log.trace("Cert Validation result : " + isValid);
-        } else if (credential.getCertificate() != null)
+            }
+        } else if (credential.getCertificate() != null) {
             isValid = true;
-        else
-            log.warn("Domain, KeyStore, or cert is null. Unable to validate the certificate.");
-        if (trace)
+        } else {
+            log.warn("Certificate is null - unable to validate");
+        }
+        if (trace) {
             log.trace("exit: validateCertificateCredential(DatawaveCredential)");
+        }
         return isValid;
     }
 }

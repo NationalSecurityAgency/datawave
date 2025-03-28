@@ -3,7 +3,6 @@ package datawave.query.index.lookup;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -28,6 +27,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
+import datawave.query.util.count.CountMap;
 
 /**
  * <pre>
@@ -142,7 +142,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 src.next();
             }
             if (ignore) {
-                tv = new IndexInfo(count);
+                tv = new IndexInfo(count > 0 ? count : -1);
             } else {
                 if (parseTldUids) {
                     // For each uid in the list of uids, parse out the tld portion from the whole uid.
@@ -293,14 +293,14 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                         strippedCq.offset(), strippedCq.length(), cv.getBackingArray(), cv.offset(), cv.length(), k.getTimestamp());
     }
 
-    private Map<String,Long> createFieldCounts(String field, Long count) {
-        Map<String,Long> counts = new HashMap<>();
+    private CountMap createFieldCounts(String field, Long count) {
+        CountMap counts = new CountMap();
         counts.put(field, count);
         return counts;
     }
 
-    private Map<String,Long> createTermCounts(String field, String value, Long count) {
-        Map<String,Long> counts = new HashMap<>();
+    private CountMap createTermCounts(String field, String value, Long count) {
+        CountMap counts = new CountMap();
         counts.put(field + " == '" + value + "'", count);
         return counts;
     }

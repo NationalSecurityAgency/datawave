@@ -2,9 +2,9 @@ package datawave.policy;
 
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * The purpose of this class is to demonstrate a likely usage pattern for an IngestPolicyEnforcer implementation
@@ -51,7 +51,7 @@ public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
      *            an event container
      */
     private void validateEventDate(RawRecordContainer event) {
-        if (event.getDate() == Long.MIN_VALUE) {
+        if (!event.isTimestampSet()) {
             event.addError(RawDataErrorNames.EVENT_DATE_MISSING);
             log.error("Event date missing for Event in raw file: " + event.getRawFileName() + ", record: " + event.getRawRecordNumber());
         }

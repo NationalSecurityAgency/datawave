@@ -3,7 +3,12 @@ package datawave.query.tables.ssdeep;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_COUNT;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_ENCODING_BASE;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_ENCODING_LENGTH;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,21 +34,23 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
+/** Additional unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
 public class SSDeepSimilarityQueryTest {
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTest.class);
@@ -102,6 +109,38 @@ public class SSDeepSimilarityQueryTest {
         runSingleQuery(true);
     }
 
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testMaxResultsLimit() throws Exception {
+        logic.setMaxResults(2);
+        runSingleQuery(false);
+    }
+
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testMaxHashLimit() throws Exception {
+        logic.setMaxHashes(1);
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3];
+        runSSDeepQuery(query, 0);
+    }
+
+    @Test
+    public void testMaxHashesPerNGram() throws Exception {
+        // block all hashes
+        logic.setMaxHashesPerNGram(0);
+        // this normally would have results [see below]
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+        // no ngrams in similarity means no results
+        EventQueryResponseBase response = runSSDeepQuery(query, 0);
+        assertNull(response.getEvents());
+
+        // verify with the value reset its fine
+        logic.setMaxHashesPerNGram(10);
+        // provate this now has results
+        query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+        // no ngrams in similarity means no results
+        response = runSSDeepQuery(query, 0);
+        assertNotNull(response.getEvents());
+    }
+
     private static void logSSDeepTestData() throws TableNotFoundException {
         Scanner scanner = accumuloClient.createScanner(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
@@ -117,7 +156,7 @@ public class SSDeepSimilarityQueryTest {
     public void runSingleQuery(boolean applyMinScoreThreshold) throws Exception {
         String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
 
-        final int minScoreThreshold = applyMinScoreThreshold ? 65 : 0;
+        final int minScoreThreshold = applyMinScoreThreshold ? 67 : 0;
         final int expectedEventCount = applyMinScoreThreshold ? 2 : 3;
 
         EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
@@ -128,15 +167,15 @@ public class SSDeepSimilarityQueryTest {
         Assert.assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "67", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
 
         // find and validate the fields for the partial match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", "96", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "53", EXPECTED_2_3_OVERLAPS, "96", observedEvents);
 
         if (applyMinScoreThreshold)
             SSDeepTestUtil.assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);
         else
-            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", "63", observedEvents);
+            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", EXPECTED_2_4_OVERLAPS, "63", observedEvents);
     }
 
     @SuppressWarnings("rawtypes")
@@ -149,7 +188,7 @@ public class SSDeepSimilarityQueryTest {
         q.setQueryAuthorizations(auths.toString());
 
         if (minScoreThreshold > 0) {
-            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
+            q.addParameter(SSDeepScoringFunction.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
         }
 
         RunningQuery runner = new RunningQuery(accumuloClient, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal,

@@ -9,7 +9,6 @@ import java.util.TreeMap;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
@@ -18,6 +17,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class MetricsTableConfigHelperTest {
@@ -31,7 +31,7 @@ public class MetricsTableConfigHelperTest {
 
     @Before
     public void setUp() throws Exception {
-        tops = new InMemoryInstance().getConnector("user", new PasswordToken("pass")).tableOperations();
+        tops = new InMemoryAccumuloClient("root", new InMemoryInstance()).tableOperations();
 
         String tableName = MetricsConfiguration.getTable(conf);
 

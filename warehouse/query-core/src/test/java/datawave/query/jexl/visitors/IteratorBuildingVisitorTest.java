@@ -59,6 +59,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
 
         Assert.assertEquals(null, node.jjtAccept(visitor, null));
+        Assert.assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
     /**
@@ -94,6 +95,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertNotEquals(null, nestedIterator);
         Assert.assertEquals(1, nestedIterator.leaves().size());
         Assert.assertTrue(nestedIterator.leaves().iterator().next().toString().contains("FOO"));
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     /**
@@ -110,6 +112,37 @@ public class IteratorBuildingVisitorTest {
 
         // this should never be reached
         Assert.assertFalse(true);
+    }
+
+    @Test
+    public void testIntersectionOfRepeatedTermsDoesNotProduceAdditionalSourceDeepCopies() throws Exception {
+        String query = "FIELD == 'value' && FIELD == 'value' && FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+    }
+
+    @Test
+    public void testUnionOfRepeatedTermsDoesNotProduceAdditionalSourceDeepCopies() throws Exception {
+        String query = "FIELD == 'value' || FIELD == 'value' || FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+    }
+
+    @Test
+    public void testIteratorForIndexHole() throws ParseException {
+        String query = "((_Hole_ = true) && (FIELD == 'value'))";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     @Test
@@ -899,7 +932,7 @@ public class IteratorBuildingVisitorTest {
         NestedIterator result = visitor.root();
         Assert.assertTrue(result != null);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
-        seekableNestedIterator.seek(docRange, null, true);
+        seekableNestedIterator.seek(docRange, Collections.emptySet(), true);
         seekableNestedIterator.initialize();
 
         // asserts for a hit or miss
@@ -952,7 +985,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class SourceFactory implements datawave.query.iterator.SourceFactory<Key,Value> {
-        private Iterator<Map.Entry<Key,Value>> iterator;
+        private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
             this.iterator = iterator;
@@ -960,6 +993,11 @@ public class IteratorBuildingVisitorTest {
 
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
+            return new SortedListKeyValueIterator(iterator);
+        }
+
+        @Override
+        public SortedKeyValueIterator<Key,Value> getSourceDeepCopy(String stage) {
             return new SortedListKeyValueIterator(iterator);
         }
     }

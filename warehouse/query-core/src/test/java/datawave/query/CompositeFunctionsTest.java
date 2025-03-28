@@ -38,8 +38,10 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
@@ -47,13 +49,12 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
@@ -84,6 +85,13 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            eventQueryLogic.setCollapseUids(true);
+            tldEventQueryLogic.setCollapseUids(true);
         }
 
         @AfterClass
@@ -125,6 +133,13 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            eventQueryLogic.setCollapseUids(false);
+            tldEventQueryLogic.setCollapseUids(false);
+        }
+
         @AfterClass
         public static void teardown() {
             TypeRegistry.reset();
@@ -146,7 +161,7 @@ public abstract class CompositeFunctionsTest {
 
     protected Authorizations auths = new Authorizations("ALL");
 
-    private Set<Authorizations> authSet = Collections.singleton(auths);
+    private final Set<Authorizations> authSet = Collections.singleton(auths);
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -165,9 +180,9 @@ public abstract class CompositeFunctionsTest {
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -453,19 +468,21 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                Collections.emptyList()};
+                Collections.emptyList()
+        };
         //  @formatter:on
 
         for (int i = 0; i < queryStrings.length; i++) {
-            System.out.println("query: " + i);
+            // filter must be reset between each run when pruning ingest types
+            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -501,23 +518,26 @@ public abstract class CompositeFunctionsTest {
         //  @formatter:off
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO")};
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO")
+        };
         //  @formatter:on
 
         for (int i = 0; i < queryStrings.length; i++) {
+            // filter must be reset between each run when pruning ingest types
+            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -665,6 +685,33 @@ public abstract class CompositeFunctionsTest {
         }
     }
 
+
+    @Test
+    public void testWithHoles(){
+        //uncomment for full planning logs
+        //log.setLevel(Level.DEBUG);
+        //Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        //Logger.getLogger(RangeStream.class).setLevel(Level.DEBUG);
+
+        eventQueryLogic.setQueryPlanner(new DatePartitionedQueryPlanner());
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String[] queryStrings = {
+                "UUID == 'CORLEONE' AND  HOLE == 'FOO'"
+        };
+
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[]{Collections.singletonList("CORLEONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            try {
+                runTestQuery(expectedLists[i], queryStrings[i], format.parse("20130101"), format.parse("20210103"), extraParameters);
+            } catch (Throwable t) {
+                log.error(t);
+                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
+            }
+        }
+    }
     @Test
     public void testTLDWithLuceneAndIdentifierToIdentifierJexl() throws Exception {
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
@@ -775,6 +822,22 @@ public abstract class CompositeFunctionsTest {
             }
 
         }
+    }
+
+    @Test
+    public void testMultiFieldInclude() throws Exception {
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
     }
 
     @Test
