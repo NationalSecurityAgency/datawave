@@ -19,7 +19,7 @@ import datawave.query.iterator.logic.IndexIteratorBridge;
  *
  */
 public class IndexRegexIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
-    private static Logger log = Logger.getLogger(IndexRegexIteratorBuilder.class);
+    private static final Logger log = Logger.getLogger(IndexRegexIteratorBuilder.class);
 
     protected Boolean negated;
 
@@ -83,12 +83,8 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 regexIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRegexIteratorJexl: " + regexIterator);
 
-                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-                if (forceDocumentBuild) {
-                    canBuildDocument = true;
-                }
                 // Add an interator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(buildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(regexIterator, null, null);
 
                 docIterator = aggregatingIterator;

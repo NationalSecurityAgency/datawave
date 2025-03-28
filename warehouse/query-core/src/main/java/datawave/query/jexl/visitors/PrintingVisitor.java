@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -92,7 +93,6 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTUnaryPlusNode;
 import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
-import org.apache.commons.jexl3.parser.JexlLexicalNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -104,6 +104,10 @@ import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Does a pretty print out of a depth first traversal.
@@ -195,18 +199,18 @@ public class PrintingVisitor extends ParserVisitor {
      *
      * @param query
      *            JEXL query string
-     * @throws ParseException
-     *             for issues parsing
      */
-    public static void printQuery(String query) throws ParseException {
+    public static void printQuery(String query) {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringProvider(";"));
 
         // Parse the query
         try {
-            printQuery(parser.parse(null, jexlFeatures(), query, null));
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("printQuery");
+            printQuery(parser.parse(jexlInfo, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
     }
 
@@ -265,9 +269,11 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            return formattedQueryString(parser.parse(null, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("formattedQueryString");
+            return formattedQueryString(parser.parse(jexlInfo, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
     }
 

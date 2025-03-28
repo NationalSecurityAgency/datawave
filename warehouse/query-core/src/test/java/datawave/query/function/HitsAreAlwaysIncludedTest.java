@@ -64,7 +64,6 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
  * the field that hit on the query
- *
  */
 public abstract class HitsAreAlwaysIncludedTest {
 
@@ -83,6 +82,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
         }
 
         @Override
@@ -107,6 +112,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override

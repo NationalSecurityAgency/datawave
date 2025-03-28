@@ -79,7 +79,7 @@ public class ValidComparisonVisitorTest {
         ValidComparisonVisitor.check(script);
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidAssignment() throws ParseException {
         String queryString = "'_Eval_' = true";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);

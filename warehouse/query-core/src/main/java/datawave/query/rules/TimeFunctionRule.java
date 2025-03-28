@@ -2,9 +2,7 @@ package datawave.query.rules;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;

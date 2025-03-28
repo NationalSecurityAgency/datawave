@@ -35,7 +35,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -55,6 +54,12 @@ public abstract class QueryModelExpansionTests {
     @RunWith(Arquillian.class)
     public static class ShardRange extends QueryModelExpansionTests {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
             return VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD;
@@ -63,6 +68,12 @@ public abstract class QueryModelExpansionTests {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends QueryModelExpansionTests {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {

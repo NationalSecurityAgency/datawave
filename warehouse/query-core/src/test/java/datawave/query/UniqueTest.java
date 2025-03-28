@@ -82,6 +82,12 @@ public abstract class UniqueTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                         throws Exception {
@@ -109,6 +115,12 @@ public abstract class UniqueTest {
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override

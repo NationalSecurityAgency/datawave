@@ -20,4 +20,13 @@ public interface SourceFactory<K extends WritableComparable<?>,V extends Writabl
      * @return the deep copy
      */
     SortedKeyValueIterator<K,V> getSourceDeepCopy();
+
+    /**
+     * Create a deep copy of a source with optional stage name
+     *
+     * @param stage
+     *            a hint as to who requested a deep copy
+     * @return a source deep copy
+     */
+    SortedKeyValueIterator<K,V> getSourceDeepCopy(String stage);
 }
