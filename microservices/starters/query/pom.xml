@@ -28,7 +28,6 @@
         <version.datawave>7.3.0</version.datawave>
         <version.datawave.hazelcast>4.0.2</version.datawave.hazelcast>
         <version.datawave.hazelcast-client>4.0.2</version.datawave.hazelcast-client>
-        <version.javax.ws.rs-api>2.1.1</version.javax.ws.rs-api>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.starter>4.0.3</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
@@ -36,6 +35,7 @@
         <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
         <version.guava>31.0.1-jre</version.guava>
         <version.hadoop>3.3.6</version.hadoop>
+        <version.javax.ws.rs-api>2.1.1</version.javax.ws.rs-api>
         <version.jts-core>1.19.0</version.jts-core>
         <version.reload4j>1.2.22</version.reload4j>
     </properties>
