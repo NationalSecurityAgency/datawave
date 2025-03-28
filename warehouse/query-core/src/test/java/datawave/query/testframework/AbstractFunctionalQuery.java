@@ -71,8 +71,8 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
@@ -176,7 +176,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMarkingFunctions(new Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setQueryPlanner(new FederatedQueryPlanner());
+        logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         logic.setCollectTimingDetails(true);

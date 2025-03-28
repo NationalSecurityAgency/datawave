@@ -80,7 +80,7 @@ public class CompositeTimestamp {
     public static int getAgeOffDeltaDays(long ts) {
         validateTimestamp(ts);
         long baseTs = Math.abs(ts);
-        long ageOffDiff = ((baseTs >>> allocationForEventDate) * MILLIS_PER_DAY);
+        long ageOffDiff = (baseTs >>> allocationForEventDate);
         return (int) ageOffDiff;
     }
 
@@ -122,7 +122,7 @@ public class CompositeTimestamp {
      * @param ageOffDeltaDays
      * @return The composite timestamp
      */
-    public static long getCompositeTimestamp(long eventDate, int ageOffDeltaDays) {
+    public static long getCompositeDeltaTimeStamp(long eventDate, int ageOffDeltaDays) {
         validateEventDate(eventDate);
         validateAgeOffDelta(ageOffDeltaDays);
         long eventBase = Math.abs(eventDate);
@@ -141,8 +141,8 @@ public class CompositeTimestamp {
      * @param tz
      * @return The composite timestamp
      */
-    public static long getCompositeTimestamp(long eventDate, long ageOffDate, TimeZone tz) {
-        return getCompositeTimestamp(eventDate, computeAgeOffDeltaDays(eventDate, ageOffDate, tz));
+    public static long getCompositeTimeStamp(long eventDate, long ageOffDate, TimeZone tz) {
+        return getCompositeDeltaTimeStamp(eventDate, computeAgeOffDeltaDays(eventDate, ageOffDate, tz));
     }
 
     /**
@@ -153,7 +153,7 @@ public class CompositeTimestamp {
      * @return The composite timestamp
      */
     public static long getCompositeTimeStamp(long eventDate, long ageOffDate) {
-        return getCompositeTimestamp(eventDate, ageOffDate, TimeZone.getTimeZone("GMT"));
+        return getCompositeTimeStamp(eventDate, ageOffDate, TimeZone.getTimeZone("GMT"));
     }
 
     /**

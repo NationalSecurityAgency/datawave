@@ -56,7 +56,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
 
@@ -600,9 +599,12 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     protected void closeOnExit() {
         // close the underlying file system references
         if (null != rfileReferences) {
-
             for (Closeable fs : rfileReferences) {
-                IOUtils.cleanup(null, fs);
+                try {
+                    fs.close();
+                } catch (Exception e) {
+                    log.debug(e);
+                }
             }
         }
         if (null != fileIterators) {
@@ -614,7 +616,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 }
             }
         }
-
     }
 
     public synchronized void close() throws IOException {
