@@ -38,8 +38,11 @@ public class SimpleQueryVisitor extends BaseVisitor {
 
     // assume noble intentions
     private boolean valid = true;
-    private boolean negationsExist = false;
-    private boolean atLeastOneFieldIndexed = false;
+    private boolean indexedFieldPresent = false;
+    private boolean indexOnlyFieldPresent = false;
+    private boolean NEpresent = false;
+    private boolean NRpresent = false;
+    private boolean unboundedRangeOperator = false;
 
     public SimpleQueryVisitor(Set<String> indexedFields, Set<String> indexOnlyFields) {
         this.indexedFields = indexedFields;
@@ -47,11 +50,26 @@ public class SimpleQueryVisitor extends BaseVisitor {
     }
 
     public boolean isValid() {
-        // TODO: detect top level union, in which case all fields must be indexed
-        boolean valid = this.valid && this.atLeastOneFieldIndexed && !negationsExist;
+        valid = indexedFieldPresent && !indexOnlyFieldPresent && !NEpresent && !NRpresent && !unboundedRangeOperator;
         if (!valid) {
-            log.warn("DocumentScheduler rejected query, valid: {}, atLeastOneFieldIndexed: {}, negationsExist: {}", this.valid, atLeastOneFieldIndexed,
-                            negationsExist);
+            StringBuilder sb = new StringBuilder();
+            sb.append("DocumentScheduler reject query: ");
+            if (!indexedFieldPresent) {
+                sb.append("no indexed field,");
+            }
+            if (indexOnlyFieldPresent) {
+                sb.append("only indexed field,");
+            }
+            if (NEpresent) {
+                sb.append("NE present,");
+            }
+            if (NRpresent) {
+                sb.append("NR present,");
+            }
+            if (unboundedRangeOperator) {
+                sb.append("unbounded range,");
+            }
+            log.warn("{}", sb);
         }
         return valid;
     }
@@ -111,31 +129,39 @@ public class SimpleQueryVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNENode node, Object data) {
         valid = false;
-        negationsExist = true;
+        NEpresent = true;
         return data;
     }
 
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        valid = false; // range operators must be bounded
+        // range operators must be bounded
+        valid = false;
+        unboundedRangeOperator = true;
         return data;
     }
 
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        valid = false; // range operators must be bounded
+        // range operators must be bounded
+        valid = false;
+        unboundedRangeOperator = true;
         return data;
     }
 
     @Override
     public Object visit(ASTLENode node, Object data) {
-        valid = false; // range operators must be bounded
+        // range operators must be bounded
+        valid = false;
+        unboundedRangeOperator = true;
         return data;
     }
 
     @Override
     public Object visit(ASTGENode node, Object data) {
-        valid = false; // range operators must be bounded
+        // range operators must be bounded
+        valid = false;
+        unboundedRangeOperator = true;
         return data;
     }
 
@@ -151,7 +177,7 @@ public class SimpleQueryVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNRNode node, Object data) {
         valid = false;
-        negationsExist = true;
+        NRpresent = true;
         return data;
     }
 
@@ -219,8 +245,11 @@ public class SimpleQueryVisitor extends BaseVisitor {
     }
 
     private void validateField(String field) {
-        if (indexedFields.contains(field) || indexOnlyFields.contains(field)) {
-            atLeastOneFieldIndexed = true;
+        if (indexOnlyFields.contains(field)) {
+            valid = false;
+            indexOnlyFieldPresent = true;
+        } else if (indexedFields.contains(field)) {
+            indexedFieldPresent = true;
         }
     }
 }

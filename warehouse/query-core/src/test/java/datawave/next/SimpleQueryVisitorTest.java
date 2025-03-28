@@ -26,7 +26,7 @@ public class SimpleQueryVisitorTest {
 
     @Test
     public void testIndexOnlyField() {
-        test("INDEX_ONLY == 'a'", true);
+        test("INDEX_ONLY == 'a'", false);
     }
 
     @Test
@@ -37,23 +37,23 @@ public class SimpleQueryVisitorTest {
     @Test
     public void testUnions() {
         test("INDEXED == 'a' || INDEXED == 'b'", true);
-        test("INDEXED == 'a' || INDEX_ONLY == 'b'", true);
+        test("INDEXED == 'a' || INDEX_ONLY == 'b'", false);
         test("INDEXED == 'a' || NON_EVENT == 'b'", true);
-        test("INDEX_ONLY == 'a' || NON_EVENT == 'b'", true);
+        test("INDEX_ONLY == 'a' || NON_EVENT == 'b'", false);
     }
 
     @Test
     public void testIntersections() {
         test("INDEXED == 'a' && INDEXED == 'b'", true);
-        test("INDEXED == 'a' && INDEX_ONLY == 'b'", true);
+        test("INDEXED == 'a' && INDEX_ONLY == 'b'", false);
         test("INDEXED == 'a' && NON_EVENT == 'b'", true);
-        test("INDEX_ONLY == 'a' && NON_EVENT == 'b'", true);
+        test("INDEX_ONLY == 'a' && NON_EVENT == 'b'", false);
     }
 
     @Test
     public void testValueMarker() {
         test("(_Value_ = true) && (INDEXED =~ 'ba.*')", true);
-        test("(_Value_ = true) && (INDEX_ONLY =~ 'ba.*')", true);
+        test("(_Value_ = true) && (INDEX_ONLY =~ 'ba.*')", false);
         test("(_Value_ = true) && (NON_EVENT =~ 'ba.*')", false);
     }
 
@@ -74,14 +74,14 @@ public class SimpleQueryVisitorTest {
     @Test
     public void testBoundedRangeMarker() {
         test("(_Bounded_ = true) && (INDEXED >= 1 && INDEXED <= 2)", true);
-        test("(_Bounded_ = true) && (INDEX_ONLY >= 1 && INDEX_ONLY <= 2)", true);
+        test("(_Bounded_ = true) && (INDEX_ONLY >= 1 && INDEX_ONLY <= 2)", false);
         test("(_Bounded_ = true) && (NON_EVENT >= 1 && NON_EVENT <= 2)", false);
     }
 
     @Test
     public void testListMarker() {
         test("((_List_ = true) && (((id = 'uuid') && (field = 'INDEXED') && (params = '{\"values\":[\"value-a\"]}'))))", true);
-        test("((_List_ = true) && (((id = 'uuid') && (field = 'INDEX_ONLY') && (params = '{\"values\":[\"value-a\"]}'))))", true);
+        test("((_List_ = true) && (((id = 'uuid') && (field = 'INDEX_ONLY') && (params = '{\"values\":[\"value-a\"]}'))))", false);
         test("((_List_ = true) && (((id = 'uuid') && (field = 'NON_EVENT') && (params = '{\"values\":[\"value-a\"]}'))))", false);
     }
 
@@ -101,7 +101,7 @@ public class SimpleQueryVisitorTest {
     @Test
     public void testNegatedEquality() {
         test("!(INDEXED == 'a')", true);
-        test("!(INDEX_ONLY == 'a')", true);
+        test("!(INDEX_ONLY == 'a')", false);
         test("!(EVENT_ONLY == 'a')", false);
     }
 
@@ -112,7 +112,7 @@ public class SimpleQueryVisitorTest {
         test("EVENT_ONLY !~ 'ba.*'", false);
 
         test("!(INDEXED =~ 'ba.*')", true);
-        test("!(INDEX_ONLY =~ 'ba.*')", true);
+        test("!(INDEX_ONLY =~ 'ba.*')", false);
         test("!(EVENT_ONLY =~ 'ba.*')", false);
     }
 
