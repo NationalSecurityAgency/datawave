@@ -49,6 +49,8 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoUtils;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * This is the descriptor class for performing geo functions. It supports basic spatial relationships against points.
@@ -121,7 +123,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         minLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                         maxLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(4)));
                     } catch (ParseException e) {
-                        throw new IllegalArgumentException(e);
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                        "Unable to parse latitude or longitude value");
+                        throw new IllegalArgumentException(qe);
                     }
 
                     // is the min longitude greater than the max longitude?
@@ -172,7 +176,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                     try {
                         center = gn.normalize(center);
                     } catch (IllegalArgumentException ne) {
-                        throw new IllegalArgumentException("Unable to parse lat_lon value: " + center);
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                        "Unable to parse lat_lon value: " + center);
+                        throw new IllegalArgumentException(qe);
                     }
                 }
                 GeoPoint c;
@@ -181,14 +187,18 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 } catch (OutOfRangeException e) {
                     throw new IllegalArgumentException("Out of range center value " + center, e);
                 } catch (ParseException e) {
-                    throw new IllegalArgumentException("Unparseable range center value " + center, e);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                    "Unparseable range center value " + center);
+                    throw new IllegalArgumentException(qe);
                 }
 
                 double radius;
                 try {
                     radius = GeoNormalizer.parseDouble(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                 } catch (ParseException pe) {
-                    throw new IllegalArgumentException("Unable to parse radius " + JexlNodes.getIdentifierOrLiteral(args.get(2)), pe);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                    "Unable to parse radius " + JexlNodes.getIdentifierOrLiteral(args.get(2)));
+                    throw new IllegalArgumentException(qe);
                 }
                 double lat = c.getLatitude();
                 double lon = c.getLongitude();
@@ -334,7 +344,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         minLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                         maxLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(4)));
                     } catch (ParseException e) {
-                        throw new IllegalArgumentException(e);
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                        "Unable to parse latitude or longitude value");
+                        throw new IllegalArgumentException(qe);
                     }
 
                     // is the lower left longitude greater than the upper right longitude?
@@ -355,7 +367,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
                     wkt = createCircle(c.getLongitude(), c.getLatitude(), radius).toText();
                 } catch (IllegalArgumentException | OutOfRangeException | ParseException e) {
-                    log.warn("Encountered an error while parsing Geo function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                    "Encountered an error while parsing Geo function");
+                    throw new IllegalArgumentException(qe);
                 }
             }
 
@@ -477,13 +491,16 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
 
-        if (!GeoFunctions.GEO_FUNCTION_NAMESPACE.equals(fvis.namespace()))
-            throw new IllegalArgumentException(
+        if (!GeoFunctions.GEO_FUNCTION_NAMESPACE.equals(fvis.namespace())) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + fvis.namespace());
-        if (!functionClass.equals(GeoFunctions.class))
-            throw new IllegalArgumentException(
+            throw new IllegalArgumentException(qe);
+        }
+        if (!functionClass.equals(GeoFunctions.class)) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
-
+            throw new IllegalArgumentException(qe);
+        }
         verify(fvis.name(), fvis.args().size());
 
         return new GeoJexlArgumentDescriptor(node, fvis.namespace(), fvis.name(), fvis.args());
@@ -493,14 +510,19 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         if (name.equals(WITHIN_BOUNDING_BOX)) {
             // three arguments is the form within_bounding_box(fieldName, lowerLeft, upperRight)
             if (numArgs != 3 && numArgs != 6) {
-                throw new IllegalArgumentException("Wrong number of arguments to within_bounding_box function");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                "Wrong number of arguments to within_bounding_box function");
+                throw new IllegalArgumentException(qe);
             }
         } else if (name.equals(WITHIN_CIRCLE)) {
             if (numArgs != 3) {
-                throw new IllegalArgumentException("Wrong number of arguments to within_circle function");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                "Wrong number of arguments to within_circle function");
+                throw new IllegalArgumentException(qe);
             }
         } else {
-            throw new IllegalArgumentException("Unknown Geo function: " + name);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, "Unknown Geo function: " + name);
+            throw new IllegalArgumentException(qe);
         }
     }
 }

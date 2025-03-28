@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.12.0-SNAPSHOT</version>
+    <version>7.19.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -63,15 +63,15 @@
         <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
         <version.datawave.dictionary-api>4.0.1</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
-        <version.datawave.metadata-utils>4.0.8</version.datawave.metadata-utils>
+        <version.datawave.metadata-utils>4.0.14</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
-        <version.datawave.type-utils>3.0.3</version.datawave.type-utils>
+        <version.datawave.type-utils>3.1.2</version.datawave.type-utils>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
@@ -126,7 +126,7 @@
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
-        <version.surefire.plugin>3.2.5</version.surefire.plugin>
+        <version.surefire.plugin>3.5.2</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
@@ -539,7 +539,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -557,6 +557,10 @@
                         <groupId>com.google.guava</groupId>
                         <artifactId>guava</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -567,6 +571,10 @@
                     <exclusion>
                         <groupId>com.google.guava</groupId>
                         <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -582,6 +590,10 @@
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -600,6 +612,12 @@
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-tserver</artifactId>
                 <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
@@ -648,7 +666,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1411,6 +1429,7 @@
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
                         <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1457,6 +1476,7 @@
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                            <phase>compile</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -1584,7 +1604,7 @@
                     <dependencies>
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
+                            <artifactId>junit-jupiter</artifactId>
                             <version>${version.junit.bom}</version>
                         </dependency>
                         <dependency>
@@ -1694,7 +1714,7 @@
                     <dependencies>
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
+                            <artifactId>junit-jupiter</artifactId>
                             <version>${version.junit.bom}</version>
                         </dependency>
                         <dependency>

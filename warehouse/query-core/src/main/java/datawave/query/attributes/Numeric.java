@@ -69,10 +69,23 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     }
 
     private Number parseToNumber(String value) {
-        Number number = null;
+        // some documents will contain numeric data that is already encoded
+        // in those cases it is faster to check for encoding up front instead
+        // of finding out the hard way via exception.
+        try {
+            if (NumericalEncoder.isPossiblyEncoded(value)) {
+                BigDecimal bigDecimal = NumericalEncoder.decode(value);
+                return bigDecimal.doubleValue();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        Number number;
         try {
             number = NumberUtils.createNumber(value);
         } catch (Exception ex) {
+            // alternatively, throw a shallow exception to avoid expensive calls to 'fill in stacktrace'
             BigDecimal bigDecimal = NumericalEncoder.decode(value);
             number = bigDecimal.doubleValue();
         }
@@ -110,12 +123,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, normalizedValue);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -173,12 +181,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        writeMetadata(kryo, output, reducedResponse);
+        writeMetadata(kryo, output);
         output.writeString(this.normalizedValue);
         output.writeBoolean(this.toKeep);
     }

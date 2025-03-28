@@ -644,6 +644,10 @@ public class RebuildingScannerTestHelper {
 
         @Override
         public Scanner createScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
+            Scanner scanner = super.createScanner(s);
+            if (scanner instanceof RebuildingScanner) {
+                return scanner;
+            }
             return new RebuildingScanner((InMemoryScanner) (super.createScanner(s)), teardown, interrupt);
         }
     }

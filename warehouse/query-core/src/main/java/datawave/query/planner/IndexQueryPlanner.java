@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutionException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
-import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
