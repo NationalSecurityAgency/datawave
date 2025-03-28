@@ -60,6 +60,19 @@ public class DocumentIteratorOptions implements OptionDescriber {
 
     protected static final Set<String> optionNames = Set.of(QUERY, QUERY_MAPPING_COMPRESS, TYPE_METADATA, PROJECTION_FIELDS, DISALLOWLISTED_FIELDS, CANDIDATES);
 
+    public void deepCopy(DocumentIteratorOptions other) {
+        // source deep copied above
+        this.options = other.options;
+        this.env = other.env;
+
+        this.query = other.query;
+        this.compressedOptions = other.compressedOptions;
+        this.typeMetadata = other.typeMetadata;
+        this.includeFields = other.includeFields;
+        this.excludeFields = other.excludeFields;
+        this.candidates.addAll(other.candidates);
+    }
+
     /**
      * Get the set of required option names. Useful when down-selecting from an existing set of options
      *
@@ -86,7 +99,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
         if (options.containsKey(QUERY)) {
             query = options.get(QUERY);
         } else {
-            throw new RuntimeException("DocumentIterator requires a query option");
+            throw new RuntimeException("DocumentIterator requires a QUERY option");
         }
 
         if (options.containsKey(CANDIDATES)) {

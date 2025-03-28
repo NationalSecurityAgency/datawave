@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -22,7 +21,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -50,6 +48,13 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
 
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
     private final List<Entry<Key,Value>> results = new LinkedList<>();
+
+    public DocumentIterator() {}
+
+    public DocumentIterator(DocumentIterator other, IteratorEnvironment env) {
+        this.source = other.source.deepCopy(env);
+        super.deepCopy(other);
+    }
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
@@ -82,6 +87,8 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         this.range = range;
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
+
+        checkForScanRebuild();
 
         // aggregate document
         AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
@@ -136,6 +143,22 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
                 Map.Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(key, d);
                 Map.Entry<Key,Value> result = serializer.apply(entry);
                 results.add(result);
+            }
+        }
+    }
+
+    /**
+     * Check if the start key is exclusive. If
+     */
+    private void checkForScanRebuild() {
+        if (!range.isStartKeyInclusive()) {
+            String cf = range.getStartKey().getColumnFamily().toString();
+            if (cf != null && !cf.isEmpty() && cf.indexOf('\u0000') != -1) {
+                // reasonably sure that if the column family is not empty and a null byte exists then
+                // we can use this to pair down the candidate list
+                while (!candidates.isEmpty() && candidates.get(0).compareTo(cf) <= 0) {
+                    candidates.remove(0);
+                }
             }
         }
     }

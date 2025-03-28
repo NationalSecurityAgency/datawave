@@ -70,16 +70,13 @@ public class DocumentScheduler extends Scheduler {
     public Iterator<Result> iterator() {
         if (scanner == null) {
             // initialize some objects in the config object
+            if (config.isSortedCandidateQueue()) {
+                config.setCandidateQueue(Queues.newPriorityBlockingQueue());
+            } else {
+                config.setCandidateQueue(Queues.newLinkedBlockingDeque());
+            }
 
             config.setResults(Queues.newLinkedBlockingDeque());
-            config.setCandidateQueue(Queues.newLinkedBlockingDeque());
-
-            // config.setResults(new ArrayBlockingQueue<>(config.getResultQueueCapacity()));
-            // if (config.isSortedCandidateQueue()) {
-            // config.setCandidateQueue(new PriorityBlockingQueue<>(config.getCandidateQueueCapacity()));
-            // } else {
-            // config.setCandidateQueue(new ArrayBlockingQueue<>(config.getCandidateQueueCapacity()));
-            // }
 
             scanner = createScanner();
         }
