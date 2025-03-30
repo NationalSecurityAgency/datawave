@@ -75,6 +75,12 @@ public class BaseEventQueryConfiguration {
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
+    public List<IvaratorCacheDirConfig> baseEventQueryLocalIvaratorCacheDirConfigs() {
+        return baseEventQueryProperties().getLocalIvaratorCacheDirConfigs();
+    }
+    
+    @Bean
+    @Scope(SCOPE_PROTOTYPE)
     public List<IvaratorCacheDirConfig> baseEventQueryIvaratorCacheDirConfigs() {
         return baseEventQueryProperties().getIvaratorCacheDirConfigs();
     }
