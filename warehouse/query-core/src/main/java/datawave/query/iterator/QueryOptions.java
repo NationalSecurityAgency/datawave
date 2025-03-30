@@ -269,6 +269,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String SUMMARY_ITERATOR = "summary.iterator.class";
 
+    public static final String SUMMARY_FIELD_NAME = "summary.field.name";
+
     // field and next thresholds before a seek is issued
     public static final String FI_FIELD_SEEK = "fi.field.seek";
     public static final String FI_NEXT_SEEK = "fi.next.seek";
@@ -448,6 +450,8 @@ public class QueryOptions implements OptionDescriber {
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
+    protected String summaryFieldname;
+
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
     private int fiNextSeek = -1;
@@ -572,6 +576,7 @@ public class QueryOptions implements OptionDescriber {
         this.excerptIterator = other.excerptIterator;
         this.summaryOptions = other.summaryOptions;
         this.summaryIterator = other.summaryIterator;
+        this.summaryFieldname = other.summaryFieldname;
 
         this.fiFieldSeek = other.fiFieldSeek;
         this.fiNextSeek = other.fiNextSeek;
@@ -1314,6 +1319,14 @@ public class QueryOptions implements OptionDescriber {
         this.summaryIterator = summaryIterator;
     }
 
+    public String getSummaryFieldName() {
+        return summaryFieldname;
+    }
+
+    public void setSummaryFieldName(String summaryFieldname) {
+        this.summaryFieldname = summaryFieldname;
+    }
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1409,6 +1422,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
         options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
+        options.put(SUMMARY_FIELD_NAME, "The name of the field we want to write a requested summary to");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
@@ -1942,6 +1956,10 @@ public class QueryOptions implements OptionDescriber {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
             }
+        }
+
+        if (options.containsKey(SUMMARY_FIELD_NAME)) {
+            setSummaryFieldName(options.get(SUMMARY_FIELD_NAME));
         }
 
         return true;

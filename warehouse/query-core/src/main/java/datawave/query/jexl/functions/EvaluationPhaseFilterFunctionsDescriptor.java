@@ -16,6 +16,7 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
@@ -113,19 +114,28 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                     if (log.isDebugEnabled()) {
                         log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
                     }
-                    String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                                    datatypeFilter);
-                    // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
-                    if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
-                        log.info("Found no index for field " + field + " and data types " + datatypeFilter);
+                    // If the date type is one marked for no expansion if current, and the query's end date is the current date, do not add any date filters,
+                    // and do not
+                    // allow a SHARDS_AND_DAYS hint to be added later.
+                    if (config.getNoExpansionIfCurrentDateTypes().contains(field) && DateUtils.isSameDay(new Date(), end)) {
+                        log.info("Query end date equals current date and date type " + field
+                                        + " is marked for no expansion if current. SHARDS_AND_DAYS hint will be skipped.");
                         return TRUE_NODE;
+                    } else {
+                        String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
+                                        datatypeFilter);
+                        // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
+                        if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
+                            log.info("Found no index for field " + field + " and data types " + datatypeFilter);
+                            return TRUE_NODE;
+                        }
+                        // create an assignment node
+                        log.info("Found index for field " + field + " and data types " + datatypeFilter);
+                        if (log.isTraceEnabled()) {
+                            log.info("Found the following shards and days: " + shardsAndDaysHint);
+                        }
+                        return JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
                     }
-                    // create an assignment node
-                    log.info("Found index for field " + field + " and data types " + datatypeFilter);
-                    if (log.isTraceEnabled()) {
-                        log.info("Found the following shards and days: " + shardsAndDaysHint);
-                    }
-                    return JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
                 } else {
                     // node0 is an Or node or an And node
                     // copy it
@@ -134,32 +144,40 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                     for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
                         String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
-                        }
-                        String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                                        datatypeFilter);
-                        // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
-                        if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
-                            log.info("Found no index for field " + field + " and data types " + datatypeFilter);
-                            // if an or node, then basically we need to search the entire range
-                            if (newParent instanceof ASTOrNode) {
-                                return TRUE_NODE;
-                            }
-                            // if an and node, then simply drop this one out of the mix
+                        // If the date type is one marked for no expansion if current, and the query's end date is the current date, do not add any date
+                        // filters, and do not
+                        // allow a SHARDS_AND_DAYS hint to be added later.
+                        if (config.getNoExpansionIfCurrentDateTypes().contains(field) && DateUtils.isSameDay(new Date(), end)) {
+                            log.info("Query end date equals current date and date type " + field
+                                            + " is marked for no expansion if current. SHARDS_AND_DAYS hint will be skipped.");
+                            return TRUE_NODE;
                         } else {
-                            // create an assignment node
-                            log.info("Found index for field " + field + " and data types " + datatypeFilter);
-                            if (log.isTraceEnabled()) {
-                                log.info("Found the following shards and days: " + shardsAndDaysHint);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
                             }
-                            JexlNode kid = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
-                            kid.jjtSetParent(newParent);
-                            newParent.jjtAddChild(kid, i++);
+                            String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
+                                            datatypeFilter);
+                            // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
+                            if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
+                                log.info("Found no index for field " + field + " and data types " + datatypeFilter);
+                                // if an or node, then basically we need to search the entire range
+                                if (newParent instanceof ASTOrNode) {
+                                    return TRUE_NODE;
+                                }
+                                // if an and node, then simply drop this one out of the mix
+                            } else {
+                                // create an assignment node
+                                log.info("Found index for field " + field + " and data types " + datatypeFilter);
+                                if (log.isTraceEnabled()) {
+                                    log.info("Found the following shards and days: " + shardsAndDaysHint);
+                                }
+                                JexlNode kid = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
+                                kid.jjtSetParent(newParent);
+                                newParent.jjtAddChild(kid, i++);
+                            }
                         }
                     }
                     return newParent;
-
                 }
             } catch (ParseException e) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_DATE, "Unable to parse dates from date function");

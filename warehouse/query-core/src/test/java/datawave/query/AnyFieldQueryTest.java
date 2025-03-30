@@ -1412,6 +1412,16 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
+    public void testNumeric() throws Exception {
+        String query = Constants.ANY_FIELD + EQ_OP + "'12345'";
+        String expect = CityField.CITY + EQ_OP + "'12345'" + OR_OP + CityField.STATE + EQ_OP + "'12345'";
+
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+    }
+
+    @Test
     public void testRegexPushdownField_federatedQueryPlanner() throws Exception {
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);

@@ -128,6 +128,11 @@
         <property name="zookeeperConfig" value="${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
+        <!-- the list of directories in which the query service puts its caches (selection always made on query service side) -->
+        <!-- TODO: Uncomment this once we have a version of datawave that has this setter -->
+        <!-- property name="localIvaratorCacheDirConfigs" ref="baseEventQueryLocalIvaratorCacheDirConfigs" /-->
+
+        <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheDirConfigs" ref="baseEventQueryIvaratorCacheDirConfigs" />
 

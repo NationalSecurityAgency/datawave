@@ -291,6 +291,12 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Test

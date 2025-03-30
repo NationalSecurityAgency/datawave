@@ -356,7 +356,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
+    // tserver side ivarator cache dir configs
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
+    // webserver side ivarator cache dir configs (e.g. for unique transform on webserver)
+    private List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
 
@@ -446,6 +449,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the summary iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
+    // The name of the field to write a summary to when requested
+    private String summaryFieldName = null;
+
     /**
      * A bloom filter to avoid duplicate results if needed
      */
@@ -534,12 +540,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * SHARDS_AND_DAYS hint.
      */
     private Set<String> noExpansionIfCurrentDateTypes = Collections.emptySet();
-
-    /**
-     * Whether the SHARDS_AND_DAYS hint should be allowed for the query. This will be set to false iff the query specified a date type, and the date type is
-     * present in {@link #noExpansionIfCurrentDateTypes}, and the query's end date is the current date.
-     */
-    private boolean shardsAndDaysHintAllowed = true;
 
     /**
      * Default constructor
@@ -712,6 +712,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
+        this.setLocalIvaratorCacheDirConfigs(
+                        null == other.getLocalIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getLocalIvaratorCacheDirConfigs()));
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
@@ -762,6 +764,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptIterator(other.getExcerptIterator());
         this.setSummaryOptions(SummaryOptions.copyOf(other.getSummaryOptions()));
         this.setSummaryIterator(other.getSummaryIterator());
+        this.setSummaryFieldName(other.getSummaryFieldName());
         this.setFiFieldSeek(other.getFiFieldSeek());
         this.setFiNextSeek(other.getFiNextSeek());
         this.setEventFieldSeek(other.getEventFieldSeek());
@@ -786,7 +789,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
-        this.setShardsAndDaysHintAllowed(other.isShardsAndDaysHintAllowed());
     }
 
     /**
@@ -816,6 +818,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
+        this.setLocalIvaratorCacheDirConfigs(
+                        null == other.getLocalIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getLocalIvaratorCacheDirConfigs()));
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
 
@@ -1538,6 +1542,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
         this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
+    }
+
+    public void setLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs) {
+        this.localIvaratorCacheDirConfigs = localIvaratorCacheDirConfigs;
+    }
+
+    public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
+        return localIvaratorCacheDirConfigs;
     }
 
     public String getIvaratorFstHdfsBaseURIs() {
@@ -2657,6 +2669,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.summaryIterator = summaryIterator;
     }
 
+    public String getSummaryFieldName() {
+        return summaryFieldName;
+    }
+
+    public void setSummaryFieldName(String summaryFieldName) {
+        this.summaryFieldName = summaryFieldName;
+    }
+
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -3033,6 +3053,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getHdfsSiteConfigURLs(), that.getHdfsSiteConfigURLs()) &&
                 Objects.equals(getHdfsFileCompressionCodec(), that.getHdfsFileCompressionCodec()) &&
                 Objects.equals(getZookeeperConfig(), that.getZookeeperConfig()) &&
+                Objects.equals(getLocalIvaratorCacheDirConfigs(), that.getLocalIvaratorCacheDirConfigs()) &&
                 Objects.equals(getIvaratorCacheDirConfigs(), that.getIvaratorCacheDirConfigs()) &&
                 Objects.equals(getIvaratorFstHdfsBaseURIs(), that.getIvaratorFstHdfsBaseURIs()) &&
                 Objects.equals(getQueryModel(), that.getQueryModel()) &&
@@ -3066,8 +3087,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
- isShardsAndDaysHintAllowed() == that.isShardsAndDaysHintAllowed();
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
 
         // @formatter:on
     }
@@ -3217,6 +3237,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getHdfsSiteConfigURLs(),
                 getHdfsFileCompressionCodec(),
                 getZookeeperConfig(),
+                getLocalIvaratorCacheDirConfigs(),
                 getIvaratorCacheDirConfigs(),
                 getIvaratorFstHdfsBaseURIs(),
                 getIvaratorCacheBufferSize(),
@@ -3276,8 +3297,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes(),
-                isShardsAndDaysHintAllowed()
+                getNoExpansionIfCurrentDateTypes()
         );
         // @formatter:on
     }
@@ -3319,13 +3339,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionIfCurrentDateTypes(Set<String> noExpansionIfCurrentDateTypes) {
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
-    }
-
-    public boolean isShardsAndDaysHintAllowed() {
-        return shardsAndDaysHintAllowed;
-    }
-
-    public void setShardsAndDaysHintAllowed(boolean shardsAndDaysHintAllowed) {
-        this.shardsAndDaysHintAllowed = shardsAndDaysHintAllowed;
     }
 }
