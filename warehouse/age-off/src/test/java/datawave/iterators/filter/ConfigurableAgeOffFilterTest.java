@@ -1,9 +1,5 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -28,6 +24,8 @@ import datawave.iterators.filter.ageoff.ConfigurableIteratorEnvironment;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.util.CompositeTimestamp;
+
+import static org.junit.Assert.*;
 
 public class ConfigurableAgeOffFilterTest {
 
@@ -59,9 +57,9 @@ public class ConfigurableAgeOffFilterTest {
 
         filter.init(source, options, env);
 
-        assertEquals(filter.accept(new Key(), VALUE), true);
+        assertTrue(filter.accept(new Key(), VALUE));
         // 1970 is older than 30 days, but filter is disable so should be true
-        assertEquals(filter.accept(getKey(0), VALUE), true);
+        assertTrue(filter.accept(getKey(0), VALUE));
     }
 
     @Test
@@ -72,9 +70,9 @@ public class ConfigurableAgeOffFilterTest {
 
         filter.init(source, options, env);
 
-        assertEquals(filter.accept(new Key(), VALUE), true);
+        assertTrue(filter.accept(new Key(), VALUE));
         // 1970 is older than 30 days, but filter is disable so should be true
-        assertEquals(filter.accept(getKey(0), VALUE), true);
+        assertTrue(filter.accept(getKey(0), VALUE));
     }
 
     @Test
@@ -85,9 +83,9 @@ public class ConfigurableAgeOffFilterTest {
         // no file or other delegate filters configured, so only the ttl are used
         filter.init(source, options, env);
 
-        assertEquals(filter.accept(getKey(daysAgo(10)), VALUE), true);
+        assertTrue(filter.accept(getKey(daysAgo(10)), VALUE));
         // 100 is older than 30 days
-        assertEquals(filter.accept(getKey(daysAgo(100)), VALUE), false);
+        assertFalse(filter.accept(getKey(daysAgo(100)), VALUE));
     }
 
     @Test
@@ -99,8 +97,8 @@ public class ConfigurableAgeOffFilterTest {
 
         // the file uses TestFilter which always returns false for accept and filter applied
         // so only ttl is uses for acceptance
-        assertEquals(filter.accept(getKey(daysAgo(15)), VALUE), true);
-        assertEquals(filter.accept(getKey(daysAgo(123)), VALUE), false);
+        assertTrue(filter.accept(getKey(daysAgo(15)), VALUE));
+        assertFalse(filter.accept(getKey(daysAgo(123)), VALUE));
     }
 
     @Test
@@ -142,24 +140,23 @@ public class ConfigurableAgeOffFilterTest {
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(daysAgo(365), tomorrow);
 
         // brand new key should be good
-        assertEquals(filter.accept(new Key(), VALUE), true);
+        assertTrue(filter.accept(new Key(), VALUE));
         // first five will hit the ttl short circuit
-        assertEquals(filter.accept(getKey(daysAgo(1)), VALUE), true);
-        assertEquals(filter.accept(getKey(daysAgo(2)), VALUE), true);
-        assertEquals(filter.accept(getKey(daysAgo(3)), VALUE), true);
-        assertEquals(filter.accept(getKey(daysAgo(4)), VALUE), true);
-        assertEquals("If this fails it may be an edge case due to date rollover, try again in a minute", //
-                        filter.accept(getKey(daysAgo(5)), VALUE), true);
+        assertTrue(filter.accept(getKey(daysAgo(1)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(2)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(3)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(4)), VALUE));
+        assertTrue("If this fails it may be an edge case due to date rollover, try again in a minute", filter.accept(getKey(daysAgo(5)), VALUE));
 
         // these will not hit the ttl short circuit and the single applied rule
-        assertEquals(filter.accept(getKey("foo", daysAgo(6)), VALUE), true);
+        assertTrue(filter.accept(getKey("foo", daysAgo(6)), VALUE));
         // will not match so should be true
-        assertEquals(filter.accept(getKey("bar", daysAgo(7)), VALUE), true);
-        assertEquals(filter.accept(getKey("foo", daysAgo(8)), VALUE), true);
+        assertTrue(filter.accept(getKey("bar", daysAgo(7)), VALUE));
+        assertTrue(filter.accept(getKey("foo", daysAgo(8)), VALUE));
         // this is really old and matches so should not be accepted
-        assertEquals(filter.accept(getKey("foo", daysAgo(365)), VALUE), false);
+        assertFalse(filter.accept(getKey("foo", daysAgo(365)), VALUE));
         // this is really old and matches, but has a future age off date, so should be accepted
-        assertEquals(filter.accept(getKey("foo", compositeTS), VALUE), true);
+        assertTrue(filter.accept(getKey("foo", compositeTS), VALUE));
 
     }
 
@@ -197,10 +194,10 @@ public class ConfigurableAgeOffFilterTest {
         Key oldBarTab = getKey("bar", "tab", daysAgo(100));
         Key lowBar = getKey("low", "bar", daysAgo(32));
 
-        assertEquals(filter.accept(fooWee, VALUE), true);
-        assertEquals(filter.accept(newBarTab, VALUE), true);
-        assertEquals(filter.accept(oldBarTab, VALUE), false);
-        assertEquals(filter.accept(lowBar, VALUE), false);
+        assertTrue(filter.accept(fooWee, VALUE));
+        assertTrue(filter.accept(newBarTab, VALUE));
+        assertFalse(filter.accept(oldBarTab, VALUE));
+        assertFalse(filter.accept(lowBar, VALUE));
     }
 
     @Test(expected = NullPointerException.class)
@@ -228,14 +225,14 @@ public class ConfigurableAgeOffFilterTest {
         // @formatter:on
         for (String unit : allUnits) {
             options.put(AgeOffConfigParams.TTL_UNITS, unit);
-            assertEquals(filter.validateOptions(options), true);
+            assertTrue(filter.validateOptions(options));
         }
         options.put(AgeOffConfigParams.TTL_UNITS, "parsecs");
-        assertEquals(filter.validateOptions(options), false);
+        assertFalse(filter.validateOptions(options));
 
         options.put(AgeOffConfigParams.TTL, "0x143");
         options.put(AgeOffConfigParams.TTL_UNITS, AgeOffTtlUnits.DAYS);
-        assertEquals(filter.validateOptions(options), false);
+        assertFalse(filter.validateOptions(options));
     }
 
     // --------------------------------------------
