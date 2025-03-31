@@ -2,8 +2,8 @@ package datawave.microservice.audit.auditors.file.config;
 
 import java.util.List;
 
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotEmpty;
 
 import org.springframework.validation.annotation.Validated;
 
