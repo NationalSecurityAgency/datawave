@@ -26,6 +26,7 @@ import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.util.CompositeTimestamp;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertSame;
 
