@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
@@ -43,6 +44,7 @@ public class SimpleQueryVisitor extends BaseVisitor {
     private boolean NEpresent = false;
     private boolean NRpresent = false;
     private boolean unboundedRangeOperator = false;
+    private boolean unhandledFunction = false;
 
     public SimpleQueryVisitor(Set<String> indexedFields, Set<String> indexOnlyFields) {
         this.indexedFields = indexedFields;
@@ -50,7 +52,7 @@ public class SimpleQueryVisitor extends BaseVisitor {
     }
 
     public boolean isValid() {
-        valid = indexedFieldPresent && !indexOnlyFieldPresent && !NEpresent && !NRpresent && !unboundedRangeOperator;
+        valid = indexedFieldPresent && !indexOnlyFieldPresent && !NEpresent && !NRpresent && !unboundedRangeOperator && !unhandledFunction;
         if (!valid) {
             StringBuilder sb = new StringBuilder();
             sb.append("DocumentScheduler reject query: ");
@@ -68,6 +70,9 @@ public class SimpleQueryVisitor extends BaseVisitor {
             }
             if (unboundedRangeOperator) {
                 sb.append("unbounded range,");
+            }
+            if (unhandledFunction) {
+                sb.append("unhandled function,");
             }
             log.warn("{}", sb);
         }
@@ -209,8 +214,15 @@ public class SimpleQueryVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        // assume all functions are okay when punting to the query iterator in a doc range
-        return data;
+        FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
+        switch (visitor.namespace()) {
+            case "content":
+                // index only query functions may also cause this to fail
+                unhandledFunction = true;
+            case "filter":
+            default:
+                return data;
+        }
     }
 
     @Override

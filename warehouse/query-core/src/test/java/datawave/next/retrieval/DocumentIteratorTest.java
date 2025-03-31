@@ -63,6 +63,8 @@ public class DocumentIteratorTest {
         options.put(QueryOptions.QUERY, "FIELD == 'value'");
         options.put(QueryOptions.TYPE_METADATA, new TypeMetadata().toString());
         options.put(DocumentIteratorOptions.CANDIDATES, "dt\0uid-1,dt\0uid-2,dt\0uid-3,dt\0uid-4,dt\0uid-5,dt\0uid-6");
+        options.put(QueryOptions.START_TIME, String.valueOf(0L));
+        options.put(QueryOptions.END_TIME, String.valueOf(Long.MAX_VALUE));
         return options;
     }
 }

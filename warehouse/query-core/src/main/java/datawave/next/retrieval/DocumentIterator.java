@@ -104,6 +104,12 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             while (source.hasTop()) {
                 key = source.getTopKey();
                 source.next();
+
+                if (timeFilter != null && !timeFilter.contains(key.getTimestamp())) {
+                    // check for time stamp just in case
+                    continue;
+                }
+
                 parser.parse(key);
 
                 String field = JexlASTHelper.deconstructIdentifier(parser.getField());
@@ -115,7 +121,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
                     continue;
                 }
 
-                Attribute<?> attr = attributeFactory.create(field, parser.getValue(), key, true);
+                Attribute<?> attr = attributeFactory.create(field, parser.getValue(), key, parser.getDatatype(), true);
                 d.put(field, attr);
             }
 
