@@ -1,5 +1,7 @@
 package datawave.ingest.data.tokenize;
 
+import static org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -9,8 +11,6 @@ import org.apache.lucene.analysis.CharArraySet;
 
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.util.ObjectFactory;
-
-import static org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SET;
 
 public class TokenizationHelper {
 
