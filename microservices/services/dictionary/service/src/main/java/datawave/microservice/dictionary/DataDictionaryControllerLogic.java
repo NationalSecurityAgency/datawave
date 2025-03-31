@@ -83,7 +83,6 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         DICT dataDictionary = responseObjectFactory.getDataDictionary();
         dataDictionary.setFields(fields);
         dataDictionary.setDataDictionarySystem(dictionaryServiceConfiguration.getSystem().systemName);
-        // dataDictionary.setDataDictionarySystem(dataDictionaryConfiguration.getSystemName());
         // Ensure that empty internal field names will be set to the field name instead.
         dataDictionary.transformFields(TRANSFORM_EMPTY_INTERNAL_FIELD_NAMES);
         
