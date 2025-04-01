@@ -26,7 +26,7 @@
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
         <version.accumulo>2.1.1</version.accumulo>
         <version.curator>5.2.0</version.curator>
-        <version.datawave.dictionary-api>4.0.3</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.5-SNAPSHOT</version.datawave.dictionary-api>
         <version.datawave.starter>4.0.2</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
