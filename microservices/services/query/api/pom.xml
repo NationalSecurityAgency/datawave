@@ -20,7 +20,7 @@
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
         <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
-        <version.validation-api>2.0.2</version.validation-api>
+        <version.validation-api>3.0.0</version.validation-api>
     </properties>
     <dependencyManagement>
         <dependencies>
