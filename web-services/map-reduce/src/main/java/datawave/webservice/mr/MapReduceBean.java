@@ -266,6 +266,7 @@ public class MapReduceBean {
         OozieClient oozieClient = null;
         Properties oozieConf = null;
 
+        BadRequestException exception = null;
         try {
             oozieClient = new OozieClient((String) job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
             oozieConf = oozieClient.createConfiguration();
@@ -303,13 +304,16 @@ public class MapReduceBean {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
                     response.addException(qe);
-                    throw new BadRequestException(qe, response);
+                    exception = new BadRequestException(qe, response);
                 } catch (Exception e) {
                     log.error("Error auditing query", e);
                     response.addMessage("Error auditing query - " + e.getMessage());
-                    throw new BadRequestException(e, response);
+                    exception = new BadRequestException(e, response);
                 }
             }
+        }
+        if (null != exception) {
+            throw exception;
         }
         // Submit the Oozie workflow.
         try {

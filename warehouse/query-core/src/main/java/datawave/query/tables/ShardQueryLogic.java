@@ -776,7 +776,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
                                 .withModel(getQueryModel())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                                .withIvaratorCacheDirConfigs(getLocalIvaratorCacheDirConfigs())
                                 .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
                                 .withSubDirectory(getConfig().getQuery().getId().toString())
                                 .withMaxOpenFiles(getIvaratorMaxOpenFiles())
@@ -1793,6 +1793,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return getConfig().getGroupFieldsBatchSize();
     }
 
+    public boolean isDisableIteratorUniqueFields() {
+        return getConfig().isDisableIteratorUniqueFields();
+    }
+
+    public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
+        getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
@@ -2300,6 +2308,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
         getConfig().setFullTableScanEnabled(fullTableScanEnabled);
+    }
+
+    public void setLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs) {
+        getConfig().setLocalIvaratorCacheDirConfigs(localIvaratorCacheDirConfigs);
+    }
+
+    public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
+        return getConfig().getLocalIvaratorCacheDirConfigs();
     }
 
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
@@ -3133,6 +3149,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
+     *            The query checkpoint
      */
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {

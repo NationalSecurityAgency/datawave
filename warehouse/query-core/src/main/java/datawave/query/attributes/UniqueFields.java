@@ -216,7 +216,9 @@ public class UniqueFields implements Serializable, Cloneable {
      * Replace a field mapping with another field
      *
      * @param field
+     *            the field
      * @param replacement
+     *            the replacement
      */
     public void replace(String field, String replacement) {
         Collection<UniqueGranularity> value = fieldMap.removeAll(field);
