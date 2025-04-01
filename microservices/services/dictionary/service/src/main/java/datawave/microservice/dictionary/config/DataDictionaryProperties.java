@@ -2,14 +2,13 @@ package datawave.microservice.dictionary.config;
 
 import java.util.Map;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Positive;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
