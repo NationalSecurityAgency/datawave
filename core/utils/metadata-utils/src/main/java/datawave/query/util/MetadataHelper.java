@@ -1844,7 +1844,11 @@ public class MetadataHelper {
      */
     public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
-        return allFieldMetadataHelper.getFieldIndexHoles(fields, datatypes, minThreshold);
+        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_I, datatypes, minThreshold);
+        if (fields == null || fields.isEmpty()) {
+            return allHoles;
+        }
+        return allHoles.entrySet().stream().filter(e -> fields.contains(e.getKey())).collect(Collectors.toUnmodifiableMap(m -> m.getKey(), m -> m.getValue()));
     }
     
     /**
@@ -1861,7 +1865,11 @@ public class MetadataHelper {
      */
     public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
-        return allFieldMetadataHelper.getReversedFieldIndexHoles(fields, datatypes, minThreshold);
+        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, datatypes, minThreshold);
+        if (fields == null || fields.isEmpty()) {
+            return allHoles;
+        }
+        return allHoles.entrySet().stream().filter(e -> fields.contains(e.getKey())).collect(Collectors.toUnmodifiableMap(m -> m.getKey(), m -> m.getValue()));
     }
     
     /**
