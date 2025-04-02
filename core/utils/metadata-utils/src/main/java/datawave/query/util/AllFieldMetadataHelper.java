@@ -1268,6 +1268,7 @@ public class AllFieldMetadataHelper {
                     cacheManager = "metadataHelperCacheManager", sync = true)
     protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
+        log.debug("cache fault for getFieldIndexHoles({}, {}, {}, {}, {})", this.auths, this.metadataTableName, targetColumnFamily, datatypes, minThreshold);
         // create local copies to avoid side effects
         datatypes = new HashSet<>(datatypes);
         
