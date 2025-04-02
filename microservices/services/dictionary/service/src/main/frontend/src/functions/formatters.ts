@@ -27,6 +27,8 @@ export function maxSubstring(str: any, colName: any): any {
     return str.substring(0, 22) + ' ...';
   } else if ((colName === 'CopyPaste') && str.length > 42) {
     return str.substring(0, 40) + ' ...';
+  } else if ((colName === 'dataType') && str.length > 12) {
+    return str.substring(0, 10) + ' ...';
   } else {
     return str;
   }
