@@ -1396,9 +1396,9 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.45.1</version>
+                    <groupId>org.eclipse.jkube</groupId>
+                    <artifactId>kubernetes-maven-plugin</artifactId>
+                    <version>1.18.1</version>
                 </plugin>
                 <plugin>
                     <groupId>io.github.git-commit-id</groupId>
