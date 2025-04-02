@@ -1254,8 +1254,6 @@ public class AllFieldMetadataHelper {
      *
      * @param targetColumnFamily
      *            the target column family
-     * @param datatypes
-     *            a set of datatypes (can be empty to denote all)
      * @param minThreshold
      *            the minimum threshold
      * @return a map of index holes by datatype
@@ -1264,33 +1262,15 @@ public class AllFieldMetadataHelper {
      * @throws IOException
      *             if a value fails to deserialize
      */
-    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#datatypes,#minThreshold}",
+    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#minThreshold}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
-    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> datatypes, double minThreshold)
+    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, double minThreshold)
                     throws TableNotFoundException, IOException {
-        log.debug("cache fault for getFieldIndexHoles({}, {}, {}, {}, {})", this.auths, this.metadataTableName, targetColumnFamily, datatypes, minThreshold);
-        // create local copies to avoid side effects
-        datatypes = new HashSet<>(datatypes);
-        
-        // Handle null datatypes if given.
-        if (datatypes == null) {
-            datatypes = Collections.emptySet();
-        } else {
-            // Ensure null is not present as an entry.
-            datatypes.remove(null);
-        }
-        
+        log.debug("cache fault for getFieldIndexHoles({}, {}, {}, {})", this.auths, this.metadataTableName, targetColumnFamily, minThreshold);
         // remove fields that are not indexed at all by the specified datatypes
         Multimap<String,String> indexedFieldMap = (targetColumnFamily == ColumnFamilyConstants.COLF_I ? loadIndexedFields() : loadReverseIndexedFields());
         Set<String> indexedFields = new HashSet<>();
-        if (datatypes.isEmpty()) {
-            indexedFields.addAll(indexedFieldMap.values());
-        } else {
-            indexedFields = new HashSet<>();
-            for (String datatype : datatypes) {
-                indexedFields.addAll(indexedFieldMap.get(datatype));
-            }
-        }
+        indexedFields.addAll(indexedFieldMap.values());
         
         // Ensure the minThreshold is a percentage in the range 0%-100%.
         if (minThreshold > 1.0d) {
@@ -1315,7 +1295,7 @@ public class AllFieldMetadataHelper {
             // Determine which range to use.
             bs.setRange(new Range());
             
-            FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, indexedFields, datatypes);
+            FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, indexedFields, Collections.emptySet());
             indexHoles = finder.findHoles();
         }
         return indexHoles;

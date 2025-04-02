@@ -45,6 +45,7 @@ import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
@@ -1844,11 +1845,32 @@ public class MetadataHelper {
      */
     public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
-        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_I, datatypes, minThreshold);
-        if (fields == null || fields.isEmpty()) {
-            return allHoles;
+        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_I, minThreshold);
+        return filteredFieldIndexHoles(allHoles, fields, datatypes);
+    }
+    
+    private Map<String,Map<String,IndexFieldHole>> filteredFieldIndexHoles(Map<String,Map<String,IndexFieldHole>> allHoles, Set<String> fields,
+                    Set<String> datatypes) {
+        if (fields.isEmpty() || fields == null) {
+            if (datatypes.isEmpty() || datatypes == null) {
+                return allHoles;
+            } else {
+                return allHoles.entrySet().stream().map(e -> filterDatatypes(e, datatypes)).filter(e -> !e.getValue().isEmpty())
+                                .collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue()));
+            }
+        } else {
+            if (datatypes.isEmpty() || datatypes == null) {
+                return allHoles.entrySet().stream().filter(e -> fields.contains(e.getKey())).collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue()));
+            } else {
+                return allHoles.entrySet().stream().filter(e -> fields.contains(e.getKey())).map(e -> filterDatatypes(e, datatypes))
+                                .filter(e -> !e.getValue().isEmpty()).collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue()));
+            }
         }
-        return allHoles.entrySet().stream().filter(e -> fields.contains(e.getKey())).collect(Collectors.toUnmodifiableMap(m -> m.getKey(), m -> m.getValue()));
+    }
+    
+    private Map.Entry<String,Map<String,IndexFieldHole>> filterDatatypes(Map.Entry<String,Map<String,IndexFieldHole>> holes, Set<String> datatypes) {
+        return new UnmodifiableMapEntry(holes.getKey(), holes.getValue().entrySet().stream().filter(e -> datatypes.contains(e.getKey()))
+                        .collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue())));
     }
     
     /**
@@ -1865,11 +1887,8 @@ public class MetadataHelper {
      */
     public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
-        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, datatypes, minThreshold);
-        if (fields == null || fields.isEmpty()) {
-            return allHoles;
-        }
-        return allHoles.entrySet().stream().filter(e -> fields.contains(e.getKey())).collect(Collectors.toUnmodifiableMap(m -> m.getKey(), m -> m.getValue()));
+        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, minThreshold);
+        return filteredFieldIndexHoles(allHoles, fields, datatypes);
     }
     
     /**
