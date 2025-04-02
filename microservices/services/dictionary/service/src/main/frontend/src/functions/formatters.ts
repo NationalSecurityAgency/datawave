@@ -25,6 +25,7 @@ export function maxSubstring(str: any, colName: any): any {
     case 'internalFieldName':
       return str.length > 32 ? str.substring(0, 30) + ' ...' : str;
     case 'Types':
+      // Types is offset by 2 to prevent overlapping in 'Tokenized' Column
       return str.length > 14 ? str.substring(0, 9) + ' ...' : str;
     case 'Descriptions':
       return str.length > 24 ? str.substring(0, 22) + ' ...' : str;
