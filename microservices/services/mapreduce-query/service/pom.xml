@@ -193,17 +193,21 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>gov.nsa.datawave.microservice</groupId>
+                                <artifactId>mapreduce-query-core-job</artifactId>
+                                <version>${version.datawave.mapreduce-query-core-job}</version>
+                                <type>jar</type>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <execution>
                                 <phase>prepare-package</phase>
                                 <goals>
-                                    <goal>copy</goal>
+                                    <goal>build-image</goal>
                                 </goals>
                                 <configuration>
                                     <artifactItems>

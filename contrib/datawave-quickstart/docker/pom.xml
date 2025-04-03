@@ -163,18 +163,18 @@
                     <plugin>
                         <groupId>org.eclipse.jkube</groupId>
                         <artifactId>kubernetes-maven-plugin</artifactId>
+                        <version>1.18.1</version>
                         <configuration>
                             <verbose>true</verbose>
                             <images>
                                 <image>
                                     <name>${docker.image.prefix}datawave/quickstart-${build.env}</name>
                                     <build>
+                                        <contextDir>${project.basedir}/../../../</contextDir>
+                                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
-                                        <cleanup>none</cleanup>
-                                        <contextDir>${project.basedir}/../../../</contextDir>
-                                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <tags>
                                             <tag>latest</tag>
                                             <tag>${project.version}</tag>
@@ -191,6 +191,9 @@
                                             <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>
                                             <ZOOKEEPER_URL>${url.zookeeper}</ZOOKEEPER_URL>
                                         </args>
+                                        <assembly>
+                                            <name>/</name>
+                                        </assembly>
                                     </build>
                                 </image>
                             </images>

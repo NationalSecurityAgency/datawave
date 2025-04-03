@@ -265,47 +265,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.45.1</version>
-                    <configuration>
-                        <verbose>true</verbose>
-                        <images>
-                            <image>
-                                <name>${docker.image.prefix}${project.artifactId}</name>
-                                <build>
-                                    <buildOptions>
-                                        <memory>8589934592</memory>
-                                    </buildOptions>
-                                    <cleanup>none</cleanup>
-                                    <contextDir>${project.build.directory}/docker-context</contextDir>
-                                    <dockerFile>${project.build.directory}/docker-context/Dockerfile</dockerFile>
-                                    <tags>
-                                        <tag>latest</tag>
-                                        <tag>${project.version}</tag>
-                                    </tags>
-                                </build>
-                            </image>
-                        </images>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>build</id>
-                            <goals>
-                                <goal>build</goal>
-                            </goals>
-                            <phase>install</phase>
-                        </execution>
-                        <execution>
-                            <id>push</id>
-                            <goals>
-                                <goal>push</goal>
-                            </goals>
-                            <phase>deploy</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>io.github.git-commit-id</groupId>
                     <artifactId>git-commit-id-maven-plugin</artifactId>
                     <version>9.0.1</version>
@@ -562,68 +521,6 @@
                     <plugin>
                         <groupId>net.revelc.code.formatter</groupId>
                         <artifactId>formatter-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>docker</id>
-            <activation>
-                <property>
-                    <name>microservice-docker</name>
-                </property>
-            </activation>
-            <properties>
-                <os.detected.classifier>linux-x86_64-fedora</os.detected.classifier>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-dockerfile</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>generate-sources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/docker</directory>
-                                            <filtering>true</filtering>
-                                        </resource>
-                                    </resources>
-                                    <overwrite>true</overwrite>
-                                    <delimiters>
-                                        <delimiter>${*}</delimiter>
-                                    </delimiters>
-                                    <useDefaultDelimiters>false</useDefaultDelimiters>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-spring-repackaged-jar</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>verify</phase>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.directory}</directory>
-                                            <filtering>false</filtering>
-                                            <includes>
-                                                <include>${project.build.finalName}-exec.jar</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                    <overwrite>true</overwrite>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
