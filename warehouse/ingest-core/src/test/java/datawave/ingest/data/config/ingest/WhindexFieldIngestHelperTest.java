@@ -1,8 +1,6 @@
 package datawave.ingest.data.config.ingest;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
@@ -12,8 +10,6 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 class WhindexFieldIngestHelperTest {
 

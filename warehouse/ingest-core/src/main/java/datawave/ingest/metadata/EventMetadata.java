@@ -2,7 +2,6 @@ package datawave.ingest.metadata;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.text.DateFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
