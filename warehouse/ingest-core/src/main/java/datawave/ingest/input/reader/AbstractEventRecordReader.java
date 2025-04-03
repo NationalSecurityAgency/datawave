@@ -53,6 +53,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
     /**
      * @deprecated to support the use of multiple formatters to parse a plurality of simple date formats
      */
+    @Deprecated
     protected SimpleDateFormat formatter;
     protected List<SimpleDateFormat> formatters;
 
