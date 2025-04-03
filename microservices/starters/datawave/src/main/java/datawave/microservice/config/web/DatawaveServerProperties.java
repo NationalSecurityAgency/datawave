@@ -8,12 +8,6 @@ import static datawave.microservice.authorization.preauth.ProxiedEntityX509Filte
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.web.server.Ssl;
@@ -23,6 +17,11 @@ import org.springframework.validation.annotation.Validated;
 import com.google.common.collect.Lists;
 
 import datawave.microservice.validator.NotBlankIfFieldEquals;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @Validated
 @ConfigurationProperties(prefix = "server", ignoreInvalidFields = true)
