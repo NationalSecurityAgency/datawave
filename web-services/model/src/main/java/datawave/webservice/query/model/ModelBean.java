@@ -101,6 +101,10 @@ public class ModelBean {
     @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
     private String dataTablesUri;
 
+    @Inject
+    @ConfigProperty(name = "dw.model.systemName", defaultValue = "unknown")
+    private String systemName;
+
     @EJB
     private AccumuloConnectionFactory connectionFactory;
 
@@ -133,7 +137,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
 
-        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName, systemName);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -337,7 +341,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
 
-        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri);
+        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri, systemName);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
