@@ -41,7 +41,5 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
-        <plugins>
-        </plugins>
     </build>
 </project>
