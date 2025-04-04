@@ -20,7 +20,6 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.checkerframework.checker.units.qual.K;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
