@@ -60,6 +60,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     public void write(DataOutput out) throws IOException {
         WritableUtils.writeString(out, datawaveType.getClass().toString());
         writeMetadata(out);
+
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -134,23 +135,29 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void read(Kryo kryo, Input input) {
+
         try {
             setDatawaveType(input.readString());
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
             log.warn("could not read datawateType from input: " + e);
         }
         super.readMetadata(kryo, input);
-        if (datawaveType == null)
+        if (datawaveType == null) {
             datawaveType = (Type) new NoOpType();
-        String delegateString = input.readString();
+        }
+
+        String normalizedValue = input.readString();
         try {
-            datawaveType.setDelegateFromString(delegateString);
+            datawaveType.setDelegateFromString(normalizedValue);
+            datawaveType.setNormalizedValue(normalizedValue);
         } catch (Exception ex) {
             // there was some problem with setting the delegate as the declared type.
             // Instead of letting this exception fail the query, make this a NoOpType containing the string value from the input
-            log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from input:" + delegateString + "  Making a NoOpType instead.");
+            log.warn("Was unable to make a " + datawaveType.getClass().getSimpleName() + " to contain a delegate created from input:" + normalizedValue
+                            + "  Making a " + NoOpType.class.getSimpleName() + " instead.");
             datawaveType = (Type) new NoOpType();
-            datawaveType.setDelegateFromString(delegateString);
+            datawaveType.setDelegateFromString(normalizedValue);
+            datawaveType.setNormalizedValue(normalizedValue);
         }
         this.toKeep = input.readBoolean();
     }
@@ -166,8 +173,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
      * @see Attribute#deepCopy()
      */
     @Override
-    public TypeAttribute copy() {
-        return new TypeAttribute(this.getType(), this.getMetadata(), this.isToKeep());
+    public TypeAttribute<T> copy() {
+        return new TypeAttribute<>(this.getType(), this.getMetadata(), this.isToKeep());
     }
 
     @Override

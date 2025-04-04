@@ -51,6 +51,11 @@ public class IdentityDataType implements Type<String> {
     }
 
     @Override
+    public void setNormalizedValueFromDelegate() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String getDelegateAsString() {
         throw new UnsupportedOperationException();
     }

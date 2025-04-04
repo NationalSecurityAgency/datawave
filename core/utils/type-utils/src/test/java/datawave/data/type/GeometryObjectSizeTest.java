@@ -17,8 +17,11 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void pointTest() throws Exception {
+        Point point = new Point((org.locationtech.jts.geom.Point) new WKTReader().read("POINT(0 0)"));
+
         PointType pointType = new PointType();
-        pointType.setDelegate(new Point((org.locationtech.jts.geom.Point) new WKTReader().read("POINT(0 0)")));
+        pointType.setDelegate(point);
+        pointType.setNormalizedValue(point.toString());
 
         long estimatedSizeInBytes = pointType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(pointType);
@@ -28,8 +31,11 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void multiPointTest() throws Exception {
+        Geometry geometry = new Geometry(new WKTReader().read("MULTIPOINT(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7, 8 8, 9 9, 10 10)"));
+
         GeometryType geometryType = new GeometryType();
-        geometryType.setDelegate(new Geometry(new WKTReader().read("MULTIPOINT(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7, 8 8, 9 9, 10 10)")));
+        geometryType.setDelegate(geometry);
+        geometryType.normalizeAndSetNormalizedValue(geometry);
 
         long estimatedSizeInBytes = geometryType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(geometryType);
@@ -39,9 +45,12 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void polygonTest() throws Exception {
+        Geometry geometry = new Geometry(
+                        new WKTReader().read("POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45))"));
+
         GeometryType geometryType = new GeometryType();
-        geometryType.setDelegate(new Geometry(
-                        new WKTReader().read("POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45))")));
+        geometryType.setDelegate(geometry);
+        geometryType.normalizeAndSetNormalizedValue(geometry);
 
         long estimatedSizeInBytes = geometryType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(geometryType);
@@ -51,9 +60,12 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void multiPolygonTest() throws Exception {
+        Geometry geometry = new Geometry(new WKTReader().read(
+                        "MULTIPOLYGON(((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), ((-60 -60, 60 -60, 60 60, -60 60, -60 -60)))"));
+
         GeometryType geometryType = new GeometryType();
-        geometryType.setDelegate(new Geometry(new WKTReader().read(
-                        "MULTIPOLYGON(((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), ((-60 -60, 60 -60, 60 60, -60 60, -60 -60)))")));
+        geometryType.setDelegate(geometry);
+        geometryType.normalizeAndSetNormalizedValue(geometry);
 
         long estimatedSizeInBytes = geometryType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(geometryType);
@@ -63,8 +75,11 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void lineStringTest() throws Exception {
+        Geometry geometry = new Geometry(new WKTReader().read("LINESTRING(-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85)"));
+
         GeometryType geometryType = new GeometryType();
-        geometryType.setDelegate(new Geometry(new WKTReader().read("LINESTRING(-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85)")));
+        geometryType.setDelegate(geometry);
+        geometryType.normalizeAndSetNormalizedValue(geometry);
 
         long estimatedSizeInBytes = geometryType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(geometryType);
@@ -74,9 +89,12 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void multiLineStringTest() throws Exception {
+        Geometry geometry = new Geometry(new WKTReader().read(
+                        "MULTILINESTRING((-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), (0 1, 0 2, 0 3, 0 4, 0 5, 0 6, 0 7, 1 8, 1 9, 1 10))"));
+
         GeometryType geometryType = new GeometryType();
-        geometryType.setDelegate(new Geometry(new WKTReader().read(
-                        "MULTILINESTRING((-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), (0 1, 0 2, 0 3, 0 4, 0 5, 0 6, 0 7, 1 8, 1 9, 1 10))")));
+        geometryType.setDelegate(geometry);
+        geometryType.normalizeAndSetNormalizedValue(geometry);
 
         long estimatedSizeInBytes = geometryType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(geometryType);
@@ -86,9 +104,12 @@ public class GeometryObjectSizeTest {
 
     @Test
     public void geometryCollectionTest() throws Exception {
+        Geometry geometry = new Geometry(new WKTReader().read(
+                        "GEOMETRYCOLLECTION(POINT(0 0), MULTIPOINT(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7, 8 8, 9 9, 10 10), POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), MULTIPOLYGON(((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), ((-60 -60, 60 -60, 60 60, -60 60, -60 -60))), LINESTRING(-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), MULTILINESTRING((-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), (0 1, 0 2, 0 3, 0 4, 0 5, 0 6, 0 7, 1 8, 1 9, 1 10)), GEOMETRYCOLLECTION(POINT(0 0), MULTIPOINT(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7, 8 8, 9 9, 10 10), POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), MULTIPOLYGON(((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), ((-60 -60, 60 -60, 60 60, -60 60, -60 -60))), LINESTRING(-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), MULTILINESTRING((-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), (0 1, 0 2, 0 3, 0 4, 0 5, 0 6, 0 7, 1 8, 1 9, 1 10))))"));
+
         GeometryType geometryType = new GeometryType();
-        geometryType.setDelegate(new Geometry(new WKTReader().read(
-                        "GEOMETRYCOLLECTION(POINT(0 0), MULTIPOINT(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7, 8 8, 9 9, 10 10), POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), MULTIPOLYGON(((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), ((-60 -60, 60 -60, 60 60, -60 60, -60 -60))), LINESTRING(-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), MULTILINESTRING((-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), (0 1, 0 2, 0 3, 0 4, 0 5, 0 6, 0 7, 1 8, 1 9, 1 10)), GEOMETRYCOLLECTION(POINT(0 0), MULTIPOINT(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7, 8 8, 9 9, 10 10), POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), MULTIPOLYGON(((-180 -90, 180 -90, 180 90, -180 90, -180 -90), (-45 -45, 45 -45, 45 45, -45 45, -45 -45)), ((-60 -60, 60 -60, 60 60, -60 60, -60 -60))), LINESTRING(-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), MULTILINESTRING((-110 -80, -45 -76, -10 -5, 30 10, 40 50, 35 30, 170 85), (0 1, 0 2, 0 3, 0 4, 0 5, 0 6, 0 7, 1 8, 1 9, 1 10))))")));
+        geometryType.setDelegate(geometry);
+        geometryType.normalizeAndSetNormalizedValue(geometry);
 
         long estimatedSizeInBytes = geometryType.sizeInBytes();
         long actualSizeInBytes = sizeInBytes(geometryType);
