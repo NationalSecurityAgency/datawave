@@ -58,7 +58,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonManager;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
