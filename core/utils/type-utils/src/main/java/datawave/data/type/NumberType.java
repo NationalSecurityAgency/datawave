@@ -22,6 +22,6 @@ public class NumberType extends BaseType<BigDecimal> {
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (2 * normalizedValue.length());
+        return STATIC_SIZE + (2L * normalizedValue.length());
     }
 }

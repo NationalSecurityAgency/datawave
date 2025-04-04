@@ -9,16 +9,25 @@ import datawave.webservice.query.data.ObjectSizeOf;
 
 public class BaseType<T extends Comparable<T> & Serializable> implements Serializable, Type<T>, ObjectSizeOf {
     
-    private static final long serialVersionUID = 5354270429891763693L;
+    private static final long serialVersionUID = 1261391800060720465L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE + Sizer.REFERENCE;
     
     protected T delegate;
     protected String normalizedValue;
     protected final Normalizer<T> normalizer;
     
-    public BaseType(String delegateString, Normalizer<T> normalizer) {
+    /**
+     * Default constructor. Generates the normalized and non-normalized variants of the provided value
+     * 
+     * @param value
+     *            the value
+     * @param normalizer
+     *            the normalizer
+     */
+    public BaseType(String value, Normalizer<T> normalizer) {
         this.normalizer = normalizer;
-        setDelegate(normalizer.denormalize(delegateString));
+        this.delegate = normalizer.denormalize(value);
+        this.normalizedValue = normalizer.normalize(value);
     }
     
     public BaseType(Normalizer<T> normalizer) {
@@ -33,9 +42,21 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
         setDelegate(normalizer.denormalize(in));
     }
     
+    /**
+     * Set the delegate directly with no further operations
+     * 
+     * @param delegate
+     *            the delegate Type
+     */
     public void setDelegate(T delegate) {
         this.delegate = delegate;
-        normalizeAndSetNormalizedValue(this.delegate);
+    }
+    
+    /**
+     * Use the normalizer and delegate to set the normalized value. Assumes that {@link #setDelegate(Comparable)} has been called.
+     */
+    public void setNormalizedValueFromDelegate() {
+        this.normalizedValue = normalizer.normalizeDelegateType(this.delegate);
     }
     
     public String getNormalizedValue() {
@@ -47,6 +68,12 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
         return this.delegate;
     }
     
+    /**
+     * Set the normalized value. This is useful when working with a value that is already normalized
+     * 
+     * @param normalizedValue
+     *            the normalized value
+     */
     public void setNormalizedValue(String normalizedValue) {
         this.normalizedValue = normalizedValue;
     }
@@ -85,9 +112,16 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
         return normalizer.normalizedRegexIsLossy(in);
     }
     
+    /**
+     * Apply a normalizer to the provided value and store the result.
+     * 
+     * @param value
+     *            the value
+     */
     @Override
-    public void normalizeAndSetNormalizedValue(T valueToNormalize) {
-        setNormalizedValue(normalizer.normalizeDelegateType(valueToNormalize));
+    public void normalizeAndSetNormalizedValue(T value) {
+        String normalized = normalizer.normalizeDelegateType(value);
+        setNormalizedValue(normalized);
     }
     
     public void validate() {
@@ -160,7 +194,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
      * One string (normalizedValue) one unknown object (delegate) one normalizer (singleton reference) ref to object (4) normalizers will not be counted because
      * they are singletons
      * 
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
@@ -169,7 +203,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
             List<String> values = ((OneToManyNormalizerType<?>) this).getNormalizedValues();
             size += values.stream().map(String::length).map(length -> 2 * length + ObjectSizeOf.Sizer.REFERENCE).reduce(Integer::sum).orElse(0);
         }
-        size += STATIC_SIZE + (2 * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
+        size += STATIC_SIZE + (2L * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
         return size;
     }
 }

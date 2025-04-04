@@ -6,7 +6,7 @@ import datawave.data.normalizer.Normalizer;
 
 public class DateType extends BaseType<Date> {
     
-    private static final long serialVersionUID = 936566410691643144L;
+    private static final long serialVersionUID = -1573098589077174678L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + PrecomputedSizes.DATE_STATIC_REF + Sizer.REFERENCE;
     
     public DateType() {
@@ -15,6 +15,7 @@ public class DateType extends BaseType<Date> {
     
     public DateType(String dateString) {
         super(Normalizer.DATE_NORMALIZER);
+        super.setNormalizedValue(dateString);
         super.setDelegate(normalizer.denormalize(dateString));
     }
     
@@ -27,10 +28,10 @@ public class DateType extends BaseType<Date> {
     /**
      * One string, one date object, one reference to the normalizer
      * 
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (2 * normalizedValue.length());
+        return STATIC_SIZE + (2L * normalizedValue.length());
     }
 }

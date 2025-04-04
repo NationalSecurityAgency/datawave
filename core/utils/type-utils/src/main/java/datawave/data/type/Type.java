@@ -22,6 +22,8 @@ public interface Type<T extends Comparable<T>> extends Comparable<Type<T>> {
     
     void setDelegate(T delegate);
     
+    void setNormalizedValueFromDelegate();
+    
     /**
      * The string form must preserve all information in the delegate such that setDelegateFromString will recreate this instance correctly.
      */

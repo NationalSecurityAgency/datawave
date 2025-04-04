@@ -39,6 +39,14 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
         setNormalizedValue(in);
     }
     
+    /**
+     * Assumes that {@link #setDelegate(Comparable)} has been called
+     */
+    public void setNormalizedValueFromDelegate() {
+        this.normalizedValue = getDelegateAsString();
+        this.normalizedValues = normalizeToMany(getDelegateAsString());
+    }
+    
     @Override
     public List<String> getNormalizedValues() {
         return normalizedValues;

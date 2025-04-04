@@ -28,8 +28,15 @@ public class GeometryType extends AbstractGeometryType<Geometry> implements OneT
     }
     
     @Override
-    public void normalizeAndSetNormalizedValue(Geometry valueToNormalize) {
-        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(valueToNormalize));
+    public void normalizeAndSetNormalizedValue(Geometry value) {
+        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(value));
+    }
+    
+    /**
+     * Assumes that {@link #setDelegate(Comparable)} has been called
+     */
+    public void setNormalizedValueFromDelegate() {
+        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(delegate));
     }
     
     public List<String> getNormalizedValues() {

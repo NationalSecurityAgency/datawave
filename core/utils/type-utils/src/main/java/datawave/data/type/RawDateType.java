@@ -13,16 +13,17 @@ public class RawDateType extends BaseType<String> {
     
     public RawDateType(String dateString) {
         super(Normalizer.RAW_DATE_NORMALIZER);
-        super.setDelegate(normalizer.denormalize(dateString));
+        setNormalizedValue(dateString);
+        setDelegate(normalizer.denormalize(dateString));
     }
     
     /**
      * Two String + normalizer reference
      * 
-     * @return
+     * @return the size in bytes
      */
     @Override
     public long sizeInBytes() {
-        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
+        return STATIC_SIZE + (2L * normalizedValue.length()) + (2L * delegate.length());
     }
 }
