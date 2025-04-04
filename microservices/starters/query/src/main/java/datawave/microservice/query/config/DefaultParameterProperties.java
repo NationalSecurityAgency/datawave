@@ -1,9 +1,10 @@
 package datawave.microservice.query.config;
 
 import javax.annotation.Nonnegative;
-import javax.validation.constraints.NotEmpty;
 
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.constraints.NotEmpty;
 
 @Validated
 public class DefaultParameterProperties {

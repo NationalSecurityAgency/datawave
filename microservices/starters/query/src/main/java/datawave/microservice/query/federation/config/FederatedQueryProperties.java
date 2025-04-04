@@ -2,8 +2,8 @@ package datawave.microservice.query.federation.config;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 public class FederatedQueryProperties {
     private String queryServiceUri = "https://query:8443/query/v1/query";
