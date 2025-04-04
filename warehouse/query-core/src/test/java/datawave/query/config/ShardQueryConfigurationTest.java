@@ -394,6 +394,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("hdfsFileCompressionCodec", "sunny");
         defaultValues.put("zookeeperConfig", null);
         updatedValues.put("zookeeperConfig", "file://etc/zookeeper/conf");
+        defaultValues.put("localIvaratorCacheDirConfigs", Collections.emptyList());
+        updatedValues.put("localIvaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("file:///tmp/ivarators")));
         defaultValues.put("ivaratorCacheDirConfigs", Collections.emptyList());
         updatedValues.put("ivaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")));
         defaultValues.put("ivaratorFstHdfsBaseURIs", null);
@@ -443,6 +445,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("indexOnlyFilterFunctionsEnabled", true);
         defaultValues.put("compositeFilterFunctionsEnabled", false);
         updatedValues.put("compositeFilterFunctionsEnabled", true);
+        defaultValues.put("disableIteratorUniqueFields", false);
+        updatedValues.put("disableIteratorUniqueFields", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
         defaultValues.put("uniqueCacheBufferSize", 100);

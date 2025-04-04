@@ -15,7 +15,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.log4j.Logger;
-import org.apache.xerces.jaxp.SAXParserFactoryImpl;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -31,7 +30,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     private static final Logger log = Logger.getLogger(XMLFieldConfigHelper.class);
 
     /** be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser */
-    private static final SAXParserFactory parserFactory = SAXParserFactoryImpl.newInstance();
+    private static final SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 
     private boolean noMatchStored = true;
     private boolean noMatchIndexed = false;
@@ -42,6 +41,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
+
+    private static final String UNEXPECTED_ATTRIBUTE = "Unexpected attribute encountered in: ";
 
     public static class FieldInfo {
         boolean stored;
@@ -339,7 +340,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     this.defaultFieldType = lv;
                     seenAttr.remove(INDEX_TYPE);
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'default' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'default' tag: '" + qn + "'");
                 }
             }
 
@@ -381,7 +382,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     }
                     seenAttr.remove(INDEX_TYPE);
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'nomatch' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'nomatch' tag: '" + qn + "'");
                 }
             }
 
@@ -426,7 +427,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -481,7 +482,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 

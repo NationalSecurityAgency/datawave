@@ -116,6 +116,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
     protected static final String MOCK = ".useInMemoryInstance";
 
+    protected static final String UTF8 = "UTF-8";
+
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
 
@@ -1295,8 +1297,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             StringTokenizer tokenizer = new StringTokenizer(iteratorOption, FIELD_SEP);
             this.iteratorName = tokenizer.nextToken();
             try {
-                this.key = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
-                this.value = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
+                this.key = URLDecoder.decode(tokenizer.nextToken(), UTF8);
+                this.value = URLDecoder.decode(tokenizer.nextToken(), UTF8);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -1317,7 +1319,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         @Override
         public String toString() {
             try {
-                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF-8") + FIELD_SEP + URLEncoder.encode(value, "UTF-8");
+                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF8") + FIELD_SEP + URLEncoder.encode(value, "UTF8");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }

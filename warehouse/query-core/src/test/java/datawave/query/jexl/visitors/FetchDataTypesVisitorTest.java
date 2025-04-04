@@ -54,6 +54,16 @@ public class FetchDataTypesVisitorTest {
     }
 
     @Test
+    public void testSingleTermNormalizerTestDeconstruction() throws ParseException {
+        String query = "$FOO == 'bar'";
+
+        Multimap<String,Type<?>> expected = HashMultimap.create();
+        expected.put("FOO", new LcNoDiacriticsType());
+
+        runTest(query, expected);
+    }
+
+    @Test
     public void testTwoSingleTermNormalizers() throws ParseException {
         String query = "FOO2 == 'bar' && FOO3 == '3'";
 
@@ -78,6 +88,16 @@ public class FetchDataTypesVisitorTest {
     @Test
     public void testFunctionWithNormalizer() throws ParseException {
         String query = "content:phrase(FOO2, termOffsetMap, 'bar', 'baz')";
+
+        Multimap<String,Type<?>> expected = HashMultimap.create();
+        expected.put("FOO2", new LcType());
+
+        runTest(query, expected);
+    }
+
+    @Test
+    public void testFunctionWithNormalizerTestDeconstruction() throws ParseException {
+        String query = "content:phrase($FOO2, termOffsetMap, 'bar', 'baz')";
 
         Multimap<String,Type<?>> expected = HashMultimap.create();
         expected.put("FOO2", new LcType());
