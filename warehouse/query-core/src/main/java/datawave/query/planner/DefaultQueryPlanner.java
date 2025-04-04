@@ -2072,15 +2072,30 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
             JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
 
-            // now lets update the query parameters with the correct start and
-            // end dates
-            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                            + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+            if (config.getNoExpansionIfCurrentDateTypes().contains(dateType)) {
+                // only remap the end date if the user did not specify today's date
+                if (!DateUtils.isSameDay(new Date(), config.getEndDate())) {
+                    // now lets update the query parameters with the correct end date
+                    log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                    + config.getBeginDate() + "," + dateIndexData.getEndDate());
 
-            // reset the dates in the configuration, no need to reset then in
-            // the Query settings object
-            config.setBeginDate(dateIndexData.getBeginDate());
-            config.setEndDate(dateIndexData.getEndDate());
+                    // reset the dates in the configuration, no need to reset them in
+                    // the Query settings object
+                    config.setEndDate(dateIndexData.getEndDate());
+                } else {
+                    log.info("No Remapped dates for " + dateType + " because " + config.getEndDate() + " is today");
+                }
+            } else {
+                // now lets update the query parameters with the correct start and
+                // end dates
+                log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+
+                // reset the dates in the configuration, no need to reset them in
+                // the Query settings object
+                config.setBeginDate(dateIndexData.getBeginDate());
+                config.setEndDate(dateIndexData.getEndDate());
+            }
         }
 
         return queryTree;
