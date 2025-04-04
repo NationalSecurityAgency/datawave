@@ -240,14 +240,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <configuration>
-                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                        <mainClass>${start-class}</mainClass>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${version.spring.boot}</version>
