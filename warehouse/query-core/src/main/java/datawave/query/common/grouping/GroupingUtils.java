@@ -109,6 +109,7 @@ public class GroupingUtils {
         // Add an attribute for the count.
         NumberType type = new NumberType();
         type.setDelegate(new BigDecimal(group.getCount()));
+        type.setNormalizedValue(String.valueOf(group.getCount()));
         TypeAttribute<BigDecimal> attr = new TypeAttribute<>(type, new Key("count"), true);
         document.put("COUNT", attr);
 
@@ -172,6 +173,7 @@ public class GroupingUtils {
     private static void addSumAggregation(Document document, String field, SumAggregator aggregator, MarkingFunctions markingFunctions) {
         NumberType type = new NumberType();
         type.setDelegate(aggregator.getAggregation());
+        type.normalizeAndSetNormalizedValue(aggregator.getAggregation());
         TypeAttribute<BigDecimal> sumAttribute = new TypeAttribute<>(type, new Key(field + "_sum"), true);
         sumAttribute.setColumnVisibility(combineVisibilities(aggregator.getColumnVisibilities(), markingFunctions, false));
         document.put(field + DocumentGrouper.FIELD_SUM_SUFFIX, sumAttribute);
@@ -192,6 +194,7 @@ public class GroupingUtils {
     private static void addCountAggregation(Document document, String field, CountAggregator aggregator, MarkingFunctions markingFunctions) {
         NumberType type = new NumberType();
         type.setDelegate(BigDecimal.valueOf(aggregator.getAggregation()));
+        type.normalizeAndSetNormalizedValue(BigDecimal.valueOf(aggregator.getAggregation()));
         TypeAttribute<BigDecimal> sumAttribute = new TypeAttribute<>(type, new Key(field + "_count"), true);
         Set<ColumnVisibility> columnVisibilities = aggregator.getColumnVisibilities();
         if (!columnVisibilities.isEmpty()) {
@@ -243,6 +246,7 @@ public class GroupingUtils {
     private static void addAverage(Document document, String field, AverageAggregator aggregator, MarkingFunctions markingFunctions) {
         NumberType type = new NumberType();
         type.setDelegate(aggregator.getAggregation());
+        type.setNormalizedValue(aggregator.getAggregation().toString());
         TypeAttribute<BigDecimal> attribute = new TypeAttribute<>(type, new Key(field + "_average"), true);
         attribute.setColumnVisibility(combineVisibilities(aggregator.getColumnVisibilities(), markingFunctions, false));
         document.put(field + DocumentGrouper.FIELD_AVERAGE_SUFFIX, attribute);
@@ -266,6 +270,7 @@ public class GroupingUtils {
         // Add an attribute for the average's numerator. This is required to properly combine additional aggregations in future groupings.
         NumberType numeratorType = new NumberType();
         numeratorType.setDelegate(aggregator.getNumerator());
+        numeratorType.setNormalizedValue(aggregator.getNumerator().toString());
         TypeAttribute<BigDecimal> sumAttribute = new TypeAttribute<>(numeratorType, new Key(field + "_average_numerator"), true);
         sumAttribute.setColumnVisibility(visibility);
         document.put(field + DocumentGrouper.FIELD_AVERAGE_NUMERATOR_SUFFIX, sumAttribute);
@@ -273,6 +278,7 @@ public class GroupingUtils {
         // Add an attribute for the average's divisor. This is required to properly combine additional aggregations in future groupings.
         NumberType divisorType = new NumberType();
         divisorType.setDelegate(aggregator.getDivisor());
+        divisorType.setNormalizedValue(aggregator.getDivisor().toString());
         TypeAttribute<BigDecimal> countAttribute = new TypeAttribute<>(divisorType, new Key(field + "_average_divisor"), true);
         countAttribute.setColumnVisibility(visibility);
         document.put(field + DocumentGrouper.FIELD_AVERAGE_DIVISOR_SUFFIX, countAttribute);

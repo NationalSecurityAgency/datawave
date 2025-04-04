@@ -70,12 +70,10 @@ public class AttributeFactory {
     }
 
     public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep) {
-
         return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep, false);
     }
 
     public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep, boolean isComposite) {
-
         return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep, isComposite);
     }
 
@@ -135,18 +133,19 @@ public class AttributeFactory {
     protected Attribute<?> getAttribute(Class<?> dataTypeClass, String fieldName, String data, Key key, boolean toKeep) throws Exception {
         Type<?> type = (Type<?>) dataTypeClass.newInstance();
         try {
+            // cannot assume data is normalized. In the future provide an alternative entry point for normalized data.
             type.setDelegateFromString(data);
-            return new TypeAttribute(type, key, toKeep);
+            type.setNormalizedValueFromDelegate();
+            return new TypeAttribute<>(type, key, toKeep);
         } catch (Exception ex) {
 
             if (ex instanceof IllegalArgumentException) {
                 log.warn("Could not parse " + fieldName + " = '" + data + "', resorting to a NoOpType");
-                return new TypeAttribute(new NoOpType(data), key, toKeep);
+                return new TypeAttribute<>(new NoOpType(data), key, toKeep);
             } else {
                 log.error("Could not create Attribute for " + fieldName + " and " + data, ex);
                 throw new IllegalArgumentException("Could not create Attribute for " + fieldName + " and " + data, ex);
             }
-
         }
     }
 
