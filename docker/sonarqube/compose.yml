@@ -1,7 +1,7 @@
 version: "3"
 services:
   sonarqube:
-    image: sonarqube:9.9.4-community
+    image: sonarqube:8-community
     depends_on:
       - db
     environment:
@@ -13,7 +13,7 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
     ports:
-      - "7777:9000"
+      - "9000:9000"
   db:
     image: postgres:12
     environment:
