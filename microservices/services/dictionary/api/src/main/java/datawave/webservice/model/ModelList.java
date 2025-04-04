@@ -26,7 +26,6 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
     private String systemName;
     
     private static final long serialVersionUID = 1L;
-    // private static final String DEFAULT_SYS = "unknown";
     private static final String TITLE = "Model Names";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
