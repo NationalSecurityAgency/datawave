@@ -431,6 +431,9 @@ services:
       - ./logs:/logs
     networks:
       - demo
+    depends_on:
+      authorization:
+        condition: service_healthy
 
   # If you want to test cached results, enable the cachedresults profile
   mysql:
