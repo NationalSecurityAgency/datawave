@@ -350,7 +350,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                         }
                         LocalDate rowDate = LocalDate.parse(rowDateString, formatter);
                         LocalDate shardDate = LocalDate.parse(date, formatter);
-                        if (shardDate.isBefore(rowDate.minusDays(1))) {
+                        if (shardDate.isBefore(rowDate)) {
                             continue;
                         }
                     } catch (Exception ex) {
