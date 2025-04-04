@@ -41,7 +41,10 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
         this.systemName = systemName;
-        
+    }
+    
+    public Model(String jqueryUri, String datatablesUri) {
+        this(jqueryUri, datatablesUri, "unknown");
     }
     
     // Only used in ModelBeanTest now

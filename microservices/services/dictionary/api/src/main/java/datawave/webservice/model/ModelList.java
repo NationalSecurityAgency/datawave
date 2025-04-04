@@ -26,6 +26,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
     private String systemName;
     
     private static final long serialVersionUID = 1L;
+    // private static final String DEFAULT_SYS = "unknown";
     private static final String TITLE = "Model Names";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
@@ -37,6 +38,10 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
         this.dataTablesUri = datatablesUri;
         this.modelTableName = modelTableName;
         this.systemName = systemName;
+    }
+    
+    public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
+        this(jqueryUri, datatablesUri, modelTableName, "unknown");
     }
     
     @XmlElementWrapper(name = "ModelNames")
