@@ -2083,7 +2083,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // the Query settings object
                     config.setEndDate(dateIndexData.getEndDate());
                 } else {
-                    log.info("No Remapped dates for " + dateType + " because " + dateIndexData.getEndDate() + " not after " + config.getEndDate());
+                    log.info("No Remapped dates for " + dateType + " because " + config.getEndDate() + " is today");
                 }
             } else {
                 // now lets update the query parameters with the correct start and
