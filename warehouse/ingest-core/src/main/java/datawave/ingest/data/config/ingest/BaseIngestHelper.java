@@ -1218,7 +1218,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     @Override
     public Multimap<String,NormalizedContentInterface> getVirtualFields(Multimap<String,NormalizedContentInterface> values) {
-        return getVirtualFields(getVirtualIngest().getVirtualFields(values));
+        return normalizeMap(getVirtualIngest().getVirtualFields(values));
     }
 
     @Override
