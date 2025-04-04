@@ -64,7 +64,7 @@
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>${project.basedir}/../../../</directory>
+                            <directory>${maven.multiModuleProjectDirectory}</directory>
                             <includes>
                                 <include>.maven-dockerignore</include>
                             </includes>
@@ -170,7 +170,7 @@
                                 <image>
                                     <name>${docker.image.prefix}datawave/quickstart-${build.env}</name>
                                     <build>
-                                        <contextDir>${project.basedir}/../../../</contextDir>
+                                        <contextDir>${maven.multiModuleProjectDirectory}</contextDir>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <buildOptions>
                                             <memory>8589934592</memory>
@@ -232,7 +232,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.basedir}/../../../</outputDirectory>
+                                    <outputDirectory>${maven.multiModuleProjectDirectory}</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${project.basedir}</directory>
