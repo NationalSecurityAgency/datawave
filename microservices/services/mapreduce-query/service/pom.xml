@@ -193,22 +193,14 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-maven-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>gov.nsa.datawave.microservice</groupId>
-                                <artifactId>mapreduce-query-core-job</artifactId>
-                                <version>${version.datawave.mapreduce-query-core-job}</version>
-                                <type>jar</type>
-                            </dependency>
-                        </dependencies>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <phase>prepare-package</phase>
                                 <goals>
-                                    <goal>build-image</goal>
+                                    <goal>copy</goal>
                                 </goals>
+                                <phase>prepare-package</phase>
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
@@ -216,12 +208,63 @@
                                             <artifactId>mapreduce-query-core-job</artifactId>
                                             <version>${version.datawave.mapreduce-query-core-job}</version>
                                             <type>jar</type>
-                                            <outputDirectory>${project.build.directory}/docker-context</outputDirectory>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <images>
+                                <image>
+                                    <name>${docker.image.prefix}${project.artifactId}</name>
+                                    <build>
+                                        <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
+                                        <contextDir>.</contextDir>
+                                        <buildOptions>
+                                            <memory>8589934592</memory>
+                                        </buildOptions>
+                                        <tags>
+                                            <tag>latest</tag>
+                                            <tag>${project.version}</tag>
+                                        </tags>
+                                        <assembly>
+                                            <name>/</name>
+                                            <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>
+                                            <layers>
+                                                <layer>
+                                                    <id>spring-jar</id>
+                                                    <files>
+                                                        <file>
+                                                            <source>${project.build.directory}/${project.build.finalName}-exec.jar</source>
+                                                            <!-- target/docker/<image path>/build -->
+                                                            <outputDirectory>.</outputDirectory>
+                                                            <fileMode>0640</fileMode>
+                                                        </file>
+                                                    </files>
+                                                </layer>
+                                                <layer>
+                                                    <id>extra-jar</id>
+                                                    <files>
+                                                        <file>
+                                                            <source>${project.build.directory}/mapreduce-query-core-job-${version.datawave.mapreduce-query-core-job}.jar</source>
+                                                            <!-- target/docker/<image path>/build -->
+                                                            <outputDirectory>.</outputDirectory>
+                                                            <fileMode>0640</fileMode>
+                                                        </file>
+                                                    </files>
+                                                </layer>
+                                            </layers>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

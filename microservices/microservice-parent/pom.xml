@@ -34,8 +34,12 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.artifactId>${project.artifactId}</project.artifactId>
+        <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.version>${project.version}</project.version>
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.docker.plugin>1.2.2</version.docker.plugin>
@@ -444,6 +448,63 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>rpm-maven-plugin</artifactId>
                     <version>2.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.jkube</groupId>
+                    <artifactId>kubernetes-maven-plugin</artifactId>
+                    <version>1.18.1</version>
+                    <configuration>
+                        <verbose>true</verbose>
+                        <images>
+                            <image>
+                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <build>
+                                    <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
+                                    <contextDir>.</contextDir>
+                                    <buildOptions>
+                                        <memory>8589934592</memory>
+                                    </buildOptions>
+                                    <tags>
+                                        <tag>latest</tag>
+                                        <tag>${project.version}</tag>
+                                    </tags>
+                                    <assembly>
+                                        <name>/</name>
+                                        <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>
+                                        <layers>
+                                            <layer>
+                                                <id>spring-jar</id>
+                                                <files>
+                                                    <file>
+                                                        <source>${project.build.directory}/${project.build.finalName}-exec.jar</source>
+                                                        <!-- target/docker/<image path>/build -->
+                                                        <outputDirectory>.</outputDirectory>
+                                                        <fileMode>0640</fileMode>
+                                                    </file>
+                                                </files>
+                                            </layer>
+                                        </layers>
+                                    </assembly>
+                                </build>
+                            </image>
+                        </images>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>build</id>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                            <phase>install</phase>
+                        </execution>
+                        <execution>
+                            <id>push</id>
+                            <goals>
+                                <goal>push</goal>
+                            </goals>
+                            <phase>deploy</phase>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

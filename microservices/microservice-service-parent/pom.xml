@@ -306,6 +306,11 @@
         </profile>
         <profile>
             <id>docker</id>
+            <activation>
+                <property>
+                    <name>microservice-docker</name>
+                </property>
+            </activation>
             <build>
                 <pluginManagement>
                     <plugins>
@@ -313,13 +318,21 @@
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-maven-plugin</artifactId>
                             <configuration>
-                                <image>
-                                    <name>${docker.image.prefix}${project.artifactId}</name>
-                                    <tags>
-                                        <tag>${docker.image.prefix}${project.artifactId}:${project.version}</tag>
-                                    </tags>
-                                </image>
+                                <!-- Mark the repackaged executable jar with the "exec" classifier -->
+                                <classifier>exec</classifier>
+                                <!-- Make the jar fully executable so it can be used as an init.d script -->
+                                <executable>true</executable>
+                                <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                                <mainClass>${start-class}</mainClass>
                             </configuration>
+                            <executions>
+                                <execution>
+                                    <id>repackage-executable-jar</id>
+                                    <goals>
+                                        <goal>repackage</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>
