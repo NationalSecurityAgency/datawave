@@ -25,7 +25,7 @@ public class FileConfigProperties {
     }
     
     @Validated
-    public class FileConfig { // outlines the files we want to make, and how we'll get their contents (download)
+    public static class FileConfig { // outlines the files we want to make, and how we'll get their contents (download)
         @NotBlank
         private String label;
         @NotBlank
@@ -60,7 +60,7 @@ public class FileConfigProperties {
     }
     
     @Validated
-    public class DownloadConfig { // how we'll download the files and finally save their contents into the FileConfig this is a member of
+    public static class DownloadConfig { // how we'll download the files and finally save their contents into the FileConfig this is a member of
         @NotBlank
         private String method;
         private String source;
