@@ -179,7 +179,7 @@ jobs:
         id: extract_branch
       - name: Free up some space
         run: |
-          if [[ ${{ steps.extract_branch.outputs.branch }} ~= ^release/version* ]] then
+          if [[ ${{ steps.extract_branch.outputs.branch }} =~ ^release/version* ]] then
             sudo rm -rf /usr/share/dotnet
             sudo rm -rf /opt/ghc
             sudo rm -rf /usr/local/share/boost
