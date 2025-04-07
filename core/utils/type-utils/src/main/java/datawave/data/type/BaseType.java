@@ -27,7 +27,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
     public BaseType(String value, Normalizer<T> normalizer) {
         this.normalizer = normalizer;
         this.delegate = normalizer.denormalize(value);
-        this.normalizedValue = normalizer.normalize(value);
+        this.normalizedValue = normalizer.normalizeDelegateType(delegate);
     }
     
     public BaseType(Normalizer<T> normalizer) {
