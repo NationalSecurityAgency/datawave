@@ -1,10 +1,32 @@
 package datawave.microservice.fileProvider;
 
+import datawave.microservice.fileProvider.config.FileConfigProperties;
+import org.apache.commons.math3.exception.NullArgumentException;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
+
+import javax.inject.Inject;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static datawave.marking.MarkingFunctions.Factory.log;
 
 /**
  * Launcher for the file provider service
@@ -13,60 +35,98 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
 public class FileProviderService {
 
-    @Inject
-    private FileConfigProperties configProperties;
-    private TaskExecutor taskExecutor;
+    private static final Logger log = Logger.getLogger(FileProviderService.class);
+    private ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
 
-    public FileProviderService(TaskExecutor taskExecutor) {
-        this.taskExecutor = taskExecutor;
-    }
+    /**
+     * Runnable task for downloading a single file, given a {@link FileConfigProperties.FileConfig}.
+     */
+    public class FileDownloadedTask implements Runnable {
 
-    protected class FileDownloadedTask impliments Runnable {
+        private FileConfigProperties.FileConfig fileConfig;
 
-        private FileConfig file;
-
-        protected FileDownloadedTask(FileConfig file){ }
+        public FileDownloadedTask(FileConfigProperties.FileConfig fileConfig) {
+            this.fileConfig = fileConfig;
+        }
 
         @Override
-        public void run(){
-
-            try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-
-                HttpGet httpGet = new HttpGet(file.getDownload().getSource());
-                httpClient.execute(httpGet, classicHttpResponse -> {
-
-                    int code = classicHttpResponse.getCode();
-                    if (code == 200) {
-                        HttpEntity entity = classicHttpResponse.getEntity();
-                        if (entity != null) {
-
-                            try (
-                                InputStream inputStream = entity.getContent();
-                                FileOutputStream fileOutputStream = new FileOutputStream(file.getName())
-                            )
-
-                            {
-                                byte[] dataBuffer = new byte[1024];
-                                int bytesRead;
-                                while((bytesRead = inputStream.read(dataBuffer)) != -1)
-                                {
-                                    fileOutputStream.write(dataBuffer, 0, bytesRead);
-                                }
-                            }
-                        }
-                        EntityUtils.consume(entity);
-                    }
-                    return classicHttpResponse;
-                });
-            }
+        public void run() {
+            log.info("FileDownloadTask started.");
         }
     }
 
-    public void downloadFromFileConfig(FileConfig fileConfig){
-        taskExecutor.execute(new FileDownloadedTask(fileConfig));
+    public void scheduleCronDownload(FileConfigProperties.FileConfig fileConfig){
+        taskScheduler.schedule(new FileDownloadedTask(fileConfig), new CronTrigger(fileConfig.getDownload().getSchedule()));
     }
 
 }
+//        private FileConfigProperties.FileConfig file;
+//
+//        protected FileDownloadedTask(FileConfigProperties.FileConfig file){ }
+//
+//        @Override
+//        public void run(){
+
+//
+//    @Inject
+//    private FileConfigProperties configProperties;
+//    private Scheduler executorService;
+//
+//    public FileProviderService(ScheduledExecutorService executor) {
+//        this.executorService = executor;
+//        if (this.executorService == null){
+//            this.executorService = Executors.newSingleThreadScheduledExecutor();        }
+//    }
+//
+//    public void downloadFromFileConfig(FileConfigProperties.FileConfig fileConfig){
+//        //need to pul the scheudling from the fileconfig. Where do I put it?
+//        executorService.recurringTask(new FileDownloadedTask(fileConfig), 1, TimeUnit.valueOf(fileConfig.getDownload().getSchedule()));
+//    }
+//
+//    protected class FileDownloadedTask implements Runnable {
+//
+//        private FileConfigProperties.FileConfig file;
+//
+//        protected FileDownloadedTask(FileConfigProperties.FileConfig file){ }
+//
+//        @Override
+//        public void run(){
+//
+//            try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+//
+//                HttpGet httpGet = new HttpGet(file.getDownload().getSource());
+//                httpClient.execute(httpGet, classicHttpResponse -> {
+//
+//                    int code = classicHttpResponse.getCode();
+//                    if (code == 200) {
+//                        HttpEntity entity = classicHttpResponse.getEntity();
+//                        if (entity != null) {
+//
+//                            try (
+//                                    InputStream inputStream = entity.getContent();
+//                                    FileOutputStream fileOutputStream = new FileOutputStream(file.getName())
+//                            )
+//
+//                            {
+//                                byte[] dataBuffer = new byte[1024];
+//                                int bytesRead;
+//                                while((bytesRead = inputStream.read(dataBuffer)) != -1)
+//                                {
+//                                    fileOutputStream.write(dataBuffer, 0, bytesRead);
+//                                }
+//                            }
+//                        }
+//                        EntityUtils.consume(entity);
+//                    }
+//                    return classicHttpResponse;
+//                });
+//            }
+//        }
+//    }
+//
+
+
+
 
 
 /*
