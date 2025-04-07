@@ -61,8 +61,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
     protected ExpandedFieldCache previouslyExpandedFieldCache;
 
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName, ExpandedFieldCache previouslyExpandedFieldCache)
-                    throws TableNotFoundException {
+    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName,
+                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
         this(config, scannerFactory, helper, null, threadName, previouslyExpandedFieldCache);
     }
 
