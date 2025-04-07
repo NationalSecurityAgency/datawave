@@ -108,6 +108,10 @@
                         <artifactId>*</artifactId>
                         <groupId>org.apache.zookeeper</groupId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -135,6 +139,10 @@
                         <artifactId>*</artifactId>
                         <groupId>commons-logging</groupId>
                     </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
+                </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
