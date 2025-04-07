@@ -55,7 +55,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
  */
 public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8812242917762274469L;
 
     private static Logger log = Logger.getLogger(RunningQuery.class);
 

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTAssignment;
@@ -83,6 +84,7 @@ import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -136,6 +138,12 @@ public class JexlASTHelper {
         return TreeFlatteningRebuildingVisitor.flatten(script);
     }
 
+    /**
+     * Utility method that creates a new {@link JexlFeatures}, disabling features that are not required for common datawave use cases. Many of these features
+     * have an adverse impact on application performance.
+     *
+     * @return a configured JexlFeatures
+     */
     public static JexlFeatures jexlFeatures() {
         // @formatter:off
         return new JexlFeatures()
@@ -185,6 +193,17 @@ public class JexlASTHelper {
     }
 
     /**
+     * Utility method that avoids an expensive constructor.
+     * <p>
+     * The no-args constructor for {@link JexlInfo} creates a new {@link Throwable} which makes an expensive call to {@link Throwable#fillInStackTrace()}. This is not desirable.
+     * @param stage the stage name
+     * @return a JexlInfo
+     */
+    public static JexlInfo jexlInfo(String stage){
+        return new JexlInfo(stage, 1, 1);
+    }
+
+    /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
      *
@@ -207,14 +226,18 @@ public class JexlASTHelper {
             try {
                 return parseQueryWithBackslashes(query, parser);
             } catch (Exception e) {
-                throw new ParseException("Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+                throw new IllegalArgumentException(qe);
             }
         } else {
             // Parse the original query
             try {
-                return parser.parse(null, jexlFeatures(), caseFixQuery, null);
+                return parser.parse(jexlInfo("parseJexlQuery"), jexlFeatures(), caseFixQuery, null);
             } catch (TokenMgrException | JexlException e) {
-                throw new ParseException(e.getMessage());
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse the query: " + e.getMessage());
+                throw new IllegalArgumentException(qe);
             }
         }
     }
@@ -244,9 +267,11 @@ public class JexlASTHelper {
         // Parse the query with the placeholders
         ASTJexlScript jexlScript;
         try {
-            jexlScript = parser.parse(null, jexlFeatures(), query, null);
+            jexlScript = parser.parse(jexlInfo("parseQueryWithBackslashes"), jexlFeatures(), query, null);
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                    "Unable to parse the query: " + e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
 
         Deque<JexlNode> workingStack = new LinkedList<>();
@@ -286,10 +311,11 @@ public class JexlASTHelper {
             }
         }
 
-        if (numFound != numReplaced)
-            throw new ParseException(
-                            "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
-
+        if (numFound != numReplaced) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                    "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
+            throw new IllegalArgumentException(qe);
+        }
         return jexlScript;
     }
 
@@ -1863,7 +1889,8 @@ public class JexlASTHelper {
     public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
         boolean valid = JunctionValidatingVisitor.validate(node);
         if (!valid && failHard) {
-            throw new RuntimeException("Instance of AND/OR node found with less than 2 children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "Instance of AND/OR node found with less than 2 children");
+            throw new RuntimeException(qe);
         }
         return valid;
     }

@@ -1,0 +1,21 @@
+spring:
+  cloud:
+    bus:
+      enabled: true
+    consul:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+  main:
+    banner-mode: "OFF"
+    # Starting with spring-boot 2.6, circular references are disabled by default
+    # This is still needed for the evaluation-only function
+    allow-circular-references: true
+
+datawave:
+  table:
+    cache:
+      enabled: false
+

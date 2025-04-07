@@ -63,6 +63,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     private int queryThreads = 100;
     ScannerFactory scannerFactory;
     String viewName = null;
+    private boolean decodeView = false;
 
     private ContentQueryConfiguration config;
 
@@ -121,6 +122,11 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             end = ALL;
         } else {
             end = PARENT_ONLY;
+        }
+
+        p = settings.findParameter(QueryParameters.DECODE_VIEW);
+        if ((null != p) && (null != p.getParameterValue())) {
+            this.decodeView = Boolean.parseBoolean(p.getParameterValue());
         }
 
         // Configure ranges
@@ -249,7 +255,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.decodeView);
     }
 
     @Override

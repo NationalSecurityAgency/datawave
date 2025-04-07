@@ -30,15 +30,39 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.count.CountMapSerDe;
 
+/**
+ * This class creates a decoupled producer/consumer of QueryData where the producer and/or consumer may be slow. The only bundling going on is the async
+ * fetching of QueryPlan from the producer
+ *
+ * The producer will begin producing immediately on construction by creating a new Thread running a RangeConsumer. The RangeConsumer will continually put to the
+ * queue, blocking if the queue is currently full (maxRanges)
+ *
+ * The consumer will be lazy initialized when hasNext() is called.
+ */
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
 
+    /**
+     * Max time to wait to pull an item off the queue when processing hasNext() before checking rangeConsumer state. This will be the minimum time waited even
+     * for an empty iterator
+     */
     private final long maxWaitValue;
+    /**
+     * TimeUnit to describe maxWaitValue
+     */
     private final TimeUnit maxWaitUnit;
     private final QueryData original;
+
+    /**
+     * Used to configure the max size of the BlockingQueue which sits between the producer and consumer. Default is 1000 if &lt;= 0 RangeConsumer will block if
+     * full.
+     */
     private final long maxRanges;
     private final Query settings;
 
+    /**
+     * The blocking queue to pass data between the producer and consumer
+     */
     private final BlockingQueue<QueryPlan> rangeQueue;
 
     private QueryData next = null;
@@ -57,9 +81,29 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
     protected boolean isTld = false;
 
+    /**
+     * a minimum number of ranges that must be on the rangeQueue before ranges will be processed if the rangeConsumer is still running and
+     * rangeBufferTimeoutMillis hasn't been exceeded. Since each QueryPlan is independently processed recommend setting this value to 0
+     */
+    @Deprecated
     protected int numRangesToBuffer;
+
+    /**
+     * The minimum amount of time in ms to wait for at least numRangesToBuffer to be in the queue only used if numRangesToBuffer &gt; 0
+     */
+    @Deprecated
     protected long rangeBufferTimeoutMillis;
+
+    /**
+     * The interval in ms to sleep while waiting for at least numRangesToBuffer items on the rangeQueue or rangeBufferTimeoutMillis to be exceeded. Only used if
+     * numRangesToBuffer &gt; 0
+     */
+    @Deprecated
     protected long rangeBufferPollMillis;
+
+    /**
+     * Tracks when the rangeConsumer started
+     */
     protected long startTimeMillis;
 
     private CountMapSerDe mapSerDe;
@@ -126,11 +170,15 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                         log.trace(" has next " + rangeQueue.isEmpty() + " is stopped? " + rangeConsumer.isStopped() + " isalive "
                                         + rangeConsumerThread.isAlive());
 
-                    // wait until we have a minimum number of ranges buffered OR the buffer is full OR the specified
-                    // amount of time to wait has elapsed OR we have processed all of our ranges before continuing
-                    while (this.rangeQueue.size() < numRangesToBuffer && this.rangeQueue.remainingCapacity() > 0
-                                    && (startTimeMillis + rangeBufferTimeoutMillis) > System.currentTimeMillis() && !rangeConsumer.isStopped()) {
-                        Thread.sleep(rangeBufferPollMillis);
+                    // only activate the potential to sleep if buffering ranges
+                    if (numRangesToBuffer > 0) {
+                        // TODO remove this code in a future release
+                        // wait until we have a minimum number of ranges buffered OR the buffer is full OR the specified
+                        // amount of time to wait has elapsed OR we have processed all of our ranges before continuing
+                        while (this.rangeQueue.size() < numRangesToBuffer && this.rangeQueue.remainingCapacity() > 0
+                                        && (startTimeMillis + rangeBufferTimeoutMillis) > System.currentTimeMillis() && !rangeConsumer.isStopped()) {
+                            Thread.sleep(rangeBufferPollMillis);
+                        }
                     }
 
                     QueryPlan plan = this.rangeQueue.poll(this.maxWaitValue, this.maxWaitUnit);
@@ -280,7 +328,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), iterClazz);
             newSetting.addOptions(setting.getOptions());
 
-            if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
+            if (plan.getFieldCounts() != null && !plan.getFieldCounts().isEmpty()) {
                 newSetting.addOption(QueryOptions.FIELD_COUNTS, getMapSerDe().serializeToString(plan.getFieldCounts()));
             }
 

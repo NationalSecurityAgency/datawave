@@ -3,7 +3,6 @@ package datawave.security.authorization.remote;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.wildfly.common.Assert;
@@ -44,7 +43,7 @@ public class ConditionalRemoteUserOperationsTest {
         boolean invoked = false;
 
         @Override
-        public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
+        public AuthorizationsListBase<?> listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
             invoked = true;
             return new DefaultAuthorizationsList();
         }

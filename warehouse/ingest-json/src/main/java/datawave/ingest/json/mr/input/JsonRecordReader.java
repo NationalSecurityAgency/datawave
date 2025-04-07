@@ -155,8 +155,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     }
 
     protected void setupIterator(JsonReader reader) {
-        JsonParser parser = new JsonParser();
-        JsonElement root = parser.parse(reader);
+        JsonElement root = JsonParser.parseReader(reader);
 
         if (root.isJsonArray()) {
             // Currently positioned to read a set of objects
@@ -229,7 +228,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
 
         event.setRawData(currentJsonObj.toString().getBytes());
 
-        if (Long.MIN_VALUE == event.getDate()) {
+        if (!event.isTimestampSet()) {
             event.setDate(System.currentTimeMillis());
         }
 
