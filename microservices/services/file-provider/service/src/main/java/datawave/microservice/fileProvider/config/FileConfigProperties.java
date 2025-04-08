@@ -6,13 +6,22 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
 @Configuration
 @ConfigurationProperties(prefix = "file-provider.files")
 public class FileConfigProperties {
+    
+    // Note from Laura:
+    // It's possible that this overall layout is too simplistic for our needs, especially if we need to support multiple methods of fetching a file,
+    // e.g. https, ftp, scp, etc. Perhaps DownloadConfig should be an abstract class with different implementations for each method type with
+    // method-specific properties that need to be given. Would need to look into polymorphic bean instantiation for the config classes via Spring.
+    
     @Valid
     private List<FileConfig> files; //all of the files that are part of the config; ie the ones we're going to try and download and save into here
     
