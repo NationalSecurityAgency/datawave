@@ -1,8 +1,17 @@
 package datawave.query.iterator.logic;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import datawave.query.Constants;
 import datawave.query.table.parser.ContentKeyValueFactory;
@@ -92,10 +101,53 @@ public class SummaryCreator {
         } else {
             summary = new String(content);
         }
-        // if the content is longer than the specified length, truncate it
-        if (summary.length() > summarySize) {
-            summary = summary.substring(0, summarySize);
+        // // if the content is longer than the specified length, truncate it
+        // if (summary.length() > summarySize) {
+        // summary = summary.substring(0, summarySize);
+        // }
+        Gson gson = new Gson();
+
+        String url = "http://localhost:11434/api/generate";
+        String s = "{" + "\"model\": \"phi3:3.8b-mini-128k-instruct-q4_K_M\","
+                        + "\"prompt\": \"create a summary of up to four sentences using the most important information from the following text: " + summary
+                        + "\"" + "}";
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = null;
+        try {
+            request = HttpRequest.newBuilder(new URI(url)).POST(HttpRequest.BodyPublishers.ofString(s)).build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
+
+        AtomicBoolean done = new AtomicBoolean(false);
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream()).thenAccept(response -> {
+            try (var in = response.body()) {
+                byte[] buffer = new byte[1024];
+                int numRead;
+                while ((numRead = in.read(buffer)) != -1) {
+                    String chunk = new String(buffer, 0, numRead);
+                    JsonObject jsonObject = gson.fromJson(chunk, JsonObject.class);
+                    if (jsonObject.get("done").getAsBoolean()) {
+                        done.set(true);
+                        break;
+                    }
+                    System.out.println("Received chunk: " + jsonObject.get("response").getAsString());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        while (!done.get()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        System.out.println("SUMMARY: " + summary);
         return summary;
     }
 }
