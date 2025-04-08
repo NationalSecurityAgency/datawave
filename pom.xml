@@ -1391,7 +1391,7 @@
                         <effort>Max</effort>
                         <threshold>High</threshold>
                         <xmlOutput>true</xmlOutput>
-                        <excludeFilterFile>${datawave.root}/spotbugs-exclude.xml</excludeFilterFile>
+                        <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1426,7 +1426,7 @@
                         <quiet>true</quiet>
                         <directories combine.children="append">
                             <!--suppress MavenModelInspection -->
-                            <file>${datawave.root}/properties</file>
+                            <file>${maven.multiModuleProjectDirectory}/properties</file>
                             <file>${user.home}/.m2/datawave/properties</file>
                         </directories>
                         <files combine.children="append">
@@ -1448,7 +1448,7 @@
                     <artifactId>git-commit-id-maven-plugin</artifactId>
                     <version>9.0.1</version>
                     <configuration>
-                        <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
+                        <dotGitDirectory>${maven.multiModuleProjectDirectory}/.git</dotGitDirectory>
                         <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
                         <generateGitPropertiesFile>true</generateGitPropertiesFile>
                         <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
@@ -1532,7 +1532,7 @@
                         <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
-                        <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
+                        <propertyExpansion>basedir=${maven.multiModuleProjectDirectory}</propertyExpansion>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
                     <executions>
@@ -1787,33 +1787,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
-            <?SORTPOM IGNORE?>
-            <!--
-                We need datawave.root to be set before the read/assert properties plugins run.
-                Maven will process the plugins in the order they appear in the pom, so we don't
-                want the sortpom plugin to change the order of declaration.
-            -->
-            <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <version>1.0</version>
-                <executions>
-                    <execution>
-                        <id>directories</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>directory-of</goal>
-                        </goals>
-                        <configuration>
-                            <property>datawave.root</property>
-                            <project>
-                                <groupId>gov.nsa.datawave</groupId>
-                                <artifactId>datawave-parent</artifactId>
-                            </project>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>gov.nsa.datawave.plugins</groupId>
                 <artifactId>assert-properties</artifactId>
@@ -1823,7 +1796,6 @@
                 <groupId>gov.nsa.datawave.plugins</groupId>
                 <artifactId>read-properties</artifactId>
             </plugin>
-            <?SORTPOM RESUME?>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
