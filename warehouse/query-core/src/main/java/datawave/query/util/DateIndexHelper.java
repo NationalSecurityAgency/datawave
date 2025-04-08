@@ -8,14 +8,14 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import com.google.common.base.Joiner;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.security.util.ScannerHelper;
@@ -81,6 +82,8 @@ public class DateIndexHelper implements ApplicationContextAware {
 
     protected float collapseDatePercentThreshold;
     protected boolean timeTravel = false;
+
+    protected boolean useIterator = false;
 
     protected ApplicationContext applicationContext;
 
@@ -170,39 +173,69 @@ public class DateIndexHelper implements ApplicationContextAware {
 
     public static class DateTypeDescription {
         final Set<String> fields = new HashSet<>();
-        final String[] dateRange = new String[2];
+        private String start;
+        private String end;
 
         public Set<String> getFields() {
             return fields;
         }
 
         public String[] getDateRange() {
-            return dateRange;
+            return new String[] {start, end};
+        }
+
+        /**
+         * Method used to set the default values for the start and end date if none were found
+         *
+         * @param startDate
+         *            the start date
+         * @param endDate
+         *            the end date
+         */
+        public void setStartEndDate(Date startDate, Date endDate) {
+            if (start == null) {
+                start = DateIndexUtil.format(startDate);
+            }
+            if (end == null) {
+                end = DateIndexUtil.format(endDate);
+            }
+        }
+
+        /**
+         * Method that updates the start and end date if the provided date is beyond either bound
+         *
+         * @param date
+         *            the date
+         */
+        public void updateStartEndDate(String date) {
+            if (start == null || date.compareTo(start) < 0) {
+                start = date;
+            }
+            if (end == null || date.compareTo(end) > 0) {
+                end = date;
+            }
         }
 
         public Date getBeginDate() {
             try {
-                return DateIndexUtil.getBeginDate(dateRange[0]);
+                return DateIndexUtil.getBeginDate(start);
             } catch (ParseException pe) {
-                log.error("Malformed date in date index table, expected yyyyMMdd: " + dateRange[0], pe);
-                throw new IllegalStateException("Malformed date in date index table, expected yyyyMMdd: " + dateRange[0], pe);
+                log.error("Malformed date in date index table, expected yyyyMMdd: " + start, pe);
+                throw new IllegalStateException("Malformed date in date index table, expected yyyyMMdd: " + start, pe);
             }
         }
 
         public Date getEndDate() {
             try {
-                return DateIndexUtil.getEndDate(dateRange[1]);
+                return DateIndexUtil.getEndDate(end);
             } catch (ParseException pe) {
-                log.error("Malformed date in date index table, expected yyyyMMdd: " + dateRange[1], pe);
-                throw new IllegalStateException("Malformed date in date index table, expected yyyyMMdd: " + dateRange[1], pe);
+                log.error("Malformed date in date index table, expected yyyyMMdd: " + end, pe);
+                throw new IllegalStateException("Malformed date in date index table, expected yyyyMMdd: " + end, pe);
             }
         }
 
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("field: ").append(fields);
-            builder.append(", dateRange").append(Arrays.asList(dateRange));
-            return builder.toString();
+            return "field: " + fields + ", dateRange[" + start + "," + end + "]";
         }
     }
 
@@ -231,49 +264,42 @@ public class DateIndexHelper implements ApplicationContextAware {
         }
         long startTime = System.currentTimeMillis();
 
+        // create date type description with default start and end values
         DateTypeDescription desc = new DateTypeDescription();
+        Range range = createRange(begin, end);
 
-        BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
-        try {
-
+        try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
             // scan from begin to end
-            bs.setRanges(Arrays.asList(new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~')));
+            scanner.setRange(range);
 
             // restrict to our date type
-            bs.fetchColumnFamily(new Text(dateType));
+            scanner.fetchColumnFamily(new Text(dateType));
 
-            Iterator<Entry<Key,Value>> iterator = bs.iterator();
+            if (useIterator && !datatypeFilter.isEmpty()) {
+                IteratorSetting setting = new IteratorSetting(50, "GetTypeDescription", DateIndexIterator.class);
+                setting.addOption(DateIndexIterator.DATATYPE_FILTER, Joiner.on(',').join(datatypeFilter));
+                scanner.addScanIterator(setting);
 
-            while (iterator.hasNext()) {
-                Entry<Key,Value> entry = iterator.next();
-                Key k = entry.getKey();
-
-                String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
-                if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
+                for (Entry<Key,Value> entry : scanner) {
+                    Key k = entry.getKey();
+                    String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                     desc.fields.add(parts[2]);
-                    String date = parts[0];
-                    if (desc.dateRange[0] == null) {
-                        desc.dateRange[0] = date;
-                        desc.dateRange[1] = date;
-                    } else {
-                        if (date.compareTo(desc.dateRange[0]) < 0) {
-                            desc.dateRange[0] = date;
-                        }
-                        if (date.compareTo(desc.dateRange[1]) > 0) {
-                            desc.dateRange[1] = date;
-                        }
+                    desc.updateStartEndDate(parts[0]);
+                }
+            } else {
+                for (Entry<Key,Value> entry : scanner) {
+                    Key k = entry.getKey();
+                    String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
+                    if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
+                        desc.fields.add(parts[2]);
+                        desc.updateStartEndDate(parts[0]);
                     }
                 }
             }
-        } finally {
-            bs.close();
         }
 
-        // if the dates are still empty, then default to the incoming dates
-        if (desc.dateRange[0] == null) {
-            desc.dateRange[0] = DateIndexUtil.format(begin);
-            desc.dateRange[1] = DateIndexUtil.format(end);
-        }
+        // set default values if none were found
+        desc.setStartEndDate(begin, end);
 
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
@@ -294,7 +320,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @param end
      *            The end date for this field
      * @param rangeBegin
-     *            The miniminum shard to search
+     *            The minimum shard to search
      * @param rangeEnd
      *            The maximum shard to search
      * @param datatypeFilter
@@ -321,17 +347,71 @@ public class DateIndexHelper implements ApplicationContextAware {
         String minShard = format.format(rangeBegin);
         String maxShard = format.format(rangeEnd);
 
+        Range range = createRange(begin, end);
+        TreeMap<String,BitSet> bitsets;
+        if (useIterator) {
+            bitsets = scanForShardsAndDaysWithIterator(range, field, datatypeFilter, minShard, maxShard);
+        } else {
+            bitsets = scanForShardsAndDays(range, field, datatypeFilter, minShard, maxShard);
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<String,BitSet> entry : bitsets.entrySet()) {
+            appendToShardsAndDays(builder, entry.getValue(), entry.getKey());
+        }
+
+        String shardsAndDays = builder.toString();
+
+        if (log.isDebugEnabled()) {
+            long endTime = System.currentTimeMillis();
+            log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
+                            + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + " returned " + shardsAndDays + " in "
+                            + (endTime - startTime) + "ms");
+        }
+
+        return shardsAndDays;
+    }
+
+    protected TreeMap<String,BitSet> scanForShardsAndDaysWithIterator(Range range, String field, Set<String> datatypeFilter, String minShard, String maxShard)
+                    throws TableNotFoundException {
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
+        try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
+            scanner.setRange(range);
 
-        BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
+            IteratorSetting setting = new IteratorSetting(50, "ShardsAndDaysHint", DateIndexIterator.class);
+            if (!datatypeFilter.isEmpty()) {
+                setting.addOption(DateIndexIterator.DATATYPE_FILTER, Joiner.on(',').join(datatypeFilter));
+            }
+            setting.addOption(DateIndexIterator.MINIMUM_DATE, minShard);
+            setting.addOption(DateIndexIterator.MAXIMUM_DATE, maxShard);
+            setting.addOption(DateIndexIterator.FIELD, field);
+            setting.addOption(DateIndexIterator.TIME_TRAVEL_ENABLED, Boolean.toString(timeTravel));
+            scanner.addScanIterator(setting);
 
-        try {
-            bs.setRanges(Arrays.asList(new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~')));
+            for (Entry<Key,Value> entry : scanner) {
+                Key k = entry.getKey();
+                String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
+                String date = parts[0];
 
-            Iterator<Entry<Key,Value>> iterator = bs.iterator();
+                BitSet bits = BitSet.valueOf(entry.getValue().get());
+                BitSet mappedBits = bitsets.get(date);
+                if (mappedBits == null) {
+                    bitsets.put(date, bits);
+                } else {
+                    mappedBits.or(bits);
+                }
+            }
+        }
+        return bitsets;
+    }
 
-            while (iterator.hasNext()) {
-                Entry<Key,Value> entry = iterator.next();
+    protected TreeMap<String,BitSet> scanForShardsAndDays(Range range, String field, Set<String> datatypeFilter, String minShard, String maxShard)
+                    throws TableNotFoundException {
+        TreeMap<String,BitSet> bitsets = new TreeMap<>();
+        try (Scanner scanner = ScannerHelper.createScanner(client, dateIndexTableName, auths)) {
+            scanner.setRange(range);
+
+            for (Entry<Key,Value> entry : scanner) {
                 Key k = entry.getKey();
                 String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                 String date = parts[0];
@@ -339,7 +419,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                 // If the event date is more than one day before the event actually happened,
                 // then skip it, unless time-travel has been enabled.
                 String[] columnFamilyParts = StringUtils.split(k.getColumnFamily().toString(), '\0');
-                if (timeTravel == false && columnFamilyParts.length > 0 && columnFamilyParts[0].equals("ACTIVITY")) {
+                if (!timeTravel && columnFamilyParts.length > 0 && columnFamilyParts[0].equals("ACTIVITY")) {
                     try {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
                         String rowDateString = k.getRow().toString();
@@ -359,7 +439,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                     }
                 }
 
-                // If the date is outside of the min and max shard, then continue to the next entry
+                // If the date is outside the min and max shard, then continue to the next entry
                 if (date.compareTo(minShard) < 0) {
                     continue;
                 }
@@ -379,26 +459,12 @@ public class DateIndexHelper implements ApplicationContextAware {
                     }
                 }
             }
-
-        } finally {
-            bs.close();
         }
+        return bitsets;
+    }
 
-        StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String,BitSet> entry : bitsets.entrySet()) {
-            appendToShardsAndDays(builder, entry.getValue(), entry.getKey());
-        }
-
-        String shardsAndDays = builder.toString();
-
-        if (log.isDebugEnabled()) {
-            long endTime = System.currentTimeMillis();
-            log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
-                            + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + " returned " + shardsAndDays + " in "
-                            + (endTime - startTime) + "ms");
-        }
-
-        return shardsAndDays;
+    protected Range createRange(Date begin, Date end) {
+        return new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~');
     }
 
     private void appendToShardsAndDays(StringBuilder builder, BitSet bits, String date) {
@@ -458,4 +524,11 @@ public class DateIndexHelper implements ApplicationContextAware {
         }
     }
 
+    public void setUseIterator(boolean useIterator) {
+        this.useIterator = useIterator;
+    }
+
+    public boolean isUseIterator() {
+        return useIterator;
+    }
 }

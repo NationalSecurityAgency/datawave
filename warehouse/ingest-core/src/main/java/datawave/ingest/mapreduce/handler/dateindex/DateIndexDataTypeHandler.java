@@ -313,7 +313,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         Key key = new Key(row, type, colq, biased, date.getTime());
 
         if (log.isTraceEnabled()) {
-            log.trace("Dateate index key: " + key + " for shardId " + shardId);
+            log.trace("Date index key: " + key + " for shardId " + shardId);
         }
 
         return new KeyValue(key, shardList);
