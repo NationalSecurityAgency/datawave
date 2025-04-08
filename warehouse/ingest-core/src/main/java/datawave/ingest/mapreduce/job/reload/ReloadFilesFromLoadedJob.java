@@ -17,17 +17,10 @@ import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 
 public class ReloadFilesFromLoadedJob {
-    public static class FileNameMapper extends Mapper<LongWritable,Text,Text,Text> {
+    public static class ReloadFilesFromLoadedMapper extends Mapper<LongWritable,Text,Text,Text> {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            System.out.println("Processing line: \"" + value.toString());
-
-            /*
-             * Split the file name to get: 1. File data type 2. Month 3. Day 4. year 5. hour 6. filename
-             *
-             * Once we have above, construct the archive path. Once we have the archive path, we can get the har file path Create the path (har file
-             * path/hour/filename) Move the file (how move out of har?)
-             */
+            System.out.println("Processing file: \"" + value.toString());
 
             String[] parts = value.toString().split("/");
             String datatype = parts[3];
@@ -94,14 +87,15 @@ public class ReloadFilesFromLoadedJob {
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map>");
+            System.err.println("File at <input path> should consist paths to loaded files in the format /data/flagged|loaded/<datatype>/<year>/<month>/<day>/<hour>/<filename>");
             System.exit(-1);
         }
 
         Configuration conf = new Configuration();
-        Job job = Job.getInstance(conf, "Print File Name Job");
+        Job job = Job.getInstance(conf, "Reprocess Loaded Files Job");
         job.setJarByClass(ReloadFilesFromLoadedJob.class);
 
-        job.setMapperClass(FileNameMapper.class);
+        job.setMapperClass(ReloadFilesFromLoadedMapper.class);
         job.setNumReduceTasks(0);
 
         job.setInputFormatClass(NLineInputFormat.class);
