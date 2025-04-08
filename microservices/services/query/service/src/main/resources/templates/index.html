@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" class="no-js" lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataWave Docs</title>
+    <link rel="stylesheet" href="webjars/foundation/dist/css/foundation.min.css">
+    <link rel="stylesheet" href="css/dwdocs.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <ul class="menu">
+                <li><img src="images/dwdocs_logo.png" width="429px" height="38px"
+                         style="padding-left: 10px; padding-right: 40px; padding-top: 10px;padding-bottom: 20px"></li>
+           </ul>
+        </div>
+        <div class="top-bar-right">
+            <ul class="dropdown menu" data-dropdown-menu>
+                <li>
+                    <a href="#">REST Docs</a>
+                    <ul class="menu vertical">
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.accumulo.uri')})}">Accumulo</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.cache.uri')})}">Cache</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.authorization.uri')})}">Authorization</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.audit.uri')})}">Audit</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.metrics.uri')})}">Query Metrics</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.dictionary.uri')})}">Dictionary</a></li>
+                        <li><a href="swagger-ui.html">Query</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.executor.uri')})}">Query Executor</a></li>
+                        <li><a th:href="@{{baseUri}/swagger-ui.html(baseUri=${@environment.getProperty('datawave.web.storage.uri')})}">Query Storage</a></li>
+
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Javadoc</a>
+                    <ul class="menu vertical">
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.accumulo.uri')})}">Accumulo</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.cache.uri')})}">Cache</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.authorization.uri')})}">Authorization</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.audit.uri')})}">Audit</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.metrics.uri')})}">Query Metrics</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.dictionary.uri')})}">Dictionary</a></li>
+                        <li><a href="javadoc/index.html">Query</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.executor.uri')})}">Query Executor</a></li>
+                        <li><a th:href="@{{baseUri}/javadoc/index.html(baseUri=${@environment.getProperty('datawave.web.storage.uri')})}">Query Storage</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">DataWave</a>
+                    <ul class="menu vertical">
+                        <li><a th:href="@{{baseUri}/data/v1/(baseUri=${@environment.getProperty('datawave.web.dictionary.uri')})}">Data Dictionary</a></li>
+                        <li><a th:href="@{{baseUri}/edge/v1/(baseUri=${@environment.getProperty('datawave.web.dictionary.uri')})}">Edge Dictionary</a></li>
+                        <li><a th:href="@{/v1/query/listQueryLogic}">Deployed Query Logics</a></li>
+                        <li><a th:href="@{{baseUri}/v1/listEffectiveAuthorizations(baseUri=${@environment.getProperty('datawave.web.authorization.uri')})}">My Effective Authorizations</a></li>
+                        <li><a th:href="@{{baseUri}/v1/admin/listUsers(baseUri=${@environment.getProperty('datawave.web.authorization.uri')})}">Cached Credentials</a></li>
+                    </ul>
+                </li>
+
+                <li><a href="#">Release Notes</a></li>
+
+                [(${@environment.getProperty('datawave.doc.menu.extras')})]
+            </ul>
+        </div>
+    </div>
+    <div style="background-color: #3c3c3c">
+        <h1 align="center" style="color: white">Welcome to DataWave</h1>
+    </div>
+
+    <div class="grid-x" align="center">
+        <div class="cell small-4">
+            <a href="swagger-ui.html"><img src="images/api_icon_finished.png" width="50%"
+                                              style="alignment-adjust:central;padding: 20px"></a>
+            <div style="padding-bottom: 30%">API Documents</div></a>
+        </div>
+        <div class="cell small-4">
+            <a href="query_help.html"><img src="images/userGuide_icon.png" width="50%"
+                                           style="alignment-adjust:central;padding: 20px"></a>
+            <div style="padding-bottom: 30%">Query Help</div>
+        </div>
+        <div class="cell small-4">
+            <a href="releaseNotes.html"><img src="images/releaseNotes_icon.png" width="50%"
+                                             style="alignment-adjust:central;padding: 20px"></a>
+            <div style="padding-bottom: 30%">Release Notes</div>
+        </div>
+    </div>
+
+    <script src="webjars/jquery/jquery.min.js"></script>
+    <script src="webjars/foundation/dist/js/foundation.min.js"></script>
+    <script src="js/index.js"></script>
+    <script>
+        var buildUserEmail = "[[${gitBuildUserEmail}]]";
+        var branch = "[[${gitBranch}]]";
+        var commitId = "[[${gitCommitId}]]";
+        var buildTime = "[[${gitBuildTime}]]";
+    </script>
+</body>
+<footer>
+    <div class="grid-x" style="background-color: #3c3c3c; text-align: center; color: white;">
+        <div id="gitInfo" class="cell"></div>
+    </div>
+</footer>
+</html>
+
+

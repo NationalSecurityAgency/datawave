@@ -11,7 +11,6 @@ import org.apache.accumulo.core.data.Range;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.key.util.FiKeyUtil;
-import datawave.query.attributes.Document;
 
 /**
  * An {@link EventDataQueryFilter} that applies TLD logic to Field Index keys

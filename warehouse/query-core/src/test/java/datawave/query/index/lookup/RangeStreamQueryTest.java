@@ -7,6 +7,7 @@ import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELA
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
+import static datawave.util.TableName.METADATA;
 import static datawave.util.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,6 +52,7 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import datawave.util.TableName;
 
 /**
  * Integration test for asserting correct query plans coming off the RangeStream
@@ -97,7 +99,7 @@ public class RangeStreamQueryTest {
         Value docValue = buildDocRange("a.b.c");
         Value docValue2 = buildDocRange("x.y.z");
 
-        Text cq = new Text("20200101_7\0datatype");
+        Text cq = new Text("20200101_0\0datatype");
 
         Mutation m = new Mutation("shard");
         m.put(new Text("FOO"), cq, shardValue);
@@ -119,6 +121,13 @@ public class RangeStreamQueryTest {
 
         bw.flush();
         bw.close();
+
+        connector.tableOperations().create(METADATA);
+        try (BatchWriter batchWriter = connector.createBatchWriter(TableName.METADATA)) {
+            m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            batchWriter.addMutation(m);
+        }
     }
 
     private static Value buildDocRange(String uid) {
@@ -278,6 +287,9 @@ public class RangeStreamQueryTest {
                 "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'uid')",
                 "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
                 "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
+                // two terms, both delayed
+                "((_Value_ = true) && (FOO =~ 'zz.*')) || ((_Value_ = true) && (FOO =~ 'xx.*'))",
+                "((_Value_ = true) && (FOO =~ 'zz.*')) && ((_Value_ = true) && (FOO =~ 'xx.*'))",
                 // three terms, one term is a nested union
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'shard')",
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'uid')",
@@ -332,6 +344,9 @@ public class RangeStreamQueryTest {
                 "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'uid')",
                 "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
                 "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
+                // two terms, both delayed
+                "((_Value_ = true) && (FOO =~ 'zz.*')) || ((_Value_ = true) && (FOO =~ 'xx.*'))",
+                "((_Value_ = true) && (FOO =~ 'zz.*')) && ((_Value_ = true) && (FOO =~ 'xx.*'))",
                 // three terms, one term is a nested intersection
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'shard')",
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'uid')",
@@ -413,6 +428,8 @@ public class RangeStreamQueryTest {
         ASTJexlScript plannedScript = JexlNodeFactory.createScript(plan.getQueryTree());
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
         if (!TreeEqualityVisitor.isEqual(expectedScript, plannedScript)) {
+            log.info("expected: " + buildQuery(expectedScript));
+            log.info("result  : " + buildQuery(plannedScript));
             fail("Expected [" + buildQuery(expectedScript) + "] but got [" + buildQuery(plannedScript) + "]");
         }
         queryPlans.close();

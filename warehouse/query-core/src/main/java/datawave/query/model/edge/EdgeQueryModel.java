@@ -37,6 +37,8 @@ public class EdgeQueryModel extends QueryModel {
      *
      * @param other
      *            the other model
+     * @param fields
+     *            the edge model fields
      * @throws InvalidModelException
      *             if the model is invalid
      */
@@ -55,6 +57,8 @@ public class EdgeQueryModel extends QueryModel {
      *
      * @param queryModelXml
      *            the model xml
+     * @param fields
+     *            the fields
      * @return EdgeQueryModel instance
      * @throws Exception
      *             if there is an issue
@@ -66,6 +70,10 @@ public class EdgeQueryModel extends QueryModel {
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      *
+     * @param queryModelXml
+     *            the query model as xml
+     * @param fieldsFactory
+     *            the edge model fields factory
      * @return EdgeQueryModel instance
      */
     public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFieldsFactory fieldsFactory) throws Exception {
@@ -75,7 +83,11 @@ public class EdgeQueryModel extends QueryModel {
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      *
+     * @param queryModelXml
+     *            the query model as an xml String
      * @return EdgeQueryModel instance
+     * @throws Exception
+     *             if unable to load the model
      */
     public static EdgeQueryModel loadModel(String queryModelXml) throws Exception {
         return loadModel(queryModelXml, new DefaultEdgeModelFieldsFactory());

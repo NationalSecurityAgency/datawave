@@ -4,7 +4,6 @@ import static java.util.stream.Collectors.toSet;
 
 import static datawave.util.ssdeep.SSDeepHashTest.GOOD_HASHES;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;

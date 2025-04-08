@@ -3,6 +3,7 @@ package datawave.core.query.logic.composite;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.Query;
@@ -17,6 +18,10 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     // Specifies whether queries are run sequentially. We stop after the first query that returns any results.
     private boolean shortCircuitExecution = false;
+
+    private long resultsPollTimeout = 1000;
+
+    private TimeUnit resultsPollTimeoutTimeUnit = TimeUnit.MILLISECONDS;
 
     public CompositeQueryConfiguration() {
         super();
@@ -110,5 +115,21 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     public void setShortCircuitExecution(boolean shortCircuitExecution) {
         this.shortCircuitExecution = shortCircuitExecution;
+    }
+
+    public long getResultsPollTimeout() {
+        return resultsPollTimeout;
+    }
+
+    public void setResultsPollTimeout(long resultsPollTimeout) {
+        this.resultsPollTimeout = resultsPollTimeout;
+    }
+
+    public TimeUnit getResultsPollTimeoutTimeUnit() {
+        return resultsPollTimeoutTimeUnit;
+    }
+
+    public void setResultsPollTimeoutTimeUnit(TimeUnit resultsPollTimeoutTimeUnit) {
+        this.resultsPollTimeoutTimeUnit = resultsPollTimeoutTimeUnit;
     }
 }

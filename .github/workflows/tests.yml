@@ -10,6 +10,10 @@ on:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE', '.github/workflows/microservice*.yaml']
   merge_group:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
   
 env:
   JAVA_VERSION: '11'
@@ -34,23 +38,33 @@ jobs:
         cache: 'maven'
     - name: Extract branch name
       shell: bash
-      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      run: |
+        if [[ "${{ github.event_name }}" != "merge_group" ]]; then
+          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        else
+          echo "Nothing to do"
+        fi
       id: extract_branch
     - name: Format code
       env:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
-        git status
-        git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
+        if [[ "${{ github.event_name }}" != "merge_group" ]]; then
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
+          git status
+          git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
+        else
+          echo "Nothing to do"
+        fi
     - name: Commit Changes
       run: |
-        if [ "$diffs_found" = true ]; then
+        if [[ "$diffs_found" = true && "${{ github.event_name }}" != "merge_group" ]]; then
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
-          git pull origin ${{ steps.extract_branch.outputs.branch }} --rebase --autostash
-          git checkout -b ${{ steps.extract_branch.outputs.branch }}
+          git fetch origin
+          git checkout ${{ steps.extract_branch.outputs.branch }}
+          git pull origin ${{ steps.extract_branch.outputs.branch }} --no-rebase
           git commit -am "GitHub Actions: Fix Formatting"
           git push origin ${{ steps.extract_branch.outputs.branch }}
         else
@@ -75,7 +89,7 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify -Dutils -Dservices -Dstarters"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -91,8 +105,6 @@ jobs:
   #   steps:
   #     - name: Checkout Code
   #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
   #     - name: Set up JDK ${{env.JAVA_VERSION}}
   #       uses: actions/setup-java@v4
   #       with:
@@ -111,14 +123,14 @@ jobs:
   #         USER_NAME: ${{ secrets.USER_NAME }}
   #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
+  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dstarters -Dservices -Dutils -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DonlyServiceApis -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
   #         $BUILD
   #     - name: Run Microservice Unit Tests
   #       env:
   #         USER_NAME: ${{ secrets.USER_NAME }}
   #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dmaven.build.cache.enabled=false verify"
+  #         RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dstarters -Dservices -Dutils -Dmaven.build.cache.enabled=false verify"
   #         cd microservices
   #         $RUN_TESTS \
   #           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
@@ -168,8 +180,6 @@ jobs:
           sudo rm -rf $AGENT_TOOLSDIRECTORY
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
@@ -184,13 +194,13 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           # update datawave dependencies to use the latest snapshots
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
           
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
           
           cd docker
           ./bootstrap.sh
@@ -237,8 +247,6 @@ jobs:
           sudo rm -rf $AGENT_TOOLSDIRECTORY
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
@@ -265,10 +273,10 @@ jobs:
                      -Durl.hadoop=https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz \
                      -Durl.maven=https://bogus.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz"
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0

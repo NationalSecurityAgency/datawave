@@ -11,5 +11,8 @@
         <property name="file" value="${basedir}/import-control-accumulo.xml"/>
         <property name="severity" value="warning"/>
     </module>
+    <module name="UnusedImports">
+        <property name="severity" value="error"/>
+    </module>
   </module>
 </module>
