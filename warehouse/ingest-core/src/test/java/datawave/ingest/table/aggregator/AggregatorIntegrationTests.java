@@ -1,12 +1,6 @@
 package datawave.ingest.table.aggregator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,16 +19,23 @@ import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.util.TableName;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * A series of integration tests using {@link MiniAccumuloCluster} to exercise various global index aggregators
@@ -45,8 +46,8 @@ public class AggregatorIntegrationTests {
 
     private static final Logger log = LoggerFactory.getLogger(AggregatorIntegrationTests.class);
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path temporaryFolder;
 
     private static final String PASSWORD = "password";
     private static MiniAccumuloCluster mac;
@@ -66,9 +67,9 @@ public class AggregatorIntegrationTests {
     private Value keepCountValue;
     private Value countOnlyValue;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws Exception {
-        MiniAccumuloConfig config = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
+        MiniAccumuloConfig config = new MiniAccumuloConfig(temporaryFolder.toFile(), PASSWORD);
         config.setNumTservers(1);
 
         mac = new MiniAccumuloCluster(config);
@@ -79,7 +80,7 @@ public class AggregatorIntegrationTests {
         configureTables();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         mac.stop();
     }
@@ -451,7 +452,6 @@ public class AggregatorIntegrationTests {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
                 fail("Failed to scan table " + tableName);
                 throw new RuntimeException(e);
             }
@@ -483,7 +483,7 @@ public class AggregatorIntegrationTests {
 
     private void assertList(String table, boolean ignore, int count) {
         Value value = getValueForTable(table);
-        assertNotNull("Expected value to not be null", value);
+        assertNotNull(value, "Expected value to not be null");
         Uid.List list = UidTestUtils.valueToUidList(value);
         assertNotNull(list);
         assertEquals(ignore, list.getIGNORE());
@@ -493,7 +493,7 @@ public class AggregatorIntegrationTests {
 
     private void assertList(String table, String... uids) {
         Value value = getValueForTable(table);
-        assertNotNull("Expected value to not be null", value);
+        assertNotNull(value, "Expected value to not be null");
         Uid.List list = UidTestUtils.valueToUidList(value);
         assertNotNull(list);
         assertFalse(list.getIGNORE());
