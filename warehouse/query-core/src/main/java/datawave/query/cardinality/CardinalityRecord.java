@@ -25,7 +25,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Sets;
 
 public class CardinalityRecord implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8860541286933451615L;
     private Set<String> resultCardinalityValueFields = null;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
     private static Logger log = Logger.getLogger(CardinalityRecord.class);

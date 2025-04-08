@@ -201,10 +201,31 @@ This command also prevents the microservice services from building with `-DskipS
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
 your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
 
-If desired, you can start and test the wildfly deployment embedded in the Datawave Quickstart by running the following command:
+If desired, you can ensure wildfly is started when creating the containers via `docker compose up -d` by changing the datawave-bootstrap.sh argument `--accumulo` to `--web` for the quickstart service in the docker-compose.yml file:
+
 ```
-docker run -m 8g datawave/quickstart-compose datawave-bootstrap.sh --test
+services:
+  quickstart:
+    profiles:
+      - quickstart
+    # To run the wildfly webservice, change `--accumulo` to `--web`
+    command: ["datawave-bootstrap.sh", "--web"]
 ```
+
+Alternatively, you can start and test the wildfly deployment after creating the containers:
+
+```
+# Enter the docker-quickstart container shell.
+docker exec -ti docker-quickstart-1 bash
+
+# Start wildfly and test it.
+[root@e80487d9f063 datawave-quickstart]# datawaveWebStart && datawaveWebTest
+
+# Exit the docker container shell.
+[root@e80487d9f063 datawave-quickstart]# exit
+```
+
+To stop the wildfly deployment, repeat the steps above using the command `datawaveWebStop` instead of `datawaveWebStart  && datawaveWebTest`.
 
 #### Hybrid Datawave Quickstart Setup
 

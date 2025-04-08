@@ -67,12 +67,12 @@ public class RowHashingPartitionerTest {
     }
 
     @Test
-    public void testMultipleColFamiliesPerRow() throws IllegalAccessException, InstantiationException {
+    public void testMultipleColFamiliesPerRow() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         String tableName = "tableX";
         conf.set(tableName + "." + RowHashingPartitioner.COLUMN_FAMILIES, "CITY,STATE");
 
-        RowHashingPartitioner partitioner = RowHashingPartitioner.class.newInstance();
+        RowHashingPartitioner partitioner = RowHashingPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(tableName);
 

@@ -33,6 +33,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
     
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Edge Dictionary", SEP = ", ";
+    private String edgeDictionarySystem = null;
     
     @XmlElementWrapper(name = "EdgeMetadata")
     @XmlElement(name = "Metadata")
@@ -57,6 +58,14 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
     @Override
     public List<? extends MetadataBase<DefaultMetadata>> getMetadataList() {
         return metadataList == null ? null : Collections.unmodifiableList(metadataList);
+    }
+    
+    public String getEdgeDictionarySystem() {
+        return edgeDictionarySystem == null ? null : edgeDictionarySystem;
+    }
+    
+    public void setEdgeDictionarySystem(String edgeDictionarySystem) {
+        this.edgeDictionarySystem = edgeDictionarySystem;
     }
     
     public static Schema<DefaultEdgeDictionary> getSchema() {
@@ -187,6 +196,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder(2048);
+        builder.append("<div id = \"system-name\"><p>Cluster: ").append(edgeDictionarySystem).append("</p></div>");
         builder.append("<div><ul>").append("<li class=\"left\">Edge Type: Defined either by Datawave Configuration files or Edge enrichment field.</li>")
                         .append("<li class=\"left\">Edge Relationship: Defined by Datawave Configuration files</li>")
                         .append("<li class=\"left\">Edge Attribute1 Source: Defined by Datawave Configuration files and optional attributes Attribute2 and Attribute3</li>")

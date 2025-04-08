@@ -990,6 +990,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            operation
      * @param userAuths
      *            set of user auths
+     * @param userDetails
+     *            proxied user details
      * @return Event
      * @throws Exception
      *             if there are issues

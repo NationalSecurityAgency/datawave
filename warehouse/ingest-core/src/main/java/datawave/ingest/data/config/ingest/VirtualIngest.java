@@ -118,15 +118,15 @@ public interface VirtualIngest {
         public static final String VIRTUAL_FIELD_IGNORE_NORMALIZATION_ON_FIELD = ".data.combine.ignore.normalization.on.fields";
 
         protected Map<String,String[]> virtualFieldDefinitions = new HashMap<>();
-        protected Map<String,Pattern> compiledFieldPatterns = null;
+        protected transient Map<String,Pattern> compiledFieldPatterns = null;
         protected String defaultSeparator = null;
         protected String defaultStartSeparator = null;
         protected String defaultEndSeparator = null;
-        protected Map<String,GroupingPolicy> grouping = new HashMap<>();
-        protected Map<String,Boolean> allowMissing = new HashMap<>();
+        protected transient Map<String,GroupingPolicy> grouping = new HashMap<>();
+        protected transient Map<String,Boolean> allowMissing = new HashMap<>();
         private Set<String> ignoreNormalizationForFields = new HashSet<>();
 
-        private MarkingFunctions markingFunctions;
+        private transient MarkingFunctions markingFunctions;
 
         public void setup(Type type, String instance, Configuration config) {
 
