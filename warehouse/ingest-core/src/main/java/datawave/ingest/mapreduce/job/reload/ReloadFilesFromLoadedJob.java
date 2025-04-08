@@ -87,7 +87,8 @@ public class ReloadFilesFromLoadedJob {
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map>");
-            System.err.println("File at <input path> should consist paths to loaded files in the format /data/flagged|loaded/<datatype>/<year>/<month>/<day>/<hour>/<filename>");
+            System.err.println(
+                            "File at <input path> should consist paths to loaded files in the format /data/flagged|loaded/<datatype>/<year>/<month>/<day>/<hour>/<filename>");
             System.exit(-1);
         }
 
