@@ -24,11 +24,14 @@ public class FileConfigProperties {
     
     @Valid
     private List<FileConfig> files; //all of the files that are part of the config; ie the ones we're going to try and download and save into here
-    
+
+    @NotBlank
+    private String tempDir;
+
     public List<FileConfig> getFiles() {
         return files;
     }
-    
+
     public void setFiles(List<FileConfig> files) {
         this.files = files;
     }

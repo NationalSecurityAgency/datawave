@@ -1,6 +1,7 @@
 package datawave.microservice.fileProvider;
 
 import datawave.microservice.fileProvider.config.FileConfigProperties;
+import datawave.microservice.fileProvider.downloaders.DownloadResult;
 import datawave.microservice.fileProvider.downloaders.Downloader;
 import datawave.microservice.fileProvider.downloaders.HttpsDownloader;
 
@@ -14,13 +15,16 @@ public class FileDownloadTask implements Runnable{
     
     @Override
     public void run() {
+        // Validation for file config? For example, sanitizing file names and URLs.
+
         // set up downloader via config properties. For example, if we were to set up an https downloader, what would we be checking/supplying.
         Downloader downloader = new HttpsDownloader();
        
         // Download the file.
-        downloader.download();
-        
-        //
+        DownloadResult result = downloader.startDownload();
+
+        // If success: Validation of file with configured validation
+        // Cleanup
     }
     
 }

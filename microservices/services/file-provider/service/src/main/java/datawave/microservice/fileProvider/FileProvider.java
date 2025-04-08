@@ -24,11 +24,17 @@ public class FileProvider {
     
     public void scheduleTasks() {
         for (FileConfigProperties.FileConfig fileConfig : configProperties.getFiles()) {
-            FileConfigProperties.DownloadConfig downloadConfig = fileConfig.getDownload();
-            FileDownloadTask task = new FileDownloadTask(fileConfig);
-            log.info("File download for " + fileConfig.getLabel() + " scheduled for " + downloadConfig.getSchedule());
-            taskScheduler.schedule(task, new CronTrigger(downloadConfig.getSchedule()));
+            if(isValid(fileConfig)) {
+                FileConfigProperties.DownloadConfig downloadConfig = fileConfig.getDownload();
+                FileDownloadTask task = new FileDownloadTask(fileConfig);
+                log.info("File download for " + fileConfig.getLabel() + " scheduled for " + downloadConfig.getSchedule());
+                taskScheduler.schedule(task, new CronTrigger(downloadConfig.getSchedule()));
+            }
         }
+    }
+
+    private boolean isValid(FileConfigProperties.FileConfig config) {
+        return true;
     }
     
 }
