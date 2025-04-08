@@ -1793,6 +1793,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return getConfig().getGroupFieldsBatchSize();
     }
 
+    public boolean isDisableIteratorUniqueFields() {
+        return getConfig().isDisableIteratorUniqueFields();
+    }
+
+    public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
+        getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
@@ -3141,6 +3149,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
+     *            The query checkpoint
+     * @throws Exception
+     *             when unable to set up query
      */
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {

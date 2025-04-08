@@ -622,6 +622,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      *
      * @param scanner
      *            a batch scanner
+     * @param queryData
+     *            data from the query
      * @param indexedFields
      *            set of currently indexed fields
      * @return iterator for discoveredthings

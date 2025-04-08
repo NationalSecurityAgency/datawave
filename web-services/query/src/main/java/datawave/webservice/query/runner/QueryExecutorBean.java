@@ -424,7 +424,9 @@ public class QueryExecutorBean implements QueryExecutor {
      * Setup the caller data in the QueryData object
      *
      * @param p
+     *            the principal
      * @param qd
+     *            the query data
      * @return qd
      */
     private QueryData setUserData(Principal p, QueryData qd) {
@@ -874,6 +876,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             AuditType auditType = qd.logic.getAuditType(null);
+            Exception exception = null;
             try {
                 Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
@@ -902,14 +905,18 @@ public class QueryExecutorBean implements QueryExecutor {
                         log.error("Error validating audit parameters", e);
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
                         response.addException(qe);
-                        throw new BadRequestException(qe, response);
+                        exception = new BadRequestException(qe, response);
                     } catch (Exception e) {
                         log.error("Error auditing query", e);
                         QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                         response.addException(qe);
-                        throw qe;
+                        exception = qe;
                     }
                 }
+            }
+
+            if (null != exception) {
+                throw exception;
             }
 
             priority = qd.logic.getConnectionPriority();

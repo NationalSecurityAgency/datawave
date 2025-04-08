@@ -37,6 +37,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
     private final MetadataHelperFactory metadataHelperFactory;
     private final MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory;
     private Map<String,String> normalizationMap = Maps.newHashMap();
+    private String dataDictionarySystem = "";
     
     public DataDictionaryImpl(MarkingFunctions markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
@@ -55,6 +56,16 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
     @Override
     public void setNormalizationMap(Map<String,String> normalizationMap) {
         this.normalizationMap = normalizationMap;
+    }
+    
+    @Override
+    public String getDataDictionarySystem() {
+        return dataDictionarySystem;
+    }
+    
+    @Override
+    public void setDataDictionarySystem(String dataDictionarySystem) {
+        this.dataDictionarySystem = dataDictionarySystem;
     }
     
     /**

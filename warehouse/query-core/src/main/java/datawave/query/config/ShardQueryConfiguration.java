@@ -396,6 +396,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private GroupFields groupFields = new GroupFields();
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
+
+    private boolean disableIteratorUniqueFields = false;
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -742,6 +744,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
+        this.setDisableIteratorUniqueFields(other.isDisableIteratorUniqueFields());
         this.setUniqueFields(other.getUniqueFields());
         log.info("Checkpointing with " + getUniqueFields());
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
@@ -796,7 +799,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * needs to be copied over here.
      *
      * @param other
+     *            the other configuration
      * @param queries
+     *            the collection of queries
      */
     public ShardQueryConfiguration(ShardQueryConfiguration other, Collection<QueryData> queries) {
         super(other);
@@ -1916,6 +1921,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public String getGroupFieldsBatchSizeAsString() {
         return "" + groupFieldsBatchSize;
+    }
+
+    public boolean isDisableIteratorUniqueFields() {
+        return disableIteratorUniqueFields;
+    }
+
+    public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
+        this.disableIteratorUniqueFields = disableIteratorUniqueFields;
     }
 
     public UniqueFields getUniqueFields() {

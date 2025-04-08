@@ -27,6 +27,7 @@ import datawave.query.jexl.JexlASTHelper;
  * {@link UniqueFields#from(String)}.
  */
 public class UniqueFields implements Serializable, Cloneable {
+    private static final long serialVersionUID = 2269249452109902433L;
 
     private final TreeMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
@@ -216,7 +217,9 @@ public class UniqueFields implements Serializable, Cloneable {
      * Replace a field mapping with another field
      *
      * @param field
+     *            the field
      * @param replacement
+     *            the replacement
      */
     public void replace(String field, String replacement) {
         Collection<UniqueGranularity> value = fieldMap.removeAll(field);

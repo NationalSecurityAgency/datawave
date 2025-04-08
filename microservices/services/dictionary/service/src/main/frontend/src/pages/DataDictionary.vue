@@ -24,6 +24,7 @@
     </div>
     <div class="row" style="width: 100%; height: 80%">
       <p class="information">
+        Cluster: {{ system?.systemName }} <br />
         When a value is present in the forward index types, this means that a
         field is indexed and informs you how your query terms will be treated
         (e.g. text, number, IPv4 address, etc). The same applies for the reverse
@@ -163,7 +164,7 @@ import { onMounted, ref } from 'vue';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
-import { Banner, columns } from '../functions/components';
+import { Banner, columns, System } from '../functions/components';
 import * as Formatters from '../functions/formatters';
 import * as Wrapper from '../functions/csvWrapper';
 import * as Feature from '../functions/features';
@@ -175,6 +176,7 @@ const loading = ref(true);
 const filter = ref('');
 const changeFilter = ref('');
 const banner = ref<Banner>();
+const system = ref<System>();
 let rows: QTableProps['rows'] = [];
 const paginationFront = ref({
   rowsPerPage: 200,
@@ -186,9 +188,11 @@ const paginationFront = ref({
 onMounted(() => {
   let endpointData = '';
   let bannerData = 'banner';
+  let systemData = 'system';
   if (process.env.DEV) {
     endpointData = 'data/v2/'
     bannerData = 'data/v2/banner/'
+    systemData = 'data/v2/system/'
   }
 
   api
@@ -198,6 +202,15 @@ onMounted(() => {
   })
   .catch((reason) => {
     console.error('Could not fetch banner: ' + reason);
+  });
+
+  api
+  .get(systemData)
+  .then((response) => {
+    system.value = response.data as System;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch system name: ' + reason);
   });
 
   api
