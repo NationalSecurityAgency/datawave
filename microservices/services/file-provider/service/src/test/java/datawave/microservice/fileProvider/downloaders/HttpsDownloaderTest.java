@@ -2,10 +2,12 @@ package datawave.microservice.fileProvider.downloaders;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 class HttpsDownloaderTest {
 
@@ -16,18 +18,21 @@ class HttpsDownloaderTest {
     /** File name to use when saving */
     private String destFileName   = "myDownloadedFile.csv";
 
-    @Test
-    public void testDownload() throws IOException {
+//    @TempDir
+//    Path tempDir;
 
-        Files.deleteIfExists(Path.of(destinationPath, destFileName));
+    @Test
+    public void testDownload(@TempDir Path tempDir) throws IOException {
+
+        Path tFile = tempDir.resolve(destFileName);
 
         HttpsDownloader downloader = new HttpsDownloader();
         downloader.setDownloadURL(downloadURL);
         downloader.setDestFileName(destFileName);
-        downloader.setDestinationPath(destinationPath);
+        downloader.setDestinationPath(tempDir.toString());
         downloader.download();
 
-        Assertions.assertTrue(Files.exists(Path.of(destinationPath, destFileName)));
+        Assertions.assertTrue(Files.exists(tFile), "File should exist");
     }
 
 }
