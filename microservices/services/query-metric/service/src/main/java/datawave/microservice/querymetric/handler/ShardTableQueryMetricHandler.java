@@ -698,7 +698,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
                             }
                         }
                     } else if (fieldName.equals("PROXY_SERVERS")) {
-                        m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
+                        m.setProxyServers(Arrays.asList(fieldValue.split(",")));
                     } else if (fieldName.equals("QUERY")) {
                         m.setQuery(fieldValue);
                     } else if (fieldName.equals("QUERY_ID")) {
@@ -862,7 +862,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             Collection<String> userAuths = new ArrayList<>(datawaveUser.getAuths());
             if (clientAuthorizations != null) {
                 Collection<String> connectorAuths = new ArrayList<>();
-                Arrays.stream(StringUtils.split(clientAuthorizations, ',')).forEach(a -> {
+                Arrays.stream(clientAuthorizations.split(",")).forEach(a -> {
                     connectorAuths.add(a);
                 });
                 userAuths.retainAll(connectorAuths);
