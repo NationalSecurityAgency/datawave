@@ -293,7 +293,7 @@ public enum DatawaveErrorCode {
     }
     
     public static DatawaveErrorCode findCode(String errorCode) {
-        String[] parts = StringUtils.split(errorCode, '-');
+        String[] parts = errorCode.split("-");
         if (parts.length == 2) {
             try {
                 int httpCode = Integer.parseInt(parts[0]);
