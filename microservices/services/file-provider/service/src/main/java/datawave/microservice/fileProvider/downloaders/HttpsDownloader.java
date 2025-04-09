@@ -1,53 +1,48 @@
 package datawave.microservice.fileProvider.downloaders;
 
+import datawave.microservice.fileProvider.downloaders.DownloadResult;
+import datawave.microservice.fileProvider.downloaders.Downloader;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 public class HttpsDownloader implements Downloader {
 
     public static String HTTPS_CODE = "https_code";
 
-    private Status status = Status.PENDING;
-
-    // some sort of token that can be started / stopped like in C#
+    private String downloadURL = "https://data.ny.gov/api/views/d6yy-54nr/rows.csv?accessType=DOWNLOAD";
+    private String destinationPath = "~/Downloads";
+    private String destFileName = "myDownloadedFile";
 
     // Need properties for:
     // - url to file
     // - file destination path
     // - file name
 
-    @Override
-    public Status getStatus() {
-        return null;
-    }
 
     @Override
-    public void startDownload() { // ???This will run async??? Right??? And then abort and stuff can be called on this Downloader instance while this funciton is running to check what's going on.
-        // download via https url
+    public DownloadResult download() throws IOException {
 
-        //set status to IN_PROGRESS
-
-        //attempt connection
-            //not connected = set status to ERROR
-            //connected = continue
-
-        //attempt download
-            //downloading in progress = wait to finish download
-            //downloading error = set status to ERROR
-                //depending on the error, handle stuff differently
-                //remove the temp file
-
-        //download aborted
-            //set status to ABORTED
-
-        //finished download
-            //status = COMPLETE
-    }
-
-    @Override
-    public void abort() {
-
-    }
-
-    @Override
-    public boolean isDone() {
-        return status == Status.COMPLETE || status == Status.ABORTED;
+        URL website = new URL(downloadURL);
+        try (InputStream in = website.openStream()) {
+            Files.copy(in, Path.of(destinationPath + "/" + destFileName), StandardCopyOption.REPLACE_EXISTING);
+            return new DownloadResult();
+        } catch (IOException e) {
+            return new DownloadResult();
+        }
     }
 }

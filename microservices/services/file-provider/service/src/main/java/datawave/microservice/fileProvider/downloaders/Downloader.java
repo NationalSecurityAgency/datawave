@@ -1,9 +1,13 @@
 package datawave.microservice.fileProvider.downloaders;
 
+import java.io.IOException;
+
 /**
  * Provide a simplistic interface for downloading a file. This can be implemented for various methods of fetching a file.
  */
 public interface Downloader {
+
+
 
     // Relevant statuses for file downloads: PENDING, IN_PROGRESS, COMPLETE, ERROR
     
@@ -14,19 +18,5 @@ public interface Downloader {
     // The above methods only apply if we decide to spawn the downloader as another task within the task so that we can loop and ping the
     // status of the file. Possibly not necessary.
 
-    // potential status definitions
-    enum Status {
-        PENDING,
-        IN_PROGRESS,
-        COMPLETE,
-        ABORTED,
-        ERROR
-    }
-
-    void startDownload();
-    void abort();
-    boolean isDone();
-
-    Status getStatus();
-
+    DownloadResult download() throws IOException;
 }

@@ -5,6 +5,8 @@ import datawave.microservice.fileProvider.downloaders.DownloadResult;
 import datawave.microservice.fileProvider.downloaders.Downloader;
 import datawave.microservice.fileProvider.downloaders.HttpsDownloader;
 
+import java.io.IOException;
+
 public class FileDownloadTask implements Runnable{
     
     private final FileConfigProperties.FileConfig config;
@@ -21,7 +23,11 @@ public class FileDownloadTask implements Runnable{
         Downloader downloader = new HttpsDownloader();
        
         // Download the file.
-        DownloadResult result = downloader.startDownload();
+        try {
+            DownloadResult result = downloader.download();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // If success: Validation of file with configured validation
         // Cleanup

@@ -4,10 +4,23 @@ import java.util.List;
 import java.util.Map;
 
 // Could be extended by subtypes to contain additional details for each method, e.g. a HttpsDownloadResult could have a method to return the http code
+
+//only created and returned at the end of the download atm. No async stuff yet.
 public class DownloadResult {
 
+    // potential status definitions
+    public enum Status {
+        COMPLETE,
+        ERROR
+    }
+
+    protected Status status;
     protected List<String> messages;
     protected Map<String,String> properties;
+
+    public Status getStatus() {
+        return status;
+    }
 
     public List<String> getMessages() {
         return messages;
