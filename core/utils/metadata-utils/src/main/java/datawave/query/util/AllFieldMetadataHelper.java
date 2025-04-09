@@ -854,7 +854,7 @@ public class AllFieldMetadataHelper {
         String date = identifier.getValue();
         
         final HashMap<String,Long> datatypeToCounts;
-
+        
         AccumuloClient clientToUse = accumuloClient;
         if (clientToUse instanceof WrappedAccumuloClient) {
             clientToUse = ((WrappedAccumuloClient) clientToUse).getReal();
