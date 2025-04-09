@@ -103,7 +103,6 @@ import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 import datawave.query.util.TypeMetadata;
-import datawave.util.StringUtils;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -820,7 +819,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         String identifier = JexlASTHelper.getIdentifier(node);
         if (Constants.SHARD_DAY_HINT.equals(identifier)) {
             JexlNode myNode = JexlNodeFactory.createExpression(node);
-            String[] shardsAndDays = StringUtils.split(JexlASTHelper.getLiteralValue(node).toString(), ',');
+            String[] shardsAndDays = JexlASTHelper.getLiteralValue(node).toString().split(",");
 
             if (shardsAndDays.length == 0) {
                 return ScannerStream.noData(myNode);
