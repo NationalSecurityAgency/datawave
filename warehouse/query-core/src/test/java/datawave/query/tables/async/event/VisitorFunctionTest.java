@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +29,7 @@ import org.junit.Test;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.microservice.query.Query;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
@@ -508,5 +511,66 @@ public class VisitorFunctionTest extends EasyMockSupport {
         metadata.put("FIELD_B", "type-a", LcNoDiacriticsType.class.getSimpleName());
         metadata.put("FIELD_C", "type-a", LcNoDiacriticsType.class.getSimpleName());
         settings.addOption(QueryOptions.TYPE_METADATA, metadata.toString());
+    }
+
+    @Test
+    public void testUniqueFunctionRemovalForSingleDocumentRangeScans() throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        MockMetadataHelper helper = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(config, helper);
+
+        Collection<Range> ranges = new HashSet<>();
+        IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
+        loadSettings(settings);
+
+        // single shard range -- no pruning
+        ranges.add(new Range(new Key("row"), true, new Key("row\0"), false));
+        loadUniqueSettings(settings);
+        function.pruneUniqueOptions(settings, ranges);
+        assertUniqueSettings(settings, true);
+
+        // single document range -- prune unique settings
+        ranges.clear();
+        ranges.add(new Range(new Key("row", "dt\0uid"), true, new Key("row", "dt\0uid\0"), false));
+        loadUniqueSettings(settings);
+        function.pruneUniqueOptions(settings, ranges);
+        assertUniqueSettings(settings, false);
+
+        // multiple document ranges -- no pruning
+        ranges.clear();
+        ranges.add(new Range(new Key("row", "dt\0uid"), true, new Key("row", "dt\0uid\0"), false));
+        ranges.add(new Range(new Key("row", "dt\0uid2"), true, new Key("row", "dt\0uid2\0"), false));
+        loadUniqueSettings(settings);
+        function.pruneUniqueOptions(settings, ranges);
+        assertUniqueSettings(settings, true);
+
+        // multiple shard ranges -- no pruning
+        ranges.add(new Range(new Key("row"), true, new Key("row\0"), false));
+        ranges.add(new Range(new Key("row2"), true, new Key("row2\0"), false));
+        loadUniqueSettings(settings);
+        function.pruneUniqueOptions(settings, ranges);
+        assertUniqueSettings(settings, true);
+
+        // mix of document and shard ranges -- no pruning
+        ranges.add(new Range(new Key("row"), true, new Key("row\0"), false));
+        ranges.add(new Range(new Key("row", "dt\0uid"), true, new Key("row", "dt\0uid\0"), false));
+        loadUniqueSettings(settings);
+        function.pruneUniqueOptions(settings, ranges);
+        assertUniqueSettings(settings, true);
+
+        // document range exclusive start -- shouldn't ever see this, but if we do: don't do anything
+    }
+
+    private void loadUniqueSettings(IteratorSetting setting) {
+        setting.addOption(QueryOptions.UNIQUE_FIELDS, UniqueFields.from("FIELD_A").toString());
+        setting.addOption(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, "10000");
+        setting.addOption(QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true));
+    }
+
+    private void assertUniqueSettings(IteratorSetting setting, boolean present) {
+        Map<String,String> options = setting.getOptions();
+        Assert.assertEquals(present, options.containsKey(QueryOptions.UNIQUE_FIELDS));
+        Assert.assertEquals(present, options.containsKey(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE));
+        Assert.assertEquals(present, options.containsKey(QueryOptions.MOST_RECENT_UNIQUE));
     }
 }

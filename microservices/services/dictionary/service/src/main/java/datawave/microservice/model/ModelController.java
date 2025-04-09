@@ -58,6 +58,7 @@ public class ModelController {
     
     private final String dataTablesUri;
     private final String jqueryUri;
+    private final String systemName;
     private final AccumuloConnectionService accumloConnectionService;
     
     public static final String DEFAULT_MODEL_TABLE_NAME = "DatawaveMetadata";
@@ -66,6 +67,7 @@ public class ModelController {
     public ModelController(ModelProperties modelProperties, AccumuloConnectionService accumloConnectionService) {
         this.dataTablesUri = modelProperties.getDataTablesUri();
         this.jqueryUri = modelProperties.getJqueryUri();
+        this.systemName = modelProperties.getSystemName();
         this.accumloConnectionService = accumloConnectionService;
     }
     
@@ -84,7 +86,7 @@ public class ModelController {
     public ModelList listModelNames(@RequestParam(defaultValue = DEFAULT_MODEL_TABLE_NAME) String modelTableName,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         
-        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName, systemName);
         HashSet<String> modelNames = new HashSet<>();
         List<Key> keys;
         try {
@@ -190,7 +192,7 @@ public class ModelController {
     @GetMapping("/{name}")
     public Model getModel(@PathVariable String name, @RequestParam(defaultValue = DEFAULT_MODEL_TABLE_NAME) String modelTableName,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
-        Model response = new Model(jqueryUri, dataTablesUri);
+        Model response = new Model(jqueryUri, dataTablesUri, systemName);
         List<Key> keys;
         try {
             keys = accumloConnectionService.getKeys(modelTableName, currentUser, name);

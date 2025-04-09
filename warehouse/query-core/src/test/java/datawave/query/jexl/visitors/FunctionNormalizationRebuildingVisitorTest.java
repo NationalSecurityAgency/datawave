@@ -110,6 +110,12 @@ public class FunctionNormalizationRebuildingVisitorTest {
     }
 
     @Test
+    public void testRemoveIdentifiers_Normalized2() {
+        String query = "content:within($123_A, 2, termOffsetMap, '12', '23')";
+        test(query, "(content:within($123_A, 2, termOffsetMap, '+bE1.2', '+bE2.3') || content:within($123_A, 2, termOffsetMap, '12', '23'))");
+    }
+
+    @Test
     public void testContentPhraseMultiField_NormalizedTextValues() {
         String query = "content:phrase((FOO || NUM), termOffsetMap, 'bar', 'baz')";
         test(query, query);

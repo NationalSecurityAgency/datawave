@@ -17,7 +17,7 @@ import datawave.query.function.KryoCVAwareSerializableSerializer;
  *
  */
 public class KryoDocumentDeserializer extends DocumentDeserializer implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -657326925013465794L;
 
     final transient Kryo kryo = new Kryo();
 

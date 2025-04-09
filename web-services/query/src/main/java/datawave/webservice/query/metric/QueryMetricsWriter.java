@@ -189,6 +189,7 @@ public class QueryMetricsWriter {
      *            maximum latency
      * @return list of query metric holders
      */
+    @SuppressWarnings("unchecked")
     private List<QueryMetricHolder> getMetricsFromQueue(int batchSize, long maxLatency) {
         List metricHolderList = new ArrayList<>();
         long start = System.currentTimeMillis();
@@ -217,7 +218,6 @@ public class QueryMetricsWriter {
         /**
          * FailureRecord tracks the number and type of failures to send the query metric update so we can make decisions on whether to retry sending or drop the
          * query metric update.
-         *
          *
          * @param metric
          *            the metric
@@ -498,8 +498,9 @@ public class QueryMetricsWriter {
          *            list of metrics to process
          * @return list of failed query metrics
          */
+        @SuppressWarnings("unchecked")
         private List<QueryMetricHolder> writeMetricsToHandler(QueryMetricHandler queryMetricHandler, List<QueryMetricHolder> metricQueue) {
-            List<QueryMetricHolder> failedMetrics = new ArrayList<>();
+            List<QueryMetricHolder> failedMetricsHolder = new ArrayList<>();
             if (!metricQueue.isEmpty()) {
                 for (QueryMetricHolder metricHolder : metricQueue) {
                     try {
@@ -511,11 +512,11 @@ public class QueryMetricsWriter {
                         }
                     } catch (Exception e) {
                         log.error(String.format("metric update write to QueryMetricHandler failed: %s", e.getMessage()));
-                        failedMetrics.add(metricHolder);
+                        failedMetricsHolder.add(metricHolder);
                     }
                 }
             }
-            return failedMetrics;
+            return failedMetricsHolder;
         }
 
         /**

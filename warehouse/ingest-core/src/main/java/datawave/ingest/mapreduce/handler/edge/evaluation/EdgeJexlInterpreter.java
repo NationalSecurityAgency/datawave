@@ -16,7 +16,7 @@ public class EdgeJexlInterpreter extends Interpreter {
         super(engine, opts, context, eFrame);
     }
 
-    // we want to avoid short circuiting an OR so we generate all possible edges if they are group aware
+    // we want to avoid short-circuiting an OR so we generate all possible edges if they are group aware
     @Override
     public Object visit(ASTOrNode node, Object data) {
         Object left = node.jjtGetChild(0).jjtAccept(this, data);

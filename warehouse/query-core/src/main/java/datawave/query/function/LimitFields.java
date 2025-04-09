@@ -388,6 +388,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * A map that assumes a value for missing keys.
      */
     public static class CountMap extends HashMap<String,Integer> {
+        private static final long serialVersionUID = -736880224574416162L;
         private static final Integer ZERO = Integer.valueOf(0);
 
         @Override

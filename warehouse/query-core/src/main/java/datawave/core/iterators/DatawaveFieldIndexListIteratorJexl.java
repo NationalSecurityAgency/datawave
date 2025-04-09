@@ -2,6 +2,7 @@ package datawave.core.iterators;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -247,11 +248,15 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
                     throw new IllegalArgumentException("Compression codec " + compressionCodec + " in not a subclass of CompressionCodec.", e);
                 }
                 try {
-                    codec = codecClass.newInstance();
+                    codec = codecClass.getDeclaredConstructor().newInstance();
                 } catch (InstantiationException e) {
                     throw new IllegalArgumentException("Compression codec " + compressionCodec + " could not be instantiated.", e);
                 } catch (IllegalAccessException e) {
                     throw new IllegalArgumentException("Compression codec " + compressionCodec + " could not be accessed.", e);
+                } catch (InvocationTargetException e) {
+                    throw new IllegalArgumentException("Compression code " + compressionCodec + " could not be invoked.", e);
+                } catch (NoSuchMethodException e) {
+                    throw new IllegalArgumentException("Comporession code " + compressionCodec + " method not found. ", e);
                 }
             }
 
