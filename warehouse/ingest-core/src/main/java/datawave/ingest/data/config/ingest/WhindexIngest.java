@@ -2,11 +2,13 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.HashMultimap;
@@ -18,6 +20,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctionsFactory;
+import org.apache.log4j.Logger;
 
 public interface WhindexIngest {
 
@@ -67,6 +70,8 @@ public interface WhindexIngest {
      * Responsible for parsing the {@code .rules} passed to the {@link WhindexIngest} and holding configuration information.
      */
     class WhindexFieldNormalizer {
+
+        private static final Logger log = Logger.getLogger(WhindexFieldNormalizer.class);
 
         // The property name that holds the whindex rules string in the configuration xml
         public static final String RULE = "rules";
@@ -132,6 +137,151 @@ public interface WhindexIngest {
                     }
                 }
             }
+        }
+
+        // TODO: MIGRATE THIS TO WFN
+        // TODO: WRITE TESTS ON THIS BAD BOY
+        // TODO: IMPLEMENT EQUALS AND HASH CODE FOR WHINDEX CONFIG
+
+        public static final String WHINDEX_RULES = "whindex.rules";
+        public static final String VALUE_FIELD = "value_field";
+        public static final String SRC_FIELD = "src_field";
+        public static final String DELETE_SRC_FIELD = "delete_src_field";
+        public static final String DST_FIELD = "dst_field";
+        public static final String VALUES = "values";
+
+        /* Property examples:
+        <type>.whindex.rules.1.value_field=APPLE
+        <type>.whindex.rules.1.values=X,Y,Z
+        <type>.whindex.rules.1.src_field=BANANA
+        <type>.whindex.rules.1.dst_field=HAT
+
+        <type>.whindex.rules.2.value_field=FRISBEE
+        <type>.whindex.rules.2.src_field=BASEBALL
+        <type>.whindex.rules.2.delete_src_field=true
+        <type>.whindex.rules.2.dst_field=KICKBALL
+        <type>.whindex.rules.2.values=X,Y,Z
+        <type>.whindex.rules.2.heyImNew=Whatever
+
+
+        If the event field contains one of the given values for the defined valueField, and has a mapping for the source
+        field, then add a field mapping that has the whindex field with the value of the source field.
+
+        */
+
+
+        /*
+        Sample event:
+
+        vf: APPLE -> vs: Y
+        sf: BANANA -> sfv: Blue
+
+        Rule 1 tells us to add the following field -> value mappings to the event fields:
+        df: HAT -> from-event-sfv: Blue
+
+
+         */
+
+        /*
+        Event 1:
+        FRISBEE -> AAA
+
+        BASEBALL -> Homerun
+
+        What would you make?
+        => Nothing, AAA is not part of the set of values for FRISBEE
+
+        Event 2:
+        APPLE -> Y
+
+        BANANA -> Blue
+        BANANA -> Green
+        BANANA -> Orange
+
+        What would you make?
+        HAT -> Blue
+        HAT -> Green
+        HAT -> Orange
+
+        Event 3:
+        FRISBEE -> X
+
+        GOLF -> Boring
+        FOOTBALL -> Tackle
+
+
+
+        What would you make?
+        => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
+         */
+
+
+        private class WhindexConfig {
+            private String valueField;
+            private List<String> values;
+            private String sourceField;
+            private String destField;
+            private boolean overloaded;
+
+
+        }
+
+        private Multimap<String, WhindexConfig> valueFieldsToConfigs = HashMultimap.create();
+
+        public void setup2(Type type, Configuration config) {
+            // The prefix common to all rules will be: <type>.whindex.rules.'
+            String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
+
+            /*
+            1.value_field=APPLE
+            1.values=X,Y,Z
+            1.src_field=BANANA
+            1.dst_field=HAT
+             */
+/*
+            class WHINDEX {
+                valueF:string
+                values:List<string>
+                srcF:string
+                df:string
+            }
+
+            Map<ID:string , WHINDEX>
+            */
+
+            Map<String, String> properties = config.getPropsWithPrefix(commonPrefix);
+            Map<String, WhindexConfig> groupingsToConfigs = new HashMap<>();
+
+            for (Map.Entry<String, String> entry : properties.entrySet()) {
+                String[] parts = entry.getKey().split("\\.");
+                String groupID = parts[0];
+                String property = parts[1];
+
+                WhindexConfig whindexConfig = groupingsToConfigs.computeIfAbsent(groupID, (k) -> new WhindexConfig());
+
+                switch (property){
+                    case VALUE_FIELD:
+                        whindexConfig.valueField = entry.getValue();
+                        break;
+                    case SRC_FIELD:
+                        whindexConfig.sourceField = entry.getValue();
+                        break;
+                    case DELETE_SRC_FIELD:
+                        whindexConfig.overloaded = Boolean.parseBoolean(entry.getValue());
+                        break;
+                    case DST_FIELD:
+                        whindexConfig.destField = entry.getValue();
+                        break;
+                    case VALUES:
+                        whindexConfig.values = List.of(entry.getValue().split(","));
+                        break;
+                    default:
+                        String originalProperty = commonPrefix + groupID + "." + property;
+                        log.warn("Unexpected whindex property given:" + originalProperty + "=" + entry.getValue());
+                }
+            }
+
+            groupingsToConfigs.values().forEach((v) -> valueFieldsToConfigs.put(v.valueField, v));
         }
 
         /**
