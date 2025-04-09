@@ -1262,50 +1262,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetches results from {@link #metadataTableName} and calculates the set of field index holes that exists for all indexed entries. The map consists of
-     * field names to datatypes to field index holes.
-     * 
-     * @param fields
-     *            the fields to fetch field index holes for, an empty set will result in all fields being fetched
-     * @param datatypes
-     *            the datatypes to fetch field index holes for, an empty set will result in all datatypes being fetched
-     * @param minThreshold
-     *            the minimum percentage threshold required for an index row to be considered NOT a hole on a particular date, this should be a value in the
-     *            range 0.0 to 1.0
-     * @return a map of field names and datatype pairs to field index holes
-     */
-    public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
-                    throws TableNotFoundException, IOException {
-        return getFieldIndexHoles(ColumnFamilyConstants.COLF_I, fields, datatypes, minThreshold);
-    }
-    
-    /**
-     * Fetches results from {@link #metadataTableName} and calculates the set of field index holes that exists for all reversed indexed entries. The map
-     * consists of field names to datatypes to field index holes.
-     * 
-     * @param fields
-     *            the fields to fetch field index holes for, an empty set will result in all fields being fetched
-     * @param datatypes
-     *            the datatypes to fetch field index holes for, an empty set will result in all datatypes being fetched
-     * @param minThreshold
-     *            the minimum percentage threshold required for an index row to be considered NOT a hole on a particular date, this should be a value in the
-     *            range 0.0 to 1.0
-     * @return a map of field names and datatype pairs to field index holes
-     */
-    public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
-                    throws TableNotFoundException, IOException {
-        return getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, fields, datatypes, minThreshold);
-    }
-    
-    /**
      * Get the field index holes for the provided fields and datatypes
      *
      * @param targetColumnFamily
      *            the target column family
-     * @param fields
-     *            a set of fields for which to get holes (can be empty to denote all)
-     * @param datatypes
-     *            a set of datatypes (can be empty to denote all)
      * @param minThreshold
      *            the minimum threshold
      * @return a map of index holes by datatype
@@ -1314,51 +1274,15 @@ public class AllFieldMetadataHelper {
      * @throws IOException
      *             if a value fails to deserialize
      */
-    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#fields,#datatypes,#minThreshold}",
+    @Cacheable(value = "getFieldIndexHoles", key = "{#root.target.auths,#root.target.metadataTableName,#targetColumnFamily,#minThreshold}",
                     cacheManager = "metadataHelperCacheManager", sync = true)
-    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, Set<String> fields, Set<String> datatypes, double minThreshold)
+    protected Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Text targetColumnFamily, double minThreshold)
                     throws TableNotFoundException, IOException {
-        // Handle null fields if given.
-        if (fields == null) {
-            fields = Collections.emptySet();
-        } else {
-            // Ensure null is not present as an entry in a local copy.
-            fields = new HashSet<>(fields);
-            fields.remove(null);
-        }
-        
-        // Handle null datatypes if given.
-        if (datatypes == null) {
-            datatypes = Collections.emptySet();
-        } else {
-            // Ensure null is not present as an entry in a local copy.
-            datatypes = new HashSet<>(datatypes);
-            datatypes.remove(null);
-        }
-        
+        log.debug("cache fault for getFieldIndexHoles({}, {}, {}, {})", this.auths, this.metadataTableName, targetColumnFamily, minThreshold);
         // remove fields that are not indexed at all by the specified datatypes
         Multimap<String,String> indexedFieldMap = (targetColumnFamily == ColumnFamilyConstants.COLF_I ? loadIndexedFields() : loadReverseIndexedFields());
-        Set<String> indexedFields;
-        if (datatypes.isEmpty()) {
-            indexedFields = new HashSet<>(indexedFieldMap.values());
-        } else {
-            indexedFields = new HashSet<>();
-            for (String datatype : datatypes) {
-                indexedFields.addAll(indexedFieldMap.get(datatype));
-            }
-        }
-        
-        // if the initial fields list is empty, then we want all possible holes
-        if (fields.isEmpty()) {
-            fields = indexedFields;
-        } else {
-            fields.retainAll(indexedFields);
-            
-            // if we have removed all fields, then there are no fields for which we can generate holes
-            if (fields.isEmpty()) {
-                return new HashMap<>();
-            }
-        }
+        Set<String> indexedFields = new HashSet<>();
+        indexedFields.addAll(indexedFieldMap.values());
         
         // Ensure the minThreshold is a percentage in the range 0%-100%.
         if (minThreshold > 1.0d) {
@@ -1381,21 +1305,9 @@ public class AllFieldMetadataHelper {
             bs.fetchColumnFamily(targetColumnFamily);
             
             // Determine which range to use.
-            Range range;
-            if (fields.isEmpty()) {
-                // If no fields are specified, scan over all entries in the table.
-                range = new Range();
-            } else if (fields.size() == 1) {
-                // If just one field is specified, limit the range to where the row is the field.
-                range = new Range(new Text(fields.iterator().next()));
-            } else {
-                // If more than one field is specified, sort the fields and limit the range from the lowest to highest field (lexicographically).
-                SortedSet<String> sortedFields = new TreeSet<>(fields);
-                range = new Range(new Text(sortedFields.first()), new Text(sortedFields.last()));
-            }
-            bs.setRange(range);
+            bs.setRange(new Range());
             
-            FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, fields, datatypes);
+            FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, indexedFields, Collections.emptySet());
             indexHoles = finder.findHoles();
         }
         return indexHoles;

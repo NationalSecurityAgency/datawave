@@ -56,13 +56,13 @@ import datawave.query.model.DateFrequencyMap;
 import datawave.query.model.IndexFieldHole;
 import datawave.util.time.DateHelper;
 
-class AllFieldMetadataHelperTest {
+class IndexFieldHoleTest {
     
     private static final String TABLE_METADATA = "metadata";
     private static final String[] AUTHS = {"FOO"};
     private static final String NULL_BYTE = "\0";
     private AccumuloClient accumuloClient;
-    private AllFieldMetadataHelper helper;
+    private MetadataHelper helper;
     
     private final List<Mutation> mutations = new ArrayList<>();
     
@@ -86,7 +86,9 @@ class AllFieldMetadataHelperTest {
         final Set<Authorizations> auths = Collections.singleton(new Authorizations(AUTHS));
         TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, accumuloClient, TABLE_METADATA, auths, false);
         CompositeMetadataHelper compositeMetadataHelper = new CompositeMetadataHelper(accumuloClient, TABLE_METADATA, auths);
-        helper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper, accumuloClient, TABLE_METADATA, auths, allMetadataAuths);
+        AllFieldMetadataHelper allHelper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper, accumuloClient, TABLE_METADATA, auths,
+                        allMetadataAuths);
+        helper = new MetadataHelper(allHelper, allMetadataAuths, accumuloClient, TABLE_METADATA, auths, allMetadataAuths);
     }
     
     /**
@@ -316,8 +318,7 @@ class AllFieldMetadataHelperTest {
     }
     
     /**
-     * Tests for {@link AllFieldMetadataHelper#getFieldIndexHoles(Set, Set, double)} and
-     * {@link AllFieldMetadataHelper#getReversedFieldIndexHoles(Set, Set, double)}.
+     * Tests for {@link MetadataHelper#getFieldIndexHoles(Set, Set, double)} and {@link MetadataHelper#getReversedFieldIndexHoles(Set, Set, double)}.
      */
     @Nested
     public class IndexFieldHoleTestsForNonAggregatedEntries extends AbstractIndexFieldHoleTests {
