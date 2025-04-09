@@ -31,32 +31,34 @@ public class ReloadFilesFromLoadedJob {
             String filename = parts[8];
 
             String dirPath = "/data/loaded/archive/" + datatype + "/" + year + "/" + month + "/" + day + "/";
-            String loadedPath = "hdfs:///data/loaded/" + datatype + "/" + year + "/" + month + "/" + day + "/";
+            Path loadedPath = new Path("hdfs:///data/loaded/" + datatype + "/" + year + "/" + month + "/" + day + "/");
+            Path harFilePath = null;
             String harFileDir = "har://" + dirPath;
             String hdfsArchiveDir = "hdfs://" + dirPath;
             // outputDir does not include hour as we will use the same relative path below.
             String outputDir = "hdfs:///data/" + datatype + "/" + year + "/" + month + "/" + day + "/";
 
+            boolean har = false;
+
             String hourAndFileName = hour + "/" + filename;
 
             FileSystem hdfs = FileSystem.get(context.getConfiguration());
 
-            Path harDirPath = new Path(hdfsArchiveDir);
-            if (hdfs.exists(harDirPath)) {
-                FileStatus[] filesInDir = hdfs.listStatus(harDirPath); // List all files in the directory
-                Path harFilePath = null;
+            Path archiveDirPath = new Path(hdfsArchiveDir);
+            if (hdfs.exists(archiveDirPath)) {
+                FileStatus[] filesInDir = hdfs.listStatus(archiveDirPath); // List all files in the directory
 
                 for (FileStatus fileStatus : filesInDir) {
                     if (fileStatus.getPath().getName().endsWith(".har")) {
-                        harFilePath = new Path(harFileDir, fileStatus.getPath().getName()); // Found the .har file
+                        harFilePath = new Path(harFileDir, fileStatus.getPath().getName());
+                        har = true;// Found the .har file
                         break;
+                    } else {
+                        loadedPath = fileStatus.getPath();
                     }
                 }
-
-                if (harFilePath == null) {
-                    throw new IOException("No .har file found in directory: " + harFileDir);
-                }
-
+            }
+            if (har) {
                 Path fileInHar = new Path(harFilePath, hourAndFileName);
                 Path outputPath = new Path(outputDir, hourAndFileName);
 
