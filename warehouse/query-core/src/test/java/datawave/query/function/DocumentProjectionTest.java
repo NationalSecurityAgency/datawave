@@ -20,7 +20,6 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
-import datawave.query.predicate.KeyProjection;
 import datawave.query.predicate.Projection;
 
 public class DocumentProjectionTest {
