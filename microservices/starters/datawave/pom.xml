@@ -25,7 +25,7 @@
     <properties>
         <version.accumulo>2.1.1</version.accumulo>
         <version.beanutils>1.9.4</version.beanutils>
-        <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
+        <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.authorization-api>4.0.1</version.datawave.authorization-api>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
         <version.datawave.cache-starter>4.0.0</version.datawave.cache-starter>
