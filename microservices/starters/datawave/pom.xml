@@ -85,11 +85,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>common-utils</artifactId>
-                <version>${version.datawave.common-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
@@ -125,14 +120,14 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>authorization-api</artifactId>
-                <version>${version.datawave.authorization-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>common-utils</artifactId>
+                <version>${version.datawave.common-utils}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
@@ -156,6 +151,11 @@
                         <groupId>org.slf4j</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>authorization-api</artifactId>
+                <version>${version.datawave.authorization-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -251,19 +251,19 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>common-utils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
