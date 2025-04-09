@@ -9,6 +9,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.type.HexStringType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -22,6 +24,8 @@ import datawave.query.util.TypeMetadata;
  * Test document serialization with various attributes
  */
 public class DocumentTest {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentTest.class);
 
     private final String datatype = "datatype";
     private final Key documentKey = new Key("row", "datatype\0uid");
@@ -118,7 +122,7 @@ public class DocumentTest {
 
     protected void roundTrip(int max) {
         Entry<Key,Value> entry = serialize(d);
-        System.out.println("size: " + entry.getValue().getSize());
+        log.trace("size: {}", entry.getValue().getSize());
         for (int i = 0; i < max; i++) {
             Entry<Key,Document> result = deserialize(entry);
             Document d2 = result.getValue();

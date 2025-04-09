@@ -153,7 +153,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         } catch (Exception ex) {
             // there was some problem with setting the delegate as the declared type.
             // Instead of letting this exception fail the query, make this a NoOpType containing the string value from the input
-            log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from input:" + normalizedValue + "  Making a NoOpType instead.");
+            log.warn("Was unable to make a " + datawaveType.getClass().getSimpleName() + " to contain a delegate created from input:" + normalizedValue
+                            + "  Making a " + NoOpType.class.getSimpleName() + " instead.");
             datawaveType = (Type) new NoOpType();
             datawaveType.setDelegateFromString(normalizedValue);
             datawaveType.setNormalizedValue(normalizedValue);
