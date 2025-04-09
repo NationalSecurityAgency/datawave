@@ -19,7 +19,7 @@
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave/v1</datawave.webservice.namespace>
         <version.datawave>7.3.0</version.datawave>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.starter-query>1.0.5</version.datawave.starter-query>
     </properties>
     <dependencyManagement>
@@ -40,7 +40,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
                 <exclusions>
@@ -65,7 +65,7 @@
             <artifactId>datawave-core-connection-pool</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>

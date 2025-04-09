@@ -18,8 +18,8 @@
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
-        <version.datawave.metadata-utils>4.0.5</version.datawave.metadata-utils>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
+        <version.datawave.metadata-utils>4.0.15</version.datawave.metadata-utils>
         <version.guava>31.1-jre</version.guava>
     </properties>
     <dependencyManagement>
@@ -30,7 +30,7 @@
                 <version>${version.guava}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
                 <exclusions>
@@ -45,7 +45,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
@@ -67,11 +67,11 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>metadata-utils</artifactId>
         </dependency>
         <dependency>

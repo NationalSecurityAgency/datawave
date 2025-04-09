@@ -27,10 +27,10 @@
         <version.beanutils>1.9.4</version.beanutils>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
         <version.datawave.authorization-api>4.0.1</version.datawave.authorization-api>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.cache-starter>4.0.0</version.datawave.cache-starter>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
-        <version.datawave.metadata-utils>4.0.5</version.datawave.metadata-utils>
+        <version.datawave.metadata-utils>4.0.15</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
@@ -84,7 +84,12 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>common-utils</artifactId>
+                <version>${version.datawave.common-utils}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
@@ -125,17 +130,12 @@
                 <version>${version.datawave.authorization-api}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>common-utils</artifactId>
-                <version>${version.datawave.common-utils}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
@@ -250,7 +250,11 @@
             <artifactId>commons-beanutils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
@@ -258,12 +262,8 @@
             <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

@@ -24,7 +24,7 @@
         <version.datawave>7.14.1</version.datawave>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
         <version.datawave.accumulo-utils>4.0.1</version.datawave.accumulo-utils>
-        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.base-rest-responses>4.0.1</version.datawave.base-rest-responses>
         <version.datawave.hazelcast-common>4.0.2</version.datawave.hazelcast-common>
         <version.datawave.query-metric-api>4.0.11</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.3</version.datawave.starter>
@@ -163,7 +163,7 @@
                 <version>${version.datawave.accumulo-api}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
@@ -174,7 +174,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave.base-rest-responses}</version>
             </dependency>
