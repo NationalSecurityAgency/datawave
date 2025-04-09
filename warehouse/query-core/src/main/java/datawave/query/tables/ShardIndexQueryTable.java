@@ -420,6 +420,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
+     *            The query checkpoint
      */
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {

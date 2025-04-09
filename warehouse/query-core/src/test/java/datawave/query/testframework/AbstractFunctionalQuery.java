@@ -71,8 +71,8 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
@@ -176,7 +176,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMarkingFunctions(new Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setQueryPlanner(new FederatedQueryPlanner());
+        logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         logic.setCollectTimingDetails(true);
@@ -548,7 +548,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
 
         RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
                         new QueryMetricFactoryImpl());
-        TransformIterator it = runner.getTransformIterator();
+        TransformIterator<?,?> it = runner.getTransformIterator();
         ShardQueryCountTableTransformer ctt = (ShardQueryCountTableTransformer) it.getTransformer();
         EventQueryResponseBase resp = (EventQueryResponseBase) ctt.createResponse(runner.next());
 
@@ -559,7 +559,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         EventBase<?,?> event = events.get(0);
         List<?> fields = event.getFields();
         Assert.assertEquals(1, fields.size());
-        FieldBase<?> count = (FieldBase) fields.get(0);
+        FieldBase<?> count = (FieldBase<?>) fields.get(0);
         String val = count.getValueString();
         if (log.isDebugEnabled()) {
             log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");

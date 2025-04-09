@@ -19,7 +19,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 6706096621887672254L;
 
     private static final GeoNormalizer normalizer = new GeoNormalizer();
 

@@ -1,0 +1,127 @@
+spring:
+  application:
+    name: query-starter-test
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
+  security:
+    user.password: passwordNotUsed
+    datawave:
+      jwt.ttl: 3600
+      issuers-required: true
+      enforce-allowed-callers: false
+      allowed-callers:
+        - "cn=test keystore, ou=my department, o=my company, st=some-state, c=us<cn=test keystore, ou=my department, o=my company, st=some-state, c=us>"
+
+hazelcast.client.enabled: false
+
+datawave.query.metric.client.enabled: false
+
+server:
+  port: 0
+  non-secure-port: 0
+  servlet.context-path: /query-starter-test
+  ssl:
+    client-auth: NEED
+    trust-store: 'classpath:testCA.p12'
+    trust-store-type: PKCS12
+    trust-store-password: 'ChangeIt'
+    key-store: 'classpath:testServer.p12'
+    key-store-type: PKCS12
+    key-store-password: 'ChangeIt'
+  outbound-ssl:
+    key-store: ${server.ssl.key-store}
+    key-store-password: ${server.ssl.key-store-password}
+    key-store-type: ${server.ssl.key-store-type}
+    trust-store: ${server.ssl.trust-store}
+    trust-store-password: ${server.ssl.trust-store-password}
+    trust-store-type: ${server.ssl.trust-store-type}
+
+logging:
+  level:
+    root: warn
+    datawave.microservice.query.storage: ERROR
+    io.undertow.request: FATAL
+    org.apache.kafka: ERROR
+    kafka: FATAL
+
+---
+
+spring.config.activate.on-profile: use-test
+
+datawave:
+  query:
+    messaging:
+      backend: test
+
+---
+
+spring.config.activate.on-profile: use-rabbit
+
+datawave:
+  query:
+    messaging:
+      backend: rabbitmq
+
+---
+
+spring.config.activate.on-profile: use-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: earliest
+      enableAutoCommit: false
+
+datawave:
+  query:
+    messaging:
+      backend: kafka
+
+---
+
+spring.config.activate.on-profile: use-hazelcast
+
+datawave:
+  query:
+    messaging:
+      backend: hazelcast
+      hazelcast:
+        splitBrainProtectionEnabled: false
+
+---
+
+spring.config.activate.on-profile: use-embedded-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: "${spring.embedded.kafka.brokers}"
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: earliest
+      enableAutoCommit: false
+datawave:
+  query:
+    messaging:
+      backend: kafka
+
+---
+
+spring.config.activate.on-profile: federatedQueryServiceTest
+
+datawave:
+  query:
+    federation:
+      services:
+        FederatedQueryService:
+          queryServiceUri: 'https://query:8443/query/v1'
+          queryMetricServiceUri: 'https://querymetric:8443/querymetric/v1/id'
+
+---
+
+spring.config.activate.on-profile: missing
+
+
