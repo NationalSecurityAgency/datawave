@@ -23,6 +23,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
     private String jqueryUri;
     private String dataTablesUri;
     private String modelTableName;
+    private String systemName;
     
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Model Names";
@@ -31,10 +32,15 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[0, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
     
-    public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
+    public ModelList(String jqueryUri, String datatablesUri, String modelTableName, String systemName) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
         this.modelTableName = modelTableName;
+        this.systemName = systemName;
+    }
+    
+    public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
+        this(jqueryUri, datatablesUri, modelTableName, "unknown");
     }
     
     @XmlElementWrapper(name = "ModelNames")
@@ -82,6 +88,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
+        builder.append("<div id = \"system-name\"><p>Cluster: ").append(systemName).append("</p></div>");
         
         if (this.getNames() == null || this.getNames().isEmpty()) {
             builder.append("No models available.");

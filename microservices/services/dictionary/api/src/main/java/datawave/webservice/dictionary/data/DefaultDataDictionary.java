@@ -35,6 +35,7 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
     
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Data Dictionary", EMPTY_STR = "", SEP = ", ";
+    private String dataDictionarySystem = null;
     
     /*
      * Loads jQuery, DataTables, some CSS elements for DataTables, and executes `.dataTables()` on the HTML table in the payload.
@@ -82,6 +83,14 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
     
     public void setFields(Collection<DefaultMetadataField> fields) {
         this.fields = Lists.newArrayList(fields);
+    }
+    
+    public String getDataDictionarySystem() {
+        return dataDictionarySystem == null ? null : dataDictionarySystem;
+    }
+    
+    public void setDataDictionarySystem(String dataDictionarySystem) {
+        this.dataDictionarySystem = dataDictionarySystem;
     }
     
     public static Schema<DefaultDataDictionary> getSchema() {
@@ -200,6 +209,7 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder(2048);
+        builder.append("<div id = \"system-name\"><p>Cluster: ").append(dataDictionarySystem).append("</p></div>");
         builder.append("<div>");
         builder.append("<p style=\"width:60%; margin-left: auto; margin-right: auto;\">When a value is present in the forward index types, this means that a field is indexed and informs you how your ");
         builder.append("query terms will be treated (e.g. text, number, IPv4 address, etc). The same applies for the reverse index types with ");

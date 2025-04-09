@@ -28,7 +28,7 @@ import datawave.webservice.dictionary.edge.EventField;
 
 public class EdgeDictionaryImpl implements EdgeDictionary<DefaultEdgeDictionary,DefaultMetadata> {
     private static final Logger log = LoggerFactory.getLogger(EdgeDictionaryImpl.class);
-    
+    private String edgeDictionarySystem = "";
     private final MetadataHelperFactory metadataHelperFactory;
     
     public EdgeDictionaryImpl(MetadataHelperFactory metadataHelperFactory) {
@@ -45,6 +45,16 @@ public class EdgeDictionaryImpl implements EdgeDictionary<DefaultEdgeDictionary,
         
         // Convert them into the DataDictionary response object
         return transformResults(metadataHelper.getEdges());
+    }
+    
+    @Override
+    public String getEdgeDictionarySystem() {
+        return edgeDictionarySystem;
+    }
+    
+    @Override
+    public void setEdgeDictionarySystem(String edgeDictionarySystem) {
+        this.edgeDictionarySystem = edgeDictionarySystem;
     }
     
     // consume the iterator, parse key/value pairs into Metadata stuff

@@ -2305,7 +2305,7 @@ public class QueryManagementService implements QueryRequestHandler {
     private String getSelfDestination() {
         String id = busProperties.getId();
         if (id.contains(":")) {
-            return id.substring(0, id.indexOf(":"));
+            return id.substring(0, id.indexOf(':'));
         }
         return id;
     }

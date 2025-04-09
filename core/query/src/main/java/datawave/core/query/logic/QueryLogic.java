@@ -112,7 +112,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     default String getResponseClass(Query query) throws QueryException {
         try {
-            QueryLogicTransformer t = this.getEnrichedTransformer(query);
+            QueryLogicTransformer<?,?> t = this.getEnrichedTransformer(query);
             BaseResponse refResponse = t.createResponse(new ResultsPage());
             return refResponse.getClass().getCanonicalName();
         } catch (RuntimeException e) {
