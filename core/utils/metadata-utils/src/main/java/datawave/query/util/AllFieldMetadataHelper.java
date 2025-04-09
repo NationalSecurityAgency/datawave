@@ -854,8 +854,12 @@ public class AllFieldMetadataHelper {
         String date = identifier.getValue();
         
         final HashMap<String,Long> datatypeToCounts;
-        
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
+
+        AccumuloClient clientToUse = accumuloClient;
+        if (clientToUse instanceof WrappedAccumuloClient) {
+            clientToUse = ((WrappedAccumuloClient) clientToUse).getReal();
+        }
+        try (Scanner scanner = ScannerHelper.createScanner(clientToUse, metadataTableName, auths)) {
             scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
             
