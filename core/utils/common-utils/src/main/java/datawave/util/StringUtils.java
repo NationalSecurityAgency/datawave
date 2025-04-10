@@ -66,19 +66,22 @@ public class StringUtils {
         protected int toIndex;
         protected String next;
 
+        /**
+         * If used then setup must be called by extended class
+         **/
+        SplitIterable() {}
+
         public SplitIterable(String str, char delimiter, boolean includeEmptyStrings) {
-            this(str, delimiter, includeEmptyStrings, true);
+            setup(str, delimiter, includeEmptyStrings);
         }
 
-        protected SplitIterable(String str, char delimiter, boolean includeEmptyStrings, boolean getNext) {
+        protected void setup(String str, char delimiter, boolean includeEmptyStrings) {
             this.str = str;
             this.delimiter = delimiter;
             this.includeEmptyStrings = includeEmptyStrings;
             fromIndex = 0;
             toIndex = str.indexOf(delimiter);
-            if (getNext) {
-                getNext();
-            }
+            getNext();
         }
 
         @Override
@@ -217,7 +220,7 @@ public class StringUtils {
      */
     public static class SubSplitIterable extends SplitIterable implements Iterable<String>, Iterator<String> {
         int stringIndex;
-        int[] indexesToReturn;
+        int[] indexesToReturn = null;
         int indexesIndex;
 
         /**
@@ -229,11 +232,10 @@ public class StringUtils {
          *            The must be a sorted list of string indexes to return
          */
         public SubSplitIterable(String str, char delimiter, boolean includeEmptyStrings, int[] indexes) {
-            super(str, delimiter, includeEmptyStrings, false);
             indexesToReturn = indexes;
             indexesIndex = 0;
             stringIndex = -1;
-            getNext();
+            setup(str, delimiter, includeEmptyStrings);
         }
 
         protected void getNext() {
