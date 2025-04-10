@@ -21,14 +21,11 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
     @Override
     public List<String> normalizeToMany(String in) {
         String[] splits = StringUtils.split(in, delimiter);
-        List<String> strings = new ArrayList(splits.length);
+        List<String> strings = new ArrayList<>(splits.length);
         for (String s : splits) {
-            
             String str = normalizer.normalize(s);
             strings.add(str);
-            
         }
-        
         return strings;
     }
     
@@ -43,8 +40,10 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
      * Assumes that {@link #setDelegate(Comparable)} has been called
      */
     public void setNormalizedValueFromDelegate() {
-        this.normalizedValue = getDelegateAsString();
-        this.normalizedValues = normalizeToMany(getDelegateAsString());
+        if (normalizedValue == null) {
+            normalizedValue = getDelegateAsString();
+        }
+        this.normalizedValues = normalizeToMany(this.normalizedValue);
     }
     
     @Override

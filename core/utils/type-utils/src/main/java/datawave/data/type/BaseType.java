@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
 import datawave.data.normalizer.Normalizer;
 import datawave.webservice.query.data.ObjectSizeOf;
 
@@ -56,6 +57,7 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
      * Use the normalizer and delegate to set the normalized value. Assumes that {@link #setDelegate(Comparable)} has been called.
      */
     public void setNormalizedValueFromDelegate() {
+        Preconditions.checkNotNull(delegate, "Tried to set normalized value from delegate, but delegate was null");
         this.normalizedValue = normalizer.normalizeDelegateType(this.delegate);
     }
     
