@@ -30,13 +30,9 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>datawave-core-connection-pool</artifactId>
-                <version>${version.datawave}</version>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.datawave.base-rest-responses}</version>
                 <exclusions>
-                    <exclusion>
-                        <artifactId>log4j</artifactId>
-                        <groupId>log4j</groupId>
-                    </exclusion>
                     <exclusion>
                         <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
@@ -45,9 +41,13 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>base-rest-responses</artifactId>
-                <version>${version.datawave.base-rest-responses}</version>
+                <artifactId>datawave-core-connection-pool</artifactId>
+                <version>${version.datawave}</version>
                 <exclusions>
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
                     <exclusion>
                         <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
