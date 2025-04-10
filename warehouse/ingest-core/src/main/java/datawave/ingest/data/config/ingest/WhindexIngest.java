@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import datawave.ingest.data.config.NormalizedFieldAndValue;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -19,9 +19,9 @@ import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctionsFactory;
-import org.apache.log4j.Logger;
 
 public interface WhindexIngest {
 
@@ -29,7 +29,8 @@ public interface WhindexIngest {
      * Used to allow external scopes to interface with the WhindexIngest's WhindexFieldNormalizer's .setup() method. Initializes the WhindexIngest from a
      * {@link Configuration}.
      *
-     * @param config the {@link Configuration}.
+     * @param config
+     *            the {@link Configuration}.
      */
     void setup(Configuration config) throws IllegalArgumentException;
 
@@ -39,10 +40,11 @@ public interface WhindexIngest {
      *
      * @return the mapping of whindex fields to values.
      */
-    Multimap<String, String> getWhindexFieldDefinitions();
+    Multimap<String,String> getWhindexFieldDefinitions();
 
     /**
-     * @param field the field to check.
+     * @param field
+     *            the field to check.
      * @return {@code true} if {@code field} is a whindex field.
      */
     boolean isWhindexField(String field);
@@ -51,7 +53,8 @@ public interface WhindexIngest {
      * {@code OverloadedWhindexField}s are source fields ("{@code SRC_FIELD}") that become redundant once whindex entries are generated. They are marked to be
      * removed.
      *
-     * @param field the field to check.
+     * @param field
+     *            the field to check.
      * @return {@code true} if {@code field} is an {@code OverloadedWhindexField} (marked for removal)
      */
     boolean isOverloadedWhindexField(String field);
@@ -62,7 +65,7 @@ public interface WhindexIngest {
      *
      * @return the mapping of whindex fields to values.
      */
-    Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventFields);
+    Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventFields);
 
     /**
      * Responsible for parsing the {@code .rules} passed to the {@link WhindexIngest} and holding configuration information.
@@ -90,15 +93,17 @@ public interface WhindexIngest {
         public static final String SRC_DST_DEL_DELIMITER = ":";
 
         // Mappings of source fields to their respective whindex field.
-        private final Multimap<String, String> whindexFieldDefinitions = LinkedListMultimap.create();
+        private final Multimap<String,String> whindexFieldDefinitions = LinkedListMultimap.create();
         private final Set<String> overloadedFields = new HashSet<>();
         private MarkingFunctions markingFunctions;
 
         /**
          * Parses the {@code config}'s "{@code <datatype>.rules"} property, generating whindex entries based on each rule.
          *
-         * @param type   the datatype we're looking for.
-         * @param config the config instance that holds the rules.
+         * @param type
+         *            the datatype we're looking for.
+         * @param config
+         *            the config instance that holds the rules.
          */
         public void setup(Type type, Configuration config) {
             markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
@@ -146,70 +151,50 @@ public interface WhindexIngest {
         public static final String DST_FIELD = "dst_field";
         public static final String VALUES = "values";
 
-        /* Property examples:
-        <type>.whindex.rules.1.value_field=APPLE
-        <type>.whindex.rules.1.values=X,Y,Z
-        <type>.whindex.rules.1.src_field=BANANA
-        <type>.whindex.rules.1.dst_field=HAT
-
-        <type>.whindex.rules.2.value_field=FRISBEE
-        <type>.whindex.rules.2.src_field=BASEBALL
-        <type>.whindex.rules.2.delete_src_field=true
-        <type>.whindex.rules.2.dst_field=KICKBALL
-        <type>.whindex.rules.2.values=X,Y,Z
-
-
-        If the event field contains one of the given values for the defined valueField, and has a mapping for the source
-        field, then add a field mapping that has the whindex field with the value of the source field.
-
-        */
-
-
         /*
-        Sample event:
-
-        vf: APPLE -> vs: Y
-        sf: BANANA -> sfv: Blue
-
-        Rule 1 tells us to add the following field -> value mappings to the event fields:
-        df: HAT -> from-event-sfv: Blue
-
-
+         * Property examples: <type>.whindex.rules.1.value_field=APPLE <type>.whindex.rules.1.values=X,Y,Z <type>.whindex.rules.1.src_field=BANANA
+         * <type>.whindex.rules.1.dst_field=HAT
+         *
+         * <type>.whindex.rules.2.value_field=FRISBEE <type>.whindex.rules.2.src_field=BASEBALL <type>.whindex.rules.2.delete_src_field=true
+         * <type>.whindex.rules.2.dst_field=KICKBALL <type>.whindex.rules.2.values=X,Y,Z
+         *
+         *
+         * If the event field contains one of the given values for the defined valueField, and has a mapping for the source field, then add a field mapping that
+         * has the whindex field with the value of the source field.
+         *
          */
 
         /*
-        Event 1:
-        FRISBEE -> AAA
-
-        BASEBALL -> Homerun
-
-        What would you make?
-        => Nothing, AAA is not part of the set of values for FRISBEE
-
-        Event 2:
-        APPLE -> Y
-
-        BANANA -> Blue
-        BANANA -> Green
-        BANANA -> Orange
-
-        What would you make?
-        HAT -> Blue
-        HAT -> Green
-        HAT -> Orange
-
-        Event 3:
-        FRISBEE -> X
-
-        GOLF -> Boring
-        FOOTBALL -> Tackle
-
-
-
-        What would you make?
-        => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
+         * Sample event:
+         *
+         * vf: APPLE -> vs: Y sf: BANANA -> sfv: Blue
+         *
+         * Rule 1 tells us to add the following field -> value mappings to the event fields: df: HAT -> from-event-sfv: Blue
+         *
+         *
          */
 
+        /*
+         * Event 1: FRISBEE -> AAA
+         *
+         * BASEBALL -> Homerun
+         *
+         * What would you make? => Nothing, AAA is not part of the set of values for FRISBEE
+         *
+         * Event 2: APPLE -> Y
+         *
+         * BANANA -> Blue BANANA -> Green BANANA -> Orange
+         *
+         * What would you make? HAT -> Blue HAT -> Green HAT -> Orange
+         *
+         * Event 3: FRISBEE -> X
+         *
+         * GOLF -> Boring FOOTBALL -> Tackle
+         *
+         *
+         *
+         * What would you make? => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
+         */
 
         private class WhindexConfig {
 
@@ -267,9 +252,11 @@ public interface WhindexIngest {
 
             @Override
             public boolean equals(Object o) {
-                if (o == null || getClass() != o.getClass()) return false;
+                if (o == null || getClass() != o.getClass())
+                    return false;
                 WhindexConfig config = (WhindexConfig) o;
-                return overloaded == config.overloaded && Objects.equals(valueField, config.valueField) && Objects.equals(values, config.values) && Objects.equals(sourceField, config.sourceField) && Objects.equals(destField, config.destField);
+                return overloaded == config.overloaded && Objects.equals(valueField, config.valueField) && Objects.equals(values, config.values)
+                                && Objects.equals(sourceField, config.sourceField) && Objects.equals(destField, config.destField);
             }
 
             @Override
@@ -279,33 +266,25 @@ public interface WhindexIngest {
 
         }
 
-        private Multimap<String, WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
+        private Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
 
         public void setup2(Type type, Configuration config) {
             // The prefix common to all rules will be: <type>.whindex.rules.'
             String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
 
             /*
-            1.value_field=APPLE
-            1.values=X,Y,Z
-            1.src_field=BANANA
-            1.dst_field=HAT
+             * 1.value_field=APPLE 1.values=X,Y,Z 1.src_field=BANANA 1.dst_field=HAT
              */
-/*
-            class WHINDEX {
-                valueF:string
-                values:List<string>
-                srcF:string
-                df:string
-            }
+            /*
+             * class WHINDEX { valueF:string values:List<string> srcF:string df:string }
+             *
+             * Map<ID:string , WHINDEX>
+             */
 
-            Map<ID:string , WHINDEX>
-            */
+            Map<String,String> properties = config.getPropsWithPrefix(commonPrefix);
+            Map<String,WhindexConfig> groupingsToConfigs = new HashMap<>();
 
-            Map<String, String> properties = config.getPropsWithPrefix(commonPrefix);
-            Map<String, WhindexConfig> groupingsToConfigs = new HashMap<>();
-
-            for (Map.Entry<String, String> entry : properties.entrySet()) {
+            for (Map.Entry<String,String> entry : properties.entrySet()) {
                 String[] parts = entry.getKey().split("\\.");
                 String groupID = parts[0];
                 String property = parts[1];
@@ -343,7 +322,7 @@ public interface WhindexIngest {
          *
          * @return the mapping of whindex fields to values.
          */
-        public Multimap<String, String> getWhindexFieldDefinitions() {
+        public Multimap<String,String> getWhindexFieldDefinitions() {
             return whindexFieldDefinitions;
         }
 
@@ -358,7 +337,8 @@ public interface WhindexIngest {
         }
 
         /**
-         * @param field the field to check.
+         * @param field
+         *            the field to check.
          * @return {@code true} if {@code field} is a whindex field.
          */
         public boolean isWhindexField(String field) {
@@ -367,25 +347,25 @@ public interface WhindexIngest {
 
         /**
          * // todo Given a "{@code RULE}", return a {@code Multimap<String, NormalizedContentInterface>} of whindex fields ("{@code DST_FIELD}") mapped to the
-         * values specified by the {@code RULE}.
-         * FieldName / Normalized FieldName and Normalized Values
+         * values specified by the {@code RULE}. FieldName / Normalized FieldName and Normalized Values
          *
          * @return the mapping of whindex fields to values.
          */
-        public Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventFieldValuePairsSet) {
+        public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventFieldValuePairsSet) {
 
-            Multimap<String, NormalizedContentInterface> newWhindexFields = HashMultimap.create();
+            Multimap<String,NormalizedContentInterface> newWhindexFields = HashMultimap.create();
 
             for (WhindexConfig currConfig : valueFieldsToWhindexConfigs.values()) {
                 if (eventFieldValuePairsSet.containsKey(currConfig.getValueField()) && eventFieldValuePairsSet.containsKey(currConfig.getSourceField())) {
 
-                    Collection<NormalizedContentInterface> eventValues = eventFieldValuePairsSet.get(currConfig.getValueField()); // Multiple NCI since its a multimap!!!
+                    Collection<NormalizedContentInterface> eventValues = eventFieldValuePairsSet.get(currConfig.getValueField()); // Multiple NCI since its a
+                                                                                                                                  // multimap!!!
                     boolean containsAnyMatchingValueFieldValue = false;
 
                     for (NormalizedContentInterface eventValue : eventValues) {
 
-                        if (currConfig.getValues().contains(eventValue.getEventFieldValue()) ||
-                                currConfig.getValues().contains(eventValue.getIndexedFieldValue())) {
+                        if (currConfig.getValues().contains(eventValue.getEventFieldValue())
+                                        || currConfig.getValues().contains(eventValue.getIndexedFieldValue())) {
                             containsAnyMatchingValueFieldValue = true;
                             break;
                         }
@@ -410,46 +390,32 @@ public interface WhindexIngest {
 
         }
 
-           /*
-        Sample event:
-        vf: APPLE -> vfv's: Y [EVENT]
-        sf: BANANA -> sfv: Blue [WHINDEX]
-        df: HAT -> from-event-sfv: Blue [MIX]
-
-
+        /*
+         * Sample event: vf: APPLE -> vfv's: Y [EVENT] sf: BANANA -> sfv: Blue [WHINDEX] df: HAT -> from-event-sfv: Blue [MIX]
+         *
+         *
          */
 
         /*
-        Event 1:
-        FRISBEE -> AAA
-
-        BASEBALL -> Homerun
-
-        What would you make?
-        => Nothing, AAA is not part of the set of values for FRISBEE
-
-        Event 2:
-        APPLE -> Y
-
-        BANANA -> Blue
-        BANANA -> Green
-        BANANA -> Orange
-
-        What would you make?
-        HAT -> Blue
-        HAT -> Green
-        HAT -> Orange
-
-        Event 3:
-        FRISBEE -> X
-
-        GOLF -> Boring
-        FOOTBALL -> Tackle
-
-
-
-        What would you make?
-        => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
+         * Event 1: FRISBEE -> AAA
+         *
+         * BASEBALL -> Homerun
+         *
+         * What would you make? => Nothing, AAA is not part of the set of values for FRISBEE
+         *
+         * Event 2: APPLE -> Y
+         *
+         * BANANA -> Blue BANANA -> Green BANANA -> Orange
+         *
+         * What would you make? HAT -> Blue HAT -> Green HAT -> Orange
+         *
+         * Event 3: FRISBEE -> X
+         *
+         * GOLF -> Boring FOOTBALL -> Tackle
+         *
+         *
+         *
+         * What would you make? => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
          */
 
     }
