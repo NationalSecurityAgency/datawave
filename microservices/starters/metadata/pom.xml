@@ -81,7 +81,7 @@
             <artifactId>datawave-core-connection-pool</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>metadata-utils</artifactId>
             <exclusions>
                 <exclusion>
