@@ -1,5 +1,7 @@
 package datawave.data.type.util;
 
+import org.apache.datasketches.common.SuppressFBWarnings;
+
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -347,6 +349,7 @@ public class IpV4Address extends IpAddress {
     }
 
     @Override
+    @SuppressFBWarnings(value = "EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS", justification = "this has been well tested")
     public boolean equals(Object o) {
         IpV4Address other = null;
         if (o instanceof IpV6Address) {

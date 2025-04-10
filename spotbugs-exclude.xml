@@ -26,6 +26,10 @@
     -->
 
     <Match>
+        <Class name="~datawave\.metadata\.protobuf\.EdgeMetadata.*" />
+    </Match>
+
+    <Match>
         <Class name="~datawave\.edge\.protobuf\.EdgeData.*" />
     </Match>
 
