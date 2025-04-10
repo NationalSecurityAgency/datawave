@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
+
 import datawave.data.normalizer.Normalizer;
 import datawave.webservice.query.data.ObjectSizeOf;
 
