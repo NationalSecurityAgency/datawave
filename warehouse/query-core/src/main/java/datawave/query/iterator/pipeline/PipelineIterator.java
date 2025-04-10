@@ -151,6 +151,9 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
 
             return next;
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             // cancel out existing executions
             cancel();
 

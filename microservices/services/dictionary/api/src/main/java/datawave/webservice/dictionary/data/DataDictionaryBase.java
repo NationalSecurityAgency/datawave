@@ -22,6 +22,10 @@ public abstract class DataDictionaryBase<T,M extends MetadataFieldBase> extends 
     
     public abstract void setFields(Collection<M> fields);
     
+    public abstract String getDataDictionarySystem();
+    
+    public abstract void setDataDictionarySystem(String dataDictionarySystem);
+    
     public abstract void setTotalResults(long totalResults);
     
     public abstract long getTotalResults();

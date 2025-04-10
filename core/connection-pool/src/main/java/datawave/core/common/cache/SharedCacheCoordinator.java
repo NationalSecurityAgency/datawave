@@ -48,7 +48,7 @@ public class SharedCacheCoordinator implements Serializable {
         void evict(String dn);
     }
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -25185425479055590L;
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
 
@@ -726,11 +726,17 @@ public class SharedCacheCoordinator implements Serializable {
                         String recursiveDeletePath = ZKPaths.makePath(curatorClient.getNamespace(), path);
                         ZKUtil.deleteRecursive(curatorClient.getZookeeperClient().getZooKeeper(), recursiveDeletePath);
                     } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
                         log.trace("Problem deleting {} (this may be ok): {}", path, e.getMessage(), e);
                     }
                 }
             }
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.warn("Error cleaning up eviction notices: {}", e.getMessage(), e);
         }
     }

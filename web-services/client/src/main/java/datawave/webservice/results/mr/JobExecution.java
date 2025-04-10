@@ -21,7 +21,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class JobExecution implements Serializable, Message<JobExecution>, Comparable<JobExecution> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2432483170643338056L;
 
     @XmlAttribute(name = "mapReduceJobId")
     private String mapReduceJobId;

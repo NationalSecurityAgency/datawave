@@ -68,7 +68,7 @@ public class QueryMetricOperationsStats {
     protected Map<String,String> staticTags = new LinkedHashMap<>();
     
     public enum TIMERS {
-        REST, STORE
+        QUERY, QUERY_FROM_CACHE, QUERY_FROM_CACHE_AND_ACCUMULO, QUERY_FROM_ACCUMULO, REST, STORE
     }
     
     public enum METERS {
@@ -247,6 +247,10 @@ public class QueryMetricOperationsStats {
         addTimerStats("store", getTimer(TIMERS.STORE), stats);
         addTimerStats("accumulo.write", this.mapStore.getWriteTimer(), stats);
         addTimerStats("accumulo.read", this.mapStore.getReadTimer(), stats);
+        addTimerStats("query", getTimer(TIMERS.QUERY), stats);
+        addTimerStats("queryCache", getTimer(TIMERS.QUERY_FROM_CACHE), stats);
+        addTimerStats("queryCacheAndAccumulo", getTimer(TIMERS.QUERY_FROM_CACHE_AND_ACCUMULO), stats);
+        addTimerStats("queryAccumulo", getTimer(TIMERS.QUERY_FROM_ACCUMULO), stats);
         addTimerStats("rest", getTimer(TIMERS.REST), stats);
         addMeterStats("message.receive", getMeter(METERS.MESSAGE_RECEIVE), stats);
         return stats;

@@ -187,13 +187,23 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             }
 
             @Override
-            public boolean hasNext() throws FileNotFoundException, IOException {
+            public boolean hasNext() throws IOException {
                 initialize();
                 while (curFile == null && !files.isEmpty()) {
                     FileStatus file = files.removeLast();
                     if (!file.isFile()) {
-                        FileStatus[] status = fs.listStatus(file.getPath());
-                        Collections.addAll(files, status);
+                        try {
+                            FileStatus[] status = fs.listStatus(file.getPath());
+                            Collections.addAll(files, status);
+                        } catch (IOException e) {
+                            if (e instanceof FileNotFoundException) {
+                                LOG.debug("File was not found for listStatus call. This typically happens when "
+                                                + "a speculative execution file output was observed above, but has been cleaned"
+                                                + " up before reaching this line. File: {}", file.getPath());
+                            } else {
+                                throw new RuntimeException(e);
+                            }
+                        }
                     } else if (!ignoreEmptyFiles || file.getLen() > 0) {
                         // if ignoreEmptyFiles is true then include all files regardless of size
                         // always include a path if it's a file that's not empty

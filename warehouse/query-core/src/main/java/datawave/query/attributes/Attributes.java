@@ -26,7 +26,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4677957768640489928L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private Set<Attribute<? extends Comparable<?>>> attributes;
     private int _count = 0;
@@ -319,8 +319,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             // Get the Class for the name of the class of the concrete Attribute
             Attribute<?> attr;
             try {
-                attr = (Attribute<?>) clz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
 
