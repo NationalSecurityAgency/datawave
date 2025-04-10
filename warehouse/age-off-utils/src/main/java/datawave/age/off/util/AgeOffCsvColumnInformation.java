@@ -5,10 +5,10 @@ import java.util.Arrays;
 
 public class AgeOffCsvColumnInformation {
 
-    int patternColumnNumber = -1;
-    int durationColumnNumber = -1;
-    int labelColumnNumber = -1;
-    int overrideColumnNumber = -1;
+    int patternColumnNumber = -1;;
+    int durationColumnNumber = -1;;
+    int labelColumnNumber = -1;;
+    int overrideColumnNumber = -1;;
 
     // required
     private static final String PATTERN_COLUMN_HEADER = "pattern";
