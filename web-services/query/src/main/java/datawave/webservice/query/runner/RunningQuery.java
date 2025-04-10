@@ -28,6 +28,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.microservice.query.Query;
@@ -379,6 +380,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } else {
             Object o = iter.next();
             gotNext.incrementAndGet();
+
+            if (this.logic instanceof WritesQuerySubplanMetrics) {
+                if (!((WritesQuerySubplanMetrics) this.logic).getSubPlans().isEmpty()) {
+                    this.getMetric().setSubPlans(((WritesQuerySubplanMetrics) this.logic).getSubPlans());
+                }
+            }
 
             // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
             if (iter.getTransformer() instanceof WritesQueryMetrics) {

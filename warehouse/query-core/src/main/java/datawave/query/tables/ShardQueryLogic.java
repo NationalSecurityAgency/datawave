@@ -56,10 +56,12 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
@@ -190,7 +192,7 @@ import datawave.webservice.result.QueryValidationResponse;
  *
  * @see datawave.query.enrich
  */
-public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
+public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic, WritesQuerySubplanMetrics {
 
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
@@ -213,6 +215,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected Profile selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     protected Transformer<Object,QueryValidationResponse> validationResponseTransformer = null;
+    protected Map<String, RangeCounts> subPlans = new HashMap<>();
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
@@ -248,6 +251,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
         this.setQueryPlanner(other.getQueryPlanner().clone());
+        this.setSubPlans(other.getSubPlans());
         this.setCreateUidsIteratorClass(other.getCreateUidsIteratorClass());
         this.setUidIntersector(other.getUidIntersector());
 
@@ -1350,7 +1354,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this);
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -1359,6 +1363,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setEventQueryDataDecoratorTransformer(EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer) {
         this.eventQueryDataDecoratorTransformer = eventQueryDataDecoratorTransformer;
+    }
+
+    @Override
+    public void setSubPlans(Map<String,RangeCounts> subPlans) {
+        this.subPlans = subPlans;
+    }
+
+    @Override
+    public Map<String,RangeCounts> getSubPlans() {
+        return subPlans;
+    }
+
+    public void addSubPlan(String plan, RangeCounts rangeCounts) {
+        synchronized (this.subPlans) {
+            if (subPlans.containsKey(plan)) {
+                RangeCounts combinedCounts = new RangeCounts();
+                RangeCounts currentCounts = subPlans.get(plan);
+                combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
+                combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
+                subPlans.put(plan, combinedCounts);
+            } else {
+                subPlans.put(plan, rangeCounts);
+            }
+        }
     }
 
     @Override
