@@ -3,6 +3,7 @@ package datawave.microservice.query.executor.action;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,6 +44,7 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricType;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.webservice.query.exception.QueryException;
 
 public abstract class ExecutorTask implements Runnable {
@@ -398,7 +400,11 @@ public abstract class ExecutorTask implements Runnable {
                 baseQueryMetric.setLastUpdated(new Date(System.currentTimeMillis()));
                 if (queryLogic instanceof WritesQuerySubplanMetrics) {
                     if (!((WritesQuerySubplanMetrics) queryLogic).getSubPlans().isEmpty()) {
+                        // Set the subPlans in the query logic to baseQueryMetric.
                         baseQueryMetric.setSubPlans(((WritesQuerySubplanMetrics) queryLogic).getSubPlans());
+                        // Since the subPlans have been added to baseQueryMetric, they are removed from the logic
+                        // to prevent any duplicates.
+                        ((WritesQuerySubplanMetrics) queryLogic).setSubPlans(new HashMap<String,RangeCounts>());
                     }
                 }
                 try {

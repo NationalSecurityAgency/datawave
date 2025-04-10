@@ -18,9 +18,9 @@
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave/v1</datawave.webservice.namespace>
-        <version.datawave>7.16.0-SNAPSHOT</version.datawave>
+        <version.datawave>7.18.0-SNAPSHOT</version.datawave>
         <version.datawave.base-rest-responses>4.0.2-SNAPSHOT</version.datawave.base-rest-responses>
-        <version.datawave.starter-query>1.0.9-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave.starter-query>1.0.10-SNAPSHOT</version.datawave.starter-query>
     </properties>
     <dependencyManagement>
         <dependencies>

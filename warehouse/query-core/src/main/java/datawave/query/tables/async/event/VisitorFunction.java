@@ -82,8 +82,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected static FileSystemCache fileSystemCache = null;
 
-    private int shardRangeCount = 0;
-    private int documentRangeCount = 0;
     private ShardQueryConfiguration config;
     private QueryLogic<?> logic;
     protected MetadataHelper metadataHelper;
@@ -140,16 +138,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         // @formatter:on
     }
 
-    public void updateRangeCounts(Range range) {
-        Key key = range.getStartKey();
-        String cf = key.getColumnFamily().toString();
-        if (cf.length() > 0) {
-            documentRangeCount++;
-        } else {
-            shardRangeCount++;
-        }
-    }
-
     private Date getEarliestBeginDate(Collection<Range> ranges) {
         SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT_STRING_TO_DAY);
         Date minDate = null;
@@ -174,9 +162,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     @Nullable
     public ScannerChunk apply(@Nullable ScannerChunk input) {
 
-        shardRangeCount = 0;
-        documentRangeCount = 0;
-
         SessionOptions options = input.getOptions();
 
         ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getContext(), input.getLastKnownLocation());
@@ -184,6 +169,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         SessionOptions newOptions = new SessionOptions(options);
 
         for (IteratorSetting setting : options.getIterators()) {
+
+            int documentRangeCount = 0;
+            int shardRangeCount = 0;
 
             final String query = setting.getOptions().get(QueryOptions.QUERY);
             if (null != query) {
@@ -375,7 +363,13 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                         DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     }
                     for (Range range : newSettings.getRanges()) {
-                        updateRangeCounts(range);
+                        Key key = range.getStartKey();
+                        String cf = key.getColumnFamily().toString();
+                        if (cf.length() > 0) {
+                            documentRangeCount++;
+                        } else {
+                            shardRangeCount++;
+                        }
                     }
                     if (logic instanceof WritesQuerySubplanMetrics) {
                         RangeCounts ranges = new RangeCounts();

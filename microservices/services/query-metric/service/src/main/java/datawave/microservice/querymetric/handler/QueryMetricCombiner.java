@@ -210,8 +210,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             if (shouldAddSubplan(updatedQueryMetric.getSubPlans(), combinedMetric.getSubPlans())) {
                 combinedMetric.addSubPlans(updatedQueryMetric.getSubPlans());
             } else {
-                if ((updatedQueryMetric.getSubPlans().size() > combinedMetric.getSubPlans().size())
-                                && (!updatedQueryMetric.getSubPlans().isEmpty() && combinedMetric.getSubPlans().isEmpty())) {
+                if ((updatedQueryMetric.getSubPlans().size() > combinedMetric.getSubPlans().size())) {
                     combinedMetric.setSubPlans(updatedQueryMetric.getSubPlans());
                 }
             }
@@ -284,10 +283,6 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
     
     // check to see if we should be adding the updated subplans to the stored subplans. If false, set them instead of adding
     protected boolean shouldAddSubplan(Map<String,RangeCounts> updated, Map<String,RangeCounts> stored) {
-        if ((updated != null && stored != null) && (updated.size() == 1)) {
-            return true;
-        } else {
-            return false;
-        }
+        return (updated != null && stored != null) && (updated.size() == 1);
     }
 }
