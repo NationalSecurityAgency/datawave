@@ -1,18 +1,10 @@
 package datawave.ingest.mapreduce.job.util;
 
 import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -66,8 +58,8 @@ public class GenerateLoadPlanDriver {
         job.setOutputFormatClass(TextOutputFormat.class);
 
         job.getConfiguration().set("mapreduce.input.filepath", baseDir);
-        // job.getConfiguration().setInt("mapreduce.map.memory.mb", 6140);
-        // job.getConfiguration().set("mapred.child.java.opts", "-Xmx6140m -Xms6140m");
+        job.getConfiguration().setInt("mapreduce.map.memory.mb", 6140);
+        job.getConfiguration().set("mapred.child.java.opts", "-Xmx6140m -Xms6140m");
         job.setInputFormatClass(FilePathInputFormat.class);
         FileOutputFormat.setOutputPath(job, new Path(baseDir + "/output"));
 

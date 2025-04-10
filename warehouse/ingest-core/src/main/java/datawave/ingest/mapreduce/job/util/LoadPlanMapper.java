@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +30,7 @@ public class LoadPlanMapper extends Mapper<LongWritable,Text,Text,Text> {
             if (fs.getFileStatus(subDir).isDirectory()) {
                 String subDirectoryName = subDir.getName();
 
-                Path outputForTable = new Path(subDir, subDirectoryName + "-loadplan.json");
+                Path outputForTable = new Path(subDir, "accumulo-bulk-loadplan-" + subDirectoryName + ".json");
                 if (!fs.exists(outputForTable)) {
                     // Prepare job configuration for the subdirectory
                     LoadPlan.SplitResolver splitResolver = SplitsFile
