@@ -410,8 +410,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             switch (union.context()) {
                 case ABSENT:
                     return ScannerStream.noData(union.currentNode(), union);
-                case IGNORED:
-                    return ScannerStream.ignored(union.currentNode(), union);
                 case DELAYED_FIELD:
                     return ScannerStream.delayedExpression(union.currentNode());
                 case PRESENT:
@@ -461,14 +459,14 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.withData(iter, wrapped);
 
         } else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
-            return ScannerStream.ignored(node);
+            return ScannerStream.delayedExpression(node);
         } else if (instance.isType(DROPPED)) {
             return ScannerStream.noOp(node);
         } else if (instance.isType(INDEX_HOLE)) {
-            return ScannerStream.ignored(node);
+            return ScannerStream.delayedExpression(node);
         } else if (instance.isType(BOUNDED_RANGE)) {
             // here we must have a bounded range that was not expanded, so it must not be expandable via the index
-            return ScannerStream.ignored(node);
+            return ScannerStream.delayedExpression(node);
         } else {
             Intersection.Builder builder = Intersection.builder();
             builder.setUidIntersector(uidIntersector);
@@ -498,8 +496,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 switch (build.context()) {
                     case ABSENT:
                         return ScannerStream.noData(build.currentNode(), build);
-                    case IGNORED:
-                        return ScannerStream.ignored(build.currentNode(), build);
+                    // TODO: all delayed?
                     case PRESENT:
                     case VARIABLE:
                         return build;

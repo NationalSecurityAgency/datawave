@@ -8,7 +8,7 @@ import datawave.query.util.Tuple2;
 
 /**
  * IndexStreams must support the PeekingIterator interface.
- *
+ * <p>
  * All inheriting classes must support the ability to seek to a specific shard.
  */
 public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
@@ -40,12 +40,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
         /**
          * UNINDEXED means that the given field is not present for any value in the index.
          */
-        UNINDEXED,
-        /**
-         * At some point in the processing chain, we determined that a node (range or regex) did not need to be expanded to satisfy the query using the field
-         * index
-         */
-        IGNORED
+        UNINDEXED
     }
 
     StreamContext context();

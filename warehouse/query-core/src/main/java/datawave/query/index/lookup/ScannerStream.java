@@ -69,14 +69,6 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED_FIELD, currNode);
     }
 
-    public static ScannerStream ignored(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.IGNORED, currNode);
-    }
-
-    public static ScannerStream ignored(JexlNode currNode, IndexStream debugDelegate) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.IGNORED, currNode, debugDelegate);
-    }
-
     /**
      * Create a stream in the initialized state
      *

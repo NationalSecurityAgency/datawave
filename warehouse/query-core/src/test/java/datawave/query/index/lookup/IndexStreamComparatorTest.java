@@ -3,7 +3,6 @@ package datawave.query.index.lookup;
 import static datawave.query.index.lookup.IndexStream.StreamContext;
 import static datawave.query.index.lookup.IndexStream.StreamContext.ABSENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED_FIELD;
-import static datawave.query.index.lookup.IndexStream.StreamContext.IGNORED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.UNINDEXED;
 import static org.junit.Assert.assertEquals;
@@ -37,7 +36,6 @@ public class IndexStreamComparatorTest {
     @Test
     public void testIntersectionOfScannerStreams() {
         test(s1(), s2(), s3()); // all present
-        test(s1(), s2(), ignored()); // present and ignored
         test(s1(), s2(), unindexed()); // present and unindexed
         test(absent(), s1(), s2()); // present and absent -- shouldn't happen but record expected output
         test(s1(), s2(), delayed()); // present and delayed
@@ -53,7 +51,6 @@ public class IndexStreamComparatorTest {
         test(s1(), union(s1(), s2()));
 
         // present and union(VARIABLE)
-        test(s1(), union(s1(), ignored()));
         test(s1(), union(s1(), unindexed()));
         test(s1(), union(s1(), absent()));
         test(s1(), union(s1(), delayed()));
@@ -61,7 +58,6 @@ public class IndexStreamComparatorTest {
         test(s1(), union(s1(), exceededValue()));
 
         // present and union(DELAYED)
-        test(s1(), union(ignored(), ignored()));
         test(s1(), union(unindexed(), unindexed()));
         test(union(absent(), absent()), s1());
         test(s1(), union(delayed(), delayed()));
@@ -69,7 +65,6 @@ public class IndexStreamComparatorTest {
         test(s1(), union(exceededValue(), exceededValue()));
 
         // present and union(VARIABLE) and union(DELAYED)
-        test(s1(), union(s1(), ignored()), union(ignored(), ignored()));
         test(s1(), union(s1(), unindexed()), union(unindexed(), unindexed()));
         test(union(absent(), absent()), s1(), union(s1(), absent()));
         test(s1(), union(s1(), delayed()), union(delayed(), delayed()));
@@ -81,7 +76,6 @@ public class IndexStreamComparatorTest {
     @Test
     public void testIntersectionOfAllUnions() {
         // union(VARIABLE) and union(DELAYED)
-        test(union(s1(), ignored()), union(ignored(), ignored()));
         test(union(s1(), unindexed()), union(unindexed(), unindexed()));
         test(union(absent(), absent()), union(s1(), absent()));
         test(union(s1(), delayed()), union(delayed(), delayed()));
@@ -146,10 +140,6 @@ public class IndexStreamComparatorTest {
         return buildScannerStream("F3", "c", PRESENT);
     }
 
-    private ScannerStream ignored() {
-        return buildScannerStream("F3", "c", IGNORED);
-    }
-
     private ScannerStream unindexed() {
         return buildScannerStream("F4", "d", UNINDEXED);
     }
@@ -184,8 +174,6 @@ public class IndexStreamComparatorTest {
         switch (context) {
             case PRESENT:
                 return ScannerStream.withData(elements.iterator(), node);
-            case IGNORED:
-                return ScannerStream.ignored(node);
             case UNINDEXED:
                 return ScannerStream.unindexed(node);
             case ABSENT:
