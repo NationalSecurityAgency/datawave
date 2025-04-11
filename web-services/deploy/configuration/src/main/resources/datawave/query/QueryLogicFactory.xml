@@ -211,6 +211,8 @@
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
         <property name="maxResults" value="${event.query.max.results}" />
         <property name="queryThreads" value="${shard.query.threads}" />
+        <property name="yieldThresholdMs" value="${query.iterator.yield.threshold.ms}" />
+        <property name="collectTimingDetails" value="${beq.collectTimingDetails}" />
         <property name="indexLookupThreads" value="${index.query.threads}" />
         <property name="dateIndexThreads" value="${date.index.threads}" />
         <property name="fullTableScanEnabled" value="${beq.fullTableScanEnabled}" />
