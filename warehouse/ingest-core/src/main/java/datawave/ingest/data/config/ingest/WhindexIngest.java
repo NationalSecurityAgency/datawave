@@ -3,6 +3,7 @@ package datawave.ingest.data.config.ingest;
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.config.NormalizedContentInterface;
 
 public interface WhindexIngest {
