@@ -34,9 +34,9 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         NO_OP,
         /**
-         * DELAYED_FIELD means this term or junction of terms is delayed for any number of reasons
+         * DELAYED means this term or junction of terms is delayed for any number of reasons
          */
-        DELAYED_FIELD,
+        DELAYED,
         /**
          * UNINDEXED means that the given field is not present for any value in the index.
          */

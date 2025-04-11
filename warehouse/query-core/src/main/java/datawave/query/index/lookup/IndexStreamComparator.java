@@ -72,7 +72,7 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
                 return 30;
             case UNINDEXED: // presence in a top level union results in a non-executable query
                 return 70;
-            case DELAYED_FIELD:
+            case DELAYED:
                 return 80;
             case NO_OP:
                 return 100;

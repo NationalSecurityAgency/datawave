@@ -2,7 +2,7 @@ package datawave.query.index.lookup;
 
 import static datawave.query.index.lookup.IndexStream.StreamContext;
 import static datawave.query.index.lookup.IndexStream.StreamContext.ABSENT;
-import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED_FIELD;
+import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.UNINDEXED;
 import static org.junit.Assert.assertEquals;
@@ -149,11 +149,11 @@ public class IndexStreamComparatorTest {
     }
 
     private ScannerStream delayed() {
-        return buildScannerStream("F6", "f", DELAYED_FIELD);
+        return buildScannerStream("F6", "f", DELAYED);
     }
 
     private ScannerStream exceededTerm() {
-        return buildScannerStream("F8", "h", DELAYED_FIELD);
+        return buildScannerStream("F8", "h", DELAYED);
     }
 
     private ScannerStream exceededValue() {
@@ -178,8 +178,8 @@ public class IndexStreamComparatorTest {
                 return ScannerStream.unindexed(node);
             case ABSENT:
                 return ScannerStream.noData(node);
-            case DELAYED_FIELD:
-                return ScannerStream.delayedExpression(node);
+            case DELAYED:
+                return ScannerStream.delayed(node);
             default:
                 throw new IllegalStateException("unknown context: " + context);
         }

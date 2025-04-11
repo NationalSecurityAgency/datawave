@@ -3035,7 +3035,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     }
                     needsFullTable = true;
                     break;
-                case DELAYED_FIELD:
+                case DELAYED:
                     if (log.isDebugEnabled()) {
                         log.debug("Full table scan required because query consists of only delayed expressions");
                     }

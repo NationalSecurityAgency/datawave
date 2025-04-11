@@ -80,7 +80,7 @@ public class Union extends BaseIndexStream {
                 case UNINDEXED:
                     // a non-indexed field present in a top level union results in a non-executable query
                     delayedFromUnindexed = true;
-                case DELAYED_FIELD:
+                case DELAYED:
                     // these nodes need to be persisted via the set of delayedNodes
                     delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                     continue;
@@ -128,7 +128,7 @@ public class Union extends BaseIndexStream {
                 this.context = StreamContext.UNINDEXED;
                 this.contextDebug = "children contains at least one unindexed field";
             } else {
-                this.context = StreamContext.DELAYED_FIELD;
+                this.context = StreamContext.DELAYED;
                 this.contextDebug = "children are all delayed";
             }
         }

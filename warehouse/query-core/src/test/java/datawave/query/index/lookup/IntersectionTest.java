@@ -326,7 +326,7 @@ public class IntersectionTest {
         ScannerStream s2 = ScannerStream.unindexed(JexlNodeFactory.buildEQNode("B", "2"));
 
         // C - delayed
-        ScannerStream s3 = ScannerStream.delayedExpression(JexlNodeFactory.buildEQNode("C", "3"));
+        ScannerStream s3 = ScannerStream.delayed(JexlNodeFactory.buildEQNode("C", "3"));
 
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3);
 
@@ -375,7 +375,7 @@ public class IntersectionTest {
         ScannerStream s2 = ScannerStream.unindexed(JexlNodeFactory.buildEQNode("B", "2"));
 
         // C - delayed
-        ScannerStream s3 = ScannerStream.delayedExpression(JexlNodeFactory.buildEQNode("C", "3"));
+        ScannerStream s3 = ScannerStream.delayed(JexlNodeFactory.buildEQNode("C", "3"));
 
         // D - infinite
         ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", null);

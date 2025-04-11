@@ -12,7 +12,7 @@ import datawave.query.util.Tuple2;
 
 /**
  * Basic implementation of an IndexStream for a single term.
- *
+ * <p>
  * Note that certain delayed terms may create a ScannerStream without an underlying RangeStreamScanner.
  */
 public class ScannerStream extends BaseIndexStream {
@@ -65,8 +65,8 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(itr, StreamContext.VARIABLE, currNode);
     }
 
-    public static ScannerStream delayedExpression(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED_FIELD, currNode);
+    public static ScannerStream delayed(JexlNode currNode) {
+        return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED, currNode);
     }
 
     /**

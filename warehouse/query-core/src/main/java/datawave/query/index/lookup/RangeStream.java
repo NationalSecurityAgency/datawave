@@ -410,8 +410,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             switch (union.context()) {
                 case ABSENT:
                     return ScannerStream.noData(union.currentNode(), union);
-                case DELAYED_FIELD:
-                    return ScannerStream.delayedExpression(union.currentNode());
+                case DELAYED:
+                    return ScannerStream.delayed(union.currentNode());
                 case PRESENT:
                 case VARIABLE:
                     return union;
@@ -429,7 +429,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // if we have a term threshold marker, then we simply could not expand an _ANYFIELD_ identifier, so return EXCEEDED_THRESHOLD
         if (instance.isType(EXCEEDED_TERM)) {
-            return ScannerStream.delayedExpression(node);
+            return ScannerStream.delayed(node);
         } else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
             try {
                 // When we exceeded the expansion threshold for a regex, the field is an index-only field, and we can't
@@ -459,14 +459,14 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.withData(iter, wrapped);
 
         } else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
-            return ScannerStream.delayedExpression(node);
+            return ScannerStream.delayed(node);
         } else if (instance.isType(DROPPED)) {
             return ScannerStream.noOp(node);
         } else if (instance.isType(INDEX_HOLE)) {
-            return ScannerStream.delayedExpression(node);
+            return ScannerStream.delayed(node);
         } else if (instance.isType(BOUNDED_RANGE)) {
             // here we must have a bounded range that was not expanded, so it must not be expandable via the index
-            return ScannerStream.delayedExpression(node);
+            return ScannerStream.delayed(node);
         } else {
             Intersection.Builder builder = Intersection.builder();
             builder.setUidIntersector(uidIntersector);
@@ -552,7 +552,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             // even though the field is not indexed it may still be valuable when evaluating an event. mark this scanner stream as delayed, so it is correctly
             // propagated
-            return ScannerStream.delayedExpression(node);
+            return ScannerStream.delayed(node);
         }
 
         // Final case, field is indexed
@@ -634,12 +634,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isTraceEnabled()) {
             log.trace("building delayed expression for function");
         }
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -647,7 +647,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         if (log.isTraceEnabled()) {
             log.trace("NOT FIELD " + JexlStringBuildingVisitor.buildQuery(node));
         }
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -674,7 +674,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
         try {
             if (!this.getAllFieldsFromHelper().contains(fieldName)) {
-                return ScannerStream.delayedExpression(node);
+                return ScannerStream.delayed(node);
             }
         } catch (TableNotFoundException e) {
             log.error(e);
@@ -686,12 +686,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
     public Object visit(ASTTrueNode node, Object data) {
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -736,7 +736,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -749,7 +749,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -762,7 +762,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     @Override
@@ -775,7 +775,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
 
-        return ScannerStream.delayedExpression(node);
+        return ScannerStream.delayed(node);
     }
 
     public Object descend(JexlNode node, Object data) {

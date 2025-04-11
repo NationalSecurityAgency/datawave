@@ -138,7 +138,7 @@ public class Intersection extends BaseIndexStream {
                         absent = true;
                         break;
                     case UNINDEXED:
-                    case DELAYED_FIELD:
+                    case DELAYED:
                         this.delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                         break;
                     case NO_OP:
@@ -165,15 +165,15 @@ public class Intersection extends BaseIndexStream {
         if (absent) {
             this.context = StreamContext.ABSENT;
             this.contextDebug = "found absent child";
-        } else if (areAllChildrenSameContext(streams, StreamContext.DELAYED_FIELD)) {
-            this.context = StreamContext.DELAYED_FIELD;
+        } else if (areAllChildrenSameContext(streams, StreamContext.DELAYED)) {
+            this.context = StreamContext.DELAYED;
             this.contextDebug = "delayed field";
         } else if (areAllChildrenSameContext(streams, StreamContext.UNINDEXED)) {
             this.context = StreamContext.UNINDEXED;
             this.contextDebug = "all children unindexed";
         } else if (this.children.isEmpty() && !delayedNodes.isEmpty()) {
             // we have a mix of delayed marker nodes
-            this.context = StreamContext.DELAYED_FIELD;
+            this.context = StreamContext.DELAYED;
             this.contextDebug = "children are a mix of delayed marker nodes";
         } else {
             // just because index streams are present, does not mean they actually intersect
