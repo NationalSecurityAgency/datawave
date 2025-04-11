@@ -26,9 +26,9 @@ public class DateFrequencyMap implements Writable {
     public DateFrequencyMap(byte[] bytes) throws IOException {
         this();
         ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-        DataInputStream dataIn = new DataInputStream(in);
-        readFields(dataIn);
-        dataIn.close();
+        try (DataInputStream dataIn = new DataInputStream(in)) {
+            readFields(dataIn);
+        }
     }
     
     /**

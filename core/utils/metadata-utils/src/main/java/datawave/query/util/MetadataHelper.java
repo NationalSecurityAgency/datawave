@@ -1582,10 +1582,7 @@ public class MetadataHelper {
                     }
                 } else {
                     // This is an entry with a count for a single date.
-                    ByteArrayInputStream bais = new ByteArrayInputStream(entry.getValue().get());
-                    DataInputStream inputStream = new DataInputStream(bais);
-                    long count = WritableUtils.readVLong(inputStream);
-                    datatypeToCounts.merge(datatype, count, Long::sum);
+                    datatypeToCounts.merge(datatype, readLongFromValue(entry.getValue()), Long::sum);
                 }
             }
         } finally {
@@ -1739,7 +1736,7 @@ public class MetadataHelper {
      * @throws IOException
      *             if there is a deserialization problem
      */
-    private Long readLongFromValue(Value value) throws IOException {
+    public static Long readLongFromValue(Value value) throws IOException {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(value.get())) {
             try (DataInputStream inputStream = new DataInputStream(bais)) {
                 return WritableUtils.readVLong(inputStream);

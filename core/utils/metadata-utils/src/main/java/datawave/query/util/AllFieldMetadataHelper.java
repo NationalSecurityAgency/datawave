@@ -1,7 +1,5 @@
 package datawave.query.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,9 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -36,7 +32,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -885,10 +880,7 @@ public class AllFieldMetadataHelper {
                         datatypeToCounts.merge(datatype, count, Long::sum);
                     }
                 } else {
-                    ByteArrayInputStream bais = new ByteArrayInputStream(countEntry.getValue().get());
-                    DataInputStream inputStream = new DataInputStream(bais);
-                    Long count = WritableUtils.readVLong(inputStream);
-                    datatypeToCounts.merge(datatype, count, Long::sum);
+                    datatypeToCounts.merge(datatype, MetadataHelper.readLongFromValue(countEntry.getValue()), Long::sum);
                 }
                 
             }
@@ -1498,9 +1490,7 @@ public class AllFieldMetadataHelper {
                             currBoundaryType = null;
                             try {
                                 currDate = DateHelper.parse(cqRemainder);
-                                ByteArrayInputStream byteStream = new ByteArrayInputStream(entry.getValue().get());
-                                DataInputStream inputStream = new DataInputStream(byteStream);
-                                currCount = WritableUtils.readVLong(inputStream);
+                                currCount = MetadataHelper.readLongFromValue(entry.getValue());
                             } catch (DateTimeParseException e) {
                                 // probably the really old type classname format instead of a date.
                                 // we can treat this like an index marker but the ts of the entry denotes the boundary
