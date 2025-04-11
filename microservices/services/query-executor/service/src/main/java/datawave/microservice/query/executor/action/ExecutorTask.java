@@ -3,6 +3,7 @@ package datawave.microservice.query.executor.action;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,6 +23,7 @@ import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.core.query.runner.AccumuloConnectionRequestMap;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.Query;
@@ -42,6 +44,7 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricType;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.webservice.query.exception.QueryException;
 
 public abstract class ExecutorTask implements Runnable {
@@ -333,7 +336,7 @@ public abstract class ExecutorTask implements Runnable {
                     publisher.publish(new Result(UUID.randomUUID().toString(), result));
                     queryTaskUpdater.resultPublished();
                     metrics.incrementNumResultsGenerated();
-                    updateMetrics(queryId, query, metrics, iter);
+                    updateMetrics(queryId, query, metrics, iter, queryLogic);
                     updateQueryStatusMetrics(metrics);
                 }
             } catch (EmptyObjectException eoe) {
@@ -346,7 +349,7 @@ public abstract class ExecutorTask implements Runnable {
         log.debug("Generated " + count + " results for " + taskKey);
         
         // a final metrics update
-        if (updateMetrics(queryId, query, metrics, iter)) {
+        if (updateMetrics(queryId, query, metrics, iter, queryLogic)) {
             updateQueryStatusMetrics(metrics);
         }
         
@@ -379,42 +382,46 @@ public abstract class ExecutorTask implements Runnable {
      * @param iter
      * @return true if metrics were found and updated
      */
-    protected boolean updateMetrics(String queryId, Query query, QueryStatusMetrics metrics, TransformIterator iter) {
-        try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(query.getQueryLogicName());
-            // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-            if (logic.getCollectQueryMetrics() && iter.getTransformer() instanceof WritesQueryMetrics) {
-                WritesQueryMetrics metricsWriter = ((WritesQueryMetrics) iter.getTransformer());
-                if (metricsWriter.hasMetrics()) {
-                    BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
-                    baseQueryMetric.setQueryId(queryId);
-                    baseQueryMetric.setSourceCount(metricsWriter.getSourceCount());
-                    metrics.incrementNextCount(metricsWriter.getNextCount());
-                    baseQueryMetric.setNextCount(metricsWriter.getNextCount());
-                    metrics.incrementSeekCount(metricsWriter.getSeekCount());
-                    baseQueryMetric.setSeekCount(metricsWriter.getSeekCount());
-                    baseQueryMetric.setYieldCount(metricsWriter.getYieldCount());
-                    baseQueryMetric.setDocRanges(metricsWriter.getDocRanges());
-                    baseQueryMetric.setFiRanges(metricsWriter.getFiRanges());
-                    baseQueryMetric.setLastUpdated(new Date(System.currentTimeMillis()));
-                    try {
-                        // @formatter:off
+    protected boolean updateMetrics(String queryId, Query query, QueryStatusMetrics metrics, TransformIterator iter, QueryLogic queryLogic) {
+        // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+        if (queryLogic.getCollectQueryMetrics() && iter.getTransformer() instanceof WritesQueryMetrics) {
+            WritesQueryMetrics metricsWriter = ((WritesQueryMetrics) iter.getTransformer());
+            if (metricsWriter.hasMetrics()) {
+                BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+                baseQueryMetric.setQueryId(queryId);
+                baseQueryMetric.setSourceCount(metricsWriter.getSourceCount());
+                metrics.incrementNextCount(metricsWriter.getNextCount());
+                baseQueryMetric.setNextCount(metricsWriter.getNextCount());
+                metrics.incrementSeekCount(metricsWriter.getSeekCount());
+                baseQueryMetric.setSeekCount(metricsWriter.getSeekCount());
+                baseQueryMetric.setYieldCount(metricsWriter.getYieldCount());
+                baseQueryMetric.setDocRanges(metricsWriter.getDocRanges());
+                baseQueryMetric.setFiRanges(metricsWriter.getFiRanges());
+                baseQueryMetric.setLastUpdated(new Date(System.currentTimeMillis()));
+                if (queryLogic instanceof WritesQuerySubplanMetrics) {
+                    if (!((WritesQuerySubplanMetrics) queryLogic).getSubPlans().isEmpty()) {
+                        // Set the subPlans in the query logic to baseQueryMetric.
+                        baseQueryMetric.setSubPlans(((WritesQuerySubplanMetrics) queryLogic).getSubPlans());
+                        // Since the subPlans have been added to baseQueryMetric, they are removed from the logic
+                        // to prevent any duplicates.
+                        ((WritesQuerySubplanMetrics) queryLogic).setSubPlans(new HashMap<String,RangeCounts>());
+                    }
+                }
+                try {
+                    // @formatter:off
                         metricClient.submit(
                                 new QueryMetricClient.Request.Builder()
-                                        .withUser((DatawaveUserDetails)logic.getServerUser())
+                                        .withUser((DatawaveUserDetails)queryLogic.getServerUser())
                                         .withMetric(baseQueryMetric)
                                         .withMetricType(QueryMetricType.DISTRIBUTED)
                                         .build());
                         // @formatter:on
-                        metricsWriter.resetMetrics();
-                    } catch (Exception e) {
-                        log.error("Error updating query metric", e);
-                    }
-                    return true;
+                    metricsWriter.resetMetrics();
+                } catch (Exception e) {
+                    log.error("Error updating query metric", e);
                 }
+                return true;
             }
-        } catch (QueryException | CloneNotSupportedException e) {
-            log.warn("Could not determine whether the query logic supports metrics");
         }
         return false;
     }
