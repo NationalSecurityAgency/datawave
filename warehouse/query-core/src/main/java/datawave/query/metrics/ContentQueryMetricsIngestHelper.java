@@ -133,7 +133,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (subPlans != null && !subPlans.isEmpty()) {
                 for (Map.Entry<String,RangeCounts> entry : subPlans.entrySet()) {
                     fields.put("SUBPLAN",
-                            entry.getKey() + " : [" + entry.getValue().getDocumentRangeCount() + ", " + entry.getValue().getShardRangeCount() + "]");
+                                    entry.getKey() + " : [" + entry.getValue().getDocumentRangeCount() + ", " + entry.getValue().getShardRangeCount() + "]");
                 }
             }
             if (updatedQueryMetric.getQueryId() != null) {

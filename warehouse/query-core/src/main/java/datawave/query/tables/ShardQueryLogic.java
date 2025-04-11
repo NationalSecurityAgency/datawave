@@ -215,7 +215,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected Profile selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     protected Transformer<Object,QueryValidationResponse> validationResponseTransformer = null;
-    protected Map<String, RangeCounts> subPlans = new HashMap<>();
+    protected Map<String,RangeCounts> subPlans = new HashMap<>();
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
