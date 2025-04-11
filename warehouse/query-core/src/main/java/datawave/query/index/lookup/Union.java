@@ -25,7 +25,7 @@ import datawave.util.StringUtils;
 
 /**
  * Creates a union of global index range streams.
- *
+ * <p>
  * This implementation of an IndexStream supports seeking to a specific shard. Such calls originate in the {@link Intersection}.
  */
 public class Union extends BaseIndexStream {
@@ -82,7 +82,6 @@ public class Union extends BaseIndexStream {
                     delayedFromUnindexed = true;
                 case IGNORED:
                 case DELAYED_FIELD:
-                case UNKNOWN_FIELD:
                     // these nodes need to be persisted via the set of delayedNodes
                     delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                     continue;

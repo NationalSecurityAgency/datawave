@@ -69,14 +69,6 @@ public class ScannerStream extends BaseIndexStream {
         return new ScannerStream(Collections.emptyIterator(), StreamContext.DELAYED_FIELD, currNode);
     }
 
-    public static ScannerStream unknownField(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNKNOWN_FIELD, currNode);
-    }
-
-    public static ScannerStream unknownField(JexlNode currNode, IndexStream debugDelegate) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNKNOWN_FIELD, currNode, debugDelegate);
-    }
-
     public static ScannerStream ignored(JexlNode currNode) {
         return new ScannerStream(Collections.emptyIterator(), StreamContext.IGNORED, currNode);
     }

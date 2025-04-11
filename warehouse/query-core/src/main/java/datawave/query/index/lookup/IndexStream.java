@@ -42,10 +42,6 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         UNINDEXED,
         /**
-         * UKNOWN_FIELD means that the field has never been tracked by the system.
-         */
-        UNKNOWN_FIELD,
-        /**
          * At some point in the processing chain, we determined that a node (range or regex) did not need to be expanded to satisfy the query using the field
          * index
          */

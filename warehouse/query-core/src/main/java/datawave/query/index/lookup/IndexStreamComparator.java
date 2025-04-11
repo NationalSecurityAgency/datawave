@@ -76,8 +76,6 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
                 return 70;
             case DELAYED_FIELD:
                 return 80;
-            case UNKNOWN_FIELD:
-                return 90;
             case NO_OP:
                 return 100;
             case INITIALIZED:

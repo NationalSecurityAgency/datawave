@@ -419,11 +419,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return union;
                 case UNINDEXED:
                     return ScannerStream.unindexed(union.currentNode(), union);
-                case UNKNOWN_FIELD:
                 case INITIALIZED:
-                    return ScannerStream.unknownField(union.currentNode(), union);
                 default:
-                    return ScannerStream.unknownField(node, union);
+                    throw new RuntimeException("unhandled scanner context");
             }
         }
     }
@@ -505,13 +503,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     case PRESENT:
                     case VARIABLE:
                         return build;
-                    case UNINDEXED:
-                        return ScannerStream.unindexed(build.currentNode(), build);
-                    case UNKNOWN_FIELD:
                     case INITIALIZED:
-                        return ScannerStream.unknownField(build.currentNode(), build);
+                        throw new RuntimeException("unhandled stream context");
+                    case UNINDEXED:
                     default:
-                        return ScannerStream.unknownField(node, build);
+                        return ScannerStream.unindexed(build.currentNode(), build);
                 }
             }
         }
@@ -556,7 +552,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 throw new RuntimeException(e);
             }
             log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
-            return ScannerStream.unknownField(node);
+
+            // even though the field is not indexed it may still be valuable when evaluating an event. mark this scanner stream as delayed, so it is correctly
+            // propagated
+            return ScannerStream.delayedExpression(node);
         }
 
         // Final case, field is indexed
@@ -678,7 +677,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
         try {
             if (!this.getAllFieldsFromHelper().contains(fieldName)) {
-                return ScannerStream.unknownField(node);
+                return ScannerStream.delayedExpression(node);
             }
         } catch (TableNotFoundException e) {
             log.error(e);

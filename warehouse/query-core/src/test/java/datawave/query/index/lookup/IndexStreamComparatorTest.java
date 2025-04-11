@@ -6,7 +6,6 @@ import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED_FIEL
 import static datawave.query.index.lookup.IndexStream.StreamContext.IGNORED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.UNINDEXED;
-import static datawave.query.index.lookup.IndexStream.StreamContext.UNKNOWN_FIELD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +41,6 @@ public class IndexStreamComparatorTest {
         test(s1(), s2(), unindexed()); // present and unindexed
         test(absent(), s1(), s2()); // present and absent -- shouldn't happen but record expected output
         test(s1(), s2(), delayed()); // present and delayed
-        test(s1(), s2(), unknown()); // present and unknown field
         test(s1(), s2(), exceededTerm()); // present and exceeded term threshold
         test(s1(), s2(), exceededValue()); // present and exceeded value threshold
     }
@@ -59,7 +57,6 @@ public class IndexStreamComparatorTest {
         test(s1(), union(s1(), unindexed()));
         test(s1(), union(s1(), absent()));
         test(s1(), union(s1(), delayed()));
-        test(s1(), union(s1(), unknown()));
         test(s1(), union(s1(), exceededTerm()));
         test(s1(), union(s1(), exceededValue()));
 
@@ -68,7 +65,6 @@ public class IndexStreamComparatorTest {
         test(s1(), union(unindexed(), unindexed()));
         test(union(absent(), absent()), s1());
         test(s1(), union(delayed(), delayed()));
-        test(s1(), union(unknown(), unknown()));
         test(s1(), union(exceededTerm(), exceededTerm()));
         test(s1(), union(exceededValue(), exceededValue()));
 
@@ -77,7 +73,6 @@ public class IndexStreamComparatorTest {
         test(s1(), union(s1(), unindexed()), union(unindexed(), unindexed()));
         test(union(absent(), absent()), s1(), union(s1(), absent()));
         test(s1(), union(s1(), delayed()), union(delayed(), delayed()));
-        test(s1(), union(s1(), unknown()), union(unknown(), unknown()));
         test(s1(), union(s1(), exceededTerm()), union(exceededTerm(), exceededTerm()));
         test(s1(), union(s1(), exceededValue()), union(exceededValue(), exceededValue()));
     }
@@ -90,7 +85,6 @@ public class IndexStreamComparatorTest {
         test(union(s1(), unindexed()), union(unindexed(), unindexed()));
         test(union(absent(), absent()), union(s1(), absent()));
         test(union(s1(), delayed()), union(delayed(), delayed()));
-        test(union(s1(), unknown()), union(unknown(), unknown()));
         test(union(s1(), exceededTerm()), union(exceededTerm(), exceededTerm()));
         test(union(s1(), exceededValue()), union(exceededValue(), exceededValue()));
     }
@@ -168,10 +162,6 @@ public class IndexStreamComparatorTest {
         return buildScannerStream("F6", "f", DELAYED_FIELD);
     }
 
-    private ScannerStream unknown() {
-        return buildScannerStream("F7", "g", UNKNOWN_FIELD);
-    }
-
     private ScannerStream exceededTerm() {
         return buildScannerStream("F8", "h", DELAYED_FIELD);
     }
@@ -202,8 +192,6 @@ public class IndexStreamComparatorTest {
                 return ScannerStream.noData(node);
             case DELAYED_FIELD:
                 return ScannerStream.delayedExpression(node);
-            case UNKNOWN_FIELD:
-                return ScannerStream.unknownField(node);
             default:
                 throw new IllegalStateException("unknown context: " + context);
         }

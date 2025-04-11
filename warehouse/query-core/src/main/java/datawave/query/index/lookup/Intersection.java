@@ -140,7 +140,6 @@ public class Intersection extends BaseIndexStream {
                     case IGNORED:
                     case UNINDEXED:
                     case DELAYED_FIELD:
-                    case UNKNOWN_FIELD:
                         this.delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                         break;
                     case NO_OP:
