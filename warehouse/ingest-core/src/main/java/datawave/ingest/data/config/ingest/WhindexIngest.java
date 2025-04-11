@@ -136,10 +136,6 @@ public interface WhindexIngest {
             }
         }
 
-        // TODO: MIGRATE THIS TO WFN
-        // TODO: WRITE TESTS ON THIS BAD BOY
-        // TODO: IMPLEMENT EQUALS AND HASH CODE FOR WHINDEX CONFIG
-
         public static final String WHINDEX_RULES = "whindex.rules";
         public static final String VALUE_FIELD = "value_field";
         public static final String SRC_FIELD = "src_field";
