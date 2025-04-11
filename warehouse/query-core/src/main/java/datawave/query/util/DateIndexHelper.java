@@ -346,7 +346,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                         // the row may be sharded, i need to get the date part
                         if (rowDateString.contains("_")) {
                             // strip off the shard number part of the rowDate string
-                            rowDateString = rowDateString.substring(0, rowDateString.indexOf("_"));
+                            rowDateString = rowDateString.substring(0, rowDateString.indexOf('_'));
                         }
                         LocalDate rowDate = LocalDate.parse(rowDateString, formatter);
                         LocalDate shardDate = LocalDate.parse(date, formatter);

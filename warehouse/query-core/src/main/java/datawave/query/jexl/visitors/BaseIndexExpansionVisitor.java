@@ -204,6 +204,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * Serves as a placeholder Jexl node which can eventually be replaced with an expanded Jexl node once the Index Lookup has finished
      */
     protected static class FutureJexlNode extends JexlNode {
+        private static final long serialVersionUID = -6505517654708569236L;
         private final JexlNode origNode;
         private final IndexLookup lookup;
         private final boolean ignoreComposites;

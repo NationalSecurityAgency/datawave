@@ -36,7 +36,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultField extends FieldBase<DefaultField> implements Serializable, Message<DefaultField> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -3982566563059126017L;
 
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)

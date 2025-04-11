@@ -170,7 +170,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/comparison.diff"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf("\n", output.getMessage().indexOf("\n") + 1) + 1));
+        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf('\n', output.getMessage().indexOf('\n') + 1) + 1));
         assertFalse(output.isError());
     }
     
@@ -190,7 +190,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/fullComparison.diff"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf("\n", output.getMessage().indexOf("\n") + 1) + 1));
+        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf('\n', output.getMessage().indexOf('\n') + 1) + 1));
         assertFalse(output.isError());
     }
 }

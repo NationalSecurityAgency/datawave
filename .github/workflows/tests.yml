@@ -172,12 +172,21 @@ jobs:
   compose-build-and-test-latest-snapshots:
     runs-on: ubuntu-latest
     steps:
+      - name: Extract branch name
+        shell: bash
+        run: |
+          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
       - name: Free up some space
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf $AGENT_TOOLSDIRECTORY
+          if [[ ${{ steps.extract_branch.outputs.branch }} =~ ^release/version* ]] then
+            echo "Nothing to do since this is a release branch."
+          else
+            sudo rm -rf /usr/share/dotnet
+            sudo rm -rf /opt/ghc
+            sudo rm -rf /usr/local/share/boost
+            sudo rm -rf $AGENT_TOOLSDIRECTORY
+          fi
       - name: Checkout Code
         uses: actions/checkout@v4
       - name: Set up JDK ${{env.JAVA_VERSION}}
@@ -193,43 +202,46 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          # update datawave dependencies to use the latest snapshots
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+          if [[ ${{ steps.extract_branch.outputs.branch }} =~ ^release/version* ]] then
+            echo "Nothing to do since this is a release branch."
+          else
+            # update datawave dependencies to use the latest snapshots
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
           
-          # free up some space so that we don't run out
-          docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+            # free up some space so that we don't run out
+            docker system prune -f
+            mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Dstarters -Dservices -Dutils -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
           
-          cd docker
-          ./bootstrap.sh
+            cd docker
+            ./bootstrap.sh
           
-          attempt=0
-          max_attempts=20
-          while [ $attempt -lt $max_attempts ]; do
-            attempt=$((attempt+1))
+            attempt=0
+            max_attempts=20
+            while [ $attempt -lt $max_attempts ]; do
+              attempt=$((attempt+1))
           
-            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
-            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
-            sleep 60s
-            cat compose.out
+              echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+              nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+              sleep 60s
+              cat compose.out
           
-            # check to see if the query service is running
-            QUERY="$(docker compose ps --status running --services | grep query || true)"
+              # check to see if the query service is running
+              QUERY="$(docker compose ps --status running --services | grep query || true)"
           
-            if [ "$QUERY" == "query" ] ; then
-              echo "Docker compose started successfully"
-              break
-            elif [ $attempt -eq $max_attempts ] ; then
-              echo "Failed to start docker compose"
-              exit 1
-            fi
-          done
+              if [ "$QUERY" == "query" ] ; then
+                echo "Docker compose started successfully"
+                break
+              elif [ $attempt -eq $max_attempts ] ; then
+                echo "Failed to start docker compose"
+                exit 1
+              fi
+            done
           
-          cd scripts
-          ./testAll.sh
-
+            cd scripts
+            ./testAll.sh
+          fi
       - name: Dump Logs
         if: failure()
         run: |

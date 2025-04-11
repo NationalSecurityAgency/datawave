@@ -594,8 +594,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setPlan(fieldValue);
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
-                    } else if (fieldName.equals("QUERY_ID")) {
-                        m.setQueryId(fieldValue);
                     } else if (fieldName.equals("BEGIN_DATE")) {
                         try {
                             Date d = sdf_date_time1.parse(fieldValue);
@@ -629,7 +627,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("CREATE_CALL_TIME")) {
                         m.setCreateCallTime(Long.parseLong(fieldValue));
                     } else if (fieldName.startsWith("PAGE_METRICS")) {
-                        int index = fieldName.indexOf(".");
+                        int index = fieldName.indexOf('.');
                         if (-1 == index) {
                             log.error("Could not parse field name to extract repetition count: " + fieldName);
                         } else {
@@ -696,8 +694,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.addVersion(BaseQueryMetric.DATAWAVE, fieldValue);
                     } else if (fieldName.startsWith("VERSION.")) {
                         m.addVersion(fieldName.substring(8), fieldValue);
-                    } else if (fieldName.equals("YIELD_COUNT")) {
-                        m.setYieldCount(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("LOGIN_TIME")) {
                         m.setLoginTime(Long.parseLong(fieldValue));
                     } else {
@@ -815,6 +811,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 try {
                     this.recordWriter.close(null);
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     log.error(e.getMessage(), e);
                 }
             }

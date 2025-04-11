@@ -441,7 +441,7 @@ public final class Uid {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 6738742719412472702L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

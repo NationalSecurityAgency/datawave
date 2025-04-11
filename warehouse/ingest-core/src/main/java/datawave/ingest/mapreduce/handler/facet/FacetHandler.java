@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.facet;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -141,8 +142,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                 // Will throw RuntimeException if class can't be coerced into Predicate<String>
                 @SuppressWarnings("unchecked")
                 Class<Predicate<String>> projClazz = (Class<Predicate<String>>) Class.forName(predClazzStr).asSubclass(Predicate.class);
-                fieldFilterPredicate = projClazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                fieldFilterPredicate = projClazz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }

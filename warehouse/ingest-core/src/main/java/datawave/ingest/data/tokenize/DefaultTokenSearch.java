@@ -320,7 +320,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.add(lcaddr + zone);
         }
 
-        int atpos = addr.indexOf("@");
+        int atpos = addr.indexOf('@');
         if (atpos > 0) {
             String name = lcaddr.substring(0, atpos);
             String domain = lcaddr.substring(atpos);
@@ -430,7 +430,7 @@ public class DefaultTokenSearch implements TokenSearch {
         tstamp = lctstamp; // reuse tstamp for edits
 
         // extract the y,m,d portion prior to t.
-        int tPos = tstamp.indexOf("t");
+        int tPos = tstamp.indexOf('t');
         if (tPos > 0) {
             String daystamp = tstamp.substring(0, tPos);
             synonyms.add(daystamp + zone);
@@ -523,7 +523,7 @@ public class DefaultTokenSearch implements TokenSearch {
 
         // lowercased portions of trailing segments
         // (to avoid leading wildcard search)
-        slashPos = zlc.indexOf("/");
+        slashPos = zlc.indexOf('/');
         int segstart = 0;
         String zseg;
 
@@ -542,14 +542,14 @@ public class DefaultTokenSearch implements TokenSearch {
             if (!zseg.isEmpty()) {
                 synonyms.add(zseg + zone);
 
-                spacePos = zseg.indexOf(" ");
+                spacePos = zseg.indexOf(' ');
                 if (spacePos > -1) {
                     // extract space delimited components of zseg.
                     int zsegstart = 0;
                     while (zsegstart <= spacePos && spacePos < zseg.length()) {
                         synonyms.add(zseg.substring(zsegstart, spacePos) + zone);
                         zsegstart = spacePos + 1;
-                        spacePos = zseg.indexOf(" ", zsegstart);
+                        spacePos = zseg.indexOf(' ', zsegstart);
                     }
 
                     if (zsegstart < zseg.length()) {
@@ -562,7 +562,7 @@ public class DefaultTokenSearch implements TokenSearch {
             if (segstart <= slashPos) {
                 segstart = slashPos + 1;
                 synonyms.add(zlc.substring(segstart) + zone); // trailing bits of the path.
-                slashPos = zlc.indexOf("/", segstart);
+                slashPos = zlc.indexOf('/', segstart);
             } else {
                 break;
             }
@@ -610,7 +610,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.add(lc + zone);
         }
 
-        int methodPos = lc.indexOf(" ");
+        int methodPos = lc.indexOf(' ');
         int versionPos = lc.indexOf(" http", methodPos + 1);
 
         if (methodPos > 0 && versionPos > methodPos) {
@@ -622,7 +622,7 @@ public class DefaultTokenSearch implements TokenSearch {
             synonyms.addAll(urlTokens(new String[] {requestUri, zone}, false, includeTerm));
             synonyms.add(version + zone);
 
-            versionPos = version.indexOf("/");
+            versionPos = version.indexOf('/');
             if (versionPos > 0) {
                 synonyms.add(version.substring(0, versionPos) + zone);
             }
@@ -713,9 +713,9 @@ public class DefaultTokenSearch implements TokenSearch {
         do {
             prevUrl = lc_url.toString();
 
-            int querypos = lc_url.indexOf("?");
+            int querypos = lc_url.indexOf('?');
             int schemepos = lc_url.indexOf("://");
-            int fragpos = lc_url.indexOf("#");
+            int fragpos = lc_url.indexOf('#');
 
             // Include the downcased url if different from the original term
             // or includeTerm is raised.
@@ -729,7 +729,7 @@ public class DefaultTokenSearch implements TokenSearch {
                 synonyms.add(lc_url.substring(schemepos + 3) + zone);
 
                 // Just the URL path, excluding host, including query and fragment strings.
-                int pathstart = lc_url.indexOf("/", schemepos + 4);
+                int pathstart = lc_url.indexOf('/', schemepos + 4);
                 if (pathstart > -1) {
                     synonyms.add(lc_url.substring(pathstart) + zone);
 
@@ -744,7 +744,7 @@ public class DefaultTokenSearch implements TokenSearch {
                     }
 
                     // Just the host or ip
-                    int portpos = lc_url.indexOf(":", schemepos + 4);
+                    int portpos = lc_url.indexOf(':', schemepos + 4);
                     if (portpos > schemepos && portpos < pathstart) {
                         synonyms.add(lc_url.substring(schemepos + 3, portpos) + zone);
                     } else {
@@ -775,13 +775,13 @@ public class DefaultTokenSearch implements TokenSearch {
                             synonyms.add(decoded + zone);
 
                             // See if we have an embedded url or email address as a parameter
-                            if (param.indexOf("=") > 0) {
+                            if (param.indexOf('=') > 0) {
                                 String kv[] = decoded.split("=", 2);
                                 if (kv != null && kv.length == 2 && kv[1].length() > 4) {
                                     if (kv[1].startsWith("http://") || kv[1].startsWith("https://")) {
                                         synonyms.addAll(urlTokens(new String[] {kv[1], zone}, false, includeTerm));
-                                    } else if (kv[1].indexOf("@") > 0) {
-                                        int atPos = kv[1].indexOf("@");
+                                    } else if (kv[1].indexOf('@') > 0) {
+                                        int atPos = kv[1].indexOf('@');
                                         synonyms.add(kv[1] + zone);
                                         if (atPos + 1 < kv[1].length()) {
                                             synonyms.add(kv[1].substring(atPos) + zone);
@@ -830,10 +830,10 @@ public class DefaultTokenSearch implements TokenSearch {
             }
 
             // trim leading path segments, adding each as a synonym.
-            int slashpos = url_path.indexOf("/");
+            int slashpos = url_path.indexOf('/');
             while (slashpos > -1 && (slashpos < (url_path.length() - 1))) {
                 synonyms.add(url_path.substring(slashpos + 1) + zone);
-                slashpos = url_path.indexOf("/", slashpos + 1);
+                slashpos = url_path.indexOf('/', slashpos + 1);
             }
 
             // Index words from this url
