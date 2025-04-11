@@ -82,9 +82,7 @@ public class WiseGuysIngest {
             case "AGE":
             case "MAGIC":
             case "ETA":
-                return numberType.getClass().getName();
-            case "
-              ":
+            case "BAIL":
                 return numberType.getClass().getName();
             case "FROM_ADDRESS":
             case "TO_ADDRESS":
@@ -144,9 +142,11 @@ public class WiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp + corleoneTimeStampDelta,
                             emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp + corleoneTimeStampDelta,
+                            emptyValue);
 
-            mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp + corleoneTimeStampDelta,
+                            emptyValue);
             mutation.put(datatype + "\u0000" + corleoneChildUID, "ETA.0" + "\u0000" + "12", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneChildUID, "BIRTH_DATE" + "\u0000" + "1930-12-28T00:00:05.000Z", columnVisibility,
                             timeStamp + corleoneTimeStampDelta, emptyValue);
