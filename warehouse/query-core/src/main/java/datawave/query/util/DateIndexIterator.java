@@ -48,8 +48,6 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
     private boolean timeTravelEnabled = false;
 
     private SortedKeyValueIterator<Key,Value> source;
-    private Map<String,String> options;
-    private IteratorEnvironment env;
 
     private Range range;
     private Collection<ByteSequence> columnFamilies;
@@ -61,10 +59,7 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.source = source;
-        this.options = options;
-        this.env = env;
 
-        // TODO: parse dates, datatypes
         if (options.containsKey(DATATYPE_FILTER)) {
             String option = options.get(DATATYPE_FILTER);
             datatypes = new HashSet<>(Splitter.on(',').splitToList(option));
@@ -140,7 +135,6 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
                     tv = null;
                     source.next();
                     continue;
-                    // TODO: should seek to minimum
                 }
             }
 

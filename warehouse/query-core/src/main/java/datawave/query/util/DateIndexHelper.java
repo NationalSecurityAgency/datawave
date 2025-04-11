@@ -176,6 +176,10 @@ public class DateIndexHelper implements ApplicationContextAware {
         private String start;
         private String end;
 
+        public void addField(String field) {
+            this.fields.add(field);
+        }
+
         public Set<String> getFields() {
             return fields;
         }
@@ -237,6 +241,26 @@ public class DateIndexHelper implements ApplicationContextAware {
         public String toString() {
             return "field: " + fields + ", dateRange[" + start + "," + end + "]";
         }
+
+        public String serializeToString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(start).append(',');
+            sb.append(end).append(',');
+            sb.append(Joiner.on(',').join(fields));
+            return sb.toString();
+        }
+
+        public static DateTypeDescription deserializeFromString(String data) {
+            String[] parts = data.split(",");
+
+            DateTypeDescription description = new DateTypeDescription();
+            description.updateStartEndDate(parts[0]);
+            description.updateStartEndDate(parts[1]);
+            for (int i = 2; i < parts.length; i++) {
+                description.addField(parts[i]);
+            }
+            return description;
+        }
     }
 
     /**
@@ -275,23 +299,23 @@ public class DateIndexHelper implements ApplicationContextAware {
             // restrict to our date type
             scanner.fetchColumnFamily(new Text(dateType));
 
-            if (useIterator && !datatypeFilter.isEmpty()) {
-                IteratorSetting setting = new IteratorSetting(50, "GetTypeDescription", DateIndexIterator.class);
-                setting.addOption(DateIndexIterator.DATATYPE_FILTER, Joiner.on(',').join(datatypeFilter));
+            if (useIterator) {
+                IteratorSetting setting = new IteratorSetting(50, "DateTypeDescriptionIterator", DateTypeDescriptionIterator.class);
+                if (!datatypeFilter.isEmpty()) {
+                    setting.addOption(DateTypeDescriptionIterator.DATATYPE_FILTER, Joiner.on(',').join(datatypeFilter));
+                }
                 scanner.addScanIterator(setting);
 
                 for (Entry<Key,Value> entry : scanner) {
-                    Key k = entry.getKey();
-                    String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
-                    desc.fields.add(parts[2]);
-                    desc.updateStartEndDate(parts[0]);
+                    // should only have one entry
+                    desc = DateTypeDescription.deserializeFromString(new String(entry.getValue().get()));
                 }
             } else {
                 for (Entry<Key,Value> entry : scanner) {
                     Key k = entry.getKey();
                     String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                     if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
-                        desc.fields.add(parts[2]);
+                        desc.addField(parts[2]);
                         desc.updateStartEndDate(parts[0]);
                     }
                 }

@@ -1,5 +1,7 @@
 package datawave.query.util;
 
+import static datawave.query.util.DateIndexHelper.DateTypeDescription;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.BitSet;
@@ -148,8 +150,8 @@ public class DateIndexHelperTest implements ApplicationContextAware {
                         0.9f);
         helper.setUseIterator(false);
 
-        DateIndexHelper.DateTypeDescription dtd = helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"),
-                        DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        DateTypeDescription dtd = helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
+                        Collections.singleton("test"));
         Assert.assertEquals(Collections.singleton("LOAD_DATE"), dtd.getFields());
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100101"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
@@ -205,8 +207,8 @@ public class DateIndexHelperTest implements ApplicationContextAware {
                         0.9f);
         helper.setUseIterator(true);
 
-        DateIndexHelper.DateTypeDescription dtd = helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"),
-                        DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        DateTypeDescription dtd = helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
+                        Collections.singleton("test"));
         Assert.assertEquals(Collections.singleton("LOAD_DATE"), dtd.getFields());
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100101"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
@@ -333,4 +335,22 @@ public class DateIndexHelperTest implements ApplicationContextAware {
                         DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
         Assert.assertEquals("", hint);
     }
+
+    @Test
+    public void testDescriptionSerDe() {
+        DateTypeDescription description = new DateTypeDescription();
+        description.addField("FIELD_A");
+        description.addField("FIELD_B");
+        description.updateStartEndDate("20240303");
+        description.updateStartEndDate("20240304");
+
+        String data = description.serializeToString();
+
+        DateTypeDescription other = DateTypeDescription.deserializeFromString(data);
+
+        Assert.assertEquals(description.getFields(), other.getFields());
+        Assert.assertEquals(description.getBeginDate(), other.getBeginDate());
+        Assert.assertEquals(description.getEndDate(), other.getEndDate());
+    }
+
 }
