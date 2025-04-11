@@ -71,7 +71,7 @@ public class ReferencedValue {
         if (isValidXML(value)) {
             this.value = value;
         } else {
-            this.value = new String(Base64.encodeBase64(value.getBytes(StandardCharsets.UTF_8)));
+            this.value = new String(Base64.encodeBase64(value.getBytes(StandardCharsets.UTF_8)), UTF_8);
             this.base64Encoded = true;
         }
     }
