@@ -1,9 +1,9 @@
 package datawave.ingest.data.config.ingest;
 
-import datawave.ingest.data.config.ingest.WhindexIngest;
-
 import java.util.List;
 import java.util.Objects;
+
+import datawave.ingest.data.config.ingest.WhindexIngest;
 
 public class WhindexConfig {
 
@@ -55,9 +55,11 @@ public class WhindexConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass())
+            return false;
         WhindexConfig config = (WhindexConfig) o;
-        return overloaded == config.overloaded && Objects.equals(valueField, config.valueField) && Objects.equals(values, config.values) && Objects.equals(sourceField, config.sourceField) && Objects.equals(destField, config.destField);
+        return overloaded == config.overloaded && Objects.equals(valueField, config.valueField) && Objects.equals(values, config.values)
+                        && Objects.equals(sourceField, config.sourceField) && Objects.equals(destField, config.destField);
     }
 
     @Override

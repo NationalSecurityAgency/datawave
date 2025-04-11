@@ -1,16 +1,5 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.LinkedListMultimap;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import org.apache.hadoop.conf.Configuration;
-
-import com.google.common.collect.Multimap;
-
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -19,6 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public class WhindexFieldIngestHelper implements WhindexIngest {
 
@@ -33,23 +33,23 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
 
     private final Type type;
 
-    private final Multimap<String, String> whindexFieldDefinitions = LinkedListMultimap.create();
-    private final Multimap<String, WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
+    private final Multimap<String,String> whindexFieldDefinitions = LinkedListMultimap.create();
+    private final Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
     private final Set<String> overloadedFields = new HashSet<>();
 
     public WhindexFieldIngestHelper(Type type) {
         this.type = type;
     }
-    
+
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
 
         String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
 
-        Map<String, String> properties = config.getPropsWithPrefix(commonPrefix);
-        Map<String, WhindexConfig> groupingsToConfigs = new HashMap<>();
+        Map<String,String> properties = config.getPropsWithPrefix(commonPrefix);
+        Map<String,WhindexConfig> groupingsToConfigs = new HashMap<>();
 
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
+        for (Map.Entry<String,String> entry : properties.entrySet()) {
             String[] parts = entry.getKey().split("\\.");
             String groupID = parts[0];
             String property = parts[1];
@@ -65,7 +65,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                     break;
                 case DELETE_SRC_FIELD:
                     whindexConfig.setOverloaded(Boolean.parseBoolean(entry.getValue()));
-                    if(whindexConfig.isOverloaded()){
+                    if (whindexConfig.isOverloaded()) {
                         overloadedFields.add(whindexConfig.getSourceField());
                     }
                     break;
@@ -84,28 +84,24 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
         groupingsToConfigs.values().forEach((v) -> valueFieldsToWhindexConfigs.put(v.getValueField(), v));
 
     }
-    
+
     @Override
     public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
 
-        Multimap<String, NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
+        Multimap<String,NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
 
         // Get all the wc that have both vf and sf in the eventMap
-        List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs
-                .entries()
-                .stream()
-                .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
-
+        List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs.entries().stream()
+                        .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
+                        .map(Map.Entry::getValue).collect(Collectors.toList());
 
         // Check that the eventMap entry has EITHER an EventField or IndexedField in common with the wc's VALUES
         for (WhindexConfig curWhindexConfig : matchingConfigs) {
             Collection<NormalizedContentInterface> relatedValueEventContents = eventMap.get(curWhindexConfig.getValueField());
             // if any of the NCI's have either EF or IF that's GOOD!
-            boolean containsAnyMatchingValue = relatedValueEventContents
-                    .stream()
-                    .anyMatch(nci -> curWhindexConfig.getValues().contains(nci.getEventFieldValue()) || curWhindexConfig.getValues().contains(nci.getIndexedFieldValue()));
+            boolean containsAnyMatchingValue = relatedValueEventContents.stream()
+                            .anyMatch(nci -> curWhindexConfig.getValues().contains(nci.getEventFieldValue())
+                                            || curWhindexConfig.getValues().contains(nci.getIndexedFieldValue()));
 
             if (containsAnyMatchingValue) {
                 Collection<NormalizedContentInterface> relatedSourceEventContents = eventMap.get(curWhindexConfig.getSourceField());
@@ -125,7 +121,9 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     @Override
-    public Multimap<String,String> getWhindexFieldDefinitions() { return whindexFieldDefinitions; }
+    public Multimap<String,String> getWhindexFieldDefinitions() {
+        return whindexFieldDefinitions;
+    }
 
     @Override
     public boolean isWhindexField(String field) {
