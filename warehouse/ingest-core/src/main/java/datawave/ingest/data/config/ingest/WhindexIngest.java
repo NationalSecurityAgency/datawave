@@ -11,8 +11,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import datawave.ingest.data.config.NormalizedFieldAndValue;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -20,9 +20,9 @@ import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctionsFactory;
-import org.apache.log4j.Logger;
 
 public interface WhindexIngest {
 
@@ -30,7 +30,8 @@ public interface WhindexIngest {
      * Used to allow external scopes to interface with the WhindexIngest's WhindexFieldNormalizer's .setup() method. Initializes the WhindexIngest from a
      * {@link Configuration}.
      *
-     * @param config the {@link Configuration}.
+     * @param config
+     *            the {@link Configuration}.
      */
     void setup(Configuration config) throws IllegalArgumentException;
 
@@ -40,10 +41,11 @@ public interface WhindexIngest {
      *
      * @return the mapping of whindex fields to values.
      */
-    Multimap<String, String> getWhindexFieldDefinitions();
+    Multimap<String,String> getWhindexFieldDefinitions();
 
     /**
-     * @param field the field to check.
+     * @param field
+     *            the field to check.
      * @return {@code true} if {@code field} is a whindex field.
      */
     boolean isWhindexField(String field);
@@ -52,7 +54,8 @@ public interface WhindexIngest {
      * {@code OverloadedWhindexField}s are source fields ("{@code SRC_FIELD}") that become redundant once whindex entries are generated. They are marked to be
      * removed.
      *
-     * @param field the field to check.
+     * @param field
+     *            the field to check.
      * @return {@code true} if {@code field} is an {@code OverloadedWhindexField} (marked for removal)
      */
     boolean isOverloadedWhindexField(String field);
@@ -63,7 +66,7 @@ public interface WhindexIngest {
      *
      * @return the mapping of whindex fields to values.
      */
-    Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventFields);
+    Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventFields);
 
     /**
      * Responsible for parsing the {@code .rules} passed to the {@link WhindexIngest} and holding configuration information.
@@ -91,15 +94,17 @@ public interface WhindexIngest {
         public static final String SRC_DST_DEL_DELIMITER = ":";
 
         // Mappings of source fields to their respective whindex field.
-        private final Multimap<String, String> whindexFieldDefinitions = LinkedListMultimap.create();
+        private final Multimap<String,String> whindexFieldDefinitions = LinkedListMultimap.create();
         private final Set<String> overloadedFields = new HashSet<>();
         private MarkingFunctions markingFunctions;
 
         /**
          * Parses the {@code config}'s "{@code <datatype>.rules"} property, generating whindex entries based on each rule.
          *
-         * @param type   the datatype we're looking for.
-         * @param config the config instance that holds the rules.
+         * @param type
+         *            the datatype we're looking for.
+         * @param config
+         *            the config instance that holds the rules.
          */
         public void setup(Type type, Configuration config) {
             markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
@@ -142,6 +147,7 @@ public interface WhindexIngest {
         public static final String DELETE_SRC_FIELD = "delete_src_field";
         public static final String DST_FIELD = "dst_field";
         public static final String VALUES = "values";
+
         private class WhindexConfig {
 
             // The name of the FIELD that contains the VALUEs
@@ -198,9 +204,11 @@ public interface WhindexIngest {
 
             @Override
             public boolean equals(Object o) {
-                if (o == null || getClass() != o.getClass()) return false;
+                if (o == null || getClass() != o.getClass())
+                    return false;
                 WhindexConfig config = (WhindexConfig) o;
-                return overloaded == config.overloaded && Objects.equals(valueField, config.valueField) && Objects.equals(values, config.values) && Objects.equals(sourceField, config.sourceField) && Objects.equals(destField, config.destField);
+                return overloaded == config.overloaded && Objects.equals(valueField, config.valueField) && Objects.equals(values, config.values)
+                                && Objects.equals(sourceField, config.sourceField) && Objects.equals(destField, config.destField);
             }
 
             @Override
@@ -213,16 +221,16 @@ public interface WhindexIngest {
         // why do we need a vf->wc multimap? OH because the same vf can have different wc associated with them.
         // renaming this would be nice, this is a:
         // Map that contains all WhindexConfigs related to each [valueField] (many to 1)
-        private Multimap<String, WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
+        private Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
 
         public void setup2(Type type, Configuration config) {
 
             String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
 
-            Map<String, String> properties = config.getPropsWithPrefix(commonPrefix);
-            Map<String, WhindexConfig> groupingsToConfigs = new HashMap<>();
+            Map<String,String> properties = config.getPropsWithPrefix(commonPrefix);
+            Map<String,WhindexConfig> groupingsToConfigs = new HashMap<>();
 
-            for (Map.Entry<String, String> entry : properties.entrySet()) {
+            for (Map.Entry<String,String> entry : properties.entrySet()) {
                 String[] parts = entry.getKey().split("\\.");
                 String groupID = parts[0];
                 String property = parts[1];
@@ -260,7 +268,7 @@ public interface WhindexIngest {
          *
          * @return the mapping of whindex fields to values.
          */
-        public Multimap<String, String> getWhindexFieldDefinitions() {
+        public Multimap<String,String> getWhindexFieldDefinitions() {
             return whindexFieldDefinitions;
         }
 
@@ -275,7 +283,8 @@ public interface WhindexIngest {
         }
 
         /**
-         * @param field the field to check.
+         * @param field
+         *            the field to check.
          * @return {@code true} if {@code field} is a whindex field.
          */
         public boolean isWhindexField(String field) {
@@ -284,31 +293,26 @@ public interface WhindexIngest {
 
         /**
          * // todo Given a "{@code RULE}", return a {@code Multimap<String, NormalizedContentInterface>} of whindex fields ("{@code DST_FIELD}") mapped to the
-         * values specified by the {@code RULE}.
-         * FieldName / Normalized FieldName and Normalized Values
+         * values specified by the {@code RULE}. FieldName / Normalized FieldName and Normalized Values
          *
          * @return the mapping of whindex fields to values.
          */
-        public Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventMap) {
+        public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
 
-            Multimap<String, NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
+            Multimap<String,NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
 
             // Get all the wc that have both vf and sf in the eventMap
-            List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs
-                    .entries()
-                    .stream()
-                    .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
-                    .map(Map.Entry::getValue)
-                    .collect(Collectors.toList());
-
+            List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs.entries().stream()
+                            .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
+                            .map(Map.Entry::getValue).collect(Collectors.toList());
 
             // Check that the eventMap entry has EITHER an EventField or IndexedField in common with the wc's VALUES
             for (WhindexConfig curWhindexConfig : matchingConfigs) {
                 Collection<NormalizedContentInterface> relatedValueEventContents = eventMap.get(curWhindexConfig.getValueField());
                 // if any of the NCI's have either EF or IF that's GOOD!
-                boolean containsAnyMatchingValue = relatedValueEventContents
-                        .stream()
-                        .anyMatch(nci -> curWhindexConfig.getValues().contains(nci.getEventFieldValue()) || curWhindexConfig.getValues().contains(nci.getIndexedFieldValue()));
+                boolean containsAnyMatchingValue = relatedValueEventContents.stream()
+                                .anyMatch(nci -> curWhindexConfig.getValues().contains(nci.getEventFieldValue())
+                                                || curWhindexConfig.getValues().contains(nci.getIndexedFieldValue()));
 
                 if (containsAnyMatchingValue) {
                     Collection<NormalizedContentInterface> relatedSourceEventContents = eventMap.get(curWhindexConfig.getSourceField());
