@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import org.apache.hadoop.conf.Configuration;
@@ -145,72 +146,6 @@ public interface WhindexIngest {
         public static final String DELETE_SRC_FIELD = "delete_src_field";
         public static final String DST_FIELD = "dst_field";
         public static final String VALUES = "values";
-
-        /* Property examples:
-        <type>.whindex.rules.1.value_field=APPLE
-        <type>.whindex.rules.1.values=X,Y,Z
-        <type>.whindex.rules.1.src_field=BANANA
-        <type>.whindex.rules.1.dst_field=HAT
-
-        <type>.whindex.rules.2.value_field=FRISBEE
-        <type>.whindex.rules.2.src_field=BASEBALL
-        <type>.whindex.rules.2.delete_src_field=true
-        <type>.whindex.rules.2.dst_field=KICKBALL
-        <type>.whindex.rules.2.values=X,Y,Z
-
-
-        If the event field contains one of the given values for the defined valueField, and has a mapping for the source
-        field, then add a field mapping that has the whindex field with the value of the source field.
-
-        */
-
-
-        /*
-        Sample event:
-
-        vf: APPLE -> vs: Y
-        sf: BANANA -> sfv: Blue
-
-        Rule 1 tells us to add the following field -> value mappings to the event fields:
-        df: HAT -> from-event-sfv: Blue
-
-
-         */
-
-        /*
-        Event 1:
-        FRISBEE -> AAA
-
-        BASEBALL -> Homerun
-
-        What would you make?
-        => Nothing, AAA is not part of the set of values for FRISBEE
-
-        Event 2:
-        APPLE -> Y
-
-        BANANA -> Blue
-        BANANA -> Green
-        BANANA -> Orange
-
-        What would you make?
-        HAT -> Blue
-        HAT -> Green
-        HAT -> Orange
-
-        Event 3:
-        FRISBEE -> X
-
-        GOLF -> Boring
-        FOOTBALL -> Tackle
-
-
-
-        What would you make?
-        => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
-         */
-
-
         private class WhindexConfig {
 
             // The name of the FIELD that contains the VALUEs
@@ -279,28 +214,14 @@ public interface WhindexIngest {
 
         }
 
+        // why do we need a vf->wc multimap? OH because the same vf can have different wc associated with them.
+        // renaming this would be nice, this is a:
+        // Map that contains all WhindexConfigs related to each [valueField] (many to 1)
         private Multimap<String, WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
 
         public void setup2(Type type, Configuration config) {
-            // The prefix common to all rules will be: <type>.whindex.rules.'
+
             String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
-
-            /*
-            1.value_field=APPLE
-            1.values=X,Y,Z
-            1.src_field=BANANA
-            1.dst_field=HAT
-             */
-/*
-            class WHINDEX {
-                valueF:string
-                values:List<string>
-                srcF:string
-                df:string
-            }
-
-            Map<ID:string , WHINDEX>
-            */
 
             Map<String, String> properties = config.getPropsWithPrefix(commonPrefix);
             Map<String, WhindexConfig> groupingsToConfigs = new HashMap<>();
@@ -372,85 +293,42 @@ public interface WhindexIngest {
          *
          * @return the mapping of whindex fields to values.
          */
-        public Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventFieldValuePairsSet) {
+        public Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventMap) {
 
-            Multimap<String, NormalizedContentInterface> newWhindexFields = HashMultimap.create();
+            Multimap<String, NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
 
-            for (WhindexConfig currConfig : valueFieldsToWhindexConfigs.values()) {
-                if (eventFieldValuePairsSet.containsKey(currConfig.getValueField()) && eventFieldValuePairsSet.containsKey(currConfig.getSourceField())) {
+            // Get all the wc that have both vf and sf in the eventMap
+            List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs
+                    .entries()
+                    .stream()
+                    .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toList());
 
-                    Collection<NormalizedContentInterface> eventValues = eventFieldValuePairsSet.get(currConfig.getValueField()); // Multiple NCI since its a multimap!!!
-                    boolean containsAnyMatchingValueFieldValue = false;
 
-                    for (NormalizedContentInterface eventValue : eventValues) {
+            // Check that the eventMap entry has EITHER an EventField or IndexedField in common with the wc's VALUES
+            for (WhindexConfig curWhindexConfig : matchingConfigs) {
+                Collection<NormalizedContentInterface> relatedValueEventContents = eventMap.get(curWhindexConfig.getValueField());
+                // if any of the NCI's have either EF or IF that's GOOD!
+                boolean containsAnyMatchingValue = relatedValueEventContents
+                        .stream()
+                        .anyMatch(nci -> curWhindexConfig.getValues().contains(nci.getEventFieldValue()) || curWhindexConfig.getValues().contains(nci.getIndexedFieldValue()));
 
-                        if (currConfig.getValues().contains(eventValue.getEventFieldValue()) ||
-                                currConfig.getValues().contains(eventValue.getIndexedFieldValue())) {
-                            containsAnyMatchingValueFieldValue = true;
-                            break;
-                        }
+                if (containsAnyMatchingValue) {
+                    Collection<NormalizedContentInterface> relatedSourceEventContents = eventMap.get(curWhindexConfig.getSourceField());
+                    List<NormalizedContentInterface> copies = new ArrayList<>();
+                    for (NormalizedContentInterface content : relatedSourceEventContents) {
+                        NormalizedFieldAndValue copy = new NormalizedFieldAndValue(content);
+                        copies.add(copy);
                     }
 
-                    if (containsAnyMatchingValueFieldValue) {
-                        Collection<NormalizedContentInterface> sourceFieldValues = eventFieldValuePairsSet.get(currConfig.getSourceField());
-                        List<NormalizedContentInterface> copies = new ArrayList<>();
-                        for (NormalizedContentInterface currSourceFieldValue : sourceFieldValues) {
-                            NormalizedFieldAndValue copy = new NormalizedFieldAndValue(currSourceFieldValue);
-                            copies.add(copy);
-                        }
-
-                        // Create whindex fields
-                        newWhindexFields.putAll(currConfig.getDestField(), copies);
-                    }
-
+                    // Create whindex fields
+                    whindicesInEventMap.putAll(curWhindexConfig.getDestField(), copies);
                 }
             }
 
-            return newWhindexFields;
+            return whindicesInEventMap;
 
         }
-
-           /*
-        Sample event:
-        vf: APPLE -> vfv's: Y [EVENT]
-        sf: BANANA -> sfv: Blue [WHINDEX]
-        df: HAT -> from-event-sfv: Blue [MIX]
-
-
-         */
-
-        /*
-        Event 1:
-        FRISBEE -> AAA
-
-        BASEBALL -> Homerun
-
-        What would you make?
-        => Nothing, AAA is not part of the set of values for FRISBEE
-
-        Event 2:
-        APPLE -> Y
-
-        BANANA -> Blue
-        BANANA -> Green
-        BANANA -> Orange
-
-        What would you make?
-        HAT -> Blue
-        HAT -> Green
-        HAT -> Orange
-
-        Event 3:
-        FRISBEE -> X
-
-        GOLF -> Boring
-        FOOTBALL -> Tackle
-
-
-
-        What would you make?
-        => Nothing, neither GOLF nor FOOTBALL are in the SRC fields for Frisbee
-         */
-
     }
 }
