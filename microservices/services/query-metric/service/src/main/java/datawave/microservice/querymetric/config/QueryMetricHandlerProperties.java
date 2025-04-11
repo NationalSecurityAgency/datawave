@@ -106,6 +106,7 @@ public class QueryMetricHandlerProperties {
             "NUM_UPDATES",
             "PARAMETERS",
             "PLAN",
+            "SUBPLAN",
             "POSITIVE_SELECTORS",
             "PROXY_SERVERS",
             "QUERY",

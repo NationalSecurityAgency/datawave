@@ -4,6 +4,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -76,6 +77,10 @@ public class QueryMetricModel extends QueryMetric implements QueryMetricModelFor
         return basePath + "/v1/id/" + queryId;
     }
     
+    public String getQuerySubplansUrl() {
+        return basePath + "/v1/id/" + queryId + "/subplans/";
+    }
+    
     public String getProxyServersStr() {
         return getProxyServers() == null ? "" : StringUtils.join(getProxyServers(), "<BR/>");
     }
@@ -99,6 +104,10 @@ public class QueryMetricModel extends QueryMetric implements QueryMetricModelFor
     
     public String getPredictionsStr() {
         return getPredictionsStr(predictions);
+    }
+    
+    public Map<String,RangeCounts> getSubplansStr() {
+        return super.getSubPlans();
     }
     
     public String getLoginTimeStr() {

@@ -21,10 +21,10 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.RangeCounts;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
     
@@ -332,6 +332,17 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (isChanged(updated.getSourceCount(), stored == null ? -1 : stored.getSourceCount())) {
                 fields.put("SOURCE_COUNT", Long.toString(updated.getSourceCount()));
             }
+            Map<String,RangeCounts> updatedSubPlans = updated.getSubPlans();
+            if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
+                Map<String,RangeCounts> storedSubPlans = stored == null ? null : stored.getSubPlans();
+                for (Map.Entry<String,RangeCounts> entry : updatedSubPlans.entrySet()) {
+                    String subPlan = entry.getKey();
+                    RangeCounts updatedRangeCounts = entry.getValue();
+                    if (storedSubPlans == null || !storedSubPlans.containsKey(subPlan) || !storedSubPlans.get(subPlan).equals(updatedRangeCounts)) {
+                        fields.put("SUBPLAN", subPlan + " : " + updatedRangeCounts.getDocumentRangeCount() + "," + updatedRangeCounts.getShardRangeCount());
+                    }
+                }
+            }
             if (!ignoredFields.contains("USER")) {
                 if (isFirstWrite(updated.getUser(), stored == null ? null : stored.getUser())) {
                     fields.put("USER", updated.getUser());
@@ -458,6 +469,18 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 }
                 if (isChanged(updated.getSourceCount(), stored.getSourceCount())) {
                     fields.put("SOURCE_COUNT", Long.toString(stored.getSourceCount()));
+                }
+                Map<String,RangeCounts> updatedSubPlans = updated.getSubPlans();
+                if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
+                    Map<String,RangeCounts> storedSubPlans = stored.getSubPlans();
+                    for (Map.Entry<String,RangeCounts> entry : updatedSubPlans.entrySet()) {
+                        String subPlan = entry.getKey();
+                        RangeCounts updatedRangeCounts = entry.getValue();
+                        if (storedSubPlans != null && storedSubPlans.containsKey(subPlan) && !storedSubPlans.get(subPlan).equals(updatedRangeCounts)) {
+                            fields.put("SUBPLAN", subPlan + " : [" + storedSubPlans.get(subPlan).getDocumentRangeCount() + ", "
+                                            + storedSubPlans.get(subPlan).getShardRangeCount() + "]");
+                        }
+                    }
                 }
                 if (isChanged(updated.getYieldCount(), stored.getYieldCount())) {
                     fields.put("YIELD_COUNT", Long.toString(stored.getYieldCount()));

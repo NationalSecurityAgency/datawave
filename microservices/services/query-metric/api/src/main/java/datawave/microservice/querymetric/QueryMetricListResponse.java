@@ -59,4 +59,32 @@ public class QueryMetricListResponse extends BaseQueryMetricListResponse<QueryMe
         mav.addObject("footer", footer);
         return mav;
     }
+    
+    /**
+     * Creates the ModelAndView for the detailed query subplans page (querysubplans.html)
+     *
+     * @return the ModelAndView for querysubplans.html
+     */
+    @Override
+    public ModelAndView createSubplanModelAndView() {
+        ModelAndView mav = new ModelAndView();
+        
+        mav.setViewName("querysubplans");
+        
+        TreeMap<Date,QueryMetric> metricMap = new TreeMap<>(Collections.reverseOrder());
+        
+        for (QueryMetric metric : this.getResult()) {
+            metricMap.put(metric.getCreateDate(), metric);
+        }
+        
+        List<QueryMetricModel> metricModelList = new ArrayList<>();
+        
+        for (QueryMetric metric : metricMap.values()) {
+            QueryMetricModel metricModel = new QueryMetricModel(metric, basePath);
+            metricModelList.add(metricModel);
+        }
+        mav.addObject("basePath", this.basePath);
+        mav.addObject("metricList", metricModelList);
+        return mav;
+    }
 }
