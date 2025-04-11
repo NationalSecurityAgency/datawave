@@ -512,6 +512,9 @@ public class MapReduceBean {
         try {
             j.submit();
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_START_ERROR, e);
             log.error(qe.getMessage(), qe);
             response.addException(qe.getBottomQueryException());
