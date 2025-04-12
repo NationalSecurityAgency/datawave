@@ -29,6 +29,7 @@
         <module>rest-api</module>
         <module>model</module>
         <module>dictionary</module>
+        <module>annotations</module>
     </modules>
     <properties>
         <accumulo.scope>provided</accumulo.scope>

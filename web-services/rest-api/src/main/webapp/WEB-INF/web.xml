@@ -94,7 +94,9 @@
             datawave.webservice.mr.status.MapReduceStatusUpdateBean,
             <!-- From dictionary -->
             datawave.webservice.dictionary.DataDictionaryBean,
-            datawave.webservice.dictionary.EdgeDictionaryBean
+            datawave.webservice.dictionary.EdgeDictionaryBean,
+            <!-- From Annotations -->
+            datawave.webservice.annotation.AnnotationBean
         </param-value>
     </context-param>
 

@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package datawave.annotation.protobuf;
+
+option java_package = "datawave.annotation.protobuf.v0";
+option optimize_for = SPEED;
+option java_multiple_files = true;
+
+enum SegmentBoundaryType {
+  TIME = 0;
+  POSITION = 1;
+}
+
+// boundaries of this segment, depending on the segment type, it might be a boundary defined by time or position.
+message SegmentBoundary {
+  required SegmentBoundaryType type = 1;
+  required string start = 2;
+  required string end = 3;
+  optional uint32 rotation = 4;
+}
+
+// scored values related to this segment
+message SegmentValue {
+  // the value associated with this segment.
+  required string value = 1;
+  // the score associated with this value (e.g., confidence)
+  required float score = 2;
+  // an optional extension providing additional data.
+  optional string extension = 3;
+}
+
+// Segment Data stored in the Accumulo value
+message SegmentData {
+  // the boundary for this segment.
+  required SegmentBoundary boundary = 1;
+  // values associated with this segment.
+  repeated SegmentValue value = 2;
+}

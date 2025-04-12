@@ -39,6 +39,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <scope>provided</scope>
         </dependency>

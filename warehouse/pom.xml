@@ -34,6 +34,7 @@
         <module>edge-model-configuration-core</module>
         <module>ssdeep-common</module>
         <module>ingest-ssdeep</module>
+        <module>annotation-core</module>
     </modules>
     <properties>
         <!-- set env property to its default value -->
@@ -145,6 +146,11 @@
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-regression-testing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-annotations</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

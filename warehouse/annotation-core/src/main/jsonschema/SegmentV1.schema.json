@@ -1,0 +1,340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/.segments.v1.Segment",
+  "$defs": {
+    ".segments.v1.All": {
+      "properties": {},
+      "type": "object",
+      "description": "segment boundary types"
+    },
+    ".segments.v1.Point": {
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/.segments.v1.Point.x"
+        },
+        "y": {
+          "$ref": "#/$defs/.segments.v1.Point.y"
+        },
+        "label": {
+          "$ref": "#/$defs/.segments.v1.Point.label"
+        }
+      },
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "label"
+      ]
+    },
+    ".segments.v1.Point.label": {
+      "type": "string"
+    },
+    ".segments.v1.Point.x": {
+      "type": "number"
+    },
+    ".segments.v1.Point.y": {
+      "type": "number"
+    },
+    ".segments.v1.PointList": {
+      "properties": {
+        "point": {
+          "$ref": "#/$defs/.segments.v1.PointList.point"
+        }
+      },
+      "type": "object"
+    },
+    ".segments.v1.PointList.point": {
+      "items": {
+        "$ref": "#/$defs/.segments.v1.Point"
+      },
+      "type": "array"
+    },
+    ".segments.v1.Segment": {
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "all"
+              ]
+            },
+            {
+              "required": [
+                "pointList"
+              ]
+            },
+            {
+              "required": [
+                "time"
+              ]
+            },
+            {
+              "required": [
+                "characters"
+              ]
+            },
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "all"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "pointList"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "time"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "characters"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "annotationId": {
+          "$ref": "#/$defs/.segments.v1.Segment.annotationId"
+        },
+        "segmentId": {
+          "$ref": "#/$defs/.segments.v1.Segment.segmentId"
+        },
+        "createTime": {
+          "$ref": "#/$defs/.segments.v1.Segment.createTime"
+        },
+        "updateTime": {
+          "$ref": "#/$defs/.segments.v1.Segment.updateTime"
+        },
+        "eTag": {
+          "$ref": "#/$defs/.segments.v1.Segment.eTag"
+        },
+        "segmentValue": {
+          "$ref": "#/$defs/.segments.v1.Segment.segmentValue"
+        },
+        "metadata": {
+          "$ref": "#/$defs/.segments.v1.Segment.metadata"
+        },
+        "boundaryType": {
+          "$ref": "#/$defs/.segments.v1.Segment.boundaryType"
+        },
+        "all": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.segments.v1.Segment.all"
+            }
+          ]
+        },
+        "pointList": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.segments.v1.Segment.pointList"
+            }
+          ]
+        },
+        "time": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.segments.v1.Segment.time"
+            }
+          ]
+        },
+        "characters": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.segments.v1.Segment.characters"
+            }
+          ]
+        }
+      },
+      "type": "object",
+      "required": [
+        "annotationId",
+        "segmentId",
+        "createTime",
+        "updateTime",
+        "eTag",
+        "boundaryType"
+      ],
+      "description": "segment wrapping, consisting of a boundary and one or more associated values."
+    },
+    ".segments.v1.Segment.all": {
+      "$ref": "#/$defs/.segments.v1.All"
+    },
+    ".segments.v1.Segment.annotationId": {
+      "type": "string",
+      "description": "the annotation this segment is associated with."
+    },
+    ".segments.v1.Segment.boundaryType": {
+      "type": "string",
+      "description": "used for for serialization and deserialization in java or json. Potential values: TIME_SPAN_SECONDS, TEXT_SPAN_CHARACTERS, RECTANGLE, POLYGON"
+    },
+    ".segments.v1.Segment.characters": {
+      "$ref": "#/$defs/.segments.v1.TextSpanChars",
+      "description": "add future segment types here"
+    },
+    ".segments.v1.Segment.createTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "segment creation time"
+    },
+    ".segments.v1.Segment.eTag": {
+      "type": "string",
+      "description": "Used for optimistic concurrency across JSON and gRPC"
+    },
+    ".segments.v1.Segment.metadata": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object",
+      "description": "arbitrary, optional metadata"
+    },
+    ".segments.v1.Segment.pointList": {
+      "$ref": "#/$defs/.segments.v1.PointList"
+    },
+    ".segments.v1.Segment.segmentId": {
+      "type": "string",
+      "description": "the segment id in this annotation."
+    },
+    ".segments.v1.Segment.segmentValue": {
+      "items": {
+        "$ref": "#/$defs/.segments.v1.SegmentValue",
+        "description": "Multiple values associated with this segment."
+      },
+      "type": "array",
+      "description": "Multiple values associated with this segment."
+    },
+    ".segments.v1.Segment.time": {
+      "$ref": "#/$defs/.segments.v1.TimeSpanSeconds"
+    },
+    ".segments.v1.Segment.updateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "segment update time"
+    },
+    ".segments.v1.SegmentValue": {
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "extension"
+              ]
+            },
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "extension"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/.segments.v1.SegmentValue.value"
+        },
+        "score": {
+          "$ref": "#/$defs/.segments.v1.SegmentValue.score"
+        },
+        "extension": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/.segments.v1.SegmentValue.extension"
+            }
+          ]
+        }
+      },
+      "type": "object",
+      "required": [
+        "value",
+        "score"
+      ],
+      "description": "segment value, e.g. a label, confidence and source"
+    },
+    ".segments.v1.SegmentValue.extension": {
+      "type": "string",
+      "description": "type-specific data"
+    },
+    ".segments.v1.SegmentValue.score": {
+      "type": "number",
+      "description": "e.g., confidence"
+    },
+    ".segments.v1.SegmentValue.value": {
+      "type": "string",
+      "description": "e.g., label"
+    },
+    ".segments.v1.TextSpanChars": {
+      "properties": {
+        "startCharacter": {
+          "$ref": "#/$defs/.segments.v1.TextSpanChars.startCharacter"
+        },
+        "endCharacter": {
+          "$ref": "#/$defs/.segments.v1.TextSpanChars.endCharacter"
+        }
+      },
+      "type": "object",
+      "required": [
+        "startCharacter",
+        "endCharacter"
+      ]
+    },
+    ".segments.v1.TextSpanChars.endCharacter": {
+      "type": "integer"
+    },
+    ".segments.v1.TextSpanChars.startCharacter": {
+      "type": "integer"
+    },
+    ".segments.v1.TimeSpanSeconds": {
+      "properties": {
+        "startSeconds": {
+          "$ref": "#/$defs/.segments.v1.TimeSpanSeconds.startSeconds"
+        },
+        "endSeconds": {
+          "$ref": "#/$defs/.segments.v1.TimeSpanSeconds.endSeconds"
+        }
+      },
+      "type": "object",
+      "required": [
+        "startSeconds",
+        "endSeconds"
+      ]
+    },
+    ".segments.v1.TimeSpanSeconds.endSeconds": {
+      "type": "number"
+    },
+    ".segments.v1.TimeSpanSeconds.startSeconds": {
+      "type": "number"
+    }
+  },
+  "type": "object"
+}
