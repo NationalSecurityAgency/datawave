@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
@@ -60,6 +61,7 @@ import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
@@ -420,12 +422,39 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             r.put(l.getValue(), new Value(new byte[0]));
         }
         
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
         for (Entry<BulkIngestKey,Collection<Value>> entry : r.asMap().entrySet()) {
             entry.getKey().getKey().setTimestamp(timestamp);
-            entry.getKey().getKey().setDeleted(deleteMode);
+            String table = entry.getKey().getTableName().toString();
+            if (deleteMode && (table.equals(indexTable) || table.equals(reverseIndexTable))) {
+                // for deletes in the indexTable and reverseIndexTable, we will
+                // add a UidList negation instead of adding a delete mutation
+                Collection<Value> originalValues = entry.getValue();
+                Collection<Value> newValues = new ArrayList<>();
+                for (Value v : originalValues) {
+                    byte[] removalListBytes = toUidRemovalListBytes(v.get());
+                    if (removalListBytes != null) {
+                        newValues.add(new Value(removalListBytes));
+                    }
+                }
+                values.putAll(entry.getKey(), newValues);
+            } else {
+                entry.getKey().getKey().setDeleted(deleteMode);
+                values.putAll(entry.getKey(), entry.getValue());
+            }
         }
-        
-        return r;
+        return values;
+    }
+    
+    public byte[] toUidRemovalListBytes(byte[] uidListBytes) {
+        byte[] removalListBytes = null;
+        try {
+            List<String> uidList = Uid.List.parseFrom(uidListBytes).getUIDList();
+            removalListBytes = Uid.List.newBuilder().setCOUNT(-1 * uidList.size()).setIGNORE(false).addAllREMOVEDUID(uidList).build().toByteArray();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return removalListBytes;
     }
     
     @SuppressWarnings("unchecked")
