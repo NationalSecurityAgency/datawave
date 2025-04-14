@@ -53,7 +53,6 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
             String property = parts[1];
 
             WhindexConfig whindexConfig = groupingsToConfigs.computeIfAbsent(groupID, (k) -> new WhindexConfig());
-            log.info(groupID + " " + property);
             switch (property) {
                 case VALUE_FIELD:
                     whindexConfig.setValueField(entry.getValue());
