@@ -1,8 +1,10 @@
 package datawave.ingest.data.config.ingest;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Arrays;
+
+import org.junit.jupiter.api.Test;
 
 public class WhindexConfigTest {
 
