@@ -32,8 +32,6 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     public static final String VALUES = "values";
 
     private final Type type;
-
-    private final Multimap<String,String> whindexFieldDefinitions = LinkedListMultimap.create();
     private final Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
     private final Set<String> overloadedFields = new HashSet<>();
 
@@ -55,7 +53,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
             String property = parts[1];
 
             WhindexConfig whindexConfig = groupingsToConfigs.computeIfAbsent(groupID, (k) -> new WhindexConfig());
-
+            log.info(groupID + " " + property);
             switch (property) {
                 case VALUE_FIELD:
                     whindexConfig.setValueField(entry.getValue());
@@ -81,7 +79,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
             }
         }
 
-        groupingsToConfigs.values().forEach((v) -> valueFieldsToWhindexConfigs.put(v.getValueField(), v));
+        // add to fieldDefinitions and VFToWC
+        groupingsToConfigs.values().forEach((wc) -> {
+            valueFieldsToWhindexConfigs.put(wc.getValueField(), wc);
+        });
 
     }
 
@@ -121,13 +122,13 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     @Override
-    public Multimap<String,String> getWhindexFieldDefinitions() {
-        return whindexFieldDefinitions;
+    public Multimap<String, WhindexConfig> getValueFieldsToWhindexConfigs() {
+        return valueFieldsToWhindexConfigs;
     }
 
     @Override
     public boolean isWhindexField(String field) {
-        return whindexFieldDefinitions.containsKey(field);
+        return valueFieldsToWhindexConfigs.values().stream().anyMatch((wc) -> wc.getDestField().equals(field));
     }
 
     @Override

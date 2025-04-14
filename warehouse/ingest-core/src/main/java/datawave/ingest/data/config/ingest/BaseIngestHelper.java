@@ -1222,8 +1222,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     @Override
-    public Multimap<String,String> getWhindexFieldDefinitions() {
-        return getWhindexIngest().getWhindexFieldDefinitions();
+    public Multimap<String, WhindexConfig> getValueFieldsToWhindexConfigs() {
+        return getWhindexIngest().getValueFieldsToWhindexConfigs();
     }
 
     @Override

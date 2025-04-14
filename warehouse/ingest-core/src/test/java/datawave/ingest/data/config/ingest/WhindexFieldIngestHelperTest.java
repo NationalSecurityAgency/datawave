@@ -2,6 +2,7 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Arrays;
 
+import com.google.common.collect.HashMultimap;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,9 @@ class WhindexFieldIngestHelperTest {
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        Multimap<String,String> expectedValues = LinkedListMultimap.create();
+        Multimap<String,WhindexConfig> expectedValues = LinkedListMultimap.create();
 
-        Assertions.assertEquals(wHelper.getWhindexFieldDefinitions(), expectedValues);
+        Assertions.assertEquals(wHelper.getValueFieldsToWhindexConfigs(), expectedValues);
     }
 
     /*
@@ -36,18 +37,57 @@ class WhindexFieldIngestHelperTest {
     @Test
     void testWhindexFieldDefinitionsParsing() {
         Configuration config = new Configuration();
-        config.set("wiki.rules", "srcA:dstA:true,srcB:dstB::v1,v2;srcC:dstC:false::v3,v4");
+
+        // delete src fields = true
+        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
+        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.delete_src_field", "true");
+        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
+        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+        WhindexConfig expectedConfigA = new WhindexConfig();
+        expectedConfigA.setValueField("AppleVF");
+        expectedConfigA.setSourceField("ForkSRC");
+        expectedConfigA.setOverloaded(true);
+        expectedConfigA.setDestField("ProvoloneDST");
+        expectedConfigA.setValues(Arrays.asList("kittyV","catV","satV","batV"));
+
+
+        config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
+        config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.2.delete_src_field", "false");
+        config.set("wiki.whindex.rules.2.dst_field", "poiuyDST");
+        config.set("wiki.whindex.rules.2.values", "aV,bV,cV,dV");
+
+        WhindexConfig expectedConfigB = new WhindexConfig();
+        expectedConfigB.setValueField("aeiouVF");
+        expectedConfigB.setSourceField("qwertySRC");
+        expectedConfigB.setOverloaded(false);
+        expectedConfigB.setDestField("poiuyDST");
+        expectedConfigB.setValues(Arrays.asList("aV", "bV", "cV", "dV"));
+
+        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
+        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
+
+        WhindexConfig expectedConfigC = new WhindexConfig();
+        expectedConfigC.setValueField("hahaVF");
+        expectedConfigC.setSourceField("heheSRC");
+        expectedConfigC.setOverloaded(false);
+        expectedConfigC.setDestField("hohohoDST");
+        expectedConfigC.setValues(Arrays.asList("lolV", "lololV", "lolololV", "lololololV"));
+
 
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        Multimap<String,String> expectedValues = LinkedListMultimap.create();
-        expectedValues.putAll("dstA", Arrays.asList("v1", "v2"));
-        expectedValues.putAll("dstB", Arrays.asList("v1", "v2"));
-        expectedValues.putAll("dstC", Arrays.asList("v3", "v4"));
+        HashMultimap<String,WhindexConfig> expectedValues = HashMultimap.create();
+        expectedValues.put("AppleVF", expectedConfigA);
+        expectedValues.put("aeiouVF", expectedConfigB);
+        expectedValues.put("hahaVF", expectedConfigC);
 
-        Assertions.assertEquals(expectedValues, wHelper.getWhindexFieldDefinitions());
+        Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
     }
 
     // /*
@@ -88,32 +128,53 @@ class WhindexFieldIngestHelperTest {
     void testWhindexFieldIdentification() {
 
         Configuration config = new Configuration();
-        config.set("wiki.rules", "srcA:dstA:true,srcB:dstB::v1,v2;srcC:dstC:false::v3,v4");
+
+        // delete src fields = true
+        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
+        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.delete_src_field", "true");
+        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
+        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+
+        // delete src fields = false
+        config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
+        config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.2.delete_src_field", "false");
+        config.set("wiki.whindex.rules.2.dst_field", "poiuyDST");
+        config.set("wiki.whindex.rules.2.values", "aV,bV,cV,dV");
+
+        // delete src fields = empty
+        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
+        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
 
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
         // check dst fields are interpreted as whindex fields
-        Assertions.assertTrue(wHelper.isWhindexField("dstA"));
-        Assertions.assertTrue(wHelper.isWhindexField("dstB"));
-        Assertions.assertTrue(wHelper.isWhindexField("dstC"));
+        Assertions.assertTrue(wHelper.isWhindexField("ProvoloneDST"));
+        Assertions.assertTrue(wHelper.isWhindexField("poiuyDST"));
+        Assertions.assertTrue(wHelper.isWhindexField("hohohoDST"));
 
         // check src fields are not interpreted as whindex fields
-        Assertions.assertFalse(wHelper.isWhindexField("srcA"));
-        Assertions.assertFalse(wHelper.isWhindexField("srcB"));
-        Assertions.assertFalse(wHelper.isWhindexField("srcC"));
+        Assertions.assertFalse(wHelper.isWhindexField("ForkSRC"));
+        Assertions.assertFalse(wHelper.isWhindexField("qwertySRC"));
+        Assertions.assertFalse(wHelper.isWhindexField("heheSRC"));
 
         // check values are not interpreted as whindex fields
-        Assertions.assertFalse(wHelper.isWhindexField("v1"));
-        Assertions.assertFalse(wHelper.isWhindexField("v2"));
-        Assertions.assertFalse(wHelper.isWhindexField("v3"));
-        Assertions.assertFalse(wHelper.isWhindexField("v4"));
+        Assertions.assertFalse(wHelper.isWhindexField("kittyV"));
+        Assertions.assertFalse(wHelper.isWhindexField("aV"));
+        Assertions.assertFalse(wHelper.isWhindexField("lolV"));
+        Assertions.assertFalse(wHelper.isWhindexField("lololV"));
 
         // check other fields are not interpreted as whindex fields
-        Assertions.assertFalse(wHelper.isWhindexField("Apple"));
+        Assertions.assertFalse(wHelper.isWhindexField("asdfghjkl"));
         Assertions.assertFalse(wHelper.isWhindexField("true"));
         Assertions.assertFalse(wHelper.isWhindexField("{true}"));
+        Assertions.assertFalse(wHelper.isWhindexField("false"));
+        Assertions.assertFalse(wHelper.isWhindexField("{false}"));
     }
 
     /*
@@ -123,31 +184,52 @@ class WhindexFieldIngestHelperTest {
     void testOverloadedFieldIdentification() {
 
         Configuration config = new Configuration();
-        config.set("wiki.rules", "srcA:dstA:true,srcB:dstB::v1,v2;srcC:dstC:false::v3,v4");
+
+        // delete src fields = true
+        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
+        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.delete_src_field", "true");
+        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
+        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+
+        // delete src fields = false
+        config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
+        config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.2.delete_src_field", "false");
+        config.set("wiki.whindex.rules.2.dst_field", "poiuyDST");
+        config.set("wiki.whindex.rules.2.values", "aV,bV,cV,dV");
+
+        // delete src fields = empty
+        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
+        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
 
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // check dst fields are not interpreted as overloaded fields
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("dstA"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("dstB"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("dstC"));
+        // check dst fields are interpreted as whindex fields
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("ProvoloneDST"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("poiuyDST"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("hohohoDST"));
 
-        // check src fields are/aren't interpreted as overloaded fields
-        Assertions.assertTrue(wHelper.isOverloadedWhindexField("srcA"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("srcB"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("srcC"));
+        // check src fields are not interpreted as whindex fields
+        Assertions.assertTrue(wHelper.isOverloadedWhindexField("ForkSRC"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("qwertySRC"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("heheSRC"));
 
-        // check values are not interpreted as overloaded fields
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("v1"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("v2"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("v3"));
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("v4"));
+        // check values are not interpreted as whindex fields
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("kittyV"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("aV"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("lolV"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("lololV"));
 
-        // check other fields are not interpreted as overloaded fields
-        Assertions.assertFalse(wHelper.isOverloadedWhindexField("Apple"));
+        // check other fields are not interpreted as whindex fields
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("asdfghjkl"));
         Assertions.assertFalse(wHelper.isOverloadedWhindexField("true"));
         Assertions.assertFalse(wHelper.isOverloadedWhindexField("{true}"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("false"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("{false}"));
     }
 }
