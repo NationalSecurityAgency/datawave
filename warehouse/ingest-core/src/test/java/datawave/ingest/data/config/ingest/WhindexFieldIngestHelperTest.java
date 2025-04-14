@@ -2,9 +2,6 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Arrays;
 
-import com.google.common.collect.HashMultimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,6 +11,8 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 class WhindexFieldIngestHelperTest {
 
@@ -91,59 +90,59 @@ class WhindexFieldIngestHelperTest {
         Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
     }
 
-     @Test
-     void testGetWhindexFields() {
+    @Test
+    void testGetWhindexFields() {
 
-         Configuration config = new Configuration();
+        Configuration config = new Configuration();
 
-         // delete src fields = true
-         config.set("wiki.whindex.rules.1.value_field", "AppleVF");
-         config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
-         config.set("wiki.whindex.rules.1.delete_src_field", "true");
-         config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
-         config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+        // delete src fields = true
+        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
+        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.delete_src_field", "true");
+        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
+        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
 
-         // delete src fields = false
-         config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
-         config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
-         config.set("wiki.whindex.rules.2.delete_src_field", "false");
-         config.set("wiki.whindex.rules.2.dst_field", "poiuyDST");
-         config.set("wiki.whindex.rules.2.values", "aV,bV,cV,dV");
+        // delete src fields = false
+        config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
+        config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.2.delete_src_field", "false");
+        config.set("wiki.whindex.rules.2.dst_field", "poiuyDST");
+        config.set("wiki.whindex.rules.2.values", "aV,bV,cV,dV");
 
-         // delete src fields = empty
-         config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
-         config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
-         config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
-         config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
+        // delete src fields = empty
+        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
+        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
 
-         Type type = new Type("wiki", null, null, null, 0, null);
-         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
-         wHelper.setup(config);
+        Type type = new Type("wiki", null, null, null, 0, null);
+        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
+        wHelper.setup(config);
 
-         Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
+        Multimap<String,NormalizedContentInterface> eventMap = LinkedListMultimap.create();
 
-         eventMap.put("AppleVF", new NormalizedFieldAndValue("AppleVF", "kittyV"));
-         eventMap.put("aeiouVF", new NormalizedFieldAndValue("aeiouVF", "aV"));
-         eventMap.put("hahaVF", new NormalizedFieldAndValue("hahaVF", "lolV"));
+        eventMap.put("AppleVF", new NormalizedFieldAndValue("AppleVF", "kittyV"));
+        eventMap.put("aeiouVF", new NormalizedFieldAndValue("aeiouVF", "aV"));
+        eventMap.put("hahaVF", new NormalizedFieldAndValue("hahaVF", "lolV"));
 
-         eventMap.put("ForkSRC", new NormalizedFieldAndValue("ForkSRC", "kittyV"));
-         eventMap.put("qwertySRC", new NormalizedFieldAndValue("qwertySRC", "aV"));
-         eventMap.put("heheSRC", new NormalizedFieldAndValue("heheSRC", "lolV"));
+        eventMap.put("ForkSRC", new NormalizedFieldAndValue("ForkSRC", "kittyV"));
+        eventMap.put("qwertySRC", new NormalizedFieldAndValue("qwertySRC", "aV"));
+        eventMap.put("heheSRC", new NormalizedFieldAndValue("heheSRC", "lolV"));
 
-         eventMap.put("fakeA", new NormalizedFieldAndValue("fakeA", "v3,v4"));
-         eventMap.put("fakeB", new NormalizedFieldAndValue("fakeB", "v5"));
-         eventMap.put("fakeC", new NormalizedFieldAndValue("fakeC", "v5,v6"));
-         eventMap.put("fakeD", new NormalizedFieldAndValue("fakeD", "v1,v7"));
+        eventMap.put("fakeA", new NormalizedFieldAndValue("fakeA", "v3,v4"));
+        eventMap.put("fakeB", new NormalizedFieldAndValue("fakeB", "v5"));
+        eventMap.put("fakeC", new NormalizedFieldAndValue("fakeC", "v5,v6"));
+        eventMap.put("fakeD", new NormalizedFieldAndValue("fakeD", "v1,v7"));
 
-         Multimap<String,NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
+        Multimap<String,NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
-         HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
-         expectedValues.put("ProvoloneDST", new NormalizedFieldAndValue("ForkSRC", "kittyV"));
-         expectedValues.put("poiuyDST", new NormalizedFieldAndValue("qwertySRC", "aV"));
-         expectedValues.put("hohohoDST", new NormalizedFieldAndValue("heheSRC", "lolV"));
+        HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
+        expectedValues.put("ProvoloneDST", new NormalizedFieldAndValue("ForkSRC", "kittyV"));
+        expectedValues.put("poiuyDST", new NormalizedFieldAndValue("qwertySRC", "aV"));
+        expectedValues.put("hohohoDST", new NormalizedFieldAndValue("heheSRC", "lolV"));
 
-         Assertions.assertEquals(expectedValues, actualValues);
-     }
+        Assertions.assertEquals(expectedValues, actualValues);
+    }
 
     /*
      * Tests that the WhindexFieldIngestHelper correctly identified whindex fields via isWhindexField() after setup.
