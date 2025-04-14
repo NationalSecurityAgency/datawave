@@ -726,11 +726,17 @@ public class SharedCacheCoordinator implements Serializable {
                         String recursiveDeletePath = ZKPaths.makePath(curatorClient.getNamespace(), path);
                         ZKUtil.deleteRecursive(curatorClient.getZookeeperClient().getZooKeeper(), recursiveDeletePath);
                     } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
                         log.trace("Problem deleting {} (this may be ok): {}", path, e.getMessage(), e);
                     }
                 }
             }
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.warn("Error cleaning up eviction notices: {}", e.getMessage(), e);
         }
     }

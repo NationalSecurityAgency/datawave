@@ -1297,6 +1297,7 @@ public class QueryExecutorBean implements QueryExecutor {
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
             return response;
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             if (query != null) {
                 query.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
             }

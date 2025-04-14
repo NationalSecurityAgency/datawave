@@ -630,6 +630,9 @@ public class CachedResultsBean {
             response.addException(e.getBottomQueryException());
             throw new NoResultsException(e, response.getResult());
         } catch (QueryCanceledQueryException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.info("Query " + queryId + " canceled on request");
             if (crq != null) {
                 crq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
@@ -2360,6 +2363,7 @@ public class CachedResultsBean {
                                     outReadThread.join();
                                     errReadThread.join();
                                 } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
                                     log.error("Thread interrupted waiting for import to finish, killing import process");
                                     process.destroy();
                                 } finally {
