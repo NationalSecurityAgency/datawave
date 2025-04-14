@@ -195,7 +195,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 log.fatal("IOException", ex);
             } catch (InterruptedException ex) {
                 log.warn("Interrupted!", ex);
-                Thread.interrupted();
+                Thread.currentThread().interrupt();
             }
 
             tokenOffsetCache.clear();
@@ -303,6 +303,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 if (indexField || reverseIndexField) {
                     try {
                         tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(ex);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }

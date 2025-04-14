@@ -656,7 +656,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
                             log.error("{}:{}:{}", fieldName, fieldValue, e.getMessage());
                         }
                     } else if (fieldName.startsWith("PAGE_METRICS")) {
-                        int index = fieldName.indexOf(".");
+                        int index = fieldName.indexOf('.');
                         if (-1 == index) {
                             log.error("Could not parse field name to extract repetition count: {}", fieldName);
                         } else {
@@ -687,7 +687,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
                     } else if (fieldName.equals("PREDICTION")) {
                         if (fieldValue != null) {
                             try {
-                                int x = fieldValue.indexOf(":");
+                                int x = fieldValue.indexOf(':');
                                 if (x > -1) {
                                     String predictionName = fieldValue.substring(0, x);
                                     double predictionValue = Double.parseDouble(fieldValue.substring(x + 1));

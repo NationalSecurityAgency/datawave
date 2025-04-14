@@ -41,7 +41,7 @@ public class QueryMetricMessage implements Serializable {
     @Override
     public String toString() {
         if (this.metricHolder == null) {
-            return null;
+            return "";
         } else {
             return this.metricHolder.toString();
         }

@@ -502,8 +502,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     int lastColon = fieldValue.lastIndexOf(':');
                     // The next two lines build up to the beginning of the indexTerm by finding the first two colons
                     // We could use split if we could guarantee a colon never appears in the index term itself
-                    int indexTermLeadingColon = fieldValue.indexOf(":", 0);
-                    indexTermLeadingColon = fieldValue.indexOf(":", indexTermLeadingColon + 1);
+                    int indexTermLeadingColon = fieldValue.indexOf(':', 0);
+                    indexTermLeadingColon = fieldValue.indexOf(':', indexTermLeadingColon + 1);
                     indexTerm = fieldValue.substring(indexTermLeadingColon + 1, lastColon);
                 }
                 String indexedValue = n.normalize(indexTerm);

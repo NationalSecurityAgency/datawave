@@ -370,7 +370,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 Content content = (Content) attr;
                 // split the content into its fieldname:value
                 String contentString = content.getContent();
-                attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));
+                attrMap.put(contentString.substring(0, contentString.indexOf(':')), contentString.substring(contentString.indexOf(':') + 1));
             }
         }
     }

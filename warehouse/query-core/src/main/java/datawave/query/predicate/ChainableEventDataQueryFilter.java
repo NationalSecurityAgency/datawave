@@ -103,7 +103,7 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
         }
 
         // test the end key
-        if (result == null || result.getEndKey() == null || result.getEndKey().compareTo(candidate.getEndKey()) >= 0) {
+        if (result.getEndKey() == null || result.getEndKey().compareTo(candidate.getEndKey()) >= 0) {
             result = new Range(result.getStartKey(), result.isStartKeyInclusive(), candidate.getEndKey(),
                             result.isEndKeyInclusive() && candidate.isEndKeyInclusive());
         }
