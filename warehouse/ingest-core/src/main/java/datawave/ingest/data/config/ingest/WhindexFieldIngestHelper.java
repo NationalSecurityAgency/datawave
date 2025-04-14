@@ -122,7 +122,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     @Override
-    public Multimap<String, WhindexConfig> getValueFieldsToWhindexConfigs() {
+    public Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
         return valueFieldsToWhindexConfigs;
     }
 

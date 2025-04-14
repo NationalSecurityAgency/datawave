@@ -2,11 +2,11 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Arrays;
 
-import com.google.common.collect.HashMultimap;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -49,8 +49,7 @@ class WhindexFieldIngestHelperTest {
         expectedConfigA.setSourceField("ForkSRC");
         expectedConfigA.setOverloaded(true);
         expectedConfigA.setDestField("ProvoloneDST");
-        expectedConfigA.setValues(Arrays.asList("kittyV","catV","satV","batV"));
-
+        expectedConfigA.setValues(Arrays.asList("kittyV", "catV", "satV", "batV"));
 
         config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
         config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
@@ -76,7 +75,6 @@ class WhindexFieldIngestHelperTest {
         expectedConfigC.setOverloaded(false);
         expectedConfigC.setDestField("hohohoDST");
         expectedConfigC.setValues(Arrays.asList("lolV", "lololV", "lolololV", "lololololV"));
-
 
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
