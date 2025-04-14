@@ -42,6 +42,5 @@ public interface WhindexIngest {
      */
     Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventFields);
 
-
-    Multimap<String, WhindexConfig> getValueFieldsToWhindexConfigs();
+    Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs();
 }
