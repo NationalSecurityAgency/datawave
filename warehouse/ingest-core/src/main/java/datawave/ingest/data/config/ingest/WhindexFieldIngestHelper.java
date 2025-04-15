@@ -2,7 +2,6 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,14 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.Type;
@@ -171,18 +168,20 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                 .collect(Collectors.toList());
 
         // Iterate over the matching configurations to generate the whindex fields.
-        for (WhindexConfig curWhindexConfig : matchingConfigs) {
+        for (WhindexConfig currWhindexConfig : matchingConfigs) {
             // Retrieve all normalized content corresponding to the value field.
-            Collection<NormalizedContentInterface> relatedValueEventContents = eventMap.get(curWhindexConfig.getValueField());
+            Collection<NormalizedContentInterface> relatedValueEventContents = eventMap.get(currWhindexConfig.getValueField());
             // Check if any of these contents match the allowed values (either event field or indexed field).
             boolean containsAnyMatchingValue = relatedValueEventContents.stream()
-                    .anyMatch(nci ->
-                            curWhindexConfig.getValues().contains(nci.getEventFieldValue()) ||
-                            curWhindexConfig.getValues().contains(nci.getIndexedFieldValue()));
+                    .anyMatch(nci -> {
+                            List<String> currentValues = currWhindexConfig.getValues();
+                            return currentValues.contains(nci.getEventFieldValue()) || currentValues.contains(nci.getIndexedFieldValue());
+                            });
+
 
             if (containsAnyMatchingValue) {
                 // Retrieve all normalized content corresponding to the source field.
-                Collection<NormalizedContentInterface> relatedSourceEventContents = eventMap.get(curWhindexConfig.getSourceField());
+                Collection<NormalizedContentInterface> relatedSourceEventContents = eventMap.get(currWhindexConfig.getSourceField());
                 List<NormalizedContentInterface> copies = new ArrayList<>();
                 // Create copies of the source field's normalized content.
                 for (NormalizedContentInterface content : relatedSourceEventContents) {
@@ -190,7 +189,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                     copies.add(copy);
                 }
                 // Map the copies to the destination field (whindex field).
-                whindicesInEventMap.putAll(curWhindexConfig.getDestField(), copies);
+                whindicesInEventMap.putAll(currWhindexConfig.getDestField(), copies);
             }
         }
         return whindicesInEventMap;
