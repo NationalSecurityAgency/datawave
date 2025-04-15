@@ -1,9 +1,8 @@
 package datawave.ingest.data.config.ingest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.util.Arrays;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class WhindexConfigTest {
@@ -18,11 +17,11 @@ public class WhindexConfigTest {
         config.setOverloaded(true);
 
         // Verify that the getter returns the value that was set
-        assertEquals("field1", config.getValueField());
-        assertEquals(Arrays.asList("val1", "val2"), config.getValues());
-        assertEquals("src", config.getSourceField());
-        assertEquals("dst", config.getDestField());
-        assertTrue(config.isOverloaded());
+       Assertions.assertEquals("field1", config.getValueField());
+       Assertions.assertEquals(Arrays.asList("val1", "val2"), config.getValues());
+       Assertions.assertEquals("src", config.getSourceField());
+       Assertions.assertEquals("dst", config.getDestField());
+       Assertions.assertTrue(config.isOverloaded());
     }
 
     @Test
@@ -42,12 +41,12 @@ public class WhindexConfigTest {
         config2.setOverloaded(false);
 
         // The two objects should be equal and have the same hash code.
-        assertEquals(config1, config2);
-        assertEquals(config1.hashCode(), config2.hashCode());
+       Assertions.assertEquals(config1, config2);
+       Assertions.assertEquals(config1.hashCode(), config2.hashCode());
 
         // Change one property in config2 and they should no longer be equal.
         config2.setOverloaded(true);
-        assertNotEquals(config1, config2);
+       Assertions.assertNotEquals(config1, config2);
     }
 
     @Test
@@ -60,11 +59,11 @@ public class WhindexConfigTest {
         config.setOverloaded(false);
 
         // Equals should return false when compared to null.
-        assertNotEquals(config, null);
+       Assertions.assertNotEquals(config, null);
         // Equals should return false when compared to an object of a different type.
-        assertNotEquals(config, "spaghetti");
+       Assertions.assertNotEquals(config, "spaghetti");
 
         // Verify that the object is equal to itself.
-        assertEquals(config, config);
+       Assertions.assertEquals(config, config);
     }
 }

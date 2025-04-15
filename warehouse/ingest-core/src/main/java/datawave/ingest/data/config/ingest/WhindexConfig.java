@@ -3,8 +3,6 @@ package datawave.ingest.data.config.ingest;
 import java.util.List;
 import java.util.Objects;
 
-import datawave.ingest.data.config.ingest.WhindexIngest;
-
 public class WhindexConfig {
 
     private String valueField;
