@@ -17,291 +17,348 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 class WhindexFieldIngestHelperTest {
 
     /**
-     * Test that a configuration with no whindex rules causes the WhindexFieldIngestHelper to have an empty valueFieldsToWhindexConfigs() Multimap.
+     * Test that when no whindex rules are configured, the WhindexFieldIngestHelper's internal
+     * mapping is empty.
      */
     @Test
     void testEmptyWhindexConfiguration() {
+        // Create a new empty configuration for the "wiki" type.
         Configuration config = new Configuration();
-        config.set("wiki", "");
+        config.set("wiki", ""); // Setting an empty value for the wiki configuration.
 
+        // Initialize the type and helper using the configuration.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        Multimap<String,WhindexConfig> expectedValues = LinkedListMultimap.create();
+        // Create an empty expected mapping.
+        Multimap<String, WhindexConfig> expectedValues = LinkedListMultimap.create();
 
-        Assertions.assertEquals(wHelper.getValueFieldsToWhindexConfigs(), expectedValues);
-    }
-
-    /**
-     * Test that whindex rules are correctly parsed, even if there are several different rules configured.
-     */
-    @Test
-    void testWhindexFieldDefinitionsParsing() {
-        Configuration config = new Configuration();
-
-        // delete src fields = true
-        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
-        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
-        config.set("wiki.whindex.rules.1.delete_src_field", "true");
-        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
-        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
-        WhindexConfig expectedConfigA = new WhindexConfig();
-        expectedConfigA.setValueField("AppleVF");
-        expectedConfigA.setSourceField("ForkSRC");
-        expectedConfigA.setOverloaded(true);
-        expectedConfigA.setDestField("ProvoloneDST");
-        expectedConfigA.setValues(Arrays.asList("kittyV", "catV", "satV", "batV"));
-
-        config.set("wiki.whindex.rules.2.value_field", "aeiouVF");
-        config.set("wiki.whindex.rules.2.src_field", "qwertySRC");
-        config.set("wiki.whindex.rules.2.delete_src_field", "false");
-        config.set("wiki.whindex.rules.2.dst_field", "poiuyDST");
-        config.set("wiki.whindex.rules.2.values", "aV,bV,cV,dV");
-
-        WhindexConfig expectedConfigB = new WhindexConfig();
-        expectedConfigB.setValueField("aeiouVF");
-        expectedConfigB.setSourceField("qwertySRC");
-        expectedConfigB.setOverloaded(false);
-        expectedConfigB.setDestField("poiuyDST");
-        expectedConfigB.setValues(Arrays.asList("aV", "bV", "cV", "dV"));
-
-        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
-        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
-        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
-        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
-
-        WhindexConfig expectedConfigC = new WhindexConfig();
-        expectedConfigC.setValueField("hahaVF");
-        expectedConfigC.setSourceField("heheSRC");
-        expectedConfigC.setOverloaded(false);
-        expectedConfigC.setDestField("hohohoDST");
-        expectedConfigC.setValues(Arrays.asList("lolV", "lololV", "lolololV", "lololololV"));
-
-        Type type = new Type("wiki", null, null, null, 0, null);
-        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
-        wHelper.setup(config);
-
-        HashMultimap<String,WhindexConfig> expectedValues = HashMultimap.create();
-        expectedValues.put("AppleVF", expectedConfigA);
-        expectedValues.put("aeiouVF", expectedConfigB);
-        expectedValues.put("hahaVF", expectedConfigC);
-
+        // Verify that the valueFieldsToWhindexConfigs() mapping is empty.
         Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
     }
 
     /**
-     * Test that getWhindexFields() works when the rules specify a "true" delete_src_field.
+     * Test that whindex rules are correctly parsed from the configuration when there are
+     * multiple rules defined.
+     */
+    @Test
+    void testWhindexFieldDefinitionsParsing() {
+        // Create a configuration with multiple whindex rule definitions.
+        Configuration config = new Configuration();
+
+        // First rule: delete_src_field is set to true.
+        config.set("wiki.whindex.rules.1.value_field", "PrimaryValueField");
+        config.set("wiki.whindex.rules.1.src_field", "PrimarySourceField");
+        config.set("wiki.whindex.rules.1.delete_src_field", "true");
+        config.set("wiki.whindex.rules.1.dst_field", "PrimaryDestField");
+        config.set("wiki.whindex.rules.1.values", "primaryTestValue1,primaryTestValue2,primaryTestValue3,primaryTestValue4");
+        WhindexConfig expectedConfigA = new WhindexConfig();
+        expectedConfigA.setValueField("PrimaryValueField");
+        expectedConfigA.setSourceField("PrimarySourceField");
+        expectedConfigA.setOverloaded(true);
+        expectedConfigA.setDestField("PrimaryDestField");
+        expectedConfigA.setValues(Arrays.asList("primaryTestValue1", "primaryTestValue2", "primaryTestValue3", "primaryTestValue4"));
+
+        // Second rule: delete_src_field is set to false.
+        config.set("wiki.whindex.rules.2.value_field", "SecondValueField");
+        config.set("wiki.whindex.rules.2.src_field", "SecondSourceField");
+        config.set("wiki.whindex.rules.2.delete_src_field", "false");
+        config.set("wiki.whindex.rules.2.dst_field", "SecondDestField");
+        config.set("wiki.whindex.rules.2.values", "secondTestValue1,secondTestValue2,secondTestValue3,secondTestValue4");
+        WhindexConfig expectedConfigB = new WhindexConfig();
+        expectedConfigB.setValueField("SecondValueField");
+        expectedConfigB.setSourceField("SecondSourceField");
+        expectedConfigB.setOverloaded(false);
+        expectedConfigB.setDestField("SecondDestField");
+        expectedConfigB.setValues(Arrays.asList("secondTestValue1", "secondTestValue2", "secondTestValue3", "secondTestValue4"));
+
+        // Third rule: no delete_src_field specified, so assumed false.
+        config.set("wiki.whindex.rules.sillyrule.value_field", "ThirdValueField");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "ThirdSourceField");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "ThirdDestField");
+        config.set("wiki.whindex.rules.sillyrule.values", "thirdTestValue1,thirdTestValue2,thirdTestValue3,thirdTestValue4");
+        WhindexConfig expectedConfigC = new WhindexConfig();
+        expectedConfigC.setValueField("ThirdValueField");
+        expectedConfigC.setSourceField("ThirdSourceField");
+        expectedConfigC.setOverloaded(false);
+        expectedConfigC.setDestField("ThirdDestField");
+        expectedConfigC.setValues(Arrays.asList("thirdTestValue1", "thirdTestValue2", "thirdTestValue3", "thirdTestValue4"));
+
+        // Setup helper using the specified configuration.
+        Type type = new Type("wiki", null, null, null, 0, null);
+        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
+        wHelper.setup(config);
+
+        // Build the expected mapping from valueField to the corresponding WhindexConfig.
+        HashMultimap<String, WhindexConfig> expectedValues = HashMultimap.create();
+        expectedValues.put("PrimaryValueField", expectedConfigA);
+        expectedValues.put("SecondValueField", expectedConfigB);
+        expectedValues.put("ThirdValueField", expectedConfigC);
+
+        // Assert that the parsed whindex configurations match the expected mapping.
+        Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
+    }
+
+    /**
+     * Test that getWhindexFields() correctly transforms the event map when the rule's
+     * delete_src_field is specified as "true".
      */
     @Test
     void testGetWhindexFieldsWithDeleteSrcFieldTrue() {
+        // Setup configuration with a rule that has delete_src_field set to true.
         Configuration config = new Configuration();
-        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
-        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.value_field", "PrimaryValueField");
+        config.set("wiki.whindex.rules.1.src_field", "PrimarySourceField");
         config.set("wiki.whindex.rules.1.delete_src_field", "true");
-        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
-        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+        config.set("wiki.whindex.rules.1.dst_field", "PrimaryDestField");
+        config.set("wiki.whindex.rules.1.values", "primaryTestValue1,primaryTestValue2,primaryTestValue3,primaryTestValue4");
 
-        // Setup helper for the "wiki" type
+        // Create the helper instance for the "wiki" type and initialize with the configuration.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // Build an event map with a corresponding entry for AppleVF and its source
+        // Build an event map containing the value field entry and its corresponding source field.
         Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
-        eventMap.put("AppleVF", new NormalizedFieldAndValue("AppleVF", "kittyV"));
-        eventMap.put("ForkSRC", new NormalizedFieldAndValue("ForkSRC", "kittyV"));
+        eventMap.put("PrimaryValueField", new NormalizedFieldAndValue("PrimaryValueField", "primaryTestValue1"));
+        eventMap.put("PrimarySourceField", new NormalizedFieldAndValue("PrimarySourceField", "primaryTestValue1"));
 
+        // Retrieve the output mapping after processing the event map.
         Multimap<String, NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
-        // Expect the transformed value to appear under the dst_field "ProvoloneDST"
+        // Expect that the source field value is mapped to the destination field.
         HashMultimap<String, NormalizedContentInterface> expectedValues = HashMultimap.create();
-        expectedValues.put("ProvoloneDST", new NormalizedFieldAndValue("ForkSRC", "kittyV"));
+        expectedValues.put("PrimaryDestField", new NormalizedFieldAndValue("PrimarySourceField", "primaryTestValue1"));
         Assertions.assertEquals(expectedValues, actualValues);
     }
 
     /**
-     * Test that getWhindexFields() works when the rules specify a "false" delete_src_field.
+     * Test that getWhindexFields() correctly transforms the event map when the rule's
+     * delete_src_field is specified as "false".
      */
     @Test
     void testGetWhindexFieldsWithDeleteSrcFieldFalse() {
+        // Setup configuration with a rule that has delete_src_field set to false.
         Configuration config = new Configuration();
-        config.set("wiki.whindex.rules.1.value_field", "aeiouVF");
-        config.set("wiki.whindex.rules.1.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.1.value_field", "SecondValueField");
+        config.set("wiki.whindex.rules.1.src_field", "SecondSourceField");
         config.set("wiki.whindex.rules.1.delete_src_field", "false");
-        config.set("wiki.whindex.rules.1.dst_field", "poiuyDST");
-        config.set("wiki.whindex.rules.1.values", "aV,bV,cV,dV");
+        config.set("wiki.whindex.rules.1.dst_field", "SecondDestField");
+        config.set("wiki.whindex.rules.1.values", "secondTestValue1,secondTestValue2,secondTestValue3,secondTestValue4");
 
+        // Initialize the helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
+        // Build the event map with entries for the value field and source field.
         Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
-        eventMap.put("aeiouVF", new NormalizedFieldAndValue("aeiouVF", "aV"));
-        eventMap.put("qwertySRC", new NormalizedFieldAndValue("qwertySRC", "aV"));
+        eventMap.put("SecondValueField", new NormalizedFieldAndValue("SecondValueField", "secondTestValue1"));
+        eventMap.put("SecondSourceField", new NormalizedFieldAndValue("SecondSourceField", "secondTestValue1"));
 
+        // Process the event map.
         Multimap<String, NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
+        // Expect that the destination field receives the transformed value.
         HashMultimap<String, NormalizedContentInterface> expectedValues = HashMultimap.create();
-        expectedValues.put("poiuyDST", new NormalizedFieldAndValue("qwertySRC", "aV"));
+        expectedValues.put("SecondDestField", new NormalizedFieldAndValue("SecondSourceField", "secondTestValue1"));
         Assertions.assertEquals(expectedValues, actualValues);
     }
 
     /**
-     * Test that getWhindexFields() works when the rules DO NOT specify delete_src_field. If no such field is provided, it is assumed to be "false".
+     * Test that getWhindexFields() correctly handles the case when no delete_src_field property is provided.
+     * <p>
+     * In this case, the helper should assume delete_src_field is false.
+     * </p>
      */
     @Test
     void testGetWhindexFieldsWithDeleteSrcFieldNotPresent() {
+        // Setup configuration without providing the delete_src_field property.
         Configuration config = new Configuration();
-        // Note: no "delete_src_field" is set here
-        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
-        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
-        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
-        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
+        config.set("wiki.whindex.rules.sillyrule.value_field", "ThirdValueField");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "ThirdSourceField");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "ThirdDestField");
+        config.set("wiki.whindex.rules.sillyrule.values", "thirdTestValue1,thirdTestValue2,thirdTestValue3,thirdTestValue4");
 
+        // Initialize the helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
+        // Build the event map.
         Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
-        eventMap.put("hahaVF", new NormalizedFieldAndValue("hahaVF", "lolV"));
-        eventMap.put("heheSRC", new NormalizedFieldAndValue("heheSRC", "lolV"));
+        eventMap.put("ThirdValueField", new NormalizedFieldAndValue("ThirdValueField", "thirdTestValue1"));
+        eventMap.put("ThirdSourceField", new NormalizedFieldAndValue("ThirdSourceField", "thirdTestValue1"));
 
+        // Process the event map.
         Multimap<String, NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
+        // Expect the mapping to be under the destination field since no delete_src_field is provided (assumed false).
         HashMultimap<String, NormalizedContentInterface> expectedValues = HashMultimap.create();
-        expectedValues.put("hohohoDST", new NormalizedFieldAndValue("heheSRC", "lolV"));
+        expectedValues.put("ThirdDestField", new NormalizedFieldAndValue("ThirdSourceField", "thirdTestValue1"));
         Assertions.assertEquals(expectedValues, actualValues);
     }
 
     /**
-     * Test that isWhindexField() works when the rules specify a "true" delete_src_field.
+     * Test that isWhindexField() correctly identifies whindex fields when the rule's
+     * delete_src_field is set to "true".
+     * <p>
+     * Only the destination field should be considered a whindex field.
+     * </p>
      */
     @Test
     void testWhindexFieldIdentificationWithDeleteSrcFieldTrue() {
+        // Setup configuration with delete_src_field true.
         Configuration config = new Configuration();
-        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
-        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.value_field", "PrimaryValueField");
+        config.set("wiki.whindex.rules.1.src_field", "PrimarySourceField");
         config.set("wiki.whindex.rules.1.delete_src_field", "true");
-        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
-        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+        config.set("wiki.whindex.rules.1.dst_field", "PrimaryDestField");
+        config.set("wiki.whindex.rules.1.values", "primaryTestValue1,primaryTestValue2,primaryTestValue3,primaryTestValue4");
 
+        // Initialize helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // Only the dst field should be considered a whindex field.
-        Assertions.assertTrue(wHelper.isWhindexField("ProvoloneDST"));
-       Assertions.assertFalse(wHelper.isWhindexField("ForkSRC"));
-       Assertions.assertFalse(wHelper.isWhindexField("kittyV")); // value field
+        // Verify that the destination field is recognized as a whindex field,
+        // and the source as well as the value field are not.
+        Assertions.assertTrue(wHelper.isWhindexField("PrimaryDestField"));
+        Assertions.assertFalse(wHelper.isWhindexField("PrimarySourceField"));
+        Assertions.assertFalse(wHelper.isWhindexField("primaryTestValue1"));
     }
 
     /**
-     * Test that isWhindexField() works when the rules specify a "false" delete_src_field.
+     * Test that isWhindexField() correctly identifies whindex fields when the rule's
+     * delete_src_field is set to "false".
+     * <p>
+     * Only the destination field should be considered a whindex field.
+     * </p>
      */
     @Test
     void testWhindexFieldIdentificationWithDeleteSrcFieldFalse() {
+        // Setup configuration with delete_src_field false.
         Configuration config = new Configuration();
-        config.set("wiki.whindex.rules.1.value_field", "aeiouVF");
-        config.set("wiki.whindex.rules.1.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.1.value_field", "SecondValueField");
+        config.set("wiki.whindex.rules.1.src_field", "SecondSourceField");
         config.set("wiki.whindex.rules.1.delete_src_field", "false");
-        config.set("wiki.whindex.rules.1.dst_field", "poiuyDST");
-        config.set("wiki.whindex.rules.1.values", "aV,bV,cV,dV");
+        config.set("wiki.whindex.rules.1.dst_field", "SecondDestField");
+        config.set("wiki.whindex.rules.1.values", "secondTestValue1,secondTestValue2,secondTestValue3,secondTestValue4");
 
+        // Initialize helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // Only the dst field should be identified as a whindex field.
-       Assertions.assertTrue(wHelper.isWhindexField("poiuyDST"));
-       Assertions.assertFalse(wHelper.isWhindexField("qwertySRC"));
-       Assertions.assertFalse(wHelper.isWhindexField("aV")); // value
+        // Verify that only the destination field is identified as a whindex field.
+        Assertions.assertTrue(wHelper.isWhindexField("SecondDestField"));
+        Assertions.assertFalse(wHelper.isWhindexField("SecondSourceField"));
+        Assertions.assertFalse(wHelper.isWhindexField("secondTestValue1"));
     }
 
     /**
-     * Test that isWhindexField() works when the rules DO NOT specify delete_src_field. If no such field is provided, it is assumed to be "false".
+     * Test that isWhindexField() works correctly when delete_src_field is not specified.
+     * <p>
+     * In this case, only the destination field should be identified as a whindex field.
+     * </p>
      */
     @Test
     void testWhindexFieldIdentificationWithDeleteSrcFieldNotPresent() {
+        // Setup configuration without the delete_src_field property.
         Configuration config = new Configuration();
-        // No delete_src_field property provided
-        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
-        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
-        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
-        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
+        config.set("wiki.whindex.rules.sillyrule.value_field", "ThirdValueField");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "ThirdSourceField");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "ThirdDestField");
+        config.set("wiki.whindex.rules.sillyrule.values", "thirdTestValue1,thirdTestValue2,thirdTestValue3,thirdTestValue4");
 
+        // Initialize helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // Only the destination field should be seen as a whindex field.
-       Assertions.assertTrue(wHelper.isWhindexField("hohohoDST"));
-       Assertions.assertFalse(wHelper.isWhindexField("heheSRC"));
-       Assertions.assertFalse(wHelper.isWhindexField("lolV")); // value
+        // Verify that only the destination field is recognized as a whindex field.
+        Assertions.assertTrue(wHelper.isWhindexField("ThirdDestField"));
+        Assertions.assertFalse(wHelper.isWhindexField("ThirdSourceField"));
+        Assertions.assertFalse(wHelper.isWhindexField("thirdTestValue1"));
     }
 
     /**
-     * Test that isOverloadedWhindexField() works when the rules specify a "true" delete_src_field.
+     * Test that isOverloadedWhindexField() identifies overloaded fields correctly when the rule's
+     * delete_src_field is set to "true".
+     * <p>
+     * When delete_src_field is true, the source field should be considered overloaded.
+     * </p>
      */
     @Test
     void testOverloadedFieldIdentificationWithDeleteSrcFieldTrue() {
+        // Setup configuration with delete_src_field true.
         Configuration config = new Configuration();
-        config.set("wiki.whindex.rules.1.value_field", "AppleVF");
-        config.set("wiki.whindex.rules.1.src_field", "ForkSRC");
+        config.set("wiki.whindex.rules.1.value_field", "PrimaryValueField");
+        config.set("wiki.whindex.rules.1.src_field", "PrimarySourceField");
         config.set("wiki.whindex.rules.1.delete_src_field", "true");
-        config.set("wiki.whindex.rules.1.dst_field", "ProvoloneDST");
-        config.set("wiki.whindex.rules.1.values", "kittyV,catV,satV,batV");
+        config.set("wiki.whindex.rules.1.dst_field", "PrimaryDestField");
+        config.set("wiki.whindex.rules.1.values", "primaryTestValue1,primaryTestValue2,primaryTestValue3,primaryTestValue4");
 
+        // Initialize helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // Only the src field from the rule with delete_src_field true is overloaded.
-       Assertions.assertTrue(wHelper.isOverloadedWhindexField("ForkSRC"));
-        // Also check that the dst field is not overloaded.
-       Assertions.assertFalse(wHelper.isOverloadedWhindexField("ProvoloneDST"));
+        // Verify that with delete_src_field true, the source field is marked as overloaded,
+        // while the destination field is not.
+        Assertions.assertTrue(wHelper.isOverloadedWhindexField("PrimarySourceField"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("PrimaryDestField"));
     }
 
     /**
-     * Test that isOverloadedWhindexField() works when the rules specify a "false" delete_src_field.
+     * Test that isOverloadedWhindexField() works correctly when delete_src_field is set to "false".
+     * <p>
+     * When delete_src_field is false, neither the source field nor the destination field should be marked as overloaded.
+     * </p>
      */
     @Test
     void testOverloadedFieldIdentificationWithDeleteSrcFieldFalse() {
+        // Setup configuration with delete_src_field false.
         Configuration config = new Configuration();
-        config.set("wiki.whindex.rules.1.value_field", "aeiouVF");
-        config.set("wiki.whindex.rules.1.src_field", "qwertySRC");
+        config.set("wiki.whindex.rules.1.value_field", "SecondValueField");
+        config.set("wiki.whindex.rules.1.src_field", "SecondSourceField");
         config.set("wiki.whindex.rules.1.delete_src_field", "false");
-        config.set("wiki.whindex.rules.1.dst_field", "poiuyDST");
-        config.set("wiki.whindex.rules.1.values", "aV,bV,cV,dV");
+        config.set("wiki.whindex.rules.1.dst_field", "SecondDestField");
+        config.set("wiki.whindex.rules.1.values", "secondTestValue1,secondTestValue2,secondTestValue3,secondTestValue4");
 
+        // Initialize helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // When delete_src_field is false the source field should not be seen as overloaded.
-       Assertions.assertFalse(wHelper.isOverloadedWhindexField("qwertySRC"));
-       Assertions.assertFalse(wHelper.isOverloadedWhindexField("poiuyDST")); // dst field is not overloaded either
+        // Verify that when delete_src_field is false, neither source nor destination fields are overloaded.
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("SecondSourceField"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("SecondDestField"));
     }
 
     /**
-     * Test that isOverloadedWhindexField() works when the rules DO NOT specify delete_src_field. If no such field is provided, it is assumed to be "false".
+     * Test that isOverloadedWhindexField() works correctly when no delete_src_field property is provided.
+     * <p>
+     * In this scenario, the source field is not considered overloaded.
+     * </p>
      */
     @Test
     void testOverloadedFieldIdentificationWithDeleteSrcFieldNotPresent() {
+        // Setup configuration without the delete_src_field property.
         Configuration config = new Configuration();
-        // No delete_src_field property provided
-        config.set("wiki.whindex.rules.sillyrule.value_field", "hahaVF");
-        config.set("wiki.whindex.rules.sillyrule.src_field", "heheSRC");
-        config.set("wiki.whindex.rules.sillyrule.dst_field", "hohohoDST");
-        config.set("wiki.whindex.rules.sillyrule.values", "lolV,lololV,lolololV,lololololV");
+        config.set("wiki.whindex.rules.sillyrule.value_field", "ThirdValueField");
+        config.set("wiki.whindex.rules.sillyrule.src_field", "ThirdSourceField");
+        config.set("wiki.whindex.rules.sillyrule.dst_field", "ThirdDestField");
+        config.set("wiki.whindex.rules.sillyrule.values", "thirdTestValue1,thirdTestValue2,thirdTestValue3,thirdTestValue4");
 
+        // Initialize helper.
         Type type = new Type("wiki", null, null, null, 0, null);
         WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
         wHelper.setup(config);
 
-        // With no delete_src_field property, the source field is not overloaded.
-       Assertions.assertFalse(wHelper.isOverloadedWhindexField("heheSRC"));
-       Assertions.assertFalse(wHelper.isOverloadedWhindexField("hohohoDST"));
+        // Verify that, without a delete_src_field property, the source field is not marked as overloaded.
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("ThirdSourceField"));
+        Assertions.assertFalse(wHelper.isOverloadedWhindexField("ThirdDestField"));
     }
-    
 }
