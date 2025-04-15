@@ -392,7 +392,54 @@ public abstract class ExecutableExpansionVisitorTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401' || BAIL == '+gE1.234987') && ((_Eval_ = true) && (BAIL =~ '12340.*?'))";
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (BAIL =~ '12340.*?'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
+    public void testAnyfieldNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        // extraParameters.put("query.syntax", "LUCENE");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testMatchesAtLeastCountOf");
+        }
+        String[] queryStrings = {"_ANYFIELD_ =~'12340.*?'"};
+        @SuppressWarnings("unchecked")
+        // SOPRANO is the only one with a 0 after the 1234
+        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "(BAIL == '+eE1.2345' || BAIL == '+fE1.23401') && ((_Eval_ = true) && (_ANYFIELD_ =~ '12340.*?'))";
+        String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
+                        TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));
+    }
+
+    @Test
+    public void testLeadingNumericExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        // extraParameters.put("query.syntax", "LUCENE");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testMatchesAtLeastCountOf");
+        }
+        String[] queryStrings = {"(UUID == 'capone' || UUID == 'soprano') && BAIL=~'.*?05'"};
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+        String expectedQueryStr = "(UUID == 'capone' || UUID == 'soprano') && (((_Eval_ = true) &&  BAIL =~ '\\+[a-zA-Z]E.*?0?\\.?5|![A-Za-z]E.*?9?\\.?5' &&  BAIL =~ '.*?05'))";
         String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
                         TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));

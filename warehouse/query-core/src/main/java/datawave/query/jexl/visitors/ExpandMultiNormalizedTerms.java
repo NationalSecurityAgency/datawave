@@ -42,6 +42,7 @@ import com.google.common.collect.Sets;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
+import datawave.data.type.GeoType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -331,11 +332,14 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     List<JexlNode> normalizedNodes = Lists.newArrayList();
                     boolean failedNormalization = false;
                     boolean regexNode = (node instanceof ASTNRNode || node instanceof ASTERNode);
+                    boolean containsLossyRegex = false;
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
                             if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                if (regexNode) {
+
+                                // todo: add other one-to-many types for which we should not allow regex
+                                if (regexNode && normalizer instanceof GeoType) {
                                     throw new IllegalArgumentException(
                                                     "OneToManyNormalizers to not handle regex normalization: " + fieldName + " -> " + normalizer.getClass());
                                 }
@@ -363,12 +367,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     }
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
-                                    if (regexNode && normalizer.normalizedRegexIsLossy(term)) {
-                                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(node, fieldName, term),
-                                                        EVALUATION_ONLY);
-                                        // now we need to combine these two nodes so that both are required
-                                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {normalizedNode, evalOnly}));
-                                        normalizedNodes.add(combined);
+                                    // if the normalized term is identical to the original term, it cannot be lossy
+                                    if (regexNode && !term.equals(normTerm) && normalizer.normalizedRegexIsLossy(term)) {
+                                        containsLossyRegex = true;
+
                                     } else {
                                         normalizedNodes.add(normalizedNode);
                                     }
@@ -412,6 +414,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             // normalization failures do not matter for ANYFIELD terms
                             failedNormalization = !fieldName.equals(Constants.ANY_FIELD);
                         }
+                    }
+                    // todo: this merits further scrutiny
+                    if (containsLossyRegex) {
+                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(nodeToReturn, fieldName, term), EVALUATION_ONLY);
+                        // now we need to combine these two nodes so that both are required
+                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {nodeToReturn, evalOnly}));
+                        normalizedNodes = Arrays.asList(combined);
                     }
 
                     // determine if we are marking this term as dropped or evaluation only
