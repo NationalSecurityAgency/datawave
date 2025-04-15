@@ -70,8 +70,6 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
                 return 20;
             case VARIABLE: // mix of PRESENT and some form of DELAYED
                 return 30;
-            case UNINDEXED: // presence in a top level union results in a non-executable query
-                return 70;
             case DELAYED:
                 return 80;
             case NO_OP:

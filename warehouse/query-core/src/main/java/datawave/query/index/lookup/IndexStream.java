@@ -22,7 +22,8 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         PRESENT,
         /**
-         * ABSENT means that we expected data to exist, but did not find any.
+         * ABSENT means that we expected data to exist, but did not find any. This could be an indexed field that simply has no value in the global index, or it
+         * could be that the value exists but not for the specified field, or neither the field nor the value is present in the global index.
          */
         ABSENT,
         /**
@@ -37,10 +38,6 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          * DELAYED means this term or junction of terms is delayed for any number of reasons
          */
         DELAYED,
-        /**
-         * UNINDEXED means that the given field is not present for any value in the index.
-         */
-        UNINDEXED
     }
 
     StreamContext context();
@@ -56,7 +53,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
 
     /**
      * Advance the underlying iterator to the first element that is greater than or equal to the <code>seekShard</code>.
-     *
+     * <p>
      * If no data exists beyond the <code>seekShard</code> then a null value is returned, signifying the end of this index stream.
      *
      * @param seekShard

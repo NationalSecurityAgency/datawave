@@ -33,14 +33,6 @@ public class ScannerStream extends BaseIndexStream {
         this(itr, ctx, currNode, null);
     }
 
-    public static ScannerStream unindexed(JexlNode currNode) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNINDEXED, currNode);
-    }
-
-    public static ScannerStream unindexed(JexlNode currNode, IndexStream debugDelegate) {
-        return new ScannerStream(Collections.emptyIterator(), StreamContext.UNINDEXED, currNode, debugDelegate);
-    }
-
     public static ScannerStream noData(JexlNode currNode) {
         return new ScannerStream(Collections.emptyIterator(), StreamContext.ABSENT, currNode);
     }

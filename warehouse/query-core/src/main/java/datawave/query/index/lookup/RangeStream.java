@@ -208,7 +208,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
         // Guards against the case of a very oddly formed JEXL query, e.g. ("foo")
         if (null == ranges) {
-            this.context = StreamContext.UNINDEXED;
+            this.context = StreamContext.ABSENT;
             this.itr = Collections.emptyIterator();
         } else {
             // we can build the iterator at a later point, grabbing the top most
@@ -250,17 +250,22 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                         queryStream = streams.iterator().next();
                     }
                 }
-                if (queryStream.context() == StreamContext.VARIABLE) {
-                    if (queryStream instanceof Union) {
-                        context = StreamContext.ABSENT;
-                        queryStream = null;
-                        itr = Collections.emptyIterator();
-                        return itr;
-                    } else {
-                        context = StreamContext.PRESENT;
-                    }
-                } else {
-                    context = queryStream.context();
+
+                switch (queryStream.context()) {
+                    case VARIABLE:
+                        if (queryStream instanceof Intersection) {
+                            this.context = StreamContext.PRESENT;
+                            break;
+                        }
+                    case DELAYED:
+                        if (queryStream instanceof Union) {
+                            // all terms in a top level union must be executable
+                            this.context = StreamContext.ABSENT;
+                            this.itr = Collections.emptyIterator();
+                            return itr;
+                        }
+                    default:
+                        context = queryStream.context();
                 }
 
                 if (log.isDebugEnabled()) {
@@ -402,7 +407,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.noOp(node);
 
         } else if (builder.size() == 0) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.noData(node);
         } else {
 
             Union union = builder.build(executor);
@@ -415,8 +420,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 case PRESENT:
                 case VARIABLE:
                     return union;
-                case UNINDEXED:
-                    return ScannerStream.unindexed(union.currentNode(), union);
                 case INITIALIZED:
                 default:
                     throw new RuntimeException("unhandled scanner context");
@@ -490,21 +493,19 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 return ScannerStream.noOp(node);
 
             } else if (builder.size() == 0) {
-                return ScannerStream.unindexed(node);
+                return ScannerStream.noData(node);
             } else {
                 Intersection build = builder.build(executor);
                 switch (build.context()) {
                     case ABSENT:
                         return ScannerStream.noData(build.currentNode(), build);
-                    // TODO: all delayed?
                     case PRESENT:
                     case VARIABLE:
+                    case DELAYED:
                         return build;
                     case INITIALIZED:
-                        throw new RuntimeException("unhandled stream context");
-                    case UNINDEXED:
                     default:
-                        return ScannerStream.unindexed(build.currentNode(), build);
+                        throw new RuntimeException("unhandled stream context: " + build.context());
                 }
             }
         }
@@ -520,21 +521,21 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         // We are looking for identifier = literal
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         final String fieldName = op.deconstructIdentifier();
 
         // Null literals cannot be resolved against the index.
         if (op.getLiteralValue() == null) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         // toString of String returns the String
         String literal = op.getLiteralValue().toString();
 
         if (QueryOptions.DEFAULT_DATATYPE_FIELDNAME.equals(fieldName)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         // Check if field is not indexed
@@ -542,7 +543,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             try {
                 if (this.getAllFieldsFromHelper().contains(fieldName)) {
                     log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not indexed.");
-                    return ScannerStream.unindexed(node);
+                    return ScannerStream.delayed(node);
                 }
             } catch (TableNotFoundException e) {
                 log.error(e);
@@ -654,22 +655,22 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public Object visit(ASTERNode node, Object data) {
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         final String fieldName = op.deconstructIdentifier();
 
         // HACK to make EVENT_DATATYPE queries work
         if (QueryOptions.DEFAULT_DATATYPE_FIELDNAME.equals(fieldName)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         if (isUnOrNotFielded(node)) {
-            return ScannerStream.noData(node);
+            return ScannerStream.delayed(node);
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         try {
@@ -733,7 +734,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         return ScannerStream.delayed(node);
@@ -746,7 +747,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         return ScannerStream.delayed(node);
@@ -759,7 +760,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         return ScannerStream.delayed(node);
@@ -772,7 +773,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
 
         if (isUnindexed(node)) {
-            return ScannerStream.unindexed(node);
+            return ScannerStream.delayed(node);
         }
 
         return ScannerStream.delayed(node);

@@ -77,9 +77,6 @@ public class Union extends BaseIndexStream {
                 case ABSENT:
                     // these index streams are dropped from the union
                     continue;
-                case UNINDEXED:
-                    // a non-indexed field present in a top level union results in a non-executable query
-                    delayedFromUnindexed = true;
                 case DELAYED:
                     // these nodes need to be persisted via the set of delayedNodes
                     delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
@@ -123,14 +120,9 @@ public class Union extends BaseIndexStream {
             this.context = StreamContext.PRESENT;
             this.contextDebug = "children are all present";
         } else {
-            // only delayed nodes, figure out which context to surface
-            if (delayedFromUnindexed) {
-                this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "children contains at least one unindexed field";
-            } else {
-                this.context = StreamContext.DELAYED;
-                this.contextDebug = "children are all delayed";
-            }
+            // only delayed nodes
+            this.context = StreamContext.DELAYED;
+            this.contextDebug = "children are all delayed";
         }
 
         // advance the queue if we have active index streams
