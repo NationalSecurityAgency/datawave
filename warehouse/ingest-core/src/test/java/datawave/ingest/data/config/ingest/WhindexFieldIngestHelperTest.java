@@ -17,8 +17,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 class WhindexFieldIngestHelperTest {
 
     /**
-     * Test that when no whindex rules are configured, the WhindexFieldIngestHelper's internal
-     * mapping is empty.
+     * Test that when no whindex rules are configured, the WhindexFieldIngestHelper's internal mapping is empty.
      */
     @Test
     void testEmptyWhindexConfiguration() {
@@ -32,15 +31,14 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Create an empty expected mapping.
-        Multimap<String, WhindexConfig> expectedValues = LinkedListMultimap.create();
+        Multimap<String,WhindexConfig> expectedValues = LinkedListMultimap.create();
 
         // Verify that the valueFieldsToWhindexConfigs() mapping is empty.
         Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
     }
 
     /**
-     * Test that whindex rules are correctly parsed from the configuration when there are
-     * multiple rules defined.
+     * Test that whindex rules are correctly parsed from the configuration when there are multiple rules defined.
      */
     @Test
     void testWhindexFieldDefinitionsParsing() {
@@ -91,7 +89,7 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Build the expected mapping from valueField to the corresponding WhindexConfig.
-        HashMultimap<String, WhindexConfig> expectedValues = HashMultimap.create();
+        HashMultimap<String,WhindexConfig> expectedValues = HashMultimap.create();
         expectedValues.put("xValueField", expectedConfigA);
         expectedValues.put("yValueField", expectedConfigB);
         expectedValues.put("zValueField", expectedConfigC);
@@ -101,8 +99,7 @@ class WhindexFieldIngestHelperTest {
     }
 
     /**
-     * Test that getWhindexFields() correctly transforms the event map when the rule's
-     * delete_src_field is specified as "true".
+     * Test that getWhindexFields() correctly transforms the event map when the rule's delete_src_field is specified as "true".
      */
     @Test
     void testGetWhindexFieldsWithDeleteSrcFieldTrue() {
@@ -120,22 +117,21 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Build an event map containing the value field entry and its corresponding source field.
-        Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
+        Multimap<String,NormalizedContentInterface> eventMap = LinkedListMultimap.create();
         eventMap.put("xValueField", new NormalizedFieldAndValue("xValueField", "xTestValue1"));
         eventMap.put("xSourceField", new NormalizedFieldAndValue("xSourceField", "xTestValue1"));
 
         // Retrieve the output mapping after processing the event map.
-        Multimap<String, NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
+        Multimap<String,NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
         // Expect that the source field value is mapped to the destination field.
-        HashMultimap<String, NormalizedContentInterface> expectedValues = HashMultimap.create();
+        HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
         expectedValues.put("xDestField", new NormalizedFieldAndValue("xSourceField", "xTestValue1"));
         Assertions.assertEquals(expectedValues, actualValues);
     }
 
     /**
-     * Test that getWhindexFields() correctly transforms the event map when the rule's
-     * delete_src_field is specified as "false".
+     * Test that getWhindexFields() correctly transforms the event map when the rule's delete_src_field is specified as "false".
      */
     @Test
     void testGetWhindexFieldsWithDeleteSrcFieldFalse() {
@@ -153,15 +149,15 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Build the event map with entries for the value field and source field.
-        Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
+        Multimap<String,NormalizedContentInterface> eventMap = LinkedListMultimap.create();
         eventMap.put("yValueField", new NormalizedFieldAndValue("yValueField", "yTestValue1"));
         eventMap.put("ySourceField", new NormalizedFieldAndValue("ySourceField", "yTestValue1"));
 
         // Process the event map.
-        Multimap<String, NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
+        Multimap<String,NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
         // Expect that the destination field receives the transformed value.
-        HashMultimap<String, NormalizedContentInterface> expectedValues = HashMultimap.create();
+        HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
         expectedValues.put("yDestField", new NormalizedFieldAndValue("ySourceField", "yTestValue1"));
         Assertions.assertEquals(expectedValues, actualValues);
     }
@@ -187,22 +183,21 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Build the event map.
-        Multimap<String, NormalizedContentInterface> eventMap = LinkedListMultimap.create();
+        Multimap<String,NormalizedContentInterface> eventMap = LinkedListMultimap.create();
         eventMap.put("zValueField", new NormalizedFieldAndValue("zValueField", "zTestValue1"));
         eventMap.put("zSourceField", new NormalizedFieldAndValue("zSourceField", "zTestValue1"));
 
         // Process the event map.
-        Multimap<String, NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
+        Multimap<String,NormalizedContentInterface> actualValues = wHelper.getWhindexFields(eventMap);
 
         // Expect the mapping to be under the destination field since no delete_src_field is provided (assumed false).
-        HashMultimap<String, NormalizedContentInterface> expectedValues = HashMultimap.create();
+        HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
         expectedValues.put("zDestField", new NormalizedFieldAndValue("zSourceField", "zTestValue1"));
         Assertions.assertEquals(expectedValues, actualValues);
     }
 
     /**
-     * Test that isWhindexField() correctly identifies whindex fields when the rule's
-     * delete_src_field is set to "true".
+     * Test that isWhindexField() correctly identifies whindex fields when the rule's delete_src_field is set to "true".
      * <p>
      * Only the destination field should be considered a whindex field.
      * </p>
@@ -230,8 +225,7 @@ class WhindexFieldIngestHelperTest {
     }
 
     /**
-     * Test that isWhindexField() correctly identifies whindex fields when the rule's
-     * delete_src_field is set to "false".
+     * Test that isWhindexField() correctly identifies whindex fields when the rule's delete_src_field is set to "false".
      * <p>
      * Only the destination field should be considered a whindex field.
      * </p>
@@ -284,8 +278,7 @@ class WhindexFieldIngestHelperTest {
     }
 
     /**
-     * Test that isOverloadedWhindexField() identifies overloaded fields correctly when the rule's
-     * delete_src_field is set to "true".
+     * Test that isOverloadedWhindexField() identifies overloaded fields correctly when the rule's delete_src_field is set to "true".
      * <p>
      * When delete_src_field is true, the source field should be considered overloaded.
      * </p>

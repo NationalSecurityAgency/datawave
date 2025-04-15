@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.Type;
@@ -24,18 +24,15 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 /**
  * Implements methods provided by the WhindexIngest interface.
  * <p>
- * The WhindexFieldIngestHelper is responsible for parsing whindex rules from a Hadoop Configuration
- * and generating a mapping between event map fields and corresponding whindex configurations.
- * The configuration rules determine how and when new whindex fields are created from an input event map.
+ * The WhindexFieldIngestHelper is responsible for parsing whindex rules from a Hadoop Configuration and generating a mapping between event map fields and
+ * corresponding whindex configurations. The configuration rules determine how and when new whindex fields are created from an input event map.
  * <ul>
- *   <li><strong>valueFieldsToWhindexConfigs</strong>: Associates an event map's value field with a corresponding
- *       WhindexConfig that specifies the source field, destination field, values, and whether the source
- *       field is overloaded (i.e. to be removed).</li>
- *   <li><strong>overloadedFields</strong>: A set of source fields that are marked as overloaded (i.e., should be deleted)
- *       based on the configuration.</li>
- *   <li><strong>destinationFields</strong>: A set of fields that are defined as new whindex (destination) fields.
- *       (Note: In this implementation, destination fields are added during setup but the getter for destination fields
- *       currently returns a copy of the overloadedFields. Verify if this behavior meets your requirements.)</li>
+ * <li><strong>valueFieldsToWhindexConfigs</strong>: Associates an event map's value field with a corresponding WhindexConfig that specifies the source field,
+ * destination field, values, and whether the source field is overloaded (i.e. to be removed).</li>
+ * <li><strong>overloadedFields</strong>: A set of source fields that are marked as overloaded (i.e., should be deleted) based on the configuration.</li>
+ * <li><strong>destinationFields</strong>: A set of fields that are defined as new whindex (destination) fields. (Note: In this implementation, destination
+ * fields are added during setup but the getter for destination fields currently returns a copy of the overloadedFields. Verify if this behavior meets your
+ * requirements.)</li>
  * </ul>
  * <p>
  * After setup, getWhindexFields() processes an event map to produce new whindex fields based on the defined rules.
@@ -57,7 +54,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     // The Type object representing the context of ingestion.
     private final Type type;
     // Multimap mapping value field names to their corresponding WhindexConfig instances.
-    private final Multimap<String, WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
+    private final Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
     // Set of source fields that are marked as overloaded (to be deleted after processing).
     private final Set<String> overloadedFields = new HashSet<>();
     // Set of destination (whindex) fields generated from configuration rules.
@@ -66,7 +63,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Constructs a new WhindexFieldIngestHelper for the given ingestion type.
      *
-     * @param type the ingestion type that this helper will operate on.
+     * @param type
+     *            the ingestion type that this helper will operate on.
      */
     public WhindexFieldIngestHelper(Type type) {
         this.type = type;
@@ -75,14 +73,14 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Parses the whindex rules from the provided Hadoop Configuration.
      * <p>
-     * The configuration is expected to have properties in the following form:
-     * <code>typeName.whindex.rules.[groupID].[property]=value</code>,
-     * where the property is one of VALUE_FIELD, SRC_FIELD, DELETE_SRC_FIELD, DST_FIELD, or VALUES.
-     * Each groupID represents a separate whindex rule.
+     * The configuration is expected to have properties in the following form: <code>typeName.whindex.rules.[groupID].[property]=value</code>, where the
+     * property is one of VALUE_FIELD, SRC_FIELD, DELETE_SRC_FIELD, DST_FIELD, or VALUES. Each groupID represents a separate whindex rule.
      * </p>
      *
-     * @param config the Hadoop Configuration containing whindex rules.
-     * @throws IllegalArgumentException if there are configuration issues.
+     * @param config
+     *            the Hadoop Configuration containing whindex rules.
+     * @throws IllegalArgumentException
+     *             if there are configuration issues.
      */
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
@@ -90,12 +88,12 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
         String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
 
         // Get all properties from the configuration that start with the common prefix.
-        Map<String, String> properties = config.getPropsWithPrefix(commonPrefix);
+        Map<String,String> properties = config.getPropsWithPrefix(commonPrefix);
         // Map to temporarily group properties by their group ID.
-        Map<String, WhindexConfig> groupingsToConfigs = new HashMap<>();
+        Map<String,WhindexConfig> groupingsToConfigs = new HashMap<>();
 
         // Process each configuration property.
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
+        for (Map.Entry<String,String> entry : properties.entrySet()) {
             // Split the key by '.' to extract the group ID and property name.
             String[] parts = entry.getKey().split("\\.");
             String groupID = parts[0];
@@ -145,39 +143,36 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      * <p>
      * The helper examines each WhindexConfig and checks:
      * <ul>
-     *   <li>That both the value field and source field exist in the input event map.</li>
-     *   <li>That at least one of the entries in the event map for the value field matches one of the configured values,
-     *       either by event field value or indexed field value.</li>
+     * <li>That both the value field and source field exist in the input event map.</li>
+     * <li>That at least one of the entries in the event map for the value field matches one of the configured values, either by event field value or indexed
+     * field value.</li>
      * </ul>
-     * If a match is found, a copy of the source field's NormalizedContentInterface objects is created and added
-     * to the whindex fields under the configured destination field.
+     * If a match is found, a copy of the source field's NormalizedContentInterface objects is created and added to the whindex fields under the configured
+     * destination field.
      * </p>
      *
-     * @param eventMap the input event map containing field names and their corresponding normalized content.
+     * @param eventMap
+     *            the input event map containing field names and their corresponding normalized content.
      * @return a multimap of whindex fields generated from the event map.
      */
     @Override
-    public Multimap<String, NormalizedContentInterface> getWhindexFields(Multimap<String, NormalizedContentInterface> eventMap) {
-        Multimap<String, NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
+    public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
+        Multimap<String,NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
 
         // Filter whindex rules for which both the value field and source field are present in the event map.
         List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs.entries().stream()
-                .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) &&
-                        eventMap.containsKey(entry.getValue().getSourceField()))
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+                        .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
+                        .map(Map.Entry::getValue).collect(Collectors.toList());
 
         // Iterate over the matching configurations to generate the whindex fields.
         for (WhindexConfig currWhindexConfig : matchingConfigs) {
             // Retrieve all normalized content corresponding to the value field.
             Collection<NormalizedContentInterface> relatedValueEventContents = eventMap.get(currWhindexConfig.getValueField());
             // Check if any of these contents match the allowed values (either event field or indexed field).
-            boolean containsAnyMatchingValue = relatedValueEventContents.stream()
-                    .anyMatch(nci -> {
-                            List<String> currentValues = currWhindexConfig.getValues();
-                            return currentValues.contains(nci.getEventFieldValue()) || currentValues.contains(nci.getIndexedFieldValue());
-                            });
-
+            boolean containsAnyMatchingValue = relatedValueEventContents.stream().anyMatch(nci -> {
+                List<String> currentValues = currWhindexConfig.getValues();
+                return currentValues.contains(nci.getEventFieldValue()) || currentValues.contains(nci.getIndexedFieldValue());
+            });
 
             if (containsAnyMatchingValue) {
                 // Retrieve all normalized content corresponding to the source field.
@@ -198,7 +193,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Determines if the provided field name is recognized as a whindex (destination) field.
      *
-     * @param field the field name to check.
+     * @param field
+     *            the field name to check.
      * @return true if the field is a whindex field; false otherwise.
      */
     @Override
@@ -209,7 +205,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Determines if the provided field name is considered overloaded (i.e., the source field that should be deleted).
      *
-     * @param field the field name to check.
+     * @param field
+     *            the field name to check.
      * @return true if the field is overloaded; false otherwise.
      */
     @Override
@@ -223,7 +220,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      * @return an immutable view of the whindex configurations mapped by value field.
      */
     @Override
-    public ImmutableMultimap<String, WhindexConfig> getValueFieldsToWhindexConfigs() {
+    public ImmutableMultimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
         return ImmutableMultimap.copyOf(valueFieldsToWhindexConfigs);
     }
 
@@ -239,8 +236,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Returns an immutable set of destination (whindex) fields.
      * <p>
-     * Note: This method currently returns a copy of the overloaded fields.
-     * Verify if the intended behavior is to return the actual destination fields.
+     * Note: This method currently returns a copy of the overloaded fields. Verify if the intended behavior is to return the actual destination fields.
      * </p>
      *
      * @return an immutable set of destination field names.

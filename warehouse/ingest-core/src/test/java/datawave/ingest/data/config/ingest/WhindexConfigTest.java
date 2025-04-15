@@ -10,8 +10,7 @@ public class WhindexConfigTest {
     /**
      * Tests that the getters and setters work correctly.
      * <p>
-     * This test creates a new WhindexConfig instance, sets its properties, and then verifies
-     * that the getter methods return the expected values.
+     * This test creates a new WhindexConfig instance, sets its properties, and then verifies that the getter methods return the expected values.
      * </p>
      */
     @Test
@@ -37,8 +36,8 @@ public class WhindexConfigTest {
      * <p>
      * This test creates two WhindexConfig objects with the same properties and verifies:
      * <ul>
-     *   <li>They are equal via equals()</li>
-     *   <li>They produce the same hash code</li>
+     * <li>They are equal via equals()</li>
+     * <li>They produce the same hash code</li>
      * </ul>
      * Then it modifies a property in one of the objects and asserts that they are no longer equal.
      * </p>
@@ -77,9 +76,9 @@ public class WhindexConfigTest {
      * <p>
      * This test ensures that:
      * <ul>
-     *   <li>A WhindexConfig object is not equal to null.</li>
-     *   <li>A WhindexConfig object is not equal to an object of a different type.</li>
-     *   <li>A WhindexConfig object is equal to itself.</li>
+     * <li>A WhindexConfig object is not equal to null.</li>
+     * <li>A WhindexConfig object is not equal to an object of a different type.</li>
+     * <li>A WhindexConfig object is equal to itself.</li>
      * </ul>
      * </p>
      */
