@@ -2,6 +2,7 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -34,6 +38,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     private final Type type;
     private final Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
     private final Set<String> overloadedFields = new HashSet<>();
+    private final Set<String> destinationFields = new HashSet<>();
 
     public WhindexFieldIngestHelper(Type type) {
         this.type = type;
@@ -68,6 +73,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                     break;
                 case DST_FIELD:
                     whindexConfig.setDestField(entry.getValue());
+                    destinationFields.add(entry.getValue());
                     break;
                 case VALUES:
                     whindexConfig.setValues(List.of(entry.getValue().split(",")));
@@ -121,18 +127,26 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     @Override
-    public Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
-        return valueFieldsToWhindexConfigs;
-    }
-
-    @Override
     public boolean isWhindexField(String field) {
-        return valueFieldsToWhindexConfigs.values().stream().anyMatch((wc) -> wc.getDestField().equals(field));
+        return destinationFields.contains(field);
     }
 
     @Override
     public boolean isOverloadedWhindexField(String field) {
         return overloadedFields.contains(field);
+    }
+
+    @Override
+    public ImmutableMultimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
+        return ImmutableMultimap.copyOf(valueFieldsToWhindexConfigs);
+    }
+
+    public ImmutableSet<String> getOverloadedFields() {
+        return ImmutableSet.copyOf(overloadedFields);
+    }
+
+    public ImmutableSet<String> getDestinationFields() {
+        return ImmutableSet.copyOf(overloadedFields);
     }
 
 }
