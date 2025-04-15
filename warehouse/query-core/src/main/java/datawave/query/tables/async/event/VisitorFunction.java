@@ -719,4 +719,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         return null;
     }
+
+    public QueryLogic<?> getLogic() {
+        return logic;
+    }
 }

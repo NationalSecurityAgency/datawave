@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.core.query.configuration.QueryData;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.UniqueFields;
@@ -573,5 +574,49 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Assert.assertEquals(present, options.containsKey(QueryOptions.UNIQUE_FIELDS));
         Assert.assertEquals(present, options.containsKey(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE));
         Assert.assertEquals(present, options.containsKey(QueryOptions.MOST_RECENT_UNIQUE));
+    }
+
+    @Test
+    public void testDocumentAndShardRangeCount() throws IOException, TableNotFoundException, URISyntaxException {
+        setupExpects();
+
+        Query mockQuery = createMock(Query.class);
+        config.setQuery(mockQuery);
+        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
+        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+
+        SessionOptions options = new SessionOptions();
+        IteratorSetting iteratorSetting = new IteratorSetting(10, "itr", QueryIterator.class);
+        String query = "FIELD1 == 'a' || FIELD1 == 'b'";
+        iteratorSetting.addOption(QueryOptions.QUERY, query);
+        options.addScanIterator(iteratorSetting);
+
+        Collection<Range> ranges = new HashSet<>();
+        ranges.add(new Range(new Key("row"), true, new Key("row\0"), false));
+        ranges.add(new Range(new Key("row2"), true, new Key("row2\0"), false));
+        ranges.add(new Range(new Key("row", "dt\0uid"), true, new Key("row", "dt\0uid\0"), false));
+        ranges.add(new Range(new Key("row", "dt\0uid2"), true, new Key("row", "dt\0uid2\0"), false));
+        ranges.add(new Range(new Key("row", "dt\0uid3"), true, new Key("row", "dt\0uid3\0"), false));
+
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery(query)
+                .withRanges(ranges)
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
+        ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
+
+        replayAll();
+
+        function = new VisitorFunction(config, helper, new ShardQueryLogic());
+        ScannerChunk updatedChunk = function.apply(chunk);
+
+        verifyAll();
+
+        Assert.assertNotEquals(chunk, updatedChunk);
+        Assert.assertEquals(1, ((WritesQuerySubplanMetrics) function.getLogic()).getSubPlans().size());
+        Assert.assertEquals(2, ((WritesQuerySubplanMetrics) function.getLogic()).getSubPlans().get("FIELD1 == 'a' || FIELD1 == 'b'").getShardRangeCount());
+        Assert.assertEquals(3, ((WritesQuerySubplanMetrics) function.getLogic()).getSubPlans().get("FIELD1 == 'a' || FIELD1 == 'b'").getDocumentRangeCount());
     }
 }
