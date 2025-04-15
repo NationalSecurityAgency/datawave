@@ -5,6 +5,7 @@ import java.lang.annotation.Annotation;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -23,6 +24,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
+import org.springframework.core.metrics.ApplicationStartup;
 
 /**
  * A delegating wrapper around {@link ConfigurableApplicationContext}. This implements all methods of {@link ConfigurableApplicationContext}, delegating each
@@ -110,6 +112,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public void setApplicationStartup(ApplicationStartup applicationStartup) {
+        lockAndWrite(() -> configurableApplicationContext.setApplicationStartup(applicationStartup));
+    }
+
+    @Override
+    public ApplicationStartup getApplicationStartup() {
+        return lockAndRead(configurableApplicationContext::getApplicationStartup);
+    }
+
+    @Override
     public void setEnvironment(ConfigurableEnvironment environment) {
         lock.writeLock().lock();
         try {
@@ -182,6 +194,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public void setClassLoader(ClassLoader classLoader) {
+        lockAndWrite(() -> configurableApplicationContext.setClassLoader(classLoader));
     }
 
     @Override
@@ -395,6 +412,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType, allowEagerInit));
+    }
+
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType, allowEagerInit));
+    }
+
+    @Override
     public String[] getBeanNamesForType(ResolvableType resolvableType) {
         return this.configurableApplicationContext.getBeanNamesForType(resolvableType);
     }
@@ -585,6 +612,39 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
         lock.writeLock().lock();
         try {
             return configurableApplicationContext.getResource(location);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Execute and return the result of the given delegate method after obtaining a lock for the read lock. The read lock will always be unlocked afterward.
+     *
+     * @param delegateMethod
+     *            the delegate method to run to return the targeted resource
+     * @return the delegate method's result
+     * @param <T>
+     *            the return type
+     */
+    private <T> T lockAndRead(Supplier<T> delegateMethod) {
+        lock.readLock().lock();
+        try {
+            return delegateMethod.get();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Execute the given delegate method after obtaining a lock for the write lock. The write lock will always be unlocked afterward.
+     *
+     * @param delegateMethod
+     *            the delegate method to execute
+     */
+    private void lockAndWrite(Runnable delegateMethod) {
+        lock.writeLock().lock();
+        try {
+            delegateMethod.run();
         } finally {
             lock.writeLock().unlock();
         }
