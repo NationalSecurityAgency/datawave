@@ -351,6 +351,23 @@ public class QueryMetricTestBase {
         m.setUser(DnUtils.getShortName(ALLOWED_CALLER.subjectDN()));
         m.setUserDN(ALLOWED_CALLER.subjectDN());
         m.addPrediction(new BaseQueryMetric.Prediction("PredictionTest", 200.0));
+        m.setSubPlans(createSubplans());
+    }
+    
+    private static Map<String,RangeCounts> createSubplans() {
+        Map<String,RangeCounts> subPlans = new HashMap<>();
+        
+        RangeCounts rangeCountOne = new RangeCounts();
+        rangeCountOne.setDocumentRangeCount(3);
+        rangeCountOne.setShardRangeCount(1);
+        
+        RangeCounts rangeCountTwo = new RangeCounts();
+        rangeCountTwo.setDocumentRangeCount(2);
+        rangeCountTwo.setShardRangeCount(3);
+        
+        subPlans.put("foo1 == bar1 || foo2 == bar2", rangeCountOne);
+        subPlans.put("foo1 == bar1 || foo4 == bar4", rangeCountTwo);
+        return subPlans;
     }
     
     public static String createQueryId() {
@@ -623,7 +640,9 @@ public class QueryMetricTestBase {
                 if (!fields.contains(f)) {
                     fields.add(f);
                 } else {
-                    duplicateFields.add(f);
+                    if (!f.equals("SUBPLAN")) {
+                        duplicateFields.add(f);
+                    }
                 }
             }
         }

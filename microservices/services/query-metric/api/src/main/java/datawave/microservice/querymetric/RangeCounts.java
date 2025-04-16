@@ -26,6 +26,17 @@ public class RangeCounts implements Serializable {
         this.shardRangeCount = newShardRangeCount;
     }
     
+    public RangeCounts() {}
+    
+    public RangeCounts(RangeCounts o) {
+        this.documentRangeCount = o.documentRangeCount;
+        this.shardRangeCount = o.shardRangeCount;
+    }
+    
+    public RangeCounts copyOf() {
+        return new RangeCounts(this);
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {

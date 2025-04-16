@@ -425,12 +425,14 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
     @Test
     public void CombineSubPlanMetricsTest() throws Exception {
         QueryMetric updatedQueryMetric = (QueryMetric) createMetric();
+        updatedQueryMetric.setSubPlans(new HashMap<>());
         RangeCounts updatedRangeCounts = new RangeCounts();
         updatedRangeCounts.setDocumentRangeCount(1);
         updatedRangeCounts.setShardRangeCount(0);
         updatedQueryMetric.addSubPlan("F1 == value1 || F2 == value2", updatedRangeCounts);
         
         QueryMetric storedQueryMetric = (QueryMetric) createMetric();
+        storedQueryMetric.setSubPlans(new HashMap<>());
         RangeCounts storedRangeCounts = new RangeCounts();
         storedRangeCounts.setDocumentRangeCount(2);
         storedRangeCounts.setShardRangeCount(1);

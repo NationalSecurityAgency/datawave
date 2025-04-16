@@ -114,7 +114,9 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         if (other.subPlans != null) {
             this.subPlans = new HashMap<>();
             if (!other.subPlans.isEmpty()) {
-                this.subPlans.putAll(other.subPlans);
+                for (Map.Entry<String,RangeCounts> entry : other.subPlans.entrySet()) {
+                    this.subPlans.put(entry.getKey(), entry.getValue().copyOf());
+                }
             }
         }
     }
