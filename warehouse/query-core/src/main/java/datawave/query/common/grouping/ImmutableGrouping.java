@@ -7,6 +7,7 @@ import java.util.function.Predicate;
  * This class represents an immutable version of {@link Grouping} that cannot be modified.
  */
 public class ImmutableGrouping extends Grouping {
+    private static final long serialVersionUID = -2915413060454488378L;
 
     public ImmutableGrouping(Collection<? extends GroupingAttribute<?>> collection) {
         super();

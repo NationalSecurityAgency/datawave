@@ -22,6 +22,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -32,7 +33,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.CharArraySet;
-import org.infinispan.commons.util.Base64;
 
 import com.google.common.collect.Multimap;
 
@@ -229,7 +229,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 this.docWriterService.shutdown();
                 this.docWriterService.awaitTermination(1, TimeUnit.MINUTES);
                 this.docWriter.close();
-            } catch (InterruptedException | MutationsRejectedException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Unable to terminate document writing service!", e);
+            } catch (MutationsRejectedException e) {
                 log.error("Unable to terminate document writing service!", e);
             }
         }
@@ -589,13 +592,13 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                         this.ingestHelper.getDeleteMode());
 
         ByteArrayOutputStream baos = null;
-        Base64.OutputStream b64os = null;
+        Base64OutputStream b64os = null;
         GZIPOutputStream gzos = null;
         Value value = null;
         try {
             baos = new ByteArrayOutputStream(Math.max(rawValue.length / 2, 1024));
             if (useBase64Encoding) {
-                b64os = new Base64.OutputStream(baos, Base64.ENCODE);
+                b64os = new Base64OutputStream(baos, true);
             }
             gzos = new GZIPOutputStream(useBase64Encoding ? b64os : baos);
 
@@ -669,6 +672,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 try {
                     Thread.sleep(INTERVAL);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
 

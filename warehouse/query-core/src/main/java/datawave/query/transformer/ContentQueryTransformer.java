@@ -82,7 +82,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
                 final String valueIdentifier = fieldSeparation > 0 ? term.substring(fieldSeparation + 1) : term;
 
                 // find the identifier if there is one, otherwise we're done with this term.
-                int idSeparation = valueIdentifier.indexOf("!");
+                int idSeparation = valueIdentifier.indexOf('!');
                 if (idSeparation > 0) {
                     String value = valueIdentifier.substring(0, idSeparation);
                     String identifier = valueIdentifier.substring(idSeparation + 1);

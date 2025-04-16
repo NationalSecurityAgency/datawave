@@ -1684,7 +1684,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             synchronized (getSummaryOptions()) {
                 if (summaryTransform == null) {
                     try {
-                        summaryTransform = new SummaryTransform(summaryOptions, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                        summaryTransform = new SummaryTransform(summaryOptions, summaryFieldname, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
                                         summaryIterator.getDeclaredConstructor().newInstance());
                     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create summary transform", e);

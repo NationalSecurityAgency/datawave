@@ -1625,8 +1625,13 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
                             false, false, false, new HashMap<>(), false, false);
 
-            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
+            try {
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (IOException ioException) {
+                Assert.fail(ioException.getMessage());
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
@@ -1669,8 +1674,11 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(
                             createMockInputStream(new String[] {"/dummy/entry"}), null, false, false, false, false, null, false, false);
 
-            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
+            try {
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
@@ -1713,9 +1721,11 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[0], false, false, false, false, null, false, false);
-
-            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
+            try {
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);

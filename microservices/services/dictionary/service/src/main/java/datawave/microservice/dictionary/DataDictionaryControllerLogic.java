@@ -18,6 +18,7 @@ import datawave.microservice.AccumuloConnectionService;
 import datawave.microservice.Connection;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.dictionary.config.DataDictionaryProperties;
+import datawave.microservice.dictionary.config.DictionaryServiceProperties;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.microservice.dictionary.data.DataDictionary;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
@@ -32,6 +33,7 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
     private final DataDictionary<META,DESC,FIELD> dataDictionary;
     private final ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory;
     private final AccumuloConnectionService accumuloConnectionService;
+    private final DictionaryServiceProperties dictionaryServiceConfiguration;
     
     private final Consumer<META> TRANSFORM_EMPTY_INTERNAL_FIELD_NAMES = meta -> {
         if (meta.getInternalFieldName() == null || meta.getInternalFieldName().isEmpty()) {
@@ -40,11 +42,13 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
     };
     
     public DataDictionaryControllerLogic(DataDictionaryProperties dataDictionaryConfiguration, DataDictionary<META,DESC,FIELD> dataDictionary,
-                    ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService) {
+                    ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService,
+                    DictionaryServiceProperties dictionaryServiceProperties) {
         this.dataDictionaryConfiguration = dataDictionaryConfiguration;
         this.dataDictionary = dataDictionary;
         this.responseObjectFactory = responseObjectFactory;
         this.accumuloConnectionService = accumloConnectionService;
+        this.dictionaryServiceConfiguration = dictionaryServiceProperties;
         dataDictionary.setNormalizationMap(dataDictionaryConfiguration.getNormalizerMap());
     }
     
@@ -78,6 +82,7 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         Collection<META> fields = dataDictionary.getFields(connection, dataTypes, dataDictionaryConfiguration.getNumThreads());
         DICT dataDictionary = responseObjectFactory.getDataDictionary();
         dataDictionary.setFields(fields);
+        dataDictionary.setDataDictionarySystem(dictionaryServiceConfiguration.getSystem().systemName);
         // Ensure that empty internal field names will be set to the field name instead.
         dataDictionary.transformFields(TRANSFORM_EMPTY_INTERNAL_FIELD_NAMES);
         
@@ -298,5 +303,9 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
      */
     public DataDictionaryProperties.Banner retrieveBanner() {
         return dataDictionaryConfiguration.getBanner();
+    }
+    
+    public DictionaryServiceProperties.System retrieveSystem() {
+        return dictionaryServiceConfiguration.getSystem();
     }
 }

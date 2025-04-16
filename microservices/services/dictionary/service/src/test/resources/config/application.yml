@@ -18,6 +18,7 @@ datawave:
     default-table-name: "DatawaveMetadata"
     jquery-uri: "/jquery.min.js"
     data-tables-uri: "/jquery.dataTables.min.js"
+    system-name: "docker quick-start"
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC
