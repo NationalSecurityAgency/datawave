@@ -275,11 +275,12 @@ public abstract class UniqueTest {
         String queryString = "UUID =~ '^[CS].*'";
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID));
-        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        // both capone and corleone contain NUMBER:25, only one document is expected to be returned
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID, WiseGuysIngest.corleoneUID));
+        // soprano uid -1kfeoq.-80b5fs.r0262j does NOT contain a NUMBER field
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         extraParameters.put("unique.fields", "NUMBER");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
     }
 
     @Test
@@ -455,6 +456,44 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         this.getClass().getMethod("testHannahHypothesis").getName().replace("Hypothesis", "Theory");
+    }
+
+    @Test
+    public void testUniquenessWithoutIteratorLevelTransformer() throws Exception {
+        boolean originalSetting = logic.isDisableIteratorUniqueFields();
+        try {
+            Map<String,String> extraParameters = new HashMap<>();
+            extraParameters.put("include.grouping.context", "true");
+
+            Date startDate = format.parse("20091231");
+            Date endDate = format.parse("20150101");
+
+            String queryString = "UUID =~ '^[CS].*'";
+
+            // disable the unique transform on the query iterator
+            logic.setDisableIteratorUniqueFields(true);
+
+            Set<Set<String>> expected = new HashSet<>();
+            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+            extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
+            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+            expected.clear();
+            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+            expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+            extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
+            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+            expected.clear();
+            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+            expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+            extraParameters.put("unique.fields", "death_date,birth_date");
+            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        } finally {
+            logic.setDisableIteratorUniqueFields(originalSetting);
+        }
     }
 
 }

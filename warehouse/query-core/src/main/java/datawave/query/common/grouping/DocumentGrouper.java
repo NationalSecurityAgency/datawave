@@ -628,7 +628,7 @@ public class DocumentGrouper {
             // The field name is everything before the first period.
             name = field.substring(0, firstPeriod);
 
-            int secondPeriod = field.indexOf(".", firstPeriod + 1);
+            int secondPeriod = field.indexOf('.', firstPeriod + 1);
             // If a second period is present, we know that field's format is <NAME>.<GROUP>...<INSTANCE>
             if (secondPeriod != -1) {
                 // Parse the group from the substring directly following the name.

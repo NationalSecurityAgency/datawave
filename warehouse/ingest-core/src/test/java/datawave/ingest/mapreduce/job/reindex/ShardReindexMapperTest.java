@@ -2139,7 +2139,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         Key event = new Key(shard, dataType + '\u0000' + uid, field + '\u0000' + value, vis, eventTime);
 
-        if (field.indexOf(".") > -1) {
+        if (field.indexOf('.') > -1) {
             field = field.replaceAll("\\..*", "");
         }
 

@@ -21,6 +21,7 @@ import com.codahale.metrics.annotation.Timed;
 import datawave.microservice.AccumuloConnectionService;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.dictionary.config.DataDictionaryProperties;
+import datawave.microservice.dictionary.config.DictionaryServiceProperties;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.microservice.dictionary.data.DataDictionary;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
@@ -45,9 +46,10 @@ public class DataDictionaryControllerV2<DESC extends DescriptionBase<DESC>,DICT 
     private DataDictionaryControllerLogic dataDictionaryControllerLogic;
     
     public DataDictionaryControllerV2(DataDictionaryProperties dataDictionaryConfiguration, DataDictionary<META,DESC,FIELD> dataDictionary,
-                    ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService) {
+                    ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService,
+                    DictionaryServiceProperties dictionaryServiceProperties) {
         dataDictionaryControllerLogic = new DataDictionaryControllerLogic<>(dataDictionaryConfiguration, dataDictionary, responseObjectFactory,
-                        accumloConnectionService);
+                        accumloConnectionService, dictionaryServiceProperties);
     }
     
     @GetMapping("/")
@@ -108,6 +110,12 @@ public class DataDictionaryControllerV2<DESC extends DescriptionBase<DESC>,DICT 
     @Timed(name = "dw.dictionary.data.banner", absolute = true)
     public DataDictionaryProperties.Banner banner() {
         return dataDictionaryControllerLogic.retrieveBanner();
+    }
+    
+    @GetMapping(value = "/system", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Timed(name = "dw.dictionary.system", absolute = true)
+    public DictionaryServiceProperties.System system() {
+        return dataDictionaryControllerLogic.retrieveSystem();
     }
     
     @Secured({"Administrator", "JBossAdministrator"})

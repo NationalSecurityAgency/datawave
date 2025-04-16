@@ -25,6 +25,8 @@ public class EdgeModelFields implements Serializable {
     /** A mapping of field names to field keys */
     private Map<String,FieldKey> reverseMap = new HashMap<>();
 
+    private static final long serialVersionUID = 6506817448338233545L;
+
     public static String EQUALS = "==";
     public static String EQUALS_REGEX = "=~";
     public static String NOT_EQUALS = "!=";
@@ -141,6 +143,11 @@ public class EdgeModelFields implements Serializable {
 
     /**
      * Returns the FieldKey associated with the actual (ie, configured) edge field name, ie, reverse lookup...
+     *
+     * @param internalFieldName
+     *            the internal field name
+     *
+     * @return the FieldKey parsed from the internalFieldName provided
      */
     public FieldKey parse(String internalFieldName) {
         FieldKey key = reverseMap.get(internalFieldName);
@@ -234,7 +241,7 @@ public class EdgeModelFields implements Serializable {
     /**
      * Returns the subset of all edge-related field names which are common to all application tiers.
      *
-     * @return
+     * @return the collection of base field names
      */
     public Collection<String> getBaseFieldNames() {
         return Collections.unmodifiableCollection(baseFieldMap.values());
@@ -244,7 +251,7 @@ public class EdgeModelFields implements Serializable {
      * Returns the field names associated with key manipulation and processing, a superset of the fields given by the {@link EdgeModelFields#getBaseFieldNames}
      * method
      *
-     * @return
+     * @return the collection of key processing field names
      */
     public Collection<String> getKeyProcessingFieldNames() {
         HashSet<String> fields = new HashSet<>();
@@ -257,7 +264,7 @@ public class EdgeModelFields implements Serializable {
      * Returns the field names associated with query result transformation, a superset of the fields given by the {@link EdgeModelFields#getBaseFieldNames}
      * method
      *
-     * @return
+     * @return collection of transform field names
      */
     public Collection<String> getTransformFieldNames() {
         HashSet<String> fields = new HashSet<>();
@@ -269,7 +276,7 @@ public class EdgeModelFields implements Serializable {
     /**
      * Returns the mapped fields associated with edge key manipulation and processing, where the keys are represented as FieldKey.name()
      *
-     * @return
+     * @return key processing field map
      */
     public Map<String,String> getKeyProcessingFieldMap() {
         HashMap<String,String> all = new HashMap<>();
@@ -281,7 +288,7 @@ public class EdgeModelFields implements Serializable {
     /**
      * Returns the mapping for fields associated with query result transformation, where the keys are represented as FieldKey.name()
      *
-     * @return
+     * @return the transform field map
      */
     public Map<String,String> getTransformFieldMap() {
         HashMap<String,String> all = new HashMap<>();
@@ -293,7 +300,7 @@ public class EdgeModelFields implements Serializable {
     /**
      * Returns all mapped field names, where the keys are represented as FieldKey.name()
      *
-     * @return
+     * @return all the mapped field names
      */
     public Map<String,String> getAllFieldsMap() {
         HashMap<String,String> all = new HashMap<>();
@@ -307,7 +314,8 @@ public class EdgeModelFields implements Serializable {
      * Returns the field name mapped to the specified FieldKey
      *
      * @param key
-     * @return
+     *            the key
+     * @return the field name mapped to the key
      */
     public String getFieldName(FieldKey key) {
         String name = getAllFieldsMap().get(key.name());

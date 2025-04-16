@@ -160,7 +160,7 @@ public class QueryModel implements Serializable {
     public String aliasFieldNameReverseModel(String fieldName) {
         String fName = fieldName;
         
-        int idx = fName.indexOf(".");
+        int idx = fName.indexOf('.');
         
         if (idx > -1) {
             fName = fName.substring(0, idx);

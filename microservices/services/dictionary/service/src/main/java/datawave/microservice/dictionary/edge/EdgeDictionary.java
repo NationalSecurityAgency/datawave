@@ -12,4 +12,8 @@ public interface EdgeDictionary<EDGE extends EdgeDictionaryBase<EDGE,META>,META 
     char COL_SEPARATOR = '/';
     
     EDGE getEdgeDictionary(String metadataTableName, AccumuloClient accumuloClient, Set<Authorizations> auths, int numThreads) throws Exception;
+    
+    String getEdgeDictionarySystem();
+    
+    void setEdgeDictionarySystem(String edgeDictionarySystem);
 }
