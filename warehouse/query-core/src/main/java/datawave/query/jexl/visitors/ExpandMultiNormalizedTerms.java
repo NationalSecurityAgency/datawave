@@ -368,14 +368,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     }
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
-                                    // if the normalized term is identical to the original term, it cannot be lossy
-                                    if (regexNode && !term.equals(normTerm) && normalizer.normalizedRegexIsLossy(term)) {
-                                        containsLossyRegex = true;
-                                        lossyRegexNode = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(nodeToReturn, fieldName, term),
-                                                        EVALUATION_ONLY);
-
-                                    }
                                     normalizedNodes.add(normalizedNode);
+                                }
+                                // if the normalized term is identical to the original term, it cannot be lossy
+                                if (regexNode && !term.equals(normTerm) && normalizer.normalizedRegexIsLossy(term)) {
+                                    containsLossyRegex = true;
+                                    lossyRegexNode = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(nodeToReturn, fieldName, term),
+                                                    EVALUATION_ONLY);
 
                                 }
                             }
