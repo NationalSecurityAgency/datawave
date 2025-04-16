@@ -336,7 +336,15 @@ public abstract class ExecutableExpansionVisitorTest {
                         finalQuery);
 
         ASTJexlScript expectedQuery = JexlASTHelper.parseJexlQuery(
-                        "((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
+                        "GENDER == 'male' && (NOME == 'that' || NOME == 'this') && (LOCATION == 'chicago' || LOCATION == 'newjersey' || LOCATION == 'newyork') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f200a80a80a80a80a' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888') && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && !filter:includeRegex(ETA, 'blah') && ((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000'))");
+        // "((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')
+        // && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') &&
+        // (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) ||
+        // (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') &&
+        // (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO
+        // == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER
+        // == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION
+        // == 'newjersey')");
         Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
     }
 
@@ -439,7 +447,7 @@ public abstract class ExecutableExpansionVisitorTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
 
-        String expectedQueryStr = "(UUID == 'capone' || UUID == 'soprano') && (((_Eval_ = true) &&  BAIL =~ '\\+[a-zA-Z]E.*?0?\\.?5|![A-Za-z]E.*?9?\\.?5' &&  BAIL =~ '.*?05'))";
+        String expectedQueryStr = "(UUID == 'capone' || UUID == 'soprano') && ((_Eval_ = true) &&  BAIL =~ '\\+[a-zA-Z]E.*?0?\\.?5|![A-Za-z]E.*?9?\\.?5' &&  BAIL =~ '.*?05')";
         String plan = JexlFormattedStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertTrue("Expected equality: " + expectedQueryStr + " vs " + plan,
                         TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery(expectedQueryStr), logic.getConfig().getQueryTree()));

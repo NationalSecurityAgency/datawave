@@ -333,6 +333,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     boolean failedNormalization = false;
                     boolean regexNode = (node instanceof ASTNRNode || node instanceof ASTERNode);
                     boolean containsLossyRegex = false;
+                    JexlNode lossyRegexNode = null;
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
@@ -370,10 +371,12 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     // if the normalized term is identical to the original term, it cannot be lossy
                                     if (regexNode && !term.equals(normTerm) && normalizer.normalizedRegexIsLossy(term)) {
                                         containsLossyRegex = true;
+                                        lossyRegexNode = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(nodeToReturn, fieldName, term),
+                                                        EVALUATION_ONLY);
 
-                                    } else {
-                                        normalizedNodes.add(normalizedNode);
                                     }
+                                    normalizedNodes.add(normalizedNode);
+
                                 }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {
@@ -414,13 +417,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             // normalization failures do not matter for ANYFIELD terms
                             failedNormalization = !fieldName.equals(Constants.ANY_FIELD);
                         }
-                    }
-                    // todo: this merits further scrutiny
-                    if (containsLossyRegex) {
-                        JexlNode evalOnly = QueryPropertyMarker.create(JexlNodeFactory.buildUntypedNode(nodeToReturn, fieldName, term), EVALUATION_ONLY);
-                        // now we need to combine these two nodes so that both are required
-                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {nodeToReturn, evalOnly}));
-                        normalizedNodes = Arrays.asList(combined);
                     }
 
                     // determine if we are marking this term as dropped or evaluation only
@@ -471,6 +467,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         } else {
                             nodeToReturn = JexlNodeFactory.createOrNode(normalizedNodes);
                         }
+                    }
+
+                    // todo: this merits further scrutiny
+                    if (containsLossyRegex) {
+                        // now we need to combine these two nodes so that both are required
+                        JexlNode combined = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {nodeToReturn, lossyRegexNode}));
+                        nodeToReturn = combined;
                     }
 
                     // wrap the node if required
