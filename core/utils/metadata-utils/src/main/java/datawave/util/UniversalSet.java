@@ -123,6 +123,16 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     }
     
     /**
+     * Need a hash code for cache key purposes
+     * 
+     * @return
+     */
+    @Override
+    public int hashCode() {
+        return UniversalSet.class.hashCode();
+    }
+    
+    /**
      *
      * @param c
      *            items to remove

@@ -101,7 +101,7 @@ public class QueryException extends Exception {
     public int getStatusCode() {
         int status = 500;
         if (null != errorCode && !errorCode.equals("")) {
-            int idx = errorCode.indexOf("-");
+            int idx = errorCode.indexOf('-');
             if (idx > 0) {
                 String httpCode = errorCode.substring(0, idx);
                 status = Integer.parseInt(httpCode);

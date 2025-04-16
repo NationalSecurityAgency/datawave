@@ -328,12 +328,6 @@ public final class EdgeData {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
                         case 8: {
                             bitField0_ |= 0x00000001;
                             count_ = input.readInt64();
@@ -426,6 +420,12 @@ public final class EdgeData {
                             com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000080;
                             uuidString_ = bs;
+                            break;
+                        }
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
                             break;
                         }
                     }
@@ -526,7 +526,7 @@ public final class EdgeData {
                 return defaultInstance;
             }
 
-            private final com.google.protobuf.UnknownFieldSet unknownFields;
+            private final transient com.google.protobuf.UnknownFieldSet unknownFields;
 
             @java.lang.Override
             public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
@@ -546,12 +546,6 @@ public final class EdgeData {
                             case 0:
                                 done = true;
                                 break;
-                            default: {
-                                if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                                    done = true;
-                                }
-                                break;
-                            }
                             case 8: {
                                 bitField0_ |= 0x00000001;
                                 leastSignificantBits_ = input.readSInt64();
@@ -560,6 +554,12 @@ public final class EdgeData {
                             case 16: {
                                 bitField0_ |= 0x00000002;
                                 mostSignificantBits_ = input.readSInt64();
+                                break;
+                            }
+                            default: {
+                                if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                    done = true;
+                                }
                                 break;
                             }
                         }
@@ -694,7 +694,7 @@ public final class EdgeData {
                 return size;
             }
 
-            private static final long serialVersionUID = 0L;
+            private static final long serialVersionUID = 780014719499307692L;
 
             @java.lang.Override
             protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -1213,7 +1213,7 @@ public final class EdgeData {
         }
 
         public static final int SINKVALUE_FIELD_NUMBER = 6;
-        private java.lang.Object sinkValue_;
+        private transient java.lang.Object sinkValue_;
 
         /**
          * <code>optional string sinkValue = 6;</code>
@@ -1260,7 +1260,7 @@ public final class EdgeData {
         }
 
         public static final int LOADDATE_FIELD_NUMBER = 7;
-        private java.lang.Object loadDate_;
+        private transient java.lang.Object loadDate_;
 
         /**
          * <code>optional string loadDate = 7;</code>
@@ -1370,7 +1370,7 @@ public final class EdgeData {
         }
 
         public static final int UUID_STRING_FIELD_NUMBER = 10;
-        private java.lang.Object uuidString_;
+        private transient java.lang.Object uuidString_;
 
         /**
          * <code>optional string uuid_string = 10;</code>
@@ -1466,15 +1466,15 @@ public final class EdgeData {
                 output.writeInt64(1, count_);
             }
             if (getHoursList().size() > 0) {
-                output.writeRawVarint32(18);
-                output.writeRawVarint32(hoursMemoizedSerializedSize);
+                output.writeUInt32NoTag(18);
+                output.writeUInt32NoTag(hoursMemoizedSerializedSize);
             }
             for (int i = 0; i < hours_.size(); i++) {
                 output.writeInt64NoTag(hours_.get(i));
             }
             if (getDurationList().size() > 0) {
-                output.writeRawVarint32(26);
-                output.writeRawVarint32(durationMemoizedSerializedSize);
+                output.writeUInt32NoTag(26);
+                output.writeUInt32NoTag(durationMemoizedSerializedSize);
             }
             for (int i = 0; i < duration_.size(); i++) {
                 output.writeInt64NoTag(duration_.get(i));
@@ -1564,7 +1564,7 @@ public final class EdgeData {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 5507263779623468977L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

@@ -1,7 +1,7 @@
 package datawave.query.exceptions;
 
 public class EmptySetComparisonException extends Exception {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -663078244115260736L;
 
     public EmptySetComparisonException() {
         super();

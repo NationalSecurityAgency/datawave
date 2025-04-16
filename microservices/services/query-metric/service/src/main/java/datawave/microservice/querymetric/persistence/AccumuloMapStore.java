@@ -95,11 +95,15 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
     
     @Override
     public void store(String queryId, QueryMetricUpdateHolder<T> queryMetricUpdate) {
-        Timer.Context writeTimerContext = writeTimer.time();
-        try {
-            storeWithRetry(queryMetricUpdate);
-        } finally {
-            writeTimerContext.stop();
+        if (queryMetricUpdate.getMetricType().equals(QueryMetricType.CACHE_ONLY)) {
+            log.trace("Ignoring cache only query metric update for {}", queryId);
+        } else {
+            Timer.Context writeTimerContext = writeTimer.time();
+            try {
+                storeWithRetry(queryMetricUpdate);
+            } finally {
+                writeTimerContext.stop();
+            }
         }
     }
     

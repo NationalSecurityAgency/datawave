@@ -15,4 +15,5 @@ public class ModelProperties {
     private String defaultTableName;
     private String jqueryUri;
     private String dataTablesUri;
+    private String systemName;
 }

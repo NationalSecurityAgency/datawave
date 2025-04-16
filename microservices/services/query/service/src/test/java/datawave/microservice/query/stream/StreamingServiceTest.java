@@ -1,5 +1,7 @@
 package datawave.microservice.query.stream;
 
+import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
+
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,8 +45,6 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.result.DefaultEventQueryResponse;
-
-import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -208,6 +208,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         
         int pageNumber = 1;
         
+        Assertions.assertNotNull("expected response body: " + response, response.getBody());
         List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(response.getBody());
         for (DefaultEventQueryResponse queryResponse : queryResponses) {
             // verify the query response
