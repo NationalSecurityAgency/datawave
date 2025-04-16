@@ -18,6 +18,18 @@ public class DownloadResult {
     protected List<String> messages;
     protected Map<String,String> properties;
 
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public void setMessages(List<String> messages) {
+        this.messages = messages;
+    }
+
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
     public Status getStatus() {
         return status;
     }

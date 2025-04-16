@@ -15,15 +15,23 @@ import java.nio.file.StandardCopyOption;
 
 public class HttpsDownloader implements Downloader {
 
-    /** Identifier for this downloader type */
+    /**
+     * Identifier for this downloader type
+     */
     public static final String HTTPS_CODE = "https_code";
 
-    /** Remote file location */
+    /**
+     * Remote file location
+     */
     private String downloadURL = "https://data.ny.gov/api/views/d6yy-54nr/rows.csv?accessType=DOWNLOAD";
-    /** Local directory to save into (no trailing slash required) */
+    /**
+     * Local directory to save into (no trailing slash required)
+     */
     private String destinationPath = "/home/ssmucker/Downloads";
-    /** File name to use when saving */
-    private String destFileName   = "myDownloadedFile.csv";
+    /**
+     * File name to use when saving
+     */
+    private String destFileName = "myDownloadedFile.csv";
 
     // ───────────────────────────────────
     // Getters & setters
@@ -59,14 +67,16 @@ public class HttpsDownloader implements Downloader {
 
     @Override
     public DownloadResult download() throws IOException {
+        DownloadResult result = new DownloadResult();
         URL website = new URL(downloadURL);
 
         try (InputStream in = website.openStream()) {
             Path target = Path.of(destinationPath, destFileName);
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-            return new DownloadResult();         // success details go here
+            result.setStatus(DownloadResult.Status.COMPLETE);
         } catch (IOException e) {
-            return new DownloadResult();         // include error info if desired
+            result.setStatus(DownloadResult.Status.ERROR);
         }
+        return result;
     }
 }
