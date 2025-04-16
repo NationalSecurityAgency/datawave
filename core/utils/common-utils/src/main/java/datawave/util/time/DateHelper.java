@@ -67,6 +67,7 @@ public class DateHelper {
      * @return the formatted date
      * @deprecated
      */
+    @Deprecated
     public static String formatWithGMT(Date date) {
         return DTF_day_GMT.format(date.toInstant());
     }
@@ -243,6 +244,7 @@ public class DateHelper {
      * @return the {@code Date} object
      * @deprecated
      */
+    @Deprecated
     public static Date parseWithGMT(String date) {
         return lenientParseHelper(date, DTF_day_GMT, DATE_FORMAT_STRING_TO_DAY, false);
     }

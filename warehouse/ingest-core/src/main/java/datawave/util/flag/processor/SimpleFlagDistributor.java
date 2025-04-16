@@ -48,7 +48,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
     public Collection<InputFile> next(SizeValidator validator) {
         int size = inputs.size();
         if (size == 0)
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         Collection<InputFile> list = new HashSet<>();
         if (size < fc.getMaxFlags()) {
             list.addAll(inputs);

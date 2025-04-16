@@ -78,14 +78,15 @@ public class CompositeMetadataHelper {
         return metadataTableName;
     }
     
-    @Cacheable(value = "getCompositeMetadata", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getCompositeMetadata", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
     public CompositeMetadata getCompositeMetadata() throws TableNotFoundException {
         log.debug("cache fault for getCompositeMetadata(" + this.auths + "," + this.metadataTableName + ")");
         return this.getCompositeMetadata(null);
     }
     
     @Cacheable(value = "getCompositeMetadata", key = "{#root.target.auths,#root.target.metadataTableName,#datatypeFilter}",
-                    cacheManager = "metadataHelperCacheManager")
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public CompositeMetadata getCompositeMetadata(Set<String> datatypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getCompositeMetadata(" + this.auths + "," + this.metadataTableName + "," + datatypeFilter + ")");
         CompositeMetadata compositeMetadata = new CompositeMetadata();

@@ -43,6 +43,7 @@ public class QueryMetricOperationsStats {
     private static final String RatePerSec_1_Min_Avg = ".RatePerSec_1_Min_Avg";
     private static final String RatePerSec_5_Min_Avg = ".RatePerSec_5_Min_Avg";
     private static final String RatePerSec_15_Min_Avg = ".RatePerSec_15_Min_Avg";
+    private static final String Count = ".Count";
     private static final String Latency_Mean = ".Latency_Mean";
     private static final String Latency_Median = ".Latency_Median";
     private static final String Latency_Max = ".Latency_Max";
@@ -68,7 +69,7 @@ public class QueryMetricOperationsStats {
     protected Map<String,String> staticTags = new LinkedHashMap<>();
     
     public enum TIMERS {
-        REST, STORE
+        QUERY, QUERY_FROM_CACHE, QUERY_FROM_CACHE_AND_ACCUMULO, QUERY_FROM_ACCUMULO, REST, STORE
     }
     
     public enum METERS {
@@ -247,6 +248,10 @@ public class QueryMetricOperationsStats {
         addTimerStats("store", getTimer(TIMERS.STORE), stats);
         addTimerStats("accumulo.write", this.mapStore.getWriteTimer(), stats);
         addTimerStats("accumulo.read", this.mapStore.getReadTimer(), stats);
+        addTimerStats("query", getTimer(TIMERS.QUERY), stats);
+        addTimerStats("queryCache", getTimer(TIMERS.QUERY_FROM_CACHE), stats);
+        addTimerStats("queryCacheAndAccumulo", getTimer(TIMERS.QUERY_FROM_CACHE_AND_ACCUMULO), stats);
+        addTimerStats("queryAccumulo", getTimer(TIMERS.QUERY_FROM_ACCUMULO), stats);
         addTimerStats("rest", getTimer(TIMERS.REST), stats);
         addMeterStats("message.receive", getMeter(METERS.MESSAGE_RECEIVE), stats);
         return stats;
@@ -358,11 +363,13 @@ public class QueryMetricOperationsStats {
         stats.put(baseName + RatePerSec_1_Min_Avg, timer.getOneMinuteRate());
         stats.put(baseName + RatePerSec_5_Min_Avg, timer.getFiveMinuteRate());
         stats.put(baseName + RatePerSec_15_Min_Avg, timer.getFifteenMinuteRate());
+        stats.put(baseName + Count, Double.valueOf(timer.getCount()));
     }
     
     private void addMeterStats(String baseName, Metered meter, Map<String,Double> stats) {
         stats.put(baseName + RatePerSec_1_Min_Avg, meter.getOneMinuteRate());
         stats.put(baseName + RatePerSec_5_Min_Avg, meter.getFiveMinuteRate());
         stats.put(baseName + RatePerSec_15_Min_Avg, meter.getFifteenMinuteRate());
+        stats.put(baseName + Count, Double.valueOf(meter.getCount()));
     }
 }

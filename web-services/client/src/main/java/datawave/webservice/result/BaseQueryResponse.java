@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlElement;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public abstract class BaseQueryResponse extends BaseResponse {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4080703202287062795L;
 
     @XmlElement(name = "LogicName")
     private String logicName = null;

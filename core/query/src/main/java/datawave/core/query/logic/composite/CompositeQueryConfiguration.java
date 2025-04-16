@@ -10,6 +10,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 
 public class CompositeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+    private static final long serialVersionUID = -1439235443475270042L;
 
     private Map<String,GenericQueryConfiguration> configs = new HashMap<>();
 

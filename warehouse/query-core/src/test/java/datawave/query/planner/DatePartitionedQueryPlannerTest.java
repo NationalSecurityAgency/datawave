@@ -78,6 +78,12 @@ public abstract class DatePartitionedQueryPlannerTest {
     @RunWith(Arquillian.class)
     public static class ShardRange extends DatePartitionedQueryPlannerTest {
 
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected IndexFieldHoleDataIngest.Range getRange() {
             return IndexFieldHoleDataIngest.Range.SHARD;
@@ -86,6 +92,12 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends DatePartitionedQueryPlannerTest {
+
+        @Before
+        public void setup() throws Exception {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected IndexFieldHoleDataIngest.Range getRange() {
@@ -411,7 +423,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         // Extract the events from the response.
         for (EventBase event : response.getEvents()) {
             String row = event.getMetadata().getRow();
-            String date = row.substring(0, row.indexOf("_"));
+            String date = row.substring(0, row.indexOf('_'));
             actualEvents.add(new Event(date, event.getMetadata().getInternalId()));
         }
 

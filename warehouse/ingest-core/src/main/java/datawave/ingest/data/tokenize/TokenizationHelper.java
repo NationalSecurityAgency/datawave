@@ -26,6 +26,7 @@ public class TokenizationHelper {
 
         public static final long INTERVAL = 500; // half second resolution
         public static volatile int counter = 0;
+
         public static long lastRun;
 
         static {
@@ -42,6 +43,7 @@ public class TokenizationHelper {
                 try {
                     Thread.sleep(INTERVAL);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
 

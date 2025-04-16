@@ -18,15 +18,19 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SeekingFilter;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.collections.iterators.IteratorChain;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -39,7 +43,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
@@ -50,8 +54,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.data.type.LcNoDiacriticsType;
@@ -80,7 +82,7 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  * <p>
  * Data is from {@link ShapesIngest} test set.
  * <p>
- * <b>Note:</b> This test class does NOT use of the {@link RebuildingScannerTestHelper}. That helper class makes use of the Apache Common's
+ * <b>Historical Note:</b> This test class does NOT use of the {@link RebuildingScannerTestHelper}. That helper class makes use of the Apache Common's
  * {@link IteratorChain} in a way that is incompatible with Accumulo's {@link SeekingFilter}. Namely, during a rebuild on a next call the ScannerHelper's call
  * to 'ChainIterator.next' will swap in a whole new seeking filter in a way that causes the call to 'range.clip' on SeekingFilter#222 to return null.
  */
@@ -90,8 +92,8 @@ public abstract class ShapesTest {
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Collections.singleton(auths);
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     // temporary stores for when forcing ivarators via absurdly low index expansion thresholds
     private int maxUnfieldedExpansionThreshold;
@@ -104,6 +106,9 @@ public abstract class ShapesTest {
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private AccumuloClient clientForTest;
 
+    protected static final String PASSWORD = "password";
+    protected static MiniAccumuloCluster mac;
+
     public void setClientForTest(AccumuloClient client) {
         this.clientForTest = client;
     }
@@ -111,7 +116,7 @@ public abstract class ShapesTest {
     // used for declarative style tests
     private String query;
     private Map<String,String> parameters = new HashMap<>();
-    private Set<String> expected = new HashSet<>();
+    private TreeSet<String> expected = new TreeSet<>();
     private Set<Document> results = new HashSet<>();
 
     private final HitTermAssertions assertHitTerms = new HitTermAssertions();
@@ -127,13 +132,17 @@ public abstract class ShapesTest {
 
     @RunWith(Arquillian.class)
     public static class ShardRange extends ShapesTest {
+
         protected static AccumuloClient client = null;
 
         @BeforeClass
         public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(ShardRange.class.getName());
-            client = new InMemoryAccumuloClient("", i);
+            MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
+            cfg.setNumTservers(1);
+            mac = new MiniAccumuloCluster(cfg);
+            mac.start();
 
+            client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
             ShapesIngest.writeData(client, ShapesIngest.RangeType.SHARD);
 
             Authorizations auths = new Authorizations("ALL");
@@ -143,8 +152,15 @@ public abstract class ShapesTest {
         }
 
         @Before
-        public void beforeEach() {
+        public void beforeEach() throws IOException {
+            super.beforeEach();
             setClientForTest(client);
+            logic.setCollapseUids(true);
+        }
+
+        @AfterClass
+        public static void tearDown() throws Exception {
+            mac.stop();
         }
     }
 
@@ -154,9 +170,13 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            InMemoryInstance i = new InMemoryInstance(DocumentRange.class.getName());
-            client = new InMemoryAccumuloClient("", i);
+            MiniAccumuloConfig cfg = new MiniAccumuloConfig(temporaryFolder.newFolder(), PASSWORD);
+            cfg.setNumTservers(1);
 
+            mac = new MiniAccumuloCluster(cfg);
+            mac.start();
+
+            client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
             ShapesIngest.writeData(client, ShapesIngest.RangeType.DOCUMENT);
 
             Authorizations auths = new Authorizations("ALL");
@@ -166,8 +186,15 @@ public abstract class ShapesTest {
         }
 
         @Before
-        public void beforeEach() {
+        public void beforeEach() throws IOException {
+            super.beforeEach();
             setClientForTest(client);
+            logic.setCollapseUids(false);
+        }
+
+        @AfterClass
+        public static void tearDown() throws Exception {
+            mac.stop();
         }
     }
 
@@ -187,7 +214,7 @@ public abstract class ShapesTest {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void beforeEach() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         resetState();
 
@@ -258,7 +285,7 @@ public abstract class ShapesTest {
     }
 
     public ShapesTest withExpected(Set<String> expected) {
-        this.expected = expected;
+        this.expected = new TreeSet<>(expected);
         return this;
     }
 
@@ -363,7 +390,7 @@ public abstract class ShapesTest {
             log.info("extra uuids: {}", extra);
         }
 
-        assertEquals(expected, found);
+        assertEquals(expected, new TreeSet<>(found));
         return this;
     }
 

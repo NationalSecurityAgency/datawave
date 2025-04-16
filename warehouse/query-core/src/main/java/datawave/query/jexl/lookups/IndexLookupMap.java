@@ -12,6 +12,7 @@ import java.util.Set;
  */
 @SuppressWarnings("serial")
 public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
+    private static final long serialVersionUID = -8726073464553222628L;
     private Set<String> patterns = new HashSet<>();
     private Map<String,ValueSet> index = new HashMap<>();
     private boolean exceededKeyThreshold = false;
