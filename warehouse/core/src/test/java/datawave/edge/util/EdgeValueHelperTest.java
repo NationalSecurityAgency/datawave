@@ -256,7 +256,7 @@ public class EdgeValueHelperTest {
             fail("Failed to encode variable length long array: " + e.getMessage());
         }
         List<Long> oldAsList = EdgeValueHelper.decodeActivityHistogram(new Value(oldBytes));
-        assertEquals(new Long(1l), oldAsList.get(6));
+        assertEquals(Long.valueOf(1l), oldAsList.get(6));
     }
 
     private static final Value NULL_VALUE = new Value(new byte[0]);

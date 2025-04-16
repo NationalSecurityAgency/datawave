@@ -22,7 +22,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class DateContent extends Attribute<DateContent> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5962661609272398909L;
 
     private static final DateNormalizer normalizer = new DateNormalizer();
 

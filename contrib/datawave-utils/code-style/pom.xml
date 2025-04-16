@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-code-style</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>DataWave Code Formatter</name>
     <description>This pom configures the formatter-maven-plugin to format the code

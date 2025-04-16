@@ -133,7 +133,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
     public void setupRanges(Query settings, SSDeepSimilarityQueryConfiguration config) {
         final String query = settings.getQuery().trim();
         Set<SSDeepHash> queries = Arrays.stream(query.split(" OR ")).map(k -> {
-            final int pos = k.indexOf(":");
+            final int pos = k.indexOf(':');
             return pos > 0 ? k.substring(pos + 1) : k;
         }).map(SSDeepHash::parse).collect(Collectors.toSet());
 

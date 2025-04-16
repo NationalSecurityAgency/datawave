@@ -391,6 +391,7 @@ public class CompositeTestingIngest {
     }
 
     public static class PigLatinNormalizer extends AbstractNormalizer<String> {
+        private static final long serialVersionUID = 4004492504906689561L;
 
         final String vowels = "aeiou";
 
@@ -446,6 +447,7 @@ public class CompositeTestingIngest {
     }
 
     public static class UcNormalizer extends AbstractNormalizer<String> {
+        private static final long serialVersionUID = -6729701168202629715L;
 
         public String normalize(String fieldValue) {
             return fieldValue.toUpperCase(Locale.ENGLISH);

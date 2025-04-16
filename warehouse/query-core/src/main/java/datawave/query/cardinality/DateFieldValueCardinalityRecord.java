@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 public class DateFieldValueCardinalityRecord implements Comparable, Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1271188645113911936L;
     private String eventDate = null;
     private String fieldName = null;
     private String fieldValue = null;

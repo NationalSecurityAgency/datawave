@@ -8,6 +8,10 @@ export interface Banner {
   styleBottom?: string;
 }
 
+export interface System {
+  systemName: string;
+}
+
 export const columns: QTableProps['columns'] = [
   {
     label: 'Field Name',

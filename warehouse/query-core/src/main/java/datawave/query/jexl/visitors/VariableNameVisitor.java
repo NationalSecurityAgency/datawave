@@ -5,6 +5,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 
 import java.util.Set;
 
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -15,13 +16,14 @@ import org.apache.commons.jexl3.parser.TokenMgrException;
 
 import com.google.common.collect.Sets;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
- * Extracts all of the identifier names from a query. This exists only because the getVariables() method in JexlEngine is broken in the released versions of
+ * Extracts all the identifier names from a query. This exists only because the getVariables() method in JexlEngine is broken in the released versions of
  * commons-jexl
  *
  */
@@ -44,7 +46,8 @@ public class VariableNameVisitor extends BaseVisitor {
 
         // Parse the query
         try {
-            return parseQuery(parser.parse(null, jexlFeatures(), query, null));
+            JexlInfo jexlInfo = JexlASTHelper.jexlInfo("parseQuery");
+            return parseQuery(parser.parse(jexlInfo, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
             throw new IllegalArgumentException(qe);

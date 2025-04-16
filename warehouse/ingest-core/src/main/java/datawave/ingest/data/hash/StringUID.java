@@ -15,6 +15,7 @@ public class StringUID extends HashUID {
 
     protected String innerUid = null;
     protected String shardedPortion = null;
+    private static final long serialVersionUID = 9221118066352445606L;
 
     public StringUID(String uid) {
         innerUid = uid;

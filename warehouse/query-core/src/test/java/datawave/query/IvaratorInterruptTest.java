@@ -144,6 +144,12 @@ public abstract class IvaratorInterruptTest {
         public static void init() throws Exception {
             init(ShardRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.SHARD);
         }
+
+        @Before
+        public void setup() throws IOException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
     }
 
     @RunWith(Arquillian.class)
@@ -152,6 +158,12 @@ public abstract class IvaratorInterruptTest {
         @BeforeClass
         public static void init() throws Exception {
             init(DocumentRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.DOCUMENT);
+        }
+
+        @Before
+        public void setup() throws IOException {
+            super.setup();
+            logic.setCollapseUids(false);
         }
     }
 
