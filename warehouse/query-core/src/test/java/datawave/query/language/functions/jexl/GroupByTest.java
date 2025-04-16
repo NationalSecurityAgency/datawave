@@ -3,12 +3,13 @@ package datawave.query.language.functions.jexl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import datawave.webservice.common.exception.BadRequestException;
-import datawave.webservice.query.exception.BadRequestQueryException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
+
+import datawave.webservice.common.exception.BadRequestException;
+import datawave.webservice.query.exception.BadRequestQueryException;
 
 class GroupByTest {
 
