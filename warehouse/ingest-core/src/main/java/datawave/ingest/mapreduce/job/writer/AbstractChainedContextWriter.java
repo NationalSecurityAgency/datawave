@@ -44,6 +44,9 @@ public abstract class AbstractChainedContextWriter<OK,OV> extends StatsDHelper i
         try {
             contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
             contextWriter.setup(conf, outputTableCounters);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Failed to initialized " + contextWriterClass + " from property " + getChainedContextWriterOption(), e);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + getChainedContextWriterOption(), e);
         }

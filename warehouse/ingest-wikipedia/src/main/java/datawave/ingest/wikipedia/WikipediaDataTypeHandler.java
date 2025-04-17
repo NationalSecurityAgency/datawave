@@ -295,6 +295,10 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                 getMetadata().addEvent(this.ingestHelper, event, normMap);
             }
 
+        } catch (InterruptedException e) {
+            log.error("Error processing Wikipedia document", e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Error processing Wikipedia document", e);
         } catch (Exception e) {
             // If error, return empty results map.
             log.error("Error processing Wikipedia document", e);
