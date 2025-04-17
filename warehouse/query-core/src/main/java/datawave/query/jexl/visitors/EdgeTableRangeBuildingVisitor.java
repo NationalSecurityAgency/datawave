@@ -226,7 +226,9 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                         // Combine the query contexts if anything fails blame the user
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) mergedContext), false))) {
                             log.error("And node had unexpected return type");
-                            throw new IllegalArgumentException("Error: problem with query syntax");
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                            "Error: problem with query syntax");
+                            throw new IllegalArgumentException(qe);
                         }
                     }
                     mergedContext = childContext;
@@ -234,17 +236,22 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                     for (QueryContext qContext : ((List<QueryContext>) mergedContext)) {
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) childContext), false))) {
                             log.error("And node had unexpected return type");
-                            throw new IllegalArgumentException("Error: problem with query syntax");
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                            "Error: problem with query syntax");
+                            throw new IllegalArgumentException(qe);
                         }
                     }
                 } else {
                     log.error("Problem parsing query");
-                    throw new IllegalArgumentException("Error: problem with query syntax");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                    "Error: problem with query syntax");
+                    throw new IllegalArgumentException(qe);
                 }
             } else {
 
                 log.error("And node had unexpected return type");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR, "Error: problem with query syntax");
+                throw new IllegalArgumentException(qe);
             }
         }
 
@@ -358,7 +365,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 mergedContext = childContext;
             } else {
                 log.error("OR node had unexpected return type");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR, "Error: problem with query syntax");
+                throw new IllegalArgumentException(qe);
             }
         }
 
@@ -369,7 +377,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         for (QueryContext qContext : (List<QueryContext>) q1) {
             if (!qContext.combineQueryContexts(q2, true)) {
                 log.error("Unable to combine query contexts");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR, "Error: problem with query syntax");
+                throw new IllegalArgumentException(qe);
             }
         }
     }
@@ -455,7 +464,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
 
         if (numChildren != 2) {
             log.error("Equals node had unexpected number of children: " + numChildren);
-            throw new IllegalArgumentException("Problem parsing query");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, "problem parsing query");
+            throw new IllegalArgumentException(qe);
         }
 
         String identifier = JexlNodes.getIdentifierOrLiteralAsString(node.jjtGetChild(0)).toUpperCase();
@@ -481,7 +491,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 }
                 if (contexts.isEmpty()) {
                     log.error("Couldn't normalize users regex: " + literal);
-                    throw new RuntimeException("Can't build query invalid regex: " + literal);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REGEX, "Can't build query invalid regex: " + literal);
+                    throw new RuntimeException(qe);
                 }
             } else {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeSource(literal, dataTypes, true)) {

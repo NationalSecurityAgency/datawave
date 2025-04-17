@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -46,6 +47,8 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
 public class RegexIndexLookup extends AsyncIndexLookup {
+
+    private static final Object LOCK = new Object();
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
 
     protected MetadataHelper helper;
@@ -266,6 +269,10 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     while (iter.hasNext()) {
+                        // check if interrupted which may be triggered by closing a batch scanner
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException();
+                        }
 
                         Entry<Key,Value> entry = iter.next();
 
@@ -308,7 +315,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                                 String field = holder.toString();
 
                                 // synchronize access to fieldsToValues
-                                synchronized (indexLookupMap) {
+                                synchronized (LOCK) {
                                     // We are only returning a mapping of field value to field name, no need to
                                     // determine cardinality and such at this point.
                                     indexLookupMap.put(field, term);
@@ -331,7 +338,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                         log.debug("Failed or Timed out " + e);
                     }
                     // synchronize access to fieldsToValues
-                    synchronized (indexLookupMap) {
+                    synchronized (LOCK) {
                         // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
                         if (!unfieldedLookup) {
                             for (String field : fields) {
@@ -359,7 +366,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         private Future<Boolean> timedScanFuture;
         private CountDownLatch lookupStartedLatch;
         private CountDownLatch lookupStoppedLatch;
-        private long lookupStartTimeMillis = Long.MAX_VALUE;
+        private AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
 
         public Collection<ScannerSession> getSessions() {
             return sessions;
@@ -393,12 +400,12 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             this.lookupStoppedLatch = lookupStoppedLatch;
         }
 
-        public long getLookupStartTimeMillis() {
+        public AtomicLong getLookupStartTimeMillis() {
             return lookupStartTimeMillis;
         }
 
         public void setLookupStartTimeMillis(long lookupStartTimeMillis) {
-            this.lookupStartTimeMillis = lookupStartTimeMillis;
+            this.lookupStartTimeMillis.set(lookupStartTimeMillis);
         }
     }
 }

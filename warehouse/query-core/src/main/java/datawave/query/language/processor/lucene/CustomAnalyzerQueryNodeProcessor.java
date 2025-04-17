@@ -21,12 +21,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.CachingTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
@@ -53,16 +54,17 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
  * <p>
  * Applies tokenization to {@link TextableQueryNode} objects using a configured Lucene {@link Analyzer}.
  * </p>
- *
  * Uses the {@link Analyzer} specified in the the {@link ConfigurationKeys#ANALYZER} attribute of the {@link QueryConfigHandler} to process non-wildcard
  * {@link FieldQueryNode}s for fields listed in <code>tokenizedFields</code>.
- *
+ * <p>
  * (Nodes that are {@link WildcardQueryNode}, {@link FuzzyQueryNode} or {@link RegexpQueryNode} or are part of a {@link TermRangeQueryNode} are NOT processed by
  * this processor.)
- *
+ * </p>
+ * <p>
  * The text of each {@link TextableQueryNode} is processed using the {@link Analyzer} to generate tokens. If the analyzer returns one or more terms that are not
  * identical to the input, the processor generates an {@link OrQueryNode} containing the original query node and a new {@link QuotedFieldQueryNode} or
  * {@link SlopQueryNode} depending on the nature of the original query node and whether <code>useSlopForTokenizedTerms</code> is <code>false</code>.
+ * </p>
  * <p>
  * There are three primary cases where tokenization will be applied to input query terms - single terms (e.g: wi-fi), phrases (e.g: "portable wi-fi"), and
  * phrases with slop (e.g: "portable wi-fi"~3). In the case of single term input, tokenization will produce a phrase with slop equals to the number of positions
@@ -250,9 +252,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return children; /* no-op */
     }
 
-    private QueryNode tokenizeNode(QueryNode node, final String text, final String field) throws QueryNodeException {
-        CachingTokenFilter buffer = null;
-
+    private QueryNode tokenizeNode(final QueryNode node, final String text, final String field) throws QueryNodeException {
         if (analyzer == null) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Skipping tokenization of node: '" + node + "'; no analyzer is set");
@@ -266,125 +266,156 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             if (logger.isDebugEnabled()) {
                 logger.debug("Skipping processed query node: " + node.toString());
             }
-
             return node;
-        } else {
-            // mark the original node processed.
-            node.setTag(NODE_PROCESSED, Boolean.TRUE);
         }
 
-        try {
-            // Take a pass over the tokens and buffer them in the caching token filter.
-            TokenStream source = this.analyzer.tokenStream(field, new StringReader(text));
-            source.reset();
+        node.setTag(NODE_PROCESSED, Boolean.TRUE); // mark this node as processed, so we don't process it again.
 
-            buffer = new CachingTokenFilter(source);
+        try (TokenStream buffer = this.analyzer.tokenStream(field, new StringReader(text))) {
 
-            PositionIncrementAttribute posIncrAtt = null;
-            int numTokens = 0;
-
-            if (buffer.hasAttribute(PositionIncrementAttribute.class)) {
-                posIncrAtt = buffer.getAttribute(PositionIncrementAttribute.class);
-            }
-
-            while (buffer.incrementToken()) {
-                numTokens++;
-            }
-
-            // rewind the buffer stream
+            // prepare the source for reading.
             buffer.reset();
-            // close original stream - all tokens buffered
-            source.close();
 
-            if (!buffer.hasAttribute(CharTermAttribute.class) || numTokens == 0) {
-                // no terms found, return unmodified node.
-                return node;
+            if (!buffer.hasAttribute(CharTermAttribute.class)) {
+                return node; // tokenizer can't produce terms, return unmodified query node.
             }
 
             final CharTermAttribute termAtt = buffer.getAttribute(CharTermAttribute.class);
+            final PositionIncrementAttribute posIncrAtt = buffer.hasAttribute(PositionIncrementAttribute.class)
+                            ? buffer.getAttribute(PositionIncrementAttribute.class)
+                            : null;
 
-            StringBuilder b = new StringBuilder();
-            int slopRange = 0;
+            // the variant builder will maintain multiple versions of the tokenized query as we find tokens
+            // that have multiple variants in the same position - e.g., stems, roots or lemmas.
+            final VariantBuilder b = new VariantBuilder();
 
-            String term;
+            // build the new query strings from the tokenizer output while tracking cases where we've dropped words
+            // and will need to adjust the phrase slop for the query as a result.
+            int positionCount = 0;
+
             while (buffer.incrementToken()) {
-                term = termAtt.toString();
-                b.append(term).append(" ");
-
-                // increment the slop range for the tokenized text based on the
-                // positionIncrement attribute if available, otherwise one position
-                // per token.
-                if (posIncrAtt != null && this.positionIncrementsEnabled) {
-                    slopRange += posIncrAtt.getPositionIncrement();
-                } else {
-                    slopRange++;
-                }
+                String token = termAtt.toString();
+                final int positionIncrement = posIncrAtt != null ? posIncrAtt.getPositionIncrement() : 1;
+                positionCount += positionIncrementsEnabled ? positionIncrement : 1;
+                b.append(token, positionIncrement == 0);
             }
 
-            b.setLength(b.length() - 1); // trim trailing whitespace
-
-            if (b.length() > 0) {
-                final String tokenizedText = b.toString();
-
-                // Check to see that the tokenizer produced output that was different from the original query node.
-                // If so avoid creating an OR clause. We compare the 'escaped' string of the original query so that we
-                // do not mistreat things like spaces.
-                if (TextableQueryNode.class.isAssignableFrom(node.getClass())) {
-                    final CharSequence c = ((TextableQueryNode) node).getText();
-                    final String cmp = UnescapedCharSequence.class.isAssignableFrom(c.getClass()) ? toStringEscaped((UnescapedCharSequence) c) : c.toString();
-                    if (tokenizedText.equalsIgnoreCase(cmp)) {
-                        return node;
-                    }
-                }
-
-                QueryNode n = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
-                // mark the derived node processed so we don't process it again later.
-                n.setTag(NODE_PROCESSED, Boolean.TRUE);
-
-                // Adjust the slop based on the difference between the original
-                // slop minus the original token count (based on whitespace)
-                int originalSlop = 0;
-                if (node.getTag(ORIGINAL_SLOP) != null) {
-                    originalSlop = (Integer) node.getTag(ORIGINAL_SLOP);
-                    final int delta = originalSlop - text.split("\\s+").length;
-                    slopRange += delta;
-                }
-
-                // Only add slop if the original had slop, or the original was not a phrase and slop is enabled.
-                // Using slop for non-quoted terms is a workaround until the phrase function will accept multiple
-                // terms in the same position as a valid match.
-                boolean originalWasQuoted = QuotedFieldQueryNode.class.isAssignableFrom(node.getClass());
-                if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
-                    n = new SlopQueryNode(n, slopRange);
-                }
-
-                // The tokenizer produced output that was different from the original query node, wrap the original
-                // node and the tokenizer produced node in a OR query. To do this properly, we need to wrap the
-                // original node in a slop query node if it was originally in a slop query node.
-                if (originalSlop > 0) {
-                    // restore the original slop wrapper to the base node if it was present originally.
-                    node = new SlopQueryNode(node, originalSlop);
-                }
-
-                final List<QueryNode> clauses = new ArrayList<>();
-                clauses.add(node);
-                clauses.add(n);
-
-                node = new GroupQueryNode(new OrQueryNode(clauses));
+            if (b.hasNoVariants()) {
+                return node; // If we didn't produce anything from the tokenizer, return unmodified query node.
             }
+
+            // calculate the amount of slop we need to add based on the original query and the number of positions observed
+            int slopNeeded = calculateSlopNeeded(node, text, positionCount);
+
+            // process each of the 'variants' to ensure they are different from the base query, if so, potentially
+            // create a new query node and add it to the set of OR clauses. Variants are guaranteed unique, so no
+            // need to deduplicate there.
+            final String baseQueryText = getEscapedBaseQueryText(node);
+            final LinkedList<QueryNode> clauses = new LinkedList<>();
+            for (String tokenizedText : b.getVariants()) {
+                if (tokenizedText.equalsIgnoreCase(baseQueryText)) {
+                    continue; // skip this variant - it adds nothing new over the base query.
+                }
+                QueryNode newQueryNode = createNewQueryNode(field, tokenizedText, slopNeeded);
+                clauses.add(newQueryNode);
+            }
+
+            if (clauses.isEmpty()) {
+                return node;
+            }
+
+            // If we made it here, the tokenizer produced output that was different from the original query node, and
+            // we want to build an 'OR' clause that will match either query string.
+            clauses.addFirst(possiblyWrapOriginalQueryNode(node));
+            return new GroupQueryNode(new OrQueryNode(clauses));
         } catch (IOException e) {
             throw new QueryNodeException(e);
-        } finally {
-            if (buffer != null) {
-                try {
-                    buffer.close();
-                } catch (IOException ex) {
-                    logger.warn("Exception closing caching token filter: ", ex);
-                }
-            }
+        }
+    }
+
+    /**
+     * Create a new query node for the specified field and tokenize text, optionally wrapping it in a SlopQueryNode if we've determined that slop is needed
+     * (either due to tokens being removed or there being slop on the original query we need to account for.
+     *
+     * @param field
+     *            the field for the query node
+     * @param tokenizedText
+     *            the text for the query node
+     * @param slopNeeded
+     *            whether slop is needed.
+     * @return a new QuotedFieldQueryNode or possibly a SlopQueryNode containing the new clause. Both of these nodes will be marked as 'PROCESSED'.
+     */
+    public QueryNode createNewQueryNode(String field, String tokenizedText, int slopNeeded) {
+        QueryNode newQueryNode = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
+        newQueryNode.setTag(NODE_PROCESSED, Boolean.TRUE); // don't process this node again.
+        if (slopNeeded != Integer.MIN_VALUE) {
+            newQueryNode = new SlopQueryNode(newQueryNode, slopNeeded);
+            newQueryNode.setTag(NODE_PROCESSED, Boolean.TRUE); // don't process this node again.
+        }
+        return newQueryNode;
+    }
+
+    /**
+     * Calculate the amount of slop we need to add to a new query node for tokenized text. This is based on the based on the number of positions observed in the
+     * tokenized text and the difference between the slop in the original query minus the original token count.
+     *
+     * @param node
+     *            the original query node from which the tokenized text originated.
+     * @param text
+     *            the text of the original query.
+     * @param positionsObserved
+     *            the number of positions observed in the tokenized text.
+     * @return the amount of slop we need to add to our new query clauses, Integer.MIN_VALUE if there should be no changes to the original node.
+     */
+    private int calculateSlopNeeded(QueryNode node, String text, int positionsObserved) {
+        int slopNeeded = positionsObserved;
+
+        // Adjust the slop based on the difference between the original
+        // slop minus the original token count (based on whitespace)
+        int originalSlop = 0;
+        if (node.getTag(ORIGINAL_SLOP) != null) {
+            originalSlop = (Integer) node.getTag(ORIGINAL_SLOP);
+            final int delta = originalSlop - text.split("\\s+").length;
+            slopNeeded += delta;
         }
 
-        return node;
+        final boolean originalWasQuoted = QuotedFieldQueryNode.class.isAssignableFrom(node.getClass());
+        if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
+            return slopNeeded;
+        }
+
+        return Integer.MIN_VALUE;
+    }
+
+    /**
+     * If the original query node was nested in a SlopQueryNode, that fact has been stored in the ORIGINAL_SLOP tag, and we'll need to re-create that slop node.
+     * Otherwise, return the original node unchanged.
+     *
+     * @param node
+     *            the node to process.
+     * @return the node wrapped in a SlopQueryNode, if the input node originally had slop.
+     */
+    private static QueryNode possiblyWrapOriginalQueryNode(QueryNode node) {
+        final int originalSlop = node.getTag(ORIGINAL_SLOP) != null ? (Integer) node.getTag(ORIGINAL_SLOP) : 0;
+        final QueryNode originalQueryNode = originalSlop > 0 ? new SlopQueryNode(node, originalSlop) : node;
+        originalQueryNode.setTag(NODE_PROCESSED, Boolean.TRUE);
+        return originalQueryNode;
+    }
+
+    /**
+     * If a query node was something that has text, get the text. If the query node was already unescaped, convert it to it's escaped version. This way it can
+     * be compared to other nodes with escapes in place.
+     *
+     * @param node
+     *            the node to extract text from
+     * @return the escaped version of the text from the node, null if the node had no text.
+     */
+    private static String getEscapedBaseQueryText(QueryNode node) {
+        if (TextableQueryNode.class.isAssignableFrom(node.getClass())) {
+            final CharSequence c = ((TextableQueryNode) node).getText();
+            return UnescapedCharSequence.class.isAssignableFrom(c.getClass()) ? toStringEscaped((UnescapedCharSequence) c) : c.toString();
+        }
+        return null;
     }
 
     /**
@@ -394,7 +425,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      *            string value
      * @return unescaped string
      */
-    private String toStringEscaped(UnescapedCharSequence unescaped) {
+    private static String toStringEscaped(UnescapedCharSequence unescaped) {
         // non efficient implementation
         final StringBuilder result = new StringBuilder();
         final int len = unescaped.length();
@@ -407,5 +438,69 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             result.append(unescaped.charAt(i));
         }
         return result.toString();
+    }
+
+    /**
+     * Maintains one or more buffers for tokenized queries. During standard operation, works like a StringBuilder. If the tokenizer encounters a variant (e.g.,
+     * zero position offset, same start and end as the previous token) appendVariant will start building a second buffer containing that variant.
+     */
+    public static class VariantBuilder {
+        List<List<String>> variants = new ArrayList<>();
+
+        public VariantBuilder append(String input, boolean appendVariant) {
+            return appendVariant ? appendVariant(input) : append(input);
+        }
+
+        public VariantBuilder append(String input) {
+            if (variants.isEmpty()) {
+                variants.add(new ArrayList<>());
+            }
+
+            for (List<String> b : variants) {
+                b.add(input);
+            }
+
+            return this;
+        }
+
+        public VariantBuilder appendVariant(String input) {
+            if (variants.isEmpty()) {
+                append(input);
+            } else {
+
+                List<List<String>> newVariants = new ArrayList<>();
+
+                for (List<String> b : variants) {
+                    // create a new variant of all the existing strings, replacing the
+                    List<String> newVariant = new ArrayList<>(b);
+                    newVariant.set(newVariant.size() - 1, input);
+                    newVariants.add(newVariant);
+                }
+
+                variants.addAll(newVariants);
+            }
+
+            return this;
+        }
+
+        public boolean hasNoVariants() {
+            boolean hasNoVariants = true;
+            for (List<String> b : variants) {
+                if (!b.isEmpty()) {
+                    // at least one of the variant buffers has something.
+                    hasNoVariants = false;
+                    break;
+                }
+            }
+            return hasNoVariants;
+        }
+
+        public Set<String> getVariants() {
+            Set<String> result = new TreeSet<>();
+            for (List<String> b : variants) {
+                result.add(String.join(" ", b));
+            }
+            return result;
+        }
     }
 }

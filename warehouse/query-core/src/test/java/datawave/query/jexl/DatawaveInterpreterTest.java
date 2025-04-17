@@ -1,6 +1,5 @@
 package datawave.query.jexl;
 
-import static org.easymock.EasyMock.mock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -19,9 +18,9 @@ import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.google.common.collect.Maps;
 
@@ -74,15 +73,12 @@ public class DatawaveInterpreterTest {
     @Test
     public void invocationFails_alwaysThrowsException() {
         Engine engine = new DatawaveJexlEngine();
-        JexlContext context = mock(JexlContext.class);
+        JexlContext context = Mockito.mock(JexlContext.class);
         JexlOptions opts = new JexlOptions();
         opts.setStrict(false);
         opts.setSilent(false);
         DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, opts, context, null);
         JexlException exception = new JexlException(JexlNodes.makeStringLiteral(), "Function failure");
-
-        // Make mocks available.
-        EasyMock.replay(context);
 
         // Capture the expected exception.
         Exception thrown = null;

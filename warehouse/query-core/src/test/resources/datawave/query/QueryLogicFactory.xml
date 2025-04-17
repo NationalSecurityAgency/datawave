@@ -28,11 +28,23 @@
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Rename"/>
-        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUnique"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
         <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
@@ -46,6 +58,7 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.SummaryOptions"/>
         <bean class="datawave.query.language.functions.jexl.Sum"/>
         <bean class="datawave.query.language.functions.jexl.Min"/>
         <bean class="datawave.query.language.functions.jexl.Max"/>
@@ -158,7 +171,92 @@
 	<property name="markingFunctions" ref="markingFunctions" />
 	<property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
-    
+
+    <bean id="AmbiguousNotRule" scope="prototype" class="datawave.query.rules.AmbiguousNotRule">
+        <property name="name" value="Check for Ambiguous Usage of NOT"/>
+    </bean>
+
+    <bean id="AmbiguousOrPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousOrPhrasesRule">
+        <property name="name" value="Check for Unfielded Terms That Could Be Wrapped"/>
+    </bean>
+
+    <bean id="AmbiguousUnquotedPhrasesRule" scope="prototype" class="datawave.query.rules.AmbiguousUnquotedPhrasesRule">
+        <property name="name" value="Check for Unfielded Terms That Could Be Quoted"/>
+    </bean>
+
+    <bean id="IncludeExcludeArgsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeArgsRule">
+        <property name="name" value="Validate Args of #INCLUDE and #EXCLUDE"/>
+    </bean>
+
+    <bean id="IncludeExcludeIndexFieldsRule" scope="prototype" class="datawave.query.rules.IncludeExcludeIndexFieldsRule">
+        <property name="name" value="Check #INCLUDE and #EXCLUDE for Indexed Fields"/>
+    </bean>
+
+    <bean id="InvalidQuoteRule" scope="prototype" class="datawave.query.rules.InvalidQuoteRule">
+        <property name="name" value="Check for Invalid Quote"/>
+    </bean>
+
+    <bean id="MinimumSlopProximityRule" scope="prototype" class="datawave.query.rules.MinimumSlopProximityRule">
+        <property name="name" value="Validate Slop Proximity"/>
+    </bean>
+
+    <bean id="NumericValueRule" scope="prototype" class="datawave.query.rules.NumericValueRule">
+        <property name="name" value="Validate Numeric Values Only Given for Numeric Fields"/>
+    </bean>
+
+    <bean id="TimeFunctionRule" scope="prototype" class="datawave.query.rules.TimeFunctionRule">
+        <property name="name" value="Validate #TIME_FUNCTION has Date Fields"/>
+    </bean>
+
+    <bean id="UnescapedWildcardsInPhrasesRule" scope="prototype" class="datawave.query.rules.UnescapedWildcardsInPhrasesRule">
+        <property name="name" value="Check Quoted Phrases for Unescaped Wildcard"/>
+    </bean>
+
+    <bean id="UnfieldedTermsRule" scope="prototype" class="datawave.query.rules.UnfieldedTermsRule">
+        <property name="name" value="Check for Unfielded Terms"/>
+    </bean>
+
+    <bean id="FieldExistenceRule" scope="prototype" class="datawave.query.rules.FieldExistenceRule">
+        <property name="name" value="Check Field Existence"/>
+        <property name="specialFields">
+            <list value-type="java.lang.String">
+                <value>I_DO_NOT_EXIST</value>
+                <value>_ANYFIELD_</value>
+                <value>_NOFIELD_</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="FieldPatternPresenceRule" scope="prototype" class="datawave.query.rules.FieldPatternPresenceRule">
+        <property name="name" value="Check Presence of Field or Pattern"/>
+        <property name="fieldMessages">
+            <map key-type="java.lang.String" value-type="java.lang.String">
+                <entry key="_ANYFIELD_" value="Detected presence of _ANYFIELD_"/>
+            </map>
+        </property>
+        <property name="patternMessages">
+            <map key-type="java.lang.String" value-type="java.lang.String">
+                <entry key=".*" value="Detected pattern '.*' that will match everything"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="UnescapedSpecialCharsRule" scope="prototype" class="datawave.query.rules.UnescapedSpecialCharsRule">
+        <property name="name" value="Check for Unescaped Special Characters"/>
+        <property name="literalExceptions">
+            <list value-type="java.lang.Character">
+                <value>?</value>
+            </list>
+        </property>
+        <property name="patternExceptions">
+            <list value-type="java.lang.Character">
+                <value>_</value>
+            </list>
+        </property>
+        <property name="escapedWhitespaceRequiredForLiterals" value="false"/>
+        <property name="escapedWhitespaceRequiredForPatterns" value="false"/>
+    </bean>
+
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
@@ -214,6 +312,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
+        <property name="localIvaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${local.ivarator.cache.dir.config} -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
@@ -231,6 +330,25 @@
                 <!-- JEXL is the default Jexl query syntax -->
             </map>
         </property>
+
+        <property name="tableHints">
+            <map key-type="java.lang.String" value-type="java.util.Map">
+                <entry key="shard">
+                    <map><entry key="scan_type" value="shard-table-executor-event"/></map>
+                </entry>
+                <entry key="shardIndex">
+                    <map><entry key="scan_type" value="index-table-executor-event"/></map>
+                </entry>
+                <!-- NOTE: this execution hint is reserved by datawave -->
+                <entry key="expansion">
+                    <map><entry key="scan_type" value="index-expansion-executor"/></map>
+                </entry>
+            </map>
+        </property>
+
+        <property name="useQueryTreeScanHintRules" value="true"/>
+        <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
+
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
@@ -242,10 +360,11 @@
         <!--   variables that control when a seek is issued     -->
         <property name="fiFieldSeek" value="-1" />
         <property name="fiNextSeek" value="-1" />
-        <property name="eventFieldSeek" value="-1" />
+        <property name="eventFieldSeek" value="3" />
         <property name="eventNextSeek" value="-1" />
         <property name="tfFieldSeek" value="-1" />
         <property name="tfNextSeek" value="-1" />
+        <property name="seekingEventAggregation" value="true"/>
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
@@ -262,11 +381,34 @@
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />
         <!--   should the range stream also generate field and term counts    -->
-        <property name="useFieldCounts" value="true" />
-        <property name="useTermCounts" value="true" />
-        <property name="sortQueryBeforeGlobalIndex" value="true" />
-        <property name="sortQueryByCounts" value="true" />
+        <property name="sortQueryPreIndexWithImpliedCounts" value="true" />
+        <property name="sortQueryPreIndexWithFieldCounts" value="true" />
+        <property name="sortQueryPostIndexWithTermCounts" value="true" />
+        <property name="sortQueryPostIndexWithFieldCounts" value="true" />
+        <!-- cardinality threshold enables running ivarators as filter iterators -->
+        <property name="cardinalityThreshold" value="50"/>
+        <property name="disableIteratorUniqueFields" value="false"/>
+        <property name="validationRules">
+            <list value-type="datawave.query.rules.QueryRule">
+                <ref bean="InvalidQuoteRule"/>
+                <ref bean="UnfieldedTermsRule"/>
+                <ref bean="UnescapedWildcardsInPhrasesRule"/>
+                <ref bean="AmbiguousNotRule"/>
+                <ref bean="AmbiguousOrPhrasesRule"/>
+                <ref bean="AmbiguousUnquotedPhrasesRule"/>
+                <ref bean="MinimumSlopProximityRule"/>
+                <ref bean="IncludeExcludeArgsRule"/>
+                <ref bean="FieldExistenceRule"/>
+                <ref bean="UnescapedSpecialCharsRule"/>
+                <ref bean="FieldPatternPresenceRule"/>
+                <ref bean="IncludeExcludeIndexFieldsRule"/>
+                <ref bean="NumericValueRule"/>
+                <ref bean="TimeFunctionRule"/>
+            </list>
+        </property>
     </bean>
+
+    <bean id="IvaratorScanHintRule" class="datawave.query.planner.scanhints.IvaratorScanHint"/>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
         <property name="collapseUids" value="false"/>
@@ -274,6 +416,16 @@
             <list value-type="java.lang.String">
                 <value>datawave.query.function.NormalizedVersionPredicate</value>
             </list>
+        </property>
+        <property name="tableHints">
+            <map key-type="java.lang.String" value-type="java.util.Map">
+                <entry key="shard">
+                    <map><entry key="scan_type" value="shard-table-executor-tld"/></map>
+                </entry>
+                <entry key="shardIndex">
+                    <map><entry key="scan_type" value="index-table-executor-tld"/></map>
+                </entry>
+            </map>
         </property>
     </bean>
 
@@ -357,4 +509,13 @@
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
     </util:list>
+
+    <!-- Query Logic that returns document content -->
+    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns a document given the document identifier" />
+    </bean>
 </beans>

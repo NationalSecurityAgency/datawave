@@ -27,10 +27,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,6 +50,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -81,8 +81,8 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected QueryIterator iterator;
     protected SortedListKeyValueIterator baseIterator;
     protected Map<String,String> options;
-    protected IteratorEnvironment environment;
-    protected PluginEnvironment penvironment;
+    protected IteratorEnvironment iterEnv;
+    protected PluginEnvironment pluginEnv;
     protected EventDataQueryFilter filter;
     protected TypeMetadata typeMetadata;
 
@@ -93,6 +93,13 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected static final String DEFAULT_DATATYPE = "dataType1";
 
     public Path tempPath;
+
+    protected Set<String> indexedFields = Set.of("EVENT_FIELD1", "EVENT_FIELD4", "EVENT_FIELD6", "TF_FIELD0", "TF_FIELD1", "TF_FIELD2", "INDEX_ONLY_FIELD1",
+                    "INDEX_ONLY_FIELD2", "INDEX_ONLY_FIELD3");
+    protected Set<String> indexOnlyFields = Set.of("TF_FIELD0", "TF_FIELD1", "TF_FIELD2", "INDEX_ONLY_FIELD1", "INDEX_ONLY_FIELD2", "INDEX_ONLY_FIELD3");
+    protected Set<String> termFrequencyFields = Set.of("TF_FIELD0", "TF_FIELD1", "TF_FIELD2");
+
+    protected static final Value EMPTY_VALUE = new Value();
 
     @Before
     public void setup() throws IOException {
@@ -108,8 +115,9 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(ALLOW_TERM_FREQUENCY_LOOKUP, "true");
 
         // set the indexed fields list
-        options.put(INDEXED_FIELDS,
-                        "EVENT_FIELD1,EVENT_FIELD4,EVENT_FIELD6,TF_FIELD0,TF_FIELD1,TF_FIELD2,INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
+        options.put(INDEXED_FIELDS, Joiner.on(',').join(indexedFields));
+        options.put(INDEX_ONLY_FIELDS, Joiner.on(',').join(indexOnlyFields));
+        options.put(TERM_FREQUENCY_FIELDS, Joiner.on(',').join(termFrequencyFields));
 
         // set the unindexed fields list
         Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create();
@@ -126,9 +134,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(SCAN_ID, "000002");
 
         // setup ivarator settings
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + tempPath.toAbsolutePath().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + tempPath.toAbsolutePath());
         options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(config));
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
+        Preconditions.checkNotNull(hdfsSiteConfig);
         options.put(HDFS_SITE_CONFIG_URLS, hdfsSiteConfig.toExternalForm());
 
         // query time range
@@ -147,11 +156,11 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("INDEX_ONLY_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
 
-        environment = createMock(IteratorEnvironment.class);
-        penvironment = createMock(PluginEnvironment.class);
-        EasyMock.expect(environment.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
-        EasyMock.expect(environment.getPluginEnv()).andReturn(penvironment).anyTimes();
-        EasyMock.expect(penvironment.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
+        iterEnv = createMock(IteratorEnvironment.class);
+        pluginEnv = createMock(PluginEnvironment.class);
+        EasyMock.expect(iterEnv.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
+        EasyMock.expect(iterEnv.getPluginEnv()).andReturn(pluginEnv).anyTimes();
+        EasyMock.expect(pluginEnv.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
         filter = createMock(EventDataQueryFilter.class);
     }
 
@@ -168,35 +177,35 @@ public class QueryIteratorIT extends EasyMockSupport {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), EMPTY_VALUE));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTime), EMPTY_VALUE));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), EMPTY_VALUE));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTime), EMPTY_VALUE));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), EMPTY_VALUE));
 
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTime), EMPTY_VALUE));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTime), getTFValue(0)));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), getTFValue(1)));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), getTFValue(2)));
 
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTime), EMPTY_VALUE));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTime), getTFValue(23)));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTime), getTFValue(24)));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTime), getTFValue(25)));
@@ -206,22 +215,18 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTime), getTFValue(3)));
 
         // add some index only field data
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTime), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTime), EMPTY_VALUE));
 
         return listSource;
     }
 
     protected List<Map.Entry<Key,Value>> configureTestData(long eventTime) {
-        List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
-
-        listSource.addAll(addEvent(eventTime, "123.345.456"));
-
-        return listSource;
+        return new ArrayList<>(addEvent(eventTime, "123.345.456"));
     }
 
     protected Range getDocumentRange(String uid) {
@@ -253,7 +258,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -261,7 +266,39 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_documentSpecific_intersection_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple' && INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_shardRange_intersection_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple' && INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_documentSpecific_union_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple' || INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void indexOnly_shardRange_union_noExtraSourceDeepCopies_test() throws IOException {
+        // build the seek range for a shard
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple' || INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -270,23 +307,23 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void indexOnly_shardRange_hitTerm_test() throws IOException {
         options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
-        // build the seek range for a document specific pull
+        // build the seek range for a shard
         Range seekRange = getShardRange();
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void indexOnly_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'fork'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'fork'", true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -294,7 +331,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "INDEX_ONLY_FIELD1 == 'fork'";
-        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -302,7 +339,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -311,8 +348,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getShardRange();
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
-        secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        secondEvent.getValue().put("INDEX_ONLY_FIELD1", List.of("apple"));
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), List.of(secondEvent));
     }
 
     @Test
@@ -320,7 +357,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -328,7 +365,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -336,7 +373,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'f.*'))";
-        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -344,7 +381,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'f.*'))";
-        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -352,7 +389,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -361,8 +398,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
-        secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        secondEvent.getValue().put("INDEX_ONLY_FIELD1", List.of("apple"));
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), List.of(secondEvent));
     }
 
     @Test
@@ -370,7 +407,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -378,7 +415,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -386,7 +423,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*k'))";
-        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -394,7 +431,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*k'))";
-        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -402,7 +439,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -411,8 +448,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
-        secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        secondEvent.getValue().put("INDEX_ONLY_FIELD1", List.of("apple"));
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), List.of(secondEvent));
     }
 
     @Test
@@ -420,7 +457,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -428,7 +465,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -437,7 +474,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -446,7 +483,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -454,7 +491,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 == 'a'";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -462,7 +499,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 == 'a'";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -470,7 +507,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -478,7 +515,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -486,7 +523,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ 'b.*'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -494,7 +531,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ 'b.*'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -502,7 +539,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ 'a.*'";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -510,7 +547,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ 'a.*'";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -518,7 +555,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ 'b.*'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -526,7 +563,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ 'b.*'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -534,7 +571,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ '.*b'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -542,7 +579,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ '.*b'";
-        event_test(seekRange, query, false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -550,7 +587,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ '.*a'";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -558,7 +595,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ '.*a'";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -566,7 +603,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ '.*b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -574,7 +611,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ '.*b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test(expected = IOException.class)
@@ -585,7 +622,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // setup a bogus ivarator cache dir for the config
         options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(new IvaratorCacheDirConfig("hddfs://bogusPath")));
 
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -593,7 +630,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -601,7 +638,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -610,7 +647,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -619,7 +656,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -627,7 +664,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD4 == 'e'";
-        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -635,7 +672,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD4 == 'e'";
-        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     /**
@@ -649,7 +686,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     /**
@@ -663,7 +700,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -671,7 +708,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'd.*'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -679,7 +716,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'd.*'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -687,7 +724,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'e.*'))";
-        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -695,7 +732,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'e.*'))";
-        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -703,7 +740,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'd.*'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -711,7 +748,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'd.*'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -719,7 +756,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -727,7 +764,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -735,7 +772,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*e'))";
-        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -743,7 +780,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*e'))";
-        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -751,7 +788,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
@@ -759,7 +796,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -767,31 +804,55 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_negation_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ 'b.*'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD2 !~ 'b.*'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+    }
+
+    // alternate form of negation
+    @Test
+    public void tf_negation2_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ 'b.*'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_index_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ 'y.*'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD2 !~ 'y.*'))";
+        // note: correcting this marker caused the query to miss
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD2=y} does not satisfy the query
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
+    }
+
+    // alternate form of negation
+    @Test
+    public void tf_index2_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ 'y.*'))";
+        // note: correcting this marker caused the query to miss
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD2=y} does not satisfy the query
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
+        // note: correcting this marker caused the query to hit
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -799,31 +860,49 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_negation_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 !~ 'b.*'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'b.*'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_index_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 !~ 'z.*'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ 'z.*'))";
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_negation2_exceededValue_trailingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
+        tf_test(seekRange, query, null, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void tf_index2_exceededValue_trailingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ 'z.*'))";
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'b.*'))";
+        // note: correcting the marker caused this query to hit
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -831,23 +910,45 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_negation_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ '.*b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD2 !~ '.*b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_index_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ '.*x'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD2 !~ '.*x'))";
+        // note: correcting this marker caused the query to miss
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD2=x} does not satisfy the query
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
+    }
+
+    // alternate form of negation
+    @Test
+    public void tf_negation2_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ '.*b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+    }
+
+    // alternate form of negation
+    @Test
+    public void tf_index2_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ '.*x'))";
+        // note: correcting this marker caused the query to miss
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD2=x} does not satisfy the query
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
@@ -855,73 +956,97 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_negation_exceededValue_leadingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 !~ '.*b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ '.*b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_index_exceededValue_leadingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 !~ '.*a'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 !~ '.*a'))";
+        // note: correcting the marker caused this query to miss
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=a} does not satisfy the query
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
+    }
+
+    // alternate form of negation
+    @Test
+    public void tf_negation2_exceededValue_leadingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
+        tf_test(seekRange, query, null, Collections.emptyList(), Collections.emptyList());
+    }
+
+    // alternate form of negation
+    @Test
+    public void tf_index2_exceededValue_leadingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*a'))";
+        // note: correcting the marker caused this query to miss
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=a} does not satisfy the query
+        index_test(seekRange, query, true, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_leadingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*b'))";
+        // note: correcting the marker caused this query to hit
+        // this behavior is correct because the document {EVENT_FIELD1=a TF_FIELD1=b} satisfies the query
+        event_test(seekRange, query, false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_exceededValue_negated_leadingWildcard_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_negation_exceededValue_negated_leadingWildcard_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 !~ '.*z'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_index_exceededValue_negated_leadingWildcard_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ '.*z'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 !~ '.*z'))";
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_negated_leadingWildcard_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 =~ '.*z'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ '.*z'))";
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_exceededValue_negated_leadingWildcard_multiTerm_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b c'))";
-        tf_test(seekRange, query, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*b c'))";
+        tf_test(seekRange, query, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_exceededValue_negated_leadingWildcard_multiTerm_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b c'))";
-        tf_test(seekRange, query, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*b c'))";
+        tf_test(seekRange, query, null, Collections.emptyList(), Collections.emptyList());
 
     }
 
@@ -929,49 +1054,49 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_exceededValue_negated_leadingWildcard_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_negated_leadingWildcard_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 =~ '.*z'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ '.*z'))";
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_exceededValue_negated_leadingWildcardMissIndexOnly_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD4 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_negation_exceededValue_negated_leadingWildcardMissIndexOnly_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 !~ '.*z'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_index_exceededValue_negated_leadingWildcardMissIndexOnly_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 !~ '.*z'))";
-        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 !~ '.*z'))";
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_negated_leadingWildcardMissIndexOnly_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 =~ '.*z'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ '.*z'))";
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_exceededValue_negated_leadingWildcardMissIndexOnly_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD4 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     // terms 'a' and 'b' are adjacent, thus a valid phrase
@@ -979,7 +1104,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_contentFunction_validPhrase_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     // terms 'a' and 'c' do not appear adjacent
@@ -987,7 +1112,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_contentFunction_invalidPhrase_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='c') && content:phrase(TF_FIELD1,termOffsetMap,'a','c'))";
-        tf_test(seekRange, query, new AbstractMap.SimpleEntry(null, null), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, new AbstractMap.SimpleEntry<>(null, null), Collections.emptyList(), Collections.emptyList());
     }
 
     // terms 'a' and 'b' are adjacent, thus a valid phrase
@@ -995,7 +1120,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_contentFunction_validPhrase_docRange_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     // terms 'a' and 'c' do not appear adjacent
@@ -1003,7 +1128,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void tf_contentFunction_invalidPhrase_docRange_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='c') && content:phrase(TF_FIELD1,termOffsetMap,'a','c'))";
-        tf_test(seekRange, query, new AbstractMap.SimpleEntry(null, null), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, new AbstractMap.SimpleEntry<>(null, null), Collections.emptyList(), Collections.emptyList());
     }
 
     // A && (phrase:'a,b' || phrase:'j,k')
@@ -1013,7 +1138,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && (((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b')) || "
                         + "((TF_FIELD0 =='j' && TF_FIELD0 =='k') && content:phrase(TF_FIELD0,termOffsetMap,'j','k')))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     // A && (phrase:'a,b' || phrase:'j,k')
@@ -1023,14 +1148,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && (((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b')) || "
                         + "((TF_FIELD0 =='j' && TF_FIELD0 =='k') && content:phrase(TF_FIELD0,termOffsetMap,'j','k')))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void tf_event_exceededValue_negated_leadingWildcardMissIndexOnly_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD2 =~ '.*z'))";
-        event_test(seekRange, query, true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD2 =~ '.*z'))";
+        event_test(seekRange, query, true, null, Collections.emptyList(), Collections.emptyList());
     }
 
     protected void configureIterator() {
@@ -1064,8 +1189,8 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        iterator.init(baseIterator, options, iterEnv);
+        iterator.seek(seekRange, Collections.emptyList(), true);
 
         verifyAll();
 
@@ -1108,8 +1233,8 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        iterator.init(baseIterator, options, iterEnv);
+        iterator.seek(seekRange, Collections.emptyList(), true);
 
         verifyAll();
 
@@ -1152,8 +1277,8 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        iterator.init(baseIterator, options, iterEnv);
+        iterator.seek(seekRange, Collections.emptyList(), true);
 
         verifyAll();
 
@@ -1163,7 +1288,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         } else {
             // define the base hit
             Map.Entry<Key,Map<String,List<String>>> hit = getBaseExpectedEvent("123.345.456");
-            hit.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
+            hit.getValue().put("INDEX_ONLY_FIELD1", List.of("apple"));
             hits.add(hit);
         }
 
@@ -1198,8 +1323,8 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        iterator.init(baseIterator, options, iterEnv);
+        iterator.seek(seekRange, Collections.emptyList(), true);
 
         verifyAll();
 
@@ -1216,14 +1341,14 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void event_isNotNull_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(EVENT_FIELD3 == null)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(EVENT_FIELD3 == null)", false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void event_isNotNull_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange(null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(EVENT_FIELD3 == null)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(EVENT_FIELD3 == null)", false, null, Collections.emptyList(), Collections.emptyList());
 
     }
 
@@ -1231,28 +1356,28 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void event_isNotNullFunction_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void event_isNotNullFunction_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange(null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test
     public void indexOnly_lazy_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple' && filter:isNotNull(TF_FIELD4@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION)";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.emptyList());
     }
 
     @Test
     public void indexOnly_lazy_shardRange_test() throws IOException {
         Range seekRange = getDocumentRange(null);
         String query = "INDEX_ONLY_FIELD1 == 'apple' && filter:isNotNull(TF_FIELD4@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION)";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     // The term fetched by the delayed context is not added to the returned document.
@@ -1262,7 +1387,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 == 'a' && ((_Delayed_ = true) && INDEX_ONLY_FIELD1 == 'apple')";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
     }
 
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
@@ -1272,16 +1397,16 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String row, String dataType, String uid) {
         Key hitKey = new Key(row, dataType + Constants.NULL + uid);
         Map<String,List<String>> expectedDocument = new HashMap<>();
-        expectedDocument.put("EVENT_FIELD1", Arrays.asList(new String[] {"a"}));
-        expectedDocument.put("EVENT_FIELD2", Arrays.asList(new String[] {"b"}));
-        expectedDocument.put("EVENT_FIELD3", Arrays.asList(new String[] {"c"}));
-        expectedDocument.put("EVENT_FIELD4", Arrays.asList(new String[] {"d"}));
-        expectedDocument.put("EVENT_FIELD5", Arrays.asList(new String[] {"e"}));
-        expectedDocument.put("EVENT_FIELD6", Arrays.asList(new String[] {"f"}));
+        expectedDocument.put("EVENT_FIELD1", List.of("a"));
+        expectedDocument.put("EVENT_FIELD2", List.of("b"));
+        expectedDocument.put("EVENT_FIELD3", List.of("c"));
+        expectedDocument.put("EVENT_FIELD4", List.of("d"));
+        expectedDocument.put("EVENT_FIELD5", List.of("e"));
+        expectedDocument.put("EVENT_FIELD6", List.of("f"));
 
         // non-normalized form
-        expectedDocument.put("TF_FIELD1", Arrays.asList(new String[] {"a,, b,,, c,,"}));
-        expectedDocument.put("TF_FIELD2", Arrays.asList(new String[] {",x, ,y, ,z,"}));
+        expectedDocument.put("TF_FIELD1", List.of("a,, b,,, c,,"));
+        expectedDocument.put("TF_FIELD2", List.of(",x, ,y, ,z,"));
 
         return new AbstractMap.SimpleEntry<>(hitKey, expectedDocument);
     }
@@ -1291,9 +1416,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     protected void eval(List<Map.Entry<Key,Map<String,List<String>>>> toEval) throws IOException {
-        Iterator<Map.Entry<Key,Map<String,List<String>>>> evalIterator = toEval.iterator();
-        while (evalIterator.hasNext()) {
-            Map.Entry<Key,Map<String,List<String>>> evalPair = evalIterator.next();
+        for (Map.Entry<Key,Map<String,List<String>>> evalPair : toEval) {
             eval(evalPair.getKey(), evalPair.getValue());
         }
         assertFalse(iterator.hasTop());
@@ -1335,7 +1458,7 @@ public class QueryIteratorIT extends EasyMockSupport {
             assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys, docKeys.keySet().size(),
                             docSize);
 
-            // validate the hitlist
+            // validate the hit list
             assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null),
                             (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm());
 
@@ -1360,14 +1483,13 @@ public class QueryIteratorIT extends EasyMockSupport {
                     // the data should be a set, verify it matches expected
                     Object dictData = d.getDictionary().get(field).getData();
                     assertNotNull(dictData);
-                    assertTrue("Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData.toString() + "'\nexpected: " + expected,
+                    assertTrue("Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData + "'\nexpected: " + expected,
                                     dictData instanceof Set);
-                    Set dictSet = (Set) dictData;
-                    assertEquals("Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size() + "\nfound: " + dictSet.toString()
-                                    + "\nexpected: " + expected, dictSet.size(), expected.size());
-                    Iterator<Attribute> dictIterator = dictSet.iterator();
-                    while (dictIterator.hasNext()) {
-                        String foundString = dictIterator.next().getData().toString();
+                    Set<?> dictSet = (Set<?>) dictData;
+                    assertEquals("Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size() + "\nfound: " + dictSet + "\nexpected: "
+                                    + expected, dictSet.size(), expected.size());
+                    for (Attribute<?> attribute : (Iterable<Attribute<?>>) dictSet) {
+                        String foundString = attribute.getData().toString();
                         assertTrue("could not find " + foundString + " in results! Still had " + expected, expected.remove(foundString));
                     }
                     // verify that the expected set is now empty
@@ -1380,9 +1502,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         }
     }
 
+    private final KryoDocumentDeserializer documentDeserializer = new KryoDocumentDeserializer();
+
     private Map.Entry<Key,Document> deserialize(Value value) {
-        KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-        return dser.apply(new AbstractMap.SimpleEntry(null, value));
+        return documentDeserializer.apply(new AbstractMap.SimpleEntry<>(null, value));
     }
 
     // support methods

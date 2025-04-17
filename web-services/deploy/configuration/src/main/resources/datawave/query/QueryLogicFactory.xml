@@ -38,15 +38,23 @@
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Rename"/>
-        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUnique"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
         <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
@@ -271,6 +279,8 @@
         <property name="hdfsSiteConfigURLs" value="${hdfs.site.config.urls}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
+        <!-- the list of directories in which the webserver puts its ivarator caches (selection always made on webserver side) -->
+        <property name="localIvaratorCacheDirConfigs" ref="LocalIvaratorCacheDirConfigs" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
@@ -309,7 +319,12 @@
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
+        <property name="summaryFieldName" value="SUMMARY" />
     </bean>
+
+    <util:list id="LocalIvaratorCacheDirConfigs">
+        ${local.ivarator.cache.dir.config}
+    </util:list>
 
     <util:list id="IvaratorCacheDirConfigs">
         ${ivarator.cache.dir.config}

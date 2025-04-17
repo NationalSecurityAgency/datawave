@@ -4,6 +4,7 @@ package datawave.query.exceptions;
  * Thrown when an invalid query tree is encountered
  */
 public class InvalidQueryTreeException extends Exception {
+    private static final long serialVersionUID = 3961878219004179463L;
 
     public InvalidQueryTreeException() {
         super();

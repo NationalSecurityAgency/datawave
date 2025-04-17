@@ -55,6 +55,12 @@ public abstract class NoExpansionTests {
     @RunWith(Arquillian.class)
     public static class ShardRange extends NoExpansionTests {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
             return VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD;
@@ -63,6 +69,12 @@ public abstract class NoExpansionTests {
 
     @RunWith(Arquillian.class)
     public static class DocumentRange extends NoExpansionTests {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
+        }
 
         @Override
         protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
@@ -149,7 +161,7 @@ public abstract class NoExpansionTests {
         // order of terms in planned script is arbitrary, fall back to comparing the jexl trees
         ASTJexlScript plannedScript = JexlASTHelper.parseJexlQuery(plan);
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(this.expectedPlan);
-        JexlNodeAssert.assertThat(expectedScript).isEqualTo(plannedScript);
+        JexlNodeAssert.assertThat(plannedScript).isEqualTo(expectedScript);
     }
 
     private AccumuloClient createClient() throws Exception {
@@ -179,8 +191,8 @@ public abstract class NoExpansionTests {
      */
     @Test
     public void testDefaultQueryModelExpansion() throws Exception {
-        givenQuery("COLOR == 'blue'");
-        givenExpectedPlan("(COLOR == 'blue' || HUE == 'blue')");
+        givenQuery("COLOR == 'blue' && FASTENER == 'bolt'");
+        givenExpectedPlan("(COLOR == 'blue' || HUE == 'blue') && (FASTENER == 'bolt' || FIXTURE == 'bolt')");
 
         runTestQuery();
     }
@@ -197,6 +209,17 @@ public abstract class NoExpansionTests {
     }
 
     /**
+     * Verify that when #NO_EXPANSION is specified in the query string itself with multiple fields, expansion does not occur.
+     */
+    @Test
+    public void testNoExpansionViaFunctionWithMultipleFields() throws Exception {
+        givenQuery("COLOR == 'blue' && FASTENER == 'bolt' && f:noExpansion(COLOR,FASTENER)");
+        givenExpectedPlan("COLOR == 'blue' && FASTENER == 'bolt'");
+
+        runTestQuery();
+    }
+
+    /**
      * Verify that when #NO_EXPANSION is specified via the query parameters, expansion does not occur.
      */
     @Test
@@ -204,6 +227,18 @@ public abstract class NoExpansionTests {
         givenQuery("COLOR == 'blue'");
         givenQueryParameter(QueryParameters.NO_EXPANSION_FIELDS, "COLOR");
         givenExpectedPlan("COLOR == 'blue'");
+
+        runTestQuery();
+    }
+
+    /**
+     * Verify that when #NO_EXPANSION is specified via the query parameters, expansion does not occur.
+     */
+    @Test
+    public void testNoExpansionViaQueryParametersWithMultipleFields() throws Exception {
+        givenQuery("COLOR == 'blue' && FASTENER == 'bolt'");
+        givenQueryParameter(QueryParameters.NO_EXPANSION_FIELDS, "COLOR,FASTENER");
+        givenExpectedPlan("COLOR == 'blue' && FASTENER == 'bolt'");
 
         runTestQuery();
     }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+    False-positive: indexesToReturn field is NOT read in an uninitialized state by the superclass
+    constructor, b/c the getNext call doesn't get invoked  (i.e., getNext boolean arg is set
+    to false by the subclass constructor)
+    -->
+    <Match>
+        <Class name="datawave.util.StringUtils$SubSplitIterable" />
+        <Field name="indexesToReturn" />
+        <Bug pattern="UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR" />
+    </Match>
+</FindBugsFilter>

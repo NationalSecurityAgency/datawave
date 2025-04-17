@@ -28,7 +28,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.collections4.iterators.PeekingIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -371,6 +371,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     currentEntry = resultQueue.poll(getPollTime(), TimeUnit.MILLISECONDS);
 
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     log.error(e);
                     throw new RuntimeException(e);
                 }
@@ -403,7 +404,10 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         Future future = myExecutor.submit(this);
         try {
             future.get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
@@ -439,6 +443,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 }
                 prevDay = null;
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return 0;
             }
         }

@@ -187,7 +187,7 @@ public class IndexInfo implements Writable, UidIntersector {
             JexlNode topLevelOr = getOrNode(sourceNode);
 
             if (null == topLevelOr) {
-                nodeSet.add(sourceNode);
+                nodeSet.add(first.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     nodeSet.add(topLevelOr.jjtGetChild(i));
@@ -328,11 +328,17 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.count = merged.uids.size();
         }
 
-        merged.setFieldCounts(this.getFieldCounts());
-        merged.mergeFieldCounts(o.getFieldCounts());
+        if (this == o) {
+            // handle idiosyncrasy of the peeking iterator where the first term is merged with itself
+            merged.setFieldCounts(o.getFieldCounts());
+            merged.setTermCounts(o.getTermCounts());
+        } else {
+            merged.setFieldCounts(getFieldCounts());
+            merged.setTermCounts(getTermCounts());
 
-        merged.setTermCounts(this.getTermCounts());
-        merged.mergeTermCounts(o.getTermCounts());
+            merged.mergeFieldCounts(o.getFieldCounts());
+            merged.mergeTermCounts(o.getTermCounts());
+        }
 
         /*
          * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the

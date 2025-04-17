@@ -55,7 +55,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
  */
 public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8812242917762274469L;
 
     private static Logger log = Logger.getLogger(RunningQuery.class);
 
@@ -254,6 +254,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         throw new RuntimeException(e);
                     }
                 }
@@ -275,6 +276,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             if (settings.getUncaughtExceptionHandler() != null) {
                 settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
             } else {
@@ -318,6 +322,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         hasNext.wait(timeout);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // if we got interrupted, then just return false
                         return false;
                     }
@@ -361,6 +366,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         gotNext.wait(timeout);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // if we got interrupted, then just return null
                         return null;
                     }

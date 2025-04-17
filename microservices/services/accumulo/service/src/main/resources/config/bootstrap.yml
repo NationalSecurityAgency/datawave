@@ -1,0 +1,101 @@
+spring:
+  application:
+    name: accumulo
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    config:
+      # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
+      # Always fail fast so we can retry if the config server is not up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
+
+---
+
+# For the dev profile, check localhost for the config server and turn off query auditing
+# here by default (re-enable in accumulo-dev.yml if needed)
+
+spring:
+  config.activate.on-profile: 'dev'
+  cloud:
+    config:
+      uri: '${CONFIG_SERVER_URL:http://localhost:8888/configserver}'
+
+audit-client:
+  enabled: false
+
+---
+
+spring:
+  config.activate.on-profile: 'consul'
+  cloud:
+    config:
+      # Use Consul to locate the configuration server and bootstrap app config.
+      discovery:
+        enabled: true
+      # Give the config server a long time to come up and register itself in Consul
+      retry:
+        max-attempts: 120
+    # Allow the default Consul host to be overridden via an environment variable
+    consul:
+      host: ${CONSUL_HOST:localhost}
+
+---
+
+# Mock profile for in-memory accumulo setup, which can be useful for testing lookup service
+# with query auditing enabled without having to worry about setting up your own accumulo
+# instance.
+
+spring.config.activate.on-profile: 'mock'
+
+# Mock for accumulo, see MockAccumuloConfiguration class, which manages connector-specific
+# beans and also ingests the canned data.
+
+warehouse-cluster:
+  accumulo:
+    zookeepers: 'mock'
+    instanceName: 'mock'
+    username: 'mock'
+    password: 'mock'
+
+# The 3 web services associated with this app (accumulo.lookup, accumulo.admin, accumulo.stats) are
+# enabled by default, but may be enabled/disabled as desired via their respective 'enabled' properties
+
+# Here, the lookup service is configured with some audit rules that'll match the canned mock data. To
+# actually perform auditing though, you'll need to enable the audit client (audit-client.enabled=true).
+
+# The stats service needs legitimate ZK and Monitor services, so the mock profile disables it here
+
+accumulo:
+  lookup:
+    numQueryThreads: 1
+    audit:
+      defaultAuditType: 'NONE'
+      tableConfig:
+        - tableRegex: 'w.*e'
+          rowRegex: 'row1'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'ACTIVE'
+
+        - tableRegex: 'warehouseTestTable2'
+          rowRegex: 'r.*2'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'PASSIVE'
+
+        - tableRegex: '.*Table'
+          rowRegex: 'r.*3'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'ACTIVE'
+
+  stats:
+    enabled: false
+
+

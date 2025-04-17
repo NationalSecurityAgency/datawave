@@ -180,7 +180,7 @@ public class CardinalityScanner {
 
         String dateOpt = cl.getOptionValue(D_OPT);
         if (dateOpt != null) {
-            if (dateOpt.indexOf("-") != -1) {
+            if (dateOpt.contains("-")) {
                 String[] splits = StringUtils.split(dateOpt, '-');
                 config.setBeginDate(splits[0].trim());
                 config.setEndDate(splits[1].trim());
