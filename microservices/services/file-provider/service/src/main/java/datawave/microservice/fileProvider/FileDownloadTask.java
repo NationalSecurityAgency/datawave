@@ -10,27 +10,36 @@ import java.io.IOException;
 public class FileDownloadTask implements Runnable{
     
     private final FileConfigProperties.FileConfig config;
-    
+    private DownloadResult result;
+
     public FileDownloadTask(FileConfigProperties.FileConfig config) {
         this.config = config;
     }
-    
+
+    /**
+     * Downloads the file specified in the config variable. Passes the nitty-gritty logic off to
+     * helper methods depending on the download method (http, etc.)
+     */
     @Override
     public void run() {
-        // Validation for file config? For example, sanitizing file names and URLs.
 
-        // set up downloader via config properties. For example, if we were to set up an https downloader, what would we be checking/supplying.
-        Downloader downloader = new HttpsDownloader();
-       
-        // Download the file.
-        try {
-            DownloadResult result = downloader.download();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if(config.getDownload().getMethod().equalsIgnoreCase("http")) {
+            result = downloadFromHttp();
         }
+        //...
 
-        // If success: Validation of file with configured validation
-        // Cleanup
     }
-    
+
+    /**
+     * Download via http
+     * @return the result of the download.
+     */
+    private DownloadResult downloadFromHttp() {
+        Downloader downloader = new HttpsDownloader();
+        return downloader.download();
+    }
+
+    public DownloadResult getResult(){
+        return result;
+    }
 }

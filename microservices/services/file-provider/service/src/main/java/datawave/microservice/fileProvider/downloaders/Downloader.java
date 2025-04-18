@@ -18,5 +18,5 @@ public interface Downloader {
     // The above methods only apply if we decide to spawn the downloader as another task within the task so that we can loop and ping the
     // status of the file. Possibly not necessary.
 
-    DownloadResult download() throws IOException;
+    DownloadResult download();
 }

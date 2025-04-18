@@ -1,11 +1,5 @@
 package datawave.microservice.fileProvider.downloaders;
 
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -33,10 +27,6 @@ public class HttpsDownloader implements Downloader {
      */
     private String destFileName = "myDownloadedFile.csv";
 
-    // ───────────────────────────────────
-    // Getters & setters
-    // ───────────────────────────────────
-
     public String getDownloadURL() {
         return downloadURL;
     }
@@ -61,16 +51,12 @@ public class HttpsDownloader implements Downloader {
         this.destFileName = destFileName;
     }
 
-    // ───────────────────────────────────
-    // Business logic
-    // ───────────────────────────────────
-
     @Override
-    public DownloadResult download() throws IOException {
+    public DownloadResult download(){
         DownloadResult result = new DownloadResult();
-        URL website = new URL(downloadURL);
-
-        try (InputStream in = website.openStream()) {
+        try {
+            URL website = new URL(downloadURL);
+            InputStream in = website.openStream();
             Path target = Path.of(destinationPath, destFileName);
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
             result.setStatus(DownloadResult.Status.COMPLETE);

@@ -8,6 +8,10 @@ import java.util.Map;
 //only created and returned at the end of the download atm. No async stuff yet.
 public class DownloadResult {
 
+    /**
+     * TODO: We need to make a list of all issues we want to catch vs which ones we just want to say "whoops something happened!"
+     */
+
     // potential status definitions
     public enum Status {
         COMPLETE,
