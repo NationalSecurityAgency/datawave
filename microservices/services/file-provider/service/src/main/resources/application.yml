@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: fileprovider
+
+server:
+  outboundSsl:
+    enabled: false   # ← disable Datawave’s outbound‐SSL support
+
+file-provider:
+  temp-dir: /tmp/downloads
+  files:
+    - label: "NYLottery"
+      name: ny-lottery.csv
+      download:
+        schedule: "*/1 * * * * *"
+        uri: https://data.ny.gov/api/views/d6yy-54nr/rows.csv?accessType=DOWNLOAD
+        method: http
+    - label: "Airports"
+      name: airports.csv
+      download:
+        schedule: "*/2 * * * * *"
+        uri: https://data.bts.gov/views/kfcv-nyy3/rows.csv?accessType=DOWNLOAD
+        method: http

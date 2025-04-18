@@ -1,0 +1,20 @@
+# src/main/resources/bootstrap.yml
+spring:
+  application:
+    name: fileprovider
+
+  cloud:
+    # never hit a Config Server unless you explicitly activate its profile
+    config:
+      enabled: false
+
+    # completely disable Consul by default
+    consul:
+      discovery:
+        enabled: false
+      registration:
+        enabled: false
+
+    # if you bring in Spring Cloud Bus, disable it too
+    bus:
+      enabled: false

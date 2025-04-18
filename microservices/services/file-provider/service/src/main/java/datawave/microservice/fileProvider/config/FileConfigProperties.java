@@ -2,19 +2,23 @@ package datawave.microservice.fileProvider.config;
 
 import java.util.List;
 
+import javax.net.ssl.SSLException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Validated
 @Configuration
-@ConfigurationProperties(prefix = "file-provider.files")
+@ConfigurationProperties(prefix = "file-provider")
 public class FileConfigProperties {
     
     // Note from Laura:
@@ -31,10 +35,12 @@ public class FileConfigProperties {
     public List<FileConfig> getFiles() {
         return files;
     }
-
     public void setFiles(List<FileConfig> files) {
         this.files = files;
     }
+
+    public String getTempDir() { return this.tempDir; }
+    public void setTempDir(String dir) { this.tempDir = dir; }
     
     @Validated
     public static class FileConfig { // outlines the files we want to make, and how we'll get their contents (download)
@@ -100,6 +106,14 @@ public class FileConfigProperties {
         
         public void setSchedule(String schedule) {
             this.schedule = schedule;
+        }
+
+        @Bean
+        @Qualifier("outboundNettySslContext")
+        public SslContext outboundNettySslContext() throws SSLException {
+            // This uses the JVM default truststore (i.e. cacerts),
+            // so you get a valid client context without any extra files.
+            return SslContextBuilder.forClient().build();
         }
     }
 }
