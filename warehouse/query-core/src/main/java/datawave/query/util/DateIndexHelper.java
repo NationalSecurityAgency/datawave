@@ -279,7 +279,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      *             if the table is not found
      */
     @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
-                    cacheManager = "dateIndexHelperCacheManager")
+                    cacheManager = "dateIndexHelperCacheManager", sync = true)
     public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getTypeDescription(" + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
                         + datatypeFilter + ")");
@@ -355,7 +355,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      */
     @Cacheable(value = "getShardsAndDaysHint",
                     key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
-                    cacheManager = "dateIndexHelperCacheManager")
+                    cacheManager = "dateIndexHelperCacheManager", sync = true)
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
                     throws TableNotFoundException {
         log.debug("cache fault for getShardsAndDaysHint(" + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
