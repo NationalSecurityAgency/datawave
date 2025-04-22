@@ -14,6 +14,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.slf4j.Logger;
@@ -187,9 +190,37 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             // if the parent is not null, replace the child
             // if the parent is null, this is the root node, and we will handle that in the expand method
             if (futureJexlNode.jjtGetParent() != null) {
-                JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
+                if (!(newNode instanceof ASTOrNode || newNode instanceof ASTAndNode)) {
+                    if (isWrappedJunction(futureJexlNode.getOrigNode())) {
+                        JexlNode parent = futureJexlNode.jjtGetParent();
+                        JexlNode grandParent = parent.jjtGetParent();
+                        JexlNodes.replaceChild(grandParent, parent, newNode);
+                    } else {
+                        JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
+                    }
+                } else {
+                    JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
+                }
             }
         }
+    }
+
+    /**
+     * Check for a wrapped junction. This matters when only a single matching term is found because we're left with oddly formed queries like
+     * <code>(term)</code> and a Jexl structure where an {@link ASTAndNode} has a single child which is not proper.
+     *
+     * @param node
+     *            the node
+     * @return true if the node is a wrapped junction
+     */
+    private boolean isWrappedJunction(JexlNode node) {
+        if (node instanceof ASTAndNode) {
+            JexlNode parent = node.jjtGetParent();
+            if (parent instanceof ASTReferenceExpression) {
+                return parent.jjtGetParent() != null;
+            }
+        }
+        return false;
     }
 
     /**

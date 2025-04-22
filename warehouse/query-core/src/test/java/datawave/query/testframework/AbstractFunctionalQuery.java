@@ -70,7 +70,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
@@ -700,10 +699,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return;
         }
 
-        ASTJexlScript expectedTree = JexlASTHelper.parseJexlQuery(expected);
-        expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
-        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+        ASTJexlScript expectedTree = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+        ASTJexlScript queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
             throw new ComparisonFailure(comparison.getReason(), expected, query);

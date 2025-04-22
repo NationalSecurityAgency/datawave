@@ -2,8 +2,10 @@ package datawave.query.jexl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.List;
@@ -999,6 +1001,49 @@ public class JexlASTHelperTest {
         for (JexlNode notNode : notNodes) {
             assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTOrNode.class));
             assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTAndNode.class));
+        }
+    }
+
+    @Test
+    public void testStringBoundedRange() {
+        testBoundedRangePermutations("aa", "bb");
+    }
+
+    private void testBoundedRangePermutations(String lower, String upper) {
+        String valid = getQuery(lower, upper);
+        assertBoundedRange(valid, true);
+
+        String invalid = getQuery(upper, lower);
+        assertBoundedRange(invalid, false);
+
+        // technically a valid bounded range, but it would be nice to rewrite this as an equality node
+        String equality = getQuery(lower, lower);
+        assertBoundedRange(equality, false);
+    }
+
+    private String getQuery(String lower, String upper) {
+        return "((_Bounded_ = true) && (F >= '" + lower + "' && F <= '" + upper + "'))";
+    }
+
+    private void assertBoundedRange(String query, boolean valid) {
+        ASTJexlScript script = parse(query);
+        JexlNode child = script.jjtGetChild(0);
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(child);
+        assertNotNull(range);
+        if (valid) {
+            assertFalse(range.isLowerBoundGreaterThanUpperBound());
+            assertFalse(range.areBoundsEquivalent());
+        } else {
+            assertTrue(range.isLowerBoundGreaterThanUpperBound() || range.areBoundsEquivalent());
+        }
+    }
+
+    private ASTJexlScript parse(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query);
+        } catch (ParseException e) {
+            fail("Failed to parse query: " + query);
+            throw new IllegalStateException("Failed to parse query: " + query, e);
         }
     }
 
