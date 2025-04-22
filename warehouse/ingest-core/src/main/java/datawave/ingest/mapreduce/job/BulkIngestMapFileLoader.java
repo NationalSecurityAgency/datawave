@@ -38,6 +38,7 @@ import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
 import org.apache.accumulo.core.rpc.ThriftUtil;
 import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
@@ -76,13 +77,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
-    private static int MAX_DIRECTORIES = 1;
+    protected static int MAX_DIRECTORIES = 1;
     private static int MAJC_CHECK_INTERVAL = 1;
     private static int MAJC_THRESHOLD = 3000;
     private static int MAJC_WAIT_TIMEOUT = 0;// 2 * 60 * 1000;
     private static int SHUTDOWN_PORT = 24111;
+    protected static int NUM_CONSIDERED_BACKLOG = 9999;
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
+    protected static String DELAY_PATH_PATTERN;
 
     public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
@@ -117,10 +120,20 @@ public final class BulkIngestMapFileLoader implements Runnable {
         ArrayList<String[]> properties = new ArrayList<>();
 
         if (args.length < 6) {
-            log.error("usage: BulkIngestMapFileLoader hdfsWorkDir jobDirPattern instanceName zooKeepers username password "
-                            + "[-sleepTime sleepTime] [-majcThreshold threshold] [-majcCheckInterval count] [-majcDelay majcDelay] "
-                            + " [-seqFileHdfs seqFileSystemUri] [-srcHdfs srcFileSystemURI] [-destHdfs destFileSystemURI] [-jt jobTracker] "
-                            + "[-ingestMetricsDisabled] [-jobObservers jobObserverClasses] [-shutdownPort portNum] confFile [{confFile}]");
+            log.error("usage: BulkIngestMapFileLoader " + "hdfsWorkDir jobDirPattern instanceName zooKeepers username password "
+                            + "[-sleepTime sleepTime (time in milliseconds to sleep between iterations)] "
+                            + "[-majcThreshold threshold (Number of majc compactions that will cause this loader to wait)] "
+                            + "[-majcCheckInterval count (number of iterations after which Major Compaction Threshold is checked)] "
+                            + "[-majcDelay majcDelay (time in milliseconds to delay checking compaction threshold)] "
+                            + "[-seqFileHdfs seqFileSystemUri (URI for the sequence file's HDFS)] "
+                            + "[-srcHdfs srcFileSystemURI (URI for the source file's HDFS)] "
+                            + "[-destHdfs destFileSystemURI (URI for the destination file's HDFS)] " + "[-jt jobTracker (job tracker address for Hadoop jobs)] "
+                            + "[-ingestMetricsDisabled (flag to disable ingest metrics collection)] "
+                            + "[-jobObservers jobObserverClasses (comma-separated observer class names)] "
+                            + "[-shutdownPort portNum (port number for shutdown commands)] "
+                            + "[-delayPathPattern pattern (delay this job if the directory contains a file matching this pattern)] "
+                            + "[-numConsideredBacklog numberOfJobs (number of jobs to be considered in backlog)] "
+                            + "confFile [{confFile} (configuration file(s) with further settings)]");
             System.exit(-1);
         }
 
@@ -276,6 +289,19 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 } else if ("-lifo".equalsIgnoreCase(args[i])) {
                     FIFO = false;
                     log.info("Changing processing order to LIFO");
+                } else if ("-delayPathPattern".equalsIgnoreCase(args[i])) {
+                    DELAY_PATH_PATTERN = args[++i];
+                } else if ("-numConsideredBacklog".equalsIgnoreCase(args[i])) {
+                    if (i + 2 > args.length) {
+                        log.error("-numConsideredBacklog must be followed by the number bulk loads waiting to be considered backlog");
+                        System.exit(-2);
+                    }
+                    try {
+                        NUM_CONSIDERED_BACKLOG = Integer.parseInt(args[++i]);
+                    } catch (NumberFormatException e) {
+                        log.error("-numConsideredBacklog must be followed by the number bulk loads waiting to be considered backlog", e);
+                        System.exit(-2);
+                    }
                 } else if ("-fifo".equalsIgnoreCase(args[i])) {
                     FIFO = true;
                     log.info("Changing processing order to FIFO");
@@ -360,6 +386,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
+    }
+
+    protected BulkIngestMapFileLoader() {
+        // no-op. Use only for testing.
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
@@ -456,7 +486,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     }
                     List<Path> processedDirectories = new ArrayList<>();
                     if (nextJobIndex >= jobDirectories.length) {
-                        jobDirectories = getJobDirectories(srcHdfs, new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
+                        jobDirectories = getJobDirectories(getFileSystem(srcHdfs), new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
                         nextJobIndex = 0;
                     }
                     if (jobDirectories.length > 0) {
@@ -518,7 +548,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 }
                             }
                             if (nextJobIndex >= jobDirectories.length) {
-                                jobDirectories = getJobDirectories(srcHdfs, new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
+                                jobDirectories = getJobDirectories(getFileSystem(srcHdfs), new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
                                 nextJobIndex = 0;
                             }
 
@@ -542,7 +572,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     protected void cleanJobDirectoriesOnStartup() throws IOException {
-        Path[] cleanupDirectories = getJobDirectories(destHdfs, new Path(workDir, jobDirPattern + '/' + CLEANUP_FILE_MARKER));
+        Path[] cleanupDirectories = getJobDirectories(getFileSystem(destHdfs), new Path(workDir, jobDirPattern + '/' + CLEANUP_FILE_MARKER));
         for (int i = 0; i < cleanupDirectories.length; i++) {
 
             markSourceFilesLoaded(cleanupDirectories[i]);
@@ -713,35 +743,59 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Gets a list of job directories that are marked with pathPattern.
      *
-     * @param hdfs
-     *            the HDFS URI
+     * @param fs
+     *            the file system to use
      * @param pathPattern
      *            the path pattern
+     * @return a path array
      * @throws IOException
      *             for issues reading/writing with the file system.
-     * @return a path array
      */
-    private Path[] getJobDirectories(URI hdfs, Path pathPattern) throws IOException {
+    protected Path[] getJobDirectories(FileSystem fs, Path pathPattern) throws IOException {
         log.debug("Checking for completed job directories.");
-        FileSystem fs = getFileSystem(hdfs);
         FileStatus[] files = fs.globStatus(pathPattern);
-        Path[] jobDirectories;
+        List<Path> jobDirectories = new ArrayList<>();
+        List<Path> delayedJobDirs = new ArrayList<>();
         if (files != null && files.length > 0) {
             final int order = (FIFO ? 1 : -1);
             Arrays.sort(files, (o1, o2) -> {
                 long m1 = o1.getModificationTime();
                 long m2 = o2.getModificationTime();
-                return order * ((m1 < m2) ? -1 : ((m1 > m2) ? 1 : 0));
+                return order * Long.compare(m1, m2);
             });
-            jobDirectories = new Path[Math.min(MAX_DIRECTORIES, files.length)];
-            for (int i = 0; i < jobDirectories.length; i++) {
-                jobDirectories[i] = files[i].getPath().getParent();
+            int i = 0;
+            while (jobDirectories.size() < MAX_DIRECTORIES && i < files.length) {
+                Path parentDir = files[i].getPath().getParent();
+                if (DELAY_PATH_PATTERN != null && !DELAY_PATH_PATTERN.isEmpty()) {
+                    FileStatus[] delayPath = fs.globStatus(new Path(parentDir, new Path(DELAY_PATH_PATTERN)));
+                    if (delayPath.length == 0 || !delayPath[0].isFile()) {
+                        jobDirectories.add(parentDir);
+                    } else {
+                        log.info("Delaying job in " + parentDir);
+                        delayedJobDirs.add(parentDir);
+                    }
+                } else {
+                    jobDirectories.add(parentDir);
+                }
+                i++;
             }
-        } else {
-            jobDirectories = new Path[0];
         }
-        log.debug("Completed job directories: " + Arrays.toString(jobDirectories));
-        return jobDirectories;
+
+        boolean inBacklog = jobDirectories.size() >= NUM_CONSIDERED_BACKLOG;
+
+        if ((jobDirectories.isEmpty() || !inBacklog) && !delayedJobDirs.isEmpty()) {
+            log.info("Running Delayed Jobs");
+            if (jobDirectories.size() + delayedJobDirs.size() <= MAX_DIRECTORIES) {
+                jobDirectories.addAll(delayedJobDirs);
+            } else {
+                while (jobDirectories.size() + delayedJobDirs.size() < MAX_DIRECTORIES) {
+                    jobDirectories.add(delayedJobDirs.remove(0));
+                }
+            }
+        }
+
+        log.debug("Completed job directories: " + StringUtils.join(jobDirectories, ","));
+        return jobDirectories.toArray(new Path[0]);
     }
 
     /**

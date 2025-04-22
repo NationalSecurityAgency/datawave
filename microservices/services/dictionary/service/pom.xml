@@ -8,7 +8,7 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
-    <version>4.0.6-SNAPSHOT</version>
+    <version>4.0.7-SNAPSHOT</version>
     <description>DATAWAVE Dictionary Service</description>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
