@@ -100,6 +100,7 @@ public class ReloadFilesFromLoadedJob {
     public static void main(String[] args) throws Exception {
         if (args.length != 3) {
             System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map> <error on file not found>");
+            System.err.println("NOTE: FLAG MAKERS MUST BE STOPPED WHILE RUNNING");
             System.err.println(
                             "File at <input path> should consist paths to loaded files in the format /data/flagged|loaded/<datatype>/<year>/<month>/<day>/<hour>/<filename>");
             System.exit(-1);
