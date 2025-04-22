@@ -155,7 +155,7 @@ public class DateFrequencyMap implements Writable {
             entry.getValue().write(dataOutput);
         }
     }
-
+    
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         // Clear the map.
@@ -196,7 +196,7 @@ public class DateFrequencyMap implements Writable {
     public String toString() {
         return dateToFrequencies.toString();
     }
-
+    
     public byte[] toBytes() {
         try {
             // estimated maximum size is the initial 4 bytes of size plus
