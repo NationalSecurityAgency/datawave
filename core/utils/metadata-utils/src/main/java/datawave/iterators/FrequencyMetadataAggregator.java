@@ -24,7 +24,6 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Splitter;
@@ -32,7 +31,6 @@ import com.google.common.base.Splitter;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.DateFrequencyMap;
 import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
 
 /**
  * Aggregates entries in the metadata table for the "f", "i", and "ri" columns. When initially ingested, entries for these columns have a column qualifier with
@@ -265,6 +263,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
                 // Aggregate the current entry.
                 aggregateCurrent();
             } else {
+                // TODO: Instead aggregate by deleting from the value (ala the shardIndex) ?
                 // Add the deleted entry to the cache so that it is available for scanning, but do not include it as part of the aggregation.
                 cache.put(super.getTopKey(), super.getTopValue());
             }
@@ -334,10 +333,10 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             isCurrentAggregated = true;
         } else {
             // The remainder should typically be a date, but in rare cases may be a legacy format with the type class name instead of the date, and cannot be
-            // aggregated if so. Check if the remainder can be parsed as a date.
+            // aggregated if so. Check if the remainder can be parsed as a date (well actually a number).
             try {
-                DateHelper.parse(remainder);
-            } catch (DateTimeParseException e) {
+                Long.parseLong(remainder);
+            } catch (NumberFormatException e) {
                 if (log.isTraceEnabled()) {
                     log.trace("Found unparseable date: " + columnQualifier);
                 }
@@ -437,7 +436,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
             
             // Return the single key-value pair.
             Key key = new Key(currentRow, currentColumnFamily, columnQualifier, combined, latestTimestamp);
-            Value value = new Value(WritableUtils.toByteArray(combinedFrequencies));
+            Value value = new Value(combinedFrequencies.toBytes());
             return Collections.singletonMap(key, value);
         } else {
             Map<Key,Value> entries = new HashMap<>();
@@ -446,7 +445,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
                 ColumnVisibility visibility = entry.getKey();
                 long timestamp = visibilityToMaxTimestamp.get(visibility);
                 Key key = new Key(currentRow, currentColumnFamily, columnQualifier, visibility, timestamp);
-                Value value = new Value(WritableUtils.toByteArray(entry.getValue()));
+                Value value = new Value(entry.getValue().toBytes());
                 entries.put(key, value);
             }
             return entries;

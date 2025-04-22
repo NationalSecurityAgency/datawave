@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
@@ -154,7 +155,7 @@ public class DateFrequencyMap implements Writable {
             entry.getValue().write(dataOutput);
         }
     }
-    
+
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         // Clear the map.
@@ -194,5 +195,25 @@ public class DateFrequencyMap implements Writable {
     @Override
     public String toString() {
         return dateToFrequencies.toString();
+    }
+
+    public byte[] toBytes() {
+        try {
+            // estimated maximum size is the initial 4 bytes of size plus
+            // the size of the date (4+8 bytes) and the size of a long (8 bytes) times the size of the map
+            int estMaxSize = 4 + (dateToFrequencies.size() * 20);
+            DataOutputBuffer out = new DataOutputBuffer(estMaxSize);
+            write(out);
+            out.close();
+            byte[] bytes = out.getData();
+            if (out.getLength() != bytes.length) {
+                byte[] copy = new byte[out.getLength()];
+                System.arraycopy(bytes, 0, copy, 0, out.getLength());
+                bytes = copy;
+            }
+            return bytes;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to convert DateFrequencyMap to bytes", ioe);
+        }
     }
 }
