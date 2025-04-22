@@ -44,6 +44,8 @@ public class ReloadFilesFromLoadedJob {
 
             FileSystem hdfs = FileSystem.get(context.getConfiguration());
 
+            boolean errorOnNotFound = context.getConfiguration().getBoolean("reload.files.error.on.not.found", true);
+
             Path archiveDirPath = new Path(hdfsArchiveDir);
             if (hdfs.exists(archiveDirPath)) {
                 FileStatus[] filesInDir = hdfs.listStatus(archiveDirPath); // List all files in the directory
@@ -80,21 +82,31 @@ public class ReloadFilesFromLoadedJob {
                 hdfs.mkdirs(new Path(outputDir, hour));
 
                 String outputPath = outputDir + hourAndFileName;
-                FileUtil.rename(hdfs, new Path(loadedPath, hourAndFileName), new Path(outputPath));
+                try {
+                    FileUtil.rename(hdfs, new Path(loadedPath, hourAndFileName), new Path(outputPath));
+                } catch (Exception e) {
+                    System.err.println("Failed to rename: " + loadedPath + "/" + hourAndFileName + " to " + outputPath);
+                    if(errorOnNotFound)
+                    {
+                        throw new RuntimeException( loadedPath + "/" + hourAndFileName + " not found in either " +
+                                "archive directory or raw loaded directory ", e);
+                    }
+                }
             }
 
         }
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
-            System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map>");
+        if (args.length != 3) {
+            System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map> <error on file not found>");
             System.err.println(
                             "File at <input path> should consist paths to loaded files in the format /data/flagged|loaded/<datatype>/<year>/<month>/<day>/<hour>/<filename>");
             System.exit(-1);
         }
 
         Configuration conf = new Configuration();
+        conf.set("reload.files.error.on.not.found", args[2]);
         Job job = Job.getInstance(conf, "Reprocess Loaded Files Job");
         job.setJarByClass(ReloadFilesFromLoadedJob.class);
 
