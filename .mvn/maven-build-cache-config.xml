@@ -99,6 +99,14 @@
                         <reconcile propertyName="testFailureIgnore" skipValue="true"/>
                     </reconciles>
                 </plugin>
+                <plugin artifactId="maven-enforcer-plugin" goal="enforce">
+                    <reconciles>
+                        <reconcile propertyName="skip" skipValue="true"/>
+                    </reconciles>
+                    <nologs>
+                        <nolog propertyName="commandLineRules"/>
+                    </nologs>
+                </plugin>
             </plugins>
         </reconcile>
     </executionControl>
