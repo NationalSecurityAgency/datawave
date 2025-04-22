@@ -4,7 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -40,12 +40,9 @@ import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
+import datawave.query.util.keyword.KeywordResults;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.query.util.TypedValue;
 
 @RunWith(Arquillian.class)
 public class KeywordQueryLogicFunctionalTest {
@@ -60,7 +57,7 @@ public class KeywordQueryLogicFunctionalTest {
     protected KeywordQueryLogic logic;
 
     private final Map<String,String> extraParameters = new HashMap<>();
-    private final Map<String,String> expectedResults = new HashMap<>();
+    private final Set<String> expectedResults = new HashSet<>();
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -99,20 +96,19 @@ public class KeywordQueryLogicFunctionalTest {
     public void simpleTest() throws Exception {
         String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzua";
 
-        addExpectedResult("20130101_0:test:-cvy0gj.tlf59s.-duxzua:CONTENT2_KEYWORDS",
-                        "{get much=0.5903, kind=0.2546, kind word=0.2052, kind word alone=0.4375, much farther=0.5903, word=0.2857, word alone=0.534}");
+        addExpectedResult(
+                        "{\"source\":\"20130101_0/test/-cvy0gj.tlf59s.-duxzua\",\"view\":\"CONTENT\",\"language\":\"ENGLISH\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052,\"kind word alone\":0.4375,\"much farther\":0.5903,\"word\":0.2857,\"word alone\":0.534}}");
 
         runTestQuery(queryString);
     }
 
     @SuppressWarnings("SameParameterValue")
-    protected void addExpectedResult(String result, String keywords) {
-        if (StringUtils.isNotBlank(result)) {
-            expectedResults.put(result, keywords);
+    protected void addExpectedResult(String keywords) {
+        if (StringUtils.isNotBlank(keywords)) {
+            expectedResults.add(keywords);
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     protected void runTestQuery(String queryString) throws Exception {
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(Integer.MAX_VALUE);
@@ -127,42 +123,20 @@ public class KeywordQueryLogicFunctionalTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
 
-        QueryLogicTransformer<Map.Entry<Key,Value>,EventBase> transformer = logic.getTransformer(config.getQuery());
-        Map<String,String> unexpectedFields = new HashMap<>();
+        QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(config.getQuery());
+        Set<String> unexpectedFields = new HashSet<>();
 
         for (Map.Entry<Key,Value> entry : logic) {
-            EventBase event = transformer.transform(entry);
-            List<FieldBase> fields = event.getFields();
-            Metadata md = event.getMetadata();
-
-            for (FieldBase field : fields) {
-                String name = field.getName();
-                String toFind = md.getRow() + ":" + md.getDataType() + ":" + md.getInternalId() + ":" + name;
-                TypedValue tv = field.getTypedValue();
-
-                String content = extractContent(tv);
-                String found = expectedResults.get(toFind);
-                if (found != null && found.equals(content)) {
-                    expectedResults.remove(toFind);
-                } else {
-                    unexpectedFields.put(toFind, content);
-                }
+            KeywordResults kr = transformer.transform(entry);
+            String content = kr.toJson();
+            if (!expectedResults.remove(content)) {
+                unexpectedFields.add(content);
             }
+
         }
 
         assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
         assertTrue(expectedResults + " was not empty", expectedResults.isEmpty());
-    }
-
-    public static String extractContent(TypedValue tv) {
-        if (tv.getType().equals(TypedValue.XSD_BASE64BINARY)) {
-            return new String((byte[]) tv.getValue());
-        } else if (tv.getType().equals(TypedValue.XSD_STRING)) {
-            return tv.getValue().toString();
-        } else {
-            log.info("Encountered unexpected type in test " + tv.getType());
-            return "UNEXPECTED_TYPE";
-        }
     }
 
     @AfterClass

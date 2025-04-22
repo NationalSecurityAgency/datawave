@@ -10,7 +10,9 @@ import org.junit.Test;
 
 public class KeywordResultsTest {
 
-    static final String EXPECTED_SOURCE = "NEWS_VIEW";
+    static final String EXPECTED_SOURCE = "NEWS_SOURCE";
+    static final String EXPECTED_LANGUAGE = "ENGLISH";
+    static final String EXPECTED_VIEW = "NEWS_VIEW";
 
     static final LinkedHashMap<String,Double> EXPECTED_NEWS_OUTPUT = new LinkedHashMap<>();
     static {
@@ -24,17 +26,19 @@ public class KeywordResultsTest {
     @Test
     public void testConstructEmpty() {
         KeywordResults results = new KeywordResults();
-        assertTrue(results.get().isEmpty());
-        assertEquals(0, results.size());
+        assertTrue(results.getKeywords().isEmpty());
+        assertEquals(0, results.getKeywordCount());
         assertTrue(results.getSource().isEmpty());
     }
 
     @Test
     public void testConstructFull() {
-        KeywordResults results = new KeywordResults(EXPECTED_SOURCE, EXPECTED_NEWS_OUTPUT);
-        assertEquals(4, results.size());
-        assertEquals(EXPECTED_NEWS_OUTPUT, results.get());
+        KeywordResults results = new KeywordResults(EXPECTED_SOURCE, EXPECTED_VIEW, EXPECTED_LANGUAGE, EXPECTED_NEWS_OUTPUT);
+        assertEquals(4, results.getKeywordCount());
+        assertEquals(EXPECTED_NEWS_OUTPUT, results.getKeywords());
         assertEquals(EXPECTED_SOURCE, results.getSource());
+        assertEquals(EXPECTED_VIEW, results.getView());
+        assertEquals(EXPECTED_LANGUAGE, results.getLanguage());
     }
 
     @Test
@@ -42,18 +46,22 @@ public class KeywordResultsTest {
         KeywordResults results = new KeywordResults();
         byte[] serialized = KeywordResults.serialize(results);
         KeywordResults deserialized = KeywordResults.deserialize(serialized);
-        assertEquals(results.size(), deserialized.size());
-        assertEquals(results.get(), deserialized.get());
+        assertEquals(results.getKeywordCount(), deserialized.getKeywordCount());
+        assertEquals(results.getKeywords(), deserialized.getKeywords());
         assertEquals(results.getSource(), deserialized.getSource());
+        assertEquals(results.getLanguage(), deserialized.getLanguage());
     }
 
     @Test
     public void testSerializeDeserializePopulated() throws IOException {
-        KeywordResults results = new KeywordResults(EXPECTED_SOURCE, EXPECTED_NEWS_OUTPUT);
+        KeywordResults results = new KeywordResults(EXPECTED_SOURCE, EXPECTED_VIEW, EXPECTED_LANGUAGE, EXPECTED_NEWS_OUTPUT);
         byte[] serialized = KeywordResults.serialize(results);
         KeywordResults deserialized = KeywordResults.deserialize(serialized);
-        assertEquals(results.size(), deserialized.size());
-        assertEquals(results.get(), deserialized.get());
+        assertEquals(results.getKeywordCount(), deserialized.getKeywordCount());
+        assertEquals(results.getKeywords(), deserialized.getKeywords());
         assertEquals(results.getSource(), deserialized.getSource());
+        assertEquals(results.getView(), deserialized.getView());
+        assertEquals(results.getLanguage(), deserialized.getLanguage());
+
     }
 }
