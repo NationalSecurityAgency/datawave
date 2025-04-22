@@ -86,7 +86,18 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      * @return a string query
      */
     public static String buildQuery(JexlNode script, boolean sortDedupeChildren) {
-        return buildQueryWithoutParse(script, sortDedupeChildren);
+        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor(sortDedupeChildren);
+
+        String s = null;
+        try {
+            StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
+
+            s = sb.toString();
+        } catch (StackOverflowError e) {
+            throw e;
+        }
+
+        return s;
     }
 
     /**
@@ -101,7 +112,9 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     }
 
     /**
-     * Build a String that is the equivalent JEXL query.
+     * Build a String that is the equivalent JEXL query. <br/>
+     * <br/>
+     * Depreciated, use {@link #buildQuery(JexlNode, boolean)}
      *
      * @param script
      *            An ASTJexlScript
@@ -110,30 +123,23 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      *            beforehand for maximum 'dedupeage'.
      * @return a query string
      */
+    @Deprecated
     public static String buildQueryWithoutParse(JexlNode script, boolean sortDedupeChildren) {
-        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor(sortDedupeChildren);
-
-        String s = null;
-        try {
-            StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
-
-            s = sb.toString();
-        } catch (StackOverflowError e) {
-
-            throw e;
-        }
-        return s;
+        return buildQuery(script, sortDedupeChildren);
     }
 
     /**
-     * Build a String that is the equivalent JEXL query.
+     * Build a String that is the equivalent JEXL query. <br/>
+     * <br/>
+     * Depreciated, use {@link #buildQuery(JexlNode)}
      *
      * @param script
      *            An ASTJexlScript
      * @return a query string
      */
+    @Deprecated
     public static String buildQueryWithoutParse(JexlNode script) {
-        return buildQueryWithoutParse(script, false);
+        return buildQuery(script);
     }
 
     public Object visit(ASTOrNode node, Object data) {
