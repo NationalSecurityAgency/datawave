@@ -2,9 +2,9 @@ package datawave.microservice.authorization.federation.config;
 
 import java.util.concurrent.TimeUnit;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
 
 public class FederatedAuthorizationServiceProperties {
     private String federatedAuthorizationUri = "https://authorization:8443/authorization/v2";

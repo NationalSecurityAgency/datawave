@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-
-import jakarta.validation.constraints.NotNull;
 
 /**
  * Datawave-specific extensions to {@link SecurityProperties}

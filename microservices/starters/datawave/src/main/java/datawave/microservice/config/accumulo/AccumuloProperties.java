@@ -1,9 +1,9 @@
 package datawave.microservice.config.accumulo;
 
-import org.springframework.validation.annotation.Validated;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * Properties that define a connection to Accumulo. Typically, this properties object will be included as a nested property in a
