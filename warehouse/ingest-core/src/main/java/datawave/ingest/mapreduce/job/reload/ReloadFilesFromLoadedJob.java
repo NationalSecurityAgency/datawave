@@ -86,10 +86,9 @@ public class ReloadFilesFromLoadedJob {
                     FileUtil.rename(hdfs, new Path(loadedPath, hourAndFileName), new Path(outputPath));
                 } catch (Exception e) {
                     System.err.println("Failed to rename: " + loadedPath + "/" + hourAndFileName + " to " + outputPath);
-                    if(errorOnNotFound)
-                    {
-                        throw new RuntimeException( loadedPath + "/" + hourAndFileName + " not found in either " +
-                                "archive directory or raw loaded directory ", e);
+                    if (errorOnNotFound) {
+                        throw new RuntimeException(loadedPath + "/" + hourAndFileName + " not found in either " + "archive directory or raw loaded directory ",
+                                        e);
                     }
                 }
             }
