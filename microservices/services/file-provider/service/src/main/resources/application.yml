@@ -4,7 +4,7 @@ spring:
 
 server:
   outboundSsl:
-    enabled: false   # ← disable Datawave’s outbound‐SSL support
+    enabled: false
 
 file-provider:
   temp-dir: /tmp/downloads
