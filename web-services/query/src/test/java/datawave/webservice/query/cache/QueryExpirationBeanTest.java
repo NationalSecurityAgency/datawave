@@ -1,7 +1,5 @@
 package datawave.webservice.query.cache;
 
-import static org.powermock.reflect.Whitebox.setInternalState;
-
 import java.util.Date;
 import java.util.UUID;
 

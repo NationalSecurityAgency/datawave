@@ -19,7 +19,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class DiacriticContent extends Attribute<DiacriticContent> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 570010612591254801L;
 
     private static final LcNormalizer normalizer = new LcNormalizer();
 
@@ -51,12 +51,7 @@ public class DiacriticContent extends Attribute<DiacriticContent> implements Ser
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, content);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -108,12 +103,7 @@ public class DiacriticContent extends Attribute<DiacriticContent> implements Ser
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        writeMetadata(kryo, output, reducedResponse);
+        writeMetadata(kryo, output);
         output.writeString(this.content);
         output.writeBoolean(this.toKeep);
     }

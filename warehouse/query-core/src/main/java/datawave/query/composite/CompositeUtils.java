@@ -36,7 +36,7 @@ public class CompositeUtils {
                     type = (Type) typeObj;
                 } else if (typeObj instanceof String) {
                     try {
-                        type = Class.forName(typeObj.toString()).asSubclass(Type.class).newInstance();
+                        type = Class.forName(typeObj.toString()).asSubclass(Type.class).getDeclaredConstructor().newInstance();
                     } catch (Exception e) {
                         if (log.isTraceEnabled())
                             log.trace("Could not instantiate object for class [" + typeObj.toString() + "]");

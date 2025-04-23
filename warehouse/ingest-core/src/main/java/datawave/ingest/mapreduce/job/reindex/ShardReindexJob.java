@@ -155,6 +155,19 @@ public class ShardReindexJob implements Tool {
         configuration.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, !jobConfig.preserveTimestamps);
         configuration.setBoolean(ShardReindexMapper.ENABLE_REINDEX_COUNTERS, jobConfig.enableCounters);
         configuration.setBoolean(ShardReindexMapper.DUMP_COUNTERS, jobConfig.dumpCounters);
+        configuration.setBoolean(ShardReindexMapper.METADATA_ONLY, jobConfig.metadataOnly);
+        configuration.setBoolean(ShardReindexMapper.METADATA_DISABLE_FREQUENCY_COUNTS, jobConfig.disableMetadataCounts);
+
+        if (jobConfig.generateMetadataFromFi) {
+            validateMetadataFromFiOptions();
+            configuration.setBoolean(ShardReindexMapper.METADATA_GENERATE_FROM_FI, jobConfig.generateMetadataFromFi);
+            configuration.setBoolean(ShardReindexMapper.METADATA_GENERATE_EVENT_FROM_FI, jobConfig.generateMetadataEventFromFi);
+            configuration.setBoolean(ShardReindexMapper.METADATA_GENERATE_RI_FROM_FI, jobConfig.generateMetadataRiFromFi);
+            configuration.setBoolean(ShardReindexMapper.METADATA_GENEREATE_TF_FROM_FI, jobConfig.generateMetadataTfFromFi);
+            configuration.setBoolean(ShardReindexMapper.LOOKUP_EVENT_METADATA_FROM_FI, jobConfig.lookupGeneratedEventFromFi);
+            configuration.setBoolean(ShardReindexMapper.LOOKUP_RI_METADATA_FROM_FI, jobConfig.lookupGeneratedRiFromFi);
+            configuration.setBoolean(ShardReindexMapper.LOOKUP_TF_METADATA_FROM_FI, jobConfig.lookupGeneratedTfFromFi);
+        }
 
         // Verify the batch mode by converting it to the enum, this will throw an IllegalArgumentException if it cannot be converted
         ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode);
@@ -370,6 +383,31 @@ public class ShardReindexJob implements Tool {
         this.accumuloClient.close();
 
         return j;
+    }
+
+    private void validateMetadataFromFiOptions() {
+        // only applies to jobs generating metadata from fi
+        if (!jobConfig.generateMetadataFromFi
+                        && (jobConfig.generateMetadataEventFromFi || jobConfig.generateMetadataRiFromFi || jobConfig.generateMetadataTfFromFi)) {
+            throw new IllegalStateException("Cannot generate event/ri/tf entries from fi metadata if not generating metadata from fi");
+        }
+
+        if (jobConfig.lookupGeneratedEventFromFi && !jobConfig.generateMetadataEventFromFi) {
+            throw new IllegalStateException("cannot lookup generated events from the fi if events are not being created from the fi");
+        }
+
+        if (jobConfig.lookupGeneratedRiFromFi && !jobConfig.generateMetadataRiFromFi) {
+            throw new IllegalStateException("cannot lookup generated ri from the fi if ri are not being created from the fi");
+        }
+
+        if (jobConfig.lookupGeneratedTfFromFi && !jobConfig.generateMetadataTfFromFi) {
+            throw new IllegalStateException("cannot lookup generated tf from the fi if tf are not being created from the fi");
+        }
+
+        if ((jobConfig.lookupGeneratedTfFromFi || jobConfig.lookupGeneratedRiFromFi || jobConfig.lookupGeneratedEventFromFi)
+                        && (jobConfig.username == null || jobConfig.password == null || jobConfig.zookeepers == null || jobConfig.instance == null)) {
+            throw new IllegalStateException("must configure accumulo username/password/zookeepers/instance if using lookups for generated fi metadata");
+        }
     }
 
     private void validateTablesExist(String[] tableNames) throws AccumuloException {
@@ -784,6 +822,39 @@ public class ShardReindexJob implements Tool {
 
         @Parameter(names = "--skipMetadata", description = "disable writing DatawaveMetadata for job")
         private boolean skipMetadata = false;
+
+        @Parameter(names = "--metadataOnly", description = "generates DatawaveMetadata entries only, no other output is generated")
+        private boolean metadataOnly = false;
+
+        @Parameter(names = "--disableMetadataCounts", description = "prevents f entries for metadata from being created when set")
+        private boolean disableMetadataCounts = false;
+
+        @Parameter(names = "--generateMetadataFromFi", description = "use fi entries to generate DatawaveMetadata entries")
+        private boolean generateMetadataFromFi = false;
+
+        @Parameter(names = "--genereateMetadataRiFromFi",
+                        description = "use fi entries to generate ri entries in DatawaveMetadata when configured by the datatypes ingest helper")
+        private boolean generateMetadataRiFromFi = false;
+
+        @Parameter(names = "--genereateMetadataEventFromFi",
+                        description = "use fi entries to generate e entries in DatawaveMetadata when configured by the datatypes ingest helper")
+        private boolean generateMetadataEventFromFi = false;
+
+        @Parameter(names = "--generateMetadataTfFromFi",
+                        description = "use fi entries to generate tf entries in DatawaveMetadata when configured by the datatypes ingest helper")
+        private boolean generateMetadataTfFromFi = false;
+
+        @Parameter(names = "--lookupGeneratedRiFromFi",
+                        description = "when --generateMetadataRiFromFi is set, verify reverse index entries once per field/dataType with an accumulo lookup [potentially expensive]")
+        private boolean lookupGeneratedRiFromFi = false;
+
+        @Parameter(names = "--lookupGeneratedEventFromFi",
+                        description = "when --generateMetadataEventFromFi is set, verify event entries once per field/dataType with an accumulo lookup [potentially expensive]")
+        private boolean lookupGeneratedEventFromFi = false;
+
+        @Parameter(names = "--lookupGeneratedTfFromFi",
+                        description = "when --generateMetadataTfFromFi is set, verify tf entries once per field/dataType with an accumulo lookup [potentially expensive]")
+        private boolean lookupGeneratedTfFromFi = false;
 
         @Parameter(names = "--resourceGroup", description = "Applies a scan_type hint on accumulo scanners")
         private String resourceGroup;

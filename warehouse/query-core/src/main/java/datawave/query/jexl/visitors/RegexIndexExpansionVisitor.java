@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -35,7 +34,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -86,12 +84,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
         if (config.isLimitTermExpansionToModel()) {
-            try {
-                QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
-                this.onlyUseThese = queryModel.getForwardQueryMapping().values();
-            } catch (ExecutionException e) {
-                this.onlyUseThese = null;
-            }
+            QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
+            this.onlyUseThese = queryModel.getForwardQueryMapping().values();
         } else {
             this.onlyUseThese = null;
         }
