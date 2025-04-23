@@ -185,12 +185,13 @@ jobs:
         run: |
           echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
         id: extract_branch
+      - name: Checkout Code
+        uses: actions/checkout@v4
       # Clean up free space
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
@@ -253,12 +254,12 @@ jobs:
   compose-build-and-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
       # Clean up free space
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
-      - name: Checkout Code
-        uses: actions/checkout@v4
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
