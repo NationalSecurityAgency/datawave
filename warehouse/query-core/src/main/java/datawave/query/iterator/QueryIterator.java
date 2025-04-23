@@ -535,9 +535,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 // if there is no document to return then return a FinalDocument with the accumulated timing metadata
                 this.documentIterator = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, documentIterator, yieldCallback);
             }
-            if (log.isTraceEnabled()) {
-                this.documentIterator = Iterators.filter(this.documentIterator, keyValueEntry -> {
-                    log.debug("finally, considering:" + keyValueEntry);
+            // add this filter for logging if logLevel is either DEBUG or TRACE
+            if (log.isDebugEnabled()) {
+                this.documentIterator = Iterators.filter(this.documentIterator, keyDocumentEntry -> {
+                    if (log.isTraceEnabled()) {
+                        log.trace("returning key/doument " + keyDocumentEntry);
+                    } else {
+                        log.debug("returning key " + keyDocumentEntry.getKey());
+                    }
                     return true;
                 });
             }
