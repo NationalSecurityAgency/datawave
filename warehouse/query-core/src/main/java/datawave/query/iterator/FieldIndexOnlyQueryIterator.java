@@ -1,11 +1,14 @@
 package datawave.query.iterator;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -22,8 +25,6 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization.ReturnType;
@@ -133,14 +134,14 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         if (options.containsKey(INCLUDE_DATATYPE)) {
             this.includeDatatype = Boolean.parseBoolean(options.get(INCLUDE_DATATYPE));
             if (this.includeDatatype) {
-                this.datatypeKey = options.containsKey(DATATYPE_FIELDNAME) ? options.get(DATATYPE_FIELDNAME) : DEFAULT_DATATYPE_FIELDNAME;
+                this.datatypeKey = options.getOrDefault(DATATYPE_FIELDNAME, DEFAULT_DATATYPE_FIELDNAME);
             }
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = new HashSet<>(List.of(StringUtils.split(filterCsv, ',')));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
                 if (options.containsKey(FI_NEXT_SEEK)) {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
@@ -225,7 +226,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
 
     protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
 
@@ -236,7 +237,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
                 // don't even make a SatisfactionVisitor.....
             }
         }
-        Collection<String> unindexedTypes = Lists.newArrayList();
+        Collection<String> unindexedTypes = new ArrayList<>();
 
         Set<String> keys = fetchDataTypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
 
@@ -283,7 +284,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
 
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
 
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -303,11 +304,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException e) {
-            throw new IOException("Unable to create document iterator", e);
-        } catch (IllegalAccessException e) {
-            throw new IOException("Unable to create document iterator", e);
-        } catch (InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 
@@ -329,7 +326,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         if (collectTimingDetails) {
             // if there is no document to return, then add an empty document to
             // store the timing metadata using the documentRange endKey
-            if (fieldIndexDocuments.hasNext() == false) {
+            if (!fieldIndexDocuments.hasNext()) {
                 fieldIndexDocuments = Collections.singletonMap(this.range.getEndKey(), new Document()).entrySet().iterator();
             }
             fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new LogTiming(trackingSpan));

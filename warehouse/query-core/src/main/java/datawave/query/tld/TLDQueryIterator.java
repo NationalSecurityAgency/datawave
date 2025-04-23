@@ -3,6 +3,7 @@ package datawave.query.tld;
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -250,7 +251,8 @@ public class TLDQueryIterator extends QueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException, InvocationTargetException,
+                    NoSuchMethodException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(TLDIndexIteratorBuilder.class);
     }

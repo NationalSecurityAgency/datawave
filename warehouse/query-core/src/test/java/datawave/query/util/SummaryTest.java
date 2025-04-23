@@ -266,7 +266,7 @@ public abstract class SummaryTest {
 
         // not sure why the timestamp and delete flag are present
         addExpectedResult(
-                        "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false");
+                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY()");
     }
@@ -276,7 +276,7 @@ public abstract class SummaryTest {
         setShouldReturnSomething(true);
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false");
+        addExpectedResult("SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(VIEWS:CONTENT/SIZE:50/ONLY)");
     }
@@ -286,7 +286,7 @@ public abstract class SummaryTest {
         setShouldReturnSomething(true);
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false");
+        addExpectedResult("SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(SIZE:50/VIEWS:CONTENT)");
     }
@@ -296,7 +296,7 @@ public abstract class SummaryTest {
         setShouldReturnSomething(true);
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false");
+        addExpectedResult("SUMMARY:CONTENT: You can get much farther with a kind word and a gu: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(SIZE:50)");
     }
@@ -307,7 +307,7 @@ public abstract class SummaryTest {
 
         // not sure why the timestamp and delete flag are present
         addExpectedResult(
-                        "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false");
+                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(SIZE:90000)");
     }
@@ -317,7 +317,7 @@ public abstract class SummaryTest {
         setShouldReturnSomething(true);
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("CONTENT_SUMMARY:CONTENT: Y: : [] 9223372036854775807 false");
+        addExpectedResult("SUMMARY:CONTENT: Y: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(SIZE:-50)");
     }
@@ -326,7 +326,7 @@ public abstract class SummaryTest {
     public void testNoContentFound() throws Exception {
         setShouldReturnSomething(true);
 
-        addExpectedResult("CONTENT_SUMMARY:NO CONTENT FOUND TO SUMMARIZE");
+        addExpectedResult("SUMMARY:NO CONTENT FOUND TO SUMMARIZE");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(SIZE:50/ONLY/VIEWS:CANTFINDME,ORME)");
     }
@@ -344,7 +344,7 @@ public abstract class SummaryTest {
 
         // not sure why the timestamp and delete flag are present
         addExpectedResult(
-                        "CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false");
+                        "SUMMARY:CONTENT: You can get much farther with a kind word and a gun than you can with a kind word alone: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(VIEWS:TEST1,TEST2)");
     }
@@ -360,7 +360,7 @@ public abstract class SummaryTest {
     public void testOnlyWithNoOtherOptions() throws Exception {
         setShouldReturnSomething(true);
 
-        addExpectedResult("CONTENT_SUMMARY:NO CONTENT FOUND TO SUMMARIZE");
+        addExpectedResult("SUMMARY:NO CONTENT FOUND TO SUMMARIZE");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(ONLY)");
     }
@@ -370,7 +370,7 @@ public abstract class SummaryTest {
         setShouldReturnSomething(true);
 
         // not sure why the timestamp and delete flag are present
-        addExpectedResult("CONTENT_SUMMARY:CONTENT: You can get much farther with a kind word and a gu"
+        addExpectedResult("SUMMARY:CONTENT: You can get much farther with a kind word and a gu"
                         + "\nCONTENT2: A lawyer and his briefcase can steal more than ten: : [] 9223372036854775807 false");
 
         runTestQuery("QUOTE:(farther) #SUMMARY(SIZE:50/VIEWS:CONTENT*/ONLY)");

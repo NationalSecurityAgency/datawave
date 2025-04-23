@@ -1,8 +1,11 @@
 package datawave.query.iterator.facets;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +26,6 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -133,7 +135,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
+                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException, InvocationTargetException,
+                    NoSuchMethodException {
         //  @formatter:off
         return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs)
                 .setIteratorBuilder(CardinalityIteratorBuilder.class)
@@ -148,7 +151,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
     @Override
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
@@ -158,7 +161,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         // TODO consider using the new EventDataQueryExpressionFilter
         EventDataQueryFieldFilter projection = null;
 
-        Iterator<Entry<Key,Document>> documents = null;
+        Iterator<Entry<Key,Document>> documents;
 
         if (!configuration.getFacetedFields().isEmpty()) {
             projection = new EventDataQueryFieldFilter().withFields(configuration.getFacetedFields());
@@ -169,7 +172,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                             this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
         }
 
-        AccumuloTreeIterable<Key,DocumentData> doc = null;
+        AccumuloTreeIterable<Key,DocumentData> doc;
         if (null != keyToDoc) {
             doc = new AccumuloTreeIterable<>(fieldIndexResults.tree, keyToDoc);
         } else {
@@ -182,9 +185,9 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                 @Nullable
                 public Entry<DocumentData,Document> apply(@Nullable Entry<Key,Document> input) {
 
-                    Set<Key> docKeys = Sets.newHashSet();
+                    Set<Key> docKeys = new HashSet<>();
 
-                    List<Entry<Key,Value>> attrs = Lists.newArrayList();
+                    List<Entry<Key,Value>> attrs = new ArrayList<>();
 
                     return Maps.immutableEntry(new DocumentData(input.getKey(), docKeys, attrs, true), input.getValue());
                 }
@@ -226,10 +229,10 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
         this.range = range;
 
-        Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
+        Iterator<Entry<Key,Document>> fieldIndexDocuments;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException | IllegalAccessException | InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 
