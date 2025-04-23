@@ -5,6 +5,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -15,9 +16,8 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
-public class DateFrequencyMap implements Writable {
+public class DateFrequencyMap implements Map<String,Frequency>, Writable {
     
-    // TODO - Should we use the YearMonthDay class instead as the key here?
     private final TreeMap<String,Frequency> dateToFrequencies;
     
     public DateFrequencyMap() {
@@ -45,6 +45,31 @@ public class DateFrequencyMap implements Writable {
         put(date, new Frequency(frequency));
     }
     
+    @Override
+    public int size() {
+        return dateToFrequencies.size();
+    }
+    
+    @Override
+    public boolean isEmpty() {
+        return dateToFrequencies.isEmpty();
+    }
+    
+    @Override
+    public boolean containsKey(Object key) {
+        return dateToFrequencies.containsKey(key);
+    }
+    
+    @Override
+    public boolean containsValue(Object value) {
+        return dateToFrequencies.containsValue(value);
+    }
+    
+    @Override
+    public Frequency get(Object key) {
+        return dateToFrequencies.get(key);
+    }
+    
     /**
      * Associates the given frequency with the given date in this {@link DateFrequencyMap}. If the map previously contained a mapping for the given date, the
      * old frequency is replaced by the new frequency.
@@ -54,8 +79,18 @@ public class DateFrequencyMap implements Writable {
      * @param frequency
      *            the frequency
      */
-    public void put(String date, Frequency frequency) {
-        dateToFrequencies.put(date, frequency);
+    public Frequency put(String date, Frequency frequency) {
+        return dateToFrequencies.put(date, frequency);
+    }
+    
+    @Override
+    public Frequency remove(Object key) {
+        return dateToFrequencies.remove(key);
+    }
+    
+    @Override
+    public void putAll(Map<? extends String,? extends Frequency> m) {
+        dateToFrequencies.putAll(m);
     }
     
     /**
@@ -111,6 +146,16 @@ public class DateFrequencyMap implements Writable {
      */
     public void clear() {
         this.dateToFrequencies.clear();
+    }
+    
+    @Override
+    public Set<String> keySet() {
+        return dateToFrequencies.keySet();
+    }
+    
+    @Override
+    public Collection<Frequency> values() {
+        return dateToFrequencies.values();
     }
     
     /**
