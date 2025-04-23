@@ -709,8 +709,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
-        this.setLocalIvaratorCacheDirConfigs(
-                        null == other.getLocalIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getLocalIvaratorCacheDirConfigs()));
+        this.setLocalIvaratorCacheDirConfigs(null == other.getLocalIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getLocalIvaratorCacheDirConfigs()));
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
@@ -818,8 +817,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
-        this.setLocalIvaratorCacheDirConfigs(
-                        null == other.getLocalIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getLocalIvaratorCacheDirConfigs()));
+        this.setLocalIvaratorCacheDirConfigs(null == other.getLocalIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getLocalIvaratorCacheDirConfigs()));
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : new ArrayList<>(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
 

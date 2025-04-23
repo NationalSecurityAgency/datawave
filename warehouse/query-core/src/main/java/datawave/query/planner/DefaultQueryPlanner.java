@@ -33,7 +33,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -56,6 +55,7 @@ import org.apache.log4j.Logger;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
@@ -3096,7 +3096,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config) throws DatawaveQueryException {
         return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex",
-                /* sort by implied cardinality */ () -> OrderByCostVisitor.order(config.getQueryTree()));
+                        /* sort by implied cardinality */ () -> OrderByCostVisitor.order(config.getQueryTree()));
     }
 
     /**

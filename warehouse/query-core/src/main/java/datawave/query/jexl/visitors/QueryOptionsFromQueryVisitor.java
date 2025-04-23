@@ -59,10 +59,10 @@ import datawave.query.jexl.functions.QueryFunctions;
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
 
-    private static final Set<String> RESERVED = Set.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
-                    QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
-                    UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
-                    UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
+    private static final Set<String> RESERVED = Set.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION, QueryFunctions.UNIQUE_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION, UniqueFunction.UNIQUE_BY_SECOND_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + QueryFunctions.UNIQUE_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_DAY_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
@@ -364,7 +364,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         optionsMap.put(option, join(fields));
     }
 
-    private String join(List<String> list){
+    private String join(List<String> list) {
         return list.stream().filter(Objects::nonNull).collect(Collectors.joining(","));
     }
 
