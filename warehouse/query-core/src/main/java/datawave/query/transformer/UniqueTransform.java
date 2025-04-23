@@ -43,15 +43,15 @@ import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
-import datawave.query.util.sortedset.RewritableSortedSetImpl;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
 import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
 import datawave.query.util.sortedmap.FileKeyDocumentSortedMap;
 import datawave.query.util.sortedmap.FileSortedMap;
 import datawave.query.util.sortedmap.HdfsBackedSortedMap;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileSortedSet;
+import datawave.query.util.sortedset.RewritableSortedSetImpl;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
