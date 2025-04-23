@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 
 import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.predicate.Projection;
 

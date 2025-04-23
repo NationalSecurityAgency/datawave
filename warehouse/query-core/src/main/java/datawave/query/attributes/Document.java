@@ -282,7 +282,7 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
     }
 
     public void put(String key, Attribute<?> value) {
-        put(key, value, false, false);
+        put(key, value, false);
     }
 
     /**
@@ -294,10 +294,8 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
      *            a value
      * @param includeGroupingContext
      *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
      */
-    public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
+    public void replace(String key, Attribute<?> value, Boolean includeGroupingContext) {
         dict.put(key, value);
     }
 
@@ -312,10 +310,8 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
      *            the attribute value
      * @param includeGroupingContext
      *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
      */
-    public void put(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
+    public void put(String key, Attribute<?> value, Boolean includeGroupingContext) {
 
         if (0 == value.size()) {
             if (log.isTraceEnabled()) {
@@ -427,25 +423,16 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
 
     public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext) {
         // No grouping context in the document.
-        this.put(entry.getKey(), entry.getValue(), includeGroupingContext, false);
-    }
-
-    public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext, boolean reducedResponse) {
-        // No grouping context in the document.
-        this.put(entry.getKey(), entry.getValue(), includeGroupingContext, reducedResponse);
+        this.put(entry.getKey(), entry.getValue(), includeGroupingContext);
     }
 
     public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext) {
-        putAll(iterator, includeGroupingContext, false);
-    }
-
-    public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext, boolean reducedResponse) {
         if (null == iterator) {
             return;
         }
 
         while (iterator.hasNext()) {
-            put(iterator.next(), includeGroupingContext, reducedResponse);
+            put(iterator.next(), includeGroupingContext);
         }
     }
 
@@ -832,7 +819,7 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
 
             Attribute<?> attribute = entry.getValue();
             output.writeString(attribute.getClass().getName());
-            attribute.write(kryo, output, reducedResponse);
+            attribute.write(kryo, output);
         }
 
         output.writeLong(this.metadata.getShardTimestamp());
@@ -872,8 +859,8 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
             if (Attribute.class.isAssignableFrom(clz)) {
                 // Get an instance of the concrete Attribute
                 try {
-                    attr = (Attribute<?>) clz.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
+                    attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
 

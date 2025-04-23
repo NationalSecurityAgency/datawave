@@ -22,6 +22,7 @@ import com.esotericsoftware.kryo.io.Output;
  */
 public class TimingMetadata implements WritableComparable<TimingMetadata>, KryoSerializable, Comparable<TimingMetadata>, Serializable {
     private static final long serialVersionUID = -1;
+
     private static final String NEXT_COUNT = "NEXT_COUNT";
     private static final String SOURCE_COUNT = "SOURCE_COUNT";
     private static final String SEEK_COUNT = "SEEK_COUNT";

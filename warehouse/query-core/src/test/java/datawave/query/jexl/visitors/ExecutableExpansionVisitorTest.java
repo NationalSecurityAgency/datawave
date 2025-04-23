@@ -96,6 +96,12 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                         throws ParseException, Exception {
@@ -119,6 +125,12 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override

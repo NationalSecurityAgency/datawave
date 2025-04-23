@@ -38,7 +38,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-import org.springframework.beans.FatalBeanException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
@@ -102,6 +101,7 @@ import datawave.query.util.count.CountMap;
 import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
+import datawave.util.UniversalSet;
 
 /**
  * QueryOptions are set on the iterators.
@@ -150,6 +150,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -266,6 +269,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String SUMMARY_ITERATOR = "summary.iterator.class";
 
+    public static final String SUMMARY_FIELD_NAME = "summary.field.name";
+
     // field and next thresholds before a seek is issued
     public static final String FI_FIELD_SEEK = "fi.field.seek";
     public static final String FI_NEXT_SEEK = "fi.next.seek";
@@ -283,6 +288,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
+
+    public static final Object LOCK = new Object();
 
     protected Map<String,String> options;
 
@@ -318,6 +325,7 @@ public class QueryOptions implements OptionDescriber {
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
+    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -444,6 +452,8 @@ public class QueryOptions implements OptionDescriber {
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
+    protected String summaryFieldname;
+
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
     private int fiNextSeek = -1;
@@ -527,6 +537,7 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
@@ -567,6 +578,7 @@ public class QueryOptions implements OptionDescriber {
         this.excerptIterator = other.excerptIterator;
         this.summaryOptions = other.summaryOptions;
         this.summaryIterator = other.summaryIterator;
+        this.summaryFieldname = other.summaryFieldname;
 
         this.fiFieldSeek = other.fiFieldSeek;
         this.fiNextSeek = other.fiNextSeek;
@@ -751,8 +763,8 @@ public class QueryOptions implements OptionDescriber {
                         throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e);
                     } catch (NoSuchMethodException e) {
                         try {
-                            list.add(clazz.newInstance());
-                        } catch (InstantiationException | IllegalAccessException e2) {
+                            list.add(clazz.getDeclaredConstructor().newInstance());
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e2) {
                             log.error("Unable to construct " + classname + " as a DocumentPermutation", e2);
                             throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e2);
                         }
@@ -816,6 +828,11 @@ public class QueryOptions implements OptionDescriber {
             // allows standard event queries to perform a seeking aggregation with field filtering
             evaluationFilter = getEventFilter();
         }
+
+        if (evaluationFilter != null) {
+            eventEvaluationFilter = evaluationFilter.clone();
+        }
+
         return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
     }
 
@@ -1068,6 +1085,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
@@ -1213,7 +1238,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public Set<String> getHitsOnlySet() {
@@ -1294,6 +1319,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setSummaryIterator(Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator) {
         this.summaryIterator = summaryIterator;
+    }
+
+    public String getSummaryFieldName() {
+        return summaryFieldname;
+    }
+
+    public void setSummaryFieldName(String summaryFieldname) {
+        this.summaryFieldname = summaryFieldname;
     }
 
     @Override
@@ -1391,6 +1424,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(SUMMARY_OPTIONS, "The size of the summary to return with possible options (ONLY) and list of contentNames");
         options.put(SUMMARY_ITERATOR, "summary iterator class (default datawave.query.iterator.logic.ContentSummaryIterator");
+        options.put(SUMMARY_FIELD_NAME, "The name of the field we want to write a requested summary to");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
         options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
@@ -1728,6 +1762,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
+            if (options.containsKey(MOST_RECENT_UNIQUE)) {
+                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
+                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
+                }
+            }
         }
 
         if (options.containsKey(HIT_LIST)) {
@@ -1919,6 +1959,10 @@ public class QueryOptions implements OptionDescriber {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(SUMMARY_ITERATOR), e);
             }
+        }
+
+        if (options.containsKey(SUMMARY_FIELD_NAME)) {
+            setSummaryFieldName(options.get(SUMMARY_FIELD_NAME));
         }
 
         return true;
@@ -2289,7 +2333,7 @@ public class QueryOptions implements OptionDescriber {
     public QueryStatsDClient getStatsdClient() {
         if (statsdHostAndPort != null && queryId != null) {
             if (statsdClient == null) {
-                synchronized (queryId) {
+                synchronized (LOCK) {
                     if (statsdClient == null) {
                         setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort),
                                         getStatsdMaxQueueSize()));

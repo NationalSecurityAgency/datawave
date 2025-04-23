@@ -259,7 +259,7 @@ public class FieldAgeOffFilter extends AppliedRule {
 
         for (String optionKey : options.options.keySet()) {
             if (optionKey.startsWith(OPTION_PREFIX)) {
-                String anotherField = optionKey.substring(OPTION_PREFIX.length(), optionKey.indexOf(".", OPTION_PREFIX.length() + 1));
+                String anotherField = optionKey.substring(OPTION_PREFIX.length(), optionKey.indexOf('.', OPTION_PREFIX.length() + 1));
                 fields.add(new ArrayByteSequence(anotherField.trim().getBytes()));
             }
         }

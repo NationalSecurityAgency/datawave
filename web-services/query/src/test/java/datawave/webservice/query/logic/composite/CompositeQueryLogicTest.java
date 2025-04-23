@@ -20,6 +20,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.VisibilityEvaluator;
 import org.apache.accumulo.core.security.VisibilityParseException;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,6 +58,7 @@ import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.QueryValidationResponse;
 
 public class CompositeQueryLogicTest {
 
@@ -88,13 +90,15 @@ public class CompositeQueryLogicTest {
     private Value valueFailure = new Value(keyFailure.getRowData().getBackingArray());
     private Value valueSpecial = new Value(keySpecial.getRowData().getBackingArray());
 
+    private static final String VALIDATION_MESSAGE = "Light is green, the trap is clean";
+
     public static class TestQueryConfiguration extends GenericQueryConfiguration {
 
     }
 
     public static class TestQueryResponse extends BaseQueryResponse {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -8977255842676463890L;
 
         private String key;
         private String value;
@@ -118,6 +122,7 @@ public class CompositeQueryLogicTest {
     }
 
     public static class TestEdgeQueryResponse extends EdgeQueryResponseBase {
+        private static final long serialVersionUID = 5788757064512932158L;
         private ArrayList<EdgeBase> edges = new ArrayList<>();
         private long totalResults = 0;
 
@@ -159,7 +164,7 @@ public class CompositeQueryLogicTest {
 
     public static class TestQueryResponseList extends BaseQueryResponse {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 5163411310145179709L;
 
         private List<TestQueryResponse> responses = new ArrayList<>();
 
@@ -454,6 +459,33 @@ public class CompositeQueryLogicTest {
             return Collections.emptySet();
         }
 
+        @Override
+        public Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+            // return something valid
+            return VALIDATION_MESSAGE;
+        }
+
+        @Override
+        public Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+            return new TestQueryValidationResultTransformer();
+        }
+
+    }
+
+    public static class TestQueryValidationResultTransformer implements Transformer<Object,QueryValidationResponse> {
+
+        @Override
+        public QueryValidationResponse transform(Object input) {
+            String validation = String.valueOf(input);
+            QueryValidationResponse.Result result = new QueryValidationResponse.Result();
+            result.setMessages(Collections.singletonList(validation));
+
+            QueryValidationResponse response = new QueryValidationResponse();
+            response.setHasResults(true);
+            response.setResults(Collections.singletonList(result));
+
+            return response;
+        }
     }
 
     public static class TestFilteredQueryLogic extends FilteredQueryLogic {
@@ -1767,4 +1799,50 @@ public class CompositeQueryLogicTest {
         c.close();
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testValidationFails() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic2 logic2 = new TestQueryLogic2();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+        c.setCurrentUser(principal);
+
+        c.validateQuery(null, settings, Collections.singleton(auths));
+    }
+
+    @Test
+    public void testValidationHappyPath() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic();
+        DifferentTestQueryLogic logic2 = new DifferentTestQueryLogic();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+        c.setCurrentUser(principal);
+
+        Object validation = c.validateQuery(null, settings, Collections.singleton(auths));
+        Transformer<Object,QueryValidationResponse> transformer = c.getQueryValidationResponseTransformer();
+        QueryValidationResponse response = transformer.transform(validation);
+        Assert.assertEquals(VALIDATION_MESSAGE, response.getResults().get(0).getMessages().get(0));
+    }
 }

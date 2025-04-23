@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 
 import datawave.query.attributes.Document;
-import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.iterator.profile.QuerySpan;
 
@@ -22,6 +21,8 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
     protected QuerySpan spanRunner;
     private static String host = null;
     private static Logger log = Logger.getLogger(QuerySpan.class);
+
+    private static final Object LOCK = new Object();
 
     static {
         try {
@@ -46,7 +47,7 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
 
         if (document != null && querySpan != null) {
             TimingMetadata timingMetadata = new TimingMetadata();
-            synchronized (querySpan) {
+            synchronized (LOCK) {
                 timingMetadata.setHost(host);
                 timingMetadata.setSourceCount(querySpan.getSourceCount());
                 timingMetadata.setSeekCount(querySpan.getSeekCount());

@@ -178,9 +178,7 @@ public class QueryLogicTestHarness {
         // AttributeFactory class
         int count = 0;
         for (Attribute<? extends Comparable<?>> attribute : document.getAttributes()) {
-            if (attribute instanceof TimingMetadata) {
-                // ignore
-            } else if (attribute instanceof Attributes) {
+            if (attribute instanceof Attributes) {
                 Attributes attrs = (Attributes) attribute;
                 Collection<Class<?>> types = new HashSet<>();
                 for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {

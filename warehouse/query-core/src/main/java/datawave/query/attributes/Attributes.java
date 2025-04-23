@@ -26,7 +26,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 
 public class Attributes extends Attribute<Attributes> implements Serializable, AttributeBagMetadata.AttributesGetter {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4677957768640489928L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private final Set<Attribute<? extends Comparable<?>>> attributes = new LinkedHashSet();
     private int _count = 0;
@@ -120,11 +120,6 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
         // Write out the number of Attributes we're going to store
@@ -135,7 +130,7 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
             WritableUtils.writeString(out, attr.getClass().getName());
 
             // Defer to the concrete instance to write() itself
-            attr.write(out, reducedResponse);
+            attr.write(out);
         }
     }
 
@@ -293,11 +288,6 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(this.trackSizes);
         // Write out the number of Attributes we're going to store
@@ -308,7 +298,7 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
             output.writeString(attr.getClass().getName());
 
             // Defer to the concrete instance to write() itself
-            attr.write(kryo, output, reducedResponse);
+            attr.write(kryo, output);
         }
     }
 
@@ -338,8 +328,8 @@ public class Attributes extends Attribute<Attributes> implements Serializable, A
             // Get the Class for the name of the class of the concrete Attribute
             Attribute<?> attr;
             try {
-                attr = (Attribute<?>) clz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
 

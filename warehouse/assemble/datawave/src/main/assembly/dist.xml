@@ -109,6 +109,7 @@
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
+                <include>${groupId}:datawave-keyword-common</include>
                 <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                 <include>gov.nsa.datawave.core:datawave-core-common</include>
                 <include>gov.nsa.datawave.core:datawave-core-common-util</include>
@@ -125,6 +126,7 @@
                 <include>io.dropwizard.metrics:metrics-core</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
+                <include>com.ibm.icu:icu4j</include>
                 <include>org.apache.lucene:lucene-core</include>
                 <include>com.clearspring.analytics:stream</include>
                 <include>com.timgroup:java-statsd-client</include>

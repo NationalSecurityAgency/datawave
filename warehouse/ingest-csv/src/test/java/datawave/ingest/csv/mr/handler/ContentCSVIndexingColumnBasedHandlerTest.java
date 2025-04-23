@@ -41,9 +41,9 @@ import datawave.util.TableName;
 public class ContentCSVIndexingColumnBasedHandlerTest {
 
     private Configuration conf;
-    private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
+    private static final Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
     private static Logger log = Logger.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
-    private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static final Enumeration<?> rootAppenders = Logger.getRootLogger().getAllAppenders();
 
     @BeforeClass
     public static void setupSystemSettings() throws Exception {

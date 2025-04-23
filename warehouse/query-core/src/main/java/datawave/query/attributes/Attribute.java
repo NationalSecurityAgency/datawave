@@ -5,10 +5,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
@@ -19,7 +18,6 @@ import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
@@ -84,7 +82,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         metadata.setMetadata(null);
     }
 
-    protected void writeMetadata(DataOutput out, Boolean reducedResponse) throws IOException {
+    protected void writeMetadata(DataOutput out) throws IOException {
         out.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
             byte[] cvBytes = getColumnVisibility().getExpression();
@@ -96,7 +94,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    protected void writeMetadata(Kryo kryo, Output output, Boolean reducedResponse) {
+    protected void writeMetadata(Kryo kryo, Output output) {
         output.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
             byte[] cvBytes = getColumnVisibility().getExpression();
@@ -152,6 +150,20 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         return fromIndex;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Attribute)) {
+            return false;
+        }
+        Attribute other = (Attribute) o;
+        EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
+        if (this.isMetadataSet()) {
+            equals.append(this.getMetadata(), other.getMetadata());
+        }
+        return equals.isEquals();
+    }
+
+    @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(145, 11);
         hcb.append(this.isMetadataSet());
@@ -238,9 +250,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    public abstract void write(DataOutput output, boolean reducedResponse) throws IOException;
+    public abstract void write(DataOutput output) throws IOException;
 
-    public abstract void write(Kryo kryo, Output output, Boolean reducedResponse);
+    public abstract void write(Kryo kryo, Output output);
 
     public abstract Object getData();
 

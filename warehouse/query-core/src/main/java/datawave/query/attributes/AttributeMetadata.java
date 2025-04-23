@@ -9,7 +9,6 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.Constants;

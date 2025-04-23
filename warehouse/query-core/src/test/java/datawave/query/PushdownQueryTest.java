@@ -14,8 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -121,7 +120,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         log.info("------  testErrorIndexOnly  ------");
         String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name() + LT_OP
                         + "104)";
-        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
+        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
         runTest(query, query);
     }
 
@@ -135,7 +134,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
                             + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
                             + CityField.STATE.name() + RE_OP + state + ")";
-            ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
+            ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
             runTest(query, expectQuery);
         }
     }
@@ -150,7 +149,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
                             + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
                             + CityField.STATE.name() + RE_OP + state + ")";
-            ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(true);
+            ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(true);
             runTest(query, expectQuery);
         }
     }
