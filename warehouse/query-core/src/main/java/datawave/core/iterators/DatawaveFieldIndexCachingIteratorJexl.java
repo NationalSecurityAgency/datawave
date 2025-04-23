@@ -824,7 +824,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
                     if (this.setControl.isCancelledQuery()) {
                         log.debug("Ivarator query was cancelled");
-                        throw new IterationInterruptedException("Ivarator query was cancelled");
+                        throw new RuntimeException("Ivarator query was cancelled");
                     }
 
                     // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
@@ -843,7 +843,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         throw new IvaratorException("Ivarator query timed out");
                     } else {
                         log.debug("Ivarator query was cancelled");
-                        throw new IterationInterruptedException("Ivarator query was cancelled");
+                        throw new RuntimeException("Ivarator query was cancelled");
                     }
                 }
 
