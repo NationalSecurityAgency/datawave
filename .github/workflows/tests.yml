@@ -84,6 +84,10 @@ jobs:
         java-version: ${{env.JAVA_VERSION}}
         maven-version: 3.9.5
         cache: 'maven'
+    # Clean up free space
+    - uses: ./.github/actions/free-space
+      with:
+        tool-cache: false
     - name: Build and Run Unit Tests
       env:
         USER_NAME: ${{ secrets.USER_NAME }}
@@ -158,6 +162,10 @@ jobs:
         fi
         sudo systemctl restart docker
         echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
+    # Clean up free space
+    - uses: ./.github/actions/free-space
+      with:
+        tool-cache: false
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
@@ -196,6 +204,10 @@ jobs:
           java-version: ${{env.JAVA_VERSION}}
           maven-version: 3.9.5
           cache: 'maven'
+      # Clean up free space
+      - uses: ./.github/actions/free-space
+        with:
+          tool-cache: false
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
         env:
