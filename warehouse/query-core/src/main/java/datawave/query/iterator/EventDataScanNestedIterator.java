@@ -18,9 +18,9 @@ import com.google.common.base.Predicate;
 import datawave.query.attributes.Document;
 
 /**
- *
+ * This iterator supports a full table scan over the event column
  */
-public class EventDataScanNestedIterator implements NestedIterator<Key>, SeekableIterator {
+public class EventDataScanNestedIterator implements NestedIterator<Key> {
     private static final Logger log = Logger.getLogger(EventDataScanNestedIterator.class);
     protected SortedKeyValueIterator<Key,Value> source;
     protected Key topKey = null;

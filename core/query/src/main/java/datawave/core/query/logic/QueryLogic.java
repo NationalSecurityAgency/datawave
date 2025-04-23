@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.audit.SelectorExtractor;
@@ -24,6 +25,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseResponse;
+import datawave.webservice.result.QueryValidationResponse;
 
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
 
@@ -110,7 +112,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     default String getResponseClass(Query query) throws QueryException {
         try {
-            QueryLogicTransformer t = this.getEnrichedTransformer(query);
+            QueryLogicTransformer<?,?> t = this.getEnrichedTransformer(query);
             BaseResponse refResponse = t.createResponse(new ResultsPage());
             return refResponse.getClass().getCanonicalName();
         } catch (RuntimeException e) {
@@ -463,6 +465,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Set a client configuration for scanner hints and consistency.
      *
      * @param config
+     *            accumuloConfiguration
      */
     void setClientConfig(AccumuloClientConfiguration config);
 
@@ -480,5 +483,29 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     ProxiedUserDetails getServerUser();
 
     void setServerUser(ProxiedUserDetails serverUser);
+
+    /**
+     * Validates the given query according to the validation criteria established for the query logic.
+     *
+     * @param client
+     *            the Accumulo connector to use for this query
+     * @param query
+     *            the query settings (query, begin date, end date, etc.)
+     * @param auths
+     *            the authorizations that have been calculated for this query based on the caller and server.
+     * @return a list of messages detailing any issues found for the query
+     */
+    default Object validateQuery(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        throw new UnsupportedOperationException("Query validation not implemented");
+    }
+
+    /**
+     * Return a transformer that will convert the result of {@link QueryLogic#validateQuery(AccumuloClient, Query, Set)} to a {@link QueryValidationResponse}.
+     *
+     * @return the transformer
+     */
+    default Transformer<Object,QueryValidationResponse> getQueryValidationResponseTransformer() {
+        throw new UnsupportedOperationException("Query validation response transformer not implemented");
+    }
 
 }

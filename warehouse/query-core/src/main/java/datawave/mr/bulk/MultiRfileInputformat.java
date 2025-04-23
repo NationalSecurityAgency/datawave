@@ -66,6 +66,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
 
     protected static final Map<String,String> dfsUriMap = new ConcurrentHashMap<>();
+    protected static final Map<String,String> dfsDirMap = new ConcurrentHashMap<>();
 
     @Override
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -93,7 +94,10 @@ public class MultiRfileInputformat extends RFileInputFormat {
         List<InputSplit> inputSplits = Lists.newArrayList();
         try {
             inputSplits = computeSplitPoints(job, tableName, ranges);
-        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException | InterruptedException e) {
+        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            throw new IOException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IOException(e);
         }
 
@@ -147,11 +151,12 @@ public class MultiRfileInputformat extends RFileInputFormat {
         /**
          * Attempt the following 1) try to get the default namespace from accumulo 2) Use the custom config option 3) use default name in the hdfs configuration
          */
-        if (dfsUriMap.get(tableId) == null) {
+        if (dfsUriMap.get(tableId) == null || dfsDirMap.get(tableId) == null) {
 
             synchronized (MultiRfileInputformat.class) {
                 final InstanceOperations instOps = client.instanceOperations();
-                dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_VOLUMES.getKey()));
+                dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_URI.getKey()));
+                dfsDirMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_DIR.getKey()));
             }
         }
 
@@ -165,7 +170,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
             }
         }
 
-        basePath = dfsUriMap.get(tableId);
+        basePath = dfsDirMap.get(tableId);
 
         if (StringUtils.isEmpty(basePath)) {
             basePath = ACCUMULO_BASE_PATH;

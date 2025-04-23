@@ -29,7 +29,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
-import org.geotools.data.Join;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -61,6 +60,7 @@ import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
+import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
@@ -310,6 +310,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     pruneIvaratorConfigs(script, newIteratorSetting);
 
+                    pruneUniqueOptions(newIteratorSetting, input.getRanges());
+
                     pruneEmptyOptions(newIteratorSetting);
 
                     if (config.getReduceQueryFieldsPerShard()) {
@@ -379,6 +381,29 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     }
 
     /**
+     * In the case of a document range there is no reason to spin up a {@link UniqueTransform}
+     *
+     * @param newIteratorSetting
+     *            the IteratorSettings
+     * @param ranges
+     *            the collection of ranges to search
+     */
+    protected void pruneUniqueOptions(IteratorSetting newIteratorSetting, Collection<Range> ranges) {
+        if (ranges.size() > 1) {
+            // Do not attempt if more than one range was provided
+            return;
+        }
+
+        Range range = ranges.iterator().next();
+        if (range.getStartKey().getColumnFamily().getLength() > 0 && range.isStartKeyInclusive()) {
+            // we have a document range
+            newIteratorSetting.removeOption(QueryOptions.UNIQUE_FIELDS);
+            newIteratorSetting.removeOption(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE);
+            newIteratorSetting.removeOption(QueryOptions.MOST_RECENT_UNIQUE);
+        }
+    }
+
+    /**
      * Prune empty options from the iterator settings
      *
      * @param settings
@@ -415,7 +440,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            an {@link IteratorSetting}
      */
     protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
-        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+        if (script != null && !settings.getOptions().containsKey(QueryOptions.MOST_RECENT_UNIQUE) && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
             settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
             settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
             settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
@@ -457,13 +482,52 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      * @param newIteratorSetting
      *            the iterator settings
      */
-    private void reduceTypeMetadata(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+    protected void reduceTypeMetadata(ASTJexlScript script, IteratorSetting newIteratorSetting) {
 
         String serializedTypeMetadata = newIteratorSetting.removeOption(QueryOptions.TYPE_METADATA);
         TypeMetadata typeMetadata = new TypeMetadata(serializedTypeMetadata);
 
-        Set<String> fieldsToRetain = ReduceFields.getQueryFields(script);
-        typeMetadata = typeMetadata.reduce(fieldsToRetain);
+        Map<String,String> options = newIteratorSetting.getOptions();
+
+        Set<String> fieldsToRetain = new HashSet<>();
+        if (options.containsKey(QueryOptions.PROJECTION_FIELDS)) {
+            // sum query fields, projection fields, and composite fields
+            fieldsToRetain.addAll(ReduceFields.getQueryFields(script));
+
+            if (options.containsKey(QueryOptions.PROJECTION_FIELDS)) {
+                String option = options.get(QueryOptions.PROJECTION_FIELDS);
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+                    fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
+                }
+            }
+
+            if (options.containsKey(QueryOptions.COMPOSITE_FIELDS)) {
+                String option = options.get(QueryOptions.COMPOSITE_FIELDS);
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+                    fieldsToRetain.addAll(Splitter.on(',').splitToList(option));
+                }
+            }
+
+        } else if (options.containsKey(QueryOptions.DISALLOWLISTED_FIELDS)) {
+            // sum all fields and remove exclude fields
+            fieldsToRetain.addAll(typeMetadata.keySet());
+
+            String option = options.get(QueryOptions.DISALLOWLISTED_FIELDS);
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(option)) {
+                Splitter.on(',').splitToList(option).forEach(fieldsToRetain::remove);
+            }
+        } else {
+            log.trace("Could not reduce type metadata per shard");
+        }
+
+        // we could get really clever and check to see if the query is satisfiable from the field index only,
+        // in which case all event-only fields could be removed. But sometimes being too clever is bad.
+        // Such a check could be run in the default query planner, but I'm not sure if natural query pruning via
+        // the range stream would falsify the field index satisfiability of a query.
+
+        if (!fieldsToRetain.isEmpty()) {
+            typeMetadata = typeMetadata.reduce(fieldsToRetain);
+        }
 
         serializedTypeMetadata = typeMetadata.toString();
 

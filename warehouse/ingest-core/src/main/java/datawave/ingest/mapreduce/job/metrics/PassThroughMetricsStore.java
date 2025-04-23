@@ -47,6 +47,9 @@ public class PassThroughMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
             Value v = (count == 1L && ONE != null) ? ONE : new Value(String.valueOf(count).getBytes(ENCODING));
             Key k = KeyConverter.fromString(key);
             contextWriter.write(new BulkIngestKey(table, k), v, context);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.error("Could not write metrics to the context writer, dropping them...", e);
         } catch (Exception e) {
             logger.error("Could not write metrics to the context writer, dropping them...", e);
         }

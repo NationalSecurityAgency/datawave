@@ -1,6 +1,5 @@
 package datawave.query.jexl.functions;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -88,29 +87,31 @@ class ContentFunctionsDescriptorTest {
     @Test
     @SuppressWarnings("unchecked")
     void testFieldsAndTerms() {
-        assertFieldsAndTerms(getDescriptor(unfieldedPhrase), new Set[] {Set.of(), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(fieldedPhrase), new Set[] {Set.of("FIELD"), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(multiFieldedPhrase), new Set[] {Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar")});
+        assertFieldsAndTerms(getDescriptor(unfieldedPhrase), Set.of(), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(fieldedPhrase), Set.of("FIELD"), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(multiFieldedPhrase), Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar"));
 
-        assertFieldsAndTerms(getDescriptor(unfieldedScoredPhrase), new Set[] {Set.of(), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(fieldedScoredPhrase), new Set[] {Set.of("FIELD"), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(multiFieldedScoredPhrase), new Set[] {Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar")});
+        assertFieldsAndTerms(getDescriptor(unfieldedScoredPhrase), Set.of(), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(fieldedScoredPhrase), Set.of("FIELD"), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(multiFieldedScoredPhrase), Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar"));
 
-        assertFieldsAndTerms(getDescriptor(unfieldedAdjacent), new Set[] {Set.of(), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(fieldedAdjacent), new Set[] {Set.of("FIELD"), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(multiFieldedAdjacent), new Set[] {Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar")});
+        assertFieldsAndTerms(getDescriptor(unfieldedAdjacent), Set.of(), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(fieldedAdjacent), Set.of("FIELD"), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(multiFieldedAdjacent), Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar"));
 
-        assertFieldsAndTerms(getDescriptor(unfieldedWithin), new Set[] {Set.of(), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(fieldedWithin), new Set[] {Set.of("FIELD"), Set.of("foo", "bar")});
-        assertFieldsAndTerms(getDescriptor(multiFieldedWithin), new Set[] {Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar")});
+        assertFieldsAndTerms(getDescriptor(unfieldedWithin), Set.of(), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(fieldedWithin), Set.of("FIELD"), Set.of("foo", "bar"));
+        assertFieldsAndTerms(getDescriptor(multiFieldedWithin), Set.of("FIELD_A", "FIELD_B"), Set.of("foo", "bar"));
     }
 
-    private void assertFieldsAndTerms(ContentJexlArgumentDescriptor jexlDescriptor, Set<String>[] expected) {
-        Set<String>[] fieldsAndTerms = jexlDescriptor.fieldsAndTerms(Set.of(), Set.of(), Set.of(), new MutableBoolean(true));
-        assertArrayEquals(expected, fieldsAndTerms);
+    private void assertFieldsAndTerms(ContentJexlArgumentDescriptor jexlDescriptor, Set<String> fields, Set<String> terms) {
+        ContentFunctionsDescriptor.FieldTerms fieldsAndTerms = jexlDescriptor.fieldsAndTerms(Set.of(), Set.of(), Set.of(), new MutableBoolean(true));
+        assertEquals(fields, fieldsAndTerms.getFields());
+        assertEquals(terms, fieldsAndTerms.getTerms());
 
         fieldsAndTerms = jexlDescriptor.fieldsAndTerms(Set.of(), Set.of(), Set.of(), new MutableBoolean(true), false);
-        assertArrayEquals(expected, fieldsAndTerms);
+        assertEquals(fields, fieldsAndTerms.getFields());
+        assertEquals(terms, fieldsAndTerms.getTerms());
     }
 
     @Test

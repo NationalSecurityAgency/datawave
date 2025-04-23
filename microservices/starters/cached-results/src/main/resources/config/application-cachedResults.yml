@@ -1,0 +1,64 @@
+datawave:
+  query:
+    cachedResults:
+      numFields: 900
+      statementTemplates:
+        createTableTemplate: |
+          CREATE TABLE IF NOT EXISTS template (
+          _user_ VARCHAR(200) NOT NULL,
+          _queryId_ VARCHAR(200) NOT NULL,
+          _logicName_ VARCHAR(200) NOT NULL,
+          _datatype_ VARCHAR(35) NOT NULL,
+          _eventId_ VARCHAR(50) NOT NULL,
+          _row_ LONGTEXT NOT NULL,
+          _colf_ LONGTEXT NOT NULL,
+          _markings_ VARCHAR(400) NOT NULL,
+          _column_markings_ LONGTEXT NOT NULL,
+          _column_timestamps_ LONGTEXT NOT NULL,
+          %FIELD_DEFINITIONS%
+          ) ENGINE = MyISAM
+        createTable: "CREATE TABLE %TABLE% LIKE template"
+        dropTable: "DROP TABLE %TABLE%"
+        dropView: "DROP VIEW %TABLE%"
+        insert: |
+          INSERT INTO %TABLE% (
+          _user_, 
+          _queryId_, 
+          _logicName_, 
+          _datatype_, 
+          _eventId_, 
+          _row_, 
+          _colf_, 
+          _markings_, 
+          _column_markings_, 
+          _column_timestamps_,
+          %PREPARED_FIELDS%
+          ) VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          %PREPARED_VALUES%
+          )
+        createView: "CREATE VIEW %VIEW%(%VIEW_COLS%) AS SELECT %TABLE_COLS% FROM %TABLE%"
+        listTablesAndViews: |
+          SELECT TABLE_NAME 
+          FROM INFORMATION_SCHEMA.TABLES 
+          WHERE TABLE_NAME != 'cachedResultsQuery' AND 
+          TABLE_NAME != 'template' AND 
+          TABLE_SCHEMA = '%DATABASE_NAME%' AND 
+          (TABLE_NAME LIKE 't%' OR TABLE_NAME LIKE 'v%')
+        listExpiredTablesAndViews: |
+          SELECT TABLE_NAME 
+          FROM INFORMATION_SCHEMA.TABLES 
+          WHERE TABLE_NAME != 'cachedResultsQuery' AND 
+          TABLE_NAME != 'template' AND 
+          TABLE_SCHEMA = '%DATABASE_NAME%' AND
+          (TABLE_NAME LIKE 't%' OR TABLE_NAME LIKE 'v%') AND 
+          CREATE_TIME < DATE_SUB(SYSDATE(), INTERVAL %DAYS_TO_LIVE% DAY)

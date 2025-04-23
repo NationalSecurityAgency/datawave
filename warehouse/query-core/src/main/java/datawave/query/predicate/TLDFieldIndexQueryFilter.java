@@ -11,7 +11,6 @@ import org.apache.accumulo.core.data.Range;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.key.util.FiKeyUtil;
-import datawave.query.attributes.Document;
 
 /**
  * An {@link EventDataQueryFilter} that applies TLD logic to Field Index keys
@@ -46,24 +45,24 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     /**
      * Always returns true.
      *
-     * @param var1
+     * @param entry
      *            an entry of type Key-Value
      * @return true, always
      */
     @Override
-    public boolean apply(@Nullable Map.Entry<Key,String> var1) {
+    public boolean apply(@Nullable Map.Entry<Key,String> entry) {
         return true;
     }
 
     /**
      * Always returns true
      *
-     * @param var1
+     * @param entry
      *            an entry of type Key-Value
      * @return true, always
      */
     @Override
-    public boolean peek(@Nullable Map.Entry<Key,String> var1) {
+    public boolean peek(@Nullable Map.Entry<Key,String> entry) {
         return true;
     }
 

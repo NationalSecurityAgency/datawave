@@ -3,7 +3,7 @@ package datawave.webservice.query.runner;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
@@ -219,8 +219,8 @@ public class QueryExecutorBeanTest {
     public void testTriple_Nulls() throws Exception {
         Triple subject = new Triple(null, null, null);
         subject.hashCode();
-        assertTrue("Should not be equal", !subject.equals(null));
-        assertTrue("Should not be equal", !subject.equals(new Triple("test", null, null)));
+        assertNotEquals("Should not be equal", subject, null);
+        assertNotEquals("Should not be equal", subject, new Triple("test", null, null));
     }
 
     private QueryImpl createNewQuery() throws Exception {
@@ -289,7 +289,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
@@ -379,7 +379,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(EasyMock.<Query> anyObject())).andReturn(AuditType.ACTIVE).anyTimes();
@@ -437,7 +437,7 @@ public class QueryExecutorBeanTest {
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
 
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
 
@@ -446,7 +446,7 @@ public class QueryExecutorBeanTest {
         metric.setQueryType(RunningQuery.class.getSimpleName());
 
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
-            public static final long serialVersionUID = 1L;
+            public static final long serialVersionUID = 7210890100446871775L;
 
             @Override
             public boolean equals(Object o) {

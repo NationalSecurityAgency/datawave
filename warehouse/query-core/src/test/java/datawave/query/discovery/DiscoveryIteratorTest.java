@@ -19,7 +19,6 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -27,11 +26,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
@@ -39,12 +36,9 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.iterator.SourceManagerTest;
 
 public class DiscoveryIteratorTest {
-    static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
 
     @Test
     public void testHappyPath() throws Throwable {

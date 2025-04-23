@@ -1,11 +1,13 @@
-#! /bin/bash
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+#!/bin/bash
+
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-	THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 #stop scripts do not require force despite lock files
 . ../ingest/ingest-env.sh -force
@@ -23,14 +25,14 @@ SIGNAL=""
 for arg in $@; do
   if [[ "$arg" == "-force" ]]; then
     SIGNAL="-9"
-  elif [[ "$arg" =~ "-[0-9]+" ]]; then
+  elif [[ "$arg" =~ -[0-9]+ ]]; then
     SIGNAL="$arg"
-  elif [[ "$arg" =~ "-SIG[[:graph:]]+" ]]; then
+  elif [[ "$arg" =~ -SIG[[:graph:]]+ ]]; then
     SIGNAL="$arg"
   fi
 done
 
-PIDS=`$MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`
+PIDS=$($MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 COUNT=0
 for PID in $PIDS; do
         COUNT=$((COUNT + 1))
@@ -44,7 +46,7 @@ else
 	for PID in $PIDS; do
 		if [[ "$SIGNAL" == "" ]]; then
 			WAIT=1
-			PORT=`ps -wwfp $PID | grep bulkIngestMapFileLoader | sed 's/.*-DshutdownPort=\([[:graph:]]*\).*/\1/'`
+			PORT=$(ps -wwfp $PID | grep bulkIngestMapFileLoader | sed 's/.*-DshutdownPort=\([[:graph:]]*\).*/\1/')
 			echo "Sending stop command to map file loader $PID using shutdown port $PORT"
 			echo "quit" | curl "telnet://localhost:$PORT"
 		else
@@ -53,15 +55,15 @@ else
 	done
 	
 	# Wait in a loop until the BulkIngestMapFileLoader processes have completed (or the user interrupts)
-	if (($WAIT)); then
+	if ((WAIT)); then
 		trap "echo -ne '\nWARNING: Aborted waiting for map file loaders.'; break" INT
 		echo -n "Waiting for map file loaders to exit (Press CTRL-C to skip waiting)."
 		sleep 1
-		PIDS=`$MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`
+		PIDS=$($MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 		until [ -z "$PIDS" ]; do
 			echo -n "."
 			sleep 15
-			PIDS=`$MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`
+			PIDS=$($MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 		done
 		echo -e "\nAll map file loaders have exited."
 		trap - INT

@@ -65,6 +65,9 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
         try {
             setContextWriter(contextWriterClass.newInstance());
             contextWriter.setup(conf, conf.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         }
@@ -182,15 +185,6 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
                     }
                     ctx.getCounter(IngestOutput.TIMESTAMP_DUPLICATE).increment(duplicates);
                 } else {
-                    /**
-                     * Aggregator values if ts < 0, it is a by product of the ts deduper (combiner)
-                     *
-                     */
-                    ts = outKey.getKey().getTimestamp();
-
-                    if (usingCombiner && (ts < 0)) {
-                        outKey.getKey().setTimestamp(-1 * ts * MILLISPERDAY);
-                    }
 
                     Iterator<Value> valueItr = values.iterator();
 

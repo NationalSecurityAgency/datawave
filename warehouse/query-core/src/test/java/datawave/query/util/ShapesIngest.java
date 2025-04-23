@@ -15,7 +15,9 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.LongCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -133,6 +135,18 @@ public class ShapesIngest {
         tops.create(SHARD_INDEX);
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
+
+        IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
+        for (IteratorUtil.IteratorScope scope : scopes) {
+            String name = "table.iterator." + scope.name() + ".UIDAggregator";
+            String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
+
+            client.tableOperations().setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
+            client.tableOperations().setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+        }
+
+        // grant root user all auths so they can scan the tables
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
 
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation m;
@@ -272,18 +286,18 @@ public class ShapesIngest {
             m.put("fi\0TYPE", "regular\0" + octagon + "\0" + octagonUid, cv, ts, value);
 
             // EDGES
-            m.put("fi\0EDGES", "acute\0" + triangle + "\0" + acuteUid, cv, ts, value);
-            m.put("fi\0EDGES", "equilateral\0" + triangle + "\0" + equilateralUid, cv, ts, value);
-            m.put("fi\0EDGES", "isosceles\0" + triangle + "\0" + isoscelesUid, cv, ts, value);
-            m.put("fi\0EDGES", "square\0" + quadrilateral + "\0" + squareUid, cv, ts, value);
-            m.put("fi\0EDGES", "rectangle\0" + quadrilateral + "\0" + rectangleUid, cv, ts, value);
-            m.put("fi\0EDGES", "rhomboid\0" + quadrilateral + "\0" + rhomboidUid, cv, ts, value);
-            m.put("fi\0EDGES", "rhombus\0" + quadrilateral + "\0" + rhombusUid, cv, ts, value);
-            m.put("fi\0EDGES", "trapezoid\0" + quadrilateral + "\0" + trapezoidUid, cv, ts, value);
-            m.put("fi\0EDGES", "kite\0" + quadrilateral + "\0" + kiteUid, cv, ts, value);
-            m.put("fi\0EDGES", "regular\0" + pentagon + "\0" + pentagonUid, cv, ts, value);
-            m.put("fi\0EDGES", "regular\0" + hexagon + "\0" + hexagonUid, cv, ts, value);
-            m.put("fi\0EDGES", "regular\0" + octagon + "\0" + octagonUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("3") + "\0" + triangle + "\0" + acuteUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("3") + "\0" + triangle + "\0" + equilateralUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("3") + "\0" + triangle + "\0" + isoscelesUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + squareUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + rectangleUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + rhomboidUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + rhombusUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + trapezoidUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("4") + "\0" + quadrilateral + "\0" + kiteUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("5") + "\0" + pentagon + "\0" + pentagonUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("6") + "\0" + hexagon + "\0" + hexagonUid, cv, ts, value);
+            m.put("fi\0EDGES", number.normalize("7") + "\0" + octagon + "\0" + octagonUid, cv, ts, value);
 
             // ONLY_*
             m.put("fi\0ONLY_TRI", "tri\0" + triangle + "\0" + acuteUid, cv, ts, value);
@@ -316,6 +330,8 @@ public class ShapesIngest {
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rectangleUid));
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rhomboidUid));
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rhombusUid));
+            m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, trapezoidUid));
+            m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, kiteUid));
             bw.addMutation(m);
             m = new Mutation("pentagon");
             m.put("SHAPE", shard + '\u0000' + pentagon, cv, ts, getValue(type, pentagonUid));
@@ -599,6 +615,12 @@ public class ShapesIngest {
         }
 
         // TODO -- query model
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            m = new Mutation("num_shards");
+            m.put("ns", "20240101_1", new Value());
+            bw.addMutation(m);
+        }
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)
@@ -648,7 +670,7 @@ public class ShapesIngest {
             builder.addUID(uid);
         } else {
             builder.setIGNORE(true);
-            builder.setCOUNT(1L);
+            builder.setCOUNT(17L); // arbitrary prime number below the 20 max uid limit
         }
         return new Value(builder.build().toByteArray());
     }

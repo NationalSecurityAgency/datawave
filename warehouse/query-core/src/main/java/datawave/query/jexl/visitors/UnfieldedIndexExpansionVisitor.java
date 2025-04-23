@@ -18,14 +18,17 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.EmptyIndexLookup;
+import datawave.query.jexl.lookups.FieldExpansionIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -33,12 +36,13 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
+import jline.internal.Preconditions;
 
 /**
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(UnfieldedIndexExpansionVisitor.class);
 
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
@@ -54,6 +58,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         this.allTypes = helper.getAllDatatypes();
+        this.stage = "field";
     }
 
     /**
@@ -91,7 +96,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
         if (script.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
-            log.warn(qe);
+            log.warn("Empty script", qe);
             throw new EmptyUnfieldedTermExpansionException(qe);
         }
         return script;
@@ -145,14 +150,14 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createLookup(node));
+        return buildIndexLookup(node, true, negated, () -> createFieldNameIndexLookup(node));
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
         toggleNegation();
         try {
-            return buildIndexLookup(node, true, negated, () -> createLookup(node));
+            return buildIndexLookup(node, true, negated, () -> createFieldNameIndexLookup(node));
         } finally {
             toggleNegation();
         }
@@ -175,22 +180,26 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createLookup(node));
+        // handled by BoundedRangeExpansionIterator
+        return super.visit(node, data);
     }
 
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createLookup(node));
+        // handled by BoundedRangeExpansionIterator
+        return super.visit(node, data);
     }
 
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createLookup(node));
+        // handled by BoundedRangeExpansionIterator
+        return super.visit(node, data);
     }
 
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createLookup(node));
+        // handled by BoundedRangeExpansionIterator
+        return super.visit(node, data);
     }
 
     @Override
@@ -223,6 +232,29 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
+        }
+    }
+
+    protected IndexLookup createFieldNameIndexLookup(JexlNode node) {
+        String term = (String) JexlASTHelper.getLiteralValue(node);
+
+        Preconditions.checkNotNull(term);
+        Preconditions.checkNotNull(expansionFields);
+
+        try {
+            // note: if the system has configured 'exp' fields in the metadata table this method call will verify
+            // all fields are also indexed. In the event that no expansion fields are configured this will fall back
+            // to the full set of indexed fields for the provided datatypes
+            Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
+
+            if (fields.isEmpty()) {
+                // if no fields match then do not attempt expansion
+                return new EmptyIndexLookup(config);
+            }
+
+            return new FieldExpansionIndexLookup(config, scannerFactory, term, fields, executor);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }

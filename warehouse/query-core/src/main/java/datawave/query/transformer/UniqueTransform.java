@@ -5,20 +5,22 @@ import java.io.Serializable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -33,25 +35,28 @@ import datawave.core.query.logic.ResultPostprocessor;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.util.sortedset.ByteArrayComparator;
-import datawave.query.util.sortedset.FileByteDocumentSortedSet;
-import datawave.query.util.sortedset.FileKeyValueSortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import datawave.query.util.sortedset.RewritableSortedSetImpl;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
+import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
+import datawave.query.util.sortedmap.FileKeyDocumentSortedMap;
+import datawave.query.util.sortedmap.FileSortedMap;
+import datawave.query.util.sortedmap.HdfsBackedSortedMap;
+import datawave.query.util.sortedset.ByteArrayComparator;
+import datawave.query.util.sortedset.FileSortedSet;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
- * fields will be returned. This transform is thread safe.
+ * fields will be returned unless mostRecentUnique is specified in which case the most recent instance of an event will be returned. This transform is thread
+ * safe.
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform implements ResultPostprocessor {
 
@@ -59,8 +64,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields = new UniqueFields();
-    private HdfsBackedSortedSet<Entry<byte[],Object>> set;
-    private HdfsBackedSortedSet<Entry<Key,Document>> returnSet;
+    private HdfsBackedSortedMap<byte[],Document> map;
+    private HdfsBackedSortedMap<Key,Document> returnSet;
     private Iterator<Entry<Key,Document>> setIterator;
 
     /**
@@ -82,72 +87,43 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public UniqueTransform(UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.uniqueFields = uniqueFields;
-        this.uniqueFields.deconstructIdentifierFields();
-        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
         }
     }
 
     /**
-     * reset the bloom filter with this one
-     *
-     * @param filter
-     */
-    public void setFilter(BloomFilter<byte[]> filter) {
-        this.bloom = filter;
-    }
-
-    /**
      * Update the configuration of this transform. If the configuration is actually changing, then the bloom filter will be reset as well.
      *
-     *
      * @param uniqueFields
-     *            The unique fields
-     * @param queryExecutionForPageTimeout
-     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
-     *            for the next unique result.
+     *            The new set of unique fields.
      */
-    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
-        this(uniqueFields, queryExecutionForPageTimeout);
-        QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
-        if (model != null) {
-            modelMapping = HashMultimap.create();
-            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
-            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
-                modelMapping.put(entry.getValue(), entry.getKey());
+    public void updateConfig(UniqueFields uniqueFields) {
+        // only reset the bloom filter if changing the field set
+        if (!this.uniqueFields.equals(uniqueFields)) {
+            this.uniqueFields = uniqueFields.clone();
+            log.info("Resetting unique fields on the unique transform");
+            if (map != null) {
+                map.clear();
+                returnSet.clear();
+            } else {
+                bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
             }
-        }
-    }
-
-    public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
-        if (this.uniqueFields != uniqueFields) {
-            uniqueFields.deconstructIdentifierFields();
-            if (!this.uniqueFields.equals(uniqueFields)) {
-                this.uniqueFields = uniqueFields;
-                log.info("Resetting unique fields on the unique transform");
-                this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-                if (log.isTraceEnabled()) {
-                    log.trace("unique fields: " + this.uniqueFields.getFields());
-                }
-            }
-        }
-        if (model != null) {
-            modelMapping = HashMultimap.create();
-            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
-            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
-                modelMapping.put(entry.getValue(), entry.getKey());
+            if (log.isTraceEnabled()) {
+                log.trace("unique fields: " + this.uniqueFields.getFields());
             }
         }
     }
 
     /**
-     * Get a predicate that will apply this transform.
+     * Add phrase excerpts to the documents from the given iterator.
      *
-     * @return A unique transform predicate
+     * @param in
+     *            the iterator source
+     * @return an iterator that will supply the enriched documents
      */
-    public Predicate<Entry<Key,Document>> getUniquePredicate() {
-        return input -> UniqueTransform.this.apply(input) != null;
+    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in) {
+        return new UniqueTransformIterator(in);
     }
 
     /**
@@ -165,22 +141,30 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 return keyDocumentEntry;
             }
 
+            if (keyDocumentEntry.getValue().isIntermediateResult()) {
+                return keyDocumentEntry;
+            }
+
             try {
-                if (isDuplicate(keyDocumentEntry.getValue())) {
-                    keyDocumentEntry = null;
-                } else {
+                if (map != null) {
+                    byte[] signature = getBytes(keyDocumentEntry.getValue());
+                    synchronized (map) {
+                        this.map.put(signature, keyDocumentEntry.getValue());
+                    }
+                    return null;
+                } else if (!isDuplicate(keyDocumentEntry.getValue())) {
                     return keyDocumentEntry;
                 }
             } catch (IOException ioe) {
                 log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
             }
-        }
 
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            Document intermediateResult = new Document();
-            intermediateResult.setIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), intermediateResult);
+            long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+            if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+                Document intermediateResult = new Document();
+                intermediateResult.setIntermediateResult(true);
+                return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);
+            }
         }
 
         return null;
@@ -234,13 +218,19 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     @Override
     public Map.Entry<Key,Document> flush() {
-        if (set != null) {
-            synchronized (set) {
+        if (map != null) {
+            synchronized (map) {
+                // persist the map so that we do not loose these results and we compact the files for the final iteration.
+                try {
+                    map.persist();
+                } catch (IOException ioe) {
+                    throw new DatawaveFatalQueryException("Unable to persist the most recent unique maps", ioe);
+                }
                 if (setIterator == null) {
                     setupIterator();
                 }
                 if (setIterator.hasNext()) {
-                    return (Map.Entry<Key,Document>) setIterator.next();
+                    return setIterator.next();
                 }
             }
         }
@@ -251,11 +241,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * This will run through the set and create a new set ordered by Key, Document
      */
     private void setupIterator() {
-        for (Map.Entry<byte[],Object> entry : set) {
-            Document d = (Document) entry.getValue();
-            returnSet.add(new UnmodifiableMapEntry<>(getDocKey(d), d));
+        for (Map.Entry<byte[],Document> entry : map.entrySet()) {
+            returnSet.put(getDocKey(entry.getValue()), entry.getValue());
         }
-        setIterator = returnSet.iterator();
+        // now persist the return set so that we don't lose the results and compact the sets
+        try {
+            returnSet.persist();
+        } catch (IOException ioe) {
+            throw new DatawaveFatalQueryException("Could not persist unique document return set", ioe);
+        }
+        setIterator = returnSet.entrySet().iterator();
     }
 
     /**
@@ -309,10 +304,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         for (String documentField : new TreeSet<>(document.getDictionary().keySet())) {
             String field = getUniqueField(documentField);
             if (field != null) {
-                if (!field.equals(lastField)) {
-                    count = dumpValues(count, lastField, values, output);
-                    lastField = field;
-                }
                 addValues(field, document.get(documentField), values);
             }
         }
@@ -347,8 +338,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     /**
      * Dump a list of values, sorted, to the data output stream
      *
-     * @param count
-     *            value count
      * @param field
      *            a field
      * @param values
@@ -373,11 +362,19 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             // in the bloom filter.
             output.append(separator);
         }
-        return count;
     }
 
-    // Return the set of values for the provided attribute.
-    private void addValues(final String field, Attribute<?> attribute, List<String> values) {
+    /**
+     * Add the attribute values to the list of values.
+     *
+     * @param field
+     *            The attribute field
+     * @param attribute
+     *            The attribute
+     * @param values
+     *            The map of values to be updated
+     */
+    private void addValues(final String field, Attribute<?> attribute, Multimap<String,String> values) {
         if (attribute instanceof Attributes) {
             // @formatter:off
             ((Attributes) attribute).getAttributes().stream()
@@ -404,7 +401,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         return uniqueFields.getFields().stream().filter((field) -> isMatchingField(baseDocumentField, field)).findFirst().orElse(null);
     }
 
-    // Return the provided field with any grouping context removed.
+    /**
+     * Return the provided field with any grouping context removed.
+     *
+     * @param field
+     *            The field
+     * @return The field with grouping stripped
+     */
     private String getFieldWithoutGrouping(String field) {
         int index = field.indexOf('.');
         if (index < 0) {
@@ -414,14 +417,22 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
-    // Return whether or not the provided document field is considered a case-insensitive match for the provided field, applying reverse model mappings if
-    // configured.
+    /**
+     * Return whether or not the provided document field is considered a case-insensitive match for the provided field
+     *
+     * @param baseField
+     *            The base field
+     * @param field
+     *            The field to match with
+     * @return true if matching
+     */
     private boolean isMatchingField(String baseField, String field) {
-        baseField = baseField.toUpperCase();
-        field = field.toUpperCase();
-        return field.equals(baseField) || (modelMapping != null && modelMapping.get(field).contains(baseField));
+        return baseField.equalsIgnoreCase(field);
     }
 
+    /**
+     * A funnel to use for the bloom filter
+     */
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
 
         private static final long serialVersionUID = -2126172579955897986L;
@@ -482,8 +493,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     public static class Builder {
         private UniqueFields uniqueFields;
-        private Comparator<Entry<byte[],Object>> keyComparator;
-        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Object>> keyValueComparator;
+        private Comparator<byte[]> keyComparator;
+        private FileSortedMap.RewriteStrategy<byte[],Document> keyValueComparator;
+        private QueryModel model;
         private int bufferPersistThreshold;
         private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
         private String hdfsSiteConfigURLs;
@@ -492,26 +504,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         private int numRetries;
         private long queryExecutionForPageTimeout;
         private FileSortedSet.PersistOptions persistOptions;
-        private BloomFilter<byte[]> filter;
 
         public Builder() {
-            keyComparator = new Comparator<>() {
-                private Comparator<byte[]> comparator = new ByteArrayComparator();
+            keyComparator = new ByteArrayComparator();
 
-                @Override
-                public int compare(Map.Entry<byte[],Object> o1, Map.Entry<byte[],Object> o2) {
-                    return comparator.compare(o1.getKey(), o2.getKey());
-                }
-            };
-
-            keyValueComparator = (original, update) -> {
-                int comparison = keyComparator.compare(original, update);
-                if (comparison == 0) {
-                    long ts1 = getTimestamp(original.getValue());
-                    long ts2 = getTimestamp(update.getValue());
-                    return (ts2 > ts1);
-                }
-                return comparison < 0;
+            keyValueComparator = (key, original, update) -> {
+                long ts1 = getTimestamp(original);
+                long ts2 = getTimestamp(update);
+                return (ts2 > ts1);
             };
         }
 
@@ -550,6 +550,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
         public Builder withUniqueFields(UniqueFields fields) {
             this.uniqueFields = fields;
+            return this;
+        }
+
+        public Builder withModel(QueryModel model) {
+            this.model = model;
             return this;
         }
 
@@ -593,22 +598,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return this;
         }
 
-        public Builder withFilter(BloomFilter<byte[]> filter) {
-            this.filter = filter;
-            return this;
-        }
-
         public UniqueTransform build() throws IOException {
             UniqueTransform transform = new UniqueTransform(uniqueFields, queryExecutionForPageTimeout);
-            if (filter != null) {
-                transform.setFilter(filter);
-            }
 
             if (transform.uniqueFields.isMostRecent()) {
-                log.info("Creating most recent unique transform");
                 // @formatter:off
                 // noinspection unchecked
-                transform.set = (HdfsBackedSortedSet<Entry<byte[],Object>>) HdfsBackedSortedSet.builder()
+                transform.map = (HdfsBackedSortedMap<byte[],Document>) HdfsBackedSortedMap.builder()
                         .withComparator(keyComparator)
                         .withRewriteStrategy(keyValueComparator)
                         .withBufferPersistThreshold(bufferPersistThreshold)
@@ -617,49 +613,34 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withMaxOpenFiles(maxOpenFiles)
                         .withNumRetries(numRetries)
                         .withPersistOptions(persistOptions)
-                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
+                        .withMapFactory(new FileByteDocumentSortedMap.Factory())
                         .build();
 
-                transform.returnSet = (HdfsBackedSortedSet<Entry<Key,Document>>) HdfsBackedSortedSet.builder()
+                // noinspection unchecked
+                transform.returnSet = (HdfsBackedSortedMap<Key,Document>) HdfsBackedSortedMap.builder()
                         .withBufferPersistThreshold(bufferPersistThreshold)
                         .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
                         .withUniqueSubPath("byDocKey")
                         .withMaxOpenFiles(maxOpenFiles)
                         .withNumRetries(numRetries)
                         .withPersistOptions(persistOptions)
-                        .withSetFactory(new FileKeyValueSortedSet.Factory())
+                        .withMapFactory(new FileKeyDocumentSortedMap.Factory())
                         .build();
                 // @formatter:on
             } else {
-                log.info("Creating unique transform");
+                transform.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
             }
 
             return transform;
         }
     }
 
-    private static long getTimestamp(Object o) {
-        if (o instanceof Document) {
-            return getDocKeyAttr((Document) o).getTimestamp();
-        } else {
-            return getTimestamp((EventBase) o);
-        }
+    private static long getTimestamp(Document doc) {
+        return getDocKeyAttr(doc).getTimestamp();
     }
 
     private static DocumentKey getDocKeyAttr(Document doc) {
-        Attribute a = doc.get(Document.DOCKEY_FIELD_NAME);
-        if (a instanceof Attributes) {
-            StringBuilder s = new StringBuilder();
-            for (Attribute a2 : ((Attributes) a).getAttributes()) {
-                if (s.length() >= 0) {
-                    s.append('\n');
-                }
-                s.append(a2.getMetadata());
-                log.info("Found multiple dockey attributes: \n" + s);
-                a = a2;
-            }
-        }
-        return (DocumentKey) a;
+        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
     }
 
     private static Key getDocKey(Document doc) {
