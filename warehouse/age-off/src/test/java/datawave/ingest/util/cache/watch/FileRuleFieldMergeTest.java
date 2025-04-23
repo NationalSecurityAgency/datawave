@@ -1,7 +1,5 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -39,9 +37,9 @@ public class FileRuleFieldMergeTest {
 
     @Test
     public void verifyIsIndexOnlyForChild() throws IOException {
-        assertThat(isIndexTable(parentFilter), is(false));
+        assertEquals(isIndexTable(parentFilter), false);
 
-        assertThat(isIndexTable(childFilter), is(true));
+        assertEquals(isIndexTable(childFilter), true);
     }
 
     @Test
@@ -50,10 +48,10 @@ public class FileRuleFieldMergeTest {
         // <fields>alpha,beta,gamma,delta</fields>
         // since child is index config, field should be in the column family
         Key key = new Key("row", "alpha", "cq", "vis", 0);
-        assertThat(childFilter.accept(key, new Value()), is(false));
+        assertEquals(childFilter.accept(key, new Value()), false);
 
         key = new Key("row", "beta", "cq", "vis", Long.MAX_VALUE);
-        assertThat(childFilter.accept(key, new Value()), is(true));
+        assertEquals(childFilter.accept(key, new Value()), true);
     }
 
     private Boolean isIndexTable(TestFieldFilter filter) {
@@ -64,7 +62,7 @@ public class FileRuleFieldMergeTest {
         FileRuleCacheValue cacheValue = new FileRuleCacheValue(fs, filePath, 1);
         Collection<FilterRule> rules = cacheValue.loadFilterRules(null);
         // should only have the single rule
-        assertThat(rules.size(), is(1));
+        assertEquals(rules.size(), 1);
         for (FilterRule rule : rules) {
             assertEquals(TestFieldFilter.class, rule.getClass());
         }

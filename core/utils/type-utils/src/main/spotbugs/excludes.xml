@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+      False-positive: equals method "checks for operand being a IpV6Address/IpV4Address".
+      We perform type conversion, as necessary, to test ipv6/ipv4 address equivalence
+    -->
+    <Match>
+        <Class name="~datawave\.data\.type\.util\.IpV.Address" />
+        <Method name="equals" />
+        <Bug pattern="EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS" />
+    </Match>
+</FindBugsFilter>

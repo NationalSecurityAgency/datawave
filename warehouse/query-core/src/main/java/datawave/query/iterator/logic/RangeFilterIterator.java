@@ -22,7 +22,6 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 
 /**
@@ -38,7 +37,7 @@ import datawave.query.jexl.DelayedNonEventIndexContext;
  * <p>
  * <code>row fi\x00FIELD : value\x00datatype\x00uid</code>
  */
-public class RangeFilterIterator implements SeekableIterator, NestedIterator<Key>, Comparable<IndexIteratorBridge> {
+public class RangeFilterIterator implements NestedIterator<Key>, Comparable<IndexIteratorBridge> {
 
     private static final Logger log = LoggerFactory.getLogger(RangeFilterIterator.class);
 

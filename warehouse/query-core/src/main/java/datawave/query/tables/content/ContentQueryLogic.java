@@ -209,7 +209,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
                 // Remove the identifier if present - we won't use it here, but will extract them from the query
                 // later in the ContentQueryTransformer
-                int idSeparation = valueIdentifier.indexOf("!");
+                int idSeparation = valueIdentifier.indexOf('!');
                 final String value = idSeparation > 0 ? valueIdentifier.substring(0, idSeparation) : valueIdentifier;
 
                 // Validate the value

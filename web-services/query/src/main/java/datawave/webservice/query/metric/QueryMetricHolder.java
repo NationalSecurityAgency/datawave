@@ -13,7 +13,7 @@ import datawave.security.authorization.DatawavePrincipal;
  */
 public class QueryMetricHolder implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1792308928373591749L;
     private DatawavePrincipal principal = null;
     private BaseQueryMetric queryMetric = null;
 
@@ -56,7 +56,7 @@ public class QueryMetricHolder implements Serializable {
     @Override
     public String toString() {
         if (this.queryMetric == null || this.principal == null) {
-            return null;
+            return "";
         } else {
             return this.principal + ":" + this.queryMetric;
         }

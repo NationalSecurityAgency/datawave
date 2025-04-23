@@ -62,7 +62,7 @@ public class HashUIDBuilder extends AbstractUIDBuilder<HashUID> {
         if (null != template) {
             // Get the existing and new extras, if any
             final String extra1 = template.getExtra();
-            final String extra2 = HashUID.mergeExtras(extras);
+            final String extra2 = UID.mergeExtras(extras);
 
             // Create a new UID based on existing and new extras
             if ((null != extra1) && (null != extra2)) {

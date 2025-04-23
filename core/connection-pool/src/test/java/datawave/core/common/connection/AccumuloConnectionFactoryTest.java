@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -25,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
+import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.cache.AccumuloTableCache;
@@ -90,7 +90,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
             p.put(AccumuloConnectionFactory.Priority.LOW, acp);
             pools.put(entry.getKey(), Collections.unmodifiableMap(p));
         }
-        Whitebox.setInternalState(factory, "log", Logger.getLogger(AccumuloConnectionFactoryImpl.class));
+        Whitebox.setInternalState(factory, "log", LoggerFactory.getLogger(AccumuloConnectionFactoryImpl.class));
         Whitebox.setInternalState(factory, ConnectionPoolsProperties.class, conf);
         Whitebox.setInternalState(factory, "defaultPoolName", conf.getDefaultPool());
         Whitebox.setInternalState(factory, "pools", pools);

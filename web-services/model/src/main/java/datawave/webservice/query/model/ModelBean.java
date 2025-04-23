@@ -421,6 +421,7 @@ public class ModelBean {
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
+        DatawaveWebApplicationException exception = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
@@ -443,7 +444,7 @@ public class ModelBean {
                     QueryException qe = new QueryException(DatawaveErrorCode.WRITER_CLOSE_ERROR, e1);
                     log.error(qe);
                     response.addException(qe);
-                    throw new DatawaveWebApplicationException(qe, response);
+                    exception = new DatawaveWebApplicationException(qe, response);
                 }
             }
             if (null != client) {
@@ -453,6 +454,9 @@ public class ModelBean {
                     log.error("Error returning connection to factory", e);
                 }
             }
+        }
+        if (null != exception) {
+            throw exception;
         }
         cache.reloadTableCache(tableName);
         return response;
@@ -494,6 +498,7 @@ public class ModelBean {
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
+        DatawaveWebApplicationException exception = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
@@ -516,7 +521,7 @@ public class ModelBean {
                     QueryException qe = new QueryException(DatawaveErrorCode.WRITER_CLOSE_ERROR, e1);
                     log.error(qe);
                     response.addException(qe);
-                    throw new DatawaveWebApplicationException(qe, response);
+                    exception = new DatawaveWebApplicationException(qe, response);
                 }
             }
             if (null != client) {
@@ -527,6 +532,10 @@ public class ModelBean {
                 }
             }
         }
+        if (null != exception) {
+            throw exception;
+        }
+
         if (reloadCache)
             cache.reloadTableCache(tableName);
         return response;

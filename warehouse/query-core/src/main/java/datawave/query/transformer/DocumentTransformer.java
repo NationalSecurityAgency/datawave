@@ -132,7 +132,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
 
         String colf = documentKey.getColumnFamily().toString();
 
-        int index = colf.indexOf("\0");
+        int index = colf.indexOf('\0');
         Preconditions.checkArgument(-1 != index);
 
         String dataType = colf.substring(0, index);
