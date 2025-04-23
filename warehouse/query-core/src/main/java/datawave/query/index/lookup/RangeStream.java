@@ -251,21 +251,39 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
 
-                switch (queryStream.context()) {
-                    case VARIABLE:
-                        if (queryStream instanceof Intersection) {
+                if (queryStream instanceof Intersection) {
+                    switch (queryStream.context()) {
+                        case VARIABLE:
+                            // a union with a mix of executable and non-executable terms is still executable
+                            // touch up the context to reflect this
                             this.context = StreamContext.PRESENT;
                             break;
-                        }
-                    case DELAYED:
-                        if (queryStream instanceof Union) {
+                        case ABSENT:
+                        case DELAYED:
+                        case INITIALIZED:
+                        case NO_OP:
+                        case PRESENT:
+                        default:
+                            this.context = queryStream.context();
+                    }
+                } else if (queryStream instanceof Union) {
+                    switch (queryStream.context()) {
+                        case VARIABLE:
                             // all terms in a top level union must be executable
                             this.context = StreamContext.ABSENT;
                             this.itr = Collections.emptyIterator();
                             return itr;
-                        }
-                    default:
-                        context = queryStream.context();
+                        case ABSENT:
+                        case DELAYED:
+                        case INITIALIZED:
+                        case NO_OP:
+                        case PRESENT:
+                        default:
+                            this.context = queryStream.context();
+                    }
+                } else {
+                    // use the delegate context
+                    context = queryStream.context();
                 }
 
                 if (log.isDebugEnabled()) {
@@ -505,6 +523,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                         return build;
                     case INITIALIZED:
                     default:
+                        // if the intersection's context is still INITIALIZED after the initializer is run then something is very, very wrong
                         throw new RuntimeException("unhandled stream context: " + build.context());
                 }
             }

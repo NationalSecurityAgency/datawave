@@ -163,12 +163,12 @@ public class Intersection extends BaseIndexStream {
 
         if (absent) {
             this.context = StreamContext.ABSENT;
-            this.contextDebug = "found absent child";
+            this.contextDebug = "found a child that was ABSENT";
         } else if (areAllChildrenSameContext(streams, StreamContext.DELAYED)) {
             this.context = StreamContext.DELAYED;
-            this.contextDebug = "delayed field";
+            this.contextDebug = "all child index streams are DELAYED";
         } else if (this.children.isEmpty() && !delayedNodes.isEmpty()) {
-            // we have a mix of delayed marker nodes
+            // no executable nodes, only delayed
             this.context = StreamContext.DELAYED;
             this.contextDebug = "children are a mix of delayed marker nodes";
         } else {
