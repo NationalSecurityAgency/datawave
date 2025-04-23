@@ -4,12 +4,10 @@ import static datawave.data.ColumnFamilyConstants.COLF_DESC;
 import static datawave.data.ColumnFamilyConstants.COLF_E;
 import static datawave.data.ColumnFamilyConstants.COLF_F;
 import static datawave.data.ColumnFamilyConstants.COLF_I;
-import static datawave.data.ColumnFamilyConstants.COLF_N;
 import static datawave.data.ColumnFamilyConstants.COLF_RI;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -585,7 +583,6 @@ public class FrequencyMetadataAggregatorTest {
         List<Map.Entry<Key,Value>> actual = new ArrayList<>();
         for (Map.Entry<Key,Value> entry : scanner) {
             actual.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
-            System.out.println("Key: " + entry.getKey());
         }
         
         Assertions.assertEquals(expected, actual);
@@ -624,7 +621,7 @@ public class FrequencyMetadataAggregatorTest {
     }
     
     private void expect(String row, Text colf, String colq, String colv, long timestamp, DateFrequencyMap map) {
-        expect(row, colf, colq, colv, timestamp, new Value(WritableUtils.toByteArray(map)));
+        expect(row, colf, colq, colv, timestamp, new Value(map.toBytes()));
     }
     
     private void expect(String row, Text colf, String colq, String colv, long timestamp, Value value) {
