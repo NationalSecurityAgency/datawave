@@ -74,7 +74,7 @@ public class SnowflakeUIDTest {
         SnowflakeUIDBuilder result1 = (SnowflakeUIDBuilder) ((UIDBuilder) SnowflakeUID.builder());
         assertNotNull(result1);
         assertNotNull(result1.toString());
-        assertNull(((SnowflakeUID) result1.newId()).getSnowflake());
+        assertNull((result1.newId()).getSnowflake());
         assertNull(result1.newId(0).getSnowflake());
         assertNull(result1.newId(System.currentTimeMillis(), 0).getSnowflake());
         assertNull(result1.newId(System.currentTimeMillis()).getSnowflake());

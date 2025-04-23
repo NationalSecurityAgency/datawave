@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl3.JexlException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -97,6 +96,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
                 "ldn-fra-lle-11",
                 "rom-usa-ms-10",
                 "par-usa-oh-8",
+                "abc-ab-9",
                 "par-usa-oh-9",
                 "ldn-uk-7",
                 "par-usa-mo-8",

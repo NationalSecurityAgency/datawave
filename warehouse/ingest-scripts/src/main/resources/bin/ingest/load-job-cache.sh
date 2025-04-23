@@ -1,17 +1,18 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
+if [[ $(uname) == "Darwin" ]]; then
 	READLINK_CMD="python -c 'import os,sys;print os.path.realpath(sys.argv[1])'"
 	MKTEMP_OPTS="-t $0"
 else
 	READLINK_CMD="readlink -f"
 	MKTEMP_OPTS=""
 fi
-THIS_SCRIPT=`eval $READLINK_CMD $0`
+THIS_SCRIPT=$(eval $READLINK_CMD $0)
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 . ../ingest/ingest-env.sh
+. ../ingest/ingest-libs.sh
 . ../ingest/job-cache-env.sh
 
 # Check that there are no other instances of this script running
@@ -46,7 +47,7 @@ sed s%${BEFORE}%${AFTER}% job-cache-env.sh > job-cache-env.tmp
 date
 
 # prepare a directory with links to all of the files/directories to put into the jobcache
-tmpdir=`mktemp -d $MKTEMP_OPTS`
+tmpdir=$(mktemp -d $MKTEMP_OPTS)
 trap 'rm -r -f "$tmpdir"; exit $?' INT TERM EXIT
 for f in ${CLASSPATH//:/ }; do
     if [ -e $f ]; then
@@ -60,13 +61,13 @@ for f in ${CLASSPATH//:/ }; do
 done
 
 # determine the number of processors we can use
-if [[ `uname` == "Darwin" ]]; then
-	declare -i CPUS=`sysctl machdep.cpu.thread_count | awk '{print $2}'`
+if [[ $(uname) == "Darwin" ]]; then
+	declare -i CPUS=$(sysctl machdep.cpu.thread_count | awk '{print $2}')
 else
-	declare -i CPUS=`cat /proc/cpuinfo | grep processor | awk '{print $3}' | sort -n | tail -1`
+	declare -i CPUS=$(cat /proc/cpuinfo | grep processor | awk '{print $3}' | sort -n | tail -1)
 fi
 # lets use twice the number of processors
-CPUS=`echo "$LOAD_JOBCACHE_CPU_MULTIPLIER * $CPUS" | bc`
+CPUS=$(echo "$LOAD_JOBCACHE_CPU_MULTIPLIER * $CPUS" | bc)
 
 # Remove the ingest new job cache directory, if it already exists, and then load files into it...
 
@@ -97,6 +98,25 @@ if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
    [[ "$WAREHOUSE_HDFS_NAME_NODE" == "hdfs://"* ]] && $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
 else
    echo "Warehouse and ingest are one in the same. Assuming the warehouse job cache loading is sufficient"
+fi
+
+# Update Zookeeper if we have an active job cache path
+if [[ -n "${ACTIVE_JOB_CACHE_PATH}" ]]; then
+  if ! java -cp ${CLASSPATH} datawave.ingest.jobcache.SetActiveCommand \
+    --zookeepers ${INGEST_ZOOKEEPERS} \
+    --path ${ACTIVE_JOB_CACHE_PATH} \
+    --job-cache "${INGEST_HDFS_NAME_NODE}${JOB_CACHE_DIR}"; then
+      echo "[ERROR] Failed to set active ingest job cache"
+  fi
+
+  if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
+    if ! java -cp ${CLASSPATH} datawave.ingest.jobcache.SetActiveCommand \
+      --zookeepers ${WAREHOUSE_ZOOKEEPERS} \
+      --path ${ACTIVE_JOB_CACHE_PATH} \
+      --job-cache "${WAREHOUSE_HDFS_NAME_NODE}${JOB_CACHE_DIR}"; then
+        echo "[ERROR] Failed to set active warehouse job cache"
+    fi
+  fi
 fi
 
 # Remove the prepared directory

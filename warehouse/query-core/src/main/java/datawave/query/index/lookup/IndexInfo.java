@@ -187,7 +187,7 @@ public class IndexInfo implements Writable, UidIntersector {
             JexlNode topLevelOr = getOrNode(sourceNode);
 
             if (null == topLevelOr) {
-                nodeSet.add(sourceNode);
+                nodeSet.add(first.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     nodeSet.add(topLevelOr.jjtGetChild(i));

@@ -179,6 +179,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                                 continue;
                             }
                         }
+
                         // We are only returning a mapping of field name to field value, no need to
                         // determine cardinality and such at this point.
                         indexLookupMap.put(colfam, row);

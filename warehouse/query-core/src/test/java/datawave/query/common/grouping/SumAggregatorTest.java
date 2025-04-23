@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.math.BigDecimal;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.K;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,7 +12,6 @@ import org.junit.Test;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Content;
-import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TypeAttribute;
 
 /**

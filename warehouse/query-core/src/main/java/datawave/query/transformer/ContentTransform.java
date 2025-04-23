@@ -30,7 +30,7 @@ public class ContentTransform extends DocumentTransform.DefaultDocumentTransform
             Document document = keyDocumentEntry.getValue();
             Key documentKey = DocumentTransformer.correctKey(keyDocumentEntry.getKey());
             String colf = documentKey.getColumnFamily().toString();
-            int index = colf.indexOf("\0");
+            int index = colf.indexOf('\0');
             String uid = colf.substring(index + 1);
 
             for (String contentFieldName : this.contentFieldNames) {
@@ -38,7 +38,7 @@ public class ContentTransform extends DocumentTransform.DefaultDocumentTransform
                     Attribute<?> contentField = document.remove(contentFieldName);
                     if (contentField.getData().toString().equalsIgnoreCase("true")) {
                         Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
-                        document.put(contentFieldName, c, false, this.reducedResponse);
+                        document.put(contentFieldName, c, false);
                     }
                 }
             }
