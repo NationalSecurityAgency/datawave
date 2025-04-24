@@ -1,5 +1,10 @@
 package datawave.ingest.mapreduce.job;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -2248,6 +2253,182 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryExistsThrowsException completed.");
         }
 
+    }
+
+    private BulkIngestMapFileLoader setupBulkIngestMapFileLoader(String delayPathPattern, int maxDirectories) {
+        BulkIngestMapFileLoader loader = new BulkIngestMapFileLoader();
+        BulkIngestMapFileLoader.DELAY_PATH_PATTERN = delayPathPattern;
+        BulkIngestMapFileLoader.MAX_DIRECTORIES = maxDirectories;
+        return loader;
+    }
+
+    private FileSystem setupMockFileSystem(Path pathPattern, FileStatus[] fileStatuses) throws IOException {
+        FileSystem mockFileSystem = mock(FileSystem.class);
+        when(mockFileSystem.globStatus(pathPattern)).thenReturn(fileStatuses);
+        return mockFileSystem;
+    }
+
+    private FileStatus createFileStatusMock(Path filePath, long modificationTime) {
+        FileStatus fileStatus = mock(FileStatus.class);
+        when(fileStatus.getPath()).thenReturn(filePath);
+        when(fileStatus.getModificationTime()).thenReturn(modificationTime);
+        return fileStatus;
+    }
+
+    private void setupDelayPatternMock(FileSystem mockFileSystem, Path parentPath, String delayPattern, FileStatus[] delayStatuses) throws IOException {
+        if (delayPattern != null) {
+            when(mockFileSystem.globStatus(new Path(parentPath, delayPattern))).thenReturn(delayStatuses);
+        }
+    }
+
+    private void assertJobDirectories(Path[] actualResult, Path... expectedPaths) {
+        assertNotNull(actualResult, "The result should not be null");
+        assertEquals(expectedPaths.length, actualResult.length, "Unexpected number of job directories returned");
+
+        for (int i = 0; i < expectedPaths.length; i++) {
+            assertEquals(expectedPaths[i], actualResult[i], "Unexpected directory at index " + i);
+        }
+    }
+
+    @Test
+    public void testGetJobDirectoriesNothingToDelay() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+    }
+
+    @Test
+    public void testGetJobDirectoriesNullDelayPattern() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = null;
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+    }
+
+    @Test
+    public void testGetJobDirectoriesNoNonDelayed() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        FileStatus mockDelayStatus = mock(FileStatus.class);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        when(mockDelayStatus.isFile()).thenReturn(true);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+    }
+
+    @Test
+    public void testGetJobDirectoriesNoBacklog() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        FileStatus mockDelayStatus = mock(FileStatus.class);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        when(mockDelayStatus.isFile()).thenReturn(true);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        // mockParentDir2 should be the first in result, as dir1 was delayed.
+        assertJobDirectories(result, mockParentDir2, mockParentDir1);
+    }
+
+    @Test
+    public void testGetJobDirectoriesInBacklog() throws IOException {
+        final Path PATH_PATTERN = new Path("/path/*/job.complete");
+        final String DELAY_PATH_PATTERN = "*delay_pattern*";
+
+        // Create mocks
+        Path mockParentDir1 = new Path("/parent1");
+        Path mockParentDir2 = new Path("/parent2");
+        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
+        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        FileStatus mockDelayStatus = mock(FileStatus.class);
+
+        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
+        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
+
+        when(mockDelayStatus.isFile()).thenReturn(true);
+
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
+        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+
+        // Configure loader and call method
+        BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 5);
+        BulkIngestMapFileLoader.NUM_CONSIDERED_BACKLOG = 1;
+        Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
+
+        // Verify
+        assertJobDirectories(result, mockParentDir2);
     }
 
     @Test
