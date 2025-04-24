@@ -12,7 +12,7 @@ import datawave.query.util.TypeMetadataHelper;
 @Component
 @Primary
 public class QueryMetricMetadataHelperFactory extends MetadataHelperFactory {
-    
+
     @Autowired
     public QueryMetricMetadataHelperFactory(BeanFactory beanFactory, @Qualifier("queryMetrics") TypeMetadataHelper.Factory typeMetadataHelperFactory) {
         super(beanFactory, typeMetadataHelperFactory);

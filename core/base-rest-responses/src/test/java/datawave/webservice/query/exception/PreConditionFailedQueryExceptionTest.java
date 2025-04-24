@@ -6,17 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 public class PreConditionFailedQueryExceptionTest {
-    
+
     private PreConditionFailedQueryException brqe;
-    
+
     private final String message = "Bad query exception";
     private final Throwable throwable = new Throwable("throws");
     private final String strErrCode = "412-10";
     private final DatawaveErrorCode code = DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED;
-    
+
     private final String assertMsg = "Query failed because it exceeded the query term threshold. Bad query exception";
     private final String assertMsg2 = "Query failed because it exceeded the query term threshold.";
-    
+
     @Test
     public void testEmptyConstructor() {
         brqe = new PreConditionFailedQueryException();
@@ -25,7 +25,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertNull(brqe.getMessage());
         assertNull(brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageConstructor() {
         brqe = new PreConditionFailedQueryException(message);
@@ -34,7 +34,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(message, brqe.getMessage());
         assertEquals(message, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableConstructor() {
         brqe = new PreConditionFailedQueryException(message, throwable);
@@ -43,7 +43,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(message, brqe.getMessage());
         assertEquals(message, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowableErrorCodeConstructor() {
         brqe = new PreConditionFailedQueryException(throwable, strErrCode);
@@ -52,7 +52,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(throwable.toString(), brqe.getMessage());
         assertEquals(throwable.toString(), brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableConstructor() {
         brqe = new PreConditionFailedQueryException(code, throwable);
@@ -61,7 +61,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(assertMsg2, brqe.getMessage());
         assertEquals(assertMsg2, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeDebugMsgConstructor() {
         brqe = new PreConditionFailedQueryException(code, message);
@@ -70,7 +70,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(assertMsg, brqe.getMessage());
         assertEquals(assertMsg, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableDebugMsgConstructor() {
         brqe = new PreConditionFailedQueryException(code, throwable, message);
@@ -79,7 +79,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(assertMsg, brqe.getMessage());
         assertEquals(assertMsg, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeConstructor() {
         brqe = new PreConditionFailedQueryException(code);
@@ -88,7 +88,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(assertMsg2, brqe.getMessage());
         assertEquals(assertMsg2, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageResponseStatus() {
         brqe = new PreConditionFailedQueryException(message, 412);
@@ -97,7 +97,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(message, brqe.getMessage());
         assertEquals(message, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableErrorCode() {
         brqe = new PreConditionFailedQueryException(message, throwable, strErrCode);
@@ -106,7 +106,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(message, brqe.getMessage());
         assertEquals(message, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageErrorCode() {
         brqe = new PreConditionFailedQueryException(message, strErrCode);
@@ -115,7 +115,7 @@ public class PreConditionFailedQueryExceptionTest {
         assertEquals(message, brqe.getMessage());
         assertEquals(message, brqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowable() {
         brqe = new PreConditionFailedQueryException(throwable);

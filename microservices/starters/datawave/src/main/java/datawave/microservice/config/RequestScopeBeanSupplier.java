@@ -10,12 +10,12 @@ public class RequestScopeBeanSupplier<T> implements Supplier<T> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final T requestScopeBean;
     private final ThreadLocal<T> threadLocalOverride;
-    
+
     public RequestScopeBeanSupplier(T requestScopeBean) {
         this.requestScopeBean = requestScopeBean;
         this.threadLocalOverride = new ThreadLocal<>();
     }
-    
+
     @Override
     public T get() {
         if (threadLocalOverride.get() != null) {
@@ -32,7 +32,7 @@ public class RequestScopeBeanSupplier<T> implements Supplier<T> {
             return requestScopeBean;
         }
     }
-    
+
     public ThreadLocal<T> getThreadLocalOverride() {
         return threadLocalOverride;
     }

@@ -37,7 +37,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"ProxiedEntityUserDetailsServiceTest"})
 public class ProxiedEntityUserDetailsServiceTest {
-    
+
     private static final SubjectIssuerDNPair CALLER = SubjectIssuerDNPair.of("cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us",
                     "cn=testcorp ca, ou=security, o=testcorp, c=us");
     private static final SubjectIssuerDNPair USER_1 = SubjectIssuerDNPair.of("cn=user1.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us",
@@ -46,10 +46,10 @@ public class ProxiedEntityUserDetailsServiceTest {
                     "cn=testcorp ca, ou=security, o=testcorp, c=us");
     private static final SubjectIssuerDNPair USER_3 = SubjectIssuerDNPair.of("cn=user3.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us",
                     "cn=testcorp ca, ou=security, o=testcorp, c=us");
-    
+
     @Autowired
     private ProxiedEntityUserDetailsService userDetailsService;
-    
+
     @Test
     public void withProxiedUsers() {
         List<SubjectIssuerDNPair> proxiedEntities = new ArrayList<>();
@@ -66,7 +66,7 @@ public class ProxiedEntityUserDetailsServiceTest {
         assertEquals(USER_3, datawaveUserDetails.getProxiedUsers().stream().skip(2).findFirst().get().getDn());
         assertEquals(CALLER, datawaveUserDetails.getProxiedUsers().stream().skip(3).findFirst().get().getDn());
     }
-    
+
     @Test
     public void withCallerOnly() {
         List<SubjectIssuerDNPair> proxiedEntities = new ArrayList<>();
@@ -77,7 +77,7 @@ public class ProxiedEntityUserDetailsServiceTest {
         assertEquals(1, datawaveUserDetails.getProxiedUsers().size());
         assertEquals(CALLER, datawaveUserDetails.getProxiedUsers().stream().findFirst().get().getDn());
     }
-    
+
     @Test
     public void withCallerInProxiedUsers() {
         List<SubjectIssuerDNPair> proxiedEntities = new ArrayList<>();
@@ -92,7 +92,7 @@ public class ProxiedEntityUserDetailsServiceTest {
         assertEquals(CALLER, datawaveUserDetails.getProxiedUsers().stream().skip(1).findFirst().get().getDn());
         assertEquals(CALLER, datawaveUserDetails.getProxiedUsers().stream().skip(2).findFirst().get().getDn());
     }
-    
+
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
     @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
@@ -103,14 +103,14 @@ public class ProxiedEntityUserDetailsServiceTest {
         public CachedDatawaveUserService cachedDatawaveUserService() {
             return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
         }
-        
+
         @Bean
         public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
         }
-        
+
         @Bean
         public BusProperties busProperties() {
             return new BusProperties();

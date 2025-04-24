@@ -16,18 +16,18 @@ import datawave.microservice.cached.LockableCacheInspector;
 @CacheConfig(cacheNames = QueryStatusCache.CACHE_NAME)
 public class QueryStatusCache {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "QueryStatusCache";
-    
+
     private final LockableCacheInspector cacheInspector;
-    
+
     public QueryStatusCache(LockableCacheInspector cacheInspector) {
         this.cacheInspector = cacheInspector;
     }
-    
+
     /**
      * Store the query status for a query.
-     * 
+     *
      * @param queryStatus
      *            the query status
      * @return the stored query status
@@ -37,10 +37,10 @@ public class QueryStatusCache {
         logStatus("Storing", queryStatus, queryStatus.getQueryKey().getQueryId());
         return queryStatus;
     }
-    
+
     /**
      * Delete the query status for a query
-     * 
+     *
      * @param queryId
      *            The query id
      */
@@ -50,7 +50,7 @@ public class QueryStatusCache {
             log.debug("Deleted query status for " + queryId);
         }
     }
-    
+
     /**
      * Return the query status for a query
      *
@@ -69,10 +69,10 @@ public class QueryStatusCache {
         }
         return props;
     }
-    
+
     /**
      * Get all of the existing query status
-     * 
+     *
      * @return A list of query status
      */
     public List<QueryStatus> getQueryStatus() {
@@ -82,7 +82,7 @@ public class QueryStatusCache {
         }
         return queryStatuses.stream().filter(o -> o instanceof QueryStatus).map(QueryStatus.class::cast).collect(Collectors.toList());
     }
-    
+
     /**
      * Clear out the cache
      *
@@ -92,7 +92,7 @@ public class QueryStatusCache {
     public String clear() {
         return "Cleared " + CACHE_NAME + " cache";
     }
-    
+
     /**
      * A convience method for logging query status
      *
@@ -110,10 +110,10 @@ public class QueryStatusCache {
             log.debug(msg + ' ' + (status == null ? "null query for " + key : "query for " + key));
         }
     }
-    
+
     /**
      * Get a query status lock for a given query id.
-     * 
+     *
      * @param queryId
      *            the query id
      * @return a query status lock
@@ -121,7 +121,7 @@ public class QueryStatusCache {
     public QueryStorageLock getQueryStatusLock(String queryId) {
         return new QueryStatusLock(queryId);
     }
-    
+
     /**
      * A lock object for a query status
      */
@@ -130,5 +130,5 @@ public class QueryStatusCache {
             super(CACHE_NAME, QueryKey.toUUIDKey(queryId), cacheInspector);
         }
     }
-    
+
 }

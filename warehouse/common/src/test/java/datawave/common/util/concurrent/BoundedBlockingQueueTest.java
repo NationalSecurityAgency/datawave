@@ -1,8 +1,8 @@
 package datawave.common.util.concurrent;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,9 +15,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Test;
 
 public class BoundedBlockingQueueTest {
 
@@ -234,8 +234,8 @@ public class BoundedBlockingQueueTest {
      * This is a helper method which will allow us to run all of our threads simultaneously, thus increasing the chance that we will encounter a concurrency
      * problem if there is one.
      * <p>
-     * All the runnables that are passed in will block, and will not begin execution until the afterInitBlocker CountDownLatch has been activated. This
-     * should ensure that all the threads begin execution simultaneously.
+     * All the runnables that are passed in will block, and will not begin execution until the afterInitBlocker CountDownLatch has been activated. This should
+     * ensure that all the threads begin execution simultaneously.
      */
     public static void assertConcurrent(final String message, final List<? extends Runnable> runnables, final int maxTimeoutSeconds)
                     throws InterruptedException {
@@ -260,13 +260,14 @@ public class BoundedBlockingQueueTest {
                 });
             }
             // wait until all threads are ready
-            assertTrue(allExecutorThreadsReady.await(runnables.size() * 10L, TimeUnit.MILLISECONDS),"Timeout initializing threads! Perform long lasting initializations before passing runnables to assertConcurrent");
+            assertTrue(allExecutorThreadsReady.await(runnables.size() * 10L, TimeUnit.MILLISECONDS),
+                            "Timeout initializing threads! Perform long lasting initializations before passing runnables to assertConcurrent");
             // start all test runners
             afterInitBlocker.countDown();
-            assertTrue(allDone.await(maxTimeoutSeconds, TimeUnit.SECONDS),message + " timeout! More than" + maxTimeoutSeconds + "seconds");
+            assertTrue(allDone.await(maxTimeoutSeconds, TimeUnit.SECONDS), message + " timeout! More than" + maxTimeoutSeconds + "seconds");
         } finally {
             threadPool.shutdownNow();
         }
-        assertTrue(exceptions.isEmpty(),message + " failed with exception(s)" + exceptions);
+        assertTrue(exceptions.isEmpty(), message + " failed with exception(s)" + exceptions);
     }
 }

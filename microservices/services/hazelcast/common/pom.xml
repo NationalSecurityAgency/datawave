@@ -30,8 +30,8 @@
             <version>${version.datawave.starter}</version>
             <exclusions>
                 <exclusion>
-                    <artifactId>*</artifactId>
                     <groupId>xerces</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

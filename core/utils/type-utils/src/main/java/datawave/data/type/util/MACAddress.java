@@ -7,34 +7,34 @@ import java.util.Objects;
  * Class to hold a MAC Address
  */
 public class MACAddress implements Serializable, Comparable<MACAddress> {
-    
+
     private static final long serialVersionUID = 4366259028581959024L;
-    
+
     /**
      * String representation of the MAC address
      */
     private String macAddress = "";
-    
+
     /**
      * The separator used between digit groups.
      */
     private String separator = "";
-    
+
     /**
      * The size of the digit groups.
      */
     private int groupingSize = 0;
-    
+
     /**
      * MAC addresses contain 12 digits
      */
     private static final int MAC_ADDRESS_LENGTH = 12;
-    
+
     /**
      * The number of groupings
      */
     private int groupings = 0;
-    
+
     /**
      * @param addr
      *            string representation of the MAC address
@@ -49,10 +49,10 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
         this.groupingSize = groupingSize;
         this.groupings = MAC_ADDRESS_LENGTH / this.groupingSize;
     }
-    
+
     /**
      * Normalize the string representation of the MAC address. Defaults to using a grouping size of 2
-     * 
+     *
      * @param sep
      *            The separator to use in the normalized string.
      * @return The normalized string
@@ -60,10 +60,10 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
     public String toNormalizedString(String sep) {
         return toNormalizedString(sep, 2);
     }
-    
+
     /**
      * Normalize the string representation of the MAC address.
-     * 
+     *
      * @param sep
      *            The separator to use in the normalized string
      * @param groupingSize
@@ -72,7 +72,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
      */
     public String toNormalizedString(String sep, int groupingSize) {
         String returnAddress = new String(this.macAddress);
-        
+
         if (!this.separator.equals("")) {
             String sepRegex = new String(this.separator);
             if (this.separator.matches("\\.")) {
@@ -80,14 +80,14 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
             }
             returnAddress = returnAddress.replaceAll(this.separator, "");
         }
-        
+
         String hexDigit = "([0-9a-fA-F])";
         StringBuilder hexDigits = new StringBuilder();
         // populate hexDigits as a regex to capture 12 hex digits
         for (int i = 0; i < MAC_ADDRESS_LENGTH; i++) {
             hexDigits.append(hexDigit);
         }
-        
+
         StringBuilder replacement = new StringBuilder();
         int groups = MAC_ADDRESS_LENGTH / groupingSize;
         int totalStringLength = MAC_ADDRESS_LENGTH + groups - 1;
@@ -105,16 +105,16 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
                 digitCount++;
             }
         }
-        
+
         returnAddress = returnAddress.replaceAll(hexDigits.toString(), replacement.toString());
         returnAddress = returnAddress.toUpperCase();
-        
+
         return returnAddress;
     }
-    
+
     /**
      * Attempt to parse a MAC address
-     * 
+     *
      * @param addr
      *            The MAC address
      * @param sep
@@ -171,10 +171,10 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
             throw new IllegalArgumentException("Address " + addr + " does not contain separator " + sep);
         }
     }
-    
+
     /**
      * Attempt to parse a MAC address The separator will be guessed based on the grouping size
-     * 
+     *
      * @param addr
      *            The MAC address
      * @param groupingSize
@@ -191,13 +191,13 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
         if (groupingSize != MAC_ADDRESS_LENGTH) {
             sep = String.valueOf(addr.charAt(groupingSize));
         }
-        
+
         return parse(addr, sep, groupingSize, true);
     }
-    
+
     /**
      * Attempt to parse a MAC address The grouping size will be guessed based on the separator
-     * 
+     *
      * @param addr
      *            the MAC address
      * @param sep
@@ -213,10 +213,10 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
         int groupingSize = addr.indexOf(sep);
         return parse(addr, sep, groupingSize, true);
     }
-    
+
     /**
      * Attempt to parse a MAC address The grouping size and separator will be guessed
-     * 
+     *
      * @param addr
      *            the MAC address
      * @return the MAC address object
@@ -235,17 +235,17 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
             throw new IllegalArgumentException("Unable to find separator in " + addr);
         }
     }
-    
+
     @Override
     public String toString() {
         return this.macAddress;
     }
-    
+
     @Override
     public int compareTo(MACAddress o) {
         return this.toString().compareTo(o.toString());
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof MACAddress) {
@@ -257,7 +257,7 @@ public class MACAddress implements Serializable, Comparable<MACAddress> {
             return false;
         }
     }
-    
+
     @Override
     public int hashCode() {
         return this.toNormalizedString("").hashCode();

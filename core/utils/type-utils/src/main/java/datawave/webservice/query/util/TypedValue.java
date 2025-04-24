@@ -42,7 +42,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class TypedValue implements Serializable, Message<TypedValue> {
     private static final long serialVersionUID = 1987198355354220378L;
-    
+
     public static final String XSD_BOOLEAN = "xs:boolean";
     public static final String XSD_BYTE = "xs:byte";
     public static final String XSD_DATETIME = "xs:dateTime";
@@ -58,33 +58,33 @@ public class TypedValue implements Serializable, Message<TypedValue> {
     public static final String XSD_STRING = "xs:string";
     public static final String XSD_IPADDRESS = "xs:ipAddress";
     public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
-    
+
     @XmlAttribute(required = false)
     private Boolean base64Encoded;
-    
+
     @XmlAttribute
     private String type;
-    
+
     // NOTE: Primitive type info is sometimes lost for Object value using ObjectMapper (de)serialization (i.e. Long becomes Integer, Float becomes
     // Double) so only use the marshalledValue
     @JsonIgnore
     @XmlTransient
     private Object value;
-    
+
     @XmlTransient
     private Class<?> dataType;
-    
+
     @JsonProperty
     @XmlValue
     private String marshalledValue;
-    
+
     public TypedValue() {}
-    
+
     public TypedValue(Object value) {
         setDataType(value.getClass());
         setValue(value);
     }
-    
+
     public long sizeInBytes() {
         // return the approximate overhead of this class
         long size = 28;
@@ -95,7 +95,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         // note we are ignoring Class object
         return size;
     }
-    
+
     // a helper method to return the size of a string
     protected static long sizeInBytes(String value) {
         if (value == null) {
@@ -106,7 +106,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
             // 12 for array overhead
         }
     }
-    
+
     protected static long roundUp(long size) {
         long extra = size % 8;
         if (extra > 0) {
@@ -114,7 +114,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         }
         return size;
     }
-    
+
     public Object getValue() {
         // NOTE: Proper (de)serialization via ObjectMapper relies on this check to populate value via marshalledValue
         if (null != this.marshalledValue && null == this.value) {
@@ -122,10 +122,10 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         }
         return value;
     }
-    
+
     public void setValue(Object value) {
         this.value = value;
-        
+
         Class<?> clazz = value.getClass();
         if (String.class.equals(clazz)) {
             String string = (String) value;
@@ -213,7 +213,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
             throw new IllegalArgumentException("Unhandled class type: " + clazz.getName());
         }
     }
-    
+
     private void setMarshalledStringValue(String string) {
         if (XMLUtil.isValidXML(string)) {
             this.marshalledValue = DatatypeConverter.printString(string);
@@ -223,23 +223,23 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         }
         this.type = XSD_STRING;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void setDataType(Class<?> dataType) {
         this.dataType = dataType;
     }
-    
+
     public Class<?> getDataType() {
         return this.dataType;
     }
-    
+
     public boolean isBase64Encoded() {
         return base64Encoded != null && base64Encoded;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
@@ -253,7 +253,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
             buf.append("null ]");
         return buf.toString();
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -264,7 +264,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         result = prime * result + ((value == null) ? 0 : value.hashCode());
         return result;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -302,7 +302,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
             return false;
         return true;
     }
-    
+
     // Method is called by the JAXB marshalling code
     private void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {
         if (XSD_STRING.equals(type)) {
@@ -339,44 +339,44 @@ public class TypedValue implements Serializable, Message<TypedValue> {
             value = new IpAddressType(marshalledValue).getDelegate();
         }
     }
-    
+
     public static Schema<TypedValue> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<TypedValue> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<TypedValue> SCHEMA = new Schema<TypedValue>() {
-        
+
         @Override
         public TypedValue newMessage() {
             return new TypedValue();
         }
-        
+
         @Override
         public Class<? super TypedValue> typeClass() {
             return TypedValue.class;
         }
-        
+
         @Override
         public String messageName() {
             return TypedValue.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return TypedValue.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(TypedValue message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, TypedValue message) throws IOException {
             Class<?> clazz = message.value.getClass();
@@ -412,7 +412,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
                 output.writeBool(12, (Boolean) message.value, false);
             }
         }
-        
+
         @Override
         public void mergeFrom(Input input, TypedValue message) throws IOException {
             int number;
@@ -462,7 +462,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -494,13 +494,13 @@ public class TypedValue implements Serializable, Message<TypedValue> {
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put("stringValue", 1);

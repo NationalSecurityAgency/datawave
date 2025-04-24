@@ -30,7 +30,7 @@ public class CachingConsistencyTest {
             validateCacheableKeys(c.getDeclaredMethods());
         }
     }
-    
+
     /**
      * Validate @Cacheable Methods have a key that is satisfied by the Fields and Parameters of the Method supports
      * <ul>
@@ -49,7 +49,7 @@ public class CachingConsistencyTest {
                     Cacheable c = (Cacheable) annotation;
                     String stripped = c.key().substring(1, c.key().length() - 1);
                     String[] keys = stripped.split(",");
-                    
+
                     // for any arguments that don't start with root check that they match parameters in the method
                     for (String cacheKey : keys) {
                         if (!cacheKey.startsWith("#root")) {
@@ -67,7 +67,7 @@ public class CachingConsistencyTest {
                                         break;
                                     }
                                 }
-                                
+
                                 assertTrue("didn't find key parameter " + cacheKey + " in method:" + method, found);
                             }
                         } else {

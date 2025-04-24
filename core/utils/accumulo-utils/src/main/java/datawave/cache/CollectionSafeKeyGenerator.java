@@ -16,12 +16,12 @@ import org.springframework.cache.interceptor.SimpleKey;
  */
 public class CollectionSafeKeyGenerator implements KeyGenerator {
     private static Logger log = LoggerFactory.getLogger(CollectionSafeKeyGenerator.class);
-    
+
     @Override
     public Object generate(Object target, Method method, Object... params) {
         return generateKey(params);
     }
-    
+
     /**
      * Generate a key based on the specified parameters, coping collections as appropriate
      */
@@ -36,17 +36,17 @@ public class CollectionSafeKeyGenerator implements KeyGenerator {
                 return copyIfCollectionParam(param);
             }
         }
-        
+
         Object[] paramsCopy = new Object[params.length];
         for (int i = 0; i < params.length; i++) {
             paramsCopy[i] = copyIfCollectionParam(params[i]);
         }
         return new SimpleKey(paramsCopy);
     }
-    
+
     /**
      * Copy a parameter iff it is a java.util collection or a map.
-     * 
+     *
      * @param param
      * @return the param, or the param copy/clone if a collection or map
      */

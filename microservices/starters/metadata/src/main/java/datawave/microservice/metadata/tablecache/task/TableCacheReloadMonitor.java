@@ -20,16 +20,16 @@ public class TableCacheReloadMonitor {
     private final Logger log = Logger.getLogger(TableCacheReloadMonitor.class);
     private final AccumuloTableCache cache;
     private final AccumuloTableCacheProperties properties;
-    
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private long taskStartTime;
     private Future<Void> taskFuture;
-    
+
     public TableCacheReloadMonitor(AccumuloTableCache cache, AccumuloTableCacheProperties properties) {
         this.cache = cache;
         this.properties = properties;
     }
-    
+
     @Scheduled(cron = "${datawave.table.cache.reload-crontab:* * * * * ?}")
     public void monitorReloadTasks() {
         // perform some upkeep
@@ -51,7 +51,7 @@ public class TableCacheReloadMonitor {
                 taskFuture.cancel(true);
             }
         }
-        
+
         // schedule a new monitor task if the previous one has finished
         if (taskFuture == null) {
             taskStartTime = System.currentTimeMillis();
@@ -64,9 +64,9 @@ public class TableCacheReloadMonitor {
             });
         }
     }
-    
+
     private boolean isTaskLeaseExpired() {
         return (System.currentTimeMillis() - taskStartTime) > properties.getTableCacheReloadTaskLeaseMillis();
     }
-    
+
 }

@@ -73,32 +73,32 @@
                 <version>${version.geowave}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>hadoop-client</artifactId>
                         <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>accumulo-minicluster</artifactId>
                         <groupId>org.apache.accumulo</groupId>
+                        <artifactId>accumulo-minicluster</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>commons-lang3</artifactId>
                         <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.eclipse.emf</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>bcprov-jdk15on</artifactId>
                         <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>json-lib</artifactId>
                         <groupId>net.sf.json-lib</groupId>
+                        <artifactId>json-lib</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -207,10 +207,10 @@
                 <executions>
                     <execution>
                         <id>copy-templated-sources</id>
-                        <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/generated-sources/templated-sources</outputDirectory>
                             <resources>
@@ -229,10 +229,10 @@
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <sources>
                                 <source>target/generated-sources/templated-sources</source>

@@ -20,7 +20,7 @@ public interface CacheInspector {
      * @return the T stored in the cache named cacheName under key, or null if no such object exists
      */
     <T> T list(String cacheName, Class<T> cacheObjectType, String key);
-    
+
     /**
      * Lists all Ts in the cache named cacheName.
      *
@@ -33,7 +33,7 @@ public interface CacheInspector {
      * @return all Ts stored in the cache named cacheName
      */
     <T> List<? extends T> listAll(String cacheName, Class<T> cacheObjectType);
-    
+
     /**
      * Lists all Ts in the cache named cacheName stored under keys containing substring.
      *
@@ -48,7 +48,7 @@ public interface CacheInspector {
      * @return all Ts stored in the cache named cacheName under a key containing substring
      */
     <T> List<? extends T> listMatching(String cacheName, Class<T> cacheObjectType, String substring);
-    
+
     /**
      * Evicts from the cache named cacheName all Ts stored under keys containing substring.
      *

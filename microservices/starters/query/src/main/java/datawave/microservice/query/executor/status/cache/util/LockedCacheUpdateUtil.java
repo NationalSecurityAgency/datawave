@@ -4,11 +4,11 @@ import datawave.microservice.query.executor.status.cache.LockableCache;
 
 public class LockedCacheUpdateUtil<T> {
     private final LockableCache<T> lockableCache;
-    
+
     public LockedCacheUpdateUtil(LockableCache<T> lockableCache) {
         this.lockableCache = lockableCache;
     }
-    
+
     public T lockedUpdate(String key, CacheUpdater<T> updater, long waitTimeMillis, long leaseTimeMillis) throws Exception, InterruptedException {
         T cacheEntry = null;
         if (lockableCache.tryLock(key, waitTimeMillis, leaseTimeMillis)) {
