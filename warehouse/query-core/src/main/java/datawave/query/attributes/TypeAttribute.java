@@ -26,7 +26,7 @@ import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7264249641813898860L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
 

@@ -24,11 +24,14 @@ import javax.inject.Named;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
@@ -473,7 +476,7 @@ public class QueryMetricTestBase {
                 entryStrings.add(table + " -> " + e.getKey());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
         return entryStrings;
     }
@@ -482,7 +485,7 @@ public class QueryMetricTestBase {
         getAllAccumuloEntries().forEach(s -> System.out.println(s));
     }
     
-    public static Collection<Map.Entry<Key,Value>> getAccumuloEntries(AccumuloClient accumuloClient, String table, Collection<String> authorizations)
+    public Collection<Map.Entry<Key,Value>> getAccumuloEntries(AccumuloClient accumuloClient, String table, Collection<String> authorizations)
                     throws Exception {
         Collection<Map.Entry<Key,Value>> entries = new ArrayList<>();
         String[] authArray = new String[authorizations.size()];
@@ -498,21 +501,37 @@ public class QueryMetricTestBase {
         return entries;
     }
     
-    public static void deleteAccumuloEntries(AccumuloClient accumuloClient, List<String> tables, Collection<String> authorizations) {
+    public void deleteAccumuloEntries(AccumuloClient accumuloClient, List<String> tables, Collection<String> authorizations) {
         try {
             String[] authArray = new String[authorizations.size()];
             authorizations.toArray(authArray);
             tables.forEach(t -> {
                 Authorizations auths = new Authorizations(authArray);
-                try (BatchDeleter bd = accumuloClient.createBatchDeleter(t, auths, 1, new BatchWriterConfig())) {
-                    bd.setRanges(Collections.singletonList(new Range()));
-                    bd.delete();
+                try (BatchScanner bs = accumuloClient.createBatchScanner(t, auths);
+                                BatchWriter bw = accumuloClient.createBatchWriter(t, new BatchWriterConfig())) {
+                    bs.setRanges(Collections.singletonList(new Range()));
+                    boolean isIndexTable = t.equals(queryMetricHandlerProperties.getIndexTableName())
+                                    || t.equals(queryMetricHandlerProperties.getReverseIndexTableName());
+                    for (Map.Entry<Key,Value> e : bs) {
+                        Key k = e.getKey();
+                        Mutation m = new Mutation(k.getRow());
+                        ColumnVisibility cv = new ColumnVisibility(k.getColumnVisibility());
+                        if (isIndexTable) {
+                            // for deletes in the indexTable and reverseIndexTable, we will
+                            // add a UidList negation instead of adding a delete mutation
+                            Value v = new Value(shardTableQueryMetricHandler.toUidRemovalListBytes(e.getValue().get()));
+                            m.put(k.getColumnFamily(), k.getColumnQualifier(), cv, k.getTimestamp(), v);
+                        } else {
+                            m.putDelete(k.getColumnFamily(), k.getColumnQualifier(), cv, k.getTimestamp());
+                        }
+                        bw.addMutation(m);
+                    }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage(), e);
                 }
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
     }
     

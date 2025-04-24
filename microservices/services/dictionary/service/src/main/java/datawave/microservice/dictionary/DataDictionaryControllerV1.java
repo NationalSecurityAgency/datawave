@@ -21,6 +21,7 @@ import com.codahale.metrics.annotation.Timed;
 import datawave.microservice.AccumuloConnectionService;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.dictionary.config.DataDictionaryProperties;
+import datawave.microservice.dictionary.config.DictionaryServiceProperties;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.microservice.dictionary.data.DataDictionary;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
@@ -45,9 +46,10 @@ public class DataDictionaryControllerV1<DESC extends DescriptionBase<DESC>,DICT 
     private DataDictionaryControllerLogic dataDictionaryControllerLogic;
     
     public DataDictionaryControllerV1(DataDictionaryProperties dataDictionaryConfiguration, DataDictionary<META,DESC,FIELD> dataDictionary,
-                    ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService) {
+                    ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService,
+                    DictionaryServiceProperties dictionaryServiceProperties) {
         dataDictionaryControllerLogic = new DataDictionaryControllerLogic<>(dataDictionaryConfiguration, dataDictionary, responseObjectFactory,
-                        accumloConnectionService);
+                        accumloConnectionService, dictionaryServiceProperties);
     }
     
     @GetMapping("/")

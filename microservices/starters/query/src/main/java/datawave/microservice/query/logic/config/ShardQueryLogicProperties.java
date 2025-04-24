@@ -22,6 +22,7 @@ public class ShardQueryLogicProperties {
     private List<String> enricherClassNames = new ArrayList<>();
     private List<String> filterClassNames = new ArrayList<>();
     private Map<String,String> filterOptions = new HashMap<>();
+    private List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs = new ArrayList<>();
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = new ArrayList<>();
     private DataDecoratorTransformerConfig dataDecoratorTransformerConfig = new DataDecoratorTransformerConfig();
     private Map<String,String> querySyntaxParsers = new HashMap<>();
@@ -105,6 +106,14 @@ public class ShardQueryLogicProperties {
     
     public void setFilterOptions(Map<String,String> filterOptions) {
         this.filterOptions = filterOptions;
+    }
+    
+    public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
+        return localIvaratorCacheDirConfigs;
+    }
+    
+    public void setLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.localIvaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
     
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {

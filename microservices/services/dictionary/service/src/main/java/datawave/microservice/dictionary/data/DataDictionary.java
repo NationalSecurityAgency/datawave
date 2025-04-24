@@ -18,6 +18,10 @@ public interface DataDictionary<META extends MetadataFieldBase<META,DESC>,DESC e
     
     void setNormalizationMap(Map<String,String> normalizationMap);
     
+    String getDataDictionarySystem();
+    
+    void setDataDictionarySystem(String dataDictionarySystem);
+    
     Collection<META> getFields(Connection connectionConfig, Collection<String> dataTypeFilters, int numThreads) throws Exception;
     
     void setDescription(Connection connectionConfig, FIELD description) throws Exception;

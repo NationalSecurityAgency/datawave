@@ -6,7 +6,7 @@ package datawave.query.exceptions;
  */
 public class TooManyTermsException extends DatawaveQueryException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5287047531989089903L;
 
     public TooManyTermsException() {
         super();

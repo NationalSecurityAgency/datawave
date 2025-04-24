@@ -713,6 +713,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                     log.error("Executor did not fully shutdown");
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // we were interrupted while waiting
             }
         }
