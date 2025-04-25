@@ -188,33 +188,6 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
                 combinedMetric.setDocSize(combinedMetric.getDocSize() + updatedQueryMetric.getDocSize());
                 combinedMetric.setDocRanges(combinedMetric.getDocRanges() + updatedQueryMetric.getDocRanges());
                 combinedMetric.setFiRanges(combinedMetric.getFiRanges() + updatedQueryMetric.getFiRanges());
-                
-                Map<String,RangeCounts> updatedSubPlans = updatedQueryMetric.getSubPlans();
-                Map<String,RangeCounts> combinedSubPlans = combinedMetric.getSubPlans();
-                if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
-                    // Check to see if combinedMetric has any existing subPlans.
-                    if (combinedSubPlans != null && !combinedSubPlans.isEmpty()) {
-                        // Since combinedSubPlans is not empty or null, we should go through each subPlan and add the updated RangeCounts.
-                        for (Map.Entry<String,RangeCounts> entry : updatedSubPlans.entrySet()) {
-                            // Check to see if a subPlan from the update exists in combinedSubPlans. If it does, combine the two RangeCounts.
-                            if (combinedSubPlans.get(entry.getKey()) != null) {
-                                combinedSubPlans.get(entry.getKey()).setDocumentRangeCount(
-                                                combinedSubPlans.get(entry.getKey()).getDocumentRangeCount() + entry.getValue().getDocumentRangeCount());
-                                combinedSubPlans.get(entry.getKey()).setShardRangeCount(
-                                                combinedSubPlans.get(entry.getKey()).getShardRangeCount() + entry.getValue().getShardRangeCount());
-                            } else {
-                                // The subPlan in updatedSubPlans did not exist in combinedSubPlans, so let's add it.
-                                combinedSubPlans.put(entry.getKey(), entry.getValue());
-                            }
-                        }
-                        // Set the state of combinedSubPlans to combinedMetric after any changes
-                        combinedMetric.setSubPlans(combinedSubPlans);
-                    }
-                    // If combinedMetric is empty or null, we can set immediately since we can assume this is the first update.
-                    else {
-                        combinedMetric.setSubPlans(updatedQueryMetric.getSubPlans());
-                    }
-                }
             } else {
                 combinedMetric.setSourceCount(updatedQueryMetric.getSourceCount());
                 combinedMetric.setNextCount(updatedQueryMetric.getNextCount());
@@ -223,36 +196,6 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
                 combinedMetric.setDocSize(updatedQueryMetric.getDocSize());
                 combinedMetric.setDocRanges(updatedQueryMetric.getDocRanges());
                 combinedMetric.setFiRanges(updatedQueryMetric.getFiRanges());
-                
-                // Since we might be getting the COMPLETE updates out of order, we need to make sure RangeCounts are correct
-                Map<String,RangeCounts> updatedSubPlans = updatedQueryMetric.getSubPlans();
-                Map<String,RangeCounts> combinedSubPlans = combinedMetric.getSubPlans();
-                if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
-                    // Check to see if combinedMetric has any existing subPlans.
-                    if (combinedSubPlans != null && !combinedSubPlans.isEmpty()) {
-                        // Since combinedSubPlans is not empty or null, we should go through each subPlan to see if any updating of RangeCounts
-                        // needs to happen.
-                        for (Map.Entry<String,RangeCounts> entry : updatedSubPlans.entrySet()) {
-                            // Check to see if a subPlan from the update exists in combinedSubPlans. If it does, compare the RangeCount values between
-                            // updatedSubPlans and combinedSubPlans so we will always end with the correct values
-                            if (combinedSubPlans.get(entry.getKey()) != null) {
-                                combinedSubPlans.get(entry.getKey()).setDocumentRangeCount(Math
-                                                .max(combinedSubPlans.get(entry.getKey()).getDocumentRangeCount(), entry.getValue().getDocumentRangeCount()));
-                                combinedSubPlans.get(entry.getKey()).setShardRangeCount(
-                                                Math.max(combinedSubPlans.get(entry.getKey()).getShardRangeCount(), entry.getValue().getShardRangeCount()));
-                            } else {
-                                // There existed a subPlan in updatedSubPlans that did not exist in combinedSubPlans, so let's add it.
-                                combinedSubPlans.put(entry.getKey(), entry.getValue());
-                            }
-                        }
-                        // Set the state of combinedSubPlans to combinedMetric after any changes
-                        combinedMetric.setSubPlans(combinedSubPlans);
-                    }
-                    // If combinedMetric is empty or null, we can set immediately since we can assume this is the first update.
-                    else {
-                        combinedMetric.setSubPlans(updatedQueryMetric.getSubPlans());
-                    }
-                }
             }
             // update if the update is in-order and the value changed
             if (inOrderUpdate && isChanged(updatedQueryMetric.getPlan(), combinedMetric.getPlan())) {
@@ -264,6 +207,44 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             }
             // use the max numUpdates
             combinedMetric.setNumUpdates(Math.max(combinedMetric.getNumUpdates(), updatedQueryMetric.getNumUpdates()));
+
+            Map<String,RangeCounts> updatedSubPlans = updatedQueryMetric.getSubPlans();
+            Map<String,RangeCounts> combinedSubPlans = combinedMetric.getSubPlans();
+            if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
+                // Check to see if combinedMetric has any existing subPlans.
+                if (combinedSubPlans != null && !combinedSubPlans.isEmpty()) {
+                    // Since combinedSubPlans is not empty or null, we should go through each subPlan and add the updated RangeCounts.
+                    for (Map.Entry<String,RangeCounts> entry : updatedSubPlans.entrySet()) {
+                        // Check to see if a subPlan from the update exists in combinedSubPlans
+                        if (combinedSubPlans.get(entry.getKey()) != null) {
+                            if (metricType.equals(QueryMetricType.DISTRIBUTED)) {
+                                // A subPlan exists, combine the two RangeCounts.
+                                combinedSubPlans.get(entry.getKey()).setDocumentRangeCount(
+                                                combinedSubPlans.get(entry.getKey()).getDocumentRangeCount() + entry.getValue().getDocumentRangeCount());
+                                combinedSubPlans.get(entry.getKey()).setShardRangeCount(
+                                                combinedSubPlans.get(entry.getKey()).getShardRangeCount() + entry.getValue().getShardRangeCount());
+                            else {
+                                // Since we might be getting the COMPLETE updates out of order, we need to make sure RangeCounts are correct.
+                                // A subPlan exists, compare the RangeCount values between updatedSubPlans and combinedSubPlans 
+                                // so we will always end with the correct values.
+                                combinedSubPlans.get(entry.getKey()).setDocumentRangeCount(Math
+                                            .max(combinedSubPlans.get(entry.getKey()).getDocumentRangeCount(), entry.getValue().getDocumentRangeCount()));
+                                combinedSubPlans.get(entry.getKey()).setShardRangeCount(
+                                            Math.max(combinedSubPlans.get(entry.getKey()).getShardRangeCount(), entry.getValue().getShardRangeCount()));
+                            }
+                        } else {
+                            // The subPlan in updatedSubPlans did not exist in combinedSubPlans, so let's add it.
+                            combinedSubPlans.put(entry.getKey(), entry.getValue());
+                        }
+                    }
+                    // Set the state of combinedSubPlans to combinedMetric after any changes
+                    combinedMetric.setSubPlans(combinedSubPlans);
+                }
+                // If combinedMetric is empty or null, we can set immediately since we can assume this is the first update.
+                else {
+                    combinedMetric.setSubPlans(updatedQueryMetric.getSubPlans());
+                }
+            }
         }
         log.trace("Combined metrics cached: " + cachedQueryMetric + " updated: " + updatedQueryMetric + " combined: " + combinedMetric);
         return combinedMetric;
