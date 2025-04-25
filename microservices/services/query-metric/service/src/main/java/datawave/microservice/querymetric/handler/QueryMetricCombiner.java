@@ -207,7 +207,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
             }
             // use the max numUpdates
             combinedMetric.setNumUpdates(Math.max(combinedMetric.getNumUpdates(), updatedQueryMetric.getNumUpdates()));
-
+            
             Map<String,RangeCounts> updatedSubPlans = updatedQueryMetric.getSubPlans();
             Map<String,RangeCounts> combinedSubPlans = combinedMetric.getSubPlans();
             if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
@@ -225,12 +225,12 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
                                                 combinedSubPlans.get(entry.getKey()).getShardRangeCount() + entry.getValue().getShardRangeCount());
                             } else {
                                 // Since we might be getting the COMPLETE updates out of order, we need to make sure RangeCounts are correct.
-                                // A subPlan exists, compare the RangeCount values between updatedSubPlans and combinedSubPlans 
+                                // A subPlan exists, compare the RangeCount values between updatedSubPlans and combinedSubPlans
                                 // so we will always end with the correct values.
                                 combinedSubPlans.get(entry.getKey()).setDocumentRangeCount(Math
-                                            .max(combinedSubPlans.get(entry.getKey()).getDocumentRangeCount(), entry.getValue().getDocumentRangeCount()));
+                                                .max(combinedSubPlans.get(entry.getKey()).getDocumentRangeCount(), entry.getValue().getDocumentRangeCount()));
                                 combinedSubPlans.get(entry.getKey()).setShardRangeCount(
-                                            Math.max(combinedSubPlans.get(entry.getKey()).getShardRangeCount(), entry.getValue().getShardRangeCount()));
+                                                Math.max(combinedSubPlans.get(entry.getKey()).getShardRangeCount(), entry.getValue().getShardRangeCount()));
                             }
                         } else {
                             // The subPlan in updatedSubPlans did not exist in combinedSubPlans, so let's add it.
