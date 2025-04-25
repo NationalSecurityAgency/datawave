@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 
-import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.UnescapedWildcardsInQuotedPhrasesVisitor;
 
 /**
