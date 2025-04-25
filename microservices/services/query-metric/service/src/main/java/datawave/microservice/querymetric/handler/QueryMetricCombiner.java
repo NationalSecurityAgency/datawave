@@ -223,7 +223,7 @@ public class QueryMetricCombiner<T extends BaseQueryMetric> implements Serializa
                                                 combinedSubPlans.get(entry.getKey()).getDocumentRangeCount() + entry.getValue().getDocumentRangeCount());
                                 combinedSubPlans.get(entry.getKey()).setShardRangeCount(
                                                 combinedSubPlans.get(entry.getKey()).getShardRangeCount() + entry.getValue().getShardRangeCount());
-                            else {
+                            } else {
                                 // Since we might be getting the COMPLETE updates out of order, we need to make sure RangeCounts are correct.
                                 // A subPlan exists, compare the RangeCount values between updatedSubPlans and combinedSubPlans 
                                 // so we will always end with the correct values.
