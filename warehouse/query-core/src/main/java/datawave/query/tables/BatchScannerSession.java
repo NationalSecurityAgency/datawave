@@ -1,5 +1,37 @@
 package datawave.query.tables;
 
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.configuration.Result;
+import datawave.core.query.configuration.ResultContext;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.microservice.query.Query;
+import datawave.query.tables.async.Scan;
+import datawave.query.tables.async.ScannerChunk;
+import datawave.query.tables.async.SessionArbiter;
+import datawave.query.tables.async.SpeculativeScan;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.clientImpl.ScannerOptions;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.log4j.Logger;
+
 import java.io.InterruptedIOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
@@ -18,43 +50,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.clientImpl.ScannerOptions;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Service;
-
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.configuration.QueryData;
-import datawave.core.query.configuration.Result;
-import datawave.core.query.configuration.ResultContext;
-import datawave.core.query.logic.QueryCheckpoint;
-import datawave.core.query.logic.QueryKey;
-import datawave.microservice.query.Query;
-import datawave.query.tables.async.Scan;
-import datawave.query.tables.async.ScannerChunk;
-import datawave.query.tables.async.SessionArbiter;
-import datawave.query.tables.async.SpeculativeScan;
 
 public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
 
@@ -116,10 +113,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     protected Map<String,AtomicInteger> serverMap;
 
-    protected AtomicInteger runnableCount = new AtomicInteger(0);
-
-    protected Set<ResultContext> runningQueries = Collections.synchronizedSet(new HashSet<>());
-
     protected boolean backoffEnabled = false;
 
     protected boolean speculativeScanning = false;
@@ -134,7 +127,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
             } catch (InterruptedException e) {}
         }
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
-        for (ResultContext context : runningQueries) {
+        for (ResultContext context : scanManager.getRunningQueries()) {
             if (!context.isFinished()) {
                 checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList((QueryData) context)));
             }
@@ -223,7 +216,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     public BatchScannerSession updateThreadService(ExecutorService service) {
         if (scanManager != null) {
-            scanManager.cancelAllAndLock();
+            scanManager.lockAndCancelAll();
         }
         if (executorService != null) {
             executorService.shutdownNow();
@@ -238,7 +231,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     public BatchScannerSession setThreads(int threads) {
         if (scanManager != null) {
-            this.scanManager.cancelAllAndLock();
+            this.scanManager.lockAndCancelAll();
         }
         if (executorService != null) {
             this.executorService.shutdownNow();
@@ -343,7 +336,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
             }
 
             while (scannerBatches.hasNext() && !needToCheckpoint) {
-                if (runnableCount.get() < (threadCount * RANGE_MULTIPLIER)) {
+                if (scanManager.getRunnableCount() < (threadCount * RANGE_MULTIPLIER)) {
                     if (currentBatch.isEmpty()) {
                         List<ScannerChunk> chunks = scannerBatches.next();
 
@@ -364,7 +357,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                     }
                     Thread.sleep(10);
                     if (Thread.interrupted() || !isRunning()) {
-                        scanManager.cancelAllAndLock();
+                        scanManager.lockAndCancelAll();
                         executorService.shutdownNow();
                         throw new InterruptedException("Interrupted while parking");
                     }
@@ -372,26 +365,26 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
             }
             if (log.isTraceEnabled())
-                log.trace("waiting " + runnableCount.get());
+                log.trace("waiting " + scanManager.getRunnableCount());
             submitTasks();
 
             // notify those that are wondering
             readyToCheckpoint = true;
 
-            while (runnableCount.get() > 0 && !needToCheckpoint) {
+            while (scanManager.getRunnableCount() > 0 && !needToCheckpoint) {
                 Thread.sleep(1);
                 // if a failure did not occur, let's check the interrupted status
                 if (isRunning()) {
 
                     if (Thread.interrupted()) {
-                        scanManager.cancelAllAndLock();
+                        scanManager.lockAndCancelAll();
                         executorService.shutdownNow();
                         throw new InterruptedException("Interrupted while parking");
                     }
                 } else {
                     if (log.isTraceEnabled())
                         log.trace(" no longer running");
-                    scanManager.cancelAllAndLock();
+                    scanManager.lockAndCancelAll();
                     executorService.shutdownNow();
                     return;
                 }
@@ -707,7 +700,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
          *
          */
         protected void shutdownServices() {
-            scanManager.cancelAllAndLock();
+            scanManager.lockAndCancelAll();
             executorService.shutdownNow();
             int count = 0;
             try {
@@ -733,7 +726,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         } catch (Exception e) {
 
         }
-        scanManager.cancelAllAndLock();
+        scanManager.lockAndCancelAll();
         executorService.shutdownNow();
     }
 
@@ -753,7 +746,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     @Override
     public boolean canRun(ScannerChunk chunk) {
-        if (!scannerBatches.hasNext() && runnableCount.get() <= serverMap.get(chunk.getLastKnownLocation()).get()) {
+        if (!scannerBatches.hasNext() && scanManager.getRunnableCount() <= serverMap.get(chunk.getLastKnownLocation()).get()) {
             return true;
         }
         AtomicInteger failCount = serverFailureMap.get(chunk.getLastKnownLocation());
@@ -766,7 +759,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
             return true;
         } else {
             // must run if we have no other work to do.
-            if (runnableCount.get() <= serverMap.get(chunk.getLastKnownLocation()).get()) {
+            if (scanManager.getRunnableCount() <= serverMap.get(chunk.getLastKnownLocation()).get()) {
                 return true;
             }
         }
@@ -792,26 +785,38 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         private final AtomicInteger runnableCount;
         private final Set<ResultContext> runningQueries;
         private final Set<Scan> runningScans;
-        private final ReadWriteLock stateRw;
-        private final Lock stateReadLock;
-        private final Lock stateWriteLock;
-        private volatile boolean shutdown;
+        private final ReadWriteLock lockScanRw;
+        private volatile boolean lockScanState;
 
+        /**
+         * Creates a new instance of this class with the specified executor.
+         * @param executor
+         */
         ScanManager(ExecutorService executor) {
             this.executor = executor;
             this.runnableCount = new AtomicInteger(0);
             this.runningQueries = Collections.synchronizedSet(new HashSet<>());
             this.runningScans = Collections.synchronizedSet(new HashSet<>());
-            this.stateRw = new ReentrantReadWriteLock();
-            this.stateReadLock = stateRw.readLock();
-            this.stateWriteLock = stateRw.writeLock();
+            this.lockScanRw = new ReentrantReadWriteLock();
         }
 
+
+        /**
+         * Submits a new scan to the executor service, if the scan manager is allowing scans. In the case
+         * that scans have been locked then the submit will return false.
+         * @param session the batch scanner session
+         * @param scan the scan to submit
+         * @param increment increment the list of running scans, or is this a re-submit
+         * @return true if the scan was submitted, otherwise false
+         */
         public boolean submit(BatchScannerSession session, Scan scan, boolean increment) {
             boolean submittedScan = false;
-            stateReadLock.lock();
+
+            // Get a read lock to run the following operations
+            lockScanRw.readLock().lock();
+
             try {
-                if (!shutdown) {
+                if (!lockScanState) {
                     ListenableFuture<Scan> future = (ListenableFuture<Scan>) executor.submit(scan);
                     if (increment) {
                         runnableCount.incrementAndGet();
@@ -823,40 +828,75 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                     submittedScan = true;
                 }
             } finally {
-                stateReadLock.unlock();
+                lockScanRw.readLock().unlock();
             }
             return submittedScan;
         }
 
-        public void cancelAllAndLock() {
-            stateWriteLock.lock();
-            try {
-                if (shutdown) {
-                    return;
-                } else {
-                    shutdown = true;
-                }
-            } finally {
-                stateWriteLock.unlock();
+        /**
+         * Get a count of running active scan runnables.
+         * @return
+         */
+        public int getRunnableCount() {
+            return runnableCount.get();
+        }
+
+        /**
+         * Gets a set of running queries
+         * @return the set of running queries
+         */
+        public Set<ResultContext> getRunningQueries() {
+            Set<ResultContext> localResults;
+            synchronized (runningQueries) {
+                localResults = new HashSet<>(runningQueries);
             }
+            return localResults;
+        }
+
+        /**
+         * Locks the scan manager and cancels/closes any running active scans.
+         */
+        public void lockAndCancelAll() {
+            // NOTE:
+            // The lock and cancel semantic helps support for the executor service to
+            // be forcefully shutdown. The underlying Accumulo scan logic is made aware
+            // that a cancellation is happening and avoids invalidating cache.
 
             Collection<Scan> localRunningScans;
-            synchronized (runningScans) {
-                localRunningScans = new ArrayList<>(runningScans);
+
+            // Write lock to update the state and gather a list of
+            // running scans that are in progress
+            // Callers that re-enter the read lock should see the lock state
+            // and avoid creating any more scans
+            lockScanRw.writeLock().lock();
+            try {
+                if (lockScanState) {
+                    return;
+                } else {
+                    lockScanState = true;
+                }
+
+                synchronized (runningScans) {
+                    localRunningScans = new ArrayList<>(runningScans);
+                }
+            } finally {
+                lockScanRw.writeLock().unlock();
             }
 
-            localRunningScans.forEach(scan -> {
+            // Run the cleanup outside the scan write lock
+            localRunningScans.forEach(scanRef -> {
                 // Signal to the scanner (datawave construct) that we would like to cancel the current running call.
-                scan.cancel();
+                // Underlying cancel does not throw exceptions.
+                scanRef.cancel();
                 // Call close on the scanner (datawave construct) which will call close() on the Accumulo
                 // underlying Scanner.
-                // Note in Accumulo - if the scanner is closed and then interrupted, then there is an underlying
-                // detail that the cache will not be invalidated - because we explicitly closed the scanner.
+                // Underlying close does not throw exceptions.
+                // Note in Accumulo - if the scanner is closed and then interrupted, then the scanner avoids
+                // a cache invalidation - because we explicitly closed the scanner.
                 // The close() in Accumulo sets a state variable, and in the case an interrupted exception is raised
                 // then the cache will not be invalidated.
-                scan.close();
+                scanRef.close();
             });
-            runningScans.clear();
         }
 
         /*
