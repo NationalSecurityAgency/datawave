@@ -39,7 +39,6 @@ public class DateTypeDescriptionIteratorTest {
     private final SortedMap<Key,Value> data = new TreeMap<>();
     private final Map<String,String> options = new HashMap<>();
 
-    private SortedKeyValueIterator<Key,Value> source;
     private SourceManagerTest.MockIteratorEnvironment env;
 
     private int expectedNextCount = 0;

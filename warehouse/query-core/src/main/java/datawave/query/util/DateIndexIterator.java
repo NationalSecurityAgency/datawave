@@ -30,6 +30,8 @@ import datawave.util.TableName;
  * Filtering based on the start/end date is done via the {@link #MINIMUM_DATE} amd {@link #MAXIMUM_DATE} options.
  * <p>
  * Filtering based on the field is done via the {@link #FIELD} option.
+ * <p>
+ * If {@link #TIME_TRAVEL_ENABLED} is set, then the shards and days hint will include shards prior to the query start date.
  */
 public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
 
@@ -38,6 +40,8 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
     public static final String MAXIMUM_DATE = "max.date";
     public static final String FIELD = "field";
     public static final String TIME_TRAVEL_ENABLED = "time.travel.enabled";
+
+    private static final Splitter splitter = Splitter.on(',');
 
     private static final String TIME_TRAVEL_FIELD = "ACTIVITY";
 
@@ -62,7 +66,7 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
 
         if (options.containsKey(DATATYPE_FILTER)) {
             String option = options.get(DATATYPE_FILTER);
-            datatypes = new HashSet<>(Splitter.on(',').splitToList(option));
+            datatypes = new HashSet<>(splitter.splitToList(option));
         }
 
         if (options.containsKey(MINIMUM_DATE)) {

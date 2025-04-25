@@ -38,7 +38,6 @@ public class DateIndexIteratorTest {
     private final SortedMap<Key,Value> data = new TreeMap<>();
     private final Map<String,String> options = new HashMap<>();
 
-    private SortedKeyValueIterator<Key,Value> source;
     private MockIteratorEnvironment env;
 
     private int expectedNextCount = 0;
@@ -57,7 +56,7 @@ public class DateIndexIteratorTest {
     public void testSimpleScan() throws IOException {
         write("20250404", "LOADED", "20250403", "datatype-a", "FIELD_A", 4, 5, 6);
         withExpectedNextSeekCounts(2, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
     }
 
     @Test
@@ -66,7 +65,7 @@ public class DateIndexIteratorTest {
         write("20250404", "LOADED", "20250403", "datatype-a", "FIELD_A", 4, 5, 6);
         write("20250404", "LOADED", "20250404", "datatype-a", "FIELD_A", 7, 8, 9);
         withExpectedNextSeekCounts(4, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
     }
 
     @Test
@@ -84,35 +83,35 @@ public class DateIndexIteratorTest {
         write("20250404", "LOADED", "20250404", "datatype-c", "FIELD_A", 7, 8, 9);
 
         withExpectedNextSeekCounts(10, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-a");
         withExpectedNextSeekCounts(4, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-b");
         withExpectedNextSeekCounts(4, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-c");
         withExpectedNextSeekCounts(4, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-a", "datatype-b");
         withExpectedNextSeekCounts(7, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-a", "datatype-c");
         withExpectedNextSeekCounts(7, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-b", "datatype-c");
         withExpectedNextSeekCounts(7, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
 
         withDatatypeFilter("datatype-a", "datatype-b", "datatype-c");
         withExpectedNextSeekCounts(10, 1);
-        drive("20250404", "LOADED");
+        assertExpected("20250404", "LOADED");
     }
 
     @Test
@@ -131,13 +130,13 @@ public class DateIndexIteratorTest {
 
         // full scan range
         withExpectedNextSeekCounts(10, 1);
-        drive("20250401", "20250403", "LOADED");
+        assertExpected("20250401", "20250403", "LOADED");
 
         // full scan range, restrict to single day in the column qualifier
         for (String date : List.of("20250401", "20250402", "20250403")) {
             withStartEndDate(date, date);
             withExpectedNextSeekCounts(4, 1);
-            drive("20250401", "20250403", "LOADED");
+            assertExpected("20250401", "20250403", "LOADED");
         }
     }
 
@@ -150,7 +149,7 @@ public class DateIndexIteratorTest {
         for (String field : List.of("FIELD_A", "FIELD_B", "FIELD_C")) {
             withExpectedNextSeekCounts(2, 1);
             withField(field);
-            drive("20250401", "LOADED");
+            assertExpected("20250401", "LOADED");
         }
     }
 
@@ -164,11 +163,11 @@ public class DateIndexIteratorTest {
         data.put(key, value);
     }
 
-    private void drive(String date, String type) throws IOException {
-        drive(date, date, type);
+    private void assertExpected(String date, String type) throws IOException {
+        assertExpected(date, date, type);
     }
 
-    private void drive(String start, String stop, String type) throws IOException {
+    private void assertExpected(String start, String stop, String type) throws IOException {
         Range range = createRangeForDate(start, stop);
         SortedKeyValueIterator<Key,Value> source = new SortedMapIterator(data);
 
@@ -180,7 +179,6 @@ public class DateIndexIteratorTest {
 
         while (iter.hasTop()) {
             Key key = iter.getTopKey();
-            Value value = iter.getTopValue();
             log.info("k: {}", key.toStringNoTime());
             iter.next();
         }

@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -311,29 +313,81 @@ public class DateIndexHelperTest implements ApplicationContextAware {
                         0.9f);
         helper.setUseIterator(true);
 
-        String hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                        DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
+        // filter function lies in the middle of the query date range, hint should be in the middle of the query date range
+        String hint = getHint(helper, "20100102", "20100102", "20090101", "20120101");
         Assert.assertEquals("20100101_1,20100102_5", hint);
 
-        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        // when filter function dates only exist for a portion of the query but hits exist elsewhere in the query date
+        // range, the hint should include shards outside the function date range
+        hint = getHint(helper, "20100102", "20100102", "20100101", "20100102");
         Assert.assertEquals("20100101_1,20100102_5", hint);
 
-        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                        DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        // when the filter function date and query dates are both the same day the hint should be restricted to that day
+        hint = getHint(helper, "20100102", "20100102", "20100102", "20100102");
         Assert.assertEquals("20100102_5", hint);
 
-        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"),
-                        DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
+        // function dates are a subset of the query dates, but the actual hint is for a separate date outside the function date range
+        hint = getHint(helper, "20100104", "20100104", "20090101", "20120101");
         Assert.assertEquals("20100103_1,20100103_3", hint);
 
-        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"),
-                        DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"), Collections.singleton("test"));
+        // function dates match the query dates but no entries exist in the date index, no hint should be returned
+        hint = getHint(helper, "20100104", "20100104", "20100104", "20100104");
         Assert.assertEquals("", hint);
 
-        hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"),
-                        DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
+        // functions dates within query dates, no entries exist in the date index, no hint should be returned
+        hint = getHint(helper, "20100103", "20100103", "20090101", "20120101");
         Assert.assertEquals("", hint);
+    }
+
+    /**
+     * Get a shards and days hint for a query start and end date given a default field and datatype filter
+     *
+     * @param helper
+     *            the DateIndexHelper
+     * @param functionStart
+     *            the function start date
+     * @param functionStop
+     *            the function end date
+     * @param queryStart
+     *            the query start date
+     * @param queryStop
+     *            the query end date
+     * @return a shards and days hint, or null if no such hint exists
+     * @throws Exception
+     *             if something goes wrong
+     */
+    private String getHint(DateIndexHelper helper, String functionStart, String functionStop, String queryStart, String queryStop) throws Exception {
+        return getHint(helper, "LOAD_DATE", functionStart, functionStop, queryStart, queryStop, Collections.singleton("test"));
+    }
+
+    /**
+     * Get a shards and days hint given the provided field, datatype filter, start and end dates, and filter start and end dates
+     *
+     * @param helper
+     *            the DateIndexHelper
+     * @param field
+     *            the field
+     * @param functionStart
+     *            the filter function start date
+     * @param functionStop
+     *            the filter function end date
+     * @param queryStart
+     *            the query start date
+     * @param queryStop
+     *            the query end date
+     * @param datatypes
+     *            the datatype filter
+     * @return a shards and days hint, or null if no such hint exists
+     * @throws Exception
+     *             if something goes wrong
+     */
+    private String getHint(DateIndexHelper helper, String field, String functionStart, String functionStop, String queryStart, String queryStop,
+                    Set<String> datatypes) throws Exception {
+        Date functionBeginDate = DateIndexUtil.getBeginDate(functionStart);
+        Date functionStopDate = DateIndexUtil.getEndDate(functionStop);
+        Date queryStartDate = DateIndexUtil.getBeginDate(queryStart);
+        Date queryStopDate = DateIndexUtil.getEndDate(queryStop);
+        return helper.getShardsAndDaysHint(field, functionBeginDate, functionStopDate, queryStartDate, queryStopDate, datatypes);
     }
 
     @Test
@@ -341,8 +395,8 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         DateTypeDescription description = new DateTypeDescription();
         description.addField("FIELD_A");
         description.addField("FIELD_B");
-        description.updateStartEndDate("20240303");
-        description.updateStartEndDate("20240304");
+        description.ensureStartAndEndDateIsSet("20240303");
+        description.ensureStartAndEndDateIsSet("20240304");
 
         String data = description.serializeToString();
 

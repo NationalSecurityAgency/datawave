@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.security.util.ScannerHelper;
@@ -73,6 +74,8 @@ public class DateIndexHelper implements ApplicationContextAware {
     private static final Logger log = Logger.getLogger(DateIndexHelper.class);
 
     public static final String NULL_BYTE = "\0";
+
+    private static final Joiner joiner = Joiner.on(',');
 
     protected AccumuloClient client;
 
@@ -211,7 +214,8 @@ public class DateIndexHelper implements ApplicationContextAware {
          * @param date
          *            the date
          */
-        public void updateStartEndDate(String date) {
+        public void ensureStartAndEndDateIsSet(String date) {
+            Preconditions.checkNotNull(date, "expected date string to be not-null");
             if (start == null || date.compareTo(start) < 0) {
                 start = date;
             }
@@ -246,7 +250,7 @@ public class DateIndexHelper implements ApplicationContextAware {
             StringBuilder sb = new StringBuilder();
             sb.append(start).append(',');
             sb.append(end).append(',');
-            sb.append(Joiner.on(',').join(fields));
+            sb.append(joiner.join(fields));
             return sb.toString();
         }
 
@@ -254,8 +258,8 @@ public class DateIndexHelper implements ApplicationContextAware {
             String[] parts = data.split(",");
 
             DateTypeDescription description = new DateTypeDescription();
-            description.updateStartEndDate(parts[0]);
-            description.updateStartEndDate(parts[1]);
+            description.ensureStartAndEndDateIsSet(parts[0]);
+            description.ensureStartAndEndDateIsSet(parts[1]);
             for (int i = 2; i < parts.length; i++) {
                 description.addField(parts[i]);
             }
@@ -302,7 +306,7 @@ public class DateIndexHelper implements ApplicationContextAware {
             if (useIterator) {
                 IteratorSetting setting = new IteratorSetting(50, "DateTypeDescriptionIterator", DateTypeDescriptionIterator.class);
                 if (!datatypeFilter.isEmpty()) {
-                    setting.addOption(DateTypeDescriptionIterator.DATATYPE_FILTER, Joiner.on(',').join(datatypeFilter));
+                    setting.addOption(DateTypeDescriptionIterator.DATATYPE_FILTER, joiner.join(datatypeFilter));
                 }
                 scanner.addScanIterator(setting);
 
@@ -316,7 +320,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                     String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                     if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
                         desc.addField(parts[2]);
-                        desc.updateStartEndDate(parts[0]);
+                        desc.ensureStartAndEndDateIsSet(parts[0]);
                     }
                 }
             }
@@ -404,7 +408,7 @@ public class DateIndexHelper implements ApplicationContextAware {
 
             IteratorSetting setting = new IteratorSetting(50, "ShardsAndDaysHint", DateIndexIterator.class);
             if (!datatypeFilter.isEmpty()) {
-                setting.addOption(DateIndexIterator.DATATYPE_FILTER, Joiner.on(',').join(datatypeFilter));
+                setting.addOption(DateIndexIterator.DATATYPE_FILTER, joiner.join(datatypeFilter));
             }
             setting.addOption(DateIndexIterator.MINIMUM_DATE, minShard);
             setting.addOption(DateIndexIterator.MAXIMUM_DATE, maxShard);
@@ -447,7 +451,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                     try {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
                         String rowDateString = k.getRow().toString();
-                        // the row may be sharded, i need to get the date part
+                        // the row may be sharded, so take the date portion which is before the underscore
                         if (rowDateString.contains("_")) {
                             // strip off the shard number part of the rowDate string
                             rowDateString = rowDateString.substring(0, rowDateString.indexOf('_'));

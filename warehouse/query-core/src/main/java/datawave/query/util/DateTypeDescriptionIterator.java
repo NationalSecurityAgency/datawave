@@ -31,6 +31,8 @@ public class DateTypeDescriptionIterator implements SortedKeyValueIterator<Key,V
 
     public static final String DATATYPE_FILTER = "datatypes";
 
+    private static final Splitter splitter = Splitter.on(',');
+
     private Set<String> datatypes;
 
     private SortedKeyValueIterator<Key,Value> source;
@@ -46,7 +48,7 @@ public class DateTypeDescriptionIterator implements SortedKeyValueIterator<Key,V
 
         if (options.containsKey(DATATYPE_FILTER)) {
             String option = options.get(DATATYPE_FILTER);
-            datatypes = new HashSet<>(Splitter.on(',').splitToList(option));
+            datatypes = new HashSet<>(splitter.splitToList(option));
         }
     }
 
@@ -65,7 +67,7 @@ public class DateTypeDescriptionIterator implements SortedKeyValueIterator<Key,V
             String[] parts = StringUtils.split(tk.getColumnQualifier().toString(), '\0');
 
             if (datatypes == null || datatypes.isEmpty() || datatypes.contains(parts[1])) {
-                description.updateStartEndDate(parts[0]);
+                description.ensureStartAndEndDateIsSet(parts[0]);
                 description.addField(parts[2]);
             }
 

@@ -95,7 +95,7 @@ public class MockDateIndexHelper extends DateIndexHelper {
                             && (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(entry.getValue().dataType))) {
 
                 String date = entry.getValue().getShardDate();
-                desc.updateStartEndDate(date);
+                desc.ensureStartAndEndDateIsSet(date);
             }
         }
         // update default values if none were found
