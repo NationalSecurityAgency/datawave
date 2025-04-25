@@ -1,6 +1,5 @@
 package datawave.query.util;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +20,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
@@ -222,6 +222,8 @@ public class TypeMetadataHelper {
             this(null);
         }
 
+        // Autowired annotation is necessary here so that the Spring bean factory knows which constructor to use
+        @Autowired
         public Factory(BeanFactory beanFactory) {
             this.beanFactory = beanFactory;
         }
@@ -237,7 +239,8 @@ public class TypeMetadataHelper {
                                 ResolvableType.forClassWithGenerics(Map.class, String.class, String.class).resolve());
                 Set<Authorizations> allMetadataAuths = (Set<Authorizations>) beanFactory.getBean("allMetadataAuths",
                                 ResolvableType.forClassWithGenerics(Set.class, Authorizations.class).resolve());
-                return new TypeMetadataHelper(typeSubstitutions, allMetadataAuths, client, metadataTableName, auths, useTypeSubstitution);
+                return beanFactory.getBean(TypeMetadataHelper.class, typeSubstitutions, allMetadataAuths, client, metadataTableName, auths,
+                                useTypeSubstitution);
             }
         }
     }
