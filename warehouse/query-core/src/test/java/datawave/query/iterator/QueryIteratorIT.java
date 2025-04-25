@@ -1123,6 +1123,13 @@ public class QueryIteratorIT extends EasyMockSupport {
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
     }
 
+    @Test
+    public void tf_contentFunction_delayed_docRange_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 == 'a' && ((_Delayed_ = true) && (TF_FIELD1 == 'a' && TF_FIELD1 == 'b' && content:phrase(TF_FIELD1,termOffsetMap,'a','b')))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.emptyList(), Collections.emptyList());
+    }
+
     // terms 'a' and 'c' do not appear adjacent
     @Test
     public void tf_contentFunction_invalidPhrase_docRange_test() throws IOException {

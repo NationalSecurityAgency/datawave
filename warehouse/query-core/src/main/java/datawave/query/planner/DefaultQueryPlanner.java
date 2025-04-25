@@ -88,6 +88,7 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
+import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -3022,27 +3023,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("query stream is " + stream.context());
             }
 
-            switch (stream.context()) {
-                case EXCEEDED_TERM_THRESHOLD:
-                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
-                    if (!config.canHandleExceededTermThreshold()) {
-                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
-                    }
-                    break;
-                case UNINDEXED:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Full table scan required because of unindexed fields");
-                    }
-                    needsFullTable = true;
-                    break;
-                case DELAYED_FIELD:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Full table scan required because query consists of only delayed expressions");
-                    }
-                    needsFullTable = true;
-                    break;
-                default:
-                    // the context is good and does not prevent a query from executing
+            // the context here doesn't actually matter because the range stream was initialized but the underlying scanners
+            // have not been started via the concurrent scanner initializer. This is just a quick check for known bad states
+            if (stream.context().equals(StreamContext.DELAYED)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Full table scan required because query consists of only delayed expressions");
+                }
+                needsFullTable = true;
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
