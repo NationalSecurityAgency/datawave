@@ -23,7 +23,7 @@
         <module>map-reduce-embedded</module>
         <module>metrics</module>
         <module>atom</module>
-        <module>query-websocket</module>
+        <!-- <module>query-websocket</module> -->
         <module>web-root</module>
         <module>modification</module>
         <module>rest-api</module>
