@@ -14,7 +14,7 @@
         <dist.accumulo>accumulo-${version.accumulo.tar.gz}-bin.tar.gz</dist.accumulo>
         <dist.hadoop>hadoop-${version.hadoop.tar.gz}.tar.gz</dist.hadoop>
         <dist.maven>apache-maven-${version.maven.tar.gz}-bin.tar.gz</dist.maven>
-        <dist.wildfly>wildfly-${version.wildfly.tar.gz}.Final.tar.gz</dist.wildfly>
+        <dist.wildfly>wildfly-preview-24.0.1.Final.tar.gz</dist.wildfly>
         <dist.zookeeper>apache-zookeeper-${version.zookeeper.tar.gz}-bin.tar.gz</dist.zookeeper>
         <skipIngest>false</skipIngest>
         <url.accumulo>https://dlcdn.apache.org/accumulo/${version.accumulo.tar.gz}/${dist.accumulo}</url.accumulo>
