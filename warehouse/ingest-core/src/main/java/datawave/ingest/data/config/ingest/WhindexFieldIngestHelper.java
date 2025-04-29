@@ -82,71 +82,77 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      *             if there are configuration issues.
      */
     @Override
-    public void setup(Configuration config) throws Exception {
-        // Construct a common prefix based on the type name and the whindex rules constant.
-        String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
+    public void setup(Configuration config) {
 
-        // Get all properties from the configuration that start with the common prefix.
-        Map<String,String> properties = config.getPropsWithPrefix(commonPrefix);
-        // Map to temporarily group properties by their group ID.
-        Map<String,WhindexConfig> groupingsToConfigs = new HashMap<>();
+        try {
 
-        // Process each configuration property.
-        for (Map.Entry<String,String> entry : properties.entrySet()) {
-            // Split the key by '.' to extract the group ID and property name.
-            String[] parts = entry.getKey().split("\\.");
-            String groupID = parts[0];
-            String property = parts[1];
+            // Construct a common prefix based on the type name and the whindex rules constant.
+            String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
 
-            if(groupID.isEmpty()){
-                throw new Exception("GroupID is empty in entry " + entry + ". Should be something like \"<someID>.whindex.etc\"");
+            // Get all properties from the configuration that start with the common prefix.
+            Map<String,String> properties = config.getPropsWithPrefix(commonPrefix);
+            // Map to temporarily group properties by their group ID.
+            Map<String,WhindexConfig> groupingsToConfigs = new HashMap<>();
+
+            // Process each configuration property.
+            for (Map.Entry<String,String> entry : properties.entrySet()) {
+                // Split the key by '.' to extract the group ID and property name.
+                String[] parts = entry.getKey().split("\\.");
+                String groupID = parts[0];
+                String property = parts[1];
+
+                if (groupID.isEmpty()) {
+                    throw new Exception("GroupID is empty in entry " + entry + ". Should be something like \"<someID>.whindex.etc\"");
+                }
+
+                if (property.isEmpty()) {
+                    throw new Exception("Property is empty in entry " + entry + ". Should be something like \"whindex.<someValidProperty>\"");
+                }
+
+                if (entry.getValue().isEmpty()) {
+                    throw new Exception("Value is empty in entry " + entry + ". Should be a string.");
+                }
+
+                // Retrieve or create the WhindexConfig for the given group ID.
+                WhindexConfig whindexConfig = groupingsToConfigs.computeIfAbsent(groupID, (k) -> new WhindexConfig());
+                // Set the appropriate property in the WhindexConfig based on the property name.
+                switch (property) {
+                    case VALUE_FIELD:
+                        whindexConfig.setValueField(entry.getValue());
+                        break;
+                    case SRC_FIELD:
+                        whindexConfig.setSourceField(entry.getValue());
+                        break;
+                    case DELETE_SRC_FIELD:
+                        whindexConfig.setOverloaded(Boolean.parseBoolean(entry.getValue()));
+                        // If the configuration specifies deletion of the source field, add it to overloadedFields.
+                        if (whindexConfig.isOverloaded()) {
+                            overloadedFields.add(whindexConfig.getSourceField());
+                        }
+                        break;
+                    case DST_FIELD:
+                        whindexConfig.setDestField(entry.getValue());
+                        // Add the destination (whindex) field to the set of destinationFields.
+                        destinationFields.add(entry.getValue());
+                        break;
+                    case VALUES:
+                        // Split the comma-separated list of values and set them.
+                        whindexConfig.setValues(List.of(entry.getValue().split(",")));
+                        break;
+                    default:
+                        // Log a warning for any unexpected property found in the configuration.
+                        String originalProperty = commonPrefix + groupID + "." + property;
+                        throw new Exception("Unexpected whindex property given:" + originalProperty + "=" + entry.getValue());
+                }
             }
 
-            if(property.isEmpty()){
-                throw new Exception("Property is empty in entry " + entry + ". Should be something like \"whindex.<someValidProperty>\"");
-            }
-
-            if(entry.getValue().isEmpty()){
-                throw new Exception("Value is empty in entry " + entry + ". Should be a string.");
-            }
-
-            // Retrieve or create the WhindexConfig for the given group ID.
-            WhindexConfig whindexConfig = groupingsToConfigs.computeIfAbsent(groupID, (k) -> new WhindexConfig());
-            // Set the appropriate property in the WhindexConfig based on the property name.
-            switch (property) {
-                case VALUE_FIELD:
-                    whindexConfig.setValueField(entry.getValue());
-                    break;
-                case SRC_FIELD:
-                    whindexConfig.setSourceField(entry.getValue());
-                    break;
-                case DELETE_SRC_FIELD:
-                    whindexConfig.setOverloaded(Boolean.parseBoolean(entry.getValue()));
-                    // If the configuration specifies deletion of the source field, add it to overloadedFields.
-                    if (whindexConfig.isOverloaded()) {
-                        overloadedFields.add(whindexConfig.getSourceField());
-                    }
-                    break;
-                case DST_FIELD:
-                    whindexConfig.setDestField(entry.getValue());
-                    // Add the destination (whindex) field to the set of destinationFields.
-                    destinationFields.add(entry.getValue());
-                    break;
-                case VALUES:
-                    // Split the comma-separated list of values and set them.
-                    whindexConfig.setValues(List.of(entry.getValue().split(",")));
-                    break;
-                default:
-                    // Log a warning for any unexpected property found in the configuration.
-                    String originalProperty = commonPrefix + groupID + "." + property;
-                    throw new Exception("Unexpected whindex property given:" + originalProperty + "=" + entry.getValue());
-            }
+            // After processing, map each WhindexConfig to its value field.
+            groupingsToConfigs.values().forEach((wc) -> {
+                valueFieldsToWhindexConfigs.put(wc.getValueField(), wc);
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        // After processing, map each WhindexConfig to its value field.
-        groupingsToConfigs.values().forEach((wc) -> {
-            valueFieldsToWhindexConfigs.put(wc.getValueField(), wc);
-        });
     }
 
     /**
