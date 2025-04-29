@@ -233,7 +233,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         this.getCompositeIngest().setup(config);
 
         // Set up the whindex ingest.
-        this.getWhindexIngest().setup(config);
+        try {
+            this.getWhindexIngest().setup(config);
+        } catch (Exception e){
+            log.error(e);
+        }
 
         IngestConfiguration ingestConfiguration = IngestConfigurationFactory.getIngestConfiguration();
         markingsHelper = ingestConfiguration.getMarkingsHelper(config, getType());
