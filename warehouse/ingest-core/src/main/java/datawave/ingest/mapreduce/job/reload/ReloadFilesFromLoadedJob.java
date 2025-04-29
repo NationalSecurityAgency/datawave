@@ -23,7 +23,6 @@ public class ReloadFilesFromLoadedJob {
 
         protected final Logger log = LoggerFactory.getLogger(getClass());
 
-
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             log.info("Processing file: \"{}", value.toString());
