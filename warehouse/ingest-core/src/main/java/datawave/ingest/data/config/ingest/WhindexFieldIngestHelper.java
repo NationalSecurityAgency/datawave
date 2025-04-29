@@ -98,15 +98,15 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
             String groupID = parts[0];
             String property = parts[1];
 
-            if(groupID.isEmpty()){
+            if (groupID.isEmpty()) {
                 throw new Exception("GroupID is empty in entry " + entry + ". Should be something like \"<someID>.whindex.etc\"");
             }
 
-            if(property.isEmpty()){
+            if (property.isEmpty()) {
                 throw new Exception("Property is empty in entry " + entry + ". Should be something like \"whindex.<someValidProperty>\"");
             }
 
-            if(entry.getValue().isEmpty()){
+            if (entry.getValue().isEmpty()) {
                 throw new Exception("Value is empty in entry " + entry + ". Should be a string.");
             }
 
