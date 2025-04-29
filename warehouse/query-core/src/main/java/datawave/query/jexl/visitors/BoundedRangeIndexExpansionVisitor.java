@@ -85,7 +85,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
             if (range != null) {
 
                 if (range.areBoundsEquivalent()) {
-                    log.warn("lower and upper bound are equivalent");
+                    log.warn("lower and upper bound are equivalent: {}", range);
                 }
 
                 if (range.isLowerBoundGreaterThanUpperBound()) {

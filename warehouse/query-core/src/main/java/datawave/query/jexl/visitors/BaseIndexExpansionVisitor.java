@@ -194,7 +194,11 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
                     if (isWrappedJunction(futureJexlNode.getOrigNode())) {
                         JexlNode parent = futureJexlNode.jjtGetParent();
                         JexlNode grandParent = parent.jjtGetParent();
-                        JexlNodes.replaceChild(grandParent, parent, newNode);
+                        if (grandParent != null) {
+                            JexlNodes.replaceChild(grandParent, parent, newNode);
+                        } else {
+                            JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
+                        }
                     } else {
                         JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
                     }

@@ -2,8 +2,6 @@ package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
@@ -20,23 +18,28 @@ import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
  */
 public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
 
+    private boolean unmarkedBoundedRangeFound = false;
+
     private UnmarkedBoundedRangeDetectionVisitor() {
         // enforce static access
     }
 
     public static boolean findUnmarkedBoundedRanges(JexlNode script) {
         UnmarkedBoundedRangeDetectionVisitor visitor = new UnmarkedBoundedRangeDetectionVisitor();
+        script.jjtAccept(visitor, null);
+        return visitor.foundUnmarkedBoundedRange();
+    }
 
-        AtomicBoolean unmarked = new AtomicBoolean(false);
-        script.jjtAccept(visitor, unmarked);
-
-        return unmarked.get();
+    public boolean foundUnmarkedBoundedRange() {
+        return unmarkedBoundedRangeFound;
     }
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (data == null) {
-            return null;
+
+        if (unmarkedBoundedRangeFound) {
+            // if we already found an unmarked bounded range there is no need to evaluate other nodes
+            return data;
         }
 
         // check for a bounded marker where the source node is not a range
@@ -44,18 +47,16 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
         if (instance.isType(BOUNDED_RANGE)) {
             LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
             if (range == null) {
-                AtomicBoolean hasBounded = (AtomicBoolean) data;
-                hasBounded.set(true);
+                unmarkedBoundedRangeFound = true;
             }
-            return false;
+            return data;
         }
 
         // check for a range that is not marked
         LiteralRange<?> range = JexlASTHelper.findRange().notDelayed().notMarked().getRange(node);
         if (range != null && range.isBounded()) {
-            AtomicBoolean hasBounded = (AtomicBoolean) data;
-            hasBounded.set(true);
-            return false;
+            unmarkedBoundedRangeFound = true;
+            return data;
         }
 
         return super.visit(node, data);
