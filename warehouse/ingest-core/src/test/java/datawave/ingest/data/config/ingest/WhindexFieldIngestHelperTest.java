@@ -2,6 +2,8 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Arrays;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMultimap;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -95,7 +97,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("zValueField", expectedConfigC);
 
         // Assert that the parsed whindex configurations match the expected mapping.
-        Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
+        Assertions.assertEquals(ImmutableMultimap.copyOf(expectedValues), wHelper.getValueFieldsToWhindexConfigs());
     }
 
     /**
