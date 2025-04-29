@@ -48,7 +48,7 @@ public class TestSharedCacheCoordinator implements Serializable {
         void evict(String dn);
     }
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 849730389996326126L;
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
 

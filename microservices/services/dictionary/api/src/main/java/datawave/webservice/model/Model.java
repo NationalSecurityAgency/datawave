@@ -30,16 +30,21 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     private static final long serialVersionUID = 1L;
     private String jqueryUri;
     private String dataTablesUri;
+    private String systemName;
     private static final String TITLE = "Model Description", EMPTY = "";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[3, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
     
-    public Model(String jqueryUri, String datatablesUri) {
+    public Model(String jqueryUri, String datatablesUri, String systemName) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
-        
+        this.systemName = systemName;
+    }
+    
+    public Model(String jqueryUri, String datatablesUri) {
+        this(jqueryUri, datatablesUri, "unknown");
     }
     
     // Only used in ModelBeanTest now
@@ -131,7 +136,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        
+        builder.append("<div id = \"system-name\"><p>Cluster: ").append(systemName).append("</p></div>");
         builder.append("<div>\n");
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");

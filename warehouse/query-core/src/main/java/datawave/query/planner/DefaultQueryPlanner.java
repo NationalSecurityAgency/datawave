@@ -88,6 +88,7 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
+import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -2272,15 +2273,30 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             JexlNode andNode = JexlNodeFactory.createAndNode(andChildren);
             JexlNodeFactory.setChildren(queryTree, Collections.singleton(andNode));
 
-            // now lets update the query parameters with the correct start and
-            // end dates
-            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                            + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+            if (config.getNoExpansionIfCurrentDateTypes().contains(dateType)) {
+                // only remap the end date if the user did not specify today's date
+                if (!DateUtils.isSameDay(new Date(), config.getEndDate())) {
+                    // now lets update the query parameters with the correct end date
+                    log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                    + config.getBeginDate() + "," + dateIndexData.getEndDate());
 
-            // reset the dates in the configuration, no need to reset then in
-            // the Query settings object
-            config.setBeginDate(dateIndexData.getBeginDate());
-            config.setEndDate(dateIndexData.getEndDate());
+                    // reset the dates in the configuration, no need to reset them in
+                    // the Query settings object
+                    config.setEndDate(dateIndexData.getEndDate());
+                } else {
+                    log.info("No Remapped dates for " + dateType + " because " + config.getEndDate() + " is today");
+                }
+            } else {
+                // now lets update the query parameters with the correct start and
+                // end dates
+                log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
+                                + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
+
+                // reset the dates in the configuration, no need to reset them in
+                // the Query settings object
+                config.setBeginDate(dateIndexData.getBeginDate());
+                config.setEndDate(dateIndexData.getEndDate());
+            }
         }
 
         return queryTree;
@@ -2570,7 +2586,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (settingFuture.isDone()) {
             try {
                 return settingFuture.get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e.getCause());
+            } catch (ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
         } else {
@@ -3004,27 +3023,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("query stream is " + stream.context());
             }
 
-            switch (stream.context()) {
-                case EXCEEDED_TERM_THRESHOLD:
-                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
-                    if (!config.canHandleExceededTermThreshold()) {
-                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
-                    }
-                    break;
-                case UNINDEXED:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Full table scan required because of unindexed fields");
-                    }
-                    needsFullTable = true;
-                    break;
-                case DELAYED_FIELD:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Full table scan required because query consists of only delayed expressions");
-                    }
-                    needsFullTable = true;
-                    break;
-                default:
-                    // the context is good and does not prevent a query from executing
+            // the context here doesn't actually matter because the range stream was initialized but the underlying scanners
+            // have not been started via the concurrent scanner initializer. This is just a quick check for known bad states
+            if (stream.context().equals(StreamContext.DELAYED)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Full table scan required because query consists of only delayed expressions");
+                }
+                needsFullTable = true;
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator

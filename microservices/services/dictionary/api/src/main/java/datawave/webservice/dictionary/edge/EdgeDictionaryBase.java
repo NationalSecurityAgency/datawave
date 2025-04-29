@@ -17,6 +17,10 @@ public abstract class EdgeDictionaryBase<T,F extends MetadataBase<F>> extends Ba
     
     public abstract List<? extends MetadataBase<F>> getMetadataList();
     
+    public abstract String getEdgeDictionarySystem();
+    
+    public abstract void setEdgeDictionarySystem(String edgeDictionarySystem);
+    
     public abstract void setTotalResults(long totalResults);
     
     public abstract long getTotalResults();

@@ -60,6 +60,7 @@ import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
+import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
@@ -309,6 +310,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     pruneIvaratorConfigs(script, newIteratorSetting);
 
+                    pruneUniqueOptions(newIteratorSetting, input.getRanges());
+
                     pruneEmptyOptions(newIteratorSetting);
 
                     if (config.getReduceQueryFieldsPerShard()) {
@@ -375,6 +378,29 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         newIteratorSetting.addOption(QueryOptions.SERIAL_EVALUATION_PIPELINE, "true");
         newIteratorSetting.addOption(QueryOptions.MAX_EVALUATION_PIPELINES, "1");
         newIteratorSetting.addOption(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, "1");
+    }
+
+    /**
+     * In the case of a document range there is no reason to spin up a {@link UniqueTransform}
+     *
+     * @param newIteratorSetting
+     *            the IteratorSettings
+     * @param ranges
+     *            the collection of ranges to search
+     */
+    protected void pruneUniqueOptions(IteratorSetting newIteratorSetting, Collection<Range> ranges) {
+        if (ranges.size() > 1) {
+            // Do not attempt if more than one range was provided
+            return;
+        }
+
+        Range range = ranges.iterator().next();
+        if (range.getStartKey().getColumnFamily().getLength() > 0 && range.isStartKeyInclusive()) {
+            // we have a document range
+            newIteratorSetting.removeOption(QueryOptions.UNIQUE_FIELDS);
+            newIteratorSetting.removeOption(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE);
+            newIteratorSetting.removeOption(QueryOptions.MOST_RECENT_UNIQUE);
+        }
     }
 
     /**

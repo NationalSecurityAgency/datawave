@@ -31,6 +31,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *
      * @return TokenSpecParser child object
      */
+    @SuppressWarnings("unchecked")
     public B parse(String configuration) {
         ParserState parser = new ParserState(configuration);
         parser.parseTo(this);
@@ -179,7 +180,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
          * @param builder
          *            token spec parser
          */
-        protected void parseTo(TokenSpecParser builder) {
+        protected void parseTo(TokenSpecParser<?> builder) {
             ParseToken initialToken;
             while ((initialToken = peek()) != null) {
                 String tokenStr = parseStrliteral();

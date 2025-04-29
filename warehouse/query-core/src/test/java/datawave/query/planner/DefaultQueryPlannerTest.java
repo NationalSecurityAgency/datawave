@@ -89,6 +89,7 @@ class DefaultQueryPlannerTest {
             config.setEndDate(endDate);
 
             settings.addParameter(QueryParameters.DATE_RANGE_TYPE, "SPECIAL_EVENT");
+            dateIndexHelper.addEntry("20241201", "SPECIAL_EVENT", "wiki", "FOO", "20240101_shard");
             dateIndexHelper.addEntry("20250101", "SPECIAL_EVENT", "wiki", "FOO", "20250101_shard");
 
             ASTJexlScript actual = addDateFilters();
@@ -96,8 +97,10 @@ class DefaultQueryPlannerTest {
             // no hints but the date filter is still used
             JexlNodeAssert.assertThat(actual).isEqualTo(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20250101"), config.getBeginDate());
-            Assertions.assertEquals(DateIndexUtil.getEndDate("20250101"), config.getEndDate());
+            // begin date is not pushed farther back
+            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241001"), config.getBeginDate());
+            // end date not pushed farther back either
+            Assertions.assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -144,7 +147,8 @@ class DefaultQueryPlannerTest {
             // hints and date filter used in this case
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
+            // only the end date is adjusted
+            Assertions.assertEquals(beginDate, config.getBeginDate());
             Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 

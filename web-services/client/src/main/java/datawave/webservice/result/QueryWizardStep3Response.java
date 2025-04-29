@@ -14,7 +14,7 @@ import datawave.webservice.HtmlProvider;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryWizardStep3Response extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5620693247455844728L;
     private static final String TITLE = "Query Plan", EMPTY = "";
     @XmlElement(name = "plan")
     private String plan = null;

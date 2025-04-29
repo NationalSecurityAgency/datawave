@@ -16,6 +16,7 @@ import com.codahale.metrics.annotation.Timed;
 import datawave.accumulo.util.security.UserAuthFunctions;
 import datawave.microservice.AccumuloConnectionService;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
+import datawave.microservice.dictionary.config.DictionaryServiceProperties;
 import datawave.microservice.dictionary.config.EdgeDictionaryProperties;
 import datawave.microservice.dictionary.edge.EdgeDictionary;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
@@ -39,13 +40,16 @@ public class EdgeDictionaryController<EDGE extends EdgeDictionaryBase<EDGE,META>
     private final EdgeDictionary<EDGE,META> edgeDictionary;
     private final UserAuthFunctions userAuthFunctions;
     private final AccumuloConnectionService accumuloConnectionService;
+    private final DictionaryServiceProperties dictionaryServiceConfiguration;
     
     public EdgeDictionaryController(EdgeDictionaryProperties edgeDictionaryProperties, EdgeDictionary<EDGE,META> edgeDictionary,
-                    UserAuthFunctions userAuthFunctions, AccumuloConnectionService accumloConnectionService) {
+                    UserAuthFunctions userAuthFunctions, AccumuloConnectionService accumloConnectionService,
+                    DictionaryServiceProperties dictionaryServiceProperties) {
         this.edgeDictionaryProperties = edgeDictionaryProperties;
         this.edgeDictionary = edgeDictionary;
         this.userAuthFunctions = userAuthFunctions;
         this.accumuloConnectionService = accumloConnectionService;
+        this.dictionaryServiceConfiguration = dictionaryServiceProperties;
     }
     
     /**
@@ -71,6 +75,7 @@ public class EdgeDictionaryController<EDGE extends EdgeDictionaryBase<EDGE,META>
         
         EDGE edgeDict = edgeDictionary.getEdgeDictionary(metadataTableName, accumuloConnectionService.getConnection().getAccumuloClient(),
                         accumuloConnectionService.getDowngradedAuthorizations(queryAuthorizations, currentUser), edgeDictionaryProperties.getNumThreads());
+        edgeDict.setEdgeDictionarySystem(dictionaryServiceConfiguration.getSystem().systemName);
         
         log.info("EDGEDICTIONARY: returning edge dictionary");
         return edgeDict;
