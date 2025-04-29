@@ -31,8 +31,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
  * destination field, values, and whether the source field is overloaded (i.e. to be removed).</li>
  * <li><strong>overloadedFields</strong>: A set of source fields that are marked as overloaded (i.e., should be deleted) based on the configuration.</li>
  * <li><strong>destinationFields</strong>: A set of fields that are defined as new whindex (destination) fields. (Note: In this implementation, destination
- * fields are added during setup but the getter for destination fields currently returns a copy of the overloadedFields. Verify if this behavior meets your
- * requirements.)</li>
+ * fields are added during setup. Verify if this behavior meets your requirements.)</li>
  * </ul>
  * <p>
  * After setup, getWhindexFields() processes an event map to produce new whindex fields based on the defined rules.
@@ -247,13 +246,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
 
     /**
      * Returns an immutable set of destination (whindex) fields.
-     * <p>
-     * Note: This method currently returns a copy of the overloaded fields. Verify if the intended behavior is to return the actual destination fields.
-     * </p>
      *
      * @return an immutable set of destination field names.
      */
     public ImmutableSet<String> getDestinationFields() {
-        return ImmutableSet.copyOf(overloadedFields);
+        return ImmutableSet.copyOf(destinationFields);
     }
 }
