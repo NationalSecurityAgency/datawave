@@ -15,7 +15,7 @@ public interface WhindexIngest {
      * @param config
      *            the {@link Configuration}.
      */
-    void setup(Configuration config) throws IllegalArgumentException;
+    void setup(Configuration config) throws Exception;
 
     /**
      * @param field

@@ -83,7 +83,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      *             if there are configuration issues.
      */
     @Override
-    public void setup(Configuration config) throws IllegalArgumentException {
+    public void setup(Configuration config) throws Exception {
         // Construct a common prefix based on the type name and the whindex rules constant.
         String commonPrefix = type.typeName() + "." + WHINDEX_RULES + ".";
 
@@ -98,6 +98,18 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
             String[] parts = entry.getKey().split("\\.");
             String groupID = parts[0];
             String property = parts[1];
+
+            if(groupID.isEmpty()){
+                throw new Exception("GroupID is empty in entry " + entry + ". Should be something like \"<someID>.whindex.etc\"");
+            }
+
+            if(property.isEmpty()){
+                throw new Exception("Property is empty in entry " + entry + ". Should be something like \"whindex.<someValidProperty>\"");
+            }
+
+            if(entry.getValue().isEmpty()){
+                throw new Exception("Value is empty in entry " + entry + ". Should be a string.");
+            }
 
             // Retrieve or create the WhindexConfig for the given group ID.
             WhindexConfig whindexConfig = groupingsToConfigs.computeIfAbsent(groupID, (k) -> new WhindexConfig());
@@ -128,7 +140,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                 default:
                     // Log a warning for any unexpected property found in the configuration.
                     String originalProperty = commonPrefix + groupID + "." + property;
-                    log.warn("Unexpected whindex property given:" + originalProperty + "=" + entry.getValue());
+                    throw new Exception("Unexpected whindex property given:" + originalProperty + "=" + entry.getValue());
             }
         }
 

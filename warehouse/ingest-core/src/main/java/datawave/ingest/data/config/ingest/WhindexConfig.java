@@ -13,7 +13,8 @@ import java.util.Objects;
  * <li><strong>values</strong> - A list of values that need to be present in the event map's valueField to create a whindex entry.</li>
  * <li><strong>sourceField</strong> - A field that must be present in the event map for a Whindex entry to be created. Depending on configuration, this field
  * may be replaced with the destination field.</li>
- * <li><strong>destField</strong> - Also known as the "WhindexField". This is the name of the new field created when a whindex entry is generated.</li>
+ * <li><strong>destField</strong> - Also known as the "WhindexField". This is the name of the new field created when a whindex entry is generated. The value of
+ * this new field will be that of the sourceField when generated.</li>
  * <li><strong>overloaded</strong> - A boolean flag indicating whether the original source field should be deleted (true) or retained (false) once the whindex
  * entry has been processed. Inclusion of this is optional, the default value is assumed false.</li>
  * </ul>
