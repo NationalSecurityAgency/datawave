@@ -93,9 +93,9 @@ public class WhindexConfigTest {
         config.setOverloaded(false);
 
         // Equals should return false when compared to null.
-        Assertions.assertNotEquals(config, null);
+        Assertions.assertNotEquals(null, config);
         // Equals should return false when compared to an object of a different type (e.g., a String).
-        Assertions.assertNotEquals(config, "spaghetti");
+        Assertions.assertNotEquals("spaghetti", config);
 
         // Verify that the object is equal to itself.
         Assertions.assertEquals(config, config);
