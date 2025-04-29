@@ -15,12 +15,18 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReloadFilesFromLoadedJob {
     public static class ReloadFilesFromLoadedMapper extends Mapper<LongWritable,Text,Text,Text> {
+
+        protected final Logger log = LoggerFactory.getLogger(getClass());
+
+
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            System.out.println("Processing file: \"" + value.toString());
+            log.info("Processing file: \"{}", value.toString());
 
             String[] parts = value.toString().split("/");
             String datatype = parts[3];
@@ -73,9 +79,9 @@ public class ReloadFilesFromLoadedJob {
                     while ((bytesRead = in.read(buffer)) > 0) {
                         out.write(buffer, 0, bytesRead);
                     }
-                    System.out.println("Extracted: " + fileInHar + " to " + outputPath);
+                    log.info("Extracted: {} to {}", fileInHar, outputPath);
                 } catch (IOException e) {
-                    System.err.println("Failed to extract: " + fileInHar + " - " + e.getMessage());
+                    log.error("Failed to extract: {} - {}", fileInHar, e.getMessage());
                 }
             } else {
 
@@ -85,7 +91,7 @@ public class ReloadFilesFromLoadedJob {
                 try {
                     FileUtil.rename(hdfs, new Path(loadedPath, hourAndFileName), new Path(outputPath));
                 } catch (Exception e) {
-                    System.err.println("Failed to rename: " + loadedPath + "/" + hourAndFileName + " to " + outputPath);
+                    log.error("Failed to rename: {}/{} to {}", loadedPath, hourAndFileName, outputPath);
                     if (errorOnNotFound) {
                         throw new RuntimeException(loadedPath + "/" + hourAndFileName + " not found in either " + "archive directory or raw loaded directory ",
                                         e);
