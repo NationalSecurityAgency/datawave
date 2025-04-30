@@ -54,8 +54,6 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     private final Type type;
     // Multimap mapping value field names to their corresponding WhindexConfig instances.
     private final Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
-    // Set of source fields that are marked as overloaded (to be deleted after processing).
-    private final Set<String> overloadedFields = new HashSet<>();
     // Set of destination (whindex) fields generated from configuration rules.
     private final Set<String> destinationFields = new HashSet<>();
 
@@ -125,10 +123,6 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                         break;
                     case DELETE_SRC_FIELD:
                         whindexConfig.setOverloaded(Boolean.parseBoolean(entry.getValue()));
-                        // If the configuration specifies deletion of the source field, add it to overloadedFields.
-                        if (whindexConfig.isOverloaded()) {
-                            overloadedFields.add(whindexConfig.getSourceField());
-                        }
                         break;
                     case DST_FIELD:
                         whindexConfig.setDestField(entry.getValue());
@@ -156,6 +150,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
+     * TODO: Update this
      * Processes the provided event map to generate new whindex fields based on the whindex rules.
      * <p>
      * The helper examines each WhindexConfig and checks:
@@ -172,14 +167,13 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      *            the input event map containing field names and their corresponding normalized content.
      * @return a multimap of whindex fields generated from the event map.
      */
-    @Override
-    public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
+    public Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
         Multimap<String,NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
 
         // Filter whindex rules for which both the value field and source field are present in the event map.
         List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs.entries().stream()
-                        .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
-                        .map(Map.Entry::getValue).collect(Collectors.toList());
+                .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
+                .map(Map.Entry::getValue).collect(Collectors.toList());
 
         // Iterate over the matching configurations to generate the whindex fields.
         for (WhindexConfig currWhindexConfig : matchingConfigs) {
@@ -202,8 +196,17 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                 }
                 // Map the copies to the destination field (whindex field).
                 whindicesInEventMap.putAll(currWhindexConfig.getDestField(), copies);
+
+                // Removes the entry from the eventMap IFF a whindex field is created and the srcField is overloaded.
+                if(currWhindexConfig.isOverloaded()){
+                    eventMap.removeAll(currWhindexConfig.getSourceField());
+                }
             }
         }
+
+        // Add the generated whindex fields to the eventMap
+        eventMap.putAll(whindicesInEventMap);
+
         return whindicesInEventMap;
     }
 
@@ -220,18 +223,6 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * Determines if the provided field name is considered overloaded (i.e., the source field that should be deleted).
-     *
-     * @param field
-     *            the field name to check.
-     * @return true if the field is overloaded; false otherwise.
-     */
-    @Override
-    public boolean isOverloadedWhindexField(String field) {
-        return overloadedFields.contains(field);
-    }
-
-    /**
      * Returns an immutable multimap of value fields to their corresponding Whindex configurations.
      *
      * @return an immutable view of the whindex configurations mapped by value field.
@@ -239,15 +230,6 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     @Override
     public ImmutableMultimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
         return ImmutableMultimap.copyOf(valueFieldsToWhindexConfigs);
-    }
-
-    /**
-     * Returns an immutable set of fields that are marked as overloaded.
-     *
-     * @return an immutable set of overloaded field names.
-     */
-    public ImmutableSet<String> getOverloadedFields() {
-        return ImmutableSet.copyOf(overloadedFields);
     }
 
     /**

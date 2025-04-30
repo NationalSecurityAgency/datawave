@@ -24,15 +24,6 @@ public interface WhindexIngest {
      */
     boolean isWhindexField(String field);
 
-    /**
-     * {@code OverloadedWhindexField}s are source fields ("{@code SRC_FIELD}") that become redundant once whindex entries are generated. They are marked to be
-     * removed.
-     *
-     * @param field
-     *            the field to check.
-     * @return {@code true} if {@code field} is an {@code OverloadedWhindexField} (marked for removal)
-     */
-    boolean isOverloadedWhindexField(String field);
 
     /**
      * // todo Given a "{@code RULE}", return a {@code Multimap<String, NormalizedContentInterface>} of whindex fields ("{@code DST_FIELD}") mapped to the
@@ -40,7 +31,7 @@ public interface WhindexIngest {
      *
      * @return the mapping of whindex fields to values.
      */
-    Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> eventFields);
+    Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> eventFields);
 
     Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs();
 }
