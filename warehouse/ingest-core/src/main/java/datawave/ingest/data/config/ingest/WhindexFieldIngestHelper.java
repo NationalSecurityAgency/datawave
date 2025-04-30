@@ -207,7 +207,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
         // Add the generated whindex fields to the eventMap
         eventMap.putAll(whindicesInEventMap);
 
-        return whindicesInEventMap;
+        return eventMap;
     }
 
     /**
