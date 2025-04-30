@@ -35,6 +35,11 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         <property name="edgeAttribute2" value="NAME"/>
         <property name="edgeAttribute3" value="ID"/>
         <property name="activityDateField" value = "PREMIERED"/>
+        <property name="allowedTypeCategories">
+            <list value-type="datawave.data.type.Type.Category">
+                <value>FULL</value>
+            </list>
+        </property>
         <property name="edges">
             <list>
 

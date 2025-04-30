@@ -99,4 +99,8 @@ public interface NormalizedContentInterface extends Cloneable {
     Object clone();
 
     void normalize(Type<?> datawaveType);
+
+    void setTypeCategory(Type.Category t);
+
+    Type.Category getTypeCategory();
 }

@@ -368,7 +368,8 @@ public class IndexFieldHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "ETA", "24", true, shard, timeStamp, range.getValue(corleoneUID));
                 writeShardIndexEntry(bw, indexCounts, "ETA", "40", true, shard, timeStamp, range.getValue(corleoneUID));
                 // geo
-                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
+                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)").stream()
+                                .map(org.apache.accumulo.core.util.Pair::getFirst).collect(Collectors.toList())) {
                     writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(corleoneUID));
                 }
                 // add some index-only fields
@@ -388,7 +389,8 @@ public class IndexFieldHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "AGE", "16", true, shard, timeStamp, range.getValue(sopranoUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "18", true, shard, timeStamp, range.getValue(sopranoUID));
                 // geo
-                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
+                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)").stream()
+                                .map(org.apache.accumulo.core.util.Pair::getFirst).collect(Collectors.toList())) {
                     writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(sopranoUID));
                 }
                 // add some index-only fields
@@ -412,7 +414,8 @@ public class IndexFieldHoleDataIngest {
                 writeShardIndexEntry(bw, indexCounts, "AGE", "34", true, shard, timeStamp, range.getValue(caponeUID));
                 writeShardIndexEntry(bw, indexCounts, "AGE", "40", true, shard, timeStamp, range.getValue(caponeUID));
                 // geo
-                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
+                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)").stream()
+                                .map(org.apache.accumulo.core.util.Pair::getFirst).collect(Collectors.toList())) {
                     writeShardIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, timeStamp, range.getValue(caponeUID));
                 }
                 // add some index-only fields
@@ -547,7 +550,8 @@ public class IndexFieldHoleDataIngest {
                 writeFieldIndexEntry(bw, indexCounts, "ETA", "40", true, shard, corleoneUID, timeStamp);
                 writeFieldIndexEntry(bw, indexCounts, "ETA", "12", true, shard, corleoneChildUID, timeStamp);
                 // geo
-                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
+                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)").stream()
+                                .map(org.apache.accumulo.core.util.Pair::getFirst).collect(Collectors.toList())) {
                     writeFieldIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, corleoneUID, timeStamp);
                 }
                 // add some index-only fields
@@ -566,7 +570,8 @@ public class IndexFieldHoleDataIngest {
                 writeFieldIndexEntry(bw, indexCounts, "AGE", "16", true, shard, sopranoUID, timeStamp);
                 writeFieldIndexEntry(bw, indexCounts, "AGE", "18", true, shard, sopranoUID, timeStamp);
                 // geo
-                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
+                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)").stream()
+                                .map(org.apache.accumulo.core.util.Pair::getFirst).collect(Collectors.toList())) {
                     writeFieldIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, corleoneUID, timeStamp);
                 }
                 // add some index-only fields
@@ -589,7 +594,8 @@ public class IndexFieldHoleDataIngest {
                 writeFieldIndexEntry(bw, indexCounts, "AGE", "20", true, shard, caponeUID, timeStamp);
                 writeFieldIndexEntry(bw, indexCounts, "AGE", "40", true, shard, caponeUID, timeStamp);
                 // geo
-                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
+                for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)").stream()
+                                .map(org.apache.accumulo.core.util.Pair::getFirst).collect(Collectors.toList())) {
                     writeFieldIndexEntry(bw, indexCounts, "GEO", normalized, false, shard, corleoneUID, timeStamp);
                 }
                 // add some index-only fields

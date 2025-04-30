@@ -19,6 +19,11 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 	<property name="edgeAttribute3" value="BAR_FIELD"/>
 	    <!-- (data-driven key component) for a given CSV record, use its EVENT_DATE value for the activity date component of the DataWave edge key  -->
         <property name="activityDateField" value = "EVENT_DATE"/>
+        <property name="allowedTypeCategories">
+            <list value-type="datawave.data.type.Type.Category">
+                <value>FULL</value>
+            </list>
+        </property>
         <property name="edges">
             <list>
                 <!-- testUnawarePrecon -->

@@ -17,8 +17,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -333,7 +335,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     for (Type<?> normalizer : dataTypes) {
                         try {
                             if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term).stream().map(Pair::getFirst)
+                                                .collect(Collectors.toList());
                                 if (normTerms.size() == 1) {
                                     String normTerm = normTerms.iterator().next();
                                     normalizedTerms.add(normTerm);

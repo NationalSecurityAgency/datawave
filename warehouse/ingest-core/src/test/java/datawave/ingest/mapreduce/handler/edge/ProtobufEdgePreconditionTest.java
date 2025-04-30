@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -26,6 +27,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.hash.UID;
+import datawave.data.type.LcNoDiacriticsListType;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -474,6 +476,40 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 7, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+    }
+
+    @Test
+    public void testCategoryAwarePreconDifferentGroup() {
+        // CANINE == 'shepherd'
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "fetch", "THING", "0"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "swim", "THING", "1"));
+
+        LcNoDiacriticsListType listType = new LcNoDiacriticsListType();
+        NormalizedFieldAndValue normalizedContent = new NormalizedFieldAndValue("CANINE", "shepherd,bernese,ketchup", "PET", "0");
+        NormalizedContentInterface copy = new NormalizedFieldAndValue(normalizedContent);
+
+        // test edge config only allows FULL category. LIST_ELEMENTS edges should not be produced in this case
+        for (Pair<String,datawave.data.type.Type.Category> one : listType.normalizeToMany(copy.getIndexedFieldValue())) {
+            copy.setIndexedFieldValue(one.getFirst());
+            copy.setTypeCategory(one.getSecond());
+            fields.put("CANINE", copy);
+            copy = new NormalizedFieldAndValue(normalizedContent);
+        }
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+
+        RawRecordContainer myEvent = getEvent(conf);
+
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 0, true, false);
         Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }

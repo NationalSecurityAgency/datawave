@@ -29,6 +29,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.hadoop.util.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -157,6 +158,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     long futureDelta, pastDelta;
     long newFormatStartDate;
 
+    protected List<datawave.data.type.Type.Category> allowedCategories = Lists.newArrayList();
+
     SimpleGroupFieldNameParser fieldParser = new SimpleGroupFieldNameParser();
 
     public enum FailurePolicy {
@@ -274,6 +277,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 edges.put(entry.getKey(), thing);
                 if (thing.getEnrichmentTypeMappings() != null) {
                     edgeTypeLookup.put(entry.getKey(), thing.getEnrichmentTypeMappings());
+                }
+                if (thing.getAllowedTypeCategories() != null) {
+                    allowedCategories.addAll(thing.getAllowedTypeCategories());
                 }
             }
 
@@ -674,6 +680,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                                 if (ifaceSource == ifaceSink) {
                                     continue;
                                 }
+                                if (!isAllowedCategory(ifaceSource, ifaceSink)) {
+                                    continue;
+                                }
                                 EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
                                                 edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate, validActivityDate);
                                 if (edgeValue != null) {
@@ -697,6 +706,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
                             for (String sinkSubGroup : mSink.keySet()) {
                                 for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
+                                    if (!isAllowedCategory(ifaceSource, ifaceSink)) {
+                                        continue;
+                                    }
                                     EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup,
                                                     sinkSubGroup, edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate,
                                                     validActivityDate);
@@ -725,6 +737,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                                 if (ifaceSource == ifaceSink) {
                                     continue;
                                 }
+                                if (!isAllowedCategory(ifaceSource, ifaceSink)) {
+                                    continue;
+                                }
                                 EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
                                                 edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate, validActivityDate);
                                 if (edgeValue != null) {
@@ -750,6 +765,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
                             for (String sinkSubGroup : sinkSubGroups) {
                                 for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
+                                    if (!isAllowedCategory(ifaceSource, ifaceSink)) {
+                                        continue;
+                                    }
                                     EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup,
                                                     sinkSubGroup, edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate,
                                                     validActivityDate);
@@ -1442,5 +1460,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     public void setVersioningCache(EdgeKeyVersioningCache versioningCache) {
         this.versioningCache = versioningCache;
+    }
+
+    public boolean isAllowedCategory(NormalizedContentInterface source, NormalizedContentInterface sink) {
+        // normalizers that do not specify a category do not have special subtypes, so allow null
+        return (allowedCategories.isEmpty() || (allowedCategories.contains(source.getTypeCategory()) && allowedCategories.contains(sink.getTypeCategory())
+                        || (null == source.getTypeCategory() && null == sink.getTypeCategory())));
     }
 }

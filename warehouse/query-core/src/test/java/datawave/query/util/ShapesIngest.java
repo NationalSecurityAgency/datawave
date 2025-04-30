@@ -8,6 +8,7 @@ import static datawave.util.TableName.SHARD_RINDEX;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -19,6 +20,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
@@ -630,7 +632,7 @@ public class ShapesIngest {
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, String uid, RangeType type, String datatype,
                     boolean indexOnly) throws Exception {
-        List<String> tokens = list.normalizeToMany(data);
+        List<String> tokens = list.normalizeToMany(data).stream().map(Pair::getFirst).collect(Collectors.toList());
 
         // write shard index tokens
         try (BatchWriter bw = client.createBatchWriter(SHARD_INDEX, config)) {
