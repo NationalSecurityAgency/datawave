@@ -24,7 +24,6 @@ public interface WhindexIngest {
      */
     boolean isWhindexField(String field);
 
-
     /**
      * // todo Given a "{@code RULE}", return a {@code Multimap<String, NormalizedContentInterface>} of whindex fields ("{@code DST_FIELD}") mapped to the
      * values specified by the {@code RULE}.
