@@ -628,11 +628,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return this.getWhindexIngest().isWhindexField(fieldName);
     }
 
-    @Override
-    public boolean isOverloadedWhindexField(String fieldName) {
-        return this.getWhindexIngest().isOverloadedWhindexField(fieldName);
-    }
-
     private void compilePatterns() {
         TreeMultimap<Matcher,datawave.data.type.Type<?>> patterns = TreeMultimap.create(new MatcherComparator(),
                         (o1, o2) -> o1.toString().compareTo(o2.toString()));
@@ -1227,8 +1222,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     @Override
-    public Multimap<String,NormalizedContentInterface> getWhindexFields(Multimap<String,NormalizedContentInterface> values) {
-        return getWhindexIngest().getWhindexFields(values);
+    public Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> values) {
+        return getWhindexIngest().processWhindexFields(values);
     }
 
     /**

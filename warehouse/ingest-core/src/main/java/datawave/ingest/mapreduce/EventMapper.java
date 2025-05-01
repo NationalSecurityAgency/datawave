@@ -821,13 +821,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Also get whindex fields, if applicable
         if (handler.getHelper(value.getDataType()) instanceof WhindexIngest) {
             WhindexIngest vHelper = (WhindexIngest) handler.getHelper(value.getDataType());
-            Multimap<String,NormalizedContentInterface> whindexFields = vHelper.getWhindexFields(newFields);
-            for (String fieldName : whindexFields.keySet()) {
-                if (vHelper.isOverloadedWhindexField(fieldName)) {
-                    newFields.removeAll(fieldName);
-                }
-                newFields.putAll(fieldName, whindexFields.get(fieldName));
-            }
+            Multimap<String,NormalizedContentInterface> tempFields = vHelper.processWhindexFields(newFields);
+            newFields.clear();
+            newFields.putAll(tempFields);
         }
 
         // Create a LOAD_DATE parameter, which is the current time in milliseconds, for all datatypes

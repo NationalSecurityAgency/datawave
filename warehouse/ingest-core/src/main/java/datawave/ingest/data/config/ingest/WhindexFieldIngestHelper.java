@@ -150,8 +150,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * TODO: Update this
-     * Processes the provided event map to generate new whindex fields based on the whindex rules.
+     * TODO: Update this Processes the provided event map to generate new whindex fields based on the whindex rules.
      * <p>
      * The helper examines each WhindexConfig and checks:
      * <ul>
@@ -172,8 +171,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
 
         // Filter whindex rules for which both the value field and source field are present in the event map.
         List<WhindexConfig> matchingConfigs = valueFieldsToWhindexConfigs.entries().stream()
-                .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
-                .map(Map.Entry::getValue).collect(Collectors.toList());
+                        .filter(entry -> eventMap.containsKey(entry.getValue().getValueField()) && eventMap.containsKey(entry.getValue().getSourceField()))
+                        .map(Map.Entry::getValue).collect(Collectors.toList());
 
         // Iterate over the matching configurations to generate the whindex fields.
         for (WhindexConfig currWhindexConfig : matchingConfigs) {
@@ -198,7 +197,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                 whindicesInEventMap.putAll(currWhindexConfig.getDestField(), copies);
 
                 // Removes the entry from the eventMap IFF a whindex field is created and the srcField is overloaded.
-                if(currWhindexConfig.isOverloaded()){
+                if (currWhindexConfig.isOverloaded()) {
                     eventMap.removeAll(currWhindexConfig.getSourceField());
                 }
             }
