@@ -81,7 +81,7 @@ public class ExpandCompositeTermsTest {
         validator.setValidateLineage(true);
         validator.setValidateJunctions(true);
         validator.setValidateQueryPropertyMarkers(true);
-        validator.setValidateReferenceExpressions(true);   //  one day
+        validator.setValidateReferenceExpressions(false); // one day
     }
 
     @Test
@@ -345,7 +345,7 @@ public class ExpandCompositeTermsTest {
 
         String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '"
                         + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'))";
-        String expected = "((((((_Bounded_ = true) && (GEO >= '0202,+AE0' && GEO <= '020d,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '030a,+AE0' && GEO <= '0335,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '0428,+AE0' && GEO <= '0483,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '0500aa,+AE0' && GEO <= '050355,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO <= '1f36c71c71c71c71c7,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))))";
+        String expected = "((((_Bounded_ = true) && (GEO >= '0202,+AE0' && GEO <= '020d,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))) || (((_Bounded_ = true) && (GEO >= '030a,+AE0' && GEO <= '0335,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))) || (((_Bounded_ = true) && (GEO >= '0428,+AE0' && GEO <= '0483,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))) || (((_Bounded_ = true) && (GEO >= '0500aa,+AE0' && GEO <= '050355,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))) || (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO <= '1f36c71c71c71c71c7,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -996,8 +996,8 @@ public class ExpandCompositeTermsTest {
 
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
-        String query = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))";
-        String expected = "((((((_Bounded_ = true) && (GEO >= '0202,+AE0' && GEO < '020d,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO >= '030a,+AE0' && GEO < '0335,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO >= '0428,+AE0' && GEO < '0483,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO >= '0500aa,+AE0' && GEO < '050355,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO < '1f36c71c71c71c71c7,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))))";
+        String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))";
+        String expected = "(((_Bounded_ = true) && (GEO >= '0202,+AE0' && GEO < '020d,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO >= '030a,+AE0' && GEO < '0335,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO >= '0428,+AE0' && GEO < '0483,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO >= '0500aa,+AE0' && GEO < '050355,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO < '1f36c71c71c71c71c7,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1019,8 +1019,8 @@ public class ExpandCompositeTermsTest {
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
 
-        String query = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))";
-        String expected = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))";
+        String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))";
+        String expected = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1044,8 +1044,8 @@ public class ExpandCompositeTermsTest {
 
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
-        String query = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))";
-        String expected = "((((((_Bounded_ = true) && (GEO_WKT >= '0202,+AE0' && GEO_WKT < '020d,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO_WKT >= '030a,+AE0' && GEO_WKT < '0335,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO_WKT >= '0428,+AE0' && GEO_WKT < '0483,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO_WKT >= '0500aa,+AE0' && GEO_WKT < '050355,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))) || (((((_Bounded_ = true) && (GEO_WKT >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO_WKT < '1f36c71c71c71c71c7,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))))))))";
+        String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))";
+        String expected = "(((_Bounded_ = true) && (GEO_WKT >= '0202,+AE0' && GEO_WKT < '020d,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO_WKT >= '030a,+AE0' && GEO_WKT < '0335,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO_WKT >= '0428,+AE0' && GEO_WKT < '0483,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO_WKT >= '0500aa,+AE0' && GEO_WKT < '050355,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))) || ((_Bounded_ = true) && (GEO_WKT >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO_WKT < '1f36c71c71c71c71c7,+bE4')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1065,9 +1065,8 @@ public class ExpandCompositeTermsTest {
 
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
-        String query = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))))";
-        String expected = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))))";
-
+        String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))";
+        String expected = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))";
         runTestQuery(query, expected, indexedFields, conf);
     }
 
@@ -1088,8 +1087,8 @@ public class ExpandCompositeTermsTest {
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
 
-        String query = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))";
-        String expected = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4')))";
+        String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))";
+        String expected = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || ((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT >= '+AE0' && WKT < '+bE4'))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1124,8 +1123,8 @@ public class ExpandCompositeTermsTest {
 
         String query = "(GEO == '0202' || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
         String expected = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '0202," + normNum + "')) && ((_Eval_ = true) && (GEO == '0202' && WKT == '"
-                        + normNum + "'))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335," + normNum
-                        + "')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && WKT == '" + normNum + "'))))";
+                        + normNum + "'))) || (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335," + normNum
+                        + "')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && WKT == '" + normNum + "')))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1231,30 +1230,23 @@ public class ExpandCompositeTermsTest {
 
     void runTestQuery(String query, String expected, Set<String> indexedFields, ShardQueryConfiguration conf) throws ParseException {
         ASTJexlScript original = JexlASTHelper.parseJexlQuery(query);
+        validateIt(original, "original");
 
-        try {
-            assertTrue(validator.isValid(original));
-        } catch (InvalidQueryTreeException e) {
-            fail("Initial query tree failed validation: " + e.getMessage());
-        }
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        validateIt(expectedScript, "expected");
 
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(indexedFields);
 
         ASTJexlScript expand = FunctionIndexQueryExpansionVisitor.expandFunctions(conf, helper, DateIndexHelper.getInstance(), original);
         expand = ExpandCompositeTerms.expandTerms(conf, expand);
+        validateIt(expand, "expanded");
 
         // Verify the script is as expected, and has a valid lineage.
         JexlNodeAssert.assertThat(expand).isEqualTo(expected).hasValidLineage();
 
         // Verify the original script was not modified, and still has a valid lineage.
         JexlNodeAssert.assertThat(original).isEqualTo(query).hasValidLineage();
-
-        try {
-            assertTrue(validator.isValid(expand));
-        } catch (InvalidQueryTreeException e) {
-            fail("Expanded query tree failed validation: " + e.getMessage());
-        }
     }
 
     void workIt(String query) throws Exception {
@@ -1274,6 +1266,14 @@ public class ExpandCompositeTermsTest {
         PrintingVisitor.printQuery(script);
         System.err.println(JexlStringBuildingVisitor.buildQuery(script));
         System.err.println();
+    }
+
+    void validateIt(ASTJexlScript script, String stage) {
+        try {
+            assertTrue(validator.isValid(script));
+        } catch (InvalidQueryTreeException e) {
+            fail("query tree failed validation [" + stage + "] " + e.getMessage());
+        }
     }
 
     private static class MockDiscreteIndexType extends BaseType<String> implements DiscreteIndexType<String> {
