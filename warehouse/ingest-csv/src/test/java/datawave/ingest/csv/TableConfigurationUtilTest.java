@@ -2,11 +2,9 @@ package datawave.ingest.csv;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloException;
