@@ -2,12 +2,12 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Arrays;
 
-import com.google.common.collect.HashMultiset;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
@@ -126,15 +126,11 @@ class WhindexFieldIngestHelperTest {
         // Retrieve the output mapping after processing the event map.
         Multimap<String,NormalizedContentInterface> actualValues = wHelper.processWhindexFields(eventMap);
 
-
         // Expect that the source field value is mapped to the destination field.
         HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
         expectedValues.put("xDestField", new NormalizedFieldAndValue("xSourceField", "xTestValue1"));
         expectedValues.put("xValueField", new NormalizedFieldAndValue("xValueField", "xTestValue1"));
-        Assertions.assertEquals(
-                HashMultiset.create(expectedValues.entries()),
-                HashMultiset.create(actualValues.entries())
-        );
+        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -168,10 +164,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("yDestField", new NormalizedFieldAndValue("ySourceField", "yTestValue1"));
         expectedValues.put("yValueField", new NormalizedFieldAndValue("yValueField", "yTestValue1"));
         expectedValues.put("ySourceField", new NormalizedFieldAndValue("ySourceField", "yTestValue1"));
-        Assertions.assertEquals(
-                HashMultiset.create(expectedValues.entries()),
-                HashMultiset.create(actualValues.entries())
-        );
+        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -207,10 +200,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("zDestField", new NormalizedFieldAndValue("zSourceField", "zTestValue1"));
         expectedValues.put("zValueField", new NormalizedFieldAndValue("zValueField", "zTestValue1"));
         expectedValues.put("zSourceField", new NormalizedFieldAndValue("zSourceField", "zTestValue1"));
-        Assertions.assertEquals(
-                HashMultiset.create(expectedValues.entries()),
-                HashMultiset.create(actualValues.entries())
-        );
+        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -294,81 +284,81 @@ class WhindexFieldIngestHelperTest {
         Assertions.assertFalse(wHelper.isWhindexField("zTestValue1"));
     }
 
-//    /**
-//     * Test that isOverloadedWhindexField() identifies overloaded fields correctly when the rule's delete_src_field is set to "true".
-//     * <p>
-//     * When delete_src_field is true, the source field should be considered overloaded.
-//     * </p>
-//     */
-//    @Test
-//    void testOverloadedFieldIdentificationWithDeleteSrcFieldTrue() {
-//        // Setup configuration with delete_src_field true.
-//        Configuration config = new Configuration();
-//        config.set("wiki.whindex.rules.1.value_field", "xValueField");
-//        config.set("wiki.whindex.rules.1.src_field", "xSourceField");
-//        config.set("wiki.whindex.rules.1.delete_src_field", "true");
-//        config.set("wiki.whindex.rules.1.dst_field", "xDestField");
-//        config.set("wiki.whindex.rules.1.values", "xTestValue1,xTestValue2,xTestValue3,xTestValue4");
-//
-//        // Initialize helper.
-//        Type type = new Type("wiki", null, null, null, 0, null);
-//        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
-//        wHelper.setup(config);
-//
-//        // Verify that with delete_src_field true, the source field is marked as overloaded,
-//        // while the destination field is not.
-//        Assertions.assertTrue(wHelper.isOverloadedWhindexField("xSourceField"));
-//        Assertions.assertFalse(wHelper.isOverloadedWhindexField("xDestField"));
-//    }
+    // /**
+    // * Test that isOverloadedWhindexField() identifies overloaded fields correctly when the rule's delete_src_field is set to "true".
+    // * <p>
+    // * When delete_src_field is true, the source field should be considered overloaded.
+    // * </p>
+    // */
+    // @Test
+    // void testOverloadedFieldIdentificationWithDeleteSrcFieldTrue() {
+    // // Setup configuration with delete_src_field true.
+    // Configuration config = new Configuration();
+    // config.set("wiki.whindex.rules.1.value_field", "xValueField");
+    // config.set("wiki.whindex.rules.1.src_field", "xSourceField");
+    // config.set("wiki.whindex.rules.1.delete_src_field", "true");
+    // config.set("wiki.whindex.rules.1.dst_field", "xDestField");
+    // config.set("wiki.whindex.rules.1.values", "xTestValue1,xTestValue2,xTestValue3,xTestValue4");
+    //
+    // // Initialize helper.
+    // Type type = new Type("wiki", null, null, null, 0, null);
+    // WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
+    // wHelper.setup(config);
+    //
+    // // Verify that with delete_src_field true, the source field is marked as overloaded,
+    // // while the destination field is not.
+    // Assertions.assertTrue(wHelper.isOverloadedWhindexField("xSourceField"));
+    // Assertions.assertFalse(wHelper.isOverloadedWhindexField("xDestField"));
+    // }
 
-//    /**
-//     * Test that isOverloadedWhindexField() works correctly when delete_src_field is set to "false".
-//     * <p>
-//     * When delete_src_field is false, neither the source field nor the destination field should be marked as overloaded.
-//     * </p>
-//     */
-//    @Test
-//    void testOverloadedFieldIdentificationWithDeleteSrcFieldFalse() {
-//        // Setup configuration with delete_src_field false.
-//        Configuration config = new Configuration();
-//        config.set("wiki.whindex.rules.1.value_field", "yValueField");
-//        config.set("wiki.whindex.rules.1.src_field", "ySourceField");
-//        config.set("wiki.whindex.rules.1.delete_src_field", "false");
-//        config.set("wiki.whindex.rules.1.dst_field", "yDestField");
-//        config.set("wiki.whindex.rules.1.values", "yTestValue1,yTestValue2,yTestValue3,yTestValue4");
-//
-//        // Initialize helper.
-//        Type type = new Type("wiki", null, null, null, 0, null);
-//        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
-//        wHelper.setup(config);
-//
-//        // Verify that when delete_src_field is false, neither source nor destination fields are overloaded.
-//        Assertions.assertFalse(wHelper.isOverloadedWhindexField("ySourceField"));
-//        Assertions.assertFalse(wHelper.isOverloadedWhindexField("yDestField"));
-//    }
+    // /**
+    // * Test that isOverloadedWhindexField() works correctly when delete_src_field is set to "false".
+    // * <p>
+    // * When delete_src_field is false, neither the source field nor the destination field should be marked as overloaded.
+    // * </p>
+    // */
+    // @Test
+    // void testOverloadedFieldIdentificationWithDeleteSrcFieldFalse() {
+    // // Setup configuration with delete_src_field false.
+    // Configuration config = new Configuration();
+    // config.set("wiki.whindex.rules.1.value_field", "yValueField");
+    // config.set("wiki.whindex.rules.1.src_field", "ySourceField");
+    // config.set("wiki.whindex.rules.1.delete_src_field", "false");
+    // config.set("wiki.whindex.rules.1.dst_field", "yDestField");
+    // config.set("wiki.whindex.rules.1.values", "yTestValue1,yTestValue2,yTestValue3,yTestValue4");
+    //
+    // // Initialize helper.
+    // Type type = new Type("wiki", null, null, null, 0, null);
+    // WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
+    // wHelper.setup(config);
+    //
+    // // Verify that when delete_src_field is false, neither source nor destination fields are overloaded.
+    // Assertions.assertFalse(wHelper.isOverloadedWhindexField("ySourceField"));
+    // Assertions.assertFalse(wHelper.isOverloadedWhindexField("yDestField"));
+    // }
 
-//    /**
-//     * Test that isOverloadedWhindexField() works correctly when no delete_src_field property is provided.
-//     * <p>
-//     * In this scenario, the source field is not considered overloaded.
-//     * </p>
-//     */
-//    @Test
-//    void testOverloadedFieldIdentificationWithDeleteSrcFieldNotPresent() {
-//        // Setup configuration without the delete_src_field property.
-//        Configuration config = new Configuration();
-//        config.set("wiki.whindex.rules.namedrule.value_field", "zValueField");
-//        config.set("wiki.whindex.rules.namedrule.src_field", "zSourceField");
-//        config.set("wiki.whindex.rules.namedrule.dst_field", "zDestField");
-//        config.set("wiki.whindex.rules.namedrule.values", "zTestValue1,zTestValue2,zTestValue3,zTestValue4");
-//
-//        // Initialize helper.
-//        Type type = new Type("wiki", null, null, null, 0, null);
-//        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
-//        wHelper.setup(config);
-//
-//        // Verify that, without a delete_src_field property, the source field is not marked as overloaded.
-//        Assertions.assertFalse(wHelper.isOverloadedWhindexField("zSourceField"));
-//        Assertions.assertFalse(wHelper.isOverloadedWhindexField("zDestField"));
-//    }
+    // /**
+    // * Test that isOverloadedWhindexField() works correctly when no delete_src_field property is provided.
+    // * <p>
+    // * In this scenario, the source field is not considered overloaded.
+    // * </p>
+    // */
+    // @Test
+    // void testOverloadedFieldIdentificationWithDeleteSrcFieldNotPresent() {
+    // // Setup configuration without the delete_src_field property.
+    // Configuration config = new Configuration();
+    // config.set("wiki.whindex.rules.namedrule.value_field", "zValueField");
+    // config.set("wiki.whindex.rules.namedrule.src_field", "zSourceField");
+    // config.set("wiki.whindex.rules.namedrule.dst_field", "zDestField");
+    // config.set("wiki.whindex.rules.namedrule.values", "zTestValue1,zTestValue2,zTestValue3,zTestValue4");
+    //
+    // // Initialize helper.
+    // Type type = new Type("wiki", null, null, null, 0, null);
+    // WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
+    // wHelper.setup(config);
+    //
+    // // Verify that, without a delete_src_field property, the source field is not marked as overloaded.
+    // Assertions.assertFalse(wHelper.isOverloadedWhindexField("zSourceField"));
+    // Assertions.assertFalse(wHelper.isOverloadedWhindexField("zDestField"));
+    // }
 }

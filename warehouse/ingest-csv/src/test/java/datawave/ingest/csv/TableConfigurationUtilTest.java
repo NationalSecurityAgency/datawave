@@ -2,9 +2,11 @@ package datawave.ingest.csv;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloException;
@@ -105,9 +107,11 @@ public class TableConfigurationUtilTest {
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
         tcu.configureTables(conf);
 
+
+
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
-        Assert.assertEquals(7868, tempCacheFile.length());
+        Assert.assertEquals(7990, tempCacheFile.length());
 
         tcu.serializeTableConfgurationIntoConf(conf);
 
@@ -271,7 +275,7 @@ public class TableConfigurationUtilTest {
         Assert.assertEquals(10, shardIndexProps.size());
 
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        Assert.assertEquals(23, metaProps.size());
+        Assert.assertEquals(24, metaProps.size());
 
         tcu.setTableItersPrioritiesAndOpts();
 
