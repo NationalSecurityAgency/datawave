@@ -15,7 +15,6 @@ import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
@@ -119,11 +118,6 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
             rebuildFutureJexlNodes();
 
-            // handle the case where the root node was expanded
-            if (rebuiltScript instanceof FutureJexlNode) {
-                rebuiltScript = (T) ((FutureJexlNode) rebuiltScript).getRebuiltNode();
-            }
-
             return rebuiltScript;
         } finally {
             shutdownExecutor();
@@ -163,7 +157,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      *            whether the original node should be replaced
      * @return a FutureJexlNode
      */
-    protected FutureJexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
+    protected JexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
         // if this is an asynchronous index lookup, set
         // it up and submit it to the executor service
         if (lookup instanceof AsyncIndexLookup) {
@@ -174,7 +168,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         futureNode.jjtSetParent(node.jjtGetParent());
         futureJexlNodes.add(futureNode);
 
-        return futureNode;
+        // do not embed the FutureJexlNode into the tree. It complicates rewrites.
+        return node;
     }
 
     protected void rebuildFutureJexlNodes() {
@@ -185,27 +180,12 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
             rebuildFutureJexlNode(futureJexlNode);
 
-            JexlNode newNode = futureJexlNode.getRebuiltNode();
-
-            // if the parent is not null, replace the child
-            // if the parent is null, this is the root node, and we will handle that in the expand method
-            if (futureJexlNode.jjtGetParent() != null) {
-                if (!(newNode instanceof ASTOrNode || newNode instanceof ASTAndNode)) {
-                    if (isWrappedJunction(futureJexlNode.getOrigNode())) {
-                        JexlNode parent = futureJexlNode.jjtGetParent();
-                        JexlNode grandParent = parent.jjtGetParent();
-                        if (grandParent != null) {
-                            JexlNodes.replaceChild(grandParent, parent, newNode);
-                        } else {
-                            JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
-                        }
-                    } else {
-                        JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
-                    }
-                } else {
-                    JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
-                }
+            if (futureJexlNode.jjtGetParent() == null) {
+                throw new IllegalStateException("Invalid query tree detected during index expansion");
             }
+
+            JexlNode node = futureJexlNode.getOrigNode();
+            JexlNodes.swap(node.jjtGetParent(), node, futureJexlNode.getRebuiltNode());
         }
     }
 
