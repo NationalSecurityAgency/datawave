@@ -108,7 +108,6 @@ public abstract class AbstractCarFields implements FieldConfig {
         this.virtualFields.remove(field);
     }
 
-
     @Override
     public Collection<Set<String>> getWhindexFields() {
         return this.whindexFields;
@@ -123,8 +122,6 @@ public abstract class AbstractCarFields implements FieldConfig {
     public void removeWhindexField(Set<String> field) {
         this.whindexFields.remove(field);
     }
-
-
 
     @Override
     public Set<String> getMultiValueFields() {

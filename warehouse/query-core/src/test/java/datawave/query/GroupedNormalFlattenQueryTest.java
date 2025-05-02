@@ -252,7 +252,6 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         private static final Collection<Set<String>> virtual = new HashSet<>();
         private static final Collection<Set<String>> whindex = new HashSet<>();
 
-
         static {
             // set index configuration values
             index.add(GroupedNormalField.STATE.name());

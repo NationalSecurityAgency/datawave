@@ -140,7 +140,6 @@ public abstract class AbstractFields implements FieldConfig {
         this.whindexFields.remove(field);
     }
 
-
     @Override
     public Set<String> getMultiValueFields() {
         return this.multivalueFields;

@@ -125,7 +125,6 @@ public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQuery {
         private static final Collection<Set<String>> virtual = new HashSet<>();
         private static final Collection<Set<String>> whindex = new HashSet<>();
 
-
         public UnevaluatedCityFields() {
             super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
         }

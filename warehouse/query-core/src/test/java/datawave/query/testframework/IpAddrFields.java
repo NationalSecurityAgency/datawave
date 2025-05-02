@@ -22,7 +22,6 @@ public class IpAddrFields extends AbstractFields {
     private static final Collection<Set<String>> virtual = new HashSet<>();
     private static final Collection<Set<String>> whindex = new HashSet<>();
 
-
     static {
         reverse.addAll(index);
         // add composite and virtual values

@@ -17,7 +17,6 @@ public class GroupsIndexConfiguration extends AbstractFields {
     private static final Collection<Set<String>> virtual = new HashSet<>();
     private static final Collection<Set<String>> whindex = new HashSet<>();
 
-
     static {
         // set index configuration values
         index.add(GroupField.CITY_EAST.getQueryField());

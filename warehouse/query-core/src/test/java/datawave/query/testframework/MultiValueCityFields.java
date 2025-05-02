@@ -22,7 +22,6 @@ public class MultiValueCityFields extends AbstractFields {
     private static final Collection<Set<String>> virtual = new HashSet<>();
     private static final Collection<Set<String>> whindex = new HashSet<>();
 
-
     static {
         Set<String> comp = new HashSet<>();
         comp.add(CityField.CITY.name());
