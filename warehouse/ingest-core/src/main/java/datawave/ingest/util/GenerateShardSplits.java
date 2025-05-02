@@ -125,7 +125,7 @@ public class GenerateShardSplits {
             } else if (i == 5) {
                 try {
                     balancerDelay = Integer.parseInt(args[i]);
-                    if(balancerDelay < 0) {
+                    if (balancerDelay < 0) {
                         System.out.println("Balancer delay cannot be less than 0");
                         System.exit(-2);
                     }
