@@ -107,8 +107,6 @@ public class TableConfigurationUtilTest {
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
         tcu.configureTables(conf);
 
-
-
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
         Assert.assertEquals(7990, tempCacheFile.length());
