@@ -487,7 +487,7 @@
                                                             <directory>${project.build.directory}/rpm/datawave-dw-${build.env}/RPMS/noarch/</directory>
                                                             <!-- target/docker/<image path>/build -->
                                                             <outputDirectory>.</outputDirectory>
-                                                            <includes>datawave-dw-${build.env}-${project.version}*.rpm</includes>
+                                                            <includes>datawave-dw-${build.env}-*.rpm</includes>
                                                             <fileMode>0640</fileMode>
                                                             <directoryMode>0750</directoryMode>
                                                         </fileSet>
