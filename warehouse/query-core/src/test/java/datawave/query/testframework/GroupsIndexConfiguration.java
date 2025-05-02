@@ -15,6 +15,8 @@ public class GroupsIndexConfiguration extends AbstractFields {
 
     private static final Collection<Set<String>> composite = new HashSet<>();
     private static final Collection<Set<String>> virtual = new HashSet<>();
+    private static final Collection<Set<String>> whindex = new HashSet<>();
+
 
     static {
         // set index configuration values
@@ -40,7 +42,7 @@ public class GroupsIndexConfiguration extends AbstractFields {
     }
 
     public GroupsIndexConfiguration() {
-        super(index, indexOnly, reverse, multivalue, composite, virtual);
+        super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
     }
 
     @Override

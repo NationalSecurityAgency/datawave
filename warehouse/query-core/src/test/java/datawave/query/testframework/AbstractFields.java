@@ -20,6 +20,7 @@ public abstract class AbstractFields implements FieldConfig {
     private final Set<String> multivalueFields = new HashSet<>();
     private final Collection<Set<String>> compositeFields = new HashSet<>();
     private final Collection<Set<String>> virtualFields = new HashSet<>();
+    private final Collection<Set<String>> whindexFields = new HashSet<>();
     private final Set<String> tokenizedFields = new HashSet<>();
 
     /**
@@ -39,13 +40,14 @@ public abstract class AbstractFields implements FieldConfig {
      *            mapping of virtual field entries
      */
     protected AbstractFields(Collection<String> index, Collection<String> indexOnly, Collection<String> reverse, Collection<String> multivalue,
-                    Collection<Set<String>> composite, Collection<Set<String>> virtual) {
+                    Collection<Set<String>> composite, Collection<Set<String>> virtual, Collection<Set<String>> whindex) {
         this.indexFields.addAll(index);
         this.indexOnlyFields.addAll(indexOnly);
         this.reverseIndexFields.addAll(reverse);
         this.multivalueFields.addAll(multivalue);
         this.compositeFields.addAll(composite);
         this.virtualFields.addAll(virtual);
+        this.whindexFields.addAll(whindex);
     }
 
     @Override
@@ -122,6 +124,22 @@ public abstract class AbstractFields implements FieldConfig {
     public void removeVirtualField(Set<String> field) {
         this.virtualFields.remove(field);
     }
+
+    @Override
+    public Collection<Set<String>> getWhindexFields() {
+        return this.whindexFields;
+    }
+
+    @Override
+    public void addWhindexField(Set<String> field) {
+        this.whindexFields.add(field);
+    }
+
+    @Override
+    public void removeWhindexField(Set<String> field) {
+        this.whindexFields.remove(field);
+    }
+
 
     @Override
     public Set<String> getMultiValueFields() {

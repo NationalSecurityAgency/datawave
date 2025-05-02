@@ -177,6 +177,8 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
         private static final Collection<String> multivalue = new HashSet<>();
         private static final Collection<Set<String>> composite = new HashSet<>();
         private static final Collection<Set<String>> virtual = new HashSet<>();
+        private static final Collection<Set<String>> whindex = new HashSet<>();
+
 
         static {
             index.add(BooksField.TITLE.name());
@@ -186,7 +188,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
         }
 
         public BooksFieldIndex() {
-            super(index, indexOnly, reverse, multivalue, composite, virtual);
+            super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
         }
 
         @Override

@@ -20,6 +20,8 @@ public class MultiValueCityFields extends AbstractFields {
 
     private static final Collection<Set<String>> composite = new HashSet<>();
     private static final Collection<Set<String>> virtual = new HashSet<>();
+    private static final Collection<Set<String>> whindex = new HashSet<>();
+
 
     static {
         Set<String> comp = new HashSet<>();
@@ -33,7 +35,7 @@ public class MultiValueCityFields extends AbstractFields {
     }
 
     public MultiValueCityFields() {
-        super(index, indexOnly, reverse, multivalue, composite, virtual);
+        super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
     }
 
     @Override

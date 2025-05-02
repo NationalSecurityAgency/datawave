@@ -48,6 +48,12 @@ public interface FieldConfig {
 
     void removeVirtualField(Set<String> field);
 
+    Collection<Set<String>> getWhindexFields();
+
+    void addWhindexField(Set<String> fields);
+
+    void removeWhindexField(Set<String> field);
+
     Set<String> getMultiValueFields();
 
     void addMultiValueField(String field);
