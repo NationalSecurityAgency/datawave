@@ -494,8 +494,8 @@
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
-        <property name="debugEnabled" value="false"/>
-        <property name="validateAst" value="false"/>
+        <property name="debugEnabled" value="true"/>
+        <property name="validateAst" value="true"/>
         <property name="validator" ref="AstValidator"/>
     </bean>
 
