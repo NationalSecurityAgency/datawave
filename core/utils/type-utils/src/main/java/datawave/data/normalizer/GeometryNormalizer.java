@@ -2,6 +2,7 @@ package datawave.data.normalizer;
 
 import java.util.List;
 
+import org.apache.accumulo.core.util.Pair;
 import org.locationtech.geowave.core.geotime.index.dimension.LatitudeDefinition;
 import org.locationtech.geowave.core.geotime.index.dimension.LongitudeDefinition;
 import org.locationtech.geowave.core.index.NumericIndexStrategy;
@@ -13,6 +14,7 @@ import org.locationtech.geowave.core.store.index.CustomNameIndex;
 
 import com.google.common.collect.Lists;
 
+import datawave.data.type.Type;
 import datawave.data.type.util.Geometry;
 
 /**
@@ -65,18 +67,21 @@ public class GeometryNormalizer extends AbstractGeometryNormalizer<Geometry,org.
     }
     
     @Override
-    public List<String> normalizeToMany(String geoString) throws IllegalArgumentException {
+    public List<Pair<String,Type.Category>> normalizeToMany(String geoString) throws IllegalArgumentException {
+        List<Pair<String,Type.Category>> list = Lists.newArrayList();
         if (validHash(geoString)) {
-            return Lists.newArrayList(geoString);
+            for (String s : Lists.newArrayList(geoString)) {
+                list.add(new Pair<>(s, Type.Category.GEOHASH));
+            }
         }
         return normalizeDelegateTypeToMany(createDatawaveGeometry(parseGeometry(geoString)));
     }
     
     @Override
-    public List<String> normalizeDelegateTypeToMany(Geometry geometry) {
-        List<String> list = Lists.newArrayList();
+    public List<Pair<String,Type.Category>> normalizeDelegateTypeToMany(Geometry geometry) {
+        List<Pair<String,Type.Category>> list = Lists.newArrayList();
         for (byte[] one : getIndicesFromGeometry(geometry)) {
-            list.add(getEncodedStringFromIndexBytes(one));
+            list.add(new Pair<>(getEncodedStringFromIndexBytes(one), Type.Category.GEOHASH));
         }
         return list;
     }
