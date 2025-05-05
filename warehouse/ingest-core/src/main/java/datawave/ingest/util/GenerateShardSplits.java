@@ -2,21 +2,27 @@ package datawave.ingest.util;
 
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.time.DateUtils;
@@ -42,30 +48,6 @@ public class GenerateShardSplits {
         System.exit(-1);
     }
 
-    protected static List<Text> sortSplitsByMidpoints(List<Text> unsorted) {
-        // Sort files by date and number
-        List<Text> sortedFiles = new ArrayList<>(unsorted);
-        sortedFiles.sort(new Comparator<>() {
-            @Override
-            public int compare(Text a, Text b) {
-                String[] partsA = a.toString().split("_");
-                String[] partsB = b.toString().split("_");
-
-                int dateComparison = partsA[0].compareTo(partsB[0]);
-                if (dateComparison != 0) {
-                    return dateComparison;
-                }
-
-                int numberA = Integer.parseInt(partsA[1]);
-                int numberB = Integer.parseInt(partsB[1]);
-                return Integer.compare(numberA, numberB);
-            }
-        });
-
-        // Call recursive function to calculate midpoints
-        return calculateMidpoints(sortedFiles);
-    }
-
     public static void main(String[] args) throws Exception {
 
         if (args.length < 3) {
@@ -77,9 +59,11 @@ public class GenerateShardSplits {
         int SHARDS = -1;
         int splitStep = 1;
         int balancerDelay = 5000; // 5 seconds
+        int maxBalancerDelay = 90000; // 90 seconds
+        double pctBatchBalanceRequired = .5;
         boolean addSplits = true;
         boolean addShardMarkers = false;
-        int splitsPerBatch = 100;
+        int splitsPerBatch = 100000;
         String[] shardMarkerTypes = null;
         String username = null;
         byte[] password = null;
@@ -115,22 +99,50 @@ public class GenerateShardSplits {
                     System.out.println("Split Step argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
-            } else if (i == 4) {
-                try {
-                    splitsPerBatch = Integer.parseInt(args[i]);
-                } catch (NumberFormatException e) {
-                    System.out.println("Splits Per Batch argument is not an integer:" + e.getMessage());
+            } else if ("-splitsPerBatch".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    System.err.println("-splitsPerBatch must be followed a number of splits to create per batch");
                     System.exit(-2);
                 }
-            } else if (i == 5) {
                 try {
                     balancerDelay = Integer.parseInt(args[i]);
                     if (balancerDelay < 0) {
                         System.out.println("Balancer delay cannot be less than 0");
                         System.exit(-2);
                     }
+            } else if ("-balancerDelay".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    System.err.println("-balancerDelay must be followed a number of millisecond to wait for balance between batches");
+                    System.exit(-2);
+                }
+                try {
+                    balancerDelay = Integer.parseInt(args[++i]);
                 } catch (NumberFormatException e) {
-                    System.out.println("Balancer delay is not an integer:" + e.getMessage());
+                    System.err.println("-balancerDelay must be followed a number of milliseconds to wait for balance between batches");
+                    System.exit(-2);
+                }
+            } else if ("-maxBalancerDelay".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    System.err.println("-maxBalancerDelay must be followed a maximum number of milliseconds to wait for balance");
+                    System.exit(-2);
+                }
+                try {
+                    maxBalancerDelay = Integer.parseInt(args[++i]);
+                } catch (NumberFormatException e) {
+                    System.err.println("-maxBalancerDelay must be followed a maximum number of milliseconds to wait for balance");
+                    System.exit(-2);
+                }
+            } else if ("-pctBatchBalanceRequired".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    System.err.println(
+                                    "-pctBatchBalanceRequired must be followed a double of the percentage of batch size that must be on a different server to continue");
+                    System.exit(-2);
+                }
+                try {
+                    pctBatchBalanceRequired = Integer.parseInt(args[++i]);
+                } catch (NumberFormatException e) {
+                    System.err.println(
+                                    "-pctBatchBalanceRequired must be followed a double of the percentage of batch size that must be on a different server to continue");
                     System.exit(-2);
                 }
             } else if (args[i].equals("-markersOnly")) {
@@ -200,7 +212,7 @@ public class GenerateShardSplits {
             startDate = DateUtils.addDays(startDate, 1);
         }
 
-        splits = sortSplitsByMidpoints(splits);
+        splits = calculateMidpoints(splits);
 
         if (username != null) {
             // Connect to accumulo
@@ -208,22 +220,45 @@ public class GenerateShardSplits {
                 // add the splits
                 if (addSplits) {
                     int batchSize = splitsPerBatch; // Make splits in batches,
+
+                    int callCount = 0;
+                    int reducedBatchSize = 0;
+
                     // as the addSplits command takes a sortedset, but we intentionally do not want the order to be
                     // lexicographically sorted.
                     while (!splits.isEmpty()) {
+                        if (callCount <= 10) {
+                            callCount++;
+                            reducedBatchSize = ((batchSize / 10) * callCount);
+                        }
+
                         // Determine the end index for the batch
-                        int endIndex = Math.min(batchSize, splits.size());
+                        reducedBatchSize = Math.min(reducedBatchSize, splits.size());
 
                         // Extract a batch of splits from the front of the list
-                        SortedSet<Text> batch = new TreeSet<>(splits.subList(0, endIndex));
+                        SortedSet<Text> batch = new TreeSet<>(splits.subList(0, reducedBatchSize));
+                        List<Range> rangesToWaitFor = new ArrayList<>();
+                        for (Text t : batch) {
+                            rangesToWaitFor.add(new Range(t));
+                        }
 
-                        // Remove the processed batch from the list
-                        splits.subList(0, endIndex).clear();
+                        long startAddSplits = System.currentTimeMillis();
 
                         // Perform the operation on the current batch
                         client.tableOperations().addSplits(tableName, batch);
 
-                        Thread.sleep(balancerDelay);
+                        // Remove the processed batch from the list
+                        splits.subList(0, reducedBatchSize).clear();
+
+                        Set<String> tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
+
+                        long currentBatchDelay = System.currentTimeMillis() - startAddSplits;
+
+                        // Ensure at least half the tablets have balanced off the original tserver
+                        while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) || (currentBatchDelay < maxBalancerDelay)) {
+                            tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
+                            Thread.sleep(balancerDelay);
+                        }
                     }
                 }
 
@@ -253,9 +288,21 @@ public class GenerateShardSplits {
         }
     }
 
-    private static List<Text> calculateMidpoints(List<Text> splits) {
-        if (splits.isEmpty()) {
-            return Collections.emptyList();
+    private static Set<String> getTabletLocations(AccumuloClient client, String tableName, List<Range> rangesToWaitFor)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        Locations locations = client.tableOperations().locate(tableName, rangesToWaitFor);
+        Set<String> tabletLocations = new HashSet<>();
+        for (Range range : rangesToWaitFor) {
+            TabletId id = locations.groupByRange().get(range).get(0);
+            tabletLocations.add(locations.getTabletLocation(id));
+            System.out.println(range.getStartKey() + "," + range.getEndKey() + "," + locations.getTabletLocation(id));
+        }
+        return tabletLocations;
+    }
+
+    protected static List<Text> calculateMidpoints(List<Text> splits) {
+        if (splits.size() < 2) {
+            return splits;
         }
 
         List<Text> midpoints = new ArrayList<>();
@@ -273,7 +320,7 @@ public class GenerateShardSplits {
             midpoints.add(splits.get(n / 2));
 
             midpoints.addAll(calculateMidpoints(splits.subList(0, n / 2)));
-            midpoints.addAll(calculateMidpoints(splits.subList((n + 1) / 2, n)));
+            midpoints.addAll(calculateMidpoints(splits.subList((n / 2) + 1, n)));
         }
 
         return midpoints;
