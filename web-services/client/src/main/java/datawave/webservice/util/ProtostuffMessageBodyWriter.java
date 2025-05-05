@@ -73,7 +73,7 @@ public class ProtostuffMessageBodyWriter implements MessageBodyWriter<Object> {
                 ProtostuffIOUtil.writeTo(out, message, schema, buffer);
             } else if (MediaType.APPLICATION_JSON_TYPE.equals(media)) {
                 IOContext ctx = new IOContext(JsonIOUtil.DEFAULT_JSON_FACTORY._getBufferRecycler(), out, false);
-                UTF8JsonGenerator generator = new UTF8JsonGenerator(ctx, JsonIOUtil.DEFAULT_JSON_FACTORY.getGeneratorFeatures(),
+                UTF8JsonGenerator generator = new UTF8JsonGenerator(ctx, JsonIOUtil.DEFAULT_JSON_FACTORY.getGeneratorFeaturesImpl(),
                                 JsonIOUtil.DEFAULT_JSON_FACTORY.getCodec(), out);
                 try {
                     JsonIOUtil.writeTo(generator, message, schema, false);

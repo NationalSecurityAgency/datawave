@@ -33,7 +33,7 @@
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
         <version.protobuf-java>3.7.1</version.protobuf-java>
-        <version.validation-api>2.0.2</version.validation-api>
+        <version.validation-api>3.0.0</version.validation-api>
         <version.webjars.bootstrap>4.3.1</version.webjars.bootstrap>
         <version.webjars.jquery>3.4.1</version.webjars.jquery>
         <version.webjars.leaflet>1.5.1</version.webjars.leaflet>
@@ -379,6 +379,12 @@
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>webjars-locator-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>2.0.1.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

@@ -2,12 +2,12 @@ package datawave.microservice.query.cachedresults.monitor.config;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @Validated
 @ConfigurationProperties(prefix = "datawave.query.cached-results.monitor")

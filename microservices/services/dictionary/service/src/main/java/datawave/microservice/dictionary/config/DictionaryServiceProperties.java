@@ -1,11 +1,10 @@
 package datawave.microservice.dictionary.config;
 
-import javax.validation.Valid;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import datawave.microservice.config.accumulo.AccumuloProperties;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -2,14 +2,13 @@ package datawave.microservice.query.stream;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.http.MediaType;
 
 import datawave.microservice.query.config.ThreadPoolTaskExecutorProperties;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @ConfigurationProperties(prefix = "datawave.query.stream")
 public class StreamingProperties {

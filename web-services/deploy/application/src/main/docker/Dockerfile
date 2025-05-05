@@ -18,11 +18,11 @@ LABEL version="11"
 RUN dnf update -y && \
     dnf install -y which less bind-utils net-tools lsof nethogs dstat strace htop iperf iperf3 socat iftop xmlstarlet augeas bsdtar unzip
 
-ENV WILDFLY_VERSION 17.0.1.Final \
+ENV WILDFLY_VERSION 24.0.1.Final \
     JBOSS_HOME /opt/jboss/wildfly \
     LAUNCH_JOBS_IN_BACKGROUND true
 
-COPY --from=jboss/wildfly:17.0.1.Final /opt/jboss/wildfly /opt/jboss/wildfly
+COPY --from=jboss/wildfly:24.0.1.Final /opt/jboss/wildfly /opt/jboss/wildfly
 EXPOSE 8080
 
 CMD ["/opt/jboss/wildfly/bin/standalone.sh","-b","0.0.0.0"]
