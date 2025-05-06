@@ -24,7 +24,7 @@
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.jackson>2.13.2</version.jackson>
-        <version.log4j.bom>2.17.2</version.log4j.bom>
+        <version.log4j.bom>2.19.0</version.log4j.bom>
         <version.spring.boot>2.7.1</version.spring.boot>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>

@@ -825,7 +825,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
         }
 
-        log.debug("Completed job directories: " + StringUtils.join(jobDirectories, ","));
+        log.info("Completed job directories: " + StringUtils.join(jobDirectories, ","));
         return jobDirectories.toArray(new Path[0]);
     }
 
