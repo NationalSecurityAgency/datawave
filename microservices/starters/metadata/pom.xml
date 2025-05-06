@@ -71,8 +71,8 @@
                 <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

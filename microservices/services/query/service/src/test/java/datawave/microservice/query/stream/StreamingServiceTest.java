@@ -92,7 +92,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
 
         int pageNumber = 1;
-        
+
         String body = response.getBody();
         Assertions.assertNotNull("expected response body: " + response, body);
         List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(body);
@@ -209,7 +209,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         Assertions.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
 
         int pageNumber = 1;
-        
+
         String body = response.getBody();
         Assertions.assertNotNull("expected response body: " + response, body);
         List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(body);
