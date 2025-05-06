@@ -38,30 +38,30 @@ import datawave.security.authorization.JWTTokenHandler;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"AuthorizeHttpsNotAllowedCallerTest", "httpsnotallowedcaller"})
 public class AuthorizeHttpsNotAllowedCallerTest {
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private CacheManager cacheManager;
-    
+
     @Autowired
     private JWTTokenHandler jwtTokenHandler;
-    
+
     private AuthorizationTestUtils testUtils;
-    
+
     private RestTemplate restTemplate;
-    
+
     @BeforeEach
     public void setup() {
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
         restTemplate = restTemplateBuilder.build(RestTemplate.class);
         testUtils = new AuthorizationTestUtils(jwtTokenHandler, restTemplate, "https", webServicePort);
     }
-    
+
     @Test
     public void testAuthorizeMethodSecurityWithNotAllowedCaller() throws Exception {
         // X509 certificate used for identity
@@ -69,7 +69,7 @@ public class AuthorizeHttpsNotAllowedCallerTest {
         testUtils.testAuthorizeMethodFailure(null, "/authorization/v1/authorize", false, false);
         testUtils.testAuthorizeMethodFailure(null, "/authorization/v2/authorize", false, false);
     }
-    
+
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
     @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
@@ -81,7 +81,7 @@ public class AuthorizeHttpsNotAllowedCallerTest {
                         @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
             return new AuthorizationTestUserService(Collections.EMPTY_MAP, true);
         }
-        
+
         @Bean
         public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
@@ -89,7 +89,7 @@ public class AuthorizeHttpsNotAllowedCallerTest {
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
         }
-        
+
         @Bean
         public BusProperties busProperties() {
             return new BusProperties();

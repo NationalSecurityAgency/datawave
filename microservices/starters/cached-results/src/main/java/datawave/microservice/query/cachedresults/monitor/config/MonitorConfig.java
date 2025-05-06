@@ -29,7 +29,7 @@ import datawave.microservice.query.cachedresults.monitor.cache.MonitorStatusCach
 @EnableConfigurationProperties(MonitorProperties.class)
 public class MonitorConfig {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     @Bean
     public MonitorStatusCache cachedResultsMonitorStatusCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
                     CacheManager cacheManager) {

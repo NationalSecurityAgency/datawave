@@ -15,29 +15,29 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryMetricOperationsHazelcastWriteBehindTest", "QueryMetricTest", "MessageRouting", "hazelcast-writebehind"})
 public class QueryMetricOperationsHazelcastWriteBehindTest extends QueryMetricOperationsTest {
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     @Override
     public void MetricStoredCorrectlyInCachesAndAccumulo() throws Exception {
         super.MetricStoredCorrectlyInCachesAndAccumulo();
     }
-    
+
     @Test
     @Override
     public void MultipleMetricsStoredCorrectlyInCachesAndAccumulo() throws Exception {
         super.MultipleMetricsStoredCorrectlyInCachesAndAccumulo();
     }
-    
+
     @Test
     @Override
     public void MultipleMetricsAsListStoredCorrectlyInCachesAndAccumulo() throws Exception {

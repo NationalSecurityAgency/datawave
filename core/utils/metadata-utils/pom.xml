@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-utils-parent</artifactId>
-        <version>7.19.0-SNAPSHOT</version>
+        <version>7.21.0-SNAPSHOT</version>
     </parent>
     <artifactId>metadata-utils</artifactId>
     <name>${project.artifactId}</name>
@@ -14,6 +14,13 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>accumulo-utils</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
@@ -28,13 +35,6 @@
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.jakarta}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${project.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -85,28 +85,12 @@
             <artifactId>datawave-in-memory-accumulo</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1-SNAPSHOT</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
@@ -20,35 +20,11 @@
     <properties>
         <resource.delimiter>@</resource.delimiter>
         <!-- delimiter that doesn't clash with Spring ${} placeholders -->
-        <!-- NOTE: The spring-boot-dependencies import below will override the Junit and log4j bom imports provided via
-        datawave-microservice-parent.  Make sure to update the Junit and log4j versions in datawave-microservice-parent
-        as you update spring-boot version so that we don't get out of date. -->
         <version.spring.boot>2.7.1</version.spring.boot>
         <version.spring.cloud>2021.0.3</version.spring.cloud>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <!--
-                Don't sort the dependencies here since we need to declare overridden versions of certain modules
-                before we include the spring boot and spring cloud BOMs
-              -->
-            <?SORTPOM IGNORE?>
-            <!-- Override any spring boot or spring cloud dependencies by declaring the newer version here. -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter</artifactId>
-                <version>${version.spring.boot}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                        <groupId>org.springframework.boot</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -63,7 +39,21 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <?SORTPOM RESUME?>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${version.spring.boot}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -86,24 +76,12 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
                     <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <!-- Turn on filtering by default for application properties -->
         <resources>
@@ -137,8 +115,38 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0</version>
                     <executions>
+                        <execution>
+                            <id>enforce-maven</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireMavenVersion>
+                                        <version>3.6.3</version>
+                                    </requireMavenVersion>
+                                </rules>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>enforce-no-snapshots</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireReleaseDeps>
+                                        <message>Snapshot dependencies are prohibited on a release build.</message>
+                                        <onlyWhenRelease>true</onlyWhenRelease>
+                                    </requireReleaseDeps>
+                                    <requireJavaVersion>
+                                        <version>${java.version}</version>
+                                    </requireJavaVersion>
+                                </rules>
+                                <fail>true</fail>
+                            </configuration>
+                        </execution>
                         <execution>
                             <id>enforce-banned-dependencies</id>
                             <goals>
@@ -149,6 +157,7 @@
                                     <bannedDependencies>
                                         <excludes>
                                             <!-- spring boot microservices do not use the following slf4j binders -->
+                                            <exclude>ch.qos.reload4j:reload4j</exclude>
                                             <exclude>org.slf4j:slf4j-reload4j</exclude>
                                             <!-- spring boot microservices do not use 1.x versions of log4j -->
                                             <exclude>log4j:log4j</exclude>
@@ -169,7 +178,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M3</version>
+                    <configuration>
+                        <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                    </configuration>
                     <executions>
                         <execution>
                             <goals>
@@ -178,14 +189,10 @@
                             </goals>
                         </execution>
                     </executions>
-                    <configuration>
-                        <classesDirectory>${project.build.outputDirectory}</classesDirectory>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.1.2</version>
                     <configuration>
                         <archive>
                             <manifest>
@@ -199,7 +206,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.1.0</version>
                     <configuration>
                         <delimiters>
                             <delimiter>${resource.delimiter}</delimiter>
@@ -210,7 +216,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
-                    <version>3.2.3</version>
                     <configuration>
                         <failOnMissingWebXml>false</failOnMissingWebXml>
                         <archive>
@@ -220,52 +225,6 @@
                                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             </manifest>
                         </archive>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
-                    <configuration>
-                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                        <mainClass>${start-class}</mainClass>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.m2e</groupId>
-                    <artifactId>lifecycle-mapping</artifactId>
-                    <version>1.0.0</version>
-                    <configuration>
-                        <lifecycleMappingMetadata>
-                            <pluginExecutions>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.codehaus.mojo</groupId>
-                                        <artifactId>flatten-maven-plugin</artifactId>
-                                        <versionRange>[1.0.0,)</versionRange>
-                                        <goals>
-                                            <goal>flatten</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore />
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.apache.maven.plugins</groupId>
-                                        <artifactId>maven-checkstyle-plugin</artifactId>
-                                        <versionRange>[0,)</versionRange>
-                                        <goals>
-                                            <goal>check</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore />
-                                    </action>
-                                </pluginExecution>
-                            </pluginExecutions>
-                        </lifecycleMappingMetadata>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -298,20 +257,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.1.1</version>
-                        <executions>
-                            <!-- build javadoc jars per module for publishing to the repo -->
-                            <execution>
-                                <id>module-apidocs</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <configuration>
-                                    <destDir>${project.build.directory}/classes/static/javadoc</destDir>
-                                </configuration>
-                            </execution>
-                        </executions>
                         <dependencies>
                             <dependency>
                                 <groupId>ch.qos.reload4j</groupId>
@@ -324,12 +269,25 @@
                                 <version>1.7.4</version>
                                 <exclusions>
                                     <exclusion>
-                                        <artifactId>log4j</artifactId>
                                         <groupId>log4j</groupId>
+                                        <artifactId>log4j</artifactId>
                                     </exclusion>
                                 </exclusions>
                             </dependency>
                         </dependencies>
+                        <executions>
+                            <!-- build javadoc jars per module for publishing to the repo -->
+                            <execution>
+                                <id>module-apidocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/classes/static/javadoc</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -347,14 +305,6 @@
                         <plugin>
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>repackage-executable-jar</id>
-                                    <goals>
-                                        <goal>repackage</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
                             <configuration>
                                 <!-- Mark the repackaged executable jar with the "exec" classifier -->
                                 <classifier>exec</classifier>
@@ -363,6 +313,14 @@
                                 <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                                 <mainClass>${start-class}</mainClass>
                             </configuration>
+                            <executions>
+                                <execution>
+                                    <id>repackage-executable-jar</id>
+                                    <goals>
+                                        <goal>repackage</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>
@@ -376,14 +334,6 @@
                         <plugin>
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>repackage-executable-jar</id>
-                                    <goals>
-                                        <goal>repackage</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
                             <configuration>
                                 <!-- Mark the repackaged executable jar with the "exec" classifier -->
                                 <classifier>exec</classifier>
@@ -392,6 +342,14 @@
                                 <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                                 <mainClass>${start-class}</mainClass>
                             </configuration>
+                            <executions>
+                                <execution>
+                                    <id>repackage-executable-jar</id>
+                                    <goals>
+                                        <goal>repackage</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>

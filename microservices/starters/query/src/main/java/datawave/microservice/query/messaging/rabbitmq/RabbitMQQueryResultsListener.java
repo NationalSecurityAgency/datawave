@@ -33,50 +33,50 @@ import datawave.microservice.query.messaging.Result;
  */
 class RabbitMQQueryResultsListener extends MessageListenerAdapter implements QueryResultsListener {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final RabbitListenerEndpointRegistry endpointRegistry;
     private final ClaimCheck claimCheck;
     private final String listenerId;
     private final String queryId;
-    
+
     private final LinkedBlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private boolean stopped = false;
-    
+
     public RabbitMQQueryResultsListener(DirectRabbitListenerContainerFactory listenerContainerFactory, RabbitListenerEndpointRegistry endpointRegistry,
                     ClaimCheck claimCheck, String listenerId, String queryId) {
         this.endpointRegistry = endpointRegistry;
         this.claimCheck = claimCheck;
         this.listenerId = listenerId;
         this.queryId = queryId;
-        
+
         SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
         endpoint.setMessageListener(this);
         endpoint.setId(listenerId);
         endpoint.setQueueNames(QUERY_QUEUE_PREFIX + queryId);
         endpoint.setAckMode(AcknowledgeMode.MANUAL);
-        
+
         this.endpointRegistry.registerListenerContainer(endpoint, listenerContainerFactory, true);
     }
-    
+
     @Override
     public String getListenerId() {
         return listenerId;
     }
-    
+
     public String getQueryId() {
         return queryId;
     }
-    
+
     @Override
     public void close() {
         stopped = true;
-        
+
         // nack all of the extra messages we have received
         for (Result result : resultQueue) {
             result.acknowledge(NACK);
         }
-        
+
         MessageListenerContainer container = endpointRegistry.unregisterListenerContainer(listenerId);
         if (container != null) {
             container.stop();
@@ -84,12 +84,12 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
             log.error("Could not find listener container to stop");
         }
     }
-    
+
     @Override
     public boolean hasResults() {
         return !resultQueue.isEmpty();
     }
-    
+
     @Override
     public Result receive(long interval, TimeUnit timeUnit) {
         Result result = null;
@@ -102,14 +102,14 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
         }
         return result;
     }
-    
+
     @Override
     public void onMessage(Message message, final Channel channel) throws Exception {
         if (!stopped) {
             if (log.isTraceEnabled()) {
                 log.trace("Query " + queryId + " Listener " + getListenerId() + " got a message");
             }
-            
+
             Result result;
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<AcknowledgementCallback.Status> ackStatus = new AtomicReference<>();
@@ -117,16 +117,16 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
             try {
                 result = objectMapper.readerFor(Result.class).readValue(message.getBody());
                 resultId = result.getId();
-                
+
                 // if the payload is null, setup a claim check
                 if (result.getPayload() == null && claimCheck != null) {
                     result.setClaimCheckCallback(() -> claimCheck.claim(queryId));
                 }
-                
+
                 if (log.isTraceEnabled()) {
                     log.trace("Query {} Received record {} from queue {}", queryId, resultId, queryId);
                 }
-                
+
                 result.setAcknowledgementCallback(status -> {
                     ackStatus.set(status);
                     latch.countDown();
@@ -138,7 +138,7 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
                 }
                 throw new RuntimeException("Unable to deserialize results for " + queryId, e);
             }
-            
+
             // add the result if we're still running, otherwise nack it right away
             synchronized (resultQueue) {
                 if (!stopped) {
@@ -148,7 +148,7 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
                     result.acknowledge(NACK);
                 }
             }
-            
+
             try {
                 latch.await();
                 if (ackStatus.get() == ACK) {

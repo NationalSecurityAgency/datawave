@@ -12,10 +12,10 @@ public final class MockPluginEnvironment {
     private MockPluginEnvironment() {
         // Utility only, do not instantiate
     }
-    
+
     /**
      * Creates a new mock PluginEnvironment.
-     * 
+     *
      * @param conf
      *            The accumulo configuration
      * @return A plugin environment

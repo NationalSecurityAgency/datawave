@@ -20,21 +20,21 @@ import net.sf.ehcache.CacheManager;
 @ConditionalOnMissingBean(name = "cacheManager")
 @Conditional({CacheCondition.class, EhCacheCacheConfiguration.ConfigAvailableCondition.class})
 class EhCacheCacheConfiguration {
-    
+
     private final CacheProperties cacheProperties;
-    
+
     private final CacheManagerCustomizers customizers;
-    
+
     EhCacheCacheConfiguration(CacheProperties cacheProperties, CacheManagerCustomizers customizers) {
         this.cacheProperties = cacheProperties;
         this.customizers = customizers;
     }
-    
+
     @Bean
     public EhCacheCacheManager cacheManager(CacheManager ehCacheCacheManager) {
         return this.customizers.customize(new EhCacheCacheManager(ehCacheCacheManager));
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public CacheManager ehCacheCacheManager() {
@@ -44,17 +44,17 @@ class EhCacheCacheConfiguration {
         }
         return EhCacheManagerUtils.buildCacheManager();
     }
-    
+
     /**
      * Determine if the EhCache configuration is available. This either kick in if a default configuration has been found or if property referring to the file
      * to use has been set.
      */
     static class ConfigAvailableCondition extends ResourceCondition {
-        
+
         ConfigAvailableCondition() {
             super("EhCache", "spring.cache.ehcache.config", "classpath:/ehcache.xml");
         }
-        
+
     }
-    
+
 }

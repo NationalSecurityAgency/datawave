@@ -23,14 +23,14 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 public class HazelcastDiscoveryService implements DiscoveryService {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final DiscoveryClient discoveryClient;
-    
+
     @Value("${hazelcast.clusterName:cache}")
     private String hazelcastCluster;
-    
+
     public HazelcastDiscoveryService(DiscoveryClient discoveryClient) {
         this.discoveryClient = discoveryClient;
     }
-    
+
     @Override
     public Iterable<DiscoveryNode> discoverNodes() {
         List<DiscoveryNode> nodes = new ArrayList<>();
@@ -47,18 +47,18 @@ public class HazelcastDiscoveryService implements DiscoveryService {
         }
         return nodes;
     }
-    
+
     @Override
     public Map<String,String> discoverLocalMetadata() {
         // Not used
         return new HashMap<>();
     }
-    
+
     @Override
     public void start() {
         // Not used
     }
-    
+
     @Override
     public void destroy() {
         // Not used

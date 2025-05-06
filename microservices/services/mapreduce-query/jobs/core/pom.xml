@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.0</version>
+        <version>5.0.1-SNAPSHOT</version>
         <relativePath>../../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>mapreduce-query-core-job</artifactId>
@@ -25,21 +25,28 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.datawave.starter-query}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-map-reduce</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.hadoop.thirdparty</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -54,21 +61,14 @@
                 <version>${version.datawave.starter-query}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.hadoop.thirdparty</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-query</artifactId>
-                <version>${version.datawave.starter-query}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -87,23 +87,26 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration combine.self="override">
+                    <!-- Mark the repackaged executable jar with the "exec" classifier -->
+                    <classifier />
+                    <!-- Make the jar fully executable so it can be used as an init.d script -->
+                    <executable>false</executable>
+                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                    <mainClass>datawave.microservice.query.mapreduce.MapReduce</mainClass>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>gov.nsa.datawave.microservice</groupId>
+                        <artifactId>mapreduce-layout-factory</artifactId>
+                        <version>${version.datawave.mapreduce-layout-factory}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>repackage-executable-jar</id>
@@ -115,21 +118,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>mapreduce-layout-factory</artifactId>
-                        <version>${version.datawave.mapreduce-layout-factory}</version>
-                    </dependency>
-                </dependencies>
-                <configuration combine.self="override">
-                    <!-- Mark the repackaged executable jar with the "exec" classifier -->
-                    <classifier />
-                    <!-- Make the jar fully executable so it can be used as an init.d script -->
-                    <executable>false</executable>
-                    <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                    <mainClass>datawave.microservice.query.mapreduce.MapReduce</mainClass>
-                </configuration>
             </plugin>
         </plugins>
     </build>

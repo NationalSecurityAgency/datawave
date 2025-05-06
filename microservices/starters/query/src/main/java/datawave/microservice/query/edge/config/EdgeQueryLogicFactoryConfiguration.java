@@ -23,17 +23,17 @@ import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 @EnableConfigurationProperties({EdgeDictionaryProviderProperties.class, EdgeModelProperties.class})
 @ImportResource(locations = {"${datawave.query.edge.xmlBeansPath:classpath:EdgeQueryLogicFactory.xml}"})
 public class EdgeQueryLogicFactoryConfiguration {
-    
+
     @Bean
     public EdgeModelFieldsFactory edgeModelFieldsFactory(EdgeModelProperties edgeModelProperties) {
         return new EdgeModelFieldsFactoryImpl(edgeModelProperties);
     }
-    
+
     @Bean
     public EdgeQueryModel edgeQueryModel(EdgeModelProperties edgeModelProperties, EdgeModelFieldsFactory edgeModelFieldsFactory) throws Exception {
         return new EdgeQueryModel(LoadModel.loadModelFromFieldMappings(edgeModelProperties.getFieldMappings()), edgeModelFieldsFactory.createFields());
     }
-    
+
     @Bean
     public EdgeDictionaryProvider edgeDictionaryProvider(EdgeDictionaryProviderProperties edgeDictionaryProperties,
                     @Autowired(required = false) QueryStorageCache queryStorageCache, @Autowired(required = false) WebClient.Builder webClientBuilder,

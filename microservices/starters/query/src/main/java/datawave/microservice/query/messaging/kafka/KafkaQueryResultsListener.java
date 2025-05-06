@@ -33,13 +33,13 @@ import datawave.microservice.query.messaging.config.MessagingProperties;
  */
 class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMessageListener<String,String> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final LinkedBlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
     private final AbstractMessageListenerContainer<String,String> container;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String queryId;
     private boolean stopped = false;
-    
+
     public KafkaQueryResultsListener(MessagingProperties messagingProperties, ConsumerFactory<String,String> kafkaConsumerFactory, String listenerId,
                     String queryId) {
         if (log.isTraceEnabled()) {
@@ -48,16 +48,16 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
         this.queryId = queryId;
         ContainerProperties containerProps = new ContainerProperties(TOPIC_PREFIX + queryId);
         containerProps.setClientId(listenerId);
-        
+
         // use the topicId (i.e. queryId) as the groupId. this makes it possible
         // to get the size of the queue later on using just the query id
         containerProps.setGroupId(TOPIC_PREFIX + queryId);
-        
+
         containerProps.setMessageListener(this);
         containerProps.setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         containerProps.setPollTimeout(messagingProperties.getKafka().getPollTimeoutMillis());
         containerProps.setIdleBetweenPolls(messagingProperties.getKafka().getIdleBetweenPollsMillis());
-        
+
         if (messagingProperties.getConcurrency() > 1) {
             ConcurrentMessageListenerContainer<String,String> concurrentContainer = new ConcurrentMessageListenerContainer<>(kafkaConsumerFactory,
                             containerProps);
@@ -66,7 +66,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
         } else {
             container = new KafkaMessageListenerContainer<>(kafkaConsumerFactory, containerProps);
         }
-        
+
         container.setBeanName(listenerId + "-" + queryId);
         container.start();
         if (log.isTraceEnabled()) {
@@ -77,20 +77,20 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
             }
         }
     }
-    
+
     @Override
     public String getListenerId() {
         return container.getListenerId();
     }
-    
+
     public String getQueryId() {
         return queryId;
     }
-    
+
     @Override
     public void close() {
         stopped = true;
-        
+
         // synchronizing on the resultQueue to ensure onMessage() does not add anymore results
         synchronized (resultQueue) {
             // nack all of the extra messages we have received
@@ -98,16 +98,16 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                 result.acknowledge(NACK);
             }
         }
-        
+
         container.stop(true);
         container.destroy();
     }
-    
+
     @Override
     public boolean hasResults() {
         return !resultQueue.isEmpty();
     }
-    
+
     @Override
     public Result receive(long interval, TimeUnit timeUnit) {
         Result result = null;
@@ -120,7 +120,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
         }
         return result;
     }
-    
+
     /**
      * Invoked with data from kafka. The default implementation throws {@link UnsupportedOperationException}.
      *
@@ -135,7 +135,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
             if (log.isTraceEnabled()) {
                 log.trace("Query " + queryId + " Listener " + getListenerId() + " got message " + data.key());
             }
-            
+
             Result result;
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<AcknowledgementCallback.Status> ackStatus = new AtomicReference<>();
@@ -143,12 +143,12 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
             try {
                 result = objectMapper.readerFor(Result.class).readValue(data.value());
                 resultId = result.getId();
-                
+
                 if (log.isTraceEnabled()) {
                     log.trace("Query {} Received record {} from topic {} and partition {} at offset {}", queryId, resultId, data.topic(), data.partition(),
                                     data.offset());
                 }
-                
+
                 result.setAcknowledgementCallback(status -> {
                     ackStatus.set(status);
                     latch.countDown();
@@ -161,7 +161,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                 }
                 throw new RuntimeException("Unable to deserialize results for " + queryId, e);
             }
-            
+
             // add the result if we're still running, otherwise nack it right away
             synchronized (resultQueue) {
                 if (!stopped) {
@@ -171,7 +171,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                     result.acknowledge(NACK);
                 }
             }
-            
+
             try {
                 latch.await();
                 if (ackStatus.get() == ACK) {

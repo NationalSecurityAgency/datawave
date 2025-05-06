@@ -20,11 +20,11 @@ import com.jcraft.jsch.UserInfo;
 @ConfigurationProperties("spring.cloud.config.server.git")
 public class DatawaveJGitEnvironmentRepository extends MultipleJGitEnvironmentRepository {
     private boolean initialized = false;
-    
+
     public DatawaveJGitEnvironmentRepository(ConfigurableEnvironment environment, MultipleJGitEnvironmentProperties properties) {
         super(environment, properties);
     }
-    
+
     @Override
     public Environment findOne(String application, String profile, String label) {
         if (!initialized && getPassword() != null) {
@@ -38,39 +38,39 @@ public class DatawaveJGitEnvironmentRepository extends MultipleJGitEnvironmentRe
         }
         return super.findOne(application, profile, label);
     }
-    
+
     private static class KeyPassphraseUserInfo implements UserInfo {
         private String passphrase;
-        
+
         public KeyPassphraseUserInfo(String passphrase) {
             this.passphrase = passphrase;
         }
-        
+
         @Override
         public String getPassphrase() {
             return passphrase;
         }
-        
+
         @Override
         public String getPassword() {
             return null;
         }
-        
+
         @Override
         public boolean promptPassword(String message) {
             return false;
         }
-        
+
         @Override
         public boolean promptPassphrase(String message) {
             return passphrase != null;
         }
-        
+
         @Override
         public boolean promptYesNo(String message) {
             return false;
         }
-        
+
         @Override
         public void showMessage(String message) {
             // empty on purpose

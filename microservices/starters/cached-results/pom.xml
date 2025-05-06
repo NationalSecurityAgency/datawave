@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.0</version>
+        <version>5.0.1-SNAPSHOT</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-cached-results</artifactId>
@@ -28,22 +28,34 @@
         <version.datawave.starter>4.0.4</version.datawave.starter>
         <version.datawave.starter-audit>4.0.3</version.datawave.starter-audit>
         <version.datawave.starter-query>1.0.8</version.datawave.starter-query>
-        <version.mysql>8.0.32</version.mysql>
+        <version.mysql-connector>8.0.32</version.mysql-connector>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.datawave.starter-query}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${version.mysql-connector}</version>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-cached-results</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>slf4j-log4j12</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -58,8 +70,8 @@
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -89,38 +101,26 @@
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.accumulo</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${version.mysql}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-query</artifactId>
-                <version>${version.datawave.starter-query}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -132,6 +132,10 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-cached-results</artifactId>
@@ -161,24 +165,8 @@
             <artifactId>datawave-ws-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
 </project>

@@ -62,15 +62,15 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 @Configuration
 @EnableConfigurationProperties({QueryMetricHandlerProperties.class, TimelyProperties.class})
 public class QueryMetricHandlerConfiguration {
-    
+
     @Value("${spring.application.name}")
     private String applicationName;
-    
+
     @Bean
     public QueryMetricConsumer queryMetricSink(QueryMetricOperations queryMetricOperations, Correlator correlator, QueryMetricOperationsStats stats) {
         return new QueryMetricConsumer(queryMetricOperations, correlator, stats);
     }
-    
+
     @Bean
     public ObjectMapper objectMapper(QueryMetricFactory metricFactory) {
         ObjectMapper mapper = new ObjectMapper();
@@ -84,18 +84,18 @@ public class QueryMetricHandlerConfiguration {
         mapper.registerModule(new JaxbAnnotationModule());
         return mapper;
     }
-    
+
     @Bean
     public ResponseObjectFactory responseObjectFactory() {
         return new DefaultResponseObjectFactory();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     QueryMetricFactory queryMetricFactory() {
         return new QueryMetricFactoryImpl();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public ShardTableQueryMetricHandler shardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
@@ -114,13 +114,13 @@ public class QueryMetricHandlerConfiguration {
         handler.setQueryMetricResponseFactory(queryMetricResponseFactory);
         return handler;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public QueryMetricCombiner queryMetricCombiner() {
         return new QueryMetricCombiner();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public QueryGeometryHandler geometryHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
@@ -129,13 +129,13 @@ public class QueryMetricHandlerConfiguration {
         handler.setQueryMetricResponseFactory(queryMetricResponseFactory);
         return handler;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public QueryMetricResponseFactory queryMetricResponseFactory(ObjectProvider<BannerProvider> bannerProvider) {
         return new QueryMetricResponseFactory(bannerProvider.getIfAvailable(), "/" + applicationName);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public LuceneToJexlQueryParser luceneToJexlQueryParser() {
@@ -143,7 +143,7 @@ public class QueryMetricHandlerConfiguration {
         Set<String> skipTokenizedUnfieldedFields = new LinkedHashSet<>();
         skipTokenizedUnfieldedFields.add("DOMETA");
         luceneToJexlQueryParser.setSkipTokenizeUnfieldedFields(skipTokenizedUnfieldedFields);
-        
+
         Map<String,JexlQueryFunction> allowedFunctions = new LinkedHashMap<>();
         for (JexlQueryFunction f : JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST) {
             allowedFunctions.put(f.getClass().getCanonicalName(), f);
@@ -155,7 +155,7 @@ public class QueryMetricHandlerConfiguration {
         luceneToJexlQueryParser.setAllowedFunctions(new ArrayList<>(allowedFunctions.values()));
         return luceneToJexlQueryParser;
     }
-    
+
     // This bean is used via autowire in DateIndexHelper
     @Bean(name = "dateIndexHelperCacheManager")
     public CaffeineCacheManager dateIndexHelperCacheManager(QueryMetricHandlerProperties queryMetricHandlerProperties) {
@@ -164,7 +164,7 @@ public class QueryMetricHandlerConfiguration {
         caffeineCacheManager.setCaffeineSpec(CaffeineSpec.parse("maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h"));
         return caffeineCacheManager;
     }
-    
+
     @Bean
     public DateIndexHelperFactory dateIndexHelperFactory() {
         DateIndexHelper dateIndexHelper = DateIndexHelper.getInstance();
@@ -175,7 +175,7 @@ public class QueryMetricHandlerConfiguration {
             }
         };
     }
-    
+
     @Bean
     @Qualifier("queryMetrics")
     public TypeMetadataHelper.Factory typeMetadataFactory(ApplicationContext context) {

@@ -28,44 +28,44 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
 public class HazelcastUtils {
-    
+
     private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = 300;
-    
+
     public static class CountdownLatchAdapter implements Latch {
-        
+
         private final CountDownLatch latch;
-        
+
         CountdownLatchAdapter(CountDownLatch latch) {
             this.latch = latch;
         }
-        
+
         @Override
         public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
             return latch.await(timeout, unit);
         }
-        
+
         @Override
         public long getCount() {
             return latch.getCount();
         }
     }
-    
+
     public static interface Latch {
-        
+
         boolean await(long timeout, TimeUnit unit) throws InterruptedException;
-        
+
         long getCount();
     }
-    
+
     private static abstract class AssertTask {
-        
+
         public abstract void run() throws Exception;
     }
-    
+
     public static String randomMapName() {
         return UuidUtil.newUnsecureUuidString();
     }
-    
+
     public static String generateRandomString(int length) {
         StringBuilder sb = new StringBuilder(length);
         Random random = new Random();
@@ -75,11 +75,11 @@ public class HazelcastUtils {
         }
         return sb.toString();
     }
-    
+
     public static String randomString() {
         return UuidUtil.newUnsecureUuidString();
     }
-    
+
     public static void sleepAtLeastMillis(long sleepFor) {
         boolean interrupted = false;
         try {
@@ -100,7 +100,7 @@ public class HazelcastUtils {
             }
         }
     }
-    
+
     public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
         for (int i = 0; i < instances.length; i++) {
             int clusterSize = getClusterSize(instances[i]);
@@ -109,24 +109,24 @@ public class HazelcastUtils {
             }
         }
     }
-    
+
     public static int getClusterSize(HazelcastInstance instance) {
         Set<Member> members = instance.getCluster().getMembers();
         return members == null ? 0 : members.size();
     }
-    
+
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
             assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         }
     }
-    
+
     public static void assertClusterSizeEventually(int expectedSize, Collection<HazelcastInstance> instances) {
         for (HazelcastInstance instance : instances) {
             assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         }
     }
-    
+
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -135,7 +135,7 @@ public class HazelcastUtils {
             }
         }, timeoutSeconds);
     }
-    
+
     public static void assertTrueEventually(String message, AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
         // we are going to check five times a second
@@ -159,23 +159,23 @@ public class HazelcastUtils {
         }
         fail("assertTrueEventually() failed without AssertionError! " + message);
     }
-    
+
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         assertTrueEventually(null, task, timeoutSeconds);
     }
-    
+
     public static void assertTrueEventually(String message, AssertTask task) {
         assertTrueEventually(message, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
-    
+
     public static void assertTrueEventually(AssertTask task) {
         assertTrueEventually(null, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
-    
+
     public static void assertOpenEventually(CountDownLatch latch) {
         assertOpenEventually(new CountdownLatchAdapter(latch), ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
-    
+
     public static void assertOpenEventually(Latch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
@@ -184,12 +184,12 @@ public class HazelcastUtils {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         Cluster cluster = instance.getCluster();
         checkMemberCount(true, cluster);
         checkPartitionCountGreaterOrEqualMemberCount(instance);
-        
+
         Member localMember = cluster.getLocalMember();
         PartitionService partitionService = instance.getPartitionService();
         while (true) {
@@ -200,23 +200,23 @@ public class HazelcastUtils {
             }
         }
     }
-    
+
     public static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
         Cluster cluster = instance.getCluster();
         int memberCount = cluster.getMembers().size();
-        
+
         InternalPartitionService internalPartitionService = getPartitionService(instance);
         int partitionCount = internalPartitionService.getPartitionCount();
-        
+
         if (partitionCount < memberCount) {
             throw new UnsupportedOperationException("Partition count should be equal or greater than member count!");
         }
     }
-    
+
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
         return getNode(hz).getPartitionService();
     }
-    
+
     public static boolean comparePartitionOwnership(boolean ownedBy, Member member, Partition partition) {
         Member owner = partition.getOwner();
         if (ownedBy) {
@@ -225,7 +225,7 @@ public class HazelcastUtils {
             return !member.equals(owner);
         }
     }
-    
+
     public static void checkMemberCount(boolean generateOwnedKey, Cluster cluster) {
         if (generateOwnedKey) {
             return;
@@ -235,7 +235,7 @@ public class HazelcastUtils {
             throw new UnsupportedOperationException("Cluster has only one member, you can not generate a `not owned key`");
         }
     }
-    
+
     public static void sleepMillis(int millis) {
         try {
             MILLISECONDS.sleep(millis);
@@ -243,7 +243,7 @@ public class HazelcastUtils {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     public static void warmUpPartition(HazelcastInstance instance) {
         if (instance == null) {
             return;
@@ -255,7 +255,7 @@ public class HazelcastUtils {
             }
         }
     }
-    
+
     public static void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
         if (h1 == null || h2 == null) {
             return;
@@ -265,15 +265,15 @@ public class HazelcastUtils {
         suspectMember(n1, n2);
         suspectMember(n2, n1);
     }
-    
+
     public static void suspectMember(HazelcastInstance source, HazelcastInstance target) {
         suspectMember(getNode(source), getNode(target));
     }
-    
+
     public static void suspectMember(Node suspectingNode, Node suspectedNode) {
         suspectMember(suspectingNode, suspectedNode, null);
     }
-    
+
     public static void suspectMember(Node suspectingNode, Node suspectedNode, String reason) {
         if (suspectingNode != null && suspectedNode != null) {
             ClusterServiceImpl clusterService = suspectingNode.getClusterService();
@@ -283,12 +283,12 @@ public class HazelcastUtils {
             }
         }
     }
-    
+
     public static Node getNode(HazelcastInstance hz) {
         HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
         return hazelcastInstanceImpl.node;
     }
-    
+
     /**
      * Retrieves the {@link HazelcastInstanceImpl} from a given Hazelcast instance.
      *

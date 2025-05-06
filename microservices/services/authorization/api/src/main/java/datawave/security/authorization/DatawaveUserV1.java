@@ -7,13 +7,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * rest endpoint
  */
 public class DatawaveUserV1 extends DatawaveUser {
-    
+
     @JsonIgnore
     protected String email;
-    
+
     @JsonIgnore
     protected String login;
-    
+
     public DatawaveUserV1(DatawaveUser o) {
         super(o.getDn(), o.getUserType(), o.getEmail(), o.getAuths(), o.getRoles(), o.getRoleToAuthMapping(), o.getCreationTime(), o.getExpirationTime());
     }

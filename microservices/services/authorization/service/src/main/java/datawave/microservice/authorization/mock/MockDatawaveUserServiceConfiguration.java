@@ -24,12 +24,12 @@ public class MockDatawaveUserServiceConfiguration {
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory) {
         return new MockDatawaveUserService(mockDatawaveUserLookup, cacheInspectorFactory.apply(cacheManager));
     }
-    
+
     @Bean
     public MockDatawaveUserLookup mockDatawaveUserLookup(MockDULProperties mockDULProperties) {
         return new MockDatawaveUserLookup(mockDULProperties);
     }
-    
+
     @Bean
     public MockDULProperties mockDULProperties() {
         return new MockDULProperties();

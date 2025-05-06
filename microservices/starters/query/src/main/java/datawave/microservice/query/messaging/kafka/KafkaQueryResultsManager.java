@@ -26,16 +26,16 @@ import datawave.microservice.query.messaging.config.MessagingProperties;
 
 public class KafkaQueryResultsManager implements QueryResultsManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String KAFKA = "kafka";
-    
+
     static final String TOPIC_PREFIX = "queryResults.";
-    
+
     private final MessagingProperties messagingProperties;
     private final AdminClient adminClient;
     private final ProducerFactory<String,String> kafkaProducerFactory;
     private final ConsumerFactory<String,String> kafkaConsumerFactory;
-    
+
     public KafkaQueryResultsManager(MessagingProperties messagingProperties, AdminClient queryKafkaAdminClient,
                     ProducerFactory<String,String> queryKafkaProducerFactory, ConsumerFactory<String,String> queryKafkaConsumerFactory) {
         this.messagingProperties = messagingProperties;
@@ -43,7 +43,7 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
         this.kafkaProducerFactory = queryKafkaProducerFactory;
         this.kafkaConsumerFactory = queryKafkaConsumerFactory;
     }
-    
+
     /**
      * Create a listener for a specified listener id
      *
@@ -56,7 +56,7 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
         createTopic(TOPIC_PREFIX + queryId);
         return new KafkaQueryResultsListener(messagingProperties, kafkaConsumerFactory, listenerId, queryId);
     }
-    
+
     /**
      * Create a publisher for a specific query id.
      *
@@ -71,7 +71,7 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
         kafkaTemplate.setDefaultTopic(TOPIC_PREFIX + queryId);
         return new KafkaQueryResultsPublisher(kafkaTemplate);
     }
-    
+
     /**
      * Delete a queue for a query
      *
@@ -82,7 +82,7 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
     public void deleteQuery(String queryId) {
         deleteTopic(TOPIC_PREFIX + queryId);
     }
-    
+
     private void deleteTopic(String topic) {
         try {
             if (adminClient.listTopics().names().get().contains(topic)) {
@@ -98,7 +98,7 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
             log.error("Failed to delete topic " + topic, e);
         }
     }
-    
+
     private void createTopic(String topic) {
         try {
             if (!adminClient.listTopics().names().get().contains(topic)) {
@@ -118,13 +118,13 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
             log.error("Failed to delete topic " + topic, e);
         }
     }
-    
+
     @Override
     public void emptyQuery(String name) {
         emptyTopic(TOPIC_PREFIX + name);
-        
+
     }
-    
+
     private void emptyTopic(String topic) {
         TopicDescription topicDesc = describeTopic(topic);
         if (topicDesc != null) {
@@ -142,12 +142,12 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
             }
         }
     }
-    
+
     @Override
     public int getNumResultsRemaining(final String queryId) {
         return getNumResultsRemainingFromTopic(TOPIC_PREFIX + queryId);
     }
-    
+
     private int getNumResultsRemainingFromTopic(final String topic) {
         Map<TopicPartition,Long> consumerOffsetMap = new HashMap<>();
         try {
@@ -161,31 +161,31 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
         } catch (InterruptedException | ExecutionException e) {
             log.warn("Unable to list consumer group offsets " + topic, e);
         }
-        
+
         long combinedLag = 0L;
         if (!consumerOffsetMap.isEmpty()) {
             Map<TopicPartition,Long> endOffsetMap = new HashMap<>();
-            
+
             try (Consumer<String,String> consumer = kafkaConsumerFactory.createConsumer()) {
                 // @formatter:off
                 consumer.endOffsets(consumerOffsetMap.keySet())
                         .forEach((key, value) -> endOffsetMap.putIfAbsent(new TopicPartition(key.topic(), key.partition()), value));
                 // @formatter:on
             }
-            
+
             if (!endOffsetMap.isEmpty()) {
                 long totalLag = 0L;
                 for (Map.Entry<TopicPartition,Long> entry : consumerOffsetMap.entrySet()) {
                     totalLag += (endOffsetMap.get(entry.getKey()) - consumerOffsetMap.get(entry.getKey()));
                 }
-                
+
                 combinedLag = totalLag;
             }
         }
-        
+
         return (int) combinedLag;
     }
-    
+
     private TopicDescription describeTopic(String topic) {
         TopicDescription topicDesc = null;
         try {

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.0</version>
+        <version>5.0.1-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>accumulo-service</artifactId>
@@ -31,20 +31,27 @@
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave</artifactId>
+                <version>${version.datawave.starter-datawave}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>accumulo-api</artifactId>
                 <version>${version.datawave.accumulo-api}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>log4j</groupId>
-                    </exclusion>
-                    <exclusion>
                         <artifactId>*</artifactId>
-                        <groupId>org.slf4j</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>servlet-api</artifactId>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>javax.servlet</groupId>
+                        <artifactId>servlet-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -59,8 +66,8 @@
                 <version>${version.curator}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>org.apache.zookeeper</artifactId>
-                        <groupId>zookeeper</groupId>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -70,8 +77,8 @@
                 <version>${version.curator}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>org.apache.zookeeper</artifactId>
-                        <groupId>zookeeper</groupId>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -81,8 +88,8 @@
                 <version>${version.curator}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>org.apache.zookeeper</artifactId>
-                        <groupId>zookeeper</groupId>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -92,12 +99,12 @@
                 <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>slf4j-log4j12</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -108,12 +115,16 @@
                 <scope>runtime</scope>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -122,13 +133,6 @@
                 <artifactId>xercesImpl</artifactId>
                 <version>2.12.2</version>
                 <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.datawave.starter-datawave}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -151,12 +155,12 @@
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>servlet-api</artifactId>
                     <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>slf4j-reload4j</artifactId>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -178,16 +182,16 @@
             <artifactId>accumulo-core</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>guava</artifactId>
                     <groupId>*</groupId>
+                    <artifactId>guava</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>servlet-api</artifactId>
                     <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>slf4j-reload4j</artifactId>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -216,33 +220,16 @@
             <artifactId>curator-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -257,8 +244,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
