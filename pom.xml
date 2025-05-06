@@ -2061,9 +2061,6 @@
         </profile>
         <profile>
             <id>kubernetes</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
             <properties>
                 <build.env>kubernetes</build.env>
                 <env>kubernetes</env>
