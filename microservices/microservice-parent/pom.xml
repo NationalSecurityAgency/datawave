@@ -52,8 +52,8 @@
         <version.junit5.platform>1.12.0</version.junit5.platform>
         <version.log4j.bom>2.17.2</version.log4j.bom>
         <version.lombok>1.18.36</version.lombok>
-        <version.spring>5.3.39</version.spring>
-        <version.spring-security-core>5.8.16</version.spring-security-core>
+        <version.spring>5.3.0</version.spring>
+        <version.spring-security-core>5.3.0.RELEASE</version.spring-security-core>
     </properties>
     <dependencyManagement>
         <dependencies>
