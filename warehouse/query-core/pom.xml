@@ -403,7 +403,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <version>${version.springframework}</version>
+            <version>${version.spring}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

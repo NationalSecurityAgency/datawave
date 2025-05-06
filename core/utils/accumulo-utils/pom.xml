@@ -33,7 +33,6 @@
         <version.slf4j>1.7.29</version.slf4j>
         <!-- snappy and dropwizard required to allow miniaccumulo to work with upgraded zookeeper -->
         <version.snappy>1.1.7</version.snappy>
-        <version.spring>5.3.5</version.spring>
         <version.zookeeper>3.8.0</version.zookeeper>
     </properties>
     <dependencyManagement>
