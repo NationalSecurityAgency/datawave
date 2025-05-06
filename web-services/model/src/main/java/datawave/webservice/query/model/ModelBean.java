@@ -102,7 +102,7 @@ public class ModelBean {
     private String dataTablesUri;
 
     @Inject
-    @ConfigProperty(name = "dw.model.systemName", defaultValue = "unknown")
+    @ConfigProperty(name = "cluster.name", defaultValue = "unknown")
     private String systemName;
 
     @EJB
