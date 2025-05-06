@@ -1433,8 +1433,10 @@
                             <file>${maven.multiModuleProjectDirectory}/properties</file>
                             <file>${user.home}/.m2/datawave/properties</file>
                         </directories>
-                        <files combine.children="append">
+                        <files>
                             <file>default.properties</file>
+                            <file>dev.properties</file>
+                            <file>dev-passwords.properties</file>
                         </files>
                     </configuration>
                     <executions>
@@ -2032,32 +2034,6 @@
             </modules>
         </profile>
         <profile>
-            <id>dev</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <build.env>dev</build.env>
-                <env>dev</env>
-            </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>gov.nsa.datawave.plugins</groupId>
-                            <artifactId>read-properties</artifactId>
-                            <configuration>
-                                <files>
-                                    <file>dev.properties</file>
-                                    <file>dev-passwords.properties</file>
-                                </files>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
             <id>compose</id>
             <properties>
                 <build.env>compose</build.env>
@@ -2071,6 +2047,7 @@
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
+                                    <file>default.properties</file>
                                     <file>compose.properties</file>
                                 </files>
                             </configuration>
@@ -2096,6 +2073,7 @@
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
+                                    <file>default.properties</file>
                                     <file>kubernetes.properties</file>
                                     <file>kubernetes-passwords.properties</file>
                                 </files>
@@ -2133,6 +2111,7 @@
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
+                                    <file>default.properties</file>
                                     <file>dev.properties</file>
                                     <file>dev-passwords.properties</file>
                                     <file>bamboo.properties</file>
