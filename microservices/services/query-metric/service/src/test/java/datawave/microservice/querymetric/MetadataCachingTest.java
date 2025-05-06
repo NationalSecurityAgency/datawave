@@ -37,31 +37,31 @@ import datawave.query.util.TypeMetadataHelper;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryMetricTest", "hazelcast-writethrough"})
 public class MetadataCachingTest extends QueryMetricTestBase {
-    
+
     @Autowired
     protected MetadataHelperFactory metadataHelperFactory;
-    
+
     @Autowired
     @Qualifier("metadataHelperCacheManager")
     protected CacheManager metadataHelperCacheManager;
-    
+
     @Autowired
     @Qualifier("dateIndexHelperCacheManager")
     protected CacheManager dateIndexHelperCacheManager;
-    
+
     @Autowired
     protected DateIndexHelperFactory dateIndexHelperFactory;
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     public void VerifyMetadataMethodsCacheable() throws Exception {
         Set<Authorizations> authorizations = auths.stream().map(Authorizations::new).collect(Collectors.toSet());
@@ -90,7 +90,7 @@ public class MetadataCachingTest extends QueryMetricTestBase {
         metadataHelper.getCompositeToFieldMap();
         metadataHelper.getCompositeTransitionDateMap();
         metadataHelper.getWhindexCreationDateMap();
-        
+
         DateIndexHelper dateIndexHelper = dateIndexHelperFactory.createDateIndexHelper();
         Date today = new Date();
         Date yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -98,21 +98,21 @@ public class MetadataCachingTest extends QueryMetricTestBase {
         dateIndexHelper.initialize(accumuloClient, "QueryMetrics_d", authorizations, 4, 0.99f);
         dateIndexHelper.getTypeDescription("BEGIN", yesterday, today, Collections.singleton("querymetrics"));
         dateIndexHelper.getShardsAndDaysHint("QUERY_ID", yesterday, today, yesterday, today, Collections.singleton("querymetrics"));
-        
+
         TreeSet<String> cacheNames = new TreeSet<>();
         cacheNames.addAll(metadataHelperCacheManager.getCacheNames());
         cacheNames.addAll(dateIndexHelperCacheManager.getCacheNames());
-        
+
         Set<String> expectedCacheNames = new TreeSet<>();
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(MetadataHelper.class));
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(CompositeMetadataHelper.class));
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(TypeMetadataHelper.class));
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(AllFieldMetadataHelper.class));
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(DateIndexHelper.class));
-        
+
         Assert.assertEquals(expectedCacheNames, cacheNames);
     }
-    
+
     private List<String> getCacheNamesForCacheableMethods(Class clazz) {
         List<String> cacheNames = new ArrayList<>();
         Arrays.stream(clazz.getMethods()).forEach(method -> {
