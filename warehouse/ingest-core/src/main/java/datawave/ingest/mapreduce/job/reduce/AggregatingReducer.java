@@ -13,10 +13,12 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -505,6 +507,21 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             @Override
             public boolean isUserCompaction() {
                 return false;
+            }
+
+            @Override
+            public ServiceEnvironment getServiceEnv() {
+                return null;
+            }
+
+            @Override
+            public PluginEnvironment getPluginEnv() {
+                return null;
+            }
+
+            @Override
+            public TableId getTableId() {
+                return null;
             }
 
             @Override
