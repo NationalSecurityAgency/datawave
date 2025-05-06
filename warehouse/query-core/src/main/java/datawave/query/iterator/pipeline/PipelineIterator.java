@@ -300,9 +300,17 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         }
     }
 
-    // If collectTimingDetails == true, then we will set the (future) yieldKey in waitWindowObserver and return
-    // an entry with the yield key and a WAIT_WINDOW_OVERRUN document to which the timing details can be added
-    // If collectTimingDetails == false, then we yield and return a null
+    /**
+     * handleWaitWindowOverrun for collectTimingDetails = true or false and either yield or return an entry to be used in a WAIT_WINDOW_OVERRUN document
+     *
+     * If collectTimingDetails == true, then we will set the (future) yieldKey in waitWindowObserver and return an entry with the yield key and a
+     * WAIT_WINDOW_OVERRUN document to which the timing details can be added. If collectTimingDetails == false, then we yield and return a null.
+     *
+     * @param e
+     *            - the WaitWindowOverrunException that has been propagated
+     *
+     * @return either null when yielding or an Entry to be used in a WAIT_WINDOW_OVERRUN document
+     */
     private Map.Entry<Key,Document> handleWaitWindowOverrun(WaitWindowOverrunException e) {
         Map.Entry<Key,Document> result = null;
         if (e.getYieldKey().getLeft() == null) {

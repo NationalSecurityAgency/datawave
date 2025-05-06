@@ -45,6 +45,13 @@ public class QuerySpanCollector {
         }
     }
 
+    /**
+     * A snapshot of the current values.
+     *
+     * @param reset
+     *            - return a QuerySpan and reset the values in this object
+     * @return a QuerySpan with the current values of this object
+     */
     private QuerySpan snapshot(boolean reset) {
         QuerySpan combinedQuerySpan = null;
         if (hasEntries()) {
