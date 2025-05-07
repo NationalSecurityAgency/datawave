@@ -34,29 +34,27 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.artifactId>${project.artifactId}</project.artifactId>
+        <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.version>${project.version}</project.version>
         <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.docker.plugin>1.2.1</version.docker.plugin>
+        <version.hadoop>3.3.4</version.hadoop>
         <version.jackson>2.13.2</version.jackson>
-        <!-- NOTE: The Junit and log4j management here will NOT override the management provided via spring boot.  Make
-        sure to update these versions as you update the spring-boot version so that we don't get out of date. -->
-        <version.junit.bom>5.8.2</version.junit.bom>
+        <version.junit4>4.13.2</version.junit4>
+        <version.junit5>5.12.0</version.junit5>
+        <version.junit5.platform>1.12.0</version.junit5.platform>
         <version.log4j.bom>2.17.2</version.log4j.bom>
-        <version.lombok>1.18.24</version.lombok>
+        <version.lombok>1.18.36</version.lombok>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${version.lombok}</version>
-                <scope>provided</scope>
-            </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
@@ -65,14 +63,147 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${version.junit.bom}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-client</artifactId>
+                <version>${version.hadoop}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-common</artifactId>
+                <version>${version.hadoop}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-server-common</artifactId>
+                <version>${version.hadoop}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit4}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <repositories>
         <repository>
             <releases>
@@ -103,30 +234,45 @@
                 <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
-                    <version>2.10.0</version>
-                    <executions>
-                        <execution>
-                            <id>sort-pom</id>
-                            <phase>process-sources</phase>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                        </execution>
-                    </executions>
+                    <version>4.0.0</version>
                     <configuration>
+                        <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
                         <createBackupFile>false</createBackupFile>
                         <lineSeparator>\n</lineSeparator>
+                        <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
                         <expandEmptyElements>false</expandEmptyElements>
                         <nrOfIndentSpace>4</nrOfIndentSpace>
                         <sortDependencies>scope,groupId,artifactId</sortDependencies>
                         <sortPlugins>groupId,artifactId</sortPlugins>
                         <sortProperties>true</sortProperties>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>sort-pom</id>
+                            <goals>
+                                <goal>sort</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>3.1.12.2</version>
+                    <version>4.9.2.0</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>High</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <excludeFilterFile>${spotbugs.excludes.file}</excludeFilterFile>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-sink-api</artifactId>
+                            <version>2.0.0</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <goals>
@@ -134,92 +280,33 @@
                             </goals>
                         </execution>
                     </executions>
-                    <dependencies>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.9.1</version>
-                            <exclusions>
-                                <exclusion>
-                                    <artifactId>log4j</artifactId>
-                                    <groupId>log4j</groupId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.reporting</groupId>
-                            <artifactId>maven-reporting-impl</artifactId>
-                            <version>3.0.0</version>
-                            <exclusions>
-                                <exclusion>
-                                    <artifactId>log4j</artifactId>
-                                    <groupId>log4j</groupId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                    </dependencies>
-                    <configuration>
-                        <effort>Max</effort>
-                        <threshold>High</threshold>
-                        <xmlOutput>true</xmlOutput>
-                        <excludeFilterFile>${spotbugs.excludes.file}</excludeFilterFile>
-                    </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>com.spotify</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>${version.docker.plugin}</version>
+                    <groupId>io.github.git-commit-id</groupId>
+                    <artifactId>git-commit-id-maven-plugin</artifactId>
+                    <version>9.0.1</version>
+                    <configuration>
+                        <verbose>false</verbose>
+                        <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+                        <failOnNoGitDirectory>true</failOnNoGitDirectory>
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <gitDescribe>
+                            <skip>true</skip>
+                        </gitDescribe>
+                    </configuration>
                     <executions>
                         <execution>
-                            <id>tag-image</id>
-                            <phase>package</phase>
                             <goals>
-                                <goal>build</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>push-image</id>
-                            <phase>deploy</phase>
-                            <goals>
-                                <goal>push</goal>
+                                <goal>revision</goal>
                             </goals>
                         </execution>
                     </executions>
-                    <configuration>
-                        <imageName>${docker.image.prefix}${project.artifactId}</imageName>
-                        <forceTags>true</forceTags>
-                        <imageTags>
-                            <imageTag>latest</imageTag>
-                            <imageTag>${project.version}</imageTag>
-                        </imageTags>
-                        <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
-                        <resources>
-                            <resource>
-                                <targetPath>/</targetPath>
-                                <directory>${project.build.directory}</directory>
-                                <include>${project.build.finalName}-exec.jar</include>
-                            </resource>
-                        </resources>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>net.revelc.code</groupId>
                     <artifactId>impsort-maven-plugin</artifactId>
                     <version>1.9.0</version>
-                    <executions>
-                        <execution>
-                            <id>sort-imports</id>
-                            <phase>process-sources</phase>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <groups>java.,javax.,org.,com.</groups>
                         <staticGroups>java,*</staticGroups>
@@ -227,18 +314,28 @@
                             <exclude>**/thrift/*.java</exclude>
                         </excludes>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>sort-imports</id>
+                            <goals>
+                                <goal>sort</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
-                    <version>2.16.0</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>format</goal>
-                            </goals>
-                        </execution>
-                    </executions>
+                    <version>2.23.0</version>
+                    <configuration>
+                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
+                        <lineEnding>LF</lineEnding>
+                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
+                        <compilerSource>${maven.compiler.source}</compilerSource>
+                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                    </configuration>
                     <dependencies>
                         <dependency>
                             <groupId>gov.nsa.datawave</groupId>
@@ -246,37 +343,32 @@
                             <version>1.0</version>
                         </dependency>
                     </dependencies>
-                    <configuration>
-                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
-                        <lineEnding>LF</lineEnding>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
-                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>format</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.14.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.8</version>
+                    <version>3.8.1</version>
                     <dependencies>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
                         <dependency>
                             <groupId>org.apache.maven.shared</groupId>
                             <artifactId>maven-common-artifact-filters</artifactId>
-                            <version>1.4</version>
+                            <version>3.4.0</version>
                             <exclusions>
                                 <exclusion>
-                                    <artifactId>log4j</artifactId>
                                     <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
                                 </exclusion>
                             </exclusions>
                         </dependency>
@@ -284,30 +376,58 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.5.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-help-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.5.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>3.1.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.4.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.11.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
+                        <releaseProfiles>dist</releaseProfiles>
+                        <arguments>-Ddist</arguments>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.3.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.3.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M5</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.junit.bom}</version>
-                        </dependency>
-                    </dependencies>
+                    <version>3.5.2</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
@@ -321,9 +441,76 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.6.0</version>
+                </plugin>
+                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>rpm-maven-plugin</artifactId>
-                    <version>2.2.0</version>
+                    <version>2.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.jkube</groupId>
+                    <artifactId>kubernetes-maven-plugin</artifactId>
+                    <version>1.18.1</version>
+                    <configuration>
+                        <verbose>true</verbose>
+                        <images>
+                            <image>
+                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <build>
+                                    <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
+                                    <contextDir>.</contextDir>
+                                    <buildOptions>
+                                        <memory>8589934592</memory>
+                                    </buildOptions>
+                                    <tags>
+                                        <tag>latest</tag>
+                                        <tag>${project.version}</tag>
+                                    </tags>
+                                    <assembly>
+                                        <name>/</name>
+                                        <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>
+                                        <layers>
+                                            <layer>
+                                                <id>spring-jar</id>
+                                                <files>
+                                                    <file>
+                                                        <source>${project.build.directory}/${project.build.finalName}-exec.jar</source>
+                                                        <!-- target/docker/<image path>/build -->
+                                                        <outputDirectory>.</outputDirectory>
+                                                        <fileMode>0640</fileMode>
+                                                    </file>
+                                                </files>
+                                            </layer>
+                                        </layers>
+                                    </assembly>
+                                </build>
+                            </image>
+                        </images>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>build</id>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                            <phase>install</phase>
+                        </execution>
+                        <execution>
+                            <id>push</id>
+                            <goals>
+                                <goal>push</goal>
+                            </goals>
+                            <phase>deploy</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -335,36 +522,26 @@
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>3.9.1.2184</version>
                 </plugin>
-                <plugin>
-                    <groupId>pl.project13.maven</groupId>
-                    <artifactId>git-commit-id-plugin</artifactId>
-                    <version>3.0.1</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>revision</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <verbose>false</verbose>
-                        <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
-                        <failOnNoGitDirectory>true</failOnNoGitDirectory>
-                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
-                        <gitDescribe>
-                            <skip>true</skip>
-                        </gitDescribe>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M3</version>
                 <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.3</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>enforce-no-snapshots</id>
                         <goals>
@@ -388,12 +565,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
-                <configuration>
-                    <tagNameFormat>@{project.version}</tagNameFormat>
-                    <releaseProfiles>dist</releaseProfiles>
-                    <arguments>-Ddist</arguments>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -426,48 +597,6 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>docker</id>
-            <activation>
-                <property>
-                    <name>microservice-docker</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>prepare-dockerfile</id>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/docker-filtered</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/docker</directory>
-                                            <filtering>true</filtering>
-                                        </resource>
-                                    </resources>
-                                    <overwrite>true</overwrite>
-                                    <delimiters>
-                                        <delimiter>${*}</delimiter>
-                                    </delimiters>
-                                    <useDefaultDelimiters>false</useDefaultDelimiters>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <properties>
-                <os.detected.classifier>linux-x86_64-fedora</os.detected.classifier>
-            </properties>
-        </profile>
         <!-- The dist profile (activated with -Ddist) triggers building of source and javadoc artifacts. -->
         <profile>
             <id>dist</id>
@@ -481,19 +610,35 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.2.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>ch.qos.reload4j</groupId>
+                                <artifactId>reload4j</artifactId>
+                                <version>1.2.22</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.maven.doxia</groupId>
+                                <artifactId>doxia-site-renderer</artifactId>
+                                <version>1.7.4</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>log4j</groupId>
+                                        <artifactId>log4j</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <!-- build javadoc jars per module for publishing to the repo -->
                             <execution>
                                 <id>module-apidocs</id>
-                                <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <phase>package</phase>
                                 <configuration>
                                     <encoding>UTF-8</encoding>
-                                    <destDir>${project.build.directory}/javadoc</destDir>
-                                    <javadocVersion>11</javadocVersion>
+                                    <outputDirectory>${project.build.directory}/javadoc</outputDirectory>
                                     <additionalJOptions>
                                         <additionalJOption>-J-Xmx768m</additionalJOption>
                                     </additionalJOptions>
@@ -548,24 +693,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>ch.qos.reload4j</groupId>
-                                <artifactId>reload4j</artifactId>
-                                <version>1.2.22</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.apache.maven.doxia</groupId>
-                                <artifactId>doxia-site-renderer</artifactId>
-                                <version>1.7.4</version>
-                                <exclusions>
-                                    <exclusion>
-                                        <artifactId>log4j</artifactId>
-                                        <groupId>log4j</groupId>
-                                    </exclusion>
-                                </exclusions>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -574,11 +701,11 @@
                             <!-- Build source jars and attach them to the project for publishing -->
                             <execution>
                                 <id>datawave-java-sources</id>
-                                <phase>package</phase>
                                 <goals>
                                     <goal>jar-no-fork</goal>
                                     <goal>test-jar-no-fork</goal>
                                 </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>

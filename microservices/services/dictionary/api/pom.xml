@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1-SNAPSHOT</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-api</artifactId>
@@ -35,12 +35,12 @@
                 <version>${version.datawave.base-rest-responses}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>ch.qos.logback</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>netty-tcnative</artifactId>
                         <groupId>io.netty</groupId>
+                        <artifactId>netty-tcnative</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -50,12 +50,12 @@
                 <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>avro</artifactId>
                         <groupId>org.apache.avro</groupId>
+                        <artifactId>avro</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -79,24 +79,7 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <resources>
             <resource>
@@ -113,10 +96,10 @@
                 <executions>
                     <execution>
                         <id>copy-templated-sources</id>
-                        <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/generated-sources/templated-sources</outputDirectory>
                             <resources>
@@ -132,14 +115,13 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <sources>
                                 <source>target/generated-sources/templated-sources</source>

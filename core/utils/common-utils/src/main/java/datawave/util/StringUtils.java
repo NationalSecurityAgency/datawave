@@ -10,25 +10,25 @@ import java.util.Set;
 
 /**
  * A class for general String utilities
- * 
+ *
  */
 public class StringUtils {
-    
+
     /**
      * An empty, constant, zero-length string
      */
     public static final String EMPTY_STRING = "";
-    
+
     /**
      * The String.split routine is fairly expensive as it uses a pattern matcher to determine the split points. However the usual case is to split a string
      * using a simple one character delimiter. This routine is many times faster in this case. Note that String.split(" ") is equivalent to
      * StringUtils.split(str, ' ', true) except for one minor difference. The java.lang split routine will not return any empty strings resulting from multiple
      * delimiters at the end of the string where as this routine will:
-     * 
+     *
      * ",,a,,".split(",") will return ["", "", "a"] StringUtils.split(",,a,,", ',', true) will return ["", "", "a", "", ""]
-     * 
+     *
      * use split(str, delimiter) if you want the same functionality
-     * 
+     *
      * @param str
      * @param delimiter
      * @param includeEmptyStrings
@@ -41,10 +41,10 @@ public class StringUtils {
         }
         return strings.toArray(new String[strings.size()]);
     }
-    
+
     /**
      * This routine provides a more efficient traversal of the splits when memory is an issue.
-     * 
+     *
      * @param str
      * @param delimiter
      * @param includeEmptyStrings
@@ -53,10 +53,10 @@ public class StringUtils {
     public static Iterable<String> splitIterable(String str, char delimiter, boolean includeEmptyStrings) {
         return new SplitIterable(str, delimiter, includeEmptyStrings);
     }
-    
+
     /**
      * This class will provide an iterator over the splits
-     * 
+     *
      */
     public static class SplitIterable implements Iterable<String>, Iterator<String> {
         protected String str;
@@ -65,11 +65,11 @@ public class StringUtils {
         protected int fromIndex;
         protected int toIndex;
         protected String next;
-        
+
         public SplitIterable(String str, char delimiter, boolean includeEmptyStrings) {
             this(str, delimiter, includeEmptyStrings, true);
         }
-        
+
         protected SplitIterable(String str, char delimiter, boolean includeEmptyStrings, boolean getNext) {
             this.str = str;
             this.delimiter = delimiter;
@@ -80,12 +80,12 @@ public class StringUtils {
                 getNext();
             }
         }
-        
+
         @Override
         public Iterator<String> iterator() {
             return this;
         }
-        
+
         protected void getNext() {
             next = null;
             while (toIndex >= 0 && next == null) {
@@ -106,12 +106,12 @@ public class StringUtils {
                 fromIndex = strLen;
             }
         }
-        
+
         @Override
         public boolean hasNext() {
             return next != null;
         }
-        
+
         @Override
         public String next() {
             if (next == null) {
@@ -121,18 +121,18 @@ public class StringUtils {
             getNext();
             return returnNext;
         }
-        
+
         @Override
         public void remove() {
             throw new UnsupportedOperationException("Cannot remove");
         }
-        
+
     }
-    
+
     /**
      * The String.split routine is fairly expensive as it uses a pattern matcher to determine the split points. However the usual case is to split a string
      * using a simple one character delimiter. This routine is many times faster in this case. This version is identical to String.split()
-     * 
+     *
      * @param str
      * @param delimiter
      * @return String[]
@@ -144,10 +144,10 @@ public class StringUtils {
         }
         return strings.toArray(new String[strings.size()]);
     }
-    
+
     /**
      * This routine provides a more efficient traversal of the splits when memory is an issue.
-     * 
+     *
      * @param str
      * @param delimiter
      * @return Iterable&lt;String&gt;
@@ -163,12 +163,12 @@ public class StringUtils {
         }
         return splitIterable(str, delimiter, true);
     }
-    
+
     /**
      * The String.split routine is fairly expensive as it uses a pattern matcher to determine the split points. However the usual case is to split a string
      * using a simple one character delimiter. This routine will use the faster method when the regex is simply a match for one character. This version is
      * identical to String.split().
-     * 
+     *
      * @param str
      * @param regex
      * @return String[]
@@ -187,11 +187,11 @@ public class StringUtils {
         }
         return str.split(regex);
     }
-    
+
     /**
      * This routine provides a more efficient traversal of the splits when memory is an issue. However this will resort to the less efficient methods of
      * String.split if the regex is more than a simply character match.
-     * 
+     *
      * @param str
      * @param regex
      * @return Iterable&lt;String&gt;
@@ -210,18 +210,18 @@ public class StringUtils {
         }
         return Arrays.asList(str.split(regex));
     }
-    
+
     /**
      * This class is the same as SplitIterable except that only the indexed strings specified are returned.
-     * 
+     *
      */
     public static class SubSplitIterable extends SplitIterable implements Iterable<String>, Iterator<String> {
         int stringIndex;
         int[] indexesToReturn;
         int indexesIndex;
-        
+
         /**
-         * 
+         *
          * @param str
          * @param delimiter
          * @param includeEmptyStrings
@@ -235,7 +235,7 @@ public class StringUtils {
             stringIndex = -1;
             getNext();
         }
-        
+
         protected void getNext() {
             next = null;
             // if we have more to return
@@ -243,11 +243,11 @@ public class StringUtils {
                 // get the next string index to return
                 int nextIndex = indexesToReturn[indexesIndex];
                 indexesIndex++;
-                
+
                 int nextFrom = -1;
                 int nextTo = -1;
                 int strLen = str.length();
-                
+
                 // while we have more to get and we have not found our string
                 while (fromIndex < strLen && stringIndex < nextIndex) {
                     stringIndex++;
@@ -272,7 +272,7 @@ public class StringUtils {
                         fromIndex = strEnd;
                     }
                 }
-                
+
                 // if we are at the next string index, and we have a string to return, then return it
                 if (stringIndex == nextIndex && fromIndex >= 0) {
                     next = str.substring(nextFrom, nextTo);
@@ -280,10 +280,10 @@ public class StringUtils {
             }
         }
     }
-    
+
     /**
      * This split routine is the same as split(str, delimiter, includeEmptyStrings) except that only the indexes strings specified are returned.
-     * 
+     *
      * @param str
      * @param delimiter
      * @param includeEmptyStrings
@@ -299,10 +299,10 @@ public class StringUtils {
         }
         return strings;
     }
-    
+
     /**
      * This routine is the same as splitIterable(str, delimiter, includeEmptyStrings) except that only the indexed strings specified are returned.
-     * 
+     *
      * @param str
      * @param delimiter
      * @param includeEmptyStrings
@@ -313,10 +313,10 @@ public class StringUtils {
     public static Iterable<String> splitIterable(String str, char delimiter, boolean includeEmptyStrings, int[] indexesToReturn) {
         return new SubSplitIterable(str, delimiter, includeEmptyStrings, indexesToReturn);
     }
-    
+
     /**
      * This routine is the same as splitIterable(str, delimiter) except that only the indexed strings specified are returned.
-     * 
+     *
      * @param str
      * @param delimiter
      * @param indexesToReturn
@@ -334,10 +334,10 @@ public class StringUtils {
         }
         return splitIterable(str, delimiter, true, indexesToReturn);
     }
-    
+
     /**
      * This routine is the same as split(str, delimiter) except that only the indexed strings specified are returned.
-     * 
+     *
      * @param str
      * @param regex
      * @param indexesToReturn
@@ -356,7 +356,7 @@ public class StringUtils {
                 return split(str, c, indexesToReturn);
             }
         }
-        
+
         // did not have time to make this part more efficient
         String[] values = str.split(regex);
         String[] returnValues = new String[indexesToReturn.length];
@@ -367,10 +367,10 @@ public class StringUtils {
         }
         return returnValues;
     }
-    
+
     /**
      * This routine is the same as split(str, delimiter) except that only the indexed strings specified are returned.
-     * 
+     *
      * @param str
      * @param delimiter
      * @param indexesToReturn
@@ -385,24 +385,24 @@ public class StringUtils {
         }
         return strings;
     }
-    
+
     /**
      * The character is reserved (i.e. required to be escaped) is it is one of $()*+.?[\^{|
      */
     static boolean isEscapeRequired(char c) {
         return (c == '$' || c == '(' || c == ')' || c == '*' || c == '+' || c == '.' || c == '?' || c == '[' || c == '\\' || c == '^' || c == '{' || c == '|');
     }
-    
+
     /**
      * The character is escapable if it is not a digit or letter
      */
     static boolean isEscapableLiteral(char c) {
         return (!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z'));
     }
-    
+
     /**
      * Remove the strings that are empty
-     * 
+     *
      * @param values
      * @return the new string array
      */
@@ -431,7 +431,7 @@ public class StringUtils {
             return values;
         }
     }
-    
+
     /**
      * Remove duplicate entries in the array
      *
@@ -442,16 +442,16 @@ public class StringUtils {
         if (values == null)
             return null;
         Set<String> stringArraySet = new HashSet<>(Arrays.asList(values));
-        
+
         if (stringArraySet.size() == values.length)
             return values;
-        
+
         return stringArraySet.toArray(new String[stringArraySet.size()]);
     }
-    
+
     /**
      * Return substring after last occurrence of separator
-     * 
+     *
      * @param str
      * @param separator
      * @return substring after last occurrence of separator
@@ -461,8 +461,8 @@ public class StringUtils {
         if (index >= 0) {
             str = str.substring(index + 1);
         }
-        
+
         return str;
-        
+
     }
 }

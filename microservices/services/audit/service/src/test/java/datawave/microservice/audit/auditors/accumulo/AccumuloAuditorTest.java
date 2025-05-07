@@ -40,50 +40,50 @@ import datawave.webservice.common.audit.Auditor;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
 @ActiveProfiles({"AccumuloAuditorTest", "accumulo-enabled"})
 public class AccumuloAuditorTest {
-    
+
     @Autowired
     private Auditor accumuloAuditor;
-    
+
     @Autowired
     private AccumuloAuditProperties accumuloAuditProperties;
-    
+
     @Autowired
     private AccumuloClient accumuloClient;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     @Test
     public void testBeansPresent() {
         assertTrue(context.containsBean("accumuloAuditSink"));
         assertTrue(context.containsBean("accumuloAuditor"));
     }
-    
+
     @Test
     public void testInit() throws Exception {
         String tableName = "QueryAuditTable";
         if (accumuloClient.tableOperations().exists(tableName))
             accumuloClient.tableOperations().delete(tableName);
-        
+
         assertFalse(accumuloClient.tableOperations().exists(tableName), tableName + " already exists before test");
-        
+
         Auditor accumuloAuditor = new AccumuloAuditor(tableName, accumuloClient);
-        
+
         assertTrue(accumuloClient.tableOperations().exists(tableName), tableName + " doesn't exist after test");
-        
+
         accumuloAuditor = new AccumuloAuditor(tableName, accumuloClient);
-        
+
         assertTrue(accumuloClient.tableOperations().exists(tableName), tableName + " doesn't exist after test");
     }
-    
+
     @Test
     public void testActiveAudit() throws Exception {
         accumuloClient.tableOperations().deleteRows(accumuloAuditProperties.getTableName(), null, null);
-        
+
         SimpleDateFormat formatter = new SimpleDateFormat(Auditor.ISO_8601_FORMAT_STRING);
-        
+
         Date date = new Date();
-        
+
         AuditParameters auditParams = new AuditParameters();
         auditParams.setUserDn("someUser");
         auditParams.setAuths("AUTH1,AUTH2");
@@ -91,9 +91,9 @@ public class AccumuloAuditorTest {
         auditParams.setAuditType(Auditor.AuditType.ACTIVE);
         auditParams.setColviz(new ColumnVisibility("ALL"));
         auditParams.setQueryDate(date);
-        
+
         accumuloAuditor.audit(auditParams);
-        
+
         Scanner scanner = accumuloClient.createScanner(accumuloAuditProperties.getTableName(), new Authorizations("ALL"));
         Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
         assertTrue(it.hasNext());
@@ -106,13 +106,13 @@ public class AccumuloAuditorTest {
         assertEquals("ALL", key.getColumnVisibility().toString());
         assertEquals(auditParams.toString(), value.toString());
     }
-    
+
     @Test
     public void testNoneAudit() throws Exception {
         accumuloClient.tableOperations().deleteRows(accumuloAuditProperties.getTableName(), null, null);
-        
+
         Date date = new Date();
-        
+
         AuditParameters auditParams = new AuditParameters();
         auditParams.setUserDn("someUser");
         auditParams.setAuths("AUTH1,AUTH2");
@@ -120,42 +120,42 @@ public class AccumuloAuditorTest {
         auditParams.setAuditType(Auditor.AuditType.NONE);
         auditParams.setColviz(new ColumnVisibility("ALL"));
         auditParams.setQueryDate(date);
-        
+
         accumuloAuditor.audit(auditParams);
-        
+
         Scanner scanner = accumuloClient.createScanner(accumuloAuditProperties.getTableName(), new Authorizations("ALL"));
         Iterator<Map.Entry<Key,Value>> it = scanner.iterator();
         assertFalse(it.hasNext());
     }
-    
+
     @Test
     public void testMissingUserDN() {
         Date date = new Date();
-        
+
         AuditParameters auditParams = new AuditParameters();
         auditParams.setAuths("AUTH1,AUTH2");
         auditParams.setQuery("test query");
         auditParams.setAuditType(Auditor.AuditType.ACTIVE);
         auditParams.setColviz(new ColumnVisibility("ALL"));
         auditParams.setQueryDate(date);
-        
+
         assertThrows(NullPointerException.class, () -> accumuloAuditor.audit(auditParams));
     }
-    
+
     @Test
     public void testMissingColViz() {
         Date date = new Date();
-        
+
         AuditParameters auditParams = new AuditParameters();
         auditParams.setUserDn("someUser");
         auditParams.setAuths("AUTH1,AUTH2");
         auditParams.setQuery("test query");
         auditParams.setAuditType(Auditor.AuditType.ACTIVE);
         auditParams.setQueryDate(date);
-        
+
         assertThrows(NullPointerException.class, () -> accumuloAuditor.audit(auditParams));
     }
-    
+
     @Configuration
     @Profile("AccumuloAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")

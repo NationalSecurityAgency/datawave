@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1-SNAPSHOT</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>audit-api</artifactId>
@@ -34,48 +34,48 @@
                 <version>${version.accumulo}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-hdfs</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-mapreduce-client-app</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-mapreduce-client-core</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-yarn-api</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>log4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>junit</artifactId>
-                        <groupId>junit</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>netty-tcnative</artifactId>
-                        <groupId>io.netty</groupId>
-                    </exclusion>
-                    <exclusion>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-tcnative</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>ch.qos.logback</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -96,22 +96,5 @@
             <artifactId>commons-lang3</artifactId>
             <version>${version.commons}</version>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
 </project>

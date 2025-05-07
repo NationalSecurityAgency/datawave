@@ -29,35 +29,35 @@ import com.google.common.collect.Lists;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 
 /**
- * 
- * 
+ *
+ *
  */
 public class JavaRegexAnalyzerTest {
-    
+
     private static final Logger log = Logger.getLogger(JavaRegexAnalyzerTest.class);
-    
+
     @BeforeAll
     public static void setUpClass() {
         Logger.getRootLogger().setLevel(Level.OFF);
     }
-    
+
     @AfterAll
     public static void tearDownClass() {}
-    
+
     @BeforeEach
     public void setUp() {
         log.setLevel(Level.OFF);
         Logger.getLogger(JavaRegexAnalyzer.class).setLevel(Level.OFF);
     }
-    
+
     @AfterEach
     public void tearDown() {}
-    
+
     public void enableLogging() {
         log.setLevel(Level.DEBUG);
         Logger.getLogger(JavaRegexAnalyzer.class).setLevel(Level.TRACE);
     }
-    
+
     @Test
     public void testRegexAnalyzer01() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer01");
@@ -77,7 +77,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abc", wcd.getLeadingLiteral());
         assertEquals("xyz", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer02() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer02");
@@ -97,7 +97,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abc.xyz", wcd.getLeadingLiteral());
         assertEquals("abc.xyz", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer03() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer03");
@@ -117,7 +117,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abcxy", wcd.getLeadingLiteral());
         assertEquals("z", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer04() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer04");
@@ -137,7 +137,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abc.*xyz", wcd.getLeadingLiteral());
         assertEquals("abc.*xyz", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer05() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer05");
@@ -157,7 +157,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abcxy", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer06() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer06");
@@ -177,7 +177,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abcxyz.*?", wcd.getLeadingLiteral());
         assertEquals("abcxyz.*?", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer07() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer07");
@@ -197,7 +197,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abc", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer08() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer08");
@@ -217,7 +217,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abc", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer09() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer09");
@@ -238,7 +238,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("abc.*xyz", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer10() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer10");
@@ -259,7 +259,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertEquals("something.com", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer11() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer11");
@@ -280,7 +280,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("something", wcd.getLeadingLiteral());
         assertEquals("com", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer12() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer12");
@@ -301,7 +301,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("something.com", wcd.getLeadingLiteral());
         assertEquals("something.com", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer13() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer13");
@@ -322,7 +322,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer14() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer14");
@@ -343,7 +343,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertEquals("com", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer15() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer15");
@@ -364,7 +364,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertEquals("com.", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer16() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer16");
@@ -385,7 +385,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("128.0.1.16", wcd.getLeadingLiteral());
         assertEquals("128.0.1.16", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer17() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer17");
@@ -406,7 +406,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("128.0.1.", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer17_1() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer17");
@@ -427,7 +427,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("128.0.1.", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer19() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer19");
@@ -448,7 +448,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("[I=2077c64e4eb655", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer20() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer20");
@@ -469,7 +469,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("\\\\some\\\\file\\\\path", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer21() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer21");
@@ -490,7 +490,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bl", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer22() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer22");
@@ -511,7 +511,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bl", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer23() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer23");
@@ -532,7 +532,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bla", wcd.getLeadingLiteral());
         assertEquals("a", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer24() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer24");
@@ -553,7 +553,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bla", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer25() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer25");
@@ -574,7 +574,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bl", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer26() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer26");
@@ -595,7 +595,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bl", wcd.getLeadingLiteral());
         assertEquals("a", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer27() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer27");
@@ -616,7 +616,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("bla", wcd.getLeadingLiteral());
         assertEquals("bla", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer28() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer28");
@@ -637,7 +637,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer29() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer29");
@@ -658,7 +658,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foo", wcd.getLeadingLiteral());
         assertEquals("bar", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer30() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer30");
@@ -679,7 +679,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foo", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer31() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer31");
@@ -700,7 +700,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("ba", wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer32() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer32");
@@ -721,7 +721,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer33() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer33");
@@ -742,7 +742,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer34() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer34");
@@ -763,7 +763,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertEquals("bar", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer35() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer35");
@@ -784,7 +784,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foo", wcd.getLeadingLiteral());
         assertEquals("bar", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer36() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer36");
@@ -805,7 +805,7 @@ public class JavaRegexAnalyzerTest {
         assertNull(wcd.getLeadingLiteral());
         assertNull(wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer37() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer37");
@@ -826,7 +826,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foo", wcd.getLeadingLiteral());
         assertEquals("bar", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer38() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer38");
@@ -847,7 +847,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foobar", wcd.getLeadingLiteral());
         assertEquals("foobar", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer39() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer39");
@@ -868,7 +868,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foo", wcd.getLeadingLiteral());
         assertEquals("bar", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer40() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer40");
@@ -889,7 +889,7 @@ public class JavaRegexAnalyzerTest {
         assertEquals("foo", wcd.getLeadingLiteral());
         assertEquals("o", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer41() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer41");
@@ -908,15 +908,15 @@ public class JavaRegexAnalyzerTest {
         assertEquals("Friendly", wcd.getLeadingLiteral());
         assertEquals("Friendly", wcd.getTrailingLiteral());
     }
-    
+
     @Test
     public void testRegexAnalyzer42() {
         log.debug("---testRegexAnalyzer42");
         String value = "(?#icu)Friendly";
-        
+
         assertThrows(JavaRegexParseException.class, () -> new JavaRegexAnalyzer(value));
     }
-    
+
     @Test
     public void testRegexAnalyzerQuoting() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzerQuoting");
@@ -941,7 +941,7 @@ public class JavaRegexAnalyzerTest {
             assertEquals(values.get(value), wcd.getTrailingLiteral());
         }
     }
-    
+
     @Test
     public void testRegexAnalyzerBoundary() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzerQuoting");
@@ -968,57 +968,57 @@ public class JavaRegexAnalyzerTest {
             assertEquals(values.get(value), wcd.getTrailingLiteral());
         }
     }
-    
+
     @Test
     public void testZeroPadIpRegex() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer18");
-        
+
         assertEquals("001\\.002\\.003\\.004", new JavaRegexAnalyzer("1\\.2\\.3\\.4").getZeroPadIpRegex());
         assertEquals("001\\.002\\.003\\.0{0,3}.*", new JavaRegexAnalyzer("1\\.2\\.3\\..*").getZeroPadIpRegex());
         assertEquals("001\\.002\\.0{0,3}.*", new JavaRegexAnalyzer("1\\.2\\..*").getZeroPadIpRegex());
         assertEquals("001\\.0{0,3}.*", new JavaRegexAnalyzer("1\\..*").getZeroPadIpRegex());
-        
+
         assertEquals("001\\.122\\.013\\.004", new JavaRegexAnalyzer("1\\.122\\.13\\.4").getZeroPadIpRegex());
         assertEquals("001\\.122\\.013\\.0{0,3}.*", new JavaRegexAnalyzer("1\\.122\\.13\\..*").getZeroPadIpRegex());
         assertEquals("091\\.122\\.0{0,3}.*", new JavaRegexAnalyzer("91\\.122\\..*").getZeroPadIpRegex());
         assertEquals("012\\.0{0,3}.*", new JavaRegexAnalyzer("12\\..*").getZeroPadIpRegex());
-        
+
         assertEquals("001\\.122\\.013\\.0{0,3}.*?", new JavaRegexAnalyzer("1\\.122\\.13\\..*?").getZeroPadIpRegex());
         assertEquals("091\\.122\\.0{0,3}.*+", new JavaRegexAnalyzer("91\\.122\\..*+").getZeroPadIpRegex());
         assertEquals("012\\.0{0,3}.*?", new JavaRegexAnalyzer("12\\..*?").getZeroPadIpRegex());
-        
+
         try {
             assertEquals("00a\\.00b\\.00c\\.00d", new JavaRegexAnalyzer("a\\.b\\.c\\.d").getZeroPadIpRegex());
             fail("Expected letters to be invalid in an IP regex");
         } catch (JavaRegexParseException e) {
             // expected
         }
-        
+
         assertEquals("001\\.027\\.0{0,3}.*\\.012", new JavaRegexAnalyzer("1\\.27\\..*\\.12").getZeroPadIpRegex());
-        
+
         assertEquals("078\\.038\\.218\\.0{0,3}.*?", new JavaRegexAnalyzer("78\\.38\\.218\\..*?").getZeroPadIpRegex());
         assertEquals("078\\.038\\.218\\....", new JavaRegexAnalyzer("78\\.38\\.218\\....").getZeroPadIpRegex());
         assertEquals("078\\.038\\.218\\.\\d\\d\\d", new JavaRegexAnalyzer("78\\.38\\.218\\.\\d\\d\\d").getZeroPadIpRegex());
-        
+
         assertEquals("0{0,3}8{0,3}\\.038\\.218\\.\\d\\d\\d", new JavaRegexAnalyzer("8{0,3}\\.38\\.218\\.\\d\\d\\d").getZeroPadIpRegex());
         assertEquals("0{1,3}8{0,2}\\.038\\.218\\.\\d\\d\\d", new JavaRegexAnalyzer("8{0,2}\\.38\\.218\\.\\d\\d\\d").getZeroPadIpRegex());
         assertEquals("0{0,2}08{0,2}\\.038\\.218\\.\\d\\d\\d", new JavaRegexAnalyzer("08{0,2}\\.38\\.218\\.\\d\\d\\d").getZeroPadIpRegex());
-        
+
         assertEquals("0.3\\.02.\\.3.3\\...3", new JavaRegexAnalyzer(".3\\.2.\\.3.3\\...3").getZeroPadIpRegex());
-        
+
         assertEquals("00\\x34\\.00\\ua425\\.00\\06\\.00\\p{Digit}", new JavaRegexAnalyzer("\\x34\\.\\ua425\\.\\06\\.\\p{Digit}").getZeroPadIpRegex());
         assertEquals("00\\0127\\.00\\063\\.00\\06\\.00\\P{Alpha}", new JavaRegexAnalyzer("\\0127\\.\\063\\.\\06\\.\\P{Alpha}").getZeroPadIpRegex());
-        
+
         assertEquals("234\\.234\\.234\\.00[\\p{L}&&[^\\p{Lu}]]", new JavaRegexAnalyzer("234\\.234\\.234\\.[\\p{L}&&[^\\p{Lu}]]").getZeroPadIpRegex());
-        
+
         assertEquals("0(3|4)2\\.0{0,1}(24|123)\\.0[234]4\\.123", new JavaRegexAnalyzer("(3|4)2\\.(24|123)\\.[234]4\\.123").getZeroPadIpRegex());
-        
+
         assertEquals("012\\.012\\.012\\.012|023\\.023\\.023\\.023", new JavaRegexAnalyzer("12\\.12\\.12\\.12|23\\.23\\.23\\.23").getZeroPadIpRegex());
         assertEquals("(012\\.012\\.012\\.012|023\\.023\\.023\\.023)", new JavaRegexAnalyzer("(12\\.12\\.12\\.12|23\\.23\\.23\\.23)").getZeroPadIpRegex());
         assertEquals("012\\.(012\\.012|023\\.023)\\.012", new JavaRegexAnalyzer("12\\.(12\\.12|23\\.23)\\.12").getZeroPadIpRegex());
-        
+
         assertEquals("012\\.(012\\.012|023\\.023)\\.0(1|2)2", new JavaRegexAnalyzer("12\\.(12\\.12|23\\.23)\\.(1|2)2").getZeroPadIpRegex());
-        
+
         // These required redistributing parts of tuples across a set of nested alternatives which contain a separator
         // The best way to handle this is to redistribute the external parts within the grouped alternatives.
         // This will break things if back references are included. Decided this is not required and should instead fail normalization
@@ -1040,7 +1040,7 @@ public class JavaRegexAnalyzerTest {
             // expected
         }
     }
-    
+
     // This will take at least 5 minutes to enumerate, not really something we want to run as unit test
     @Test
     @Disabled
@@ -1059,12 +1059,12 @@ public class JavaRegexAnalyzerTest {
         }
         sw.stop();
     }
-    
+
     @Test
     public void testDigitRegexs() throws JavaRegexParseException {
         // Try to generate a list of potentially edge-case octet values (from the digit regex in the JavaRegexAnalyzer#zeroPadIpRegex(String) method
         List<Integer> octetsToEnumerate = Lists.newArrayList(1, 10, 20, 70, 100, 101, 120, 170, 200, 201, 220, 255);
-        
+
         // Then enumerate all combinations of them to make sure they all generate zero-padded 1 through 3 octets with the trailing wildcard
         for (Integer i : octetsToEnumerate) {
             for (Integer j : octetsToEnumerate) {
@@ -1077,7 +1077,7 @@ public class JavaRegexAnalyzerTest {
             }
         }
     }
-    
+
     @Test
     public void testRegexLowerCase() throws JavaRegexParseException {
         Map<String,String> testPatterns = new HashMap<>();
@@ -1099,7 +1099,7 @@ public class JavaRegexAnalyzerTest {
                         "\\p{L}[^\\p{Lu}]test upper and lower character classes[\\p{L}&&[^\\p{Lu}]]");
         testPatterns.put("\\P{Lu}[^\\P{Lu}]Test Upper And Lower Character Classes[\\p{L}&&[^\\P{Lu}]]",
                         "\\P{Lu}[\\P{Lu}]test upper and lower character classes[\\p{L}&&[\\P{Lu}]]");
-        
+
         for (Map.Entry<String,String> testPattern : testPatterns.entrySet()) {
             JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(testPattern.getKey());
             assertEquals(testPattern.getKey(), analyzer.getRegex());
@@ -1108,7 +1108,7 @@ public class JavaRegexAnalyzerTest {
             assertEquals(testPattern.getValue(), analyzer.getRegex());
         }
     }
-    
+
     @Test
     public void testRegexUpperCase() throws JavaRegexParseException {
         Map<String,String> testPatterns = new HashMap<>();
@@ -1130,7 +1130,7 @@ public class JavaRegexAnalyzerTest {
                         "\\p{Lu}[\\p{Lu}]TEST UPPER AND LOWER CHARACTER CLASSES[\\p{L}&&[\\p{Lu}]]");
         testPatterns.put("\\P{Lu}[^\\P{Lu}]Test Upper And Lower Character Classes[\\p{L}&&[^\\P{Lu}]]",
                         "\\p{L}[^\\P{Lu}]TEST UPPER AND LOWER CHARACTER CLASSES[\\p{L}&&[^\\P{Lu}]]");
-        
+
         for (Map.Entry<String,String> testPattern : testPatterns.entrySet()) {
             JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(testPattern.getKey());
             assertEquals(testPattern.getKey(), analyzer.getRegex());
@@ -1139,7 +1139,7 @@ public class JavaRegexAnalyzerTest {
             assertEquals(testPattern.getValue(), analyzer.getRegex());
         }
     }
-    
+
     @Test
     public void testRegexCaseFailures() {
         Set<String> testPatterns = new HashSet<>();
@@ -1155,7 +1155,7 @@ public class JavaRegexAnalyzerTest {
         testPatterns.add("Test\\xFG\\wMissing Hex Digit");
         testPatterns.add("Test\\xGF\\wMissing Hex Digit");
         testPatterns.add("Test\\c\\Missing Control Char");
-        
+
         for (String testPattern : testPatterns) {
             try {
                 new JavaRegexAnalyzer(testPattern);
@@ -1165,5 +1165,5 @@ public class JavaRegexAnalyzerTest {
             }
         }
     }
-    
+
 }

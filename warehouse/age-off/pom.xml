@@ -51,11 +51,7 @@
             <artifactId>log4j-1.2-api</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
+
         <!-- For org.hamcrest.CoreMatchers -->
         <dependency>
             <groupId>org.hamcrest</groupId>

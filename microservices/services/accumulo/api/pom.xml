@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1-SNAPSHOT</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>accumulo-api</artifactId>
@@ -21,7 +21,7 @@
         <version.accumulo>2.1.1</version.accumulo>
         <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
-        <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
+        <version.datawave.type-utils>3.1.2</version.datawave.type-utils>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -31,8 +31,8 @@
                 <version>${version.datawave.accumulo-utils}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>guava</artifactId>
                         <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -47,8 +47,8 @@
                 <version>${version.datawave.type-utils}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>avro</artifactId>
                         <groupId>org.apache.avro</groupId>
+                        <artifactId>avro</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -58,36 +58,36 @@
                 <version>${version.accumulo}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-hdfs</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-mapreduce-client-app</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-mapreduce-client-core</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-yarn-api</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>junit</artifactId>
                         <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -130,24 +130,7 @@
             <artifactId>jackson-module-jaxb-annotations</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <resources>
             <resource>
@@ -164,10 +147,10 @@
                 <executions>
                     <execution>
                         <id>copy-templated-sources</id>
-                        <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+                        <phase>validate</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/generated-sources/templated-sources</outputDirectory>
                             <resources>
@@ -183,14 +166,13 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <sources>
                                 <source>target/generated-sources/templated-sources</source>

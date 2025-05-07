@@ -15,12 +15,12 @@ import com.google.common.collect.Iterables;
 
 /**
  * A class used to analyze and manipulate regular expressions
- * 
+ *
  * TODO: if somebody finds a usable java Pattern grammar, please rewrite this class
  */
 public class JavaRegexAnalyzer {
     protected static final Logger log = Logger.getLogger(JavaRegexAnalyzer.class);
-    
+
     // Types as applied to portions of the regex. We are interested in portions that
     // are literals and those that contain regex constructs.
     private enum RegexType {
@@ -30,34 +30,34 @@ public class JavaRegexAnalyzer {
         REGEX_QUANTIFIER(false), // a regex quantifier like * or +
         ESCAPED_REGEX(false), // an escaped regex construct
         IGNORABLE_REGEX(false); // an ignorable regex construct (e.g. boundary or quoting)
-        
+
         private boolean literal = false;
-        
+
         private RegexType(boolean lit) {
             this.literal = lit;
         }
-        
+
         public boolean isLiteral() {
             return this.literal;
         }
     }
-    
+
     private static class RegexPart {
         // the regex is not-final to allow applyRegexCaseSensitivity
         public String regex;
         public RegexType type;
         public final boolean nonCapturing;
-        
+
         public RegexPart(String reg, RegexType typ, boolean nonCapt) {
             this.regex = reg;
             this.type = typ;
             this.nonCapturing = nonCapt;
         }
-        
+
         public RegexPart(String reg, RegexType typ, int nonCapt) {
             this(reg, typ, (nonCapt > 0));
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof RegexPart)) {
@@ -66,66 +66,66 @@ public class JavaRegexAnalyzer {
             RegexPart other = (RegexPart) o;
             return regex.equals(other.regex) && type.equals(other.type) && (nonCapturing == other.nonCapturing);
         }
-        
+
         @Override
         public int hashCode() {
             return regex.hashCode() + type.hashCode() + (nonCapturing ? 1 : 0);
         }
-        
+
         @Override
         public String toString() {
             return regex;
         }
     }
-    
+
     public static class JavaRegexParseException extends ParseException {
         private static final long serialVersionUID = -8377431598528407124L;
-        
+
         public JavaRegexParseException(String s, int errorOffset) {
             super(s, errorOffset);
         }
     }
-    
+
     // The regex broken into parts
     private RegexPart[] regexParts = null;
-    
+
     // The updated value portion
     private String leadingLiteral = null;
     private String trailingLiteral = null;
     private boolean updatedLiterals = false;
-    
+
     // do we have a capturing regex somewhere
     private boolean hasWildCard = false;
-    
+
     // the characters that when escaped have special meanings (i.e. not an escaped literal value)
     private static final String ESCAPED_REGEX_CHARS = "0123456789xutnrfaecdDsSwWpPbBAGzZQE";
-    
+
     // Non digit matching regex chars
     private static final String NON_DIGIT_ESCAPED_REGEX_CHARS = "tnrfaecDsw";
-    
+
     // Quoting regex chars
     private static final String QUOTING_REGEX_CHARS = "QE";
-    
+
     // Boundary regex chars
     private static final String BOUNDARY_REGEX_CHARS = "bBAGzZ";
-    
+
     // Boundary chars
     private static final String BOUNDARY_CHARS = "^$";
-    
+
     // digit character classes
     private static final List<String> DIGIT_CHARACTER_CLASSES = Arrays.asList("\\P{Lower}", "\\P{Upper}", "\\p{ASCII}", "\\P{Alpha}", "\\p{Digit}",
                     "\\p{Alnum}", "\\P{{Punct}", "\\p{Graph}", "\\p{Print}", "\\P{Blank}", "\\P{Cntrl}", "\\p{XDigit}", "\\P{Space}", "\\P{javaLowerCase}",
                     "\\P{javaUpperCase}", "\\P{javaWhitespace}", "\\P{javaMirrored}", "\\P{InGreek}", "\\P{Lu}", "\\P{Sc}", "\\p{L}");
-    
+
     // the character class chars
     private static final String CHAR_REGEX_CHARS = "0xutnrfaecdDsSwWpP";
-    
+
     // the back reference chars
     private static final String BACK_REF_CHARS = "123456789";
-    
+
     // characters that are have special meanings
     private static final String RESERVED_CHARS = ".*?+{}^$|()[]";
-    
+
     // Some pattern precompiling
     private static final String FLAG_REGEX = "\\(\\?-?[idmsux]\\).*";
     private static final Pattern flagRegexPattern = Pattern.compile(FLAG_REGEX);
@@ -133,26 +133,26 @@ public class JavaRegexAnalyzer {
     private static final Pattern nonCapturingPattern = Pattern.compile(NON_CAPTURING_REGEX);
     private static final String CURLY_QUANTIFIER_REGEX = "\\{([0-9]+)(,([0-9]*))?\\}.*";
     private static final Pattern curlyQuantifierPattern = Pattern.compile(CURLY_QUANTIFIER_REGEX);
-    
+
     // characters that serve as quantifiers
     private static final String QUANTIFIERS = "*+?";
-    
+
     private static int MIN_INDEX = 0;
     private static int MAX_INDEX = 1;
-    
+
     private static final RegexPart OPEN_PAREN = new RegexPart("(", RegexType.REGEX, false);
     private static final RegexPart CLOSE_PAREN = new RegexPart(")", RegexType.REGEX, false);
     private static final RegexPart ALTERNATE = new RegexPart("|", RegexType.REGEX, false);
-    
+
     // construct a regex analyzer
     public JavaRegexAnalyzer(String regex) throws JavaRegexParseException {
         setRegex(regex);
     }
-    
+
     public String getRegex() {
         return getRegex(regexParts);
     }
-    
+
     public static String getRegex(RegexPart[] regexParts) {
         StringBuilder regex = new StringBuilder();
         for (RegexPart part : regexParts) {
@@ -160,52 +160,52 @@ public class JavaRegexAnalyzer {
         }
         return regex.toString();
     }
-    
+
     @Override
     public String toString() {
         return getRegex();
     }
-    
+
     /**
      * Set the regex on this analyzer. This will do the parsing of the regex into its parts up front. Note that this parser only needs to parse enough for the
      * purposes of the applyRegexCaseSensitivity and the determination of the leading and trailing literals.
-     * 
+     *
      * @param regex
      */
     public void setRegex(String regex) throws JavaRegexParseException {
         regexParts = null;
         List<RegexPart> partList = new ArrayList<>();
-        
+
         // parse on '\' characters,
         // then walk forward from each one to determine the escaped character or character class, parsing on '[' and ']' characters
         // as we go
         // note that things between a \Q and \E do not count as escaped character or character classes.
         String[] parts = Iterables.toArray(Splitter.on('\\').split(regex), String.class);
-        
+
         // is the next section/part escaped
         boolean escaped = false;
-        
+
         // are we in a quoted section (between \\Q and \\E)
         boolean quoted = false;
-        
+
         // keeping track of paren and bracket nesting
         LinkedList<String> parensAndBrackets = new LinkedList<>();
-        
+
         // remember if we are inside any brackets to enable distinguishing between LITERAL and REGEX
         int bracketCount = 0;
-        
+
         // are we in a non-capturing group: we want to hold these as separate entities as they can be ignored with determining the updated value
         int nonCapturing = 0;
-        
+
         // expression is the portion prefaced with a '\\'
         String expression = null;
-        
+
         // remainder is non-escaped portion
         String remainder = null;
-        
+
         // keep track of the column for exceptions
         int column = 0;
-        
+
         // for each part
         for (int i = 0; i < parts.length; i++) {
             // if not an escaped portion, then the entire part is the remainder and the next part is escaped
@@ -228,7 +228,7 @@ public class JavaRegexAnalyzer {
             else {
                 // endExpression is the division between the escaped character/class and the remainder
                 int endExpression = 0;
-                
+
                 // check for \\\\
                 if (parts[i].equals("")) {
                     parts[i] = "\\";
@@ -302,7 +302,7 @@ public class JavaRegexAnalyzer {
                 else {
                     endExpression = 1;
                 }
-                
+
                 // now pull off the expression and remainder
                 if (endExpression == 0) {
                     remainder = parts[i];
@@ -313,10 +313,10 @@ public class JavaRegexAnalyzer {
                     expression = parts[i];
                 }
             }
-            
+
             if (expression != null) {
                 RegexType type = RegexType.ESCAPED_REGEX;
-                
+
                 // determine if this is an escaped regex or an escaped literal
                 if (expression.length() == 1) {
                     if (ESCAPED_REGEX_CHARS.indexOf(expression.charAt(0)) < 0) {
@@ -335,13 +335,13 @@ public class JavaRegexAnalyzer {
                         type = RegexType.IGNORABLE_REGEX;
                     }
                 }
-                
+
                 partList.add(new RegexPart("\\" + expression, type, nonCapturing));
                 column += expression.length() + 1;
-                
+
                 expression = null;
             }
-            
+
             if (remainder != null) {
                 if (quoted) {
                     // if we are in a bracket, then its a regex
@@ -352,7 +352,7 @@ public class JavaRegexAnalyzer {
                     // check for () or [] constructs
                     for (int c = 0; c < remainder.length(); c++) {
                         char character = remainder.charAt(c);
-                        
+
                         if (RESERVED_CHARS.indexOf(character) >= 0) {
                             if (character == '(') {
                                 // look for a non-capturing group
@@ -466,7 +466,7 @@ public class JavaRegexAnalyzer {
         }
         regexParts = partList.toArray(new RegexPart[partList.size()]);
     }
-    
+
     /**
      * Determine the leading and trailing literals, and update the hasWildCard boolean while we are at it
      */
@@ -477,36 +477,36 @@ public class JavaRegexAnalyzer {
             updatedLiterals = true;
         }
     }
-    
+
     private void updateLeadingLiteralAndWildCard() {
         leadingLiteral = null;
         hasWildCard = false;
-        
+
         // a stack of literal builders used for nested capturing groups. If empty then we are at the top level.
         LinkedList<StringBuilder> literalBuilders = new LinkedList<>();
         // the current literal builder
         StringBuilder literalBuilder = new StringBuilder();
         // appendLiteral is set false once we have found a regex and we need to terminate with what we have
         boolean appendLiteral = true;
-        
+
         for (int i = 0; i < regexParts.length; i++) {
             RegexPart part = regexParts[i];
-            
+
             // if we are done and we have already resolved all nestings, then we are done
             if (!appendLiteral && literalBuilders.isEmpty()) {
                 break;
             }
-            
+
             // simply ignore nonCapturing portions
             if (part.nonCapturing) {
                 continue;
             }
-            
+
             // ignore the ignorable
             if (part.type.equals(RegexType.IGNORABLE_REGEX)) {
                 continue;
             }
-            
+
             // if a literal then append to the current builder
             if (part.type.isLiteral()) {
                 if (appendLiteral && atLeastOnce(i)) {
@@ -533,10 +533,10 @@ public class JavaRegexAnalyzer {
                 if (part.regex.equals("|")) {
                     literalBuilder.setLength(0);
                 }
-                
+
                 // we are now done appending literals as we have found a non-literal
                 appendLiteral = false;
-                
+
                 // we can set the hasWildCard to true now
                 hasWildCard = true;
             }
@@ -545,13 +545,13 @@ public class JavaRegexAnalyzer {
             leadingLiteral = literalBuilder.toString();
         }
     }
-    
+
     private void updateTrailingLiteral() {
         trailingLiteral = null;
-        
+
         // appendLiteral is set false once we have found a regex and we need to terminate with what we have
         boolean appendLiteral = true;
-        
+
         // a stack of literal builders used for nested capturing groups. If empty then we are at the top level.
         LinkedList<StringBuilder> literalBuilders = new LinkedList<>();
         // the current literal builder
@@ -560,28 +560,28 @@ public class JavaRegexAnalyzer {
         LinkedList<Boolean> atLeastOnceFlags = new LinkedList<>();
         // the current atLeastOnce flag
         boolean atLeastOnce = true;
-        
+
         // have we found a quantifier yet
         boolean quantifierFound = false;
-        
+
         for (int i = regexParts.length - 1; i >= 0; i--) {
             RegexPart part = regexParts[i];
-            
+
             // if we are done and we have already resolved all nestings, then we are done
             if (!appendLiteral && literalBuilders.isEmpty()) {
                 break;
             }
-            
+
             // simply ignore nonCapturing portions
             if (part.nonCapturing) {
                 continue;
             }
-            
+
             // ignore the ignorable
             if (part.type.equals(RegexType.IGNORABLE_REGEX)) {
                 continue;
             }
-            
+
             // ignore quantifiers
             if (part.type == RegexType.REGEX_QUANTIFIER) {
                 // if we may have none of the preceding value, then we are done
@@ -591,7 +591,7 @@ public class JavaRegexAnalyzer {
                 quantifierFound = true;
                 continue;
             }
-            
+
             // if a literal then prepend to the current builder
             if (part.type.isLiteral()) {
                 if (appendLiteral) {
@@ -620,7 +620,7 @@ public class JavaRegexAnalyzer {
                 }
                 literalBuilder = literalBuilders.removeLast();
                 atLeastOnce = atLeastOnceFlags.removeLast();
-                
+
                 // if a quantifier was found, then we are done
                 if (quantifierFound) {
                     appendLiteral = false;
@@ -632,7 +632,7 @@ public class JavaRegexAnalyzer {
                 if (part.regex.equals("|")) {
                     literalBuilder.setLength(0);
                 }
-                
+
                 // we are now done appending literals as we have found a non-literal
                 appendLiteral = false;
             }
@@ -641,10 +641,10 @@ public class JavaRegexAnalyzer {
             trailingLiteral = literalBuilder.toString();
         }
     }
-    
+
     /**
      * Determine if the part at index i is to occur at least once as determined by an optional following regex quantifier
-     * 
+     *
      * @param i
      */
     private boolean atLeastOnce(int i) {
@@ -659,90 +659,90 @@ public class JavaRegexAnalyzer {
         }
         return atLeastOnce;
     }
-    
+
     /**
      * Determine if the part at index i is followed by a quantifier
-     * 
+     *
      * @param i
      */
     private boolean followedByQuantifier(int i) {
         return (i < (regexParts.length - 1) && regexParts[i + 1].type == RegexType.REGEX_QUANTIFIER);
     }
-    
+
     public boolean hasWildCard() {
         updateLiteral();
         return hasWildCard;
     }
-    
+
     public boolean isLeadingLiteral() {
         updateLiteral();
         return leadingLiteral != null;
     }
-    
+
     public boolean isTrailingLiteral() {
         updateLiteral();
         return trailingLiteral != null;
     }
-    
+
     public boolean isLeadingRegex() {
         updateLiteral();
         return leadingLiteral == null;
     }
-    
+
     public boolean isTrailingRegex() {
         updateLiteral();
         return trailingLiteral == null;
     }
-    
+
     public boolean isNgram() {
         updateLiteral();
         return (leadingLiteral == null && trailingLiteral == null);
     }
-    
+
     public String getLeadingLiteral() {
         updateLiteral();
         return leadingLiteral;
     }
-    
+
     public String getTrailingLiteral() {
         updateLiteral();
         return trailingLiteral;
     }
-    
+
     public String getLeadingOrTrailingLiteral() {
         updateLiteral();
         return (leadingLiteral != null ? leadingLiteral : trailingLiteral);
     }
-    
+
     /**
      * Given an ip regex, zero pad it out to create a regex for the normalized ip value.
-     * 
+     *
      * This method does not attempt to discern the intent of the user when a wildcard is specified mid-octet. It always tries to zero-pad the octet in which the
      * wildcard was found
-     * 
+     *
      * For example, 1.2.1* has the potential to match 001.002.001.*, 001.002.010.*, or 001.002.100.*. This method will return an expansion of 001.002.001.* for
      * that input.
-     * 
+     *
      * @return If the zero-padded variant consists of octets of length 3, the zero-padded regex variant. Else, the original ip address.
      * @throws JavaRegexParseException
      */
     public String getZeroPadIpRegex() throws JavaRegexParseException {
         StringBuilder builder = new StringBuilder();
-        
+
         RegexPart split = new RegexPart("\\.", RegexType.ESCAPED_LITERAL, false);
-        
+
         // split up the parts into those that would match against a tuple
         // to do that we find the literal '.' matches
         List<RegexPart[]> tuples = splitParts(this.regexParts, split);
-        
+
         List<RegexPart> ignore = Arrays.asList(split, ALTERNATE, OPEN_PAREN, CLOSE_PAREN);
-        
+
         // if we found a tuple that crosses over an open group or a close group, then we have a situation
         // we cannot handle currently. This gets even more complicates with alternatives within the groups.
         // (e.g. \\.m(n\\.o)p\\. in which case the tuples are actually mn and op)
         boolean inTuple = false;
         String previousTuple = null;
-        
+
         // now for each tuple, prefix with '0' literals as needed
         for (RegexPart[] tuple : tuples) {
             if (tuple.length != 1 || !ignore.contains(tuple[0])) {
@@ -752,11 +752,11 @@ public class JavaRegexAnalyzer {
                 }
                 inTuple = true;
                 previousTuple = getRegex(tuple);
-                
+
                 if (!allDigits(tuple)) {
                     throw new JavaRegexParseException("This tuple matches non digits and hence cannot match an IPV4: " + previousTuple, -1);
                 }
-                
+
                 // now prefix with '0' literals from 3-min to 3-max
                 int[] bounds = countMatchedChars(tuple);
                 if (bounds[MIN_INDEX] < 3) {
@@ -784,7 +784,7 @@ public class JavaRegexAnalyzer {
         }
         return builder.toString();
     }
-    
+
     private boolean allDigits(RegexPart[] tuple) {
         LinkedList<Boolean> negatedCharClass = new LinkedList<>();
         boolean negated = false;
@@ -825,11 +825,11 @@ public class JavaRegexAnalyzer {
         }
         return true;
     }
-    
+
     /**
      * Split up a list of parts using a specified separator. If a separator is found inside of a nested group, then that group and its ancestors begin and end
      * parentheses will be returned as separate parts. Separators are included as separate parts.
-     * 
+     *
      * @param character
      * @param escaped
      * @return the part lists
@@ -858,11 +858,11 @@ public class JavaRegexAnalyzer {
         }
         return regex;
     }
-    
+
     /**
      * Split up a list of parts using a specified separator. If a separator is found inside of a nested group, then that group and its ancestors begin and end
      * parentheses will be returned as separate parts as well as alternates. Separators are included as separate parts.
-     * 
+     *
      * @param parts
      * @param separator
      * @return the part lists
@@ -909,7 +909,7 @@ public class JavaRegexAnalyzer {
                         start = j + 1;
                     } else if (parts[j].equals(CLOSE_PAREN)) {
                         // we found a closing paren which must have a matching open paren within a non-separated section
-                        
+
                         // move back to the matching paren
                         RegexPart[] last = tuples.removeLast();
                         while (last.length != 1 || !last[0].equals(OPEN_PAREN)) {
@@ -918,7 +918,7 @@ public class JavaRegexAnalyzer {
                         }
                         start -= last.length;
                         last = (tuples.isEmpty() || start == begin ? null : tuples.removeLast());
-                        
+
                         // now move back to the previous paren, separator, or beginning
                         while (last != null && (last.length != 1 || !(last[0].equals(OPEN_PAREN) || last[0].equals(separator)))) {
                             start -= last.length;
@@ -929,7 +929,7 @@ public class JavaRegexAnalyzer {
                         }
                     }
                 }
-                
+
                 if (i > start) {
                     tuples.addLast(Arrays.copyOfRange(parts, start, i));
                 }
@@ -943,41 +943,41 @@ public class JavaRegexAnalyzer {
         if (parts.length > start) {
             tuples.addLast(Arrays.copyOfRange(parts, start, parts.length));
         }
-        
+
         return tuples;
     }
-    
+
     /**
      * Determine the minimum and maximum number of characters that a regex will match
-     * 
+     *
      * @return the min and max number of characters that the regex will match
      * @throws JavaRegexParseException
      */
     public int[] countMatchedChars() throws JavaRegexParseException {
         return countMatchedChars(this.regexParts);
     }
-    
+
     /**
      * Determine the minimum and maximum number of characters that a regex will match
-     * 
+     *
      * @param parts
      * @return the min and max number of characters that the regex will match
      * @throws JavaRegexParseException
      */
     private int[] countMatchedChars(RegexPart[] parts) throws JavaRegexParseException {
-        
+
         // a stack of ranges used for nested capturing groups with alternates. If empty then we are at the top level.
         LinkedList<LinkedList<int[]>> groups = new LinkedList<>();
-        
+
         // the current alternates. If empty then we have no alternates
         LinkedList<int[]> alternates = new LinkedList<>();
-        
+
         // the current bounds
         int[] bounds = new int[2];
-        
+
         // are we in a character class section [...]
         int charClass = 0;
-        
+
         // now count the digits
         int column = 0;
         int len = parts.length;
@@ -1055,10 +1055,10 @@ public class JavaRegexAnalyzer {
         alternates.addLast(bounds);
         return summarize(alternates);
     }
-    
+
     /**
      * Summarize a list of alternatives returning the min of the mins and the max of the maxes
-     * 
+     *
      * @param alternates
      * @return the summarized bounds
      */
@@ -1071,10 +1071,10 @@ public class JavaRegexAnalyzer {
         }
         return bounds;
     }
-    
+
     /**
      * Updated the bounds with a quantity, taking a following quantifier into account.
-     * 
+     *
      * @param bounds
      *            The bounds to update
      * @param quantity
@@ -1088,10 +1088,10 @@ public class JavaRegexAnalyzer {
     private void updateBounds(int[] bounds, int quantity, RegexPart[] parts, int partIndex) throws JavaRegexParseException {
         updateBounds(bounds, new int[] {quantity, quantity}, parts, partIndex);
     }
-    
+
     /**
      * Updated the bounds with a min and max quantity, taking a following quantifier into account.
-     * 
+     *
      * @param bounds
      *            The bounds to update
      * @param quantity
@@ -1129,22 +1129,22 @@ public class JavaRegexAnalyzer {
                 throw new JavaRegexParseException("Cannot deal with the quantifier " + part.regex, -1);
             }
         }
-        
+
         bounds[MIN_INDEX] += quantity[MIN_INDEX] * multiplier[MIN_INDEX];
         bounds[MAX_INDEX] += quantity[MAX_INDEX] * multiplier[MAX_INDEX];
     }
-    
+
     /**
      * Apply uppercase or lowercase to a regex, leaving all character class constants alone. It will replace \\p{Lu}, \\p{Lower}, \\p{Upper} \\p{javaLowerCase}
      * and \\p{javaUpperCase} as well. TODO: Nested negations of upper or lower character classes are not be handled correctly.
-     * 
+     *
      * @param upperCase
      */
     public void applyRegexCaseSensitivity(boolean upperCase) {
         // one possibility is to simply add the case independence flag...but does not
         // work for shardIndex query....maybe we can modify that logic appropriately....
         // return "(?i" + regex + ')';
-        
+
         // translate the uppercase and lowercase character classes
         // and apply the upcase or lowercase to all literals
         for (int i = 0; i < regexParts.length; i++) {
@@ -1217,12 +1217,12 @@ public class JavaRegexAnalyzer {
                         part.regex = "\\p{L}";
                     }
                 }
-                
+
             }
         }
-        
+
         // now reset the updated value
         updatedLiterals = false;
     }
-    
+
 }

@@ -12,19 +12,19 @@ import datawave.data.normalizer.regex.RegexParser;
 import datawave.data.normalizer.regex.visitor.StringVisitor;
 
 class StringVisitorTest {
-    
+
     @Test
     void testNullNode() {
         assertThat(toString(null)).isNull();
     }
-    
+
     @Test
     void testEmptyExpression() {
         ExpressionNode node = new ExpressionNode();
         node.addChild(new EmptyNode());
         assertThat(toString(node)).isEqualTo("");
     }
-    
+
     @Test
     void testComplexTrees() {
         assertThat(toString(parse("-234\\.3"))).isEqualTo("-234\\.3");
@@ -37,7 +37,7 @@ class StringVisitorTest {
         assertThat(toString(parse("(23|65)|(34[65].*)"))).isEqualTo("(23|65)|(34[65].*)");
         assertThat(toString(parse("35\\d.+"))).isEqualTo("35\\d.+");
     }
-    
+
     private String toString(Node node) {
         return StringVisitor.toString(node);
     }

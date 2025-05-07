@@ -228,11 +228,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <scope>test</scope>
@@ -284,6 +279,9 @@
                 <targetPath>test-classes</targetPath>
                 <filtering>true</filtering>
                 <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>*.pkcs12</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>

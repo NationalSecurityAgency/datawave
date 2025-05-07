@@ -25,7 +25,7 @@
         <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
         <version.accumulo.tar.gz>2.1.3</version.accumulo.tar.gz>
         <version.hadoop.tar.gz>3.3.6</version.hadoop.tar.gz>
-        <version.maven.tar.gz>3.8.8</version.maven.tar.gz>
+        <version.maven.tar.gz>3.9.9</version.maven.tar.gz>
         <version.wildfly.tar.gz>17.0.1</version.wildfly.tar.gz>
         <version.zookeeper.tar.gz>3.7.2</version.zookeeper.tar.gz>
     </properties>
@@ -61,13 +61,12 @@
         <plugins>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.2.0</version>
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>${project.basedir}/../../../</directory>
+                            <directory>${maven.multiModuleProjectDirectory}</directory>
                             <includes>
-                                <include>.maven-dockerignore</include>
+                                <include>.jkube-dockerignore</include>
                             </includes>
                         </fileset>
                         <fileset>
@@ -162,21 +161,49 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>0.40.1</version>
+                        <groupId>io.github.git-commit-id</groupId>
+                        <artifactId>git-commit-id-maven-plugin</artifactId>
+                        <configuration>
+                            <skipPoms>false</skipPoms>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-docker-ignore</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${maven.multiModuleProjectDirectory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}</directory>
+                                            <includes>
+                                                <include>.jkube-dockerignore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
                         <configuration>
                             <verbose>true</verbose>
                             <images>
                                 <image>
                                     <name>${docker.image.prefix}datawave/quickstart-${build.env}</name>
                                     <build>
+                                        <contextDir>${maven.multiModuleProjectDirectory}</contextDir>
+                                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
-                                        <cleanup>none</cleanup>
-                                        <contextDir>${project.basedir}/../../../</contextDir>
-                                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <tags>
                                             <tag>latest</tag>
                                             <tag>${project.version}</tag>
@@ -193,6 +220,9 @@
                                             <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>
                                             <ZOOKEEPER_URL>${url.zookeeper}</ZOOKEEPER_URL>
                                         </args>
+                                        <assembly>
+                                            <name>/</name>
+                                        </assembly>
                                     </build>
                                 </image>
                             </images>
@@ -213,36 +243,6 @@
                                 <phase>deploy</phase>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-docker-ignore</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/../../../</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}</directory>
-                                            <includes>
-                                                <include>.maven-dockerignore</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>pl.project13.maven</groupId>
-                        <artifactId>git-commit-id-plugin</artifactId>
-                        <configuration>
-                            <skipPoms>false</skipPoms>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

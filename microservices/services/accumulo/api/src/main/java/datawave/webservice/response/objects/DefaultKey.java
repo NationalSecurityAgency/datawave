@@ -16,22 +16,22 @@ import datawave.webservice.query.util.TypedValue;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultKey extends KeyBase {
-    
+
     @XmlElement(name = "Row")
     private TypedValue row;
-    
+
     @XmlElement(name = "ColFam")
     private TypedValue colFam;
-    
+
     @XmlElement(name = "ColQual")
     private TypedValue colQual;
-    
+
     @XmlElement(name = "ColumnVisibility")
     private TypedValue columnVisibility;
-    
+
     @XmlElement(name = "Timestamp")
     private TypedValue timestamp;
-    
+
     public DefaultKey(String row, String colFam, String colQual, String columnVisibility, Long timestamp) {
         this.row = new TypedValue(row);
         this.colFam = new TypedValue(colFam);
@@ -39,9 +39,9 @@ public class DefaultKey extends KeyBase {
         this.columnVisibility = new TypedValue(columnVisibility);
         this.timestamp = new TypedValue(timestamp);
     }
-    
+
     public DefaultKey() {}
-    
+
     @Override
     public String getRow() {
         if (this.row.getType().equals(TypedValue.XSD_STRING) && this.row.isBase64Encoded()) {
@@ -50,7 +50,7 @@ public class DefaultKey extends KeyBase {
             return this.row.getValue().toString();
         }
     }
-    
+
     @Override
     public String getColFam() {
         if (this.colFam.getType().equals(TypedValue.XSD_STRING) && this.colFam.isBase64Encoded()) {
@@ -59,7 +59,7 @@ public class DefaultKey extends KeyBase {
             return this.colFam.getValue().toString();
         }
     }
-    
+
     @Override
     public String getColQual() {
         if (this.colQual.getType().equals(TypedValue.XSD_STRING) && this.colQual.isBase64Encoded()) {
@@ -68,7 +68,7 @@ public class DefaultKey extends KeyBase {
             return this.colQual.getValue().toString();
         }
     }
-    
+
     public String getColumnVisibility() {
         if (this.columnVisibility.getType().equals(TypedValue.XSD_STRING) && this.columnVisibility.isBase64Encoded()) {
             return new String(Base64.decodeBase64(this.columnVisibility.getValue().toString().getBytes(UTF_8)), UTF_8);
@@ -76,7 +76,7 @@ public class DefaultKey extends KeyBase {
             return this.columnVisibility.getValue().toString();
         }
     }
-    
+
     @Override
     public long getTimestamp() {
         if (this.timestamp.getType().equals(TypedValue.XSD_LONG)) {
@@ -85,7 +85,7 @@ public class DefaultKey extends KeyBase {
             return 0L;
         }
     }
-    
+
     @Override
     public void setMarkings(Map<String,String> markings) {
         HashMap<String,String> markingMap = new HashMap<>();
@@ -93,36 +93,36 @@ public class DefaultKey extends KeyBase {
             markingMap.putAll(markings);
         }
         this.markings = markingMap;
-        
+
         setColumnVisibility(markingMap.getOrDefault(MarkingFunctions.Default.COLUMN_VISIBILITY, ""));
     }
-    
+
     @Override
     public Map<String,String> getMarkings() {
         return this.markings;
     }
-    
+
     public void setRow(String row) {
         this.row = new TypedValue(row);
     }
-    
+
     public void setColFam(String colFam) {
         this.colFam = new TypedValue(colFam);
     }
-    
+
     public void setColQual(String colQual) {
         this.colQual = new TypedValue(colQual);
     }
-    
+
     public void setColumnVisibility(String colVis) {
         this.columnVisibility = (colVis == null) ? new TypedValue("") : new TypedValue(colVis);
         if (markings == null) {
             markings = new HashMap<>();
         }
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility.getValue().toString());
-        
+
     }
-    
+
     public void setTimestamp(long timestamp) {
         this.timestamp = new TypedValue(timestamp);
     }

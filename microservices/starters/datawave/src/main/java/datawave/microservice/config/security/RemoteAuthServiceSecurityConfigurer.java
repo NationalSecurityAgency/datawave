@@ -32,7 +32,7 @@ import datawave.microservice.authorization.service.RemoteAuthorizationServiceUse
 public class RemoteAuthServiceSecurityConfigurer extends JWTSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
-    
+
     public RemoteAuthServiceSecurityConfigurer(DatawaveSecurityProperties securityProperties,
                     AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService,
                     JWTAuthenticationProvider jwtAuthenticationProvider) {
@@ -40,12 +40,12 @@ public class RemoteAuthServiceSecurityConfigurer extends JWTSecurityConfigurer {
         this.securityProperties = securityProperties;
         this.authenticationUserDetailsService = authenticationUserDetailsService;
     }
-    
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        
+
         super.configure(http);
-        
+
         // The parent configures JWT-based security. Add an additional filter here to allow authentication based on the
         // X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers that are supplied by trusted callers. These headers will
         // be used to make a remote call to the authorization service and retrieve the necessary credentials.
@@ -55,12 +55,12 @@ public class RemoteAuthServiceSecurityConfigurer extends JWTSecurityConfigurer {
         proxiedX509Filter.setContinueFilterChainOnUnsuccessfulAuthentication(false);
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);
     }
-    
+
     @Override
     protected void configure(@NonNull AuthenticationManagerBuilder auth) throws Exception {
         Preconditions.checkNotNull(auth);
         super.configure(auth);
-        
+
         PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
         provider.setPreAuthenticatedUserDetailsService(authenticationUserDetailsService);
         auth.authenticationProvider(provider);

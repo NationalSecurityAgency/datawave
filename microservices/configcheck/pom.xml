@@ -21,17 +21,13 @@
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.jackson>2.13.2</version.jackson>
-        <version.junit.bom>5.9.1</version.junit.bom>
         <version.log4j.bom>2.17.2</version.log4j.bom>
         <version.spring.boot>2.7.1</version.spring.boot>
+        <version.junit5>5.12.0</version.junit5>
+        <version.junit5.platform>1.12.0</version.junit5.platform>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
@@ -47,18 +43,70 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${version.junit.bom}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${version.spring.boot}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite</artifactId>
+                <version>${version.junit5.platform}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${version.junit5}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -76,12 +124,12 @@
             <artifactId>spring-boot-starter</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>commons-logging</artifactId>
                     <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>spring-boot-starter-logging</artifactId>
                     <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -91,13 +139,27 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.junit.jupiter</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <repositories>
@@ -129,30 +191,45 @@
             <plugin>
                 <groupId>com.github.ekryd.sortpom</groupId>
                 <artifactId>sortpom-maven-plugin</artifactId>
-                <version>2.10.0</version>
-                <executions>
-                    <execution>
-                        <id>sort-pom</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>sort</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <version>4.0.0</version>
                 <configuration>
+                    <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
                     <createBackupFile>false</createBackupFile>
                     <lineSeparator>\n</lineSeparator>
+                    <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
                     <expandEmptyElements>false</expandEmptyElements>
                     <nrOfIndentSpace>4</nrOfIndentSpace>
                     <sortDependencies>scope,groupId,artifactId</sortDependencies>
                     <sortPlugins>groupId,artifactId</sortPlugins>
                     <sortProperties>true</sortProperties>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>sort-pom</id>
+                        <goals>
+                            <goal>sort</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>3.1.12.2</version>
+                <version>4.9.2.0</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>High</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${spotbugs.excludes.file}</excludeFilterFile>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.doxia</groupId>
+                        <artifactId>doxia-sink-api</artifactId>
+                        <version>2.0.0</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <goals>
@@ -160,26 +237,11 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <effort>Max</effort>
-                    <threshold>High</threshold>
-                    <xmlOutput>true</xmlOutput>
-                    <excludeFilterFile>${spotbugs.excludes.file}</excludeFilterFile>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
                 <version>1.9.0</version>
-                <executions>
-                    <execution>
-                        <id>sort-imports</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>sort</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <groups>java.,javax.,org.,com.</groups>
                     <staticGroups>java,*</staticGroups>
@@ -187,18 +249,28 @@
                         <exclude>**/thrift/*.java</exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>sort-imports</id>
+                        <goals>
+                            <goal>sort</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>net.revelc.code.formatter</groupId>
                 <artifactId>formatter-maven-plugin</artifactId>
-                <version>2.16.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>format</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <version>2.23.0</version>
+                <configuration>
+                    <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
+                    <lineEnding>LF</lineEnding>
+                    <removeTrailingWhitespace>true</removeTrailingWhitespace>
+                    <compilerSource>${maven.compiler.source}</compilerSource>
+                    <compilerCompliance>${maven.compiler.source}</compilerCompliance>
+                    <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>gov.nsa.datawave</groupId>
@@ -206,25 +278,56 @@
                         <version>1.0</version>
                     </dependency>
                 </dependencies>
-                <configuration>
-                    <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
-                    <lineEnding>LF</lineEnding>
-                    <compilerSource>${maven.compiler.source}</compilerSource>
-                    <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                    <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
-                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.3</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-banned-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>log4j:log4j</exclude>
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        <exclude>ch.qos.logback:logback-classic</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M6</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter-engine</artifactId>
-                        <version>${version.junit.bom}</version>
-                    </dependency>
-                </dependencies>
+                <version>3.5.2</version>
                 <configuration>
                     <reuseForks>false</reuseForks>
                     <forkCount>${surefire.forkCount}</forkCount>

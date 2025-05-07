@@ -18,15 +18,15 @@ import datawave.microservice.metadata.remote.TableCacheReloadRequestHandler;
 @ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadRequestEventListener implements ApplicationListener<TableCacheReloadRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     private final List<TableCacheReloadRequestHandler> tableCacheReloadRequestHandlers;
     private final ServiceMatcher serviceMatcher;
-    
+
     public TableCacheReloadRequestEventListener(List<TableCacheReloadRequestHandler> tableCacheReloadRequestHandlers, ServiceMatcher serviceMatcher) {
         this.tableCacheReloadRequestHandlers = tableCacheReloadRequestHandlers;
         this.serviceMatcher = serviceMatcher;
     }
-    
+
     @Override
     public void onApplicationEvent(TableCacheReloadRequestEvent event) {
         // Ignore events that this service instance published, since we publish from a place
@@ -35,7 +35,7 @@ public class TableCacheReloadRequestEventListener implements ApplicationListener
         if (isSelfRequest) {
             log.debug("Received a self-request {}.", event);
         }
-        
+
         // process the event using each tableCacheReload request handler.
         // By default, for parallelStreams java uses threads equal to the number of cores.
         // if we need more than that, we can specify our own ForkJoinPool.
@@ -47,11 +47,11 @@ public class TableCacheReloadRequestEventListener implements ApplicationListener
                 .forEach(h -> handleRequest(h, event));
         // @formatter:on
     }
-    
+
     private boolean shouldHandleRequest(TableCacheReloadRequestHandler handler, boolean isSelfRequest) {
         return !isSelfRequest || handler instanceof TableCacheReloadRequestHandler.QuerySelfRequestHandler;
     }
-    
+
     private void handleRequest(TableCacheReloadRequestHandler tableCacheReloadRequestHandler, TableCacheReloadRequestEvent tableCacheReloadRequestEvent) {
         try {
             tableCacheReloadRequestHandler.handleRemoteRequest(tableCacheReloadRequestEvent.getTableName(), tableCacheReloadRequestEvent.getOriginService(),

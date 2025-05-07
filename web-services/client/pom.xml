@@ -179,16 +179,6 @@
             <version>${version.jakarta}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
@@ -249,7 +239,7 @@
                             <outputDirectory>lib</outputDirectory>
                             <includeScope>runtime</includeScope>
                             <excludeScope>provided</excludeScope>
-                            <excludeScope>test</excludeScope>
+                            <excludeScope>compile</excludeScope>
                         </configuration>
                     </execution>
                 </executions>

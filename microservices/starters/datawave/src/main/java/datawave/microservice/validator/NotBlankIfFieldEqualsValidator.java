@@ -15,20 +15,20 @@ public class NotBlankIfFieldEqualsValidator implements ConstraintValidator<NotBl
     private String fieldName;
     private String fieldSetValue;
     private String notBlankFieldName;
-    
+
     @Override
     public void initialize(NotBlankIfFieldEquals constraintAnnotation) {
         fieldName = constraintAnnotation.fieldName();
         fieldSetValue = constraintAnnotation.fieldValue();
         notBlankFieldName = constraintAnnotation.notBlankFieldName();
     }
-    
+
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
         if (value == null) {
             return true;
         }
-        
+
         try {
             final String fieldValue = BeanUtils.getProperty(value, fieldName);
             final String notBlankFieldValue = BeanUtils.getProperty(value, notBlankFieldName);
@@ -41,7 +41,7 @@ public class NotBlankIfFieldEqualsValidator implements ConstraintValidator<NotBl
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
-        
+
         return true;
     }
 }

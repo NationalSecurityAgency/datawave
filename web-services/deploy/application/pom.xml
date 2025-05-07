@@ -7,10 +7,11 @@
         <version>7.21.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
-    <packaging>ear</packaging>
+    <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <properties>
-        <allowIncompleteProjects>true</allowIncompleteProjects>
+        <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
+        <project.build.finalName>${project.build.finalName}</project.build.finalName>
     </properties>
     <dependencies>
         <dependency>
@@ -258,7 +259,6 @@
                 <configuration>
                     <defaultLibBundleDir>lib/</defaultLibBundleDir>
                     <skinnyWars>true</skinnyWars>
-                    <fileNameMapping>standard</fileNameMapping>
                     <classifier>${build.env}</classifier>
                     <modules combine.children="append">
                         <ejbModule>
@@ -318,6 +318,22 @@
                         </webModule>
                     </modules>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-application-xml</id>
+                        <goals>
+                            <goal>generate-application-xml</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>create-ear</id>
+                        <goals>
+                            <goal>ear</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -337,87 +353,85 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>1.1.1</version>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
+                        <version>1.18.1</version>
                         <configuration>
-                            <imageName>${docker.image.prefix}datawave/webservice-${build.env}</imageName>
-                            <forceTags>true</forceTags>
-                            <imageTags>
-                                <imageTag>latest</imageTag>
-                                <imageTag>${project.version}</imageTag>
-                            </imageTags>
-                            <dockerDirectory>${project.build.directory}/wildfly</dockerDirectory>
-                            <resources>
-                                <resource>
-                                    <targetPath>/</targetPath>
-                                    <directory>${project.build.directory}</directory>
-                                    <include>${project.build.finalName}-${build.env}.ear</include>
-                                </resource>
-                            </resources>
+                            <verbose>true</verbose>
+                            <images>
+                                <image>
+                                    <name>${docker.image.prefix}datawave/webservice-${build.env}</name>
+                                    <build>
+                                        <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
+                                        <contextDir>.</contextDir>
+                                        <buildOptions>
+                                            <memory>8589934592</memory>
+                                        </buildOptions>
+                                        <tags>
+                                            <tag>latest</tag>
+                                            <tag>${project.version}</tag>
+                                        </tags>
+                                        <assembly>
+                                            <name>/</name>
+                                            <!-- matches dist.xml assembly file-->
+                                            <layers>
+                                                <layer>
+                                                    <id>ear</id>
+                                                    <files>
+                                                        <file>
+                                                            <source>${project.build.directory}/${project.build.finalName}-${build.env}.ear</source>
+                                                            <!-- target/docker/<image path>/build -->
+                                                            <outputDirectory>.</outputDirectory>
+                                                            <fileMode>0640</fileMode>
+                                                        </file>
+                                                    </files>
+                                                </layer>
+                                                <layer>
+                                                    <id>wildfly-files</id>
+                                                    <fileSets>
+                                                        <fileSet>
+                                                            <directory>${project.build.directory}/wildfly</directory>
+                                                            <!-- target/docker/<image path>/build -->
+                                                            <outputDirectory>.</outputDirectory>
+                                                            <excludes>*.sh</excludes>
+                                                            <fileMode>0640</fileMode>
+                                                            <directoryMode>0750</directoryMode>
+                                                        </fileSet>
+                                                    </fileSets>
+                                                </layer>
+                                                <layer>
+                                                    <id>wildfly-scripts</id>
+                                                    <fileSets>
+                                                        <fileSet>
+                                                            <directory>{project.build.directory}/wildfly</directory>
+                                                            <!-- target/docker/<image path>/build -->
+                                                            <outputDirectory>.</outputDirectory>
+                                                            <includes>*.sh</includes>
+                                                            <fileMode>0750</fileMode>
+                                                            <directoryMode>0750</directoryMode>
+                                                        </fileSet>
+                                                    </fileSets>
+                                                </layer>
+                                            </layers>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
                         </configuration>
                         <executions>
                             <execution>
-                                <id>tag-image</id>
+                                <id>build</id>
                                 <goals>
                                     <goal>build</goal>
                                 </goals>
-                                <phase>package</phase>
+                                <phase>install</phase>
                             </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
                             <execution>
-                                <id>copy-mysql-jar</id>
+                                <id>push</id>
                                 <goals>
-                                    <goal>copy</goal>
+                                    <goal>push</goal>
                                 </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/mysql</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>mysql</groupId>
-                                            <artifactId>mysql-connector-java</artifactId>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-dockerfile</id>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/main/docker</directory>
-                                            <filtering>true</filtering>
-                                            <excludes>
-                                                <exclude>runtime-config.clis</exclude>
-                                            </excludes>
-                                        </resource>
-                                        <resource>
-                                            <!-- Include file with filtering disabled-->
-                                            <directory>${project.basedir}/src/main/docker</directory>
-                                            <filtering>false</filtering>
-                                            <includes>
-                                                <exclude>runtime-config.clis</exclude>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
+                                <phase>deploy</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -496,23 +510,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <!-- Activate the assert-properties plugin to ensure all configuration we require is set. -->
-                        <groupId>gov.nsa.datawave.plugins</groupId>
-                        <artifactId>assert-properties</artifactId>
-                        <executions>
-                            <execution>
-                                <id>assert-properties</id>
-                                <goals>
-                                    <goal>assert-properties</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                                <configuration>
-                                    <expectedPropertyNames>src/main/assert/expected-properties.txt</expectedPropertyNames>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <executions>
                             <execution>
@@ -527,6 +524,35 @@
                                     </descriptors>
                                     <tarLongFileMode>posix</tarLongFileMode>
                                     <finalName>${project.artifactId}-${project.version}</finalName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>assemble-and-docker-prep</id>
+            <activation>
+                <property>
+                    <name>!skipPrep</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <!-- Activate the assert-properties plugin to ensure all configuration we require is set. -->
+                        <groupId>gov.nsa.datawave.plugins</groupId>
+                        <artifactId>assert-properties</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assert-properties</id>
+                                <goals>
+                                    <goal>assert-properties</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <expectedPropertyNames>src/main/assert/expected-properties.txt</expectedPropertyNames>
                                 </configuration>
                             </execution>
                         </executions>
@@ -548,8 +574,8 @@
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>mysql</groupId>
-                                            <artifactId>mysql-connector-java</artifactId>
+                                            <groupId>com.mysql</groupId>
+                                            <artifactId>mysql-connector-j</artifactId>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
@@ -741,7 +767,7 @@
                                         </artifactItem>
                                     </artifactItems>
                                     <includes>replication_scripts/**</includes>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly-tmp/overlay</outputDirectory>
                                 </configuration>
                             </execution>
                         </executions>
@@ -750,7 +776,7 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-scripts</id>
+                                <id>copy-wildfly-resources</id>
                                 <goals>
                                     <goal>copy-resources</goal>
                                 </goals>

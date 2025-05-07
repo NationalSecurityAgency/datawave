@@ -15,19 +15,19 @@ import datawave.security.authorization.DatawaveUser.UserType;
  */
 public class DatawaveUserInfo implements Serializable {
     private static final long serialVersionUID = 6644439736099548284L;
-    
+
     private final SubjectIssuerDNPair dn;
     private final UserType userType;
     private final long creationTime;
     private final long expirationTime;
-    
+
     public DatawaveUserInfo(DatawaveUser user) {
         dn = user.getDn();
         userType = user.getUserType();
         creationTime = user.getCreationTime();
         expirationTime = user.getExpirationTime();
     }
-    
+
     @JsonCreator
     public DatawaveUserInfo(@JsonProperty(value = "dn", required = true) SubjectIssuerDNPair dn,
                     @JsonProperty(value = "userType", required = true) UserType userType,
@@ -37,34 +37,34 @@ public class DatawaveUserInfo implements Serializable {
         this.userType = userType;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
-        
+
     }
-    
+
     public SubjectIssuerDNPair getDn() {
         return dn;
     }
-    
+
     public UserType getUserType() {
         return userType;
     }
-    
+
     public long getCreationTime() {
         return creationTime;
     }
-    
+
     public long getExpirationTime() {
         return expirationTime;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         DatawaveUserInfo that = (DatawaveUserInfo) o;
-        
+
         if (creationTime != that.creationTime)
             return false;
         if (expirationTime != that.expirationTime)
@@ -73,7 +73,7 @@ public class DatawaveUserInfo implements Serializable {
             return false;
         return userType == that.userType;
     }
-    
+
     @Override
     public int hashCode() {
         int result = dn.hashCode();
@@ -82,7 +82,7 @@ public class DatawaveUserInfo implements Serializable {
         result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
         return result;
     }
-    
+
     @Override
     public String toString() {
         return "DatawaveUserInfo{" + "dn=" + dn + ", userType=" + userType + ", creationTime=" + creationTime + ", expirationTime=" + expirationTime + '}';

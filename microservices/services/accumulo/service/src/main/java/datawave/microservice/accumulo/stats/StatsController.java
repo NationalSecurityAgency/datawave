@@ -21,14 +21,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
 @ConditionalOnProperty(name = "accumulo.stats.enabled", havingValue = "true", matchIfMissing = true)
 public class StatsController {
-    
+
     private final StatsService statsService;
-    
+
     @Autowired
     public StatsController(StatsService statsService) {
         this.statsService = statsService;
     }
-    
+
     /**
      * Retrieves stats from the Accumulo monitor
      *
