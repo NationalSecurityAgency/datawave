@@ -8,52 +8,52 @@ import java.util.NoSuchElementException;
  * An iterator for traversing over a list of {@link Node} instances, with functionality for skipping over nodes that meet certain conditions.
  */
 public class NodeListIterator {
-    
+
     /**
      * The list.
      */
     private final List<Node> nodes;
-    
+
     /**
      * The current index.
      */
     private int index;
-    
+
     public NodeListIterator(List<Node> nodes) {
         this.nodes = nodes;
     }
-    
+
     /**
      * Return the current iterator index.
-     * 
+     *
      * @return the index
      */
     public int index() {
         return index;
     }
-    
+
     /**
      * Set the current index for the iterator.
-     * 
+     *
      * @param index
      *            the index
      */
     public void setIndex(int index) {
         this.index = index;
     }
-    
+
     /**
      * Return true if there are more nodes to return from the list.
-     * 
+     *
      * @return true if there are a next node to return
      */
     public boolean hasNext() {
         return this.index < this.nodes.size();
     }
-    
+
     /**
      * Return the next node from the list.
-     * 
+     *
      * @return the next node
      * @throws NoSuchElementException
      *             if there is no next node
@@ -64,10 +64,10 @@ public class NodeListIterator {
         }
         return nodes.get(index++);
     }
-    
+
     /**
      * Return the next node from the list without modifying the current iterator index.
-     * 
+     *
      * @return the next node
      * @throws NoSuchElementException
      *             if there is no next node
@@ -78,10 +78,10 @@ public class NodeListIterator {
         }
         return nodes.get((index));
     }
-    
+
     /**
      * Return whether the next node is an instance of the given type.
-     * 
+     *
      * @param type
      *            the type
      * @return true if the next node is an instance of the type, or false otherwise
@@ -91,10 +91,10 @@ public class NodeListIterator {
     public boolean isNextInstanceOf(Class<? extends Node> type) {
         return type.isInstance(peekNext());
     }
-    
+
     /**
      * Return whether the next node is an instance of one of the given types.
-     * 
+     *
      * @param types
      *            the types
      * @return true if the next node is an instance of one of the given types, or false otherwise
@@ -105,7 +105,7 @@ public class NodeListIterator {
         Node previous = peekNext();
         return types.stream().anyMatch((type) -> type.isInstance(previous));
     }
-    
+
     /**
      * Update the iterator so that the next call to {@link #next()} will return the first node is not a regex element that can match against the character '0',
      * starting from the iterator's current position in the list. If no such node is found, the iterator will be moved to the end of the list,
@@ -127,7 +127,7 @@ public class NodeListIterator {
             }
         }
     }
-    
+
     /**
      * Update the iterator so that the next call to {@link #next()} will return the first node is not a regex element that can match only the character '0',
      * starting from the iterator's current position in the list. If no such node is found, the iterator will be moved to the end of the list,
@@ -149,7 +149,7 @@ public class NodeListIterator {
             }
         }
     }
-    
+
     /**
      * Update the iterator so that the next call to {@link #next()} will return the first node that is not a {@link ZeroOrMoreNode}, {@link OneOrMoreNode}, or
      * {@link RepetitionNode}, starting from the iterator's current position in the list. If no such node is found, the iterator will be moved to the end of the
@@ -160,7 +160,7 @@ public class NodeListIterator {
             next();
         }
     }
-    
+
     /**
      * Update the iterator so that the next call to {@link #next()} will return the first node that is not an {@link QuestionMarkNode}, starting from the
      * iterator's current position in the list. If no such node is found, the iterator will be moved to the end of the list, {@link #hasNext()} will return
@@ -171,19 +171,19 @@ public class NodeListIterator {
             next();
         }
     }
-    
+
     /**
      * Return whether the next node in the list is a {@link ZeroOrMoreNode}, {@link OneOrMoreNode}, or a {@link RepetitionNode}.
-     * 
+     *
      * @return true if the next node in the list is a quantifier type, or false otherwise
      */
     public boolean isNextQuantifier() {
         return hasNext() && isNextInstanceOfAny(RegexConstants.QUANTIFIER_TYPES);
     }
-    
+
     /**
      * Return whether the next node in the list is a {@link QuestionMarkNode}.
-     * 
+     *
      * @return true if the next node in the list is an {@link QuestionMarkNode}, or false otherwise
      */
     public boolean isNextQuestionMark() {

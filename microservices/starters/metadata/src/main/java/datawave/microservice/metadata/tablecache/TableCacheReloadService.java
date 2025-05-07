@@ -17,16 +17,16 @@ public class TableCacheReloadService implements TableCacheReloadRequestHandler {
     private final AccumuloTableCache cache;
     private final BusProperties busProperties;
     private final ApplicationEventPublisher publisher;
-    
+
     public TableCacheReloadService(AccumuloTableCache cache, BusProperties busProperties, ApplicationEventPublisher publisher) {
         this.cache = cache;
         this.busProperties = busProperties;
         this.publisher = publisher;
     }
-    
+
     /**
      * Handle a remote request to reload a table.
-     * 
+     *
      * @param tableName
      *            The table name
      * @param originService
@@ -39,10 +39,10 @@ public class TableCacheReloadService implements TableCacheReloadRequestHandler {
         log.debug("Handling remote reload request for " + tableName);
         reloadTable(tableName, false);
     }
-    
+
     /**
      * Reload a table and publish a reload message if requested
-     * 
+     *
      * @param tableName
      *            The table name
      * @param publishEvent
@@ -54,10 +54,10 @@ public class TableCacheReloadService implements TableCacheReloadRequestHandler {
             sendCacheReloadMessage(tableName);
         }
     }
-    
+
     /**
      * Send a reload message to all other executors
-     * 
+     *
      * @param tableName
      *            The table name
      */
@@ -72,7 +72,7 @@ public class TableCacheReloadService implements TableCacheReloadRequestHandler {
                         tableName));
         // @formatter:on
     }
-    
+
     public AccumuloTableCache getTableCache() {
         return cache;
     }

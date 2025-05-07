@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-core-parent</artifactId>
-        <version>7.20.0-SNAPSHOT</version>
+        <version>7.21.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-core-connection-pool</artifactId>
     <name>${project.artifactId}</name>
@@ -44,10 +44,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -140,7 +136,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>

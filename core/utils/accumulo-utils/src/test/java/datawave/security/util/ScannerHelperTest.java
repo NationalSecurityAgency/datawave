@@ -31,17 +31,17 @@ import datawave.security.iterator.ConfigurableVisibilityFilter;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class ScannerHelperTest {
-    
+
     public static String TABLE_NAME = "DATA";
     private AccumuloClient mockConnector;
-    
+
     @BeforeEach
     public void setUp() throws Exception {
         InMemoryInstance instance = new InMemoryInstance();
         mockConnector = new InMemoryAccumuloClient("root", instance);
         mockConnector.securityOperations().changeUserAuthorizations("root", new Authorizations("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         mockConnector.tableOperations().create(TABLE_NAME);
-        
+
         Mutation m = new Mutation("row");
         m.put("cf1", "cq1", new ColumnVisibility("A&B&C"), 1L, new Value(new byte[0]));
         m.put("cf1", "cq2", new ColumnVisibility("A&D&E"), 1L, new Value(new byte[0]));
@@ -61,17 +61,17 @@ public class ScannerHelperTest {
         bw.flush();
         bw.close();
     }
-    
+
     @Test
     public void testVisibilityFiltersAdded() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         List<Key> expectedKeys = Lists.newArrayList(new Key("row", "cf2", "cq1", "A", 1L));
         Value expectedVal = new Value(new byte[0]);
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         for (Entry<Key,Value> entry : scanner) {
             assertFalse(expectedKeys.isEmpty(), "Ran out of expected keys but got: " + entry.getKey());
@@ -81,17 +81,17 @@ public class ScannerHelperTest {
         }
         assertTrue(expectedKeys.isEmpty(), "Scanner did not return all expected keys: " + expectedKeys);
     }
-    
+
     @Test
     public void testVisibilityFilterClearImmutability() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         List<Key> expectedKeys = Lists.newArrayList(new Key("row", "cf2", "cq1", "A", 1L));
         Value expectedVal = new Value(new byte[0]);
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         // Clearing the scan iterators should do nothing to the iterators added by ScannerHelper.createScanner
         scanner.clearScanIterators();
@@ -103,17 +103,17 @@ public class ScannerHelperTest {
         }
         assertTrue(expectedKeys.isEmpty(), "Scanner did not return all expected keys: " + expectedKeys);
     }
-    
+
     @Test
     public void testVisibilityFilterRemoveImmutability() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         List<Key> expectedKeys = Lists.newArrayList(new Key("row", "cf2", "cq1", "A", 1L));
         Value expectedVal = new Value(new byte[0]);
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         // Removing the scan iterator should do nothing to the iterators added by ScannerHelper.createScanner
         scanner.removeScanIterator("visibilityFilter10");
@@ -125,17 +125,17 @@ public class ScannerHelperTest {
         }
         assertTrue(expectedKeys.isEmpty(), "Scanner did not return all expected keys: " + expectedKeys);
     }
-    
+
     @Test
     public void testVisibilityFilterModifyImmutability() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         List<Key> expectedKeys = Lists.newArrayList(new Key("row", "cf2", "cq1", "A", 1L));
         Value expectedVal = new Value(new byte[0]);
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         // Removing the scan iterator should do nothing to the iterators added by ScannerHelper.createScanner
         scanner.updateScanIteratorOption("visibilityFilter10", ConfigurableVisibilityFilter.AUTHORIZATIONS_OPT, "A,B,C");
@@ -148,39 +148,39 @@ public class ScannerHelperTest {
         }
         assertTrue(expectedKeys.isEmpty(), "Scanner did not return all expected keys: " + expectedKeys);
     }
-    
+
     @Test
     public void testVisibilityFilterSystemNameRemoveIntegrity() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         // Removing the scan iterator should do nothing to the iterators added by ScannerHelper.createScanner
         assertThrows(IllegalArgumentException.class, () -> scanner.removeScanIterator("sys_visibilityFilter10"));
     }
-    
+
     @Test
     public void testVisibilityFilterSystemNameModifyIntegrity() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         // Removing the scan iterator should do nothing to the iterators added by ScannerHelper.createScanner
         assertThrows(IllegalArgumentException.class,
                         () -> scanner.updateScanIteratorOption("sys_visibilityFilter10", ConfigurableVisibilityFilter.AUTHORIZATIONS_OPT, "A,B,C"));
     }
-    
+
     @Test
     public void testVisibilityFilterSystemNameAddIntegrity() throws Exception {
-        
+
         Authorizations a1 = new Authorizations("A", "B", "C");
         Authorizations a2 = new Authorizations("A", "D", "E");
         Authorizations a3 = new Authorizations("A", "F", "G");
-        
+
         Scanner scanner = ScannerHelper.createScanner(new WrappedAccumuloClient(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         // Removing the scan iterator should do nothing to the iterators added by ScannerHelper.createScanner
         IteratorSetting cfg = new IteratorSetting(10, "dwSystem_mySystemIterator", ConfigurableVisibilityFilter.class);

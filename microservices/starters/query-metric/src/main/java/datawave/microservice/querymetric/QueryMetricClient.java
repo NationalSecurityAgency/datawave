@@ -53,36 +53,36 @@ import datawave.webservice.result.VoidResponse;
 public class QueryMetricClient {
     // Note: This must match 'confirmAckChannel' in the service configuration. Default set in bootstrap.yml.
     public static final String CONFIRM_ACK_CHANNEL = "confirmAckChannel";
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private RestTemplate restTemplate;
-    
+
     private QueryMetricClientProperties queryMetricClientProperties;
-    
+
     private QueryMetricSupplier queryMetricSupplier;
-    
+
     private ObjectMapper objectMapper;
-    
+
     private JWTTokenHandler jwtTokenHandler;
-    
+
     private static final Map<String,CountDownLatch> correlationLatchMap = new ConcurrentHashMap<>();
-    
+
     public QueryMetricClient(RestTemplateBuilder restTemplateBuilder, QueryMetricClientProperties queryMetricClientProperties,
                     @Autowired(required = false) QueryMetricSupplier queryMetricSupplier, ObjectMapper objectMapper,
                     @Autowired(required = false) JWTTokenHandler jwtTokenHandler) {
         this.queryMetricClientProperties = queryMetricClientProperties;
         this.queryMetricSupplier = queryMetricSupplier;
-        
+
         this.objectMapper = objectMapper;
         this.restTemplate = restTemplateBuilder.build();
         this.jwtTokenHandler = jwtTokenHandler;
     }
-    
+
     public void submit(Request request) throws Exception {
         submit(request, queryMetricClientProperties.getTransport());
     }
-    
+
     public void submit(Request request, QueryMetricTransportType transportType) throws Exception {
         if (request.metrics == null || request.metrics.isEmpty()) {
             throw new IllegalArgumentException("Request must contain a query metric");
@@ -96,13 +96,13 @@ public class QueryMetricClient {
             submitViaRest(request);
         }
     }
-    
+
     private void submitViaMessage(Request request) {
         if (!updateMetrics(request.metrics.stream().map(m -> new QueryMetricUpdate(m, request.metricType)).collect(Collectors.toList()))) {
             throw new RuntimeException("Unable to process query metric update");
         }
     }
-    
+
     /**
      * Receives producer confirm acks, and disengages the latch associated with the given correlation ID.
      *
@@ -113,7 +113,7 @@ public class QueryMetricClient {
     public void processConfirmAck(Message<?> message) {
         if (queryMetricClientProperties.isConfirmAckEnabled()) {
             Object headerObj = message.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
-            
+
             if (headerObj != null) {
                 String correlationId = headerObj.toString();
                 if (correlationLatchMap.containsKey(correlationId)) {
@@ -126,17 +126,17 @@ public class QueryMetricClient {
             }
         }
     }
-    
+
     private boolean updateMetrics(List<QueryMetricUpdate> updates) {
         Map<String,QueryMetricUpdate> updatesById = new LinkedHashMap<>();
-        
+
         boolean success;
         final long updateStartTime = System.currentTimeMillis();
         long currentTime;
         int attempts = 0;
-        
+
         Retry retry = queryMetricClientProperties.getRetry();
-        
+
         List<QueryMetricUpdate> failedConfirmAck = new ArrayList<>(updates.size());
         do {
             if (attempts++ > 0) {
@@ -145,34 +145,34 @@ public class QueryMetricClient {
                 } catch (InterruptedException e) {
                     // Ignore -- we'll just end up retrying a little too fast
                 }
-                
+
                 // perform some retry upkeep
                 updates.addAll(failedConfirmAck);
                 failedConfirmAck.clear();
             }
-            
+
             if (log.isDebugEnabled()) {
                 log.debug("Bulk update attempt {} of {}", attempts, retry.getMaxAttempts());
             }
-            
+
             // send all of the remaining metric updates
             success = sendMessages(updates, updatesById) && awaitConfirmAcks(updatesById, failedConfirmAck);
             currentTime = System.currentTimeMillis();
         } while (!success && (currentTime - updateStartTime) < retry.getFailTimeoutMillis() && attempts < retry.getMaxAttempts());
-        
+
         if (!success) {
             log.warn("Bulk update failed. {attempts = {}, elapsedMillis = {}}", attempts, (currentTime - updateStartTime));
         } else {
             log.debug("Bulk update successful. {attempts = {}, elapsedMillis = {}}", attempts, (currentTime - updateStartTime));
         }
-        
+
         return success;
     }
-    
+
     private boolean updateMetric(QueryMetricUpdate update) {
         return updateMetrics(Lists.newArrayList(update));
     }
-    
+
     /**
      * Passes query metric messages to the messaging infrastructure.
      *
@@ -183,9 +183,9 @@ public class QueryMetricClient {
      * @return true if all messages were successfully sent, false otherwise
      */
     private boolean sendMessages(List<QueryMetricUpdate> updates, Map<String,QueryMetricUpdate> updatesById) {
-        
+
         List<QueryMetricUpdate> failedSend = new ArrayList<>(updates.size());
-        
+
         boolean success = true;
         // send all of the remaining metric updates
         for (QueryMetricUpdate update : updates) {
@@ -200,12 +200,12 @@ public class QueryMetricClient {
                 success = false;
             }
         }
-        
+
         updates.retainAll(failedSend);
-        
+
         return success;
     }
-    
+
     private boolean sendMessage(String correlationId, QueryMetricUpdate update) {
         boolean success = false;
         if (queryMetricSupplier.send(MessageBuilder.withPayload(update).setCorrelationId(correlationId).build())) {
@@ -216,7 +216,7 @@ public class QueryMetricClient {
         }
         return success;
     }
-    
+
     /**
      * Waits for the producer confirm acks to be received for the updates that were sent. If a producer confirm ack is not received within the specified amount
      * of time, a 500 Internal Server Error will be returned to the caller.
@@ -240,7 +240,7 @@ public class QueryMetricClient {
         }
         return success;
     }
-    
+
     private boolean awaitConfirmAck(String correlationId) {
         boolean success = false;
         if (queryMetricClientProperties.isConfirmAckEnabled()) {
@@ -254,7 +254,7 @@ public class QueryMetricClient {
         }
         return success;
     }
-    
+
     private void submitViaRest(Request request) throws Exception {
         if (request.user == null && request.trustedUser == null) {
             throw new IllegalArgumentException("Request must contain either user or trustedUser to use HTTP/HTTPS transport");
@@ -276,7 +276,7 @@ public class QueryMetricClient {
             url = this.queryMetricClientProperties.getUpdateMetricsUrl();
             metricObject = request.metrics;
         }
-        
+
         HttpEntity requestEntity = createRequestEntity(request.user, request.trustedUser, metricObject);
         // @formatter:off
         UriComponents metricUpdateUri = UriComponentsBuilder.newInstance()
@@ -289,9 +289,9 @@ public class QueryMetricClient {
         // @formatter:on
         restTemplate.postForEntity(metricUpdateUri.toUri(), requestEntity, VoidResponse.class);
     }
-    
+
     protected HttpEntity createRequestEntity(DatawaveUserDetails user, DatawaveUserDetails trustedUser, Object body) throws JsonProcessingException {
-        
+
         HttpHeaders headers = new HttpHeaders();
         if (this.jwtTokenHandler != null && user != null) {
             String token = this.jwtTokenHandler.createTokenFromUsers(user.getUsername(), user.getProxiedUsers());
@@ -304,21 +304,21 @@ public class QueryMetricClient {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         return new HttpEntity<>(objectMapper.writeValueAsString(body), headers);
     }
-    
+
     /**
      * Query metric update request
      *
      * @see Request.Builder
      */
     public static class Request {
-        
+
         protected List<BaseQueryMetric> metrics;
         protected QueryMetricType metricType;
         protected DatawaveUserDetails user;
         protected DatawaveUserDetails trustedUser;
-        
+
         private Request() {}
-        
+
         /**
          * Constructs a query metric update request
          *
@@ -331,47 +331,47 @@ public class QueryMetricClient {
             this.user = b.user;
             this.trustedUser = b.trustedUser;
         }
-        
+
         @Override
         public String toString() {
             return ToStringBuilder.reflectionToString(this).toString();
         }
-        
+
         /**
          * Builder for base audit requests
          */
         public static class Builder {
-            
+
             protected List<BaseQueryMetric> metrics;
             protected QueryMetricType metricType;
             protected DatawaveUserDetails user;
             protected DatawaveUserDetails trustedUser;
-            
+
             public Builder withMetricType(QueryMetricType metricType) {
                 this.metricType = metricType;
                 return this;
             }
-            
+
             public Builder withMetric(BaseQueryMetric metric) {
                 this.metrics = Collections.singletonList(metric);
                 return this;
             }
-            
+
             public Builder withMetrics(List<BaseQueryMetric> metrics) {
                 this.metrics = metrics;
                 return this;
             }
-            
+
             public Builder withUser(DatawaveUserDetails user) {
                 this.user = user;
                 return this;
             }
-            
+
             public Builder withTrustedUser(DatawaveUserDetails trustedUser) {
                 this.trustedUser = trustedUser;
                 return this;
             }
-            
+
             public Request build() {
                 return new Request(this);
             }

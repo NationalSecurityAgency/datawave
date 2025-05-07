@@ -29,10 +29,10 @@ import datawave.data.normalizer.regex.ZeroOrMoreNode;
  * Implementation of {@link CopyVisitor} that trims and consolidates leading zeros for partially encoded regex patterns.
  */
 public class ZeroTrimmer extends CopyVisitor {
-    
+
     /**
      * Return a copy of the node tree with all leading zeros for partially encoded regex patterns either trimmed and/or consolidated.
-     * 
+     *
      * @param node
      *            the node
      * @return the trimmed tree
@@ -44,7 +44,7 @@ public class ZeroTrimmer extends CopyVisitor {
         ZeroTrimmer visitor = new ZeroTrimmer();
         return (Node) node.accept(visitor, null);
     }
-    
+
     public static ZeroRegexStatus getStatus(List<Node> encodedRegexNodes) {
         if (hasPossiblyLeadingZeroes(encodedRegexNodes)) {
             return ZeroRegexStatus.LEADING;
@@ -52,21 +52,21 @@ public class ZeroTrimmer extends CopyVisitor {
             return ZeroRegexStatus.TRAILING;
         } else
             return ZeroRegexStatus.NONE;
-        
+
     }
-    
+
     private static boolean hasTrailingZeroes(List<Node> encodedRegexNodes) {
         Collections.reverse(encodedRegexNodes);
-        
+
         NodeListIterator iter = new NodeListIterator(encodedRegexNodes);
-        
+
         while (iter.hasNext()) {
             iter.seekPastQuestionMarks();
             iter.seekPastQuantifiers();
             iter.seekPastQuestionMarks();
-            
+
             Node next = iter.peekNext();
-            
+
             if (RegexUtils.matchesZero(next)) {
                 if (RegexUtils.matchesZeroExplicitly(next)) {
                     return true;
@@ -75,18 +75,18 @@ public class ZeroTrimmer extends CopyVisitor {
             } else {
                 return false;
             }
-            
+
         }
         return true;
-        
+
     }
-    
+
     private static boolean hasPossiblyLeadingZeroes(List<Node> encodedRegexNodes) {
         NodeListIterator iter = new NodeListIterator(encodedRegexNodes);
-        
+
         while (iter.hasNext()) {
             Node next = iter.peekNext();
-            
+
             if (RegexUtils.matchesZero(next)) {
                 return true;
             } else if (RegexUtils.isChar(next, RegexConstants.HYPHEN) || next.equals(new EscapedSingleCharNode(RegexConstants.PERIOD))) {
@@ -95,15 +95,15 @@ public class ZeroTrimmer extends CopyVisitor {
                 return false;
             }
         }
-        
+
         return true;
-        
+
     }
-    
+
     @Override
     public Object visitEncodedPattern(EncodedPatternNode node, Object data) {
         EncodedPatternNode trimmed = new EncodedPatternNode();
-        
+
         // Create a new node and add each child up to (inclusively) the 'E' character.
         int startOfRemainingNodes = 0;
         for (int i = 0; i < node.getChildCount(); i++) {
@@ -114,7 +114,7 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         // Copy the remaining children into a separate list. This list will be modified as zeros are trimmed.
         List<Node> nodes = new ArrayList<>();
         for (int i = startOfRemainingNodes; i < node.getChildCount(); i++) {
@@ -124,25 +124,25 @@ public class ZeroTrimmer extends CopyVisitor {
                 nodes.add(copy(child));
             }
         }
-        
+
         // Check if the remaining children represent a single regex element. If so, no trimming is required.
         if (isSingleElementPattern(nodes)) {
             trimmed.addChildren(nodes);
             return trimmed;
         }
-        
+
         // Trim leading and trailing zeros.
         nodes = trimLeadingZeros(nodes);
         nodes = trimTrailingZeros(nodes);
-        
+
         // Add the new nodes to the node to return.
         trimmed.addChildren(nodes);
         return trimmed;
     }
-    
+
     /**
      * Trim/consolidate leading zeros.
-     * 
+     *
      * @param nodes
      *            the nodes to trim
      * @return the trimmed nodes
@@ -151,10 +151,10 @@ public class ZeroTrimmer extends CopyVisitor {
         nodes = trimLeadingZeroOnlyElements(nodes);
         return consolidatePossibleLeadingZeros(nodes);
     }
-    
+
     /**
      * Trim/consolidate trailing zeros.
-     * 
+     *
      * @param nodes
      *            the nodes to trim
      * @return the trimmed nodes
@@ -168,10 +168,10 @@ public class ZeroTrimmer extends CopyVisitor {
         Collections.reverse(nodes);
         return nodes;
     }
-    
+
     /**
      * Return true if the given list consists only of one regex element that may or may not be followed by a quantifier or question mark.
-     * 
+     *
      * @param nodes
      *            the nodes
      * @return true if the list consists of a single element pattern, or false otherwise
@@ -183,10 +183,10 @@ public class ZeroTrimmer extends CopyVisitor {
         iter.seekPastQuestionMarks();
         return !iter.hasNext();
     }
-    
+
     /**
      * Trim all leading nodes that only match zero. Trimming will stop once the first element that can match something other than zero is seen.
-     * 
+     *
      * @param nodes
      *            the nodes
      * @return a list of trimmed nodes
@@ -204,14 +204,14 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         // If no leading zeros were seen, return the original list, otherwise return a sublist.
         return iter.index() == 0 ? nodes : new ArrayList<>(nodes.subList(iter.index(), nodes.size()));
     }
-    
+
     /**
      * Return a list with all possible leading zeros consolidated, and any elements made optional as needed.
-     * 
+     *
      * @param nodes
      *            the nodes to consolidate
      * @return a list of consolidated nodes
@@ -221,7 +221,7 @@ public class ZeroTrimmer extends CopyVisitor {
         if (!RegexUtils.matchesZero(nodes.get(0))) {
             return nodes;
         }
-        
+
         // Iterate through each child.
         NodeListIterator iter = new NodeListIterator(nodes);
         List<Node> consolidated = new ArrayList<>();
@@ -240,17 +240,17 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         // Add the remaining nodes to the list to return.
         while (iter.hasNext()) {
             consolidated.add(iter.next());
         }
         return consolidated;
     }
-    
+
     /**
      * Consolidate any leading zeros that can possibly match zero.
-     * 
+     *
      * @param iter
      *            the iterator
      * @return the consolidated nodes.
@@ -322,7 +322,7 @@ public class ZeroTrimmer extends CopyVisitor {
                     nodes.add(next);
                     nodes.add(new QuestionMarkNode());
                 }
-                
+
                 // If there are any elements directly after the current element that only match zero, consolidate then and add the result.
                 if (iter.hasNext() && RegexUtils.matchesZeroOnly(iter.peekNext())) {
                     nodes.addAll(consolidateLeadingMatchesZeroOnly(iter));
@@ -334,10 +334,10 @@ public class ZeroTrimmer extends CopyVisitor {
         }
         return nodes;
     }
-    
+
     /**
      * Consolidate the next consecutive elements that can only match zero.
-     * 
+     *
      * @param iter
      *            the iterator
      * @return a list of the consolidated nodes
@@ -346,7 +346,7 @@ public class ZeroTrimmer extends CopyVisitor {
         // We need to track the minimum and maximum times a leading zero can occur.
         int minZeroCount = 0;
         int maxZeroCount = 0;
-        
+
         while (iter.hasNext()) {
             // Do not call next until we've confirmed the next node only matches zero.
             Node next = iter.peekNext();
@@ -383,7 +383,7 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         List<Node> nodes = new ArrayList<>();
         // If the min and max are both 1, return 0?
         if (minZeroCount == 1 && maxZeroCount == 1) {
@@ -393,7 +393,7 @@ public class ZeroTrimmer extends CopyVisitor {
             // Otherwise we need return 0 followed by a quantifier inside an optional group.
             GroupNode groupNode = new GroupNode();
             groupNode.addChild(new SingleCharNode(RegexConstants.ZERO));
-            
+
             if (maxZeroCount == -1 && minZeroCount < 2) {
                 if (minZeroCount == 0) {
                     // Return (0*)?
@@ -417,27 +417,27 @@ public class ZeroTrimmer extends CopyVisitor {
                     }
                     repetition.addChild(integerRange);
                 }
-                
+
                 groupNode.addChild(repetition);
             }
             nodes.add(groupNode);
             // Ensure the group is optional.
             nodes.add(new QuestionMarkNode());
         }
-        
+
         return nodes;
     }
-    
+
     /**
      * Trim all trailing nodes that explicitly only match zero. Trimming will stop once the first element that can match something other than zero is seen.
-     * 
+     *
      * @param nodes
      *            the nodes
      * @return a list of trimmed nodes
      */
     private List<Node> trimTrailingZeroOnlyElements(List<Node> nodes) {
         NodeListIterator iter = new NodeListIterator(nodes);
-        
+
         while (iter.hasNext()) {
             // Keep a record of the current index so that we can reset it once we find an element that cannot match zero.
             int lastIndex = iter.index();
@@ -454,14 +454,14 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         // If no trailing zeros were seen, return the original list, otherwise return a sublist.
         return iter.index() == 0 ? nodes : new ArrayList<>(nodes.subList(iter.index(), nodes.size()));
     }
-    
+
     /**
      * Return a list with all possible trailing zeros consolidated, and any elements made optional as needed.
-     * 
+     *
      * @param nodes
      *            the nodes to consolidate
      * @return a list of consolidated nodes
@@ -470,7 +470,7 @@ public class ZeroTrimmer extends CopyVisitor {
         // List of consolidated nodes.
         List<Node> consolidated = new ArrayList<>();
         NodeListIterator iter = new NodeListIterator(nodes);
-        
+
         // Check if the pattern ends with '.+' or '.+?'. In this case, the '.+' must become a '.*' to allow for matching against numbers that had trailing zeros
         // that were subsequently trimmed when encoded.
         if (iter.hasNext()) {
@@ -490,13 +490,13 @@ public class ZeroTrimmer extends CopyVisitor {
                 iter.setIndex(lastIndex);
             }
         }
-        
+
         // Iterate through each child.
         while (iter.hasNext()) {
             int lastIndex = iter.index();
             iter.seekPastQuestionMarks();
             iter.seekPastQuantifiers();
-            
+
             // Do not call next until we know the next node can match zero.
             Node next = iter.peekNext();
             // The next node can match zero. Call next, and call the specific consolidation method based on whether the node can match only zero, or other
@@ -515,17 +515,17 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         // Add the remaining nodes to the list to return.
         while (iter.hasNext()) {
             consolidated.add(iter.next());
         }
         return consolidated;
     }
-    
+
     /**
      * Consolidate any trailing zeros that can possibly match zero.
-     * 
+     *
      * @param iter
      *            the iterator
      * @return the consolidated nodes.
@@ -534,7 +534,7 @@ public class ZeroTrimmer extends CopyVisitor {
         List<Node> nodes = new ArrayList<>();
         while (iter.hasNext()) {
             int lastIndex = iter.index();
-            
+
             // Skip past and capture the optional and quantifier for the node if present.
             Node questionMark = iter.isNextQuestionMark() ? iter.next() : null;
             Node quantifier = iter.isNextQuantifier() ? iter.next() : null;
@@ -599,7 +599,7 @@ public class ZeroTrimmer extends CopyVisitor {
                     nodes.add(new QuestionMarkNode());
                     nodes.add(next);
                 }
-                
+
                 // If there are any elements after the current element that only match zero, consolidate then and add the result.
                 if (iter.hasNext()) {
                     lastIndex = iter.index();
@@ -620,10 +620,10 @@ public class ZeroTrimmer extends CopyVisitor {
         }
         return nodes;
     }
-    
+
     /**
      * Consolidate the next consecutive elements that can only match zero.
-     * 
+     *
      * @param iter
      *            the iterator
      * @return a list of the consolidated nodes
@@ -632,14 +632,14 @@ public class ZeroTrimmer extends CopyVisitor {
         // We need to track the minimum and maximum times a leading zero can occur.
         int minZeroCount = 0;
         int maxZeroCount = 0;
-        
+
         while (iter.hasNext()) {
             int lastIndex = iter.index();
             // Skip any question mark if present.
             iter.seekPastQuestionMarks();
             // Grab the quantifier if present.
             Node quantifier = iter.isNextQuantifier() ? iter.next() : null;
-            
+
             // Do not call next until we've confirmed the next node only matches zero.
             Node next = iter.peekNext();
             if (RegexUtils.matchesZeroOnly(next)) {
@@ -674,11 +674,11 @@ public class ZeroTrimmer extends CopyVisitor {
                 break;
             }
         }
-        
+
         List<Node> nodes = new ArrayList<>();
         // Make the element optional.
         nodes.add(new QuestionMarkNode());
-        
+
         // If the min and max are both 1, return 0?
         if (minZeroCount == 1 && maxZeroCount == 1) {
             nodes.add(new SingleCharNode(RegexConstants.ZERO));
@@ -686,7 +686,7 @@ public class ZeroTrimmer extends CopyVisitor {
             // Otherwise we need return 0 followed by a quantifier inside an optional group.
             GroupNode groupNode = new GroupNode();
             groupNode.addChild(new SingleCharNode(RegexConstants.ZERO));
-            
+
             if (maxZeroCount == -1 && minZeroCount < 2) {
                 if (minZeroCount == 0) {
                     // Return (0*)?
@@ -710,13 +710,13 @@ public class ZeroTrimmer extends CopyVisitor {
                     }
                     repetition.addChild(integerRange);
                 }
-                
+
                 groupNode.addChild(repetition);
             }
-            
+
             nodes.add(groupNode);
         }
-        
+
         return nodes;
     }
 }

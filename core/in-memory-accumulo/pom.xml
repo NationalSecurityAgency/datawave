@@ -33,10 +33,26 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <version.accumulo>2.1.1</version.accumulo>
         <version.hadoop>3.3.4</version.hadoop>
+        <version.junit5>5.12.0</version.junit5>
+        <version.log4j.bom>2.17.2</version.log4j.bom>
         <version.mockito>2.28.2</version.mockito>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.junit5}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
@@ -48,8 +64,8 @@
                 <version>${version.accumulo}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>zookeeper</artifactId>
                         <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -62,6 +78,12 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
                 <version>${version.hadoop}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -102,39 +124,32 @@
                 <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
-                    <version>2.10.0</version>
-                    <executions>
-                        <execution>
-                            <id>sort-pom</id>
-                            <phase>process-sources</phase>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                        </execution>
-                    </executions>
+                    <version>4.0.0</version>
                     <configuration>
+                        <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
                         <createBackupFile>false</createBackupFile>
                         <lineSeparator>\n</lineSeparator>
+                        <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
                         <expandEmptyElements>false</expandEmptyElements>
                         <nrOfIndentSpace>4</nrOfIndentSpace>
                         <sortDependencies>scope,groupId,artifactId</sortDependencies>
                         <sortPlugins>groupId,artifactId</sortPlugins>
                         <sortProperties>true</sortProperties>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>sort-pom</id>
+                            <goals>
+                                <goal>sort</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>net.revelc.code</groupId>
                     <artifactId>impsort-maven-plugin</artifactId>
                     <version>1.9.0</version>
-                    <executions>
-                        <execution>
-                            <id>sort-imports</id>
-                            <phase>process-sources</phase>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <groups>java.,javax.,org.,com.</groups>
                         <staticGroups>java,*</staticGroups>
@@ -142,18 +157,28 @@
                             <exclude>**/thrift/*.java</exclude>
                         </excludes>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>sort-imports</id>
+                            <goals>
+                                <goal>sort</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
-                    <version>2.16.0</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>format</goal>
-                            </goals>
-                        </execution>
-                    </executions>
+                    <version>2.23.0</version>
+                    <configuration>
+                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
+                        <lineEnding>LF</lineEnding>
+                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
+                        <compilerSource>${maven.compiler.source}</compilerSource>
+                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                    </configuration>
                     <dependencies>
                         <dependency>
                             <groupId>gov.nsa.datawave</groupId>
@@ -161,13 +186,79 @@
                             <version>1.0</version>
                         </dependency>
                     </dependencies>
-                    <configuration>
-                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
-                        <lineEnding>LF</lineEnding>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
-                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>format</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <executions>
+                        <execution>
+                            <id>enforce-maven</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireMavenVersion>
+                                        <version>3.6.3</version>
+                                    </requireMavenVersion>
+                                </rules>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>enforce-banned-dependencies</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <bannedDependencies>
+                                        <excludes>
+                                            <exclude>log4j:log4j</exclude>
+                                            <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                            <exclude>ch.qos.logback:logback-classic</exclude>
+                                        </excludes>
+                                    </bannedDependencies>
+                                </rules>
+                                <fail>true</fail>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>ch.qos.reload4j</groupId>
+                            <artifactId>reload4j</artifactId>
+                            <version>1.2.22</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-site-renderer</artifactId>
+                            <version>1.7.4</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -179,82 +270,18 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
-                    <optimize>true</optimize>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <!-- build javadoc jars per module for publishing to the repo -->
-                    <execution>
-                        <id>module-apidocs</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <configuration>
-                            <encoding>UTF-8</encoding>
-                            <destDir>${project.build.directory}/apidocs</destDir>
-                            <javadocVersion>1.8.0</javadocVersion>
-                            <additionalJOption>-J-Xmx768m</additionalJOption>
-                            <show>private</show>
-                            <quiet>true</quiet>
-                            <javaApiLinks>
-                                <property>
-                                    <name>api_1.8</name>
-                                    <value>http://docs.oracle.com/javase/8/docs/api</value>
-                                </property>
-                            </javaApiLinks>
-                        </configuration>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>ch.qos.reload4j</groupId>
-                        <artifactId>reload4j</artifactId>
-                        <version>1.2.22</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.maven.doxia</groupId>
-                        <artifactId>doxia-site-renderer</artifactId>
-                        <version>1.7.4</version>
-                        <exclusions>
-                            <exclusion>
-                                <artifactId>log4j</artifactId>
-                                <groupId>log4j</groupId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
+                <version>3.1.1</version>
                 <configuration>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <releaseProfiles>dist</releaseProfiles>
                     <arguments>-Ddist</arguments>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <!-- Build source jars and attach them to the project for publishing -->
-                    <execution>
-                        <id>datawave-java-sources</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                            <goal>test-jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
@@ -281,6 +308,10 @@
                         <groupId>net.revelc.code.formatter</groupId>
                         <artifactId>formatter-maven-plugin</artifactId>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -297,19 +328,17 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.0.1</version>
                         <executions>
                             <!-- build javadoc jars per module for publishing to the repo -->
                             <execution>
                                 <id>module-apidocs</id>
-                                <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <phase>package</phase>
                                 <configuration>
                                     <encoding>UTF-8</encoding>
-                                    <destDir>${project.build.directory}/apidocs</destDir>
-                                    <javadocVersion>1.8.0</javadocVersion>
+                                    <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <tags>
                                         <tag>
@@ -344,24 +373,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>ch.qos.reload4j</groupId>
-                                <artifactId>reload4j</artifactId>
-                                <version>1.2.22</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.apache.maven.doxia</groupId>
-                                <artifactId>doxia-site-renderer</artifactId>
-                                <version>1.7.4</version>
-                                <exclusions>
-                                    <exclusion>
-                                        <artifactId>log4j</artifactId>
-                                        <groupId>log4j</groupId>
-                                    </exclusion>
-                                </exclusions>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -370,11 +381,11 @@
                             <!-- Build source jars and attach them to the project for publishing -->
                             <execution>
                                 <id>java-sources</id>
-                                <phase>package</phase>
                                 <goals>
                                     <goal>jar-no-fork</goal>
                                     <goal>test-jar-no-fork</goal>
                                 </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>

@@ -167,8 +167,8 @@ public class ModelBean {
             }
 
         } catch (Exception e) {
+            log.error(String.format("Exception when listing models from table %s : %s", modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_NAME_LIST_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -366,8 +366,8 @@ public class ModelBean {
                 }
             }
         } catch (Exception e) {
+            log.error(String.format("Exception when getting model %s from table %s : %s", name, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_FETCH_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -432,7 +432,8 @@ public class ModelBean {
                 writer.addMutation(m);
             }
         } catch (Exception e) {
-            log.error("Could not insert mapping.", e);
+            String modelName = model == null ? null : model.getName();
+            log.error(String.format("Exception when inserting model %s into table %s : %s", modelName, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.INSERT_MAPPING_ERROR, e);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
@@ -509,7 +510,8 @@ public class ModelBean {
                 writer.addMutation(m);
             }
         } catch (Exception e) {
-            log.error("Could not delete mapping.", e);
+            String modelName = model == null ? null : model.getName();
+            log.error(String.format("Exception when deleting model %s from table %s : %s", modelName, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MAPPING_DELETION_ERROR, e);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);

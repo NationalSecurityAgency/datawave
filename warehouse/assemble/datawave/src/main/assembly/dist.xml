@@ -158,7 +158,6 @@
             <fileMode>0444</fileMode>
             <includes>
                   <include>org.apache.commons:commons-lang3</include>
-                  <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-core</include>
                   <include>${groupId}:datawave-ingest-csv</include>
                   <include>${groupId}:datawave-ingest-json</include>

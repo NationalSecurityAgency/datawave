@@ -82,7 +82,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping(path = "/v1")
 public class QueryMetricOperations {
     private Logger log = LoggerFactory.getLogger(QueryMetricOperations.class);
-    
+
     private ShardTableQueryMetricHandler handler;
     private QueryGeometryHandler geometryHandler;
     private CacheManager cacheManager;
@@ -95,10 +95,10 @@ public class QueryMetricOperations {
     private MetricUpdateEntryProcessorFactory entryProcessorFactory;
     private QueryMetricOperationsStats stats;
     private static Set<String> inProcess = Collections.synchronizedSet(new HashSet<>());
-    
+
     private final QueryMetricClient queryMetricClient;
     private final DnUtils dnUtils;
-    
+
     /**
      * The enum Default datetime.
      */
@@ -112,7 +112,7 @@ public class QueryMetricOperations {
          */
         END
     }
-    
+
     /**
      * Instantiates a new QueryMetricOperations.
      *
@@ -157,7 +157,7 @@ public class QueryMetricOperations {
         this.queryMetricClient = queryMetricClient;
         this.dnUtils = dnUtils;
     }
-    
+
     @PreDestroy
     public void shutdown() {
         if (this.correlator.isEnabled()) {
@@ -168,7 +168,7 @@ public class QueryMetricOperations {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
-                    
+
                 }
             }
             ensureUpdatesProcessed(false);
@@ -176,11 +176,11 @@ public class QueryMetricOperations {
         this.stats.queueAggregatedQueryStatsForTimely();
         this.stats.writeQueryStatsToTimely();
     }
-    
+
     public boolean isTimedCorrelationInProgress() {
         return this.timedCorrelationInProgress.get();
     }
-    
+
     @Scheduled(fixedDelay = 2000)
     public void ensureUpdatesProcessedScheduled() {
         // don't write metrics from this thread while shutting down,
@@ -194,7 +194,7 @@ public class QueryMetricOperations {
             }
         }
     }
-    
+
     public void ensureUpdatesProcessed(boolean scheduled) {
         if (this.correlator.isEnabled()) {
             List<QueryMetricUpdate> correlatedUpdates;
@@ -214,7 +214,7 @@ public class QueryMetricOperations {
             } while (!(scheduled && this.correlator.isShuttingDown()) && correlatedUpdates != null && !correlatedUpdates.isEmpty());
         }
     }
-    
+
     /**
      * Update metrics void response.
      *
@@ -254,7 +254,7 @@ public class QueryMetricOperations {
         }
         return new VoidResponse();
     }
-    
+
     /**
      * Update metric void response.
      *
@@ -294,11 +294,11 @@ public class QueryMetricOperations {
         }
         return new VoidResponse();
     }
-    
+
     private String getClusterLocalMemberUuid() {
         return ((HazelcastCacheManager) this.cacheManager).getHazelcastInstance().getCluster().getLocalMember().getUuid().toString();
     }
-    
+
     public QueryMetricUpdateHolder combineMetricUpdates(List<QueryMetricUpdate> updates, QueryMetricType metricType) throws Exception {
         BaseQueryMetric combinedMetric = null;
         Lifecycle lowestLifecycle = null;
@@ -317,7 +317,7 @@ public class QueryMetricOperations {
         metricUpdateHolder.updateLowestLifecycle(lowestLifecycle);
         return metricUpdateHolder;
     }
-    
+
     public void storeMetricUpdate(QueryMetricUpdateHolder metricUpdate) {
         Timer.Context storeTimer = this.stats.getTimer(TIMERS.STORE).time();
         String queryId = metricUpdate.getMetric().getQueryId();
@@ -349,11 +349,11 @@ public class QueryMetricOperations {
             storeTimer.stop();
         }
     }
-    
+
     public static Set<String> getInProcess() {
         return inProcess;
     }
-    
+
     /**
      * Returns metrics for the current users queries that are identified by the id
      *
@@ -370,7 +370,7 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/id/{queryId}", method = {RequestMethod.GET}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public BaseQueryMetricListResponse query(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId) {
-        
+
         BaseQueryMetricListResponse response = queryMetricResponseFactory.createListResponse();
         List<BaseQueryMetric> metricList = new ArrayList<>();
         long startTime = System.currentTimeMillis();
@@ -413,14 +413,14 @@ public class QueryMetricOperations {
                 candidateMetrics.addAll(metricsFromAccumulo);
                 timerType = TIMERS.QUERY_FROM_ACCUMULO;
             }
-            
+
             for (BaseQueryMetric metric : candidateMetrics) {
                 // Ensure that the requesting user has the necessary Authorizations to view the query metric
                 if ((isMetricsAdministrator(currentUser) || isSameUser(currentUser, metric)) && canViewMetric(currentUser, metric)) {
                     metricList.add(metric);
                 }
             }
-            
+
             // Set the result to have the formatted query and query plan
             // StackOverflowErrors seen in JexlFormattedStringBuildingVisitor.formatMetrics, so protect
             // this call for each metric with try/catch and add original metric if formatMetrics fails
@@ -457,7 +457,7 @@ public class QueryMetricOperations {
         }
         return response;
     }
-    
+
     private boolean isSameUser(DatawaveUserDetails currentUser, BaseQueryMetric metric) {
         boolean sameUser = false;
         if (currentUser != null) {
@@ -467,7 +467,7 @@ public class QueryMetricOperations {
         }
         return sameUser;
     }
-    
+
     private boolean isMetricsAdministrator(DatawaveUserDetails currentUser) {
         boolean isMetricsAdministrator = false;
         if (currentUser != null) {
@@ -475,7 +475,7 @@ public class QueryMetricOperations {
         }
         return isMetricsAdministrator;
     }
-    
+
     private boolean canViewMetric(DatawaveUserDetails currentUser, BaseQueryMetric metric) throws Exception {
         boolean userCanViewMetric = true;
         ColumnVisibility columnVisibility = this.markingFunctions.translateToColumnVisibility(metric.getMarkings());
@@ -489,7 +489,7 @@ public class QueryMetricOperations {
         }
         return userCanViewMetric;
     }
-    
+
     /**
      * Returns metrics for the current users queries that are identified by the id
      *
@@ -507,14 +507,14 @@ public class QueryMetricOperations {
     public ModelAndView queryWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId,
                     @Parameter(description = "queryId to return") @RequestParam(name = "display", required = false) String display) {
-        
+
         BaseQueryMetricListResponse response = query(currentUser, queryId);
         if (StringUtils.isNotBlank(display) && display.equalsIgnoreCase("horizontal")) {
             response.setViewName("querymetric-horizontal");
         }
         return response.createModelAndView();
     }
-    
+
     /**
      * Get a map for the given query represented by the query ID, if applicable.
      *
@@ -540,7 +540,7 @@ public class QueryMetricOperations {
             return queryGeometryResponse;
         }
     }
-    
+
     /*
      * Try to determine if cached metric is complete or whether it may be missing pages because it was evicted from the incoming cache
      */
@@ -559,7 +559,7 @@ public class QueryMetricOperations {
             }
         }
     }
-    
+
     /*
      * Pages could be missing if the metricUpdate was evicted from the incomingQueryMetricsCache. If so, then retrieve the full metric from Accumulo and combine
      * metrics so that the requesting user gets the complete metric.
@@ -581,14 +581,14 @@ public class QueryMetricOperations {
         }
         return metricUpdate;
     }
-    
+
     @Operation(summary = "Get a map for the given query represented by the query ID, if applicable.")
     @PermitAll
     @RequestMapping(path = "/id/{queryId}/map", method = {RequestMethod.GET, RequestMethod.POST}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView mapWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser, @PathVariable("queryId") String queryId) {
         return map(currentUser, queryId).createModelAndView();
     }
-    
+
     private static Date parseDate(String dateString, DEFAULT_DATETIME defaultDateTime) throws IllegalArgumentException {
         if (StringUtils.isBlank(dateString)) {
             return null;
@@ -610,9 +610,9 @@ public class QueryMetricOperations {
             }
         }
     }
-    
+
     private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, DatawaveUserDetails currentUser, boolean onlyCurrentUser) {
-        
+
         if (null == end) {
             end = new Date();
         }
@@ -633,7 +633,7 @@ public class QueryMetricOperations {
         }
         return response;
     }
-    
+
     /**
      * Returns a summary of the query metrics
      *
@@ -652,7 +652,7 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/summary/all", method = {RequestMethod.GET}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public QueryMetricsSummaryResponse getQueryMetricsSummary(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @RequestParam(required = false) String begin, @RequestParam(required = false) String end) {
-        
+
         try {
             return queryMetricsSummary(parseDate(begin, BEGIN), parseDate(end, END), currentUser, false);
         } catch (Exception e) {
@@ -661,7 +661,7 @@ public class QueryMetricOperations {
             return response;
         }
     }
-    
+
     /**
      * Returns a summary of the query metrics
      *
@@ -680,10 +680,10 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/summary/all", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView getQueryMetricsSummaryWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser, @RequestParam(required = false) String begin,
                     @RequestParam(required = false) String end) {
-        
+
         return getQueryMetricsSummary(currentUser, begin, end).createModelAndView();
     }
-    
+
     /**
      * Returns a summary of the requesting user's query metrics
      *
@@ -710,7 +710,7 @@ public class QueryMetricOperations {
             return response;
         }
     }
-    
+
     /**
      * Returns a summary of the requesting user's query metrics
      *
@@ -729,10 +729,10 @@ public class QueryMetricOperations {
     @RequestMapping(path = "/summary/user", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView getQueryMetricsUserSummaryWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
                     @RequestParam(required = false) String begin, @RequestParam(required = false) String end) {
-        
+
         return getQueryMetricsUserSummary(currentUser, begin, end).createModelAndView();
     }
-    
+
     /**
      * Returns cache stats for the local part of the distributed Hazelcast cache
      *
@@ -752,21 +752,21 @@ public class QueryMetricOperations {
         try {
             cacheStats.setHost(InetAddress.getLocalHost().getCanonicalHostName());
         } catch (Exception e) {
-            
+
         }
         return cacheStats;
     }
-    
+
     @Scheduled(fixedRateString = "${datawave.query.metric.stats.logServiceStatsRateMs:300000}")
     public void logStats() {
         this.stats.logServiceStats();
     }
-    
+
     @Scheduled(fixedRateString = "${datawave.query.metric.stats.publishServiceStatsToTimelyRateMs:60000}")
     public void publishServiceStatsToTimely() {
         this.stats.writeServiceStatsToTimely();
     }
-    
+
     @Scheduled(fixedRateString = "${datawave.query.metric.stats.publishQueryStatsToTimelyRateMs:60000}")
     public void publishQueryStatsToTimely() {
         this.stats.queueAggregatedQueryStatsForTimely();

@@ -55,22 +55,22 @@ import datawave.webservice.result.VoidResponse;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class LookupServiceTest extends AbstractQueryServiceTest {
-    
+
     @Autowired
     public LookupProperties lookupProperties;
-    
+
     @Test
     public void testLookupUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
         MultiValueMap<String,String> uuidParams = createUUIDParams();
-        
+
         String uuidType = "PAGE_TITLE";
         String uuid = "anarchy";
-        
+
         Future<ResponseEntity<DefaultEventQueryResponse>> future = lookupUUID(authUser, uuidParams, uuidType, uuid);
-        
+
         String queryId = null;
-        
+
         // get the lookup query id
         QueryStatus queryStatus = null;
         long startTime = System.currentTimeMillis();
@@ -83,18 +83,18 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Thread.sleep(500);
             }
         }
-        
+
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStatus.getQuery().getPagesize();
-        
+
         // test field value pairings
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add(uuidType, uuid);
-        
+
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
-        
+
         // @formatter:off
         publishEventsToQueue(
                 queryId,
@@ -102,11 +102,11 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 fieldValues,
                 "ALL");
         // @formatter:on
-        
+
         ResponseEntity<DefaultEventQueryResponse> response = future.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         // verify some headers
         Assertions.assertEquals("1",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
@@ -114,9 +114,9 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
         Assertions.assertEquals("false",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
-        
+
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
-        
+
         // verify the query response
         // @formatter:off
         assertQueryResponse(
@@ -130,7 +130,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 pageSize,
                 Objects.requireNonNull(queryResponse));
         // @formatter:on
-        
+
         // validate one of the events
         DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
         // @formatter:off
@@ -139,7 +139,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Collections.singletonList(uuid),
                 event);
         // @formatter:on
-        
+
         // verify that the correct events were published
         Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
@@ -160,18 +160,18 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE_TITLE:anarchy OR PAGE_TITLE:accessiblecomputing");
-        
+
         Future<ResponseEntity<DefaultEventQueryResponse>> future = batchLookupUUID(authUser, uuidParams);
-        
+
         String queryId = null;
-        
+
         // get the lookup query id
         QueryStatus queryStatus = null;
         long startTime = System.currentTimeMillis();
@@ -184,19 +184,19 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Thread.sleep(500);
             }
         }
-        
+
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
-        
+
         // test field value pairings
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add("PAGE_TITLE", "anarchy");
         fieldValues.add("PAGE_TITLE", "accessiblecomputing");
-        
+
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
-        
+
         // @formatter:off
         publishEventsToQueue(
                 queryId,
@@ -204,11 +204,11 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 fieldValues,
                 "ALL");
         // @formatter:on
-        
+
         ResponseEntity<DefaultEventQueryResponse> response = future.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         // verify some headers
         Assertions.assertEquals("1",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
@@ -216,9 +216,9 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
         Assertions.assertEquals("false",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
-        
+
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
-        
+
         // verify the query response
         // @formatter:off
         assertQueryResponse(
@@ -232,7 +232,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 pageSize,
                 Objects.requireNonNull(queryResponse));
         // @formatter:on
-        
+
         // validate one of the events
         DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
         // @formatter:off
@@ -241,7 +241,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Arrays.asList("anarchy", "accessiblecomputing"),
                 event);
         // @formatter:on
-        
+
         // verify that the correct events were published
         Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
@@ -262,19 +262,19 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testLookupContentUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
         MultiValueMap<String,String> uuidParams = createUUIDParams();
-        
+
         String uuidType = "PAGE_TITLE";
         String uuid = "anarchy";
-        
+
         Future<ResponseEntity<DefaultEventQueryResponse>> future = lookupContentUUID(authUser, uuidParams, uuidType, uuid);
-        
+
         String queryId = null;
-        
+
         // get the lookup query id
         QueryStatus queryStatus = null;
         long startTime = System.currentTimeMillis();
@@ -287,18 +287,18 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Thread.sleep(500);
             }
         }
-        
+
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStatus.getQuery().getPagesize();
-        
+
         // test field value pairings
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add(uuidType, uuid);
-        
+
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
-        
+
         // @formatter:off
         publishEventsToQueue(
                 queryId,
@@ -306,7 +306,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 fieldValues,
                 "ALL");
         // @formatter:on
-        
+
         Set<String> contentQueryIds = null;
         // wait for the initial event query to be closed
         startTime = System.currentTimeMillis();
@@ -326,12 +326,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             }
             Thread.sleep(500);
         }
-        
+
         Assertions.assertNotNull(contentQueryIds);
         for (String contentQueryId : contentQueryIds) {
             MultiValueMap<String,String> contentFieldValues = new LinkedMultiValueMap<>();
             contentFieldValues.add("CONTENT", "look I made you some content!");
-            
+
             // @formatter:off
             publishEventsToQueue(
                     contentQueryId,
@@ -340,11 +340,11 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                     "ALL");
             // @formatter:on
         }
-        
+
         ResponseEntity<DefaultEventQueryResponse> response = future.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         // verify some headers
         Assertions.assertEquals("1",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
@@ -352,13 +352,13 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
         Assertions.assertEquals("false",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
-        
+
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
-        
+
         String responseQueryId = queryResponse.getQueryId();
-        
+
         Assertions.assertTrue(contentQueryIds.contains(responseQueryId));
-        
+
         // verify the query response
         // @formatter:off
         assertContentQueryResponse(
@@ -370,7 +370,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 pageSize,
                 Objects.requireNonNull(queryResponse));
         // @formatter:on
-        
+
         // validate one of the events
         DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
         // @formatter:off
@@ -379,7 +379,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Collections.singletonList("look I made you some content!"),
                 event);
         // @formatter:on
-        
+
         // verify that the correct events were published
         Assertions.assertEquals(7, queryRequestEvents.size());
         // @formatter:off
@@ -420,21 +420,21 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     // Test is randomly failing so disabling for now
     @Test
     @Disabled
     public void testBatchLookupContentUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE_TITLE:anarchy OR PAGE_TITLE:accessiblecomputing");
         uuidParams.add(QUERY_MAX_RESULTS_OVERRIDE, "10");
-        
+
         Future<ResponseEntity<DefaultEventQueryResponse>> future = batchLookupContentUUID(authUser, uuidParams);
-        
+
         String queryId = null;
-        
+
         // get the lookup query id
         QueryStatus queryStatus = null;
         long startTime = System.currentTimeMillis();
@@ -447,19 +447,19 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Thread.sleep(500);
             }
         }
-        
+
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStatus.getQuery().getPagesize();
-        
+
         // test field value pairings
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add("PAGE_TITLE", "anarchy");
         fieldValues.add("PAGE_TITLE", "accessiblecomputing");
-        
+
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
-        
+
         // @formatter:off
         publishEventsToQueue(
                 queryId,
@@ -467,7 +467,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 fieldValues,
                 "ALL");
         // @formatter:on
-        
+
         Set<String> contentQueryIds = null;
         // wait for the initial event query to be closed
         startTime = System.currentTimeMillis();
@@ -487,12 +487,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             }
             Thread.sleep(500);
         }
-        
+
         Assertions.assertNotNull(contentQueryIds);
         for (String contentQueryId : contentQueryIds) {
             MultiValueMap<String,String> contentFieldValues = new LinkedMultiValueMap<>();
             contentFieldValues.add("CONTENT", "look I made you some content!");
-            
+
             // @formatter:off
             publishEventsToQueue(
                     contentQueryId,
@@ -501,7 +501,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                     "ALL");
             // @formatter:on
         }
-        
+
         // wait until each query has read its results, and then close it
         for (String contentQueryId : contentQueryIds) {
             QueryStatus status = queryStorageCache.getQueryStatus(contentQueryId);
@@ -511,11 +511,11 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 status = queryStorageCache.getQueryStatus(contentQueryId);
             }
         }
-        
+
         ResponseEntity<DefaultEventQueryResponse> response = future.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         // verify some headers
         Assertions.assertEquals("1",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"), response.getHeaders().toString())));
@@ -523,13 +523,13 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"), response.getHeaders().toString())));
         Assertions.assertEquals("false",
                         Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"), response.getHeaders().toString())));
-        
+
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
-        
+
         String responseQueryId = queryResponse.getQueryId();
-        
+
         Assertions.assertTrue(contentQueryIds.contains(responseQueryId));
-        
+
         // verify the query response
         // @formatter:off
         assertContentQueryResponse(
@@ -541,7 +541,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 pageSize,
                 Objects.requireNonNull(queryResponse));
         // @formatter:on
-        
+
         // validate one of the events
         DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
         // @formatter:off
@@ -550,7 +550,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Collections.singletonList("look I made you some content!"),
                 event);
         // @formatter:on
-        
+
         // verify that the correct events were published
         Assertions.assertEquals(7, queryRequestEvents.size());
         // @formatter:off
@@ -591,24 +591,24 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_noLookupUUIDPairs() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Missing required parameter.",
@@ -617,25 +617,25 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_mixedQueryLogics() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE_TITLE:anarchy OR PAGE_NUMBER:accessiblecomputing");
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Multiple UUID types 'LuceneUUIDEventQuery' and 'EventQuery' not supported within the same lookup request",
@@ -644,25 +644,25 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_nullUUIDType() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE:anarchy");
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Invalid type 'PAGE' for UUID anarchy not supported with the LuceneToJexlUUIDQueryParser",
@@ -671,25 +671,25 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_emptyUUIDFieldValue() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, ":anarchy");
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Empty UUID type or value extracted from uuidPair :anarchy",
@@ -698,25 +698,25 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_invalidUUIDPair() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, ":");
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Unable to determine UUID type and value from uuidPair :",
@@ -725,13 +725,13 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_tooManyTerms() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
-        
+
         StringBuilder lookupUUIDPairs = new StringBuilder();
         for (int i = 0; i < lookupProperties.getBatchLookupLimit() + 1; i++) {
             if (i > 0) {
@@ -740,18 +740,18 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             lookupUUIDPairs.append("PAGE_TITLE:anarchy-").append(i);
         }
         uuidParams.add(LOOKUP_UUID_PAIRS, lookupUUIDPairs.toString());
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(400, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "The " + (lookupProperties.getBatchLookupLimit() + 1) + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupLimit() + " allowed for a given lookup request",
@@ -760,25 +760,25 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     @Test
     public void testBatchLookupUUIDFailure_nonLookupQueryLogic() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE_NUMBER:accessiblecomputing");
-        
+
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, uuidParams, null, HttpMethod.POST, uri);
-        
+
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
-        
+
         Assertions.assertEquals(500, response.getStatusCodeValue());
-        
+
         // @formatter:off
         assertQueryException(
                 "Error setting up query. Lookup UUID can only be run with a LookupQueryLogic",
@@ -787,7 +787,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on
     }
-    
+
     protected MultiValueMap<String,String> createUUIDParams() {
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
         map.set(DefaultQueryParameters.QUERY_NAME, TEST_QUERY_NAME);
@@ -796,49 +796,49 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         map.set(QUERY_MAX_CONCURRENT_TASKS, Integer.toString(1));
         return map;
     }
-    
+
     protected Future<ResponseEntity<DefaultEventQueryResponse>> batchLookupUUID(DatawaveUserDetails authUser, MultiValueMap<String,String> map) {
         UriComponents uri = createUri("lookupUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, DefaultEventQueryResponse.class));
     }
-    
+
     protected Future<ResponseEntity<DefaultEventQueryResponse>> lookupUUID(DatawaveUserDetails authUser, MultiValueMap<String,String> map, String uuidType,
                     String uuid) {
         UriComponents uri = createUri("lookupUUID/" + uuidType + "/" + uuid);
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.GET, uri);
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, DefaultEventQueryResponse.class));
     }
-    
+
     protected Future<ResponseEntity<DefaultEventQueryResponse>> batchLookupContentUUID(DatawaveUserDetails authUser, MultiValueMap<String,String> map) {
         UriComponents uri = createUri("lookupContentUUID");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, DefaultEventQueryResponse.class));
     }
-    
+
     protected Future<ResponseEntity<DefaultEventQueryResponse>> lookupContentUUID(DatawaveUserDetails authUser, MultiValueMap<String,String> map,
                     String uuidType, String uuid) {
         UriComponents uri = createUri("lookupContentUUID/" + uuidType + "/" + uuid);
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.GET, uri);
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, DefaultEventQueryResponse.class));
     }
-    
+
     protected void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
         QueryResultsPublisher publisher = queryQueueManager.createPublisher(queryId);
         for (int resultId = 0; resultId < numEvents; resultId++) {
@@ -851,7 +851,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 }
             }
             event.setFields(fields);
-            
+
             Metadata metadata = new Metadata();
             // tonight i'm gonna party like it's
             metadata.setRow("19991231_0");
@@ -861,7 +861,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             publisher.publish(new Result(Integer.toString(resultId), event));
         }
     }
-    
+
     protected void assertContentQueryResponse(String queryId, String logicName, long pageNumber, boolean partialResults, long operationTimeInMS, int numEvents,
                     DefaultEventQueryResponse queryResponse) {
         Assertions.assertEquals(queryId, queryResponse.getQueryId());

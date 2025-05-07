@@ -20,11 +20,11 @@ import datawave.data.normalizer.regex.RepetitionNode;
  * </ul>
  */
 public class ZeroLengthRepetitionTrimmer extends SubExpressionVisitor {
-    
+
     /**
      * Return a copy of the given tree trimmed of all characters followed by a zero-length repetition quantifier. If the entire tree is trimmed, null will be
      * returned, otherwise an {@link ExpressionNode} with the trimmed tree will be returned.
-     * 
+     *
      * @param node
      *            the node to trim
      * @return the trimmed node
@@ -36,18 +36,18 @@ public class ZeroLengthRepetitionTrimmer extends SubExpressionVisitor {
         ZeroLengthRepetitionTrimmer visitor = new ZeroLengthRepetitionTrimmer();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         Node visited = (Node) super.visitExpression(node, data);
         return visited != null && visited.isLeaf() ? null : visited;
     }
-    
+
     @Override
     protected Object visitSubExpression(Node node) {
         Node copy = new ExpressionNode();
         NodeListIterator iter = node.getChildrenIterator();
-        
+
         // Check each child for any zero-length repetitions.
         while (iter.hasNext()) {
             Node next = iter.next();
@@ -69,7 +69,7 @@ public class ZeroLengthRepetitionTrimmer extends SubExpressionVisitor {
                 copy.addChild(copy(next));
             }
         }
-        
+
         // If we have any children after removing zero-length repetitions, return the copy. Otherwise, return null.
         if (copy.hasChildren()) {
             return copy;
@@ -77,10 +77,10 @@ public class ZeroLengthRepetitionTrimmer extends SubExpressionVisitor {
             return null;
         }
     }
-    
+
     /**
      * Return whether the given repetition is {@code {0}} or {@code {0,0}}.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the given repetition is a zero-length repetition, or false otherwise

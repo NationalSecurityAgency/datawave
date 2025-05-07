@@ -45,10 +45,10 @@ import datawave.microservice.query.mapreduce.status.cache.MapReduceQueryStatusCa
 @EnableCaching
 @ConditionalOnProperty(name = MapReduceQueryProperties.PREFIX + ".enabled", havingValue = "true", matchIfMissing = true)
 public class MapReduceQueryConfiguration {
-    
+
     @Autowired
     private ApplicationContext applicationContext;
-    
+
     @Bean
     public MapReduceQueryIdByJobIdCache mapReduceQueryIdByJobIdCache(
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
@@ -61,7 +61,7 @@ public class MapReduceQueryConfiguration {
         }
         return new MapReduceQueryIdByJobIdCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public MapReduceQueryIdByUsernameCache mapReduceQueryIdByUsernameCache(
                     @Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
@@ -74,7 +74,7 @@ public class MapReduceQueryConfiguration {
         }
         return new MapReduceQueryIdByUsernameCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public MapReduceQueryStatusCache mapReduceQueryStatusCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
                     @Qualifier("cacheManager") CacheManager cacheManager) {
@@ -86,18 +86,18 @@ public class MapReduceQueryConfiguration {
         }
         return new MapReduceQueryStatusCache(lockableCacheInspector);
     }
-    
+
     @Bean
     public MapReduceQueryCache mapReduceQueryCache(MapReduceQueryStatusCache queryStatusCache, MapReduceQueryIdByJobIdCache queryIdByJobIdCache,
                     MapReduceQueryIdByUsernameCache queryIdByUsernameCache) {
         return new MapReduceQueryCache(queryStatusCache, queryIdByJobIdCache, queryIdByUsernameCache);
     }
-    
+
     @Bean
     public Map<String,String> propertiesMap() {
         Environment env = applicationContext.getEnvironment();
         Map<String,String> propertiesMap = new HashMap<>();
-        
+
         // @formatter:off
         ((ConfigurableEnvironment) applicationContext.getEnvironment()).getPropertySources().stream()
                 .filter(ps -> ps instanceof EnumerablePropertySource)
@@ -105,10 +105,10 @@ public class MapReduceQueryConfiguration {
                 .flatMap(Arrays::stream).distinct()
                 .forEach(prop -> putProperty(propertiesMap, prop));
         // @formatter:on
-        
+
         return propertiesMap;
     }
-    
+
     private void putProperty(Map<String,String> propertiesMap, String prop) {
         Environment env = applicationContext.getEnvironment();
         try {
@@ -117,26 +117,26 @@ public class MapReduceQueryConfiguration {
             // ignoring property
         }
     }
-    
+
     @ConditionalOnMapReduceJob("BulkResultsJob")
     @Bean("BulkResultsJob")
     public Supplier<MapReduceJob> bulkResultsJob(MapReduceQueryProperties mapReduceQueryProperties, Map<String,String> propertiesMap) {
         return () -> new BulkResultsJob(mapReduceQueryProperties, new HashMap<>(propertiesMap));
     }
-    
+
     @ConditionalOnMapReduceJob("OozieJob")
     @Bean("OozieJob")
     public Supplier<MapReduceJob> oozieJob(MapReduceQueryProperties mapReduceQueryProperties) {
         return () -> new OozieJob(mapReduceQueryProperties);
     }
-    
+
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Conditional(MapReduceJobCondition.class)
     public static @interface ConditionalOnMapReduceJob {
         String value();
     }
-    
+
     public static class MapReduceJobCondition implements Condition {
         @Override
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {

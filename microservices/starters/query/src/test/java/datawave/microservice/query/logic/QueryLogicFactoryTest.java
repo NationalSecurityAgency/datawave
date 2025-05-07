@@ -23,16 +23,16 @@ import datawave.webservice.query.exception.QueryException;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles({"QueryStarterDefaults", "QueryLogicFactoryTest"})
 public class QueryLogicFactoryTest {
-    
+
     @Autowired
     private QueryLogicFactoryProperties queryLogicFactoryProperties;
-    
+
     @Autowired
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Autowired
     private JWTTokenHandler jwtTokenHandler;
-    
+
     @Test
     public void createShardQueryLogicTest() throws QueryException, CloneNotSupportedException {
         Assertions.assertNotNull(queryLogicFactory.getQueryLogic("FederatedEventQuery"));
@@ -54,14 +54,14 @@ public class QueryLogicFactoryTest {
         Assertions.assertNotNull(queryLogicFactory.getQueryLogic("QueryMetricsQuery"));
         Assertions.assertNotNull(queryLogicFactory.getQueryLogic("TermFrequencyQuery"));
     }
-    
+
     @ComponentScan(basePackages = "datawave.microservice")
     @Configuration
     @Profile("QueryLogicFactoryTest")
     public static class TestConfiguration {
-        
+
     }
-    
+
     @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
     public static class TestApplication {
         public static void main(String[] args) {

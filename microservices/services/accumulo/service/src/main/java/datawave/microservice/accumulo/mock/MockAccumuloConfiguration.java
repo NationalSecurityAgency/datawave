@@ -17,13 +17,13 @@ import datawave.microservice.config.accumulo.AccumuloProperties;
 @Configuration
 @Profile("mock")
 public class MockAccumuloConfiguration {
-    
+
     @Bean
     @Qualifier("warehouse")
     public InMemoryInstance warehouseInstance(@Qualifier("warehouse") AccumuloProperties warehouseProperties) {
         return new InMemoryInstance(warehouseProperties.getInstanceName());
     }
-    
+
     @Bean
     @Qualifier("warehouse")
     public AccumuloClient warehouseClient(@Qualifier("warehouse") AccumuloProperties warehouseProperties) throws AccumuloSecurityException {

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.0</version>
+        <version>5.0.1-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-executor-service</artifactId>
@@ -30,6 +30,13 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.datawave.starter-query}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-in-memory-accumulo</artifactId>
                 <version>${version.in-memory-accumulo}</version>
@@ -38,8 +45,8 @@
                 <exclusions>
                     <!-- Exclude all dependencies of in-memory-accumulo. We'll pull in the exact version we need. -->
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -60,12 +67,12 @@
                 <version>${version.accumulo}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -90,21 +97,14 @@
                 <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>slf4j-log4j12</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-query</artifactId>
-                <version>${version.datawave.starter-query}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -119,40 +119,40 @@
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.resteasy</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.annotation</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.ejb</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.interceptor</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.servlet</groupId>
-                    </exclusion>
-                    <exclusion>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.jboss.logging</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>jsp-api</artifactId>
                         <groupId>javax.servlet.jsp</groupId>
+                        <artifactId>jsp-api</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>log4j</artifactId>
                         <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>slf4j-reload4j</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -163,8 +163,8 @@
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.resteasy</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -176,52 +176,52 @@
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.resteasy</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.annotation</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.ejb</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.interceptor</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.spec.javax.servlet</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jsp-api</artifactId>
-                        <groupId>javax.servlet.jsp</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>log4j</artifactId>
-                        <groupId>log4j</groupId>
-                    </exclusion>
-                    <exclusion>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.servlet.jsp</groupId>
+                        <artifactId>jsp-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>junit</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -256,12 +256,12 @@
             <artifactId>accumulo-tserver</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>guava</artifactId>
                     <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>*</artifactId>
                     <groupId>org.apache.hadoop</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -297,51 +297,45 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <plugins>
             <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                        <version>1.2.22</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.shared</groupId>
+                        <artifactId>maven-common-artifact-filters</artifactId>
+                        <version>1.4</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>log4j</groupId>
+                                <artifactId>log4j</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>unpack-test-resources</id>
-                        <phase>process-test-resources</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
+                        <phase>process-test-resources</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -356,10 +350,10 @@
                     </execution>
                     <execution>
                         <id>unpack</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -372,42 +366,15 @@
                         </configuration>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>ch.qos.reload4j</groupId>
-                        <artifactId>reload4j</artifactId>
-                        <version>1.2.22</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.maven.shared</groupId>
-                        <artifactId>maven-common-artifact-filters</artifactId>
-                        <version>1.4</version>
-                        <exclusions>
-                            <exclusion>
-                                <artifactId>log4j</artifactId>
-                                <groupId>log4j</groupId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <!-- This was added to ensure that nested test classes are run. -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude />
-                    </excludes>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -422,8 +389,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

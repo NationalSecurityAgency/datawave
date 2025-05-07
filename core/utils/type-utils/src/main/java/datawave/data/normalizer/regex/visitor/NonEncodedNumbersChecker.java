@@ -9,14 +9,14 @@ import datawave.data.normalizer.regex.Node;
  * An implementation of {@link BaseVisitor} that will examine a node tree and return whether any non-encoded patterns remain in the tree. This is intended to be
  * used in conjunction with {@link SimpleNumberEncoder} to see if any further work remains to be done after encoding any and all simple numbers in the tree via
  * {@link SimpleNumberEncoder#encode(Node)}.
- * 
+ *
  * @see SimpleNumberEncoder
  */
 public class NonEncodedNumbersChecker extends BaseVisitor {
-    
+
     /**
      * Check if there are any non-encoded number patterns still present in the tree.
-     * 
+     *
      * @param node
      *            the node to check
      * @return true if there are any non-encoded patterns, or false otherwise.
@@ -26,9 +26,9 @@ public class NonEncodedNumbersChecker extends BaseVisitor {
         node.accept(visitor, null);
         return visitor.hasUnencodedPatterns;
     }
-    
+
     private boolean hasUnencodedPatterns = false;
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         // If we have not yet found any unencoded patterns, check the node.
@@ -43,7 +43,7 @@ public class NonEncodedNumbersChecker extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visitAlternation(AlternationNode node, Object data) {
         // If we have not yet found any unencoded patterns, check each child.
@@ -55,11 +55,11 @@ public class NonEncodedNumbersChecker extends BaseVisitor {
                     break;
                 }
             }
-            
+
         }
         return null;
     }
-    
+
     @Override
     public Object visitEncodedNumber(EncodedNumberNode node, Object data) {
         // No need to traverse down into the children.

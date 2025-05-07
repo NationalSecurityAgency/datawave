@@ -21,7 +21,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class MonitorTask implements Callable<Void> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final List<QueryStatus> queryStatusList;
     private final MonitorProperties monitorProperties;
     private final QueryExpirationProperties expirationProperties;
@@ -30,7 +30,7 @@ public class MonitorTask implements Callable<Void> {
     private final QueryResultsManager queryQueueManager;
     private final QueryManagementService queryManagementService;
     private final QueryMetricFactory queryMetricFactory;
-    
+
     public MonitorTask(List<QueryStatus> queryStatusList, MonitorProperties monitorProperties, QueryExpirationProperties expirationProperties,
                     MonitorStatusCache monitorStatusCache, QueryStorageCache queryStorageCache, QueryResultsManager queryQueueManager,
                     QueryManagementService queryManagementService, QueryMetricFactory queryMetricFactory) {
@@ -43,7 +43,7 @@ public class MonitorTask implements Callable<Void> {
         this.queryManagementService = queryManagementService;
         this.queryMetricFactory = queryMetricFactory;
     }
-    
+
     @Override
     public Void call() throws Exception {
         if (tryLock()) {
@@ -66,7 +66,7 @@ public class MonitorTask implements Callable<Void> {
         }
         return null;
     }
-    
+
     // Check for the following conditions
     // 1) Is query progress idle? If so, poke the query
     // 2) Is the user idle? If so, close the query
@@ -74,10 +74,10 @@ public class MonitorTask implements Callable<Void> {
     private void monitor(long currentTimeMillis) {
         for (QueryStatus status : queryStatusList) {
             String queryId = status.getQueryKey().getQueryId();
-            
+
             // if the query is not running
             if (!status.isRunning()) {
-                
+
                 // if the query has been inactive too long (i.e. no interaction from the user or software)
                 if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
                     deleteQuery(queryId);
@@ -100,12 +100,12 @@ public class MonitorTask implements Callable<Void> {
             }
         }
     }
-    
+
     private void cancelQuery(String queryId) {
         // since this is running in a separate thread, we need to set and use the thread-local baseQueryMetric
         ThreadLocal<BaseQueryMetric> baseQueryMetricOverride = queryManagementService.getBaseQueryMetricOverride();
         baseQueryMetricOverride.set(queryMetricFactory.createMetric());
-        
+
         try {
             queryManagementService.cancel(queryId, true);
         } catch (InterruptedException e) {
@@ -116,12 +116,12 @@ public class MonitorTask implements Callable<Void> {
             baseQueryMetricOverride.remove();
         }
     }
-    
+
     private void defibrillateQuery(String queryId, String queryPool) {
         // publish a next event to the executor pool
         queryManagementService.publishNextEvent(queryId, queryPool);
     }
-    
+
     private void deleteQuery(String queryId) {
         try {
             // deletes everything for a query
@@ -131,12 +131,12 @@ public class MonitorTask implements Callable<Void> {
             log.error("Encountered error while trying to evict inactive query: " + queryId, e);
         }
     }
-    
+
     private boolean tryLock() throws InterruptedException {
         return monitorStatusCache.tryLock(monitorProperties.getLockWaitTime(), monitorProperties.getLockWaitTimeUnit(), monitorProperties.getLockLeaseTime(),
                         monitorProperties.getLockLeaseTimeUnit());
     }
-    
+
     private void unlock() {
         monitorStatusCache.unlock();
     }

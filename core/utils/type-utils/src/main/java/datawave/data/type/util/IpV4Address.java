@@ -6,21 +6,21 @@ import com.google.common.collect.Iterables;
 
 /**
  * The IpV4 address
- * 
+ *
  */
 public class IpV4Address extends IpAddress {
     private static final long serialVersionUID = -3258500702340145500L;
     private byte[] ipaddress = new byte[4];
     private int wildcardLoc = -1;
     private int numOctets = 4;
-    
+
     public IpV4Address(byte[] address) {
         if (address.length != 4) {
             throw new IllegalArgumentException("An IPV4 address must be 4 bytes in length");
         }
         System.arraycopy(address, 0, this.ipaddress, 0, 4);
     }
-    
+
     public IpV4Address(byte[] address, int wildcardLoc, int numOctets) {
         this.wildcardLoc = wildcardLoc;
         this.numOctets = numOctets;
@@ -29,7 +29,7 @@ public class IpV4Address extends IpAddress {
         }
         System.arraycopy(address, 0, this.ipaddress, 0, 4);
     }
-    
+
     public IpV4Address(long ipaddress) {
         if ((ipaddress >>> 32) != 0) {
             throw new IllegalArgumentException(ipaddress + " is out of range");
@@ -39,28 +39,28 @@ public class IpV4Address extends IpAddress {
         this.ipaddress[1] = (byte) (0x00FF & (ipaddress >>> 16));
         this.ipaddress[0] = (byte) (0x00FF & (ipaddress >>> 24));
     }
-    
+
     /**
      * Return the underlying bytes
-     * 
+     *
      * @return the IpV4 address bytes
      */
     public byte[] toBytes() {
         return new byte[] {this.ipaddress[0], this.ipaddress[1], this.ipaddress[2], this.ipaddress[3]};
     }
-    
+
     /**
      * Return the underlying bytes in reverse order
-     * 
+     *
      * @return the IpV4 address bytes in reverse order
      */
     public byte[] toReverseBytes() {
         return new byte[] {this.ipaddress[3], this.ipaddress[2], this.ipaddress[1], this.ipaddress[0]};
     }
-    
+
     /**
      * Return the int representation of this address
-     * 
+     *
      * @return an int
      */
     public long toNumber() {
@@ -73,10 +73,10 @@ public class IpV4Address extends IpAddress {
         value |= 0x00FF & ipaddress[3];
         return value;
     }
-    
+
     /**
      * Return the int representation of this address
-     * 
+     *
      * @return an int
      */
     public long toReverseNumber() {
@@ -89,10 +89,10 @@ public class IpV4Address extends IpAddress {
         value |= 0x00FF & ipaddress[0];
         return value;
     }
-    
+
     /**
      * Parse an address assume the specified radix
-     * 
+     *
      * @param address
      * @param radix
      *            The radix (e.g. 10 for decimal, 16 for hexidecimal, ...). 0 means that Number.decode() will be used
@@ -165,10 +165,10 @@ public class IpV4Address extends IpAddress {
             return new IpV4Address(ipaddress);
         }
     }
-    
+
     /**
      * Parse an address assume the specified radix. It attempts first as a dotted notation, then as a single number
-     * 
+     *
      * @param address
      * @param radix
      *            10 for decimal, 8 for octal, 16 for hexidecimal, 0 to use Number.decode
@@ -185,10 +185,10 @@ public class IpV4Address extends IpAddress {
             return IpV4Address.parse(address, radix, false);
         }
     }
-    
+
     /**
      * Parse an address. It attempts first as radix 10, then as radix 16, then as radix 8, then as radix 0
-     * 
+     *
      * @param address
      * @return An IpV4Address
      * @throws IllegalArgumentException
@@ -209,10 +209,10 @@ public class IpV4Address extends IpAddress {
             }
         }
     }
-    
+
     /**
      * Parse an address. It attempts first as radix 10, then as radix 16, then as radix 8, then as radix 0
-     * 
+     *
      * @param address
      * @return An IpV4Address
      * @throws IllegalArgumentException
@@ -233,18 +233,18 @@ public class IpV4Address extends IpAddress {
             }
         }
     }
-    
+
     public static String toString(byte[] address, boolean zeroPadded, int wc_loc, int numOctets, boolean reverse) {
         StringBuilder builder = new StringBuilder(15);
         for (int i = 0; i < address.length; i++) {
             if (wc_loc != -1 && numOctets - 1 < i) {
                 break;
             }
-            
+
             if (builder.length() > 0) {
                 builder.append('.');
             }
-            
+
             if (i == wc_loc) {
                 builder.append("*");
                 if (wc_loc != 0) {
@@ -259,21 +259,21 @@ public class IpV4Address extends IpAddress {
                 }
                 builder.append(value);
             }
-            
+
         }
         return builder.toString();
     }
-    
+
     @Override
     public String toString() {
         return toString(ipaddress, false, this.wildcardLoc, this.numOctets, false);
     }
-    
+
     @Override
     public String toZeroPaddedString() {
         return toString(ipaddress, true, this.wildcardLoc, this.numOctets, false);
     }
-    
+
     @Override
     public String toReverseString() {
         if (wildcardLoc > -1) {
@@ -282,7 +282,7 @@ public class IpV4Address extends IpAddress {
             return toString(toReverseBytes(), false, this.wildcardLoc, this.numOctets, true);
         }
     }
-    
+
     @Override
     public String toReverseZeroPaddedString() {
         if (wildcardLoc > -1) {
@@ -291,7 +291,7 @@ public class IpV4Address extends IpAddress {
             return toString(toReverseBytes(), true, this.wildcardLoc, this.numOctets, true);
         }
     }
-    
+
     @Override
     public IpAddress getStartIp(int validBits) {
         byte[] ipaddress = new byte[4];
@@ -308,7 +308,7 @@ public class IpV4Address extends IpAddress {
         }
         return new IpV4Address(ipaddress);
     }
-    
+
     @Override
     public IpAddress getEndIp(int validBits) {
         byte[] ipaddress = new byte[4];
@@ -324,7 +324,7 @@ public class IpV4Address extends IpAddress {
         }
         return new IpV4Address(ipaddress);
     }
-    
+
     @Override
     public int compareTo(IpAddress o) {
         if (o instanceof IpV4Address) {
@@ -345,7 +345,7 @@ public class IpV4Address extends IpAddress {
         }
         return 0;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         IpV4Address other = null;
@@ -357,10 +357,10 @@ public class IpV4Address extends IpAddress {
         if (null == other) {
             return false;
         }
-        
+
         return Objects.equal(this.toNumber(), other.toNumber());
     }
-    
+
     @Override
     public int hashCode() {
         int hashCode = 0;
@@ -369,5 +369,5 @@ public class IpV4Address extends IpAddress {
         }
         return hashCode;
     }
-    
+
 }

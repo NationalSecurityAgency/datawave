@@ -16,24 +16,24 @@ import datawave.microservice.query.messaging.Result;
 
 public class HazelcastQueryResultsListener implements QueryResultsListener {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final IQueue<String> queue;
     private final ObjectMapper objectMapper;
     private final String listenerId;
-    
+
     private boolean stopped = false;
-    
+
     public HazelcastQueryResultsListener(IQueue<String> queue, ObjectMapper objectMapper, String listenerId) {
         this.queue = queue;
         this.objectMapper = objectMapper;
         this.listenerId = listenerId;
     }
-    
+
     @Override
     public String getListenerId() {
         return listenerId;
     }
-    
+
     @Override
     public Result receive(long interval, TimeUnit timeUnit) {
         Result result = null;
@@ -53,12 +53,12 @@ public class HazelcastQueryResultsListener implements QueryResultsListener {
         }
         return result;
     }
-    
+
     @Override
     public boolean hasResults() {
         return !queue.isEmpty();
     }
-    
+
     @Override
     public void close() throws IOException {
         stopped = true;

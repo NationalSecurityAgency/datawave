@@ -13,11 +13,11 @@ public class DatawaveKeyStoreKeyFactory extends KeyStoreKeyFactory {
     public DatawaveKeyStoreKeyFactory(Resource resource, char[] password) {
         super(resource, password, type(resource));
     }
-    
+
     public DatawaveKeyStoreKeyFactory(Resource resource, char[] password, String type) {
         super(resource, password, type);
     }
-    
+
     private static String type(Resource resource) {
         String ext = StringUtils.getFilenameExtension(resource.getFilename());
         if ("p12".equalsIgnoreCase(ext))

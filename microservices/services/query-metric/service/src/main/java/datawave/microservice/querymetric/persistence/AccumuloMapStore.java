@@ -45,12 +45,12 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
                     "PAGE_METRICS");
     // Exclude PREDICTION, PAGE_METRICS which we don't want to pull from Accumulo but which can change after query creation
     public static final List<String> ignoreFieldsOnWrite = new ArrayList<>();
-    
+
     static {
         AccumuloMapStore.ignoreFieldsOnWrite.addAll(ignoreFieldsOnQuery);
         AccumuloMapStore.ignoreFieldsOnWrite.removeAll(Arrays.asList("PREDICTION", "PAGE_METRICS"));
     }
-    
+
     private static AccumuloMapStore instance;
     private final Logger log = LoggerFactory.getLogger(AccumuloMapStore.class);
     private Cache lastWrittenQueryMetricCache;
@@ -58,14 +58,14 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
     private final Timer writeTimer = new Timer(new SlidingTimeWindowArrayReservoir(1, MINUTES));
     private final Timer readTimer = new Timer(new SlidingTimeWindowArrayReservoir(1, MINUTES));
     private boolean shuttingDown = false;
-    
+
     public static class Factory implements MapStoreFactory<String,BaseQueryMetric> {
         @Override
         public MapLoader<String,BaseQueryMetric> newMapStore(String mapName, Properties properties) {
             return AccumuloMapStore.instance;
         }
     }
-    
+
     @Autowired
     public AccumuloMapStore(ShardTableQueryMetricHandler handler) {
         this.handler = handler;
@@ -76,7 +76,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
         // @formatter:on
         AccumuloMapStore.instance = this;
     }
-    
+
     @PreDestroy
     public void shutdown() {
         this.shuttingDown = true;
@@ -88,11 +88,11 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             log.error(e.getMessage(), e);
         }
     }
-    
+
     public void setLastWrittenQueryMetricCache(Cache lastWrittenQueryMetricCache) {
         this.lastWrittenQueryMetricCache = lastWrittenQueryMetricCache;
     }
-    
+
     @Override
     public void store(String queryId, QueryMetricUpdateHolder<T> queryMetricUpdate) {
         if (queryMetricUpdate.getMetricType().equals(QueryMetricType.CACHE_ONLY)) {
@@ -106,7 +106,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             }
         }
     }
-    
+
     public void storeWithRetry(QueryMetricUpdateHolder<T> queryMetricUpdate) {
         boolean retry = true;
         boolean success = false;
@@ -124,16 +124,16 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             }
         }
     }
-    
+
     public void store(QueryMetricUpdateHolder<T> queryMetricUpdate) throws Exception {
-        
+
         String queryId = queryMetricUpdate.getMetric().getQueryId();
         T updatedMetric = null;
         try {
             updatedMetric = (T) queryMetricUpdate.getMetric().duplicate();
             QueryMetricType metricType = queryMetricUpdate.getMetricType();
             QueryMetricUpdateHolder<T> lastQueryMetricUpdate = null;
-            
+
             final List<String> ignoredFields = new ArrayList<>();
             if (!queryMetricUpdate.isNewMetric()) {
                 lastQueryMetricUpdate = lastWrittenQueryMetricCache.get(queryId, QueryMetricUpdateHolder.class);
@@ -155,7 +155,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
                     }
                 }
             }
-            
+
             if (lastQueryMetricUpdate != null) {
                 T lastQueryMetric = lastQueryMetricUpdate.getMetric();
                 if (metricType.equals(QueryMetricType.DISTRIBUTED)) {
@@ -170,7 +170,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
                     updatedMetric.setDocRanges(queryMetricUpdate.getValue("docRanges"));
                     updatedMetric.setFiRanges(queryMetricUpdate.getValue("fiRanges"));
                 }
-                
+
                 updatedMetric = handler.combineMetrics(updatedMetric, lastQueryMetric, metricType);
                 long numUpdates = updatedMetric.getNumUpdates();
                 // The createDate shouldn't change once it is set, so this is just insurance
@@ -184,7 +184,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
                 }
                 long writeTimestamp = deleteTimestamp + 1;
                 updatedMetric.setNumUpdates(numUpdates + 1);
-                
+
                 if (lastQueryMetric.getLastUpdated() != null) {
                     handler.writeMetric(updatedMetric, Collections.singletonList(lastQueryMetric), deleteTimestamp, true, ignoredFields);
                 }
@@ -197,7 +197,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             } else {
                 log.debug("writing metric to accumulo: {}", queryId);
             }
-            
+
             lastWrittenQueryMetricCache.put(queryId, new QueryMetricUpdateHolder<>(updatedMetric));
             queryMetricUpdate.setPersisted();
             failures.invalidate(queryId);
@@ -217,7 +217,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             }
         }
     }
-    
+
     private boolean retryOnException(QueryMetricUpdate update, Exception e) {
         String queryId = update.getMetric().getQueryId();
         int numFailures = 1;
@@ -238,7 +238,7 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             return false;
         }
     }
-    
+
     @Override
     public void storeAll(Map<String,QueryMetricUpdateHolder<T>> map) {
         Iterator<Map.Entry<String,QueryMetricUpdateHolder<T>>> itr = map.entrySet().iterator();
@@ -255,31 +255,31 @@ public class AccumuloMapStore<T extends BaseQueryMetric> extends AccumuloMapLoad
             }
         }
     }
-    
+
     @Override
     public QueryMetricUpdateHolder load(String s) {
         return null;
     }
-    
+
     @Override
     public Map<String,QueryMetricUpdateHolder<T>> loadAll(Collection<String> keys) {
         return null;
     }
-    
+
     @Override
     public void delete(String key) {
         // not implemented
     }
-    
+
     @Override
     public void deleteAll(Collection<String> keys) {
         // not implemented
     }
-    
+
     public Timer getWriteTimer() {
         return writeTimer;
     }
-    
+
     public Timer getReadTimer() {
         return readTimer;
     }

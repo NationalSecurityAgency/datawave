@@ -18,11 +18,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
 public class IndexFieldHoleTest {
-    
+
     private static long A_DAY_MILLIS = 1000L * 60 * 60 * 24;
     private static long SOME_DELTA = new Random().nextLong() % A_DAY_MILLIS;
     private static long A_DAY_PLUS_SOME_DELTA = A_DAY_MILLIS + SOME_DELTA;
-    
+
     @Test
     public void testGetterSetter() {
         List<Date> dates = new ArrayList<>();
@@ -43,16 +43,16 @@ public class IndexFieldHoleTest {
         }
         SortedSet<Pair<Date,Date>> unexpected = new TreeSet<>(expected);
         unexpected.add(Pair.of(new Date(), new Date()));
-        
+
         IndexFieldHole expectedHole = new IndexFieldHole("f", "d", expected);
-        
+
         IndexFieldHole hole = new IndexFieldHole("f", "d", holes);
         assertEquals(expected, hole.getDateRanges());
         assertEquals("f", hole.getFieldName());
         assertEquals("d", hole.getDatatype());
         assertEquals(expectedHole, hole);
         assertEquals(expectedHole.hashCode(), hole.hashCode());
-        
+
         IndexFieldHole unexpectedHole1 = new IndexFieldHole("f", "d", unexpected);
         IndexFieldHole unexpectedHole2 = new IndexFieldHole("fn", "d", expected);
         IndexFieldHole unexpectedHole3 = new IndexFieldHole("f", "dn", expected);
@@ -60,9 +60,9 @@ public class IndexFieldHoleTest {
         assertNotEquals(unexpectedHole2, hole);
         assertNotEquals(unexpectedHole3, hole);
     }
-    
+
     private Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-    
+
     private Date floor(Date d) {
         calendar.setTime(d);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -71,7 +71,7 @@ public class IndexFieldHoleTest {
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
-    
+
     private Date ceil(Date d) {
         calendar.setTime(d);
         calendar.set(Calendar.HOUR_OF_DAY, 23);

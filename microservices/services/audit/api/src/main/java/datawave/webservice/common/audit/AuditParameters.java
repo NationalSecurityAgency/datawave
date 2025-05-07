@@ -21,7 +21,7 @@ import com.google.common.base.Splitter;
 import datawave.webservice.common.audit.Auditor.AuditType;
 
 public class AuditParameters {
-    
+
     public static final String USER_DN = "auditUserDN";
     public static final String QUERY_STRING = "query";
     public static final String QUERY_SELECTORS = "selectors";
@@ -31,10 +31,10 @@ public class AuditParameters {
     public static final String QUERY_DATE = "queryDate";
     public static final String QUERY_LOGIC_CLASS = "logicClass";
     public static final String AUDIT_ID = "auditId";
-    
+
     private static final List<String> REQUIRED_PARAMS = Arrays.asList(USER_DN, QUERY_STRING, QUERY_AUTHORIZATIONS, QUERY_AUDIT_TYPE,
                     QUERY_SECURITY_MARKING_COLVIZ);
-    
+
     protected Date queryDate = null;
     protected String userDn;
     protected String query = null;
@@ -44,7 +44,7 @@ public class AuditParameters {
     protected ColumnVisibility colviz = null;
     protected String auditId = null;
     protected String logicClass = null;
-    
+
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         this.queryDate = new Date();
         for (String param : REQUIRED_PARAMS) {
@@ -81,7 +81,7 @@ public class AuditParameters {
                     throw new IllegalArgumentException("Unknown condition.");
             }
         }
-        
+
         if (parameters.containsKey(QUERY_DATE)) {
             List<String> dates = parameters.get(QUERY_DATE);
             if (dates != null && !dates.isEmpty()) {
@@ -100,88 +100,88 @@ public class AuditParameters {
         if (StringUtils.isEmpty(auditId)) {
             auditId = UUID.randomUUID().toString();
         }
-        
+
         Preconditions.checkNotNull(this.userDn);
         Preconditions.checkNotNull(this.query);
         Preconditions.checkNotNull(this.auths);
         Preconditions.checkNotNull(this.auditType);
         Preconditions.checkNotNull(this.colviz);
     }
-    
+
     public Date getQueryDate() {
         return queryDate;
     }
-    
+
     public void setQueryDate(Date queryDate) {
         this.queryDate = queryDate;
     }
-    
+
     public String getUserDn() {
         return userDn;
     }
-    
+
     public void setUserDn(String userDn) {
         this.userDn = userDn;
     }
-    
+
     public String getQuery() {
         return query;
     }
-    
+
     public void setQuery(String query) {
         this.query = query;
     }
-    
+
     public String getAuths() {
         return auths;
     }
-    
+
     public void setAuths(String auths) {
         // ensure that auths are comma separated with no empty values or spaces
         Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
         this.auths = StringUtils.join(splitter.splitToList(auths), ",");
     }
-    
+
     public AuditType getAuditType() {
         return auditType;
     }
-    
+
     public void setAuditType(AuditType auditType) {
         this.auditType = auditType;
     }
-    
+
     public String getAuditId() {
         return auditId;
     }
-    
+
     public void setAuditId(String auditId) {
         this.auditId = auditId;
     }
-    
+
     public ColumnVisibility getColviz() {
         return colviz;
     }
-    
+
     public void setColviz(ColumnVisibility colviz) {
         this.colviz = colviz;
     }
-    
+
     public String getLogicClass() {
         return logicClass;
     }
-    
+
     public void setLogicClass(String logicClass) {
         this.logicClass = logicClass;
     }
-    
+
     public void setSelectors(List<String> selectors) {
         this.selectors = selectors;
     }
-    
+
     public List<String> getSelectors() {
         return selectors;
     }
-    
+
     public Map<String,String> toMap() {
         Map<String,String> map = new HashMap<>();
         map.put(QUERY_DATE, Long.toString(this.queryDate.getTime()));
@@ -199,7 +199,7 @@ public class AuditParameters {
         }
         return map;
     }
-    
+
     protected static Map<String,List<String>> parseMessage(Map<String,String> msg) {
         Map<String,List<String>> p = new HashMap<>();
         p.put(USER_DN, Collections.singletonList(msg.get(USER_DN)));
@@ -219,7 +219,7 @@ public class AuditParameters {
         }
         return p;
     }
-    
+
     private static AuditParameters fromMapInternal(Map<String,String> msg) {
         AuditParameters ap = new AuditParameters();
         Map<String,List<String>> p = parseMessage(msg);
@@ -234,11 +234,11 @@ public class AuditParameters {
         }
         return ap;
     }
-    
+
     public AuditParameters fromMap(Map<String,String> msg) {
         return fromMapInternal(msg);
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);
@@ -252,16 +252,16 @@ public class AuditParameters {
         tsb.append("auditId").append(this.auditId == null ? "none" : this.auditId);
         return tsb.toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         AuditParameters that = (AuditParameters) o;
-        
+
         if (queryDate != null ? !queryDate.equals(that.queryDate) : that.queryDate != null)
             return false;
         if (userDn != null ? !userDn.equals(that.userDn) : that.userDn != null)
@@ -279,9 +279,9 @@ public class AuditParameters {
         if (auditId != null ? !auditId.equals(that.auditId) : that.auditId != null)
             return false;
         return !(colviz != null ? !colviz.equals(that.colviz) : that.colviz != null);
-        
+
     }
-    
+
     @Override
     public int hashCode() {
         int result = queryDate != null ? queryDate.hashCode() : 0;
@@ -295,7 +295,7 @@ public class AuditParameters {
         result = 31 * result + (auditId != null ? auditId.hashCode() : 0);
         return result;
     }
-    
+
     public void clear() {
         this.queryDate = null;
         this.userDn = null;
@@ -307,7 +307,7 @@ public class AuditParameters {
         this.logicClass = null;
         this.auditId = null;
     }
-    
+
     public Collection<String> getRequiredAuditParameters() {
         return REQUIRED_PARAMS;
     }

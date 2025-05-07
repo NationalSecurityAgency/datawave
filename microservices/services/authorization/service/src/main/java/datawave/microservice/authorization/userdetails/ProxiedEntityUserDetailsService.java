@@ -42,29 +42,29 @@ public class ProxiedEntityUserDetailsService implements AuthenticationUserDetail
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final DatawaveUserService datawaveUserService;
     private final DatawaveSecurityProperties securityProperties;
-    
+
     @Autowired
     public ProxiedEntityUserDetailsService(DatawaveUserService datawaveUserService, DatawaveSecurityProperties securityProperties) {
         this.datawaveUserService = datawaveUserService;
         this.securityProperties = securityProperties;
     }
-    
+
     @Override
     public UserDetails loadUserDetails(PreAuthenticatedAuthenticationToken token) throws UsernameNotFoundException {
         logger.debug("Authenticating {}", token);
-        
+
         Object principalObj = token.getPrincipal();
         if (!(principalObj instanceof ProxiedEntityPreauthPrincipal)) {
             return null;
         }
         ProxiedEntityPreauthPrincipal principal = (ProxiedEntityPreauthPrincipal) principalObj;
-        
+
         HttpServletRequest request = null;
         // principal should be a AuthorizationProxiedEntityPreauthPrincipal so that we can get the httpServletRequest
         if (principalObj instanceof AuthorizationProxiedEntityPreauthPrincipal) {
             request = ((AuthorizationProxiedEntityPreauthPrincipal) principalObj).getRequest();
         }
-        
+
         if (request == null || AuthorizationAllowedCallersFilter.enforceAllowedCallersForRequest(request)) {
             if (securityProperties.isEnforceAllowedCallers()) {
                 final Collection<String> allowedCallers = securityProperties.getAllowedCallers();
@@ -76,7 +76,7 @@ public class ProxiedEntityUserDetailsService implements AuthenticationUserDetail
                 logger.trace("Allowing {} since we're not enforcing allowed callers.", principalObj);
             }
         }
-        
+
         try {
             List<SubjectIssuerDNPair> users = new ArrayList<>();
             users.addAll(principal.getProxiedEntities());

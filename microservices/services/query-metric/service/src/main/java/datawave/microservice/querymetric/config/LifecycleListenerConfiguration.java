@@ -7,7 +7,7 @@ import datawave.microservice.querymetric.MergeLockLifecycleListener;
 
 @Configuration
 public class LifecycleListenerConfiguration {
-    
+
     @Bean
     public MergeLockLifecycleListener mergeLockLifecycleListener() {
         return new MergeLockLifecycleListener();
