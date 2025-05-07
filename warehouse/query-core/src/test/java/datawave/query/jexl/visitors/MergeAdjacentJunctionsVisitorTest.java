@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.List;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -14,6 +16,7 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 
 public class MergeAdjacentJunctionsVisitorTest {
 
@@ -76,6 +79,28 @@ public class MergeAdjacentJunctionsVisitorTest {
         JexlNode result = MergeAdjacentJunctionsVisitor.merge(andScript);
         String resultString = JexlStringBuildingVisitor.buildQuery(result);
         assertEquals(expectedOutput, resultString);
+    }
+
+    @Test
+    public void testMergeIntersectionWithSingleChild() {
+        String expected = "F == 'a'";
+        JexlNode eq = JexlNodeFactory.buildEQNode("F", "a");
+        JexlNode intersection = JexlNodeFactory.createAndNode(List.of(eq));
+        ASTJexlScript script = JexlNodeFactory.createScript(intersection);
+
+        // initial state
+        assertInstanceOf(ASTJexlScript.class, script);
+        assertInstanceOf(ASTAndNode.class, script.jjtGetChild(0));
+        assertEquals(1, script.jjtGetChild(0).jjtGetNumChildren());
+        assertInstanceOf(ASTEQNode.class, script.jjtGetChild(0).jjtGetChild(0));
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+
+        JexlNode result = MergeAdjacentJunctionsVisitor.merge(script);
+
+        // no state changes after visit
+        assertInstanceOf(ASTJexlScript.class, script);
+        assertInstanceOf(ASTEQNode.class, script.jjtGetChild(0));
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(result));
     }
 
     private ASTJexlScript parse(String query) {

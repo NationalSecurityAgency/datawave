@@ -19,6 +19,13 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
  */
 public class MergeAdjacentJunctionsVisitor extends BaseVisitor {
 
+    /**
+     * Static entrypoint
+     *
+     * @param node
+     *            the JexlNode
+     * @return the original node, potentially modified
+     */
     public static JexlNode merge(JexlNode node) {
         MergeAdjacentJunctionsVisitor visitor = new MergeAdjacentJunctionsVisitor();
         node.jjtAccept(visitor, null);
@@ -80,6 +87,22 @@ public class MergeAdjacentJunctionsVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * This method allows the visitor to merge the children for similar adjacent junctions where the nested junction is wrapped in a reference expression, as in
+     * the case of:
+     * <p>
+     * <code>A and (B and C)</code>
+     * <p>
+     * In this case the children of the nested intersection should be pulled up into the top level intersection for a final result of:
+     * <p>
+     * <code>A and B and C</code>
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return the data
+     */
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         super.visit(node, data);
@@ -92,10 +115,12 @@ public class MergeAdjacentJunctionsVisitor extends BaseVisitor {
             if (areParentAndChildSameJunctions(parent, child)) {
                 List<JexlNode> children = new ArrayList<>();
                 for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
-                    if (parent.jjtGetChild(i) == node) {
-                        children.addAll(List.of(JexlNodes.getChildren(parent.jjtGetChild(i))));
+                    JexlNode currChild = parent.jjtGetChild(i);
+                    // this logic ensures the nodes are inserted in-line so that the order of children is preserved
+                    if (currChild == node) {
+                        children.addAll(List.of(JexlNodes.getChildren(currChild)));
                     } else {
-                        children.add(parent.jjtGetChild(i));
+                        children.add(currChild);
                     }
                 }
                 JexlNodes.setChildren(parent, children.toArray(new JexlNode[0]));
@@ -104,6 +129,16 @@ public class MergeAdjacentJunctionsVisitor extends BaseVisitor {
         return data;
     }
 
+    /**
+     * Two nodes are considered the same junction if their node id is equivalent and the node id maps to {@link ParserTreeConstants#JJTANDNODE} or
+     * {@link ParserTreeConstants#JJTORNODE}. Neither node may be a marker node.
+     *
+     * @param a
+     *            the first node
+     * @param b
+     *            the second node
+     * @return true if the nodes are equivalent junctions
+     */
     protected boolean areParentAndChildSameJunctions(JexlNode a, JexlNode b) {
         int idA = JexlNodes.id(a);
         int idB = JexlNodes.id(b);
