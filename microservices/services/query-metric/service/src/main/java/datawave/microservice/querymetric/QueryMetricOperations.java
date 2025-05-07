@@ -556,13 +556,9 @@ public class QueryMetricOperations {
     @PermitAll
     @RequestMapping(path = "/id/{queryId}/subplans", method = {RequestMethod.GET}, produces = {MediaType.TEXT_HTML_VALUE})
     public ModelAndView querySubplanWebpage(@AuthenticationPrincipal DatawaveUserDetails currentUser,
-                    @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId,
-                    @Parameter(description = "queryId to return") @RequestParam(name = "display", required = false) String display) {
+                    @Parameter(description = "queryId to return") @PathVariable("queryId") String queryId) {
         
         BaseQueryMetricListResponse response = query(currentUser, queryId);
-        if (StringUtils.isNotBlank(display) && display.equalsIgnoreCase("horizontal")) {
-            response.setViewName("querysubplans");
-        }
         return response.createSubplanModelAndView();
     }
     

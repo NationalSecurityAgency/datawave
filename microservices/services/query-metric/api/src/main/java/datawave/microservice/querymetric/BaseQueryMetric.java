@@ -685,7 +685,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     protected String plan = null;
     @XmlElement
     @XmlJavaTypeAdapter(StringRangeCountMapAdapter.class)
-    protected Map<String,RangeCounts> subPlans = new HashMap<>();
+    protected Map<String,RangeCounts> subPlans = new TreeMap<>();
     @XmlElement
     protected long loginTime = -1;
     @XmlElementWrapper(name = "predictions")
@@ -720,15 +720,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         synchronized (this.subPlans) {
             if (subplanMap != null && !subplanMap.isEmpty()) {
                 for (Map.Entry<String,RangeCounts> entry : subplanMap.entrySet()) {
-                    if (subPlans.containsKey(entry.getKey())) {
-                        RangeCounts combinedCounts = new RangeCounts();
-                        RangeCounts currentCounts = subPlans.get(entry.getKey());
-                        combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + entry.getValue().getDocumentRangeCount());
-                        combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + entry.getValue().getShardRangeCount());
-                        subPlans.put(entry.getKey(), combinedCounts);
-                    } else {
-                        subPlans.put(entry.getKey(), entry.getValue());
-                    }
+                    addSubPlan(entry.getKey(), entry.getValue());
                 }
             }
         }

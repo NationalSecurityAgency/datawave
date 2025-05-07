@@ -85,6 +85,8 @@ public class QueryMetricListResponse extends BaseQueryMetricListResponse<QueryMe
         }
         mav.addObject("basePath", this.basePath);
         mav.addObject("metricList", metricModelList);
+        mav.addObject("header", header);
+        mav.addObject("footer", footer);
         return mav;
     }
 }

@@ -170,7 +170,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         metric.setBeginDate(d);
         metric.setEndDate(d);
         metric.setPlan("PLAN");
-        metric.setSubPlans(new HashMap<>());
+        metric.setSubPlans(new TreeMap<>());
         metric.setError(new RuntimeException());
         metric.setErrorMessage("ERROR");
         metric.setErrorCode("ERROR");
@@ -577,7 +577,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            Map<String,RangeCounts> subplans = new HashMap<>();
+            Map<String,RangeCounts> subplans = new TreeMap<>();
             
             boolean createDateSet = false;
             for (FieldBase f : field) {

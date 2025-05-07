@@ -41,6 +41,7 @@
                 <th>Query Logic</th>
                 <th id="query-header">Query</th>
                 <th>Query Plan</th>
+                <th>Query SubPlans</th>
                 <th>Query Name</th>
                 <th>Begin Date</th>
                 <th>End Date</th>
@@ -82,6 +83,7 @@
                 <!--/* Note the HTML for the Query and Query Plan are set later... See scripts at end of this tr element */-->
                 <td th:id="query + ${metricIter.index + 1}" th:style="${metric.queryStyle + ' min-width:500px;'}"></td>
                 <td th:id="query-plan + ${metricIter.index + 1}" style="white-space:pre-wrap; overflow-wrap:anywhere; min-width:500px;"></td>
+                <td><a th:href="${metric.querySubplansUrl}" th:text="${metric.queryId}"></a></td>
                 <td th:text="${metric.queryName}"></td>
                 <td style="min-width:125px;" th:text="${metric.beginDateStr}"></td>
                 <td style="min-width:125px;" th:text="${metric.endDateStr}"></td>
