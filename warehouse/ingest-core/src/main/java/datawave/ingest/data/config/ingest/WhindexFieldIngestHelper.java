@@ -167,6 +167,12 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      * @return a multimap of whindex fields generated from the event map.
      */
     public Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
+        
+        // Do not modify the event map if no whindex configurations are set up.
+        if (valueFieldsToWhindexConfigs.isEmpty()) {
+            return eventMap;
+        }
+        
         Multimap<String,NormalizedContentInterface> whindicesInEventMap = HashMultimap.create();
 
         // Filter whindex rules for which both the value field and source field are present in the event map.
