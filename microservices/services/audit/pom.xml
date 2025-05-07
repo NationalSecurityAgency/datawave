@@ -15,10 +15,10 @@
         <module>api</module>
     </modules>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-audit-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-audit-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-audit-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <profiles>
         <profile>

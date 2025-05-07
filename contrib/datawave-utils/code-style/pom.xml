@@ -16,9 +16,10 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-utils.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-utils.git</developerConnection>
-        <url>https://github.com/NationalSecurityAgency/datawave-utils</url>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <distributionManagement>
         <repository>

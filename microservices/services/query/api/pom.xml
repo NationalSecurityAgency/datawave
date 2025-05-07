@@ -11,10 +11,10 @@
     <version>1.0.1-SNAPSHOT</version>
     <url>https://github.com/NationalSecurityAgency/datawave-query-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-query-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-query-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-query-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>

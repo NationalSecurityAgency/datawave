@@ -35,11 +35,6 @@
         <module>ssdeep-common</module>
         <module>ingest-ssdeep</module>
     </modules>
-    <scm>
-        <connection>scm:git:https://fixme/git/warehouse/</connection>
-        <developerConnection>scm:git:ssh://git@fixme/warehouse.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
     <properties>
         <!-- set env property to its default value -->
         <!-- commented this out so profiles other than dev build properly.  May need to put it back.  -->

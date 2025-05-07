@@ -12,10 +12,10 @@
     <description>DATAWAVE Auditing Microservice</description>
     <url>https://code.nsa.gov/datawave-audit-service</url>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-audit-service.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-audit-service.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-audit-service</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <version.commons>3.9</version.commons>

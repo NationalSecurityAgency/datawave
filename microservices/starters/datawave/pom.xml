@@ -17,10 +17,10 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave-spring-boot-starter.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave-spring-boot-starter.git</developerConnection>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/NationalSecurityAgency/datawave-spring-boot-starter</url>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
         <version.accumulo>2.1.1</version.accumulo>
