@@ -983,6 +983,8 @@ public class JexlASTHelper {
     }
 
     /**
+     * <b>NOTE: Do NOT use this method with a rebuilding visitor. You cannot guarantee parentage will remain the same.</b>
+     * <p>
      * Swaps the original node with the replacement, following rules for reference expressions, single terms and junctions
      * <p>
      * This method prevents reference expressions from having a single child.

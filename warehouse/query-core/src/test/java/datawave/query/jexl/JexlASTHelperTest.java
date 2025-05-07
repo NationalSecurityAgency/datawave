@@ -28,6 +28,7 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -37,10 +38,12 @@ import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.Tuple3;
@@ -48,6 +51,17 @@ import datawave.query.util.Tuple3;
 public class JexlASTHelperTest {
 
     private static final Logger log = Logger.getLogger(JexlASTHelperTest.class);
+
+    private final ASTValidator validator = new ASTValidator();
+
+    @Before
+    public void beforeEach() {
+        validator.setValidateLineage(true);
+        validator.setValidateFlatten(true);
+        validator.setValidateJunctions(true);
+        validator.setValidateReferenceExpressions(true);
+        validator.setValidateQueryPropertyMarkers(true);
+    }
 
     @Test
     public void test() throws Exception {
@@ -1036,6 +1050,136 @@ public class JexlASTHelperTest {
         } else {
             assertTrue(range.isLowerBoundGreaterThanUpperBound() || range.areBoundsEquivalent());
         }
+    }
+
+    @Test
+    public void testSafeReplacementOfIntersectionChildWithEquality() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' && X == 'x' && C == '3'");
+        JexlNode expansion = parseAndGetRoot("B == '2'");
+        String expected = "A == '1' && B == '2' && C == '3'";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTAndNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTEQNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testSafeReplacementOfIntersectionChildWithUnion() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' && X == 'x' && D == '4'");
+        JexlNode expansion = parseAndGetRoot("B == '2' || C == '3'");
+        String expected = "A == '1' && (B == '2' || C == '3') && D == '4'";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTAndNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTOrNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testSafeReplacementOfIntersectionChildWithIntersection() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' && X == 'x' && D == '4'");
+        JexlNode expansion = parseAndGetRoot("B == '2' && C == '3'");
+        String expected = "A == '1' && B == '2' && C == '3' && D == '4'";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTAndNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTAndNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testSafeReplacementOfUnionChildWithEquality() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' || X == 'x' || C == '3'");
+        JexlNode expansion = parseAndGetRoot("B == '2'");
+        String expected = "A == '1' || B == '2' || C == '3'";
+
+        // intersection initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTOrNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTEQNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testSafeReplacementOfUnionChildWithUnion() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' || X == 'x' || D == '4'");
+        JexlNode expansion = parseAndGetRoot("B == '2' || C == '3'");
+        String expected = "A == '1' || B == '2' || C == '3' || D == '4'";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTOrNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTOrNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testSafeReplacementOfUnionChildWithIntersection() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' || X == 'x' || D == '4'");
+        JexlNode expansion = parseAndGetRoot("B == '2' || C == '3'");
+        String expected = "A == '1' || B == '2' || C == '3' || D == '4'";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTOrNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTOrNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    private JexlNode parseAndGetRoot(String query) {
+        return parse(query).jjtGetChild(0);
     }
 
     private ASTJexlScript parse(String query) {

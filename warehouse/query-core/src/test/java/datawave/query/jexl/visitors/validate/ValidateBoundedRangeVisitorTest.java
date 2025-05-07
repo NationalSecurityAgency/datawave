@@ -32,14 +32,13 @@ public class ValidateBoundedRangeVisitorTest {
     }
 
     @Test
-    public void testNoMarkerValidSource() {
+    public void testNoMarker() {
+        // 'valid' source node for a bounded range
         String query = "FIELD >= '2' && FIELD <= '3'";
         test(query);
-    }
 
-    @Test
-    public void testNoMarkerInvalidSource() {
-        String query = "FIELD == '2' && FIELD == '3'";
+        // 'invalid' source for a bounded range,
+        query = "FIELD == '2' && FIELD == '3'";
         test(query);
     }
 
