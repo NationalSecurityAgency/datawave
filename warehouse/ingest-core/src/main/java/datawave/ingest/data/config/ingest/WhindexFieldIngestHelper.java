@@ -22,15 +22,11 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 /**
- * Implements methods provided by the {@link WhindexIngest} interface, enabling parsing and application
- * of whindex rules defined by the constants
- * {@link #WHINDEX_RULES}, {@link #VALUE_FIELD}, {@link #SRC_FIELD},
- * {@link #DELETE_SRC_FIELD}, {@link #DST_FIELD}, and {@link #VALUES}.
+ * Implements methods provided by the {@link WhindexIngest} interface, enabling parsing and application of whindex rules defined by the constants
+ * {@link #WHINDEX_RULES}, {@link #VALUE_FIELD}, {@link #SRC_FIELD}, {@link #DELETE_SRC_FIELD}, {@link #DST_FIELD}, and {@link #VALUES}.
  * <p>
- * Call {@link #setup(org.apache.hadoop.conf.Configuration)} (which reads
- * properties prefixed by <code>typeName. {@link #WHINDEX_RULES}.</code>) before
- * {@link #processWhindexFields(com.google.common.collect.Multimap)}, or no
- * whindex rules will be applied.
+ * Call {@link #setup(org.apache.hadoop.conf.Configuration)} (which reads properties prefixed by <code>typeName. {@link #WHINDEX_RULES}.</code>) before
+ * {@link #processWhindexFields(com.google.common.collect.Multimap)}, or no whindex rules will be applied.
  * </p>
  */
 public class WhindexFieldIngestHelper implements WhindexIngest {
@@ -67,6 +63,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      * Parses the whindex rules from the provided Hadoop Configuration.
      * <p>
      * Expects properties of the form:
+     *
      * <pre>
      *   typeName.{@link #WHINDEX_RULES}.[groupID].{@link #VALUE_FIELD}=&lt;valueFieldName&gt;
      *   typeName.{@link #WHINDEX_RULES}.[groupID].{@link #SRC_FIELD}=&lt;sourceFieldName&gt;
@@ -74,8 +71,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      *   typeName.{@link #WHINDEX_RULES}.[groupID].{@link #DST_FIELD}=&lt;destinationFieldName&gt;
      *   typeName.{@link #WHINDEX_RULES}.[groupID].{@link #VALUES}=&lt;comma,separated,values&gt;
      * </pre>
-     * Each <code>groupID</code> defines one {@link WhindexConfig}.  Missing or invalid entries
-     * will cause an {@link IllegalArgumentException}.
+     *
+     * Each <code>groupID</code> defines one {@link WhindexConfig}. Missing or invalid entries will cause an {@link IllegalArgumentException}.
      *
      * @param config
      *            the Hadoop Configuration containing whindex rules.
@@ -157,16 +154,12 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Processes the input <code>eventMap</code> by applying each configured {@link WhindexConfig}:
      * <ul>
-     *   <li>Checks that both {@link WhindexConfig#getValueField() valueField} (from {@link #VALUE_FIELD})
-     *       and {@link WhindexConfig#getSourceField() sourceField} (from {@link #SRC_FIELD})
-     *       exist in the map.</li>
-     *   <li>Verifies at least one entry in the {@link WhindexConfig#getValueField() valueField}
-     *       matches one of the configured {@link WhindexConfig#getValues() VALUES}.</li>
-     *   <li>If matched, copies entries from {@link WhindexConfig#getSourceField()}
-     *       into the new {@link WhindexConfig#getDestField() destinationField}
-     *       (as defined by {@link #DST_FIELD}), and if
-     *       {@link WhindexConfig#isOverloaded()} ({@link #DELETE_SRC_FIELD}) is true,
-     *       removes the original source entries.</li>
+     * <li>Checks that both {@link WhindexConfig#getValueField() valueField} (from {@link #VALUE_FIELD}) and {@link WhindexConfig#getSourceField() sourceField}
+     * (from {@link #SRC_FIELD}) exist in the map.</li>
+     * <li>Verifies at least one entry in the {@link WhindexConfig#getValueField() valueField} matches one of the configured {@link WhindexConfig#getValues()
+     * VALUES}.</li>
+     * <li>If matched, copies entries from {@link WhindexConfig#getSourceField()} into the new {@link WhindexConfig#getDestField() destinationField} (as defined
+     * by {@link #DST_FIELD}), and if {@link WhindexConfig#isOverloaded()} ({@link #DELETE_SRC_FIELD}) is true, removes the original source entries.</li>
      * </ul>
      *
      * @param eventMap

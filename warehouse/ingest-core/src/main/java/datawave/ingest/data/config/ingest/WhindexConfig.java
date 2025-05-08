@@ -19,21 +19,20 @@ public class WhindexConfig {
     private List<String> values;
 
     /**
-     * The source field parsed from an instance of the property {@link WhindexFieldIngestHelper#SRC_FIELD}.
-     * This is the field that may be replaced by the {@link #destField}.
+     * The source field parsed from an instance of the property {@link WhindexFieldIngestHelper#SRC_FIELD}. This is the field that may be replaced by the
+     * {@link #destField}.
      */
     private String sourceField;
 
     /**
-     * The destination field parsed from an instance of the property {@link WhindexFieldIngestHelper#DST_FIELD}.
-     * The name of the new field (WhindexField) created when a Whindex entry is generated.
+     * The destination field parsed from an instance of the property {@link WhindexFieldIngestHelper#DST_FIELD}. The name of the new field (WhindexField)
+     * created when a Whindex entry is generated.
      */
     private String destField;
 
     /**
-     * The overloaded field parsed from an instance of the property {@link WhindexFieldIngestHelper#DELETE_SRC_FIELD}.
-     *  A flag indicating whether the original source field should be deleted (overloaded=true) or retained (overloaded=false).
-     *  The default is assumed false.
+     * The overloaded field parsed from an instance of the property {@link WhindexFieldIngestHelper#DELETE_SRC_FIELD}. A flag indicating whether the original
+     * source field should be deleted (overloaded=true) or retained (overloaded=false). The default is assumed false.
      */
     private boolean overloaded;
 
