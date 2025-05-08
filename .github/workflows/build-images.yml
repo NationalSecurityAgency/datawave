@@ -41,6 +41,6 @@ jobs:
         cache: 'maven'
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble,deploy-ws -Dmicroservice-docker -Ddist -Pdocker -Ddocker-release -DskipTests
 
  
