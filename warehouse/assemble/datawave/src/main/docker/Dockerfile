@@ -5,6 +5,8 @@ FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
 USER root
 
 COPY --from=hadoop  /usr/local/hadoop/  /usr/local/hadoop/
+RUN true
+COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
 
 RUN adduser datawave -g hadoop \
     --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
