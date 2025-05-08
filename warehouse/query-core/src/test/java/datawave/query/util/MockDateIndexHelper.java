@@ -99,7 +99,7 @@ public class MockDateIndexHelper extends DateIndexHelper {
             }
         }
         // update default values if none were found
-        desc.setStartEndDate(begin, end);
+        desc.replaceNullDateRange(begin, end);
 
         return desc;
     }

@@ -199,11 +199,11 @@ public class DateIndexHelper implements ApplicationContextAware {
          * @param endDate
          *            the end date
          */
-        public void setStartEndDate(Date startDate, Date endDate) {
-            if (start == null) {
+        public void replaceNullDateRange(Date startDate, Date endDate) {
+            if (start == null && startDate != null) {
                 start = DateIndexUtil.format(startDate);
             }
-            if (end == null) {
+            if (end == null && endDate != null) {
                 end = DateIndexUtil.format(endDate);
             }
         }
@@ -327,7 +327,7 @@ public class DateIndexHelper implements ApplicationContextAware {
         }
 
         // set default values if none were found
-        desc.setStartEndDate(begin, end);
+        desc.replaceNullDateRange(begin, end);
 
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
