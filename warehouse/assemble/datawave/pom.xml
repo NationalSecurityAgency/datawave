@@ -453,7 +453,7 @@
             <id>docker</id>
             <activation>
                 <property>
-                    <name>docker-release</name>
+                    <name>docker-disable</name>
                 </property>
             </activation>
             <build>

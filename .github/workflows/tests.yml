@@ -24,48 +24,6 @@ env:
   ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
-  compose-build-and-test-latest-snapshots:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ env.USER_NAME }}
-          password: ${{ env.ACCESS_TOKEN }}
-      - name: Extract branch name
-        shell: bash
-        run: |
-          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
-        id: extract_branch
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      # Clean up free space
-      - uses: ./.github/actions/free-space
-        with:
-          tool-cache: false
-      
-      - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v4
-        with:
-          distribution: ${{env.JAVA_DISTRIBUTION}}
-          java-version: ${{env.JAVA_VERSION}}
-          cache: 'maven'
-      # Builds the quickstart and microservice docker images and runs a query test
-      - name: Docker Compose Query Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
-
-      - name: Dump Logs
-        if: failure()
-        run: |
-          df -h
-          free -h
-          docker info
-
   compose-build-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -100,7 +58,7 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Pkubernetes,assemble -Ddeploy -Ddocker-release -DskipTests
 
       - name: Dump Logs
         if: failure()
