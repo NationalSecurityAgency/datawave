@@ -45,8 +45,7 @@ jobs:
         cache: 'maven'
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
-        # free up some space so that we don't run out
-        docker system prune -f
-        DOCKER_BUILDKIT=1 mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
-
+        #DOCKER_BUILDKIT=1 mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
+        docker version
+        docker info
  
