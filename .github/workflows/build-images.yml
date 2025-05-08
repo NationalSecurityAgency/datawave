@@ -1,4 +1,3 @@
-#
 name: Create and publish a Docker image
 
 on:
@@ -52,7 +51,6 @@ jobs:
           network=host
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
-        docker info
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
 
  
