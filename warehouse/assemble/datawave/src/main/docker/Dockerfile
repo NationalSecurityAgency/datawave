@@ -4,12 +4,12 @@ FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
 
 USER root
 
-RUN ls -la /usr/local/hadoop/
-RUN ls -lRa /lib/hadoop/
-COPY --from=hadoop  /usr/local/hadoop/  /usr/local/hadoop/
-RUN ls -la /usr/local/hadoop/
-RUN ls -lRa /lib/hadoop/
-COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
+RUN mkdir -p /usr/local/hadoop2/
+RUN mkdir -p /usr/lib/zookeeper2/
+COPY --from=hadoop  /usr/local/hadoop/  /usr/local/hadoop2/
+COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper2/
+RUN diff -r /usr/local/hadoop/ /usr/local/hadoop2/
+RUN diff -r /usr/lib/zookeeper/ /usr/lib/zookeeper2/
 
 RUN adduser datawave -g hadoop \
     --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
