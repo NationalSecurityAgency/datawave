@@ -44,7 +44,6 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     static final int DEFAULT_INPUT_INTERVAL = 10_000_000;
     static final int DEFAULT_OUTPUT_INTERVAL = 100;
 
-    private static final char NULL_CHAR = '\0';
     private static final String NULL_STR = "\0";
 
     // ===========================
