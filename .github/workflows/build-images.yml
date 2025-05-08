@@ -18,6 +18,7 @@ env:
   IMAGE_NAME: ${{ github.repository.lowercase }}
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
   USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
   ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
@@ -34,9 +35,9 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
     # Clean up free space
-    - uses: ./.github/actions/free-space
-      with:
-        tool-cache: false
+    # - uses: ./.github/actions/free-space
+    #   with:
+    #     tool-cache: false
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v4
       with:
@@ -45,7 +46,7 @@ jobs:
         cache: 'maven'
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
-        echo 0 > /sys/module/overlay/parameters/redirect_dir
+        sudo echo 0 > /sys/module/overlay/parameters/redirect_dir
         sudo systemctl restart docker 
         docker info
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
