@@ -46,7 +46,7 @@ jobs:
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
         echo 0 > /sys/module/overlay/parameters/redirect_dir
-        systemctl restart docker 
+        sudo systemctl restart docker 
         docker info
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
 
