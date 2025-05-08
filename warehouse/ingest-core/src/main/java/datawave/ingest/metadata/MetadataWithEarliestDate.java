@@ -32,7 +32,7 @@ public class MetadataWithEarliestDate {
     private Map<String,Components> earliestDates = new HashMap<>();
 
     /**
-     * Creates an instance for tracking earliest metadata entries for a specific column family.
+     * Creates an instance for tracking the earliest metadata entries for a specific column family.
      *
      * @param columnFamily
      *            the column family (COLF) to track

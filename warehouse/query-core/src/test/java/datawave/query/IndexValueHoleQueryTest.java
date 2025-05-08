@@ -143,7 +143,6 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
 
         private static final Collection<Set<String>> composite = new HashSet<>();
         private static final Collection<Set<String>> virtual = new HashSet<>();
-        private static final Collection<Set<String>> whindex = new HashSet<>();
 
         static {
             index.add(CityField.CITY.name());
@@ -153,7 +152,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
         }
 
         public NoHoleFields() {
-            super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
+            super(index, indexOnly, reverse, multivalue, composite, virtual);
         }
 
         @Override
@@ -171,7 +170,6 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
 
         private static final Collection<Set<String>> composite = new HashSet<>();
         private static final Collection<Set<String>> virtual = new HashSet<>();
-        private static final Collection<Set<String>> whindex = new HashSet<>();
 
         static {
             // index city and state but not code
@@ -181,7 +179,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
         }
 
         public HoleFields() {
-            super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
+            super(index, indexOnly, reverse, multivalue, composite, virtual);
         }
 
         @Override

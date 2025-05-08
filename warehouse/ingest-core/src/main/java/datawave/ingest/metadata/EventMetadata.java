@@ -473,6 +473,11 @@ public class EventMetadata implements RawRecordMetadata {
         }
     }
 
+    /**
+     * Given metadata of the earliest dates, add them to the results multimap.
+     * @param results the multimap to add the earliest date metadata
+     * @param earliestDates metadata containing a mapping of field names to their earliest dates.
+     */
     protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithEarliestDate earliestDates) {
         for (MetadataWithEarliestDate.Components entry : earliestDates.entries()) {
             long earliestDate = entry.getEarliestDate();

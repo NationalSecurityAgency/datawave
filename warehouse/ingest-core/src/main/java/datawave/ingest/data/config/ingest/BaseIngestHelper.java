@@ -623,6 +623,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     }
 
+    /**
+     * Returns true if {@param fieldName} is a whindex field.
+     * @param fieldName
+     *            the field to check.
+     * @return true if {@param fieldName} is a whindex field.
+     */
     @Override
     public boolean isWhindexField(String fieldName) {
         return this.getWhindexIngest().isWhindexField(fieldName);
@@ -1216,11 +1222,21 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return normalizeMap(getVirtualIngest().getVirtualFields(values));
     }
 
+    /**
+     * Returns a multimap containing all WhindexConfigs mapped to their related ValueFields.
+     * @return a multimap of K:ValueFields -> V:WhindexConfig(s)
+     */
     @Override
     public Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
         return getWhindexIngest().getValueFieldsToWhindexConfigs();
     }
 
+    /**
+     * Applies the loaded whindex configuration to the Multimap of values passed in. Only applies whindex configurations
+     * for which all the necessary fields and values are present in the Multimap.
+     * @param values the multimap of values to check and apply the whindex configurations to.
+     * @return a multimap of updated values based on the loaded whindex configuration.
+     */
     @Override
     public Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> values) {
         return getWhindexIngest().processWhindexFields(values);

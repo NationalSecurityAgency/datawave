@@ -17,7 +17,6 @@ public class GenericCarFields extends AbstractCarFields {
 
     private static final Collection<Set<String>> composite = new HashSet<>();
     private static final Collection<Set<String>> virtual = new HashSet<>();
-    private static final Collection<Set<String>> whindex = new HashSet<>();
 
     static {
         // add composite and virtual values
@@ -35,7 +34,7 @@ public class GenericCarFields extends AbstractCarFields {
     }
 
     public GenericCarFields() {
-        super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
+        super(index, indexOnly, reverse, multivalue, composite, virtual);
     }
 
     @Override

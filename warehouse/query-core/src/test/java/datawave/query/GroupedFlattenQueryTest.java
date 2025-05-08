@@ -197,7 +197,6 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
 
         private static final Collection<Set<String>> composite = new HashSet<>();
         private static final Collection<Set<String>> virtual = new HashSet<>();
-        private static final Collection<Set<String>> whindex = new HashSet<>();
 
         static {
             // set index configuration values
@@ -209,7 +208,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
         }
 
         GroupedIndexing() {
-            super(index, indexOnly, reverse, multivalue, composite, virtual, whindex);
+            super(index, indexOnly, reverse, multivalue, composite, virtual);
         }
 
         @Override
