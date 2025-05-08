@@ -4,8 +4,9 @@ FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
 
 USER root
 
+RUN ls -la /usr/local/hadoop
 COPY --from=hadoop  /usr/local/hadoop/  /usr/local/hadoop/
-RUN true
+RUN ls -la /usr/local/hadoop
 COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
 
 RUN adduser datawave -g hadoop \

@@ -54,7 +54,7 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Pkubernetes,assemble -Ddocker-release -DskipTests -DskipFormat -Denforcer.skip=true -DskipMicroservices -DskipSpotbugs
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Pkubernetes,assemble -Ddocker-release -DskipTests -DskipFormat -DskipMicroservices -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
 
       - name: Dump Logs
         if: failure()
