@@ -1,5 +1,5 @@
 #
-name: Create and publish a Docker image
+name: Publish all DataWave images and packages
 
 on:
   push:
@@ -18,6 +18,7 @@ env:
   IMAGE_NAME: ${{ github.repository.lowercase }}
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
   USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
   ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
@@ -33,14 +34,17 @@ jobs:
         password: ${{ env.ACCESS_TOKEN }}
     - name: Checkout Code
       uses: actions/checkout@v4
+    # Clean up free space
+    - uses: ./.github/actions/free-space
+      with:
+        tool-cache: false
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
-    - name: Build Web and Ingest Docker Images (Maven)
+    - name: Build and Push all DataWave images and packages
       run: |
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests
-
- 
+        docker info
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests

@@ -19,6 +19,9 @@ env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
+  REGISTRY: ghcr.io
+  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -91,10 +94,36 @@ jobs:
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify -Dutils -Dservices -Dstarters"
+        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify -Dutils -Dservices -Dstarters"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+
+  build-datawave-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.USER_NAME }}
+          password: ${{ env.ACCESS_TOKEN }}
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      # Clean up free space
+      - uses: ./.github/actions/free-space
+        with:
+          tool-cache: false
+      - name: Set up JDK ${{env.JAVA_VERSION}}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{env.JAVA_DISTRIBUTION}}
+          java-version: ${{env.JAVA_VERSION}}
+          cache: 'maven'
+      - name: Build all DataWave images
+        run: |
+          docker info
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Pkubernetes -Ddeploy -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
 
   # This step can be uncommented to support feature development.  When developing a 
   # feature which spans multiple repos, you can update the poms to use the latest 
@@ -125,7 +154,7 @@ jobs:
   #         USER_NAME: ${{ secrets.USER_NAME }}
   #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dstarters -Dservices -Dutils -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DonlyServiceApis -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
+  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dstarters -Dservices -Dutils -Pexamples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DonlyServiceApis -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
   #         $BUILD
   #     - name: Run Microservice Unit Tests
   #       env:
@@ -166,7 +195,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
         USER_NAME: ${{ secrets.USER_NAME }}
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
