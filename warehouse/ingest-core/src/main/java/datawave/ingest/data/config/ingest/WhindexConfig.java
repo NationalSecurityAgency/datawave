@@ -5,38 +5,36 @@ import java.util.Objects;
 
 /**
  * Container class for keeping track of configuration rules related to Whindex entries.
- * <p>
- * A whindex rule configuration is defined by several parameters:
- * <ul>
- * <li><strong>valueField</strong> - The field in which an event map's values are checked. The event map must contain a matching entry for this field in order
- * to create a Whindex entry.</li>
- * <li><strong>values</strong> - A list of values that need to be present in the event map's valueField to create a whindex entry.</li>
- * <li><strong>sourceField</strong> - A field that must be present in the event map for a Whindex entry to be created. Depending on configuration, this field
- * may be replaced with the destination field.</li>
- * <li><strong>destField</strong> - Also known as the "WhindexField". This is the name of the new field created when a whindex entry is generated. The value of
- * this new field will be that of the sourceField when generated.</li>
- * <li><strong>overloaded</strong> - A boolean flag indicating whether the original source field should be deleted (true) or retained (false) once the whindex
- * entry has been processed. Inclusion of this is optional, the default value is assumed false.</li>
- * </ul>
- * </p>
  */
 public class WhindexConfig {
 
-    // The field in which the event map's values are checked.
+    /**
+     * The field name parsed from an instance of the property {@link WhindexFieldIngestHelper#VALUE_FIELD}.
+     */
     private String valueField;
 
-    // The list of values that must be present in the event map's valueField to trigger a Whindex entry.
+    /**
+     * The field values of {@link #valueField} parsed from an instance of the property {@link WhindexFieldIngestHelper#VALUES}.
+     */
     private List<String> values;
 
-    // The field from the event map that is required for creating a Whindex entry.
-    // This field might be replaced by the destination field based on the configuration.
+    /**
+     * The source field parsed from an instance of the property {@link WhindexFieldIngestHelper#SRC_FIELD}.
+     * This is the field that may be replaced by the {@link #destField}.
+     */
     private String sourceField;
 
-    // The name of the new field (WhindexField) created when a Whindex entry is generated.
+    /**
+     * The destination field parsed from an instance of the property {@link WhindexFieldIngestHelper#DST_FIELD}.
+     * The name of the new field (WhindexField) created when a Whindex entry is generated.
+     */
     private String destField;
 
-    // A flag indicating whether the original source field should be deleted (overloaded=true)
-    // or retained (overloaded=false). The default is assumed false.
+    /**
+     * The overloaded field parsed from an instance of the property {@link WhindexFieldIngestHelper#DELETE_SRC_FIELD}.
+     *  A flag indicating whether the original source field should be deleted (overloaded=true) or retained (overloaded=false).
+     *  The default is assumed false.
+     */
     private boolean overloaded;
 
     /**

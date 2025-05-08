@@ -6,14 +6,22 @@ import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.config.NormalizedContentInterface;
 
+/**
+ * Interface for applying Whindex transformations during the ingest process.
+ */
 public interface WhindexIngest {
 
     /**
-     * Used to allow external scopes to interface with the WhindexIngest's WhindexFieldNormalizer's .setup() method. Initializes the WhindexIngest from a
-     * {@link Configuration}.
+     * Parses the whindex rules from the provided Hadoop Configuration.
+     * <p>
+     * The configuration is expected to have properties in the following form: <code>typeName.whindex.rules.[groupID].[property]=value</code>, where the
+     * property is one of VALUE_FIELD, SRC_FIELD, DELETE_SRC_FIELD, DST_FIELD, or VALUES. Each groupID represents a separate whindex rule.
+     * </p>
      *
      * @param config
-     *            the {@link Configuration}.
+     *            the Hadoop Configuration containing whindex rules.
+     * @throws IllegalArgumentException
+     *             if there are configuration issues.
      */
     void setup(Configuration config);
 
@@ -25,12 +33,19 @@ public interface WhindexIngest {
     boolean isWhindexField(String field);
 
     /**
-     * // todo Given a "{@code RULE}", return a {@code Multimap<String, NormalizedContentInterface>} of whindex fields ("{@code DST_FIELD}") mapped to the
-     * values specified by the {@code RULE}.
+     * Applies the loaded whindex configuration to the Multimap of values passed in. Only applies whindex configurations for which all the necessary fields and
+     * values are present in the Multimap.
      *
-     * @return the mapping of whindex fields to values.
+     * @param eventFields
+     *            the multimap of values to check and apply the whindex configurations to.
+     * @return a multimap of updated values based on the loaded whindex configuration.
      */
     Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> eventFields);
 
+    /**
+     * Returns a multimap containing all WhindexConfigs mapped to their related ValueFields.
+     *
+     * @return a multimap of K:ValueFields -> V:WhindexConfig(s)
+     */
     Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs();
 }
