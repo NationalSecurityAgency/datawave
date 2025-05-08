@@ -35,10 +35,6 @@ jobs:
           password: ${{ env.ACCESS_TOKEN }}
       - name: Checkout Code
         uses: actions/checkout@v4
-      # Clean up free space
-      - uses: ./.github/actions/free-space
-        with:
-          tool-cache: false
       - name: Set up JDK ${{env.JAVA_VERSION}}
         uses: actions/setup-java@v4
         with:
