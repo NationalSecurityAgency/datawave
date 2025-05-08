@@ -85,6 +85,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     }
 
     public DatawaveAuthenticationMechanism(String mechanismName, boolean forceRenegotiation, IdentityManager identityManager) {
+        logger.trace("entering DatawaveAuthenticationMechanism(mechanismName={},forceRenegotiation={},identityManager={})", mechanismName, forceRenegotiation,
+                        identityManager);
         this.name = mechanismName;
         this.forceRenegotiation = forceRenegotiation;
         this.identityManager = identityManager;
@@ -112,6 +114,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
 
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
+        logger.trace("enter: authenticate(HttpServerExchange exchange, SecurityContext securityContext)");
+        logger.trace("securityContext={}", securityContext.getClass().getName());
         // Pull proxied entity info from the headers. If proxied entities are there, but proxied issuers are missing, then fail authentication immediately.
         String proxiedEntities;
         String proxiedIssuers;
@@ -120,6 +124,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             proxiedIssuers = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ISSUERS_HEADER);
             logger.trace("Authenticating with proxiedEntities={} and proxiedIssuers={}", proxiedEntities, proxiedIssuers);
             if (proxiedEntities != null && proxiedIssuers == null) {
+                logger.trace("exit: authenticate() notAuthenticated proxied");
                 return notAuthenticated(exchange, securityContext,
                                 PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER + " is missing!");
             }
@@ -132,43 +137,51 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         SSLSessionInfo sslSession = exchange.getConnection().getSslSessionInfo();
         if (sslSession != null) {
             try {
+                logger.trace("Fetching credentials from SSL session");
                 Certificate[] clientCerts = getPeerCertificates(exchange, sslSession, securityContext);
                 if (clientCerts[0] instanceof X509Certificate) {
                     X509Certificate certificate = (X509Certificate) clientCerts[0];
                     credential = new DatawaveCredential(certificate, proxiedEntities, proxiedIssuers);
                 }
             } catch (SSLPeerUnverifiedException e) {
+                logger.trace("Exception while fetching credentials from SSL session", e);
                 // No action - this mechanism can not attempt authentication without peer certificates, so allow it to drop out to NOT_ATTEMPTED
             }
         }
         // If we're using JWT authentication, then trust the JWT in the header.
         if (jwtHeaderAuthentication) {
             try {
+                logger.trace("Using JWT authentication, trusting the JWT header");
                 String authorizationHeader = getSingleHeader(exchange.getRequestHeaders(), "Authorization");
                 if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                     credential = new DatawaveCredential(authorizationHeader.substring(7));
                 }
             } catch (MultipleHeaderException e) {
+                logger.trace("exit: authenticate() notAuthenticated jwt");
                 return notAuthenticated(exchange, securityContext, e.getMessage());
             }
         }
         // If we're either not using SSL and/or didn't get user info from the SSL session, then get it from the trusted headers, if we're configured to do so.
         if (credential == null && trustedHeaderAuthentication) {
             try {
+                logger.trace("Attempting to fetch user info from trusted headers");
                 String subjectDN = getSingleHeader(exchange.getRequestHeaders(), SUBJECT_DN_HEADER);
                 String issuerDN = getSingleHeader(exchange.getRequestHeaders(), ISSUER_DN_HEADER);
                 logger.trace("Authenticating with trusted subject header={} and trusted issuer header={}", subjectDN, issuerDN);
                 // If no DN headers supplied, then report that we did not authenticate
                 if (subjectDN == null && issuerDN == null) {
+                    logger.trace("exit: authenticate() notAttempted: no DN headers");
                     return notAttempted(exchange);
                 }
                 // If one of subject or issuer is missing, then report authentication failure.
                 if (subjectDN == null || issuerDN == null) {
+                    logger.trace("exit: authenticate() notAuthenticated subject or issuer missing");
                     return notAuthenticated(exchange, securityContext,
                                     "Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN + ") for trusted header authentication.");
                 }
                 credential = new DatawaveCredential(subjectDN, issuerDN, proxiedEntities, proxiedIssuers);
             } catch (MultipleHeaderException e) {
+                logger.trace("exit: authenticate() notAuthenticated exception");
                 return notAuthenticated(exchange, securityContext, e.getMessage());
             }
         }
@@ -181,13 +194,23 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             }
             String username = credential.getUserName();
 
+            logger.trace("Fetching identity manager");
             IdentityManager idm = getIdentityManager(securityContext);
+            logger.trace("Attempting to verify account with identity manager={}", identityManager.getClass().getName());
             Account account = idm.verify(username, credential);
             if (account != null) {
+                logger.trace("Exit: authenticate() successful");
+                logger.trace("Computed account = {}", account.getClass().getName());
+                logger.trace("\tprincipal: {}={}", account.getPrincipal().getName(), account.getPrincipal().getClass().getName());
+                logger.trace("\troles: {}", account.getRoles());
+                logger.trace("exit: authenticate() authenticated");
                 return authenticated(exchange, securityContext, account);
+            } else {
+                logger.trace("account was null");
             }
         }
 
+        logger.trace("exit: authenticate() notAttempted eom");
         return notAttempted(exchange);
     }
 
@@ -241,6 +264,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
 
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange httpServerExchange, SecurityContext securityContext) {
+        logger.trace("enter: sendChallenge(HttpServerExchange, SecurityContext)");
         // FORBIDDEN (403) was the previous default response code returned when an exception happened
         // in the DatawavePrincipalLoginModule and this method returned ChallengeResult(false)
         int returnCode = HttpStatus.SC_FORBIDDEN;
@@ -259,6 +283,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             }
         }
         // The ChallengeResult is evaluated in SecurityContextImpl.transition()
+        logger.trace("exit: sendChallenge(HttpServerExchange, SecurityContext), returnCode={}", returnCode);
         return new ChallengeResult(true, returnCode);
     }
 
@@ -275,7 +300,14 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
 
     @SuppressWarnings("deprecation")
     private IdentityManager getIdentityManager(SecurityContext securityContext) {
-        return identityManager != null ? identityManager : securityContext.getIdentityManager();
+        logger.trace("enter: getIdentityManager(SecurityContext)");
+        if (identityManager != null) {
+            logger.trace("identity manager is not null, returning it");
+            return identityManager;
+        } else {
+            logger.trace("identity manager is null, returning identity manager from security context");
+            return securityContext.getIdentityManager();
+        }
     }
 
     private static final class MultipleHeaderException extends Exception {

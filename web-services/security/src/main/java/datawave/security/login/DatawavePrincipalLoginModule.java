@@ -89,8 +89,20 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String,?> sharedState, Map<String,?> options) {
-
         trace = log.isTraceEnabled();
+        if (trace) {
+            log.trace("enter: initialize(Subject, CallbackHandler, Map, Map)");
+        }
+
+        if (trace) {
+            log.trace("subject: " + subject.toString());
+            log.trace("callbackHandler: " + callbackHandler.getClass().getName());
+            log.trace("sharedState: " + sharedState.size() + " entries:\n");
+            sharedState.forEach((key, value) -> log.trace("\t" + key + ": " + value));
+
+            log.trace("options: " + options.size() + " entries: \n");
+            options.forEach((key, value) -> log.trace("\t" + key + ": " + value));
+        }
 
         super.initialize(subject, callbackHandler, sharedState, options);
 
@@ -139,6 +151,10 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             requiredRoles.add("AuthorizedProxiedServer");
         }
 
+        if (trace) {
+            log.trace("requiredRoles: " + requiredRoles);
+        }
+
         /**
          * the directRoles check is restricted to UserType.SERVER so the AuthorizedUser is not required in this set. There is no explicit check to verify that
          * there is overlap between requiredRoles and directRoles. If that check is wanted it could be added in the #getRoleSets()
@@ -153,11 +169,29 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             directRoles.add("AuthorizedQueryServer");
         }
 
+        if (trace) {
+            log.trace("directRoles: " + directRoles);
+        }
+
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
             mapper.registerModule(new GuavaModule());
             mapper.registerModule(new JaxbAnnotationModule());
+
+            if (domain != null) {
+                log.trace("JSSESecurityDomain instanceof: " + domain.getClass().getName());
+                log.trace("security domain: " + domain.getSecurityDomain());
+                log.trace("client alias: " + domain.getClientAlias());
+                log.trace("server alias: " + domain.getServerAlias());
+                log.trace("cipher suites: " + Arrays.toString(domain.getCipherSuites()));
+                log.trace("");
+            }
+            log.trace("JSSE domain null?: " + (domain == null));
+            log.trace("Using JSSESecurityDomain instance " + domain.getClass().getName());
+            log.trace("JSSE security domain: " + domain.getSecurityDomain());
+            log.trace("JSSESecurityDomain clientAlias:" + domain.getClientAlias());
+            log.trace("JSSESecurityDomain serverAlias:" + domain.getServerAlias());
 
             String alias = domain.getKeyStore().aliases().nextElement();
             X509KeyManager keyManager = (X509KeyManager) domain.getKeyManagers()[0];
@@ -175,6 +209,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     }
 
     protected void performFieldInjection() {
+        log.trace("enter: performFieldInjection()");
         if (datawaveUserService == null) {
             BeanProvider.injectFields(this);
         }
@@ -182,6 +217,8 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
     @Override
     protected Principal getIdentity() {
+        log.trace("enter: getIdentity()");
+        log.trace("exit: getIdentity() identity=" + identity);
         return identity;
     }
 
@@ -194,6 +231,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
     @Override
     protected Group[] getRoleSets() throws LoginException {
+        log.trace("enter: getRoleSets()");
         Group groups[];
         try {
             Set<String> roles = new TreeSet<>();
@@ -240,11 +278,13 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             log.warn("Exception in getRoleSets: " + e.getMessage(), e);
             abort();
         }
+        log.trace("exit: getRoleSets(): [" + Arrays.toString(groups) + "]");
         return groups;
     }
 
     @Override
     public boolean commit() throws LoginException {
+        log.trace("enter: commit()");
         // If our login is ok, then remove any principals from the subject principals list that match our type.
         // If another login module produces a DatawavePrincipal before us, it will be associated with the subject
         // and later retrieved instead of the one we produce here. Therefore we remove any DatawavePrincipals
@@ -288,11 +328,13 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         boolean ok = super.commit();
         if (ok && certificateCredential != null)
             subject.getPublicCredentials().add(certificateCredential);
+        log.trace("exit: commit() ok=" + ok);
         return ok;
     }
 
     @Override
     public boolean login() throws LoginException {
+        log.trace("enter: login()");
         try {
             // We don't really place nice with other login modules. If the other module sticks a cert
             // in the shared state for login, then we're ok. Otherwise, we are going to reject the login.
@@ -386,6 +428,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge
             throw new LoginException(e.getMessage());
         }
+        log.trace("exit: login()");
         return true;
     }
 
@@ -409,6 +452,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             // (supplied by the load balancer) containing the subject and issuer DNs to construct a list of entities.
             Object tmpCreds = oc.getCredential();
             if (tmpCreds instanceof DatawaveCredential) {
+                log.trace("getDatawaveCredential(): tmpCreds= " + tmpCreds);
                 return (DatawaveCredential) tmpCreds;
             } else {
                 String credentialClass = tmpCreds == null ? "null" : tmpCreds.getClass().getName();
@@ -458,6 +502,8 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
             if (!jwtHeaderLogin || credential.getJwtToken() == null) {
                 try {
+                    log.trace("Using DatawaveUserService " + datawaveUserService.getClass().getName());
+
                     identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
                 } catch (AuthorizationException e) {
                     Throwable cause = e.getCause();

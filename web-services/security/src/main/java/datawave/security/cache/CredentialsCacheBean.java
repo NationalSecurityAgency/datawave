@@ -66,7 +66,8 @@ import datawave.webservice.result.GenericResponse;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 // transactions not supported directly by this bean
 public class CredentialsCacheBean {
-    protected Logger log = LoggerFactory.getLogger(getClass());
+
+    private static final Logger log = LoggerFactory.getLogger(CredentialsCacheBean.class);
 
     @Inject
     @AuthorizationCache

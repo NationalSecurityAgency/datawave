@@ -9,6 +9,7 @@ import javax.security.auth.Subject;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import org.jboss.logging.Logger;
 import org.jboss.security.SecurityContext;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.identity.Identity;
@@ -32,12 +33,15 @@ import org.jboss.security.identity.plugins.SimpleRoleGroup;
  * and also ensure that the server enpoint annotation sets {@link WebsocketSecurityConfigurator} as the {@link ServerEndpoint#configurator()} class.
  */
 public class WebsocketSecurityInterceptor {
+    private static final Logger log = Logger.getLogger(WebsocketSecurityInterceptor.class);
+
     public static final String SESSION_PRINCIPAL = "websocket.security.principal";
     public static final String SESSION_SUBJECT = "websocket.security.subject";
     public static final String SESSION_CREDENTIAL = "websocket.security.credential";
 
     @AroundInvoke
     public Object intercept(InvocationContext ctx) throws Exception {
+        log.trace("enter: intercept(InvocationContext)");
         Session session = findSessionParameter(ctx);
         if (session != null) {
             final Principal principal = (Principal) session.getUserProperties().get(SESSION_PRINCIPAL);
@@ -49,10 +53,12 @@ public class WebsocketSecurityInterceptor {
             }
         }
 
+        log.trace("exit: intercept(InvocationContext)");
         return ctx.proceed();
     }
 
     protected Session findSessionParameter(InvocationContext ctx) {
+        log.trace("enter: findSessionParameter(InvocationContext)");
         Session session = null;
         for (Object param : ctx.getParameters()) {
             if (param instanceof Session) {
@@ -60,24 +66,30 @@ public class WebsocketSecurityInterceptor {
                 break;
             }
         }
+        log.trace("exit: findSessionParameter(InvocationContext)");
         return session;
     }
 
     protected void setSubjectInfo(final Principal principal, final Subject subject, final Object credential) {
+        log.trace("enter: setSubjectInfo(Principal, Subject, Object)");
         SecurityContext securityContext = SecurityContextAssociation.getSecurityContext();
         Role roleGroup = getRoleGroup(subject);
         Identity identity = CredentialIdentityFactory.createIdentity(principal, credential, roleGroup);
         securityContext.getUtil().createSubjectInfo(identity, subject);
+        log.trace("exit: setSubjectInfo(Principal, Subject, Object)");
     }
 
     protected Role getRoleGroup(final Subject subject) {
-        Role roleGroup = null;
+        log.trace("enter: getRoleGroup(Subject)");
+        SimpleRoleGroup roleGroup = null;
         for (Group group : subject.getPrincipals(Group.class)) {
             if ("Roles".equals(group.getName())) {
                 roleGroup = new SimpleRoleGroup(group);
+                log.trace("Found roles " + roleGroup.getRoles());
                 break;
             }
         }
+        log.trace("exit: getRoleGroup(Subject)");
         return roleGroup;
     }
 }

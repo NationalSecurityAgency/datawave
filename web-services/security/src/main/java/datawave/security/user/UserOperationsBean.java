@@ -45,7 +45,7 @@ import datawave.webservice.result.GenericResponse;
 @RolesAllowed({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
 @DeclareRoles({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
 public class UserOperationsBean implements UserOperations {
-    private Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger log = LoggerFactory.getLogger(UserOperationsBean.class);
 
     @Resource
     private EJBContext context;
@@ -112,7 +112,10 @@ public class UserOperationsBean implements UserOperations {
     @Produces({"application/xml", "text/xml", "text/plain", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "text/html"})
     public AuthorizationsListBase listEffectiveAuthorizations(@DefaultValue("true") @QueryParam("includeRemoteServices") boolean includeRemoteServices) {
-        return listEffectiveAuthorizations(context.getCallerPrincipal(), includeRemoteServices);
+        log.trace("enter: listEffectiveAuthorizations(includeRemoteServices=" + includeRemoteServices + ")");
+        AuthorizationsListBase authorizationsListBase = listEffectiveAuthorizations(context.getCallerPrincipal(), includeRemoteServices);
+        log.trace("exit: listEffectiveAuthorizations(boolean)");
+        return authorizationsListBase;
     }
 
     @Override
@@ -121,6 +124,7 @@ public class UserOperationsBean implements UserOperations {
     }
 
     private AuthorizationsListBase listEffectiveAuthorizations(Object p, boolean includeRemoteServices) {
+        log.trace("enter: listEffectiveAuthorizations(p=" + p + ", includeRemoteServices=" + includeRemoteServices + ")");
         final AuthorizationsListBase list = responseObjectFactory.getAuthorizationsList();
 
         String name = p.toString();
@@ -237,18 +241,25 @@ public class UserOperationsBean implements UserOperations {
     }
 
     public DatawavePrincipal getCurrentPrincipal() {
+        log.trace("enter: getCurrentPrincipal()");
         if (context == null) {
+            log.trace("Context is null");
             return null;
         } else {
             Principal p = context.getCallerPrincipal();
             if (p instanceof DatawavePrincipal) {
+                log.trace("Current principal is a DatawavePrincipal");
                 log.info("PRINCIPAL: {}", p.getName());
+                log.trace("exit: getCurrentPrincipal() returns " + p);
                 return (DatawavePrincipal) p;
             } else {
+                log.trace("Current principal is instanceof " + p.getClass().getName());
                 log.info("PRINCIPAL: {}", p.getName());
+                log.trace("exit: getCurrentPrincipal() returns null");
                 return null;
             }
         }
+
     }
 
 }

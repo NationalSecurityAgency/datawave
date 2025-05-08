@@ -3,11 +3,13 @@ package datawave.security.authorization.simple;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -115,6 +117,23 @@ public class DatabaseUserService implements DatawaveUserService {
 
     @PostConstruct
     public void setup() {
+        log.trace("enter: setup()");
+        try (Connection c = ds.getConnection();
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery(String.format("SELECT * from %s", usersTableName))) {
+            dumpTable(rs, usersTableName);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (Connection c = ds.getConnection();
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery(String.format("SELECT * from %s", mappingTableName))) {
+            dumpTable(rs, mappingTableName);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
         try (Connection c = ds.getConnection();
                         Statement s = c.createStatement();
                         ResultSet rs = s.executeQuery(String.format("SELECT role, auth FROM %s", mappingTableName))) {
@@ -125,10 +144,43 @@ public class DatabaseUserService implements DatawaveUserService {
             log.error(e.getMessage(), e);
             throw new IllegalStateException("Unable to read roleToAuthorizationMap.", e);
         }
+        log.trace("exit: setup()");
+    }
+
+    private void dumpTable(ResultSet rs, String tableName) throws SQLException {
+        if (log.isTraceEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            ResultSetMetaData metaData = rs.getMetaData();
+            sb.append("Dumping table ").append(tableName).append("\n\n");
+            int columns = metaData.getColumnCount();
+            List<String> columnNames = new ArrayList<>();
+            for (int i = 1; i <= columns; i++) {
+                columnNames.add(metaData.getColumnName(i).toLowerCase());
+            }
+            appendSeparatedByPipes(sb, columnNames);
+
+            while (rs.next()) {
+                List<String> rowValues = new ArrayList<>();
+                for (String columnName : columnNames) {
+                    rowValues.add(rs.getString(columnName));
+                }
+                appendSeparatedByPipes(sb, rowValues);
+            }
+            sb.append("\n");
+            log.trace(sb.toString());
+        }
+    }
+
+    private void appendSeparatedByPipes(StringBuilder sb, List<String> items) {
+        sb.append("|");
+        items.forEach(i -> sb.append("  ").append(i).append("  |"));
+        sb.append("\n");
     }
 
     @Override
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
+        log.trace("enter: lookup({})", dns);
+
         try (Connection c = ds.getConnection();
                         PreparedStatement ps = c.prepareStatement(String.format("SELECT * from %s where subjectDN = ? and issuerDN = ?", usersTableName))) {
             ArrayList<DatawaveUser> users = new ArrayList<>();
@@ -138,6 +190,8 @@ public class DatabaseUserService implements DatawaveUserService {
             return users;
         } catch (SQLException e) {
             throw new AuthorizationException("Unable to lookup users " + dns + ": " + e.getMessage(), e);
+        } finally {
+            log.trace("exit: lookup(Collection<SubjectIssuerDNPair>))");
         }
     }
 
@@ -151,7 +205,9 @@ public class DatabaseUserService implements DatawaveUserService {
                     Collection<String> roles = Arrays.asList(rs.getString("roles").split(regPattern));
                     Collection<String> auths = Arrays.asList(rs.getString("auths").split(regPattern));
                     HashMultimap<String,String> map = HashMultimap.create();
+                    log.info("Laura - Found roles {} and auths {}", roles, auths);
                     roles.forEach(r -> map.putAll(r, roleToAuthorizationMap.get(r)));
+                    log.info("Laura - roles after adding auths: {}", roles);
                     return new DatawaveUser(dn, userType, auths, roles, map, System.currentTimeMillis());
                 } else {
                     throw new AuthorizationException("No user found for " + dn);
