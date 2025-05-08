@@ -35,9 +35,9 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
     # Clean up free space
-    # - uses: ./.github/actions/free-space
-    #   with:
-    #     tool-cache: false
+    - uses: ./.github/actions/free-space
+      with:
+        tool-cache: false
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v4
       with:
@@ -46,8 +46,6 @@ jobs:
         cache: 'maven'
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
-        sudo echo 0 > /sys/module/overlay/parameters/redirect_dir
-        sudo systemctl restart docker 
         docker info
         mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
 
