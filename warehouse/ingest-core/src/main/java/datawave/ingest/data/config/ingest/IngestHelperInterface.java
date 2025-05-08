@@ -134,6 +134,7 @@ public interface IngestHelperInterface extends DataTypeHelper {
 
     /**
      * Returns true if {@param fieldName} is a whindex field.
+     *
      * @param fieldName
      *            the field to check.
      * @return true if {@param fieldName} is a whindex field.
