@@ -1,5 +1,5 @@
 #
-name: Create and publish a Docker image
+name: Publish all DataWave images and packages
 
 on:
   push:
@@ -44,9 +44,7 @@ jobs:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
-    - name: Build Web and Ingest Docker Images (Maven)
+    - name: Build and Push all DataWave images and packages
       run: |
         docker info
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Prpm,kubernetes,assemble -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
-
- 
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
