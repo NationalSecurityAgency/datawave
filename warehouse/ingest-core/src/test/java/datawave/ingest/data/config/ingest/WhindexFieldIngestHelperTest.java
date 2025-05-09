@@ -53,12 +53,13 @@ class WhindexFieldIngestHelperTest {
         config.set("wiki.whindex.rules.1.delete_src_field", "true");
         config.set("wiki.whindex.rules.1.dst_field", "xDestField");
         config.set("wiki.whindex.rules.1.values", "xTestValue1,xTestValue2,xTestValue3,xTestValue4");
-        WhindexConfig expectedConfigA = new WhindexConfig();
-        expectedConfigA.setValueField("xValueField");
-        expectedConfigA.setSourceField("xSourceField");
-        expectedConfigA.setOverloaded(true);
-        expectedConfigA.setDestField("xDestField");
-        expectedConfigA.setValues(Arrays.asList("xTestValue1", "xTestValue2", "xTestValue3", "xTestValue4"));
+        WhindexConfig expectedConfigA = WhindexConfig.builder()
+                .withValueField("xValueField")
+                .withSourceField("xSourceField")
+                .withOverloaded(true)
+                .withDestField("xDestField")
+                .withValues(Arrays.asList("xTestValue1", "xTestValue2", "xTestValue3", "xTestValue4"))
+                .build();
 
         // y rule: delete_src_field is set to false.
         config.set("wiki.whindex.rules.2.value_field", "yValueField");
@@ -66,24 +67,26 @@ class WhindexFieldIngestHelperTest {
         config.set("wiki.whindex.rules.2.delete_src_field", "false");
         config.set("wiki.whindex.rules.2.dst_field", "yDestField");
         config.set("wiki.whindex.rules.2.values", "yTestValue1,yTestValue2,yTestValue3,yTestValue4");
-        WhindexConfig expectedConfigB = new WhindexConfig();
-        expectedConfigB.setValueField("yValueField");
-        expectedConfigB.setSourceField("ySourceField");
-        expectedConfigB.setOverloaded(false);
-        expectedConfigB.setDestField("yDestField");
-        expectedConfigB.setValues(Arrays.asList("yTestValue1", "yTestValue2", "yTestValue3", "yTestValue4"));
+        WhindexConfig expectedConfigB = WhindexConfig.builder()
+                .withValueField("yValueField")
+                .withSourceField("ySourceField")
+                .withOverloaded(false)
+                .withDestField("yDestField")
+                .withValues(Arrays.asList("yTestValue1", "yTestValue2", "yTestValue3", "yTestValue4"))
+                .build();
 
         // z rule: no delete_src_field specified, so assumed false.
         config.set("wiki.whindex.rules.namedrule.value_field", "zValueField");
         config.set("wiki.whindex.rules.namedrule.src_field", "zSourceField");
         config.set("wiki.whindex.rules.namedrule.dst_field", "zDestField");
         config.set("wiki.whindex.rules.namedrule.values", "zTestValue1,zTestValue2,zTestValue3,zTestValue4");
-        WhindexConfig expectedConfigC = new WhindexConfig();
-        expectedConfigC.setValueField("zValueField");
-        expectedConfigC.setSourceField("zSourceField");
-        expectedConfigC.setOverloaded(false);
-        expectedConfigC.setDestField("zDestField");
-        expectedConfigC.setValues(Arrays.asList("zTestValue1", "zTestValue2", "zTestValue3", "zTestValue4"));
+        WhindexConfig expectedConfigC = WhindexConfig.builder()
+                .withValueField("zValueField")
+                .withSourceField("zSourceField")
+                .withOverloaded(false)
+                .withDestField("zDestField")
+                .withValues(Arrays.asList("zTestValue1", "zTestValue2", "zTestValue3", "zTestValue4"))
+                .build();
 
         // Setup helper using the specified configuration.
         Type type = new Type("wiki", null, null, null, 0, null);

@@ -8,22 +8,22 @@ import org.junit.jupiter.api.Test;
 public class WhindexConfigTest {
 
     /**
-     * Tests that the getters and setters work correctly.
+     * Tests that the builder and getters work correctly.
      * <p>
-     * This test creates a new WhindexConfig instance, sets its properties, and then verifies that the getter methods return the expected values.
+     * This test creates a new WhindexConfig via the builder, setting its properties,
+     * and then verifies that the getter methods return the expected values.
      * </p>
      */
     @Test
-    public void testGettersAndSetters() {
-        // Create a new configuration instance and set its properties.
-        WhindexConfig config = new WhindexConfig();
-        config.setValueField("field1");
-        config.setValues(Arrays.asList("val1", "val2"));
-        config.setSourceField("src");
-        config.setDestField("dst");
-        config.setOverloaded(true);
+    public void testBuilderAndGetters() {
+        WhindexConfig config = WhindexConfig.builder()
+                .withValueField("field1")
+                .withValues(Arrays.asList("val1", "val2"))
+                .withSourceField("src")
+                .withDestField("dst")
+                .withOverloaded(true)
+                .build();
 
-        // Verify that the getter returns the value that was set.
         Assertions.assertEquals("field1", config.getValueField());
         Assertions.assertEquals(Arrays.asList("val1", "val2"), config.getValues());
         Assertions.assertEquals("src", config.getSourceField());
@@ -34,70 +34,58 @@ public class WhindexConfigTest {
     /**
      * Tests the equals() and hashCode() methods.
      * <p>
-     * This test creates two WhindexConfig objects with the same properties and verifies:
-     * <ul>
-     * <li>They are equal via equals()</li>
-     * <li>They produce the same hash code</li>
-     * </ul>
-     * Then it modifies a property in one of the objects and asserts that they are no longer equal.
+     * This test creates two WhindexConfig objects with the same properties via the builder
+     * and verifies equality/hashCode, then mutates one to ensure inequality.
      * </p>
      */
     @Test
     public void testEqualsAndHashCode() {
-        // Create the first configuration object with specific properties.
-        WhindexConfig config1 = new WhindexConfig();
-        config1.setValueField("field");
-        config1.setValues(Arrays.asList("val1", "val2"));
-        config1.setSourceField("src");
-        config1.setDestField("dst");
-        config1.setOverloaded(false);
+        WhindexConfig config1 = WhindexConfig.builder()
+                .withValueField("field")
+                .withValues(Arrays.asList("val1", "val2"))
+                .withSourceField("src")
+                .withDestField("dst")
+                .withOverloaded(false)
+                .build();
 
-        // Create the second configuration object with identical properties.
-        WhindexConfig config2 = new WhindexConfig();
-        config2.setValueField("field");
-        config2.setValues(Arrays.asList("val1", "val2"));
-        config2.setSourceField("src");
-        config2.setDestField("dst");
-        config2.setOverloaded(false);
+        WhindexConfig config2 = WhindexConfig.builder()
+                .withValueField("field")
+                .withValues(Arrays.asList("val1", "val2"))
+                .withSourceField("src")
+                .withDestField("dst")
+                .withOverloaded(false)
+                .build();
 
-        // Verify that both objects are considered equal.
         Assertions.assertEquals(config1, config2);
-        // Verify that both objects generate the same hash code.
         Assertions.assertEquals(config1.hashCode(), config2.hashCode());
 
-        // Change one property in config2.
-        config2.setOverloaded(true);
-        // Verify that the objects are no longer equal after the change.
-        Assertions.assertNotEquals(config1, config2);
+        // Different overloaded flag
+        WhindexConfig config3 = WhindexConfig.builder()
+                .withValueField("field")
+                .withValues(Arrays.asList("val1", "val2"))
+                .withSourceField("src")
+                .withDestField("dst")
+                .withOverloaded(true)
+                .build();
+
+        Assertions.assertNotEquals(config1, config3);
     }
 
     /**
-     * Tests the equals() method with null and objects of different types.
-     * <p>
-     * This test ensures that:
-     * <ul>
-     * <li>A WhindexConfig object is not equal to null.</li>
-     * <li>A WhindexConfig object is not equal to an object of a different type.</li>
-     * <li>A WhindexConfig object is equal to itself.</li>
-     * </ul>
-     * </p>
+     * Tests equals() with null, different type, and self-comparison.
      */
     @Test
     public void testEqualsWithNullAndDifferentType() {
-        // Create a configuration object with sample properties.
-        WhindexConfig config = new WhindexConfig();
-        config.setValueField("field");
-        config.setValues(Arrays.asList("val1", "val2"));
-        config.setSourceField("src");
-        config.setDestField("dst");
-        config.setOverloaded(false);
+        WhindexConfig config = WhindexConfig.builder()
+                .withValueField("field")
+                .withValues(Arrays.asList("val1", "val2"))
+                .withSourceField("src")
+                .withDestField("dst")
+                .withOverloaded(false)
+                .build();
 
-        // Equals should return false when compared to null.
         Assertions.assertNotEquals(null, config);
-        // Equals should return false when compared to an object of a different type (e.g., a String).
         Assertions.assertNotEquals("spaghetti", config);
-
-        // Verify that the object is equal to itself.
         Assertions.assertEquals(config, config);
     }
 }
