@@ -153,6 +153,22 @@ public class DateIndexIteratorTest {
         }
     }
 
+    @Test
+    public void testWithTimeTravel() throws IOException {
+        write("20250403", "ACTIVITY", "20250401", "datatype-a", "FIELD_A", 1);
+        write("20250403", "ACTIVITY", "20250402", "datatype-a", "FIELD_A", 2);
+        write("20250403", "ACTIVITY", "20250403", "datatype-a", "FIELD_A", 3);
+
+        withDatatypeFilter("datatype-a");
+        withExpectedNextSeekCounts(2, 1);
+        assertExpected("20250403", "datatype-a");
+
+        // enabling time travel means we will return keys for the first and second
+        withTimeTravel(true);
+        withExpectedNextSeekCounts(4, 1);
+        assertExpected("20250403", "ACTIVITY");
+    }
+
     private void write(String shard, String type, String date, String datatype, String field, int... offsets) {
         Key key = new Key(shard, type, date + "\u0000" + datatype + "\u0000" + field);
         BitSet bitset = new BitSet();
@@ -173,7 +189,7 @@ public class DateIndexIteratorTest {
 
         Collection<ByteSequence> columnFamily = Collections.singleton(new ArrayByteSequence(type.getBytes()));
 
-        StatDateIndexIterator iter = new StatDateIndexIterator();
+        StatEnabledDateIndexIterator iter = new StatEnabledDateIndexIterator();
         iter.init(source, options, env);
         iter.seek(range, columnFamily, true);
 
@@ -211,35 +227,6 @@ public class DateIndexIteratorTest {
     private void withExpectedNextSeekCounts(int expectedNextCount, int expectedSeekCount) {
         this.expectedNextCount = expectedNextCount;
         this.expectedSeekCount = expectedSeekCount;
-    }
-
-    /**
-     * Helper class for test, verifies cost of executing iterator
-     */
-    private class StatDateIndexIterator extends DateIndexIterator {
-
-        private int next = 0;
-        private int seek = 0;
-
-        @Override
-        public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-            seek++;
-            super.seek(range, columnFamilies, inclusive);
-        }
-
-        @Override
-        public void next() throws IOException {
-            next++;
-            super.next();
-        }
-
-        public int getNextCount() {
-            return next;
-        }
-
-        public int getSeekCount() {
-            return seek;
-        }
     }
 
 }
