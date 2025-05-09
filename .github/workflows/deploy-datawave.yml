@@ -47,4 +47,4 @@ jobs:
     - name: Build and Push all DataWave images and packages
       run: |
         docker info
-        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -Dutils -DskipTests -Ddocker.image.prefix=ghcr.io/nationalsecurityagency/
