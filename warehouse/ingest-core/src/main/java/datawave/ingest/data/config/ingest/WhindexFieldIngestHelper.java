@@ -211,11 +211,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                 }
             }
 
-            for (String field : fieldsToRemove) {
-                result.removeAll(field);
-            }
         }
-
+        for (String field : fieldsToRemove) {
+            result.removeAll(field);
+        }
         // Add the generated whindex fields to the eventMap
         result.putAll(whindicesInEventMap);
 

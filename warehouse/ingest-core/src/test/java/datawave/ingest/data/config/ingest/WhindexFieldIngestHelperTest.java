@@ -204,6 +204,46 @@ class WhindexFieldIngestHelperTest {
     }
 
     /**
+     * Test that processWhindexFields() correctly handles the case when multiple whindex configs share a srcField.
+     */
+    @Test
+    void testProcessWhindexFieldsWithOverlappingSrcFields() {
+
+        Configuration config = new Configuration();
+        config.set("wiki.whindex.rules.o1.value_field", "oValueField");
+        config.set("wiki.whindex.rules.o1.src_field", "SHARED_SRC_FIELD");
+        config.set("wiki.whindex.rules.o1.dst_field", "oDestField");
+        config.set("wiki.whindex.rules.o1.delete_src_field", "true"); // <-- Delete the shared srcField
+        config.set("wiki.whindex.rules.o1.values", "oTestValue1,oTestValue2,oTestValue3,oTestValue4");
+
+        config.set("wiki.whindex.rules.o2.value_field", "pValueField");
+        config.set("wiki.whindex.rules.o2.src_field", "SHARED_SRC_FIELD");
+        config.set("wiki.whindex.rules.o2.dst_field", "pDestField");
+        config.set("wiki.whindex.rules.o2.values", "pTestValue1,pTestValue2,pTestValue3,pTestValue4");
+        // Initialize the helper.
+        Type type = new Type("wiki", null, null, null, 0, null);
+        WhindexFieldIngestHelper wHelper = new WhindexFieldIngestHelper(type);
+        wHelper.setup(config);
+
+        // Build the event map.
+        Multimap<String,NormalizedContentInterface> eventMap = LinkedListMultimap.create();
+        eventMap.put("oValueField", new NormalizedFieldAndValue("oValueField", "oTestValue1"));
+        eventMap.put("pValueField", new NormalizedFieldAndValue("pValueField", "pTestValue1"));
+        eventMap.put("SHARED_SRC_FIELD", new NormalizedFieldAndValue("SHARED_SRC_FIELD", "oTestValue1,pTestValue1"));
+
+        // Process the event map.
+        Multimap<String,NormalizedContentInterface> actualValues = wHelper.processWhindexFields(eventMap);
+
+        // Expect that both whindex fields are added despite deleting the srcField
+        HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
+        expectedValues.put("oDestField", new NormalizedFieldAndValue("SHARED_SRC_FIELD", "oTestValue1,pTestValue1"));
+        expectedValues.put("pDestField", new NormalizedFieldAndValue("SHARED_SRC_FIELD", "oTestValue1,pTestValue1"));
+        expectedValues.put("oValueField", new NormalizedFieldAndValue("oValueField", "oTestValue1"));
+        expectedValues.put("pValueField", new NormalizedFieldAndValue("pValueField", "pTestValue1"));
+        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
+    }
+
+    /**
      * Test that isWhindexField() correctly identifies whindex fields when the rule's delete_src_field is set to "true".
      * <p>
      * Only the destination field should be considered a whindex field.
