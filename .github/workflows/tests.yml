@@ -99,32 +99,6 @@ jobs:
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
 
-  build-datawave-images:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ env.USER_NAME }}
-          password: ${{ env.ACCESS_TOKEN }}
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      # Clean up free space
-      - uses: ./.github/actions/free-space
-        with:
-          tool-cache: false
-      - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v4
-        with:
-          distribution: ${{env.JAVA_DISTRIBUTION}}
-          java-version: ${{env.JAVA_VERSION}}
-          cache: 'maven'
-      - name: Build all DataWave images
-        run: |
-          docker info
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Pkubernetes -Ddeploy -Ddocker-release -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
-
   # This step can be uncommented to support feature development.  When developing a 
   # feature which spans multiple repos, you can update the poms to use the latest 
   # SNAPSHOT across the board, and run this action as a sanity check to ensure 
