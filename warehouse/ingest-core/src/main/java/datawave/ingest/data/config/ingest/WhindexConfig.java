@@ -19,21 +19,20 @@ public class WhindexConfig {
     private final List<String> values;
 
     /**
-     * The source field parsed from an instance of the property {@link WhindexFieldIngestHelper#SRC_FIELD}.
-     * This is the field that may be replaced by the {@link #destField}.
+     * The source field parsed from an instance of the property {@link WhindexFieldIngestHelper#SRC_FIELD}. This is the field that may be replaced by the
+     * {@link #destField}.
      */
     private final String sourceField;
 
     /**
-     * The destination field parsed from an instance of the property {@link WhindexFieldIngestHelper#DST_FIELD}.
-     * The name of the new field (WhindexField) created when a Whindex entry is generated.
+     * The destination field parsed from an instance of the property {@link WhindexFieldIngestHelper#DST_FIELD}. The name of the new field (WhindexField)
+     * created when a Whindex entry is generated.
      */
     private final String destField;
 
     /**
-     * The overloaded field parsed from an instance of the property {@link WhindexFieldIngestHelper#DELETE_SRC_FIELD}.
-     * A flag indicating whether the original source field should be deleted (overloaded=true) or retained (overloaded=false).
-     * The default is assumed false.
+     * The overloaded field parsed from an instance of the property {@link WhindexFieldIngestHelper#DELETE_SRC_FIELD}. A flag indicating whether the original
+     * source field should be deleted (overloaded=true) or retained (overloaded=false). The default is assumed false.
      */
     private final boolean overloaded;
 
@@ -91,27 +90,25 @@ public class WhindexConfig {
     }
 
     /**
-     * Compares this WhindexConfig with another object for equality.
-     * Two WhindexConfig instances are considered equal if all their properties match.
+     * Compares this WhindexConfig with another object for equality. Two WhindexConfig instances are considered equal if all their properties match.
      *
-     * @param o the object to compare with
+     * @param o
+     *            the object to compare with
      * @return true if both objects are equal; false otherwise
      */
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         WhindexConfig that = (WhindexConfig) o;
-        return overloaded == that.overloaded &&
-                Objects.equals(valueField, that.valueField) &&
-                Objects.equals(values, that.values) &&
-                Objects.equals(sourceField, that.sourceField) &&
-                Objects.equals(destField, that.destField);
+        return overloaded == that.overloaded && Objects.equals(valueField, that.valueField) && Objects.equals(values, that.values)
+                        && Objects.equals(sourceField, that.sourceField) && Objects.equals(destField, that.destField);
     }
 
     /**
-     * Computes the hash code for this WhindexConfig.
-     * The hash code is computed based on the valueField, values, sourceField, destField, and overloaded flag.
+     * Computes the hash code for this WhindexConfig. The hash code is computed based on the valueField, values, sourceField, destField, and overloaded flag.
      *
      * @return the hash code as an integer
      */
@@ -140,7 +137,8 @@ public class WhindexConfig {
         private boolean overloaded = false;
 
         /**
-         * @param valueField the field name to check against values
+         * @param valueField
+         *            the field name to check against values
          */
         public Builder withValueField(String valueField) {
             this.valueField = valueField;
@@ -148,7 +146,8 @@ public class WhindexConfig {
         }
 
         /**
-         * @param values the list of values that trigger a Whindex entry
+         * @param values
+         *            the list of values that trigger a Whindex entry
          */
         public Builder withValues(List<String> values) {
             this.values = values;
@@ -156,7 +155,8 @@ public class WhindexConfig {
         }
 
         /**
-         * @param sourceField the field from which to read original data
+         * @param sourceField
+         *            the field from which to read original data
          */
         public Builder withSourceField(String sourceField) {
             this.sourceField = sourceField;
@@ -164,7 +164,8 @@ public class WhindexConfig {
         }
 
         /**
-         * @param destField the field to write the Whindex entry into
+         * @param destField
+         *            the field to write the Whindex entry into
          */
         public Builder withDestField(String destField) {
             this.destField = destField;
@@ -172,7 +173,8 @@ public class WhindexConfig {
         }
 
         /**
-         * @param overloaded true to delete the sourceField after processing
+         * @param overloaded
+         *            true to delete the sourceField after processing
          */
         public Builder withOverloaded(boolean overloaded) {
             this.overloaded = overloaded;

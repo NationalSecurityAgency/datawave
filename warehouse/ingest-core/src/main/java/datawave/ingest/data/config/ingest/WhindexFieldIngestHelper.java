@@ -1,12 +1,12 @@
 package datawave.ingest.data.config.ingest;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
@@ -24,12 +24,12 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 /**
  * Implements methods provided by the {@link WhindexIngest} interface, enabling parsing and application of Whindex rules defined by the constants:
  * <ul>
- *   <li>{@link #WHINDEX_RULES}</li>
- *   <li>{@link #VALUE_FIELD}</li>
- *   <li>{@link #SRC_FIELD}</li>
- *   <li>{@link #DELETE_SRC_FIELD}</li>
- *   <li>{@link #DST_FIELD}</li>
- *   <li>{@link #VALUES}</li>
+ * <li>{@link #WHINDEX_RULES}</li>
+ * <li>{@link #VALUE_FIELD}</li>
+ * <li>{@link #SRC_FIELD}</li>
+ * <li>{@link #DELETE_SRC_FIELD}</li>
+ * <li>{@link #DST_FIELD}</li>
+ * <li>{@link #VALUES}</li>
  * </ul>
  * <p>
  * Call {@link #setup(Configuration)} (which reads properties prefixed by <code>typeName. {@link #WHINDEX_RULES}.</code>) before
@@ -42,22 +42,22 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     private static final Logger log = Logger.getLogger(WhindexFieldIngestHelper.class);
 
     /** Prefix for Whindex rules in configuration (e.g. <code>myType.whindex.rules</code>). */
-    public static final String WHINDEX_RULES    = "whindex.rules";
+    public static final String WHINDEX_RULES = "whindex.rules";
 
     /** Property name for the value field to check. */
-    public static final String VALUE_FIELD      = "value_field";
+    public static final String VALUE_FIELD = "value_field";
 
     /** Property name for the source field to read from. */
-    public static final String SRC_FIELD        = "src_field";
+    public static final String SRC_FIELD = "src_field";
 
     /** Property name to indicate whether to delete the source field after processing. */
     public static final String DELETE_SRC_FIELD = "delete_src_field";
 
     /** Property name for the destination field to write Whindex entries into. */
-    public static final String DST_FIELD        = "dst_field";
+    public static final String DST_FIELD = "dst_field";
 
     /** Property name for the comma-separated list of trigger values. */
-    public static final String VALUES           = "values";
+    public static final String VALUES = "values";
 
     /** The data type this helper applies to. */
     private final Type type;
@@ -73,19 +73,21 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Create a new helper bound to the given data type.
      *
-     * @param type the Type whose configuration properties to read
+     * @param type
+     *            the Type whose configuration properties to read
      */
     public WhindexFieldIngestHelper(Type type) {
         this.type = type;
     }
 
     /**
-     * Reads all Whindex rule properties from the given Hadoop Configuration.
-     * Each group of properties (by prefix) is accumulated into a {@link WhindexConfig.Builder},
-     * then built and stored in the internal multimaps.
+     * Reads all Whindex rule properties from the given Hadoop Configuration. Each group of properties (by prefix) is accumulated into a
+     * {@link WhindexConfig.Builder}, then built and stored in the internal multimaps.
      *
-     * @param config the Hadoop Configuration containing properties like <code>typeName.whindex.rules.X.value_field</code>
-     * @throws RuntimeException if any property is malformed or missing required values
+     * @param config
+     *            the Hadoop Configuration containing properties like <code>typeName.whindex.rules.X.value_field</code>
+     * @throws RuntimeException
+     *             if any property is malformed or missing required values
      */
     @Override
     public void setup(Configuration config) {
@@ -105,8 +107,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                     throw new IllegalArgumentException("Empty value for Whindex property: " + key);
                 }
 
-                WhindexConfig.Builder builder =
-                        builders.computeIfAbsent(group, g -> WhindexConfig.builder());
+                WhindexConfig.Builder builder = builders.computeIfAbsent(group, g -> WhindexConfig.builder());
 
                 switch (prop) {
                     case VALUE_FIELD:
@@ -148,17 +149,15 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * Applies all configured Whindex rules to the given event map.
-     * For each config whose <code>valueField</code> has a triggering value,
-     * copies all entries from the <code>sourceField</code> into the new
-     * <code>destField</code>, optionally deleting the source.
+     * Applies all configured Whindex rules to the given event map. For each config whose <code>valueField</code> has a triggering value, copies all entries
+     * from the <code>sourceField</code> into the new <code>destField</code>, optionally deleting the source.
      *
-     * @param eventMap the original multimap of field -> values
+     * @param eventMap
+     *            the original multimap of field -> values
      * @return a new Multimap reflecting added Whindex entries and any removed sources
      */
     @Override
-    public Multimap<String,NormalizedContentInterface> processWhindexFields(
-            Multimap<String,NormalizedContentInterface> eventMap) {
+    public Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> eventMap) {
         if (valueFieldsToWhindexConfigs.isEmpty()) {
             return eventMap;
         }
@@ -168,18 +167,15 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
         Set<String> toRemove = new HashSet<>();
 
         // Determine which configs apply
-        List<WhindexConfig> configs = valueFieldsToWhindexConfigs.entries().stream()
-                .map(Map.Entry::getValue)
-                .filter(cfg -> result.containsKey(cfg.getValueField())
-                        && result.containsKey(cfg.getSourceField()))
-                .collect(Collectors.toList());
+        List<WhindexConfig> configs = valueFieldsToWhindexConfigs.entries().stream().map(Map.Entry::getValue)
+                        .filter(cfg -> result.containsKey(cfg.getValueField()) && result.containsKey(cfg.getSourceField())).collect(Collectors.toList());
 
         for (WhindexConfig cfg : configs) {
             // Check if any existing values match the config's trigger list
             boolean match = result.get(cfg.getValueField()).stream()
-                    .anyMatch(nci -> cfg.getValues().contains(nci.getEventFieldValue())
-                            || cfg.getValues().contains(nci.getIndexedFieldValue()));
-            if (!match) continue;
+                            .anyMatch(nci -> cfg.getValues().contains(nci.getEventFieldValue()) || cfg.getValues().contains(nci.getIndexedFieldValue()));
+            if (!match)
+                continue;
 
             // Copy source entries into new dest field
             Collection<NormalizedContentInterface> sources = result.get(cfg.getSourceField());
@@ -202,7 +198,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Checks if the given field name is one of the Whindex-generated destination fields.
      *
-     * @param field the field name to check
+     * @param field
+     *            the field name to check
      * @return true if this helper can generate values for that field
      */
     @Override
