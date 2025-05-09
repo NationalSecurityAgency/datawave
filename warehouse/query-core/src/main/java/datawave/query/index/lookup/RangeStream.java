@@ -935,7 +935,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
 
                 if (scannedKeys == 0) {
-                    log.error("no entries in num_shards cache");
+                    log.fatal("no entries in num_shards cache");
                 }
             } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
                 // an exception here shouldn't kill the query

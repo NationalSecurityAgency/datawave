@@ -17,6 +17,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTNumberLiteral;
@@ -1160,8 +1161,29 @@ public class JexlASTHelperTest {
     @Test
     public void testSafeReplacementOfUnionChildWithIntersection() throws InvalidQueryTreeException {
         ASTJexlScript script = parse("A == '1' || X == 'x' || D == '4'");
+        JexlNode expansion = parseAndGetRoot("B == '2' && C == '3'");
+        String expected = "A == '1' || (B == '2' && C == '3') || D == '4'";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTOrNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(1) instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(2) instanceof ASTEQNode);
+
+        // replacement initial state
+        assertTrue(expansion instanceof ASTAndNode);
+
+        JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testUnhappyNodeTreeReplacementHasNullParent() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1' || X == 'x' || D == '4'");
         JexlNode expansion = parseAndGetRoot("B == '2' || C == '3'");
-        String expected = "A == '1' || B == '2' || C == '3' || D == '4'";
+        String expected = "A == '1' || X == 'x' || D == '4'";
 
         // root initial state
         JexlNode root = script.jjtGetChild(0);
@@ -1173,6 +1195,39 @@ public class JexlASTHelperTest {
         // replacement initial state
         assertTrue(expansion instanceof ASTOrNode);
 
+        // this expansion wil fail because the parent is null
+        JexlNode target = root.jjtGetChild(1);
+        target.jjtSetParent(null);
+        assertNull(target.jjtGetParent());
+
+        JexlASTHelper.replaceNodeSafely(target, expansion);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
+
+        try {
+            validator.isValid(script);
+            fail("Validation should have failed due to lineage");
+        } catch (InvalidQueryTreeException e) {
+            assertTrue(e.getMessage().equals("Invalid query tree detected outside of normal scope: [Lineage]"));
+        }
+
+        // link target to parent and validate again
+        target.jjtSetParent(root);
+        assertTrue(validator.isValid(script));
+    }
+
+    @Test
+    public void testUnhappyNodeTreeTargetIsLeafNode() throws InvalidQueryTreeException {
+        ASTJexlScript script = parse("A == '1'");
+        JexlNode expansion = parseAndGetRoot("B == '2' && C == '3'");
+        String expected = "A == (B == '2' && C == '3')";
+
+        // root initial state
+        JexlNode root = script.jjtGetChild(0);
+        assertTrue(root instanceof ASTEQNode);
+        assertTrue(root.jjtGetChild(0) instanceof ASTIdentifier);
+        assertTrue(root.jjtGetChild(1) instanceof ASTStringLiteral);
+
+        // this test highlights the danger of blindly replacing a child node without knowing what it is
         JexlASTHelper.replaceNodeSafely(root.jjtGetChild(1), expansion);
         assertEquals(expected, JexlStringBuildingVisitor.buildQuery(script));
         assertTrue(validator.isValid(script));

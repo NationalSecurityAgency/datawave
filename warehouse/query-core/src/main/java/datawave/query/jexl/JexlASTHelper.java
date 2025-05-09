@@ -1124,7 +1124,7 @@ public class JexlASTHelper {
      * @param b
      *            second JexlNode
      */
-    public static void mergeJunctions(JexlNode parent, JexlNode a, JexlNode b) {
+    private static void mergeJunctions(JexlNode parent, JexlNode a, JexlNode b) {
         List<JexlNode> nodes = new ArrayList<>();
         for (JexlNode child : JexlNodes.getChildren(parent)) {
             if (child == a) {
