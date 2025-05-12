@@ -180,7 +180,21 @@
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
+        <property name="visitorManager" ref="TimedVisitorManager"/>
     </bean>
 
+    <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
+        <property name="debugEnabled" value="true"/>
+        <property name="validateAst" value="true"/>
+        <property name="validator" ref="AstValidator"/>
+    </bean>
+
+    <bean id="AstValidator" scope="prototype" class="datawave.query.jexl.visitors.validate.ASTValidator">
+        <property name="validateLineage" value="true"/>
+        <property name="validateFlatten" value="true"/>
+        <property name="validateJunctions" value="true"/>
+        <property name="validateReferenceExpressions" value="true"/>
+        <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
 
 </beans>
