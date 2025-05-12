@@ -21,11 +21,6 @@
         <module>utils</module>
         <module>base-rest-responses</module>
     </modules>
-    <scm>
-        <connection>scm:git:https://fixme/git/core/</connection>
-        <developerConnection>scm:git:ssh://git@fixme/core.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
