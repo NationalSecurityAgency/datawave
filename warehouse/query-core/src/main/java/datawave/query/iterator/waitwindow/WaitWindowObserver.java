@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import datawave.query.attributes.WaitWindowExceededMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -25,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
+import datawave.query.attributes.WaitWindowExceededMetadata;
 import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.ResultCountingIterator;
 import datawave.query.iterator.profile.QuerySpan;

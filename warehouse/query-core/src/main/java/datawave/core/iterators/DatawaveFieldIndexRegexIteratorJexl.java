@@ -79,16 +79,7 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     }
 
     @Override
-    public String toStringNoQueryId() {
-        return toStringImpl(false);
-    }
-
-    @Override
-    public String toString() {
-        return toStringImpl(true);
-    }
-
-    private String toStringImpl(boolean includeQueryId) {
+    protected String toStringImpl(boolean includeQueryId) {
         StringBuilder builder = new StringBuilder();
         builder.append(getClass().getSimpleName());
         if (includeQueryId) {

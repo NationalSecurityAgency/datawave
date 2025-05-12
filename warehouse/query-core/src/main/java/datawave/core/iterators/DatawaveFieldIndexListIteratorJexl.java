@@ -101,16 +101,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     }
 
     @Override
-    public String toStringNoQueryId() {
-        return toStringImpl(false);
-    }
-
-    @Override
-    public String toString() {
-        return toStringImpl(true);
-    }
-
-    private String toStringImpl(boolean includeQueryId) {
+    protected String toStringImpl(boolean includeQueryId) {
         StringBuilder builder = new StringBuilder();
         if (fst != null) {
             builder.append("DatawaveFieldIndexFSTIteratorJexl");

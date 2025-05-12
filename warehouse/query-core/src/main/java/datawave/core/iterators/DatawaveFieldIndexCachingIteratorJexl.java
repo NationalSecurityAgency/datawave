@@ -1747,15 +1747,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         return toStringImpl(true);
     }
 
-    private String toStringImpl(boolean includeQueryId) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(getClass().getSimpleName());
-        if (includeQueryId) {
-            builder.append(" (").append(queryId).append(")");
-        }
-        builder.append(" {fName=").append(getFieldName()).append(", fValue=").append(getFieldValue()).append(", negated=").append(isNegated()).append("}");
-        return builder.toString();
-    }
+    protected abstract String toStringImpl(boolean includeQueryId);
 
     public AtomicLong getScannedKeys() {
         return scannedKeys;
