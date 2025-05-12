@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import datawave.query.attributes.WaitWindowExceededMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -24,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
-import datawave.query.attributes.WaitWindowExceededMetadata;
 import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.ResultCountingIterator;
 import datawave.query.iterator.profile.QuerySpan;
@@ -56,7 +56,7 @@ public class WaitWindowObserver {
     protected AtomicLong remainingTimeMs = new AtomicLong(Long.MAX_VALUE);
     protected TimerTask timerTask = null;
     // How often the timerTask gets run
-    protected long checkPeriodMillis = 50;
+    protected long defaultCheckPeriodMillis = 50;
     // Seek range of the QueryIterator. Used to ensure that yieldKey is in the range.
     protected Range seekRange = null;
     // When collectTimingDetails==true, we set the yieldKey, return a WAIT_WINDOW_OVERRUN
@@ -129,12 +129,14 @@ public class WaitWindowObserver {
             this.seekRange = seekRange;
         }
         this.queryId = queryId;
-        if (yieldThresholdMs < Long.MAX_VALUE) {
+        if (yieldThresholdMs > 0 && yieldThresholdMs < Long.MAX_VALUE) {
             this.remainingTimeMs.set(yieldThresholdMs);
             this.endOfWaitWindow = yieldThresholdMs + System.currentTimeMillis();
             if (this.timerTask == null) {
                 this.timerTask = new WaitWindowTimerTask();
-                WaitWindowObserver.getTimer().schedule(this.timerTask, this.checkPeriodMillis, this.checkPeriodMillis);
+                // this allows us to set the yieldThresholdMs < defaultCheckPeriodMillis for testing
+                long checkPeriodMs = Math.min(this.defaultCheckPeriodMillis, yieldThresholdMs);
+                WaitWindowObserver.getTimer().schedule(this.timerTask, checkPeriodMs, checkPeriodMs);
             }
         }
     }
