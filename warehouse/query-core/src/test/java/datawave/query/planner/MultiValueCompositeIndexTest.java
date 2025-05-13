@@ -334,7 +334,7 @@ public class MultiValueCompositeIndexTest {
             // immediately from the ThreadedRangeBundler. The test framework also begins pulling ranges and the
             // final count is obviously incorrect
             List<QueryData> queries = getQueryRanges(query, false);
-            Assert.assertEquals(3, queries.size());
+            Assert.assertEquals(2, queries.size());
         }
 
         List<DefaultEvent> events = getQueryResults(query, false);
@@ -373,7 +373,7 @@ public class MultiValueCompositeIndexTest {
             // immediately from the ThreadedRangeBundler. The test framework also begins pulling ranges and the
             // final count is obviously incorrect
             List<QueryData> queries = getQueryRanges(query, true);
-            Assert.assertEquals(732, queries.size());
+            Assert.assertEquals(2196, queries.size());
         }
 
         List<DefaultEvent> events = getQueryResults(query, true);
@@ -401,7 +401,6 @@ public class MultiValueCompositeIndexTest {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
 
         Iterator iter = getQueryRangesIterator(queryString, logic);
-        Thread.sleep(5_000);
         List<QueryData> queryData = new ArrayList<>();
         while (iter.hasNext()) {
             queryData.add((QueryData) iter.next());

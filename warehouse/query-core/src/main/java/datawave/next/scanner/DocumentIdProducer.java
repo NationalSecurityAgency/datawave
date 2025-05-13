@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ public class DocumentIdProducer implements RunnableWithContext {
                 log.debug("scanning shard {} for candidates", context.getRanges().iterator().next().getStartKey());
             }
             boolean offered;
-            for (Map.Entry<Key,Value> entry : scanner) {
+            for (Map.Entry<Key, Value> entry : scanner) {
                 Key key = entry.getKey();
                 String payload = entry.getValue().toString();
                 KeyWithContext keyWithContext = parseEntry(key, payload);
@@ -65,7 +66,8 @@ public class DocumentIdProducer implements RunnableWithContext {
                     offered = candidateQueue.offer(keyWithContext, candidateQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
                 }
             }
-
+        } catch (IterationInterruptedException e){
+            log.warn("scan was interrupted");
         } catch (Exception e) {
             log.error("exception found while scanning the field index", e);
             throw new RuntimeException("exception found while scanning the field index", e);

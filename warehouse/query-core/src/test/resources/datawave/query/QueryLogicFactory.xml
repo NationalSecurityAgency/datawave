@@ -388,7 +388,7 @@
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
         <property name="disableIteratorUniqueFields" value="false"/>
-        <property name="useDocumentScheduler" value="true"/>
+        <property name="useDocumentScheduler" value="false"/>
         <property name="documentScannerConfig" ref="DocumentScannerConfig"/>
         <property name="validationRules">
             <list value-type="datawave.query.rules.QueryRule">

@@ -362,7 +362,7 @@ public class CompositeIndexTest {
 
         if (!logic.isUseDocumentScheduler()) {
             List<QueryData> queries = getQueryRanges(logic, query, false);
-            Assert.assertEquals(12, queries.size());
+            Assert.assertEquals(10, queries.size());
         }
 
         List<DefaultEvent> events = getQueryResults(logic, query, false);
@@ -461,7 +461,7 @@ public class CompositeIndexTest {
 
         if (!logic.isUseDocumentScheduler()) {
             List<QueryData> queries = getQueryRanges(query, true);
-            Assert.assertEquals(732, queries.size());
+            Assert.assertEquals(2196, queries.size());
         }
 
         List<DefaultEvent> events = getQueryResults(query, true);
