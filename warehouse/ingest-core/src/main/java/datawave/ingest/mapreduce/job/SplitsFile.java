@@ -1,12 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.commons.lang.time.DateUtils;
@@ -19,9 +15,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
 
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SplitsFile {
     private static final Logger log = Logger.getLogger(SplitsFile.class);
@@ -183,6 +182,8 @@ public class SplitsFile {
 
         return dateIsBalanced;
     }
+
+
 
     public static Map<String,List<Text>> getSplits(Configuration conf) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplits();
