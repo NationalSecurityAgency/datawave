@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 
+// @formatter:off
 /**
  * Visitor that removes disjunction children of AND nodes that are made redundant by virtue of distributed equivalency. For example:
  *
@@ -45,6 +46,7 @@ import datawave.query.jexl.JexlASTHelper;
  * <p>
  * Node traversal is post-order.
  */
+// @formatter:on
 public class DisjunctionEliminationVisitor extends RebuildingVisitor {
 
     private static final Logger log = Logger.getLogger(DisjunctionEliminationVisitor.class);

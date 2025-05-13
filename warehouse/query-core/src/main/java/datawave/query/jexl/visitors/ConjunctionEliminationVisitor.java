@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 
+// @formatter:off
 /**
  * Visitor that removes conjunction children of OR nodes that are made redundant by virtue of distributed equivalency. For example:
  *
@@ -49,6 +50,7 @@ import datawave.query.jexl.JexlASTHelper;
  * <p>
  * Node traversal is post-order.
  */
+// @formatter:on
 public class ConjunctionEliminationVisitor extends RebuildingVisitor {
 
     private static final Logger log = Logger.getLogger(ConjunctionEliminationVisitor.class);
