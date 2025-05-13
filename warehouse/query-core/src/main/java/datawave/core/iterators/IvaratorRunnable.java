@@ -57,7 +57,7 @@ public class IvaratorRunnable implements Runnable {
         this.ivarator = ivarator;
         this.source = source;
         this.boundingFiRange = boundingFiRange;
-        this.rangeHash = String.valueOf(Math.abs(boundingFiRange.hashCode()));
+        this.rangeHash = String.valueOf(Math.abs(boundingFiRange.hashCode() / 2));
         this.seekRange = seekRange;
         this.fiRow = fiRow;
         this.queryId = queryId;

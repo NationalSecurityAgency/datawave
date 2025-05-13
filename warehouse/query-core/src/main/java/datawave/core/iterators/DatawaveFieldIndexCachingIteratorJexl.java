@@ -1228,7 +1228,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         sb.append(" queryId:").append(queryId);
         sb.append(" fiRow:").append(fiRow);
         sb.append(" iHash:").append(getIHash(fiRow));
-        sb.append(" rangeHash:").append(Math.abs(boundingFiRange.hashCode()));
+        sb.append(" rangeHash:").append(Math.abs(boundingFiRange.hashCode() / 2));
         return sb.toString();
     }
 
@@ -1784,6 +1784,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public String getIHash(String row) {
         HashCodeBuilder builder = new HashCodeBuilder();
         int hashCode = builder.append(row).append(this.toString()).toHashCode();
-        return String.valueOf(Math.abs(hashCode));
+        return String.valueOf(Math.abs(hashCode / 2));
     }
 }
