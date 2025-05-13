@@ -15,6 +15,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,23 +73,30 @@ public class DocumentRangeScan implements RunnableWithContext {
 
     @Override
     public void run() {
+        Thread.currentThread().setName(getContext());
         try {
-            Thread.currentThread().setName(getContext());
-            stats.markStart();
-            if (log.isDebugEnabled()) {
-                if (keyWithContext instanceof BulkKeyWithContext) {
-                    log.debug("executing document batch {}", ((BulkKeyWithContext) keyWithContext).getKeys().size());
-                } else {
-                    log.debug("executing document range {}", keyWithContext.getKey().toStringNoTime());
+            boolean executing = true;
+            while (executing) {
+                try {
+                    stats.markStart();
+                    if (log.isDebugEnabled()) {
+                        if (keyWithContext instanceof BulkKeyWithContext) {
+                            log.debug("executing document batch {}", ((BulkKeyWithContext) keyWithContext).getKeys().size());
+                        } else {
+                            log.debug("executing document range {}", keyWithContext.getKey().toStringNoTime());
+                        }
+                    }
+
+                    if (useQueryIterator) {
+                        executeQueryIteratorScan();
+                    } else {
+                        executeDocumentScan();
+                    }
+                    executing = false;
+                } catch (IterationInterruptedException e) {
+                    log.warn("time sliced, resubmitting scan for {}", getContext());
                 }
             }
-
-            if (useQueryIterator) {
-                executeQueryIteratorScan();
-            } else {
-                executeDocumentScan();
-            }
-
         } catch (Exception e) {
             log.error("error executing document range {}", keyWithContext.getKey().toStringNoTime(), e);
             throw new RuntimeException("error retrieving document: " + keyWithContext.getKey().toStringNoTime(), e);

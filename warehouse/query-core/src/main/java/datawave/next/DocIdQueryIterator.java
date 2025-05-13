@@ -15,6 +15,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang3.LongRange;
@@ -136,53 +138,57 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
     @Override
     public void next() throws IOException {
-        tk = null;
+        try {
+            tk = null;
 
-        if (data.hasNext()) {
-            tk = data.next();
-        }
-
-        // if this is the last key,
-        if (batchSize == 1 && !data.hasNext() && !statsReturned) {
-            statsReturned = true;
-
-            // close enough
-            timingStats.markRetrievalStop();
-
-            tv = new Value(iteratorStats + ":" + timingStats);
-            if (tk == null) {
-                // if no document keys were found, i.e. a scan that returned no results, then create a fake key
-                tk = new Key(range.getStartKey().getRow(), new Text("STATS"));
-            }
-        }
-
-        if (batchSize > 1 && !statsReturned) {
-            int count = 0;
-            Set<Key> batch = new HashSet<>();
-            if (tk != null) {
-                count++;
-                batch.add(tk);
+            if (data.hasNext()) {
+                tk = data.next();
             }
 
-            while (data.hasNext() && count < batchSize) {
-                count++;
-                batch.add(data.next());
-            }
-
-            String serialized = batchToString(batch);
-
-            if (!data.hasNext()) {
-                // add stats if this is the last key
+            // if this is the last key,
+            if (batchSize == 1 && !data.hasNext() && !statsReturned) {
                 statsReturned = true;
-                serialized += ";" + iteratorStats + ":" + timingStats;
 
+                // close enough
+                timingStats.markRetrievalStop();
+
+                tv = new Value(iteratorStats + ":" + timingStats);
                 if (tk == null) {
                     // if no document keys were found, i.e. a scan that returned no results, then create a fake key
                     tk = new Key(range.getStartKey().getRow(), new Text("STATS"));
                 }
             }
 
-            tv = new Value(serialized);
+            if (batchSize > 1 && !statsReturned) {
+                int count = 0;
+                Set<Key> batch = new HashSet<>();
+                if (tk != null) {
+                    count++;
+                    batch.add(tk);
+                }
+
+                while (data.hasNext() && count < batchSize) {
+                    count++;
+                    batch.add(data.next());
+                }
+
+                String serialized = batchToString(batch);
+
+                if (!data.hasNext()) {
+                    // add stats if this is the last key
+                    statsReturned = true;
+                    serialized += ";" + iteratorStats + ":" + timingStats;
+
+                    if (tk == null) {
+                        // if no document keys were found, i.e. a scan that returned no results, then create a fake key
+                        tk = new Key(range.getStartKey().getRow(), new Text("STATS"));
+                    }
+                }
+
+                tv = new Value(serialized);
+            }
+        } catch (Exception e) {
+            handleException(e);
         }
     }
 
@@ -212,29 +218,33 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        timingStats.markScanStart();
-        this.range = range;
+        try {
+            timingStats.markScanStart();
+            this.range = range;
 
-        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypeFilter, timeFilter, indexedFields);
-        if (scanTimeout > 0) {
-            visitor.setMaxScanTimeMillis(scanTimeout);
+            DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypeFilter, timeFilter, indexedFields);
+            if (scanTimeout > 0) {
+                visitor.setMaxScanTimeMillis(scanTimeout);
+            }
+
+            Set<Key> docIds = visitor.getDocIds(script);
+            data = new TreeSet<>(docIds).iterator();
+
+            timingStats.markScanStop();
+
+            if (log.isDebugEnabled()) {
+                long elapsedNS = timingStats.getScanTime();
+                long elapsedMS = TimeUnit.NANOSECONDS.toMillis(elapsedNS);
+                log.debug("scanned {} ids in {} ns or {} ms", docIds.size(), elapsedNS, elapsedMS);
+            }
+            iteratorStats.merge(visitor.getStats());
+            timingStats.incrementTotalDocumentIds(docIds.size());
+
+            timingStats.markRetrievalStart();
+            next();
+        } catch (Exception e) {
+            handleException(e);
         }
-
-        Set<Key> docIds = visitor.getDocIds(script);
-        data = new TreeSet<>(docIds).iterator();
-
-        timingStats.markScanStop();
-
-        if (log.isDebugEnabled()) {
-            long elapsedNS = timingStats.getScanTime();
-            long elapsedMS = TimeUnit.NANOSECONDS.toMillis(elapsedNS);
-            log.debug("scanned {} ids in {} ns or {} ms", docIds.size(), elapsedNS, elapsedMS);
-        }
-        iteratorStats.merge(visitor.getStats());
-        timingStats.incrementTotalDocumentIds(docIds.size());
-
-        timingStats.markRetrievalStart();
-        next();
     }
 
     @Override
@@ -250,5 +260,64 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new DocIdQueryIterator(this, env);
+    }
+
+    /**
+     * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
+     * interrupted because the client is no longer listening.
+     *
+     * @param e
+     *            the exception to handle
+     * @throws IOException
+     *             for read/write issues
+     */
+    private void handleException(Exception e) throws IOException {
+        Throwable reason = e;
+
+        // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
+        // handled specially to ensure that the client will retry the scan elsewhere
+        IOException ioe = null;
+        IterationInterruptedException iie = null;
+        TabletClosedException tce = null;
+        if (reason instanceof IOException) {
+            ioe = (IOException) reason;
+        }
+        if (reason instanceof IterationInterruptedException) {
+            iie = (IterationInterruptedException) reason;
+        }
+        if (reason instanceof TabletClosedException) {
+            tce = (TabletClosedException) reason;
+        }
+
+        int depth = 1;
+        while (iie == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+            reason = reason.getCause();
+            if (reason instanceof IOException) {
+                ioe = (IOException) reason;
+            }
+            if (reason instanceof IterationInterruptedException) {
+                iie = (IterationInterruptedException) reason;
+            }
+            if (reason instanceof TabletClosedException) {
+                tce = (TabletClosedException) reason;
+            }
+            depth++;
+        }
+
+        // NOTE: Only logging debug (for the most part) here because the Tablet/LookupTask will log the exception
+        // as a WARN if we actually have a problem here
+        if (iie != null) {
+            log.debug("Query interrupted ", e);
+            throw iie;
+        } else if (tce != null) {
+            log.debug("Query tablet closed ", e);
+            throw tce;
+        } else if (ioe != null) {
+            log.debug("Query io exception ", e);
+            throw ioe;
+        } else {
+            log.error("Failure for query ", e);
+            throw new RuntimeException("Failure for query ", e);
+        }
     }
 }

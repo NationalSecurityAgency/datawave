@@ -7,17 +7,22 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.core.query.configuration.QueryData;
+import datawave.next.DocIdQueryIterator;
 import datawave.next.async.RunnableWithContext;
 import datawave.next.stats.DocIdQueryIteratorStats;
 import datawave.next.stats.DocumentIteratorStats;
+import datawave.query.iterator.QueryOptions;
 
 /**
  * A runnable that handles async scanning of a tablet to find document candidates.
@@ -29,16 +34,16 @@ public class DocumentIdProducer implements RunnableWithContext {
     private final DocumentScannerConfig config;
     private final long candidateQueueOfferTimeMillis;
     private final BlockingQueue<KeyWithContext> candidateQueue;
-    private final Scanner scanner;
+    private final Range range;
     private final QueryData context;
     private final AtomicInteger numSearchScans;
 
     private String runnableContext;
 
-    public DocumentIdProducer(DocumentScannerConfig config, Scanner scanner, QueryData context) {
+    public DocumentIdProducer(DocumentScannerConfig config, QueryData context, Range range) {
         this.config = config;
-        this.scanner = scanner;
         this.context = context;
+        this.range = range;
         this.candidateQueueOfferTimeMillis = this.config.getCandidateQueueOfferTimeMillis();
         this.candidateQueue = this.config.getCandidateQueue();
         this.numSearchScans = this.config.getNumSearchScans();
@@ -46,13 +51,33 @@ public class DocumentIdProducer implements RunnableWithContext {
 
     @Override
     public void run() {
+        Thread.currentThread().setName(getContext());
+        if (log.isDebugEnabled()) {
+            log.debug("scanning shard {} for candidates", range.getStartKey());
+        }
+
         try {
-            Thread.currentThread().setName(getContext());
-            if (log.isDebugEnabled()) {
-                log.debug("scanning shard {} for candidates", context.getRanges().iterator().next().getStartKey());
+            boolean executing = true;
+            while (executing) {
+                try {
+                    executeScan();
+                    executing = false;
+                } catch (IterationInterruptedException e) {
+                    log.warn("time sliced, resubmitting scan for {}", getContext());
+                }
             }
+        } catch (Exception e) {
+            log.error("exception found while scanning the field index", e);
+            throw new RuntimeException("exception found while scanning the field index", e);
+        } finally {
+            numSearchScans.getAndDecrement();
+        }
+    }
+
+    private void executeScan() throws TableNotFoundException, InterruptedException {
+        try (Scanner scanner = createScanner()) {
             boolean offered;
-            for (Map.Entry<Key, Value> entry : scanner) {
+            for (Map.Entry<Key,Value> entry : scanner) {
                 Key key = entry.getKey();
                 String payload = entry.getValue().toString();
                 KeyWithContext keyWithContext = parseEntry(key, payload);
@@ -66,15 +91,38 @@ public class DocumentIdProducer implements RunnableWithContext {
                     offered = candidateQueue.offer(keyWithContext, candidateQueueOfferTimeMillis, TimeUnit.MILLISECONDS);
                 }
             }
-        } catch (IterationInterruptedException e){
-            log.warn("scan was interrupted");
-        } catch (Exception e) {
-            log.error("exception found while scanning the field index", e);
-            throw new RuntimeException("exception found while scanning the field index", e);
-        } finally {
-            numSearchScans.getAndDecrement();
-            scanner.close();
         }
+    }
+
+    private Scanner createScanner() throws TableNotFoundException {
+        // this check exists because datawave can produce day ranges for certain unit tests. The document scheduler is optimized for shard-specific plans and
+        // thus is not compatible with day ranges.
+        Range scanRange = Range.exact(range.getStartKey().getRow());
+        if (!scanRange.equals(range)) {
+            log.warn("prev: {}", range);
+            log.warn("next: {}", scanRange);
+            throw new RuntimeException("Scan range differed from input range");
+        }
+
+        Scanner scanner = config.getClient().createScanner(context.getTableName(), config.getAuthorizations());
+        scanner.setRange(range);
+        scanner.addScanIterator(createIteratorSetting());
+        return scanner;
+    }
+
+    private IteratorSetting createIteratorSetting() {
+        IteratorSetting settings = context.getSettings().get(0);
+
+        IteratorSetting next = new IteratorSetting(settings.getPriority(), "DocIdQueryIterator", DocIdQueryIterator.class);
+        next.addOption(QueryOptions.QUERY, context.getQuery());
+        next.addOption(QueryOptions.START_TIME, settings.getOptions().get(QueryOptions.START_TIME));
+        next.addOption(QueryOptions.END_TIME, settings.getOptions().get(QueryOptions.END_TIME));
+        next.addOption(QueryOptions.INDEXED_FIELDS, settings.getOptions().get(QueryOptions.INDEXED_FIELDS));
+        if (settings.getOptions().containsKey(QueryOptions.DATATYPE_FILTER)) {
+            next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
+        }
+        next.addOption(DocIdQueryIterator.BATCH_SIZE, String.valueOf(config.getCandidateBatchSize()));
+        return next;
     }
 
     private KeyWithContext parseEntry(Key key, String payload) {

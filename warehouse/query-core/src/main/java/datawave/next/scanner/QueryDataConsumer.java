@@ -7,8 +7,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -18,9 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import datawave.core.query.configuration.QueryData;
-import datawave.next.DocIdQueryIterator;
 import datawave.next.stats.QueryDataConsumerStats;
-import datawave.query.iterator.QueryOptions;
 
 /**
  * Thread that consumes {@link QueryData} and submits them to the {@link DocumentScanner}'s executor pool.
@@ -112,33 +108,6 @@ public class QueryDataConsumer implements Runnable {
     private void putFiScan(QueryData queryData, Range range) throws TableNotFoundException {
         stats.incrementNumShardScans();
 
-        IteratorSetting settings = queryData.getSettings().get(0);
-
-        IteratorSetting next = new IteratorSetting(settings.getPriority(), "DocIdQueryIterator", DocIdQueryIterator.class);
-        next.addOption(QueryOptions.QUERY, queryData.getQuery());
-        next.addOption(QueryOptions.START_TIME, settings.getOptions().get(QueryOptions.START_TIME));
-        next.addOption(QueryOptions.END_TIME, settings.getOptions().get(QueryOptions.END_TIME));
-        next.addOption(QueryOptions.INDEXED_FIELDS, settings.getOptions().get(QueryOptions.INDEXED_FIELDS));
-        if (settings.getOptions().containsKey(QueryOptions.DATATYPE_FILTER)) {
-            next.addOption(QueryOptions.DATATYPE_FILTER, settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
-        }
-        next.addOption(DocIdQueryIterator.BATCH_SIZE, String.valueOf(config.getCandidateBatchSize()));
-
-        // TODO: migrate to scanner factory to pick up configuration for scan hints and consistency level
-        Scanner scanner = config.getClient().createScanner(queryData.getTableName(), config.getAuthorizations());
-
-        // this check exists because datawave can produce day ranges for certain unit tests. The document scheduler is optimized for shard-specific plans and
-        // thus is not compatible with day ranges.
-        Range scanRange = Range.exact(range.getStartKey().getRow());
-        if (!scanRange.equals(range)) {
-            log.warn("prev: {}", range);
-            log.warn("next: {}", scanRange);
-            throw new RuntimeException("Scan range differed from input range");
-        }
-
-        scanner.setRange(range);
-        scanner.addScanIterator(next);
-
         // wait until there's room to run
         while (numSearchScans.get() >= maxSearchTasks) {
             // Note: the max field index tasks submitted may exceed the number of executor threads. This
@@ -148,7 +117,7 @@ public class QueryDataConsumer implements Runnable {
 
         int currentFiScanCount = numSearchScans.incrementAndGet();
         log.debug("current fi scans: {}", currentFiScanCount);
-        DocumentIdProducer fiScan = new DocumentIdProducer(config, scanner, queryData);
+        DocumentIdProducer fiScan = new DocumentIdProducer(config, queryData, range);
 
         String context = range.getStartKey().getRow().toString();
         fiScan.setContext("fi scan " + ++fiScansSubmitted + " - " + context);
