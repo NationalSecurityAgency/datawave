@@ -26,7 +26,7 @@ env:
   ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
-  build-and-push-datawave:
+  deploy-packages-and-images:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
