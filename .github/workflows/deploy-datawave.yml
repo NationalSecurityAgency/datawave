@@ -1,5 +1,4 @@
-#
-name: Publish all DataWave images and packages
+name: Deploy
 
 on:
   push:
