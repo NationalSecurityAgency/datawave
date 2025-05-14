@@ -9,6 +9,7 @@ import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,6 +21,10 @@ public class FieldAgeOffFilterTest {
     private static final String VISIBILITY_PATTERN = "MY_VIS";
     private static final int ONE_SEC = 1000;
     private static final int ONE_MIN = 60 * ONE_SEC;
+
+    private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
+
+    private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment(conf, IteratorUtil.IteratorScope.scan) {};
 
     private ConfigurableIteratorEnvironment iterEnv = new ConfigurableIteratorEnvironment();
 
@@ -68,7 +73,7 @@ public class FieldAgeOffFilterTest {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         conf.put("table.custom.isindextable", "true");
         iterEnv.setConf(conf);
-
+        env.setConf(conf);
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
@@ -80,7 +85,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("fields", "field_y,field_z\\x00my-uuid");
         filterOptions.setOption("field_z\\x00my-uuid.ttl", "2"); // 2 seconds
         filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
@@ -96,6 +101,7 @@ public class FieldAgeOffFilterTest {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         conf.put("table.custom.isindextable", "true");
         iterEnv.setConf(conf);
+        env.setConf(conf);
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -110,7 +116,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("field_z\\x00my-uuid.ttl", "2"); // 2 seconds
         filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
 
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         Assert.assertNotNull("IteratorEnvironment should not be null after init!", ageOffFilter.iterEnv);
         // originally this would cause the iterEnv to be lost and test would fail
         ageOffFilter = (FieldAgeOffFilter) ageOffFilter.deepCopy(tenSecondsAgo, iterEnv);
@@ -123,6 +129,7 @@ public class FieldAgeOffFilterTest {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         conf.put("isindextable", "false");
         iterEnv.setConf(conf);
+        env.setConf(conf);
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -135,7 +142,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("fields", "field_y,field_z\\x00my-uuid");
         filterOptions.setOption("field_z\\x00my-uuid.ttl", "2"); // 2 seconds
         filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
@@ -230,7 +237,7 @@ public class FieldAgeOffFilterTest {
         Key key = new Key("1234", "d", "someother stuff", VISIBILITY_PATTERN);
 
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
-        ageOffFilter.init(createFilterOptionsWithPattern(), iterEnv);
+        ageOffFilter.init(createFilterOptionsWithPattern(), env);
 
         // age off immediately
         AgeOffPeriod futureAgeOff = new AgeOffPeriod(System.currentTimeMillis());
@@ -283,7 +290,7 @@ public class FieldAgeOffFilterTest {
         // set up ttls for field_y and field_z only, deliberately exclude the ttl for field_y
         filterOptions.setOption("fields", "field_y,field_z");
         filterOptions.setOption("field_z.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, oneSecondAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
@@ -302,7 +309,7 @@ public class FieldAgeOffFilterTest {
         // set up ttls for field_y and field_z only, deliberately exclude the ttl for field_y
         filterOptions.setOption("fields", "field_y,field_z");
         filterOptions.setOption("field_z.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
@@ -322,7 +329,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("fields", "field_y,field_z");
         filterOptions.setOption("field_y.ttl", "1"); // 1 second
         filterOptions.setOption("field_z.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
 
         // field_a is not a match, so it should pass through
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_a\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
@@ -344,7 +351,7 @@ public class FieldAgeOffFilterTest {
         // set up ttls for field_y and field_z only, deliberately exclude the ttl for field_y
         filterOptions.setOption("fields", "field_y");
         filterOptions.setOption("field.field_z.ttl", "2"); // 2 minutes
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key keyY = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, oneMinuteAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyY, new Value()));
@@ -368,7 +375,7 @@ public class FieldAgeOffFilterTest {
         // set up ttls for field_y and field_z only, deliberately exclude the ttl for field_y
         filterOptions.setOption("fields", "field_y");
         filterOptions.setOption("field.field_z.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
@@ -395,7 +402,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("fields", "field_y");
         filterOptions.setOption("field.12_3_4.ttl", "2"); // 2 seconds
         filterOptions.setOption("field.12_3_4.ttlUnits", "s"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), key, new Value()));
@@ -425,7 +432,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("fields", "field_y");
         filterOptions.setOption("field.field_z.ttl", "2");
         filterOptions.setOption("field.field_z.ttlUnits", "d"); // 2 days
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key keyY = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, oneMinuteAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyY, new Value()));
@@ -448,7 +455,7 @@ public class FieldAgeOffFilterTest {
         // set up ttls for field_y and field_z only
         filterOptions.setOption("field.field_y.ttl", "1"); // 1 second
         filterOptions.setOption("field.field_z.ttl", "2"); // 2 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
 
         // field_a is not a match, so it should pass through
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_a\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
@@ -470,7 +477,7 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("excludeData", "event");
         filterOptions.setOption("field.field_y.ttl", "9"); // 9 seconds
         filterOptions.setOption("field.field_z.ttl", "11"); // 11 seconds
-        ageOffFilter.init(filterOptions, iterEnv);
+        ageOffFilter.init(filterOptions, env);
 
         // field_y is event data, it should pass through; but rule is not applied
         Key key1 = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
