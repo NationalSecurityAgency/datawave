@@ -312,6 +312,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
+        <property name="localIvaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${local.ivarator.cache.dir.config} -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
@@ -386,6 +387,7 @@
         <property name="sortQueryPostIndexWithFieldCounts" value="true" />
         <!-- cardinality threshold enables running ivarators as filter iterators -->
         <property name="cardinalityThreshold" value="50"/>
+        <property name="disableIteratorUniqueFields" value="false"/>
         <property name="validationRules">
             <list value-type="datawave.query.rules.QueryRule">
                 <ref bean="InvalidQuoteRule"/>
@@ -492,8 +494,8 @@
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
-        <property name="debugEnabled" value="false"/>
-        <property name="validateAst" value="false"/>
+        <property name="debugEnabled" value="true"/>
+        <property name="validateAst" value="true"/>
         <property name="validator" ref="AstValidator"/>
     </bean>
 
@@ -507,4 +509,31 @@
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
     </util:list>
+
+    <!-- Query Logic that returns document content -->
+    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns a document given the document identifier" />
+    </bean>
+
+    <!-- Query Logic that returns document term frequency information -->
+    <bean id="TermFrequencyQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.term.TermFrequencyQueryTable">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns data from the term frequency query table" />
+    </bean>
+
+    <!-- Query Logic that returns returnd document keywords -->
+    <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
+        <property name="tableName" value="shard" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns keywords from content" />
+    </bean>
 </beans>

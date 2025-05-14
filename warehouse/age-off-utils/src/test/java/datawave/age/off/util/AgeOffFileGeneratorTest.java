@@ -17,9 +17,12 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.xerces.dom.DocumentImpl;
 import org.junit.Rule;
 import org.junit.Test;
@@ -389,9 +392,11 @@ public class AgeOffFileGeneratorTest {
     }
 
     private class TestProvider implements AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider {
+        private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
+
         @Override
         public IteratorEnvironment getIterEnv() {
-            return new ConfigurableIteratorEnvironment();
+            return new ConfigurableIteratorEnvironment(conf, IteratorUtil.IteratorScope.scan);
         }
 
         @Override

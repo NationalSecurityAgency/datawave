@@ -37,6 +37,8 @@ import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -294,13 +296,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(visitor.namespace());
 
-        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace()))
-            throw new IllegalArgumentException(
+        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace())) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
-        if (!functionClass.equals(QueryFunctions.class))
-            throw new IllegalArgumentException(
+            throw new IllegalArgumentException(qe);
+        }
+        if (!functionClass.equals(QueryFunctions.class)) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
-
+            throw new IllegalArgumentException(qe);
+        }
         verify(visitor.name(), visitor.args().size());
 
         return new QueryJexlArgumentDescriptor(node, visitor.namespace(), visitor.name(), visitor.args());
@@ -310,17 +315,23 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         switch (name) {
             case BETWEEN:
                 if (numArgs != 3) {
-                    throw new IllegalArgumentException("Wrong number of arguments to between function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Wrong number of arguments to between function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case LENGTH:
                 if (numArgs != 3) {
-                    throw new IllegalArgumentException("Wrong number of arguments to length function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Wrong number of arguments to length function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case QueryFunctions.OPTIONS_FUNCTION:
                 if (numArgs % 2 != 0) {
-                    throw new IllegalArgumentException("Expected even number of arguments to options function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Expected even number of arguments to options function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case QueryFunctions.UNIQUE_FUNCTION:
@@ -355,13 +366,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.AVERAGE:
             case QueryFunctions.RENAME_FUNCTION:
                 if (numArgs == 0) {
-                    throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
+                                    "Expected at least one argument to the " + name + " function");
+                    throw new IllegalArgumentException(qe);
                 }
                 break;
             case QueryFunctions.SUMMARY_FUNCTION:
                 break;
             default:
-                throw new IllegalArgumentException("Unknown Query function: " + name);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, "Unknown Query function: " + name);
+                throw new IllegalArgumentException(qe);
         }
     }
 }

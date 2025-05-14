@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;

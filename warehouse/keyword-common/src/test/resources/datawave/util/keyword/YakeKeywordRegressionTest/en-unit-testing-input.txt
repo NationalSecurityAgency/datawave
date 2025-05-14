@@ -1,0 +1,38 @@
+Unit testing, a.k.a. component or module testing, is a form of software testing by which isolated source code is
+tested to validate expected behavior. Unit testing describes tests that are run at the unit-level to contrast testing
+at the integration or system level.
+
+Unit testing, as a principle for testing separately smaller parts of large software systems dates back to the early
+days of software engineering. In June 1956, H.D. Benington presented at US Navy's Symposium on Advanced Programming
+Methods for Digital Computers the SAGE project and its specification based approach where the coding phase was
+followed by "parameter testing" to validate component subprograms against their specification, followed then by an
+"assembly testing" for parts put together.
+
+In 1964, a similar approach is described for the software of the Mercury project, where individual units developed by
+different programmes underwent "unit tests" before being integrated together. In 1969, testing methodologies appear
+more structured, with unit tests, component tests and integration tests with the purpose of validating individual
+parts written separately and their progressive assembly into larger blocks. Some public standards adopted end of
+the 60's, such as MIL-STD-483 and MIL-STD-490 contributed further to a wide acceptance of unit testing in large
+projects.
+
+Unit testing was in those times interactive or automated, using either coded tests or capture and replay testing
+tools. In 1989, Kent Beck described a testing framework for Smalltalk (later called SUnit) in "Simple Smalltalk
+Testing: With Patterns". In 1997, Kent Beck and Erich Gamma developed and released JUnit, a unit test framework that
+became popular with Java developers. Google embraced automated testing around 2005–2006.
+
+Unit is defined as a single behaviour exhibited by the system under test (SUT), usually corresponding to a requirement.
+While it may imply that it is a function or a module (in procedural programming) or a method or a class
+(in object-oriented programming) it does not mean functions/methods, modules or classes always correspond to units.
+From the system-requirements perspective only the perimeter of the system is relevant, thus only entry points to
+externally-visible system behaviours define units.
+
+Unit tests can be performed manually or via automated test execution. Automated tests include benefits such as: running
+tests often, running tests without staffing cost, and consistent and repeatable testing.
+
+Testing is often performed by the programmer who writes and modifies the code under test. Unit testing may be viewed
+as part of the process of writing code.
+
+During development, a programmer may code criteria, or results that are known to be good, into the test to verify
+the unit's correctness. During test execution, frameworks log tests that fail any criterion and report them in a
+summary. For this, the most commonly used approach is test - function - expected value.
+

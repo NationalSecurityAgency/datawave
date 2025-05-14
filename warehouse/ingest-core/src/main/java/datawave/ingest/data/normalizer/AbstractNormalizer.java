@@ -17,6 +17,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public abstract class AbstractNormalizer implements TextNormalizer {
+    private static final String FAILED_TO_NORMALIZE = "Failed to normalize ";
     private static final Logger log = Logger.getLogger(AbstractNormalizer.class);
 
     @Override
@@ -223,7 +224,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
             if (field.getEventFieldName().equals("IP_GEO_FM_COORDINATES") && field.getEventFieldValue().equals("-99.999/-999.999")) {
                 log.warn("Found know bad default value: IP_GEO_FM_COORDINATES=-99.999/-999.999");
             } else {
-                log.error("Failed to normalize " + field.getEventFieldName() + '=' + field.getEventFieldValue(), e);
+                log.error(FAILED_TO_NORMALIZE + field.getEventFieldName() + '=' + field.getEventFieldValue(), e);
             }
             n.setError(e);
         }
@@ -240,7 +241,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
                 try {
                     normalizedContent = normalize(new NormalizedFieldAndValue(field.getKey(), field.getValue()));
                 } catch (Exception e) {
-                    log.error("Failed to normalize " + field.getKey() + '=' + field.getValue(), e);
+                    log.error(FAILED_TO_NORMALIZE + field.getKey() + '=' + field.getValue(), e);
                     normalizedContent = new NormalizedFieldAndValue(field.getKey(), field.getValue());
                     normalizedContent.setError(e);
                 }
@@ -260,7 +261,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
                 try {
                     normalizedContent = normalize(field.getValue());
                 } catch (Exception e) {
-                    log.error("Failed to normalize " + field.getValue().getIndexedFieldName() + '=' + field.getValue().getIndexedFieldValue(), e);
+                    log.error(FAILED_TO_NORMALIZE + field.getValue().getIndexedFieldName() + '=' + field.getValue().getIndexedFieldValue(), e);
                     normalizedContent.setError(e);
                 }
                 results.put(normalizedContent.getIndexedFieldName(), normalizedContent);

@@ -9,7 +9,6 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.Text;
@@ -261,7 +260,7 @@ public class FieldAgeOffFilter extends AppliedRule {
 
         for (String optionKey : options.options.keySet()) {
             if (optionKey.startsWith(OPTION_PREFIX)) {
-                String anotherField = optionKey.substring(OPTION_PREFIX.length(), optionKey.indexOf(".", OPTION_PREFIX.length() + 1));
+                String anotherField = optionKey.substring(OPTION_PREFIX.length(), optionKey.indexOf('.', OPTION_PREFIX.length() + 1));
                 fields.add(new ArrayByteSequence(anotherField.trim().getBytes()));
             }
         }

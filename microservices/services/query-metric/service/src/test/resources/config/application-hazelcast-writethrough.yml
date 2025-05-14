@@ -1,0 +1,34 @@
+hazelcast:
+  server:
+    enabled: true
+    # How long to wait (in seconds) before performing the first split-brain merge. When a number
+    # of cache servers start up at once, they will form individual clusters because the attempt
+    # to create a cluster happens before the server has registered in Consul. Therefore, the split
+    # brain merge will take care of joining the multiple clusters.
+    mergeDelaySeconds: 5
+    # Run interval of split-brain/merge process in seconds; i.e how frequently to look for new cluster members
+    mergeIntervalSeconds: 10
+    xml-config: |
+      <hazelcast xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd"
+                  xmlns="http://www.hazelcast.com/schema/config">
+        <map name="incomingQueryMetrics">
+          <in-memory-format>OBJECT</in-memory-format>
+          <!-- Keep 1 backup copy of data (so we have 2 copies total) -->
+          <backup-count>1</backup-count>
+          <!-- Maximum time in seconds for each entry to stay idle in the map. (no get, put, EntryProcessor.process or
+               containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Default is 0 / infinite -->
+          <max-idle-seconds>3600</max-idle-seconds>
+          <!-- No matter what, entries get evicted after this time. -->
+          <time-to-live-seconds>7200</time-to-live-seconds>
+          <merge-policy>datawave.microservice.querymetric.QueryMetricSplitBrainMergePolicy</merge-policy>
+          <per-entry-stats-enabled>true</per-entry-stats-enabled>
+          <!-- Evict the least frequently used entries first if we run out of space and allow 2GB for each cluster node to store data -->
+          <eviction eviction-policy="LRU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
+          <map-store enabled="true" initial-mode="LAZY">
+            <factory-class-name>datawave.microservice.querymetric.persistence.AccumuloMapStore$Factory</factory-class-name>
+            <write-delay-seconds>0</write-delay-seconds>
+            <write-batch-size>1000</write-batch-size>
+          </map-store>
+        </map>
+      </hazelcast>

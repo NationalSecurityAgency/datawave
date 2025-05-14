@@ -29,7 +29,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;

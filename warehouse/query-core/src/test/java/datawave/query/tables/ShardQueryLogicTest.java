@@ -85,6 +85,12 @@ public abstract class ShardQueryLogicTest {
         protected String getRange() {
             return WiseGuysIngest.WhatKindaRange.SHARD.name();
         }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
     }
 
     @RunWith(Arquillian.class)
@@ -93,6 +99,12 @@ public abstract class ShardQueryLogicTest {
         @Override
         protected String getRange() {
             return WiseGuysIngest.WhatKindaRange.DOCUMENT.name();
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
     }
 

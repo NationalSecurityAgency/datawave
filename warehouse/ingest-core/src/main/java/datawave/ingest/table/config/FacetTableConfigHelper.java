@@ -10,7 +10,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.facet.FacetHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class FacetTableConfigHelper extends AbstractTableConfigHelper {
 

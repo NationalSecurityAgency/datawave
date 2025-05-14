@@ -32,6 +32,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class
@@ -52,6 +54,8 @@ public class EvaluationPhaseFilterFunctions {
      * This regex matches against regex strings that contain case-insensitive flags, e.g. {@code (?i).*(?-i)}.
      */
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
+
+    public static final Object LOCK = new Object();
 
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
 
@@ -1549,7 +1553,7 @@ public class EvaluationPhaseFilterFunctions {
      *             if the value failed to be parsed using the supplied format
      */
     public static long getTime(Object value, DateFormat format) throws ParseException {
-        synchronized (format) {
+        synchronized (LOCK) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
     }
@@ -1611,7 +1615,9 @@ public class EvaluationPhaseFilterFunctions {
                 // try the next one
             }
         }
-        throw new ParseException("Unable to parse value using known date formats: " + value, 0);
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse value using known date formats: " + value + " [Error offset: 0]");
+        throw new IllegalArgumentException(qe);
     }
 
     /**
