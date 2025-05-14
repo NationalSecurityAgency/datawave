@@ -1,11 +1,15 @@
 package datawave.next.stats;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
-public class DocumentIteratorStats {
+public class DocumentIteratorStats implements Serializable {
+
+    private static final long serialVersionUID = 7609796063950808927L;
+
     private long nextCount = 0;
     private long seekCount = 0;
     private long datatypeFilterMiss = 0;

@@ -1,11 +1,15 @@
 package datawave.next.stats;
 
+import java.io.Serializable;
+
 /**
  * The scheduler stats are associated with the config object which is shared among multiple threads.
  * <p>
  * Note: great care must be taken when incrementing the underlying objects. In each case only a single thread would ever update the variable.
  */
-public class DocumentSchedulerStats {
+public class DocumentSchedulerStats implements Serializable {
+
+    private static final long serialVersionUID = 6253805455359165344L;
 
     private long totalDocumentScansSubmitted = 0L;
     private long totalResultsReturned = 0L;

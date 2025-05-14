@@ -1,6 +1,11 @@
 package datawave.next.stats;
 
-public class QueryDataConsumerStats {
+import java.io.Serializable;
+
+public class QueryDataConsumerStats implements Serializable {
+
+    private static final long serialVersionUID = 4859710545760282597L;
+
     private int queryDataSeen = 0;
     private int nullDataSeen = 0;
     private int numShardScans = 0;

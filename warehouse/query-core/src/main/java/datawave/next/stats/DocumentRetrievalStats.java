@@ -1,5 +1,6 @@
 package datawave.next.stats;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -9,7 +10,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Meta stats for document scans (candidate retrieval)
  */
-public class DocumentRetrievalStats {
+public class DocumentRetrievalStats implements Serializable {
+
+    private static final long serialVersionUID = 7847751715708664481L;
 
     private static final Logger log = LoggerFactory.getLogger(DocumentRetrievalStats.class);
 

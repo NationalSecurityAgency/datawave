@@ -1,5 +1,6 @@
 package datawave.next.stats;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -7,7 +8,9 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 /**
  * Meta stats for field index scans (candidate search)
  */
-public class DocumentCandidateStats {
+public class DocumentCandidateStats implements Serializable {
+
+    private static final long serialVersionUID = 6008862471729801263L;
 
     private final int window = 10_000;
 

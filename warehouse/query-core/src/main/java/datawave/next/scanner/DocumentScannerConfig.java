@@ -1,5 +1,6 @@
 package datawave.next.scanner;
 
+import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,16 +21,18 @@ import datawave.query.tables.async.event.VisitorFunction;
  * <p>
  * Externally we only care about configuring the queue capacities, thread pool sizes, and max tasks per thread pool.
  */
-public class DocumentScannerConfig {
+public class DocumentScannerConfig implements Serializable {
+
+    private static final long serialVersionUID = 404271911443485394L;
 
     private AccumuloClient client;
     private Authorizations authorizations;
-    private BlockingQueue<KeyWithContext> candidateQueue;
-    private BlockingQueue<Result> results;
-    private ContextThreadFactory searchThreadFactory;
-    private ContextThreadFactory retrievalThreadFactory;
-    private ExecutorService searchExecutorPool;
-    private ExecutorService retrievalExecutorPool;
+    private transient BlockingQueue<KeyWithContext> candidateQueue;
+    private transient BlockingQueue<Result> results;
+    private transient ContextThreadFactory searchThreadFactory;
+    private transient ContextThreadFactory retrievalThreadFactory;
+    private transient ExecutorService searchExecutorPool;
+    private transient ExecutorService retrievalExecutorPool;
 
     // sort candidate queue by uid and datatype to prevent hot spotting during retrieval
     private boolean sortedCandidateQueue = false;
@@ -68,7 +71,7 @@ public class DocumentScannerConfig {
     // should the scheduler use the query iterator or a document iterator?
     private boolean useQueryIterator = true;
 
-    private VisitorFunction visitorFunction;
+    private transient VisitorFunction visitorFunction;
     private String queryId;
 
     private final DocumentSchedulerStats stats = new DocumentSchedulerStats();

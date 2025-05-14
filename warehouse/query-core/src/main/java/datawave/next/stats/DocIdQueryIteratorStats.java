@@ -1,5 +1,6 @@
 package datawave.next.stats;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.google.common.base.Joiner;
@@ -8,7 +9,9 @@ import com.google.common.base.Preconditions;
 /**
  * Holds stats for document iterators by extending {@link DocumentIteratorStats} and also tracks total wall clock time and how many results were found
  */
-public class DocIdQueryIteratorStats {
+public class DocIdQueryIteratorStats implements Serializable {
+
+    private static final long serialVersionUID = -2139467589556624363L;
 
     // these four variables are the important ones
     private long totalDocumentIds = 0L;
