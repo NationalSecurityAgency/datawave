@@ -529,6 +529,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
+                        <skipTests>${skip.unit.tests}</skipTests>
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>

@@ -240,6 +240,7 @@ another classloader.
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
                     <!--                     <forkMode>pertest</forkMode> -->
                     <reuseForks>false</reuseForks>
+                    <skipTests>${skip.unit.tests}</skipTests>
                 </configuration>
             </plugin>
         </plugins>

@@ -210,6 +210,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skipTests>${skip.unit.tests}</skipTests>
                     <argLine>@{argLine}</argLine>
                     <reuseForks>false</reuseForks>
                     <additionalClasspathElements>
