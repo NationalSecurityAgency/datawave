@@ -22,7 +22,6 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang3.LongRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +47,8 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
  * <p>
  * Operators that are NOT supported
  * <ul>
- * <li>negated regex (NR)</li>
- * <li>negated equality (NE)</li>
+ * <li>negated regex</li>
+ * <li>negated equality</li>
  * <li>functions</li>
  * <li>term markers</li>
  * </ul>

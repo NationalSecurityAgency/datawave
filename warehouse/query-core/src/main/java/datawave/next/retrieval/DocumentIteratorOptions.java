@@ -31,11 +31,11 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.LongRange;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
+import datawave.next.LongRange;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.TypeMetadata;

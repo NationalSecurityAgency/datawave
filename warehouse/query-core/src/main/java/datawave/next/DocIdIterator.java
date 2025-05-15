@@ -146,7 +146,7 @@ public class DocIdIterator extends BaseDocIdIterator {
     }
 
     /**
-     * Determine if the datatype is accepted. This method will use the datatype filter, or the min/max datatype
+     * Determine if the datatype is accepted. This method will use the datatype filter, or the min max datatype
      *
      * @param datatype
      *            the datatype

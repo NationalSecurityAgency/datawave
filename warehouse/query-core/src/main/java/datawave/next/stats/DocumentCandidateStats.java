@@ -6,7 +6,7 @@ import java.text.DecimalFormat;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 /**
- * Meta stats for field index scans (candidate search)
+ * Meta stats for candidate search against the field index
  */
 public class DocumentCandidateStats implements Serializable {
 

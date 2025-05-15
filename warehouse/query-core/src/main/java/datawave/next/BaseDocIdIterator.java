@@ -14,7 +14,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang3.LongRange;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,9 +137,9 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
     /**
      * Attempt to reduce the datatype filter if one exists.
      * <p>
-     * If no datatype filter exists then the min/max datatypes are recorded.
+     * If no datatype filter exists then the min and max datatypes are recorded.
      * <p>
-     * If the min/max match the filter is a singleton. Otherwise, the filter becomes a range.
+     * If the min or max match the filter is a singleton. Otherwise, the filter becomes a range.
      */
     protected void attemptDatatypeFilterReduction() {
         String minDatatype = this.minDatatypeUid.substring(0, this.minDatatypeUid.indexOf('\u0000'));

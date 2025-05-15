@@ -24,7 +24,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 /**
- * This test exercises random terms are executable, not executable, and/or negated.
+ * This test exercises random terms are executable, not executable, or negated.
  */
 public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 

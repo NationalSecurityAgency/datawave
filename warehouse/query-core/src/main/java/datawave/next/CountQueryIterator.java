@@ -16,7 +16,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.commons.lang3.LongRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

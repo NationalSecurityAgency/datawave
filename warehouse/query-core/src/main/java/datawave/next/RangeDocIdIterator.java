@@ -105,7 +105,7 @@ public class RangeDocIdIterator extends DocIdIterator {
     }
 
     /**
-     * Handle a datatype miss when using a min/max datatype range
+     * Handle a datatype miss when using a min max datatype range
      *
      * @param datatype
      *            the current datatype

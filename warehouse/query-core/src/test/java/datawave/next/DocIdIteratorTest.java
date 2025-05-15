@@ -9,7 +9,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang3.LongRange;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

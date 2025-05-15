@@ -78,7 +78,7 @@ public class DocumentIteratorStats implements Serializable {
     }
 
     /**
-     * Always present the next/seek counts. Conditionally present the datatype, time, and regex miss counts.
+     * Always present the next and seek counts. Conditionally present the datatype, time, and regex miss counts.
      *
      * @return a string representation of the iterator status
      */

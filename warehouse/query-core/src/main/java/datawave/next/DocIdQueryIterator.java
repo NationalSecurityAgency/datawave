@@ -19,7 +19,6 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.commons.lang3.LongRange;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,7 +192,9 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     /**
-     * Data structure <code>row;column-families;iter-stats:timing-stats</code>
+     * Data structure is the row, the column family, and stats separated by a semicolon.
+     * <p>
+     * Iterator stats are colon separated and divided into iterator stats and timing stats.
      *
      * @param batch
      *            the batch of record ids

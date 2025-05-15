@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Meta stats for document scans (candidate retrieval)
+ * Meta stats for candidate retrieval
  */
 public class DocumentRetrievalStats implements Serializable {
 
