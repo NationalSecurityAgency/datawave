@@ -307,7 +307,7 @@
                         <additionalClasspathElement>${basedir}/conf</additionalClasspathElement>
                     </additionalClasspathElements>
                     <argLine>@{argLine} --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
-                    <skipTests>${skip.unit.tests}</skipTests>
+                    <skipTests>${skipUTs}</skipTests>
                 </configuration>
             </plugin>
         </plugins>

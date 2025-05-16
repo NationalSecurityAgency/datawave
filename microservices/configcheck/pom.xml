@@ -18,7 +18,9 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <skip.unit.tests>false</skip.unit.tests>
+        <skipITs>${skipTests}</skipITs>
+        <skipTests>false</skipTests>
+        <skipUTs>${skipTests}</skipUTs>
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.jackson>2.13.2</version.jackson>
@@ -330,7 +332,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <skipTests>${skip.unit.tests}</skipTests>
+                    <skipTests>${skipUTs}</skipTests>
                     <reuseForks>false</reuseForks>
                     <forkCount>${surefire.forkCount}</forkCount>
                     <threadCount>1</threadCount>
