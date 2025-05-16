@@ -17,23 +17,23 @@ import com.hazelcast.map.IMap;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"HazelcastCachingTest", "QueryMetricTest", "hazelcast-writethrough"})
 public class HazelcastCachingTest extends QueryMetricTestBase {
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     public void TestWriteThroughCache() {
-        
+
         String queryId = createQueryId();
         BaseQueryMetric m = createMetric(queryId);
-        
+
         // use a native cache set vs Cache.put to prevent the fetching and return of Accumulo value
         ((IMap<Object,Object>) incomingQueryMetricsCache.getNativeCache()).set(queryId, new QueryMetricUpdateHolder<>(m));
         try {
@@ -47,7 +47,7 @@ public class HazelcastCachingTest extends QueryMetricTestBase {
             fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void InMemoryAccumuloAndCachesReset() {
         // ensure that the Hazelcast caches and in-memory Accumulo are being reset between each test

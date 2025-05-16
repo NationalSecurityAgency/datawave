@@ -20,16 +20,16 @@ import datawave.microservice.audit.replay.ReplayController;
 @ConditionalOnProperty(name = "audit.replay.enabled", havingValue = "true")
 public class AuditReplayRemoteRequestEventListener implements ApplicationListener<AuditReplayRemoteRequestEvent> {
     private Logger log = LoggerFactory.getLogger(getClass());
-    
+
     private final ReplayController replayController;
     private final ServiceMatcher serviceMatcher;
-    
+
     @Autowired
     public AuditReplayRemoteRequestEventListener(ReplayController replayController, ServiceMatcher serviceMatcher) {
         this.replayController = replayController;
         this.serviceMatcher = serviceMatcher;
     }
-    
+
     @Override
     public void onApplicationEvent(AuditReplayRemoteRequestEvent event) {
         // Ignore events that this service instance published, since we publish from a place
@@ -38,7 +38,7 @@ public class AuditReplayRemoteRequestEventListener implements ApplicationListene
             log.debug("Dropping {} since it is from us.", event);
             return;
         }
-        
+
         replayController.handleRemoteRequest(event.getRequest());
     }
 }

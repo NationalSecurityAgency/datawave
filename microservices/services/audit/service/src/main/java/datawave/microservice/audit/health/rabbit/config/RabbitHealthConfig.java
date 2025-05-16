@@ -30,13 +30,13 @@ import datawave.microservice.audit.health.rabbit.RabbitHealthChecker;
 @EnableConfigurationProperties(RabbitHealthProperties.class)
 @ConditionalOnProperty(name = "audit.health.rabbit.enabled", havingValue = "true")
 public class RabbitHealthConfig implements SchedulingConfigurer {
-    
+
     @Autowired
     RabbitHealthProperties rabbitHealthProperties;
-    
+
     @Resource(name = "rabbitConnectionFactory")
     CachingConnectionFactory rabbitConnectionFactory;
-    
+
     @Bean
     public HealthChecker healthChecker() {
         try {
@@ -45,7 +45,7 @@ public class RabbitHealthConfig implements SchedulingConfigurer {
             throw new RuntimeException("Unable to create rabbit health checker");
         }
     }
-    
+
     @Bean
     public Runnable triggerTask() {
         return () -> {
@@ -53,7 +53,7 @@ public class RabbitHealthConfig implements SchedulingConfigurer {
             healthChecker().recover();
         };
     }
-    
+
     @Bean
     public Trigger trigger() {
         return triggerContext -> {
@@ -64,12 +64,12 @@ public class RabbitHealthConfig implements SchedulingConfigurer {
             return nextExecutionTime.getTime();
         };
     }
-    
+
     @Bean(destroyMethod = "shutdown")
     public Executor taskExecutor() {
         return Executors.newScheduledThreadPool(2);
     }
-    
+
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.setScheduler(taskExecutor());

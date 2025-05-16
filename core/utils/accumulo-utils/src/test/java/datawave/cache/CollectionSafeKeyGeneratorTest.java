@@ -19,7 +19,7 @@ import org.springframework.cache.interceptor.SimpleKey;
  * Test the CollectionSafeKeyGenerator class
  */
 public class CollectionSafeKeyGeneratorTest {
-    
+
     @Test
     public void testListCopy() {
         ArrayList<Object> list = new ArrayList<>();
@@ -28,7 +28,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(copy, list);
         assertEquals(copy, list);
     }
-    
+
     @Test
     public void testSetCopy() {
         HashSet<Object> set = new HashSet<>();
@@ -37,7 +37,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(copy, set);
         assertEquals(copy, set);
     }
-    
+
     @Test
     public void testSortedSetCopy() {
         TreeSet<String> set = new TreeSet<>();
@@ -46,7 +46,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(copy, set);
         assertEquals(copy, set);
     }
-    
+
     @Test
     public void testMapCopy() {
         HashMap<Object,Object> map = new HashMap<>();
@@ -55,7 +55,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(copy, map);
         assertEquals(copy, map);
     }
-    
+
     @Test
     public void testSortedMapCopy() {
         TreeMap<String,Object> map = new TreeMap<>();
@@ -64,20 +64,20 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(copy, map);
         assertEquals(copy, map);
     }
-    
+
     @Test
     public void testEmptyKey() {
         Object key = CollectionSafeKeyGenerator.generateKey();
         assertSame(key, SimpleKey.EMPTY);
     }
-    
+
     @Test
     public void testNonCollectionSingleParam() {
         Object obj1 = new Object();
         Object key = CollectionSafeKeyGenerator.generateKey(obj1);
         assertSame(key, obj1);
     }
-    
+
     @Test
     public void testNonCollectionMultiParam() {
         Object obj1 = new Object();
@@ -86,7 +86,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertTrue(key instanceof SimpleKey);
         assertEquals(new SimpleKey(obj1, obj2), key);
     }
-    
+
     @Test
     public void testCollectionSingleParam() {
         ArrayList<Object> list = new ArrayList<>();
@@ -95,7 +95,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(key, list);
         assertEquals(key, list);
     }
-    
+
     @Test
     public void testCollectionMultiParam() throws IllegalAccessException, NoSuchFieldException {
         ArrayList<Object> list = new ArrayList<>();
@@ -115,7 +115,7 @@ public class CollectionSafeKeyGeneratorTest {
         assertNotSame(params[1], set);
         assertEquals(params[1], set);
     }
-    
+
     @Test
     public void testMixedMultiParam() throws IllegalAccessException, NoSuchFieldException {
         ArrayList<Object> list = new ArrayList<>();
@@ -139,5 +139,5 @@ public class CollectionSafeKeyGeneratorTest {
         assertEquals(params[2], set);
         assertSame(params[3], obj2);
     }
-    
+
 }

@@ -30,13 +30,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE, PROTOSTUFF_VALUE,
         "text/x-yaml", "application/x-yaml", "text/yaml", "application/x-protobuf"})
 public class ModificationController {
-    
+
     private final ModificationService service;
-    
+
     public ModificationController(ModificationService service) {
         this.service = service;
     }
-    
+
     /**
      * Returns a list of the Modification service names and their configurations
      *
@@ -68,7 +68,7 @@ public class ModificationController {
     public List<ModificationConfigurationResponse> listConfigurations() {
         return service.listConfigurations();
     }
-    
+
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
@@ -111,5 +111,5 @@ public class ModificationController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return service.submit(currentUser, modificationServiceName, request);
     }
-    
+
 }

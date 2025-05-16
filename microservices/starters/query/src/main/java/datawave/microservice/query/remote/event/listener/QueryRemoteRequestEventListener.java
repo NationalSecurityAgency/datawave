@@ -16,15 +16,15 @@ import datawave.microservice.query.remote.QueryRequestHandler;
 @ConditionalOnBusEnabled
 public class QueryRemoteRequestEventListener implements ApplicationListener<RemoteQueryRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     private final List<QueryRequestHandler> queryRequestHandlers;
     private final ServiceMatcher serviceMatcher;
-    
+
     public QueryRemoteRequestEventListener(List<QueryRequestHandler> queryRequestHandlers, ServiceMatcher serviceMatcher) {
         this.queryRequestHandlers = queryRequestHandlers;
         this.serviceMatcher = serviceMatcher;
     }
-    
+
     @Override
     public void onApplicationEvent(RemoteQueryRequestEvent event) {
         // Ignore events that this service instance published, since we publish from a place
@@ -33,7 +33,7 @@ public class QueryRemoteRequestEventListener implements ApplicationListener<Remo
         if (isSelfRequest) {
             log.debug("Received a self-request {}.", event);
         }
-        
+
         // process the event using each query request handler.
         // By default, for parallelStreams java uses threads equal to the number of cores.
         // if we need more than that, we can specify our own ForkJoinPool.
@@ -45,11 +45,11 @@ public class QueryRemoteRequestEventListener implements ApplicationListener<Remo
                 .forEach(h -> handleRequest(h, event));
         // @formatter:on
     }
-    
+
     private boolean shouldHandleRequest(QueryRequestHandler handler, boolean isSelfRequest) {
         return !isSelfRequest || handler instanceof QueryRequestHandler.QuerySelfRequestHandler;
     }
-    
+
     private void handleRequest(QueryRequestHandler queryRequestHandler, RemoteQueryRequestEvent queryRequestEvent) {
         try {
             queryRequestHandler.handleRemoteRequest(queryRequestEvent.getRequest(), queryRequestEvent.getOriginService(),

@@ -19,19 +19,19 @@ import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.JWTTokenHandler;
 
 public class AuthorizationTestUtils {
-    
+
     private JWTTokenHandler jwtTokenHandler;
     private RestTemplate restTemplate;
     private String scheme;
     private int webServicePort;
-    
+
     public AuthorizationTestUtils(JWTTokenHandler jwtTokenHandler, RestTemplate restTemplate, String scheme, int webServicePort) {
         this.jwtTokenHandler = jwtTokenHandler;
         this.restTemplate = restTemplate;
         this.scheme = scheme;
         this.webServicePort = webServicePort;
     }
-    
+
     public void testAdminMethodFailure(DatawaveUserDetails unauthUser, String path, String query) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).query(query).build();
         try {
@@ -43,14 +43,14 @@ public class AuthorizationTestUtils {
             assertEquals("403 Forbidden: \"<html><head><title>Error</title></head><body>Forbidden</body></html>\"", e.getMessage());
         }
     }
-    
+
     public void testAdminMethodSuccess(DatawaveUserDetails authUser, String path, String query) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).query(query).build();
         RequestEntity requestEntity = createRequestEntity(null, authUser, HttpMethod.GET, uri);
         ResponseEntity<String> entity = restTemplate.exchange(requestEntity, String.class);
         assertEquals(HttpStatus.OK, entity.getStatusCode(), "Authorizaed admin request to " + uri + " did not return a 200.");
     }
-    
+
     public void testAuthorizeMethodFailure(DatawaveUserDetails unauthUser, String path, boolean useTrustedHeader, boolean useJWT) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).build();
         try {
@@ -68,7 +68,7 @@ public class AuthorizationTestUtils {
             assertTrue(e.getMessage().startsWith("403 Forbidden"));
         }
     }
-    
+
     public void testAuthorizeMethodSuccess(DatawaveUserDetails authUser, String path, boolean useTrustedHeader, boolean useJWT) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).build();
         RequestEntity requestEntity;
@@ -81,9 +81,9 @@ public class AuthorizationTestUtils {
         ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode(), "Authorized request to " + uri + " did not return a 200.");
     }
-    
+
     public <T> RequestEntity<T> createRequestEntity(DatawaveUserDetails trustedUser, DatawaveUserDetails jwtUser, HttpMethod method, UriComponents uri) {
-        
+
         HttpHeaders headers = new HttpHeaders();
         if (this.jwtTokenHandler != null && jwtUser != null) {
             String token = jwtTokenHandler.createTokenFromUsers(jwtUser.getUsername(), jwtUser.getProxiedUsers());
@@ -95,7 +95,7 @@ public class AuthorizationTestUtils {
         }
         return new RequestEntity(null, headers, method, uri.toUri());
     }
-    
+
     public String getScheme() {
         return scheme;
     }

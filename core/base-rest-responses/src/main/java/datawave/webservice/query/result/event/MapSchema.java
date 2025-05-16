@@ -11,7 +11,7 @@ import io.protostuff.Schema;
 
 public class MapSchema implements Schema<Map<String,String>> {
     public static MapSchema SCHEMA = new MapSchema();
-    
+
     @Override
     public String getFieldName(int number) {
         switch (number) {
@@ -21,7 +21,7 @@ public class MapSchema implements Schema<Map<String,String>> {
                 return null;
         }
     }
-    
+
     @Override
     public int getFieldNumber(String name) {
         switch (name) {
@@ -31,32 +31,32 @@ public class MapSchema implements Schema<Map<String,String>> {
                 return 0;
         }
     }
-    
+
     @Override
     public boolean isInitialized(Map<String,String> message) {
         return true;
     }
-    
+
     @Override
     public Map<String,String> newMessage() {
         return new HashMap<>();
     }
-    
+
     @Override
     public String messageName() {
         return Map.class.getSimpleName();
     }
-    
+
     @Override
     public String messageFullName() {
         return Map.class.getName();
     }
-    
+
     @Override
     public Class<? super Map<String,String>> typeClass() {
         return Map.class;
     }
-    
+
     @Override
     public void mergeFrom(Input input, Map<String,String> message) throws IOException {
         MapEntrySchema.MutableMapEntry entry = new MapEntrySchema.MutableMapEntry();
@@ -73,7 +73,7 @@ public class MapSchema implements Schema<Map<String,String>> {
             }
         }
     }
-    
+
     @Override
     public void writeTo(Output output, Map<String,String> message) throws IOException {
         MapEntrySchema.DelegateMapEntry delegateMapEntry = new MapEntrySchema.DelegateMapEntry();

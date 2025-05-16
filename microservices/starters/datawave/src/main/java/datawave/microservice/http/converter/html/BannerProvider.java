@@ -5,6 +5,6 @@ package datawave.microservice.http.converter.html;
  */
 public interface BannerProvider {
     String getHeadBanner();
-    
+
     String getFootBanner();
 }

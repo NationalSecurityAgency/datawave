@@ -29,7 +29,7 @@ import datawave.data.normalizer.regex.ZeroOrMoreNode;
  * </ul>
  */
 public class OptionalVariantExpander extends SubExpressionVisitor {
-    
+
     public static Node expand(Node node) {
         if (node == null) {
             return null;
@@ -37,7 +37,7 @@ public class OptionalVariantExpander extends SubExpressionVisitor {
         OptionalVariantExpander visitor = new OptionalVariantExpander();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     protected Object visitSubExpression(Node node) {
         if (node.isAnyChildOf(QuestionMarkNode.class)) {
@@ -46,10 +46,10 @@ public class OptionalVariantExpander extends SubExpressionVisitor {
             return copy(node);
         }
     }
-    
+
     /**
      * Return an expression that contains the expanded variants of each expanded optional.
-     * 
+     *
      * @param node
      *            the expression to expand
      * @return the expanded expression
@@ -57,49 +57,49 @@ public class OptionalVariantExpander extends SubExpressionVisitor {
     private Node expandOptionals(Node node) {
         List<Node> expansions = new ArrayList<>();
         expansions.add(new ExpressionNode());
-        
+
         int startIndex = 0;
         int optionalPos = node.indexOf(QuestionMarkNode.class);
         int posBeforeOptional = optionalPos - 1;
         int decimalPoint = RegexUtils.getDecimalPointIndex(node);
-        
+
         // If the first optional found is after an escaped decimal point, there is no need to do any expansion. Return a copy of the copy.
         if (decimalPoint != -1 && decimalPoint < posBeforeOptional) {
             return copy(node);
         }
-        
+
         do {
             // Children from the start index (inclusive) to the position before optional (not inclusive) can be added to each expansion.
             expansions = addChildrenToExpansions(expansions, node, startIndex, posBeforeOptional);
             // Move the start index to the position before the optional.
             startIndex = posBeforeOptional;
-            
+
             // If the optional is not a modifier to make a quantifier match in lazy mode, add expansions for each variant.
             Node childBeforeOptional = node.getChildAt(posBeforeOptional);
             if (!(isOptionalLazyModifierFor(childBeforeOptional))) {
                 expansions = addOptionalElement(expansions, childBeforeOptional);
                 startIndex = optionalPos + 1;
             }
-            
+
             // Determine the position of the next optional node, and the child before it.
             optionalPos = node.indexOf(QuestionMarkNode.class, (optionalPos + 1));
             posBeforeOptional = optionalPos - 1;
-            
+
             // If there is an escaped decimal point in the regex, and the next optional is for a character after it, there is no need to do any further
             // expansion.
             if (decimalPoint != -1 && decimalPoint < posBeforeOptional) {
                 break;
             }
         } while (optionalPos != -1);
-        
+
         // If we have any remaining children to copy to each expansion, do so.
         if (startIndex < (node.getChildCount())) {
             expansions = addChildrenToExpansions(expansions, node, startIndex, node.getChildCount());
         }
-        
+
         // Remove any expansions that are leafs without children.
         expansions = expansions.stream().filter((ex) -> !ex.isLeaf()).collect(Collectors.toList());
-        
+
         // If we only have one expression after expansion, return the expression.
         if (expansions.size() == 1) {
             return expansions.get(0);
@@ -108,10 +108,10 @@ public class OptionalVariantExpander extends SubExpressionVisitor {
             return new ExpressionNode(new AlternationNode(expansions));
         }
     }
-    
+
     /**
      * Return whether the given node is a *, +, or a repetition quantifier.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the node is a *, +, or a repetition quantifier, or false otherwise.
@@ -119,10 +119,10 @@ public class OptionalVariantExpander extends SubExpressionVisitor {
     private boolean isOptionalLazyModifierFor(Node node) {
         return node instanceof ZeroOrMoreNode || node instanceof OneOrMoreNode || node instanceof RepetitionNode;
     }
-    
+
     /**
      * Add the children of the given node from the start index (inclusive) to the end index (not inclusive) to each expansion in the list.
-     * 
+     *
      * @param expansions
      *            the expansions
      * @param node
@@ -144,10 +144,10 @@ public class OptionalVariantExpander extends SubExpressionVisitor {
         }
         return newExpansions;
     }
-    
+
     /**
      * Add the given optional element to each expansion, preserving a copy of each original expansion.
-     * 
+     *
      * @param expansions
      *            the expansions
      * @param optionalElement

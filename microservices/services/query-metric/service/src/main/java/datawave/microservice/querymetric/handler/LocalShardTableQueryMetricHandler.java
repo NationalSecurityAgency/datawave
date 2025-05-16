@@ -42,63 +42,63 @@ import datawave.webservice.result.BaseQueryResponse;
 
 public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extends ShardTableQueryMetricHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(LocalShardTableQueryMetricHandler.class);
-    
+
     protected final datawave.microservice.querymetric.QueryMetricFactory datawaveQueryMetricFactory;
-    
+
     private final DatawavePrincipal datawavePrincipal;
     private final Map<String,CachedQuery> cachedQueryMap = new HashMap<>();
-    
+
     protected ExecutorService executorService;
-    
+
     public LocalShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, @Qualifier("warehouse") AccumuloClientPool clientPool,
                     QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
                     QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, DnUtils dnUtils) {
         super(queryMetricHandlerProperties, clientPool, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
-        
+
         this.datawaveQueryMetricFactory = metricFactory;
-        
+
         Collection<String> auths = new ArrayList<>();
         if (clientAuthorizations != null) {
             auths.addAll(Arrays.asList(StringUtils.split(clientAuthorizations, ',')));
         }
         DatawaveUser datawaveUser = new DatawaveUser(SubjectIssuerDNPair.of("admin"), USER, null, auths, null, null, System.currentTimeMillis());
         datawavePrincipal = new DatawavePrincipal(Collections.singletonList(datawaveUser));
-        
+
         this.executorService = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("metric-handler-query-thread-%d").build());
     }
-    
+
     @Override
     protected BaseQueryResponse createAndNext(Query query) throws Exception {
         String queryId = query.getId().toString();
-        
+
         Future<BaseQueryResponse> createAndNextFuture = null;
         final CachedQuery cachedQuery = new CachedQuery();
         try {
             createAndNextFuture = this.executorService.submit(() -> {
                 RunningQuery runningQuery;
                 AccumuloClient accumuloClient;
-                
+
                 cachedQueryMap.put(queryId, cachedQuery);
-                
+
                 QueryLogic<?> queryLogic = logicFactory.getObject();
                 Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
                 accumuloClient = accumuloClientPool.borrowObject(trackingMap);
-                
+
                 cachedQuery.setAccumuloClient(accumuloClient);
-                
+
                 runningQuery = new RunningQuery(null, accumuloClient, AccumuloConnectionFactory.Priority.ADMIN, queryLogic, query,
                                 query.getQueryAuthorizations(), datawavePrincipal, datawaveQueryMetricFactory);
-                
+
                 cachedQuery.setRunningQuery(runningQuery);
-                
+
                 QueryLogicTransformer<?,?> transformer = queryLogic.getTransformer(query);
                 cachedQuery.setTransformer(transformer);
-                
+
                 BaseQueryResponse response = transformer.createResponse(runningQuery.next());
                 response.setQueryId(queryId);
                 return response;
             });
-            
+
             return createAndNextFuture.get(
                             Math.max(0, queryMetricHandlerProperties.getMaxReadMilliseconds() - (System.currentTimeMillis() - cachedQuery.getStartTime())),
                             TimeUnit.MILLISECONDS);
@@ -115,14 +115,14 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
             }
         }
     }
-    
+
     @Override
     protected BaseQueryResponse next(String queryId) throws Exception {
         Future<BaseQueryResponse> nextFuture = null;
         final CachedQuery cachedQuery = cachedQueryMap.get(queryId);
         try {
             nextFuture = this.executorService.submit(() -> cachedQuery.getTransformer().createResponse(cachedQuery.getRunningQuery().next()));
-            
+
             return nextFuture.get(
                             Math.max(0, queryMetricHandlerProperties.getMaxReadMilliseconds() - (System.currentTimeMillis() - cachedQuery.getStartTime())),
                             TimeUnit.MILLISECONDS);
@@ -139,7 +139,7 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
             }
         }
     }
-    
+
     @Override
     protected void close(String queryId) {
         try {
@@ -152,42 +152,42 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
             throw new IllegalStateException("Running query close call failed", e);
         }
     }
-    
+
     private static class CachedQuery {
         private long startTime = System.currentTimeMillis();
-        
+
         private RunningQuery runningQuery;
         private QueryLogicTransformer<?,?> transformer;
         private AccumuloClient accumuloClient;
-        
+
         public long getStartTime() {
             return startTime;
         }
-        
+
         public void setStartTime(long startTime) {
             this.startTime = startTime;
         }
-        
+
         public RunningQuery getRunningQuery() {
             return runningQuery;
         }
-        
+
         public void setRunningQuery(RunningQuery runningQuery) {
             this.runningQuery = runningQuery;
         }
-        
+
         public QueryLogicTransformer<?,?> getTransformer() {
             return transformer;
         }
-        
+
         public void setTransformer(QueryLogicTransformer<?,?> transformer) {
             this.transformer = transformer;
         }
-        
+
         public AccumuloClient getAccumuloClient() {
             return accumuloClient;
         }
-        
+
         public void setAccumuloClient(AccumuloClient accumuloClient) {
             this.accumuloClient = accumuloClient;
         }

@@ -6,17 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 public class TimeoutQueryExceptionTest {
-    
+
     private TimeoutQueryException tqe;
-    
+
     private final String message = "Bad query exception";
     private final Throwable throwable = new Throwable("throws");
     private final String strErrCode = "500-26";
     private final DatawaveErrorCode code = DatawaveErrorCode.QUERY_TIMEOUT;
-    
+
     private final String assertMsg = "Query timed out. Bad query exception";
     private final String assertMsg2 = "Query timed out.";
-    
+
     @Test
     public void testEmptyConstructor() {
         tqe = new TimeoutQueryException();
@@ -25,7 +25,7 @@ public class TimeoutQueryExceptionTest {
         assertNull(tqe.getMessage());
         assertNull(tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageConstructor() {
         tqe = new TimeoutQueryException(message);
@@ -34,7 +34,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableConstructor() {
         tqe = new TimeoutQueryException(message, throwable);
@@ -43,7 +43,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowableErrorCodeConstructor() {
         tqe = new TimeoutQueryException(throwable, strErrCode);
@@ -52,7 +52,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(throwable.toString(), tqe.getMessage());
         assertEquals(throwable.toString(), tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableConstructor() {
         tqe = new TimeoutQueryException(code, throwable);
@@ -61,7 +61,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(assertMsg2, tqe.getMessage());
         assertEquals(assertMsg2, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeDebugMsgConstructor() {
         tqe = new TimeoutQueryException(code, message);
@@ -70,7 +70,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(assertMsg, tqe.getMessage());
         assertEquals(assertMsg, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeThrowableDebugMsgConstructor() {
         tqe = new TimeoutQueryException(code, throwable, message);
@@ -79,7 +79,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(assertMsg, tqe.getMessage());
         assertEquals(assertMsg, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testDatawaveErrorCodeConstructor() {
         tqe = new TimeoutQueryException(code);
@@ -88,7 +88,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(assertMsg2, tqe.getMessage());
         assertEquals(assertMsg2, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageResponseStatus() {
         tqe = new TimeoutQueryException(message, 500);
@@ -97,7 +97,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageThrowableErrorCode() {
         tqe = new TimeoutQueryException(message, throwable, strErrCode);
@@ -106,7 +106,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testMessageErrorCode() {
         tqe = new TimeoutQueryException(message, strErrCode);
@@ -115,7 +115,7 @@ public class TimeoutQueryExceptionTest {
         assertEquals(message, tqe.getMessage());
         assertEquals(message, tqe.getLocalizedMessage());
     }
-    
+
     @Test
     public void testThrowable() {
         tqe = new TimeoutQueryException(throwable);

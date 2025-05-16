@@ -19,12 +19,12 @@ import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 
 @Configuration
 public class QueryServiceConfiguration {
-    
+
     @Bean
     public WebSecurityCustomizer ignorePoolHealthEndpoint() {
         return (web) -> web.ignoring().antMatchers("/v1/pool/{poolName}/health");
     }
-    
+
     @Bean
     @RequestScope
     @ConditionalOnProperty(name = "datawave.defaults.QueryParameters.enabled", havingValue = "true", matchIfMissing = true)
@@ -33,7 +33,7 @@ public class QueryServiceConfiguration {
         queryParameters.clear();
         return queryParameters;
     }
-    
+
     @Bean
     @RequestScope
     @ConditionalOnProperty(name = "datawave.defaults.SecurityMarking.enabled", havingValue = "true", matchIfMissing = true)
@@ -42,19 +42,19 @@ public class QueryServiceConfiguration {
         securityMarking.clear();
         return securityMarking;
     }
-    
+
     @Bean
     @RequestScope
     public BaseQueryMetric baseQueryMetric(QueryMetricFactory queryMetricFactory) {
         return queryMetricFactory.createMetric();
     }
-    
+
     @Bean
     @ConditionalOnProperty(name = "datawave.defaults.QueryMetricFactory.enabled", havingValue = "true", matchIfMissing = true)
     public QueryMetricFactory queryMetricFactory() {
         return new QueryMetricFactoryImpl();
     }
-    
+
     @RefreshScope
     @Bean
     public ThreadPoolTaskExecutor nextCallExecutor(QueryProperties queryProperties) {
@@ -67,7 +67,7 @@ public class QueryServiceConfiguration {
         executor.initialize();
         return executor;
     }
-    
+
     @RefreshScope
     @Bean
     public ThreadPoolTaskExecutor streamingCallExecutor(StreamingProperties streamingProperties) {

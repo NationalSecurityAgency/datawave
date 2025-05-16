@@ -22,23 +22,23 @@ import datawave.webservice.common.audit.Auditor;
 @Configuration
 @ConditionalOnProperty(name = "audit.auditors.file.enabled", havingValue = "true")
 public class FileAuditConfig {
-    
+
     @Bean("fileAuditProperties")
     @Valid
     @ConfigurationProperties("audit.auditors.file")
     public FileAuditProperties fileAuditProperties() {
         return new FileAuditProperties();
     }
-    
+
     @Bean(name = "fileAuditor")
     public Auditor fileAuditor(AuditProperties auditProperties, @Qualifier("fileAuditProperties") FileAuditProperties fileAuditProperties) throws Exception {
         List<String> fsConfigResources = (fileAuditProperties.getFsConfigResources() != null) ? fileAuditProperties.getFsConfigResources()
                         : auditProperties.getFsConfigResources();
-        
+
         String subPath = fileAuditProperties.getSubPath();
         if (subPath == null && fileAuditProperties.getSubPathEnvVar() != null)
             subPath = System.getenv(fileAuditProperties.getSubPathEnvVar());
-        
+
         // @formatter:off
         return new FileAuditor.Builder()
                 .setUser(fileAuditProperties.getUser())

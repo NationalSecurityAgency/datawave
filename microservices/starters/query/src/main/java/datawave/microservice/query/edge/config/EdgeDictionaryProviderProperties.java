@@ -10,11 +10,11 @@ import org.springframework.validation.annotation.Validated;
 public class EdgeDictionaryProviderProperties {
     @NotEmpty
     private String uri = "https://dictionary:8443/dictionary/edge/v1/";
-    
+
     public String getUri() {
         return uri;
     }
-    
+
     public void setUri(String uri) {
         this.uri = uri;
     }

@@ -12,25 +12,25 @@ import io.protostuff.Message;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultEdgeDictionary.class)
 public abstract class EdgeDictionaryBase<T,F extends MetadataBase<F>> extends BaseResponse implements Message<T> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     public abstract List<? extends MetadataBase<F>> getMetadataList();
-    
+
     public abstract String getEdgeDictionarySystem();
-    
+
     public abstract void setEdgeDictionarySystem(String edgeDictionarySystem);
-    
+
     public abstract void setTotalResults(long totalResults);
-    
+
     public abstract long getTotalResults();
-    
+
     public abstract String getTitle();
-    
+
     public abstract String getHeadContent();
-    
+
     public abstract String getPageHeader();
-    
+
     public abstract String getMainContent();
-    
+
 }

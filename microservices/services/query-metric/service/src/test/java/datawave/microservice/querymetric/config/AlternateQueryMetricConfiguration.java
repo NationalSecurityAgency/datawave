@@ -26,7 +26,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 @Profile("AlternateQueryMetricTest")
 @Configuration
 public class AlternateQueryMetricConfiguration {
-    
+
     @Bean
     QueryMetricFactory metricFactory() {
         return new QueryMetricFactory() {
@@ -34,7 +34,7 @@ public class AlternateQueryMetricConfiguration {
             public BaseQueryMetric createMetric() {
                 return createMetric(true);
             }
-            
+
             @Override
             public BaseQueryMetric createMetric(boolean populateVersionMap) {
                 BaseQueryMetric queryMetric = new AlternateQueryMetric();
@@ -45,7 +45,7 @@ public class AlternateQueryMetricConfiguration {
             }
         };
     }
-    
+
     @Bean
     public ShardTableQueryMetricHandler shardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
                     @Qualifier("warehouse") AccumuloClientPool accumuloClientPool, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
