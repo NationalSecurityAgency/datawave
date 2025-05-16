@@ -53,4 +53,8 @@ public interface Type<T extends Comparable<T>> extends Comparable<Type<T>> {
             }
         }
     }
+
+    enum Category {
+        FULL, PART, GEOHASH, LIST_ELEMENT
+    }
 }

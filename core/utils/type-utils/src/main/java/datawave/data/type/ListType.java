@@ -2,6 +2,9 @@ package datawave.data.type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.util.StringUtils;
@@ -19,13 +22,13 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
     }
 
     @Override
-    public List<String> normalizeToMany(String in) {
+    public List<Pair<String,Category>> normalizeToMany(String in) {
         String[] splits = StringUtils.split(in, delimiter);
-        List<String> strings = new ArrayList(splits.length);
+        List<Pair<String,Category>> strings = new ArrayList(splits.length);
         for (String s : splits) {
 
             String str = normalizer.normalize(s);
-            strings.add(str);
+            strings.add(Pair.of(str, Category.LIST_ELEMENT));
 
         }
 
@@ -34,7 +37,7 @@ public abstract class ListType extends BaseType implements OneToManyNormalizerTy
 
     @Override
     public void setDelegateFromString(String in) {
-        this.normalizedValues = normalizeToMany(in);
+        this.normalizedValues = normalizeToMany(in).stream().map(Pair::getLeft).collect(Collectors.toList());
         this.delegate = in;
         setNormalizedValue(in);
     }
