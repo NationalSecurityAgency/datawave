@@ -375,11 +375,11 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             iterator.withMinMax(scanResult.getMin(), scanResult.getMax());
         }
 
+        // if scan results exist then this scan is allowed to timeout
         boolean checkForTimeout = data instanceof ScanResult;
         long scanStart = System.currentTimeMillis();
         long elapsedScanTime;
 
-        // TODO: if another anchor term exists in the query, allow this scan to timeout
         int count = 0;
         ScanResult result = new ScanResult();
         while (iterator.hasNext()) {

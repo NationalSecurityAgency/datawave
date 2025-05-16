@@ -80,6 +80,8 @@ public class CountQueryIterator implements SortedKeyValueIterator<Key,Value> {
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
+        } else {
+            throw new RuntimeException("query not set");
         }
 
         if (options.containsKey(QueryOptions.DATATYPE_FILTER)) {
