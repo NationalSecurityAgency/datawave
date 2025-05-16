@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -730,8 +730,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         NormalizedContentInterface copy = new NormalizedFieldAndValue(normalizedContent);
         for (Pair<String,datawave.data.type.Type.Category> one : datawaveType.normalizeToMany(copy.getIndexedFieldValue())) {
             try {
-                copy.setIndexedFieldValue(one.getFirst());
-                copy.setTypeCategory(one.getSecond());
+                copy.setIndexedFieldValue(one.getLeft());
+                copy.setTypeCategory(one.getRight());
                 list.add(copy);
                 copy = new NormalizedFieldAndValue(normalizedContent);
             } catch (Exception ex) {

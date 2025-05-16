@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -495,8 +495,8 @@ public class ProtobufEdgePreconditionTest {
 
         // test edge config only allows FULL category. LIST_ELEMENTS edges should not be produced in this case
         for (Pair<String,datawave.data.type.Type.Category> one : listType.normalizeToMany(copy.getIndexedFieldValue())) {
-            copy.setIndexedFieldValue(one.getFirst());
-            copy.setTypeCategory(one.getSecond());
+            copy.setIndexedFieldValue(one.getLeft());
+            copy.setTypeCategory(one.getRight());
             fields.put("CANINE", copy);
             copy = new NormalizedFieldAndValue(normalizedContent);
         }
