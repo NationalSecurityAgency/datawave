@@ -102,9 +102,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     private Date parseToDate(String fieldValue) {
         try {
             Date date = parseDate(fieldValue, FORMAT_STRINGS);
-            if (sanityCheck(date.getTime())) {
-                return date;
-            }
+            return date;
         } catch (ParseException e) {
             if (log.isTraceEnabled()) {
                 log.trace("Failed to normalize value using DateUtils: " + fieldValue);
@@ -126,7 +124,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
                     break;
                 }
             }
-            if (valid && sanityCheck(dateLong)) {
+            if (valid) {
                 return new Date(dateLong);
             }
         } catch (NumberFormatException e) {
@@ -135,11 +133,6 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
 
         throw new IllegalArgumentException("Failed to normalize value as a Date: " + fieldValue);
 
-    }
-
-    private boolean sanityCheck(Long dateLong) {
-        // between 1900/01/01 and 2100/12/31
-        return -2208970800000L <= dateLong && dateLong < 4133894400000L;
     }
 
     private Collection<String> formatAll(Date date) {
@@ -178,7 +171,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     @Override
     public Collection<String> expand(String dateString) {
         Date date = parseToDate(dateString);
-        if (date != null && this.sanityCheck(date.getTime())) {
+        if (date != null) {
             return formatAll(date);
         }
         return Collections.emptyList();
