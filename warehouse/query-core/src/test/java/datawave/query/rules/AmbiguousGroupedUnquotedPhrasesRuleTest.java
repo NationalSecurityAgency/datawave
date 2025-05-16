@@ -74,7 +74,7 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
     void testGroupedAmbiguousPhrases() throws Exception {
         givenQuery("FOO:(abc def ghi)");
 
-        expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: FOO:(abc AND def AND ghi ). Recommended: FOO:\"abc def ghi\"");
+        expectMessage("Ambiguous grouped unfielded terms AND'd with fielded term detected: FOO:( abc AND def AND ghi ). Recommended: FOO:\"abc def ghi\"");
 
         assertResult();
     }
@@ -110,6 +110,6 @@ class AmbiguousGroupedUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
 
     @Override
     protected ShardQueryRule getNewRule() {
-        return new AmbiguousUnquotedPhrasesRule(ruleName);
+        return new AmbiguousGroupedUnquotedPhrasesRule(ruleName);
     }
 }

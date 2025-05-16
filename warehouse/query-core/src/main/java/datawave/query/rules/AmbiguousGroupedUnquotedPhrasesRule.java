@@ -1,11 +1,11 @@
 package datawave.query.rules;
 
 import datawave.query.lucene.visitors.AmbiguousGroupedUnfieldedTermsVisitor;
-import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 import java.util.List;
@@ -56,6 +56,9 @@ public class AmbiguousGroupedUnquotedPhrasesRule extends ShardQueryRule {
     // Return a message about the given nodes.
     private String formatMessage(QueryNode node) {
         // @formatter:off
+                    // issue is not the GROUP -> AND . it is the GROUP -> FIELD AND...
+                    // check for same field names conjoined with AND and combine?
+                    // maybe a loop : however many fields and combine them with their operator and grouped
         return new StringBuilder()
                         .append("Ambiguous grouped unfielded terms AND'd with fielded term detected: ")
                         .append(LuceneQueryStringBuildingVisitor.build(node))

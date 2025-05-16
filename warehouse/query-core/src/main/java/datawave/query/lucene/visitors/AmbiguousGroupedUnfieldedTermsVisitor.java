@@ -1,10 +1,15 @@
 package datawave.query.lucene.visitors;
 
 import org.apache.lucene.queryparser.flexible.core.nodes.*;
+import org.apache.lucene.queryparser.surround.query.AndQuery;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
+
+import static datawave.query.lucene.visitors.QueryNodeType.AND;
+import static datawave.query.lucene.visitors.QueryNodeType.GROUP;
 
 /**
  * A {@link BaseVisitor} implementation that will search a query for any sub-phrases that represent a fielded term that is directly followed by unfielded terms
@@ -196,7 +201,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
         // A GROUP node will have just one child.
         QueryNode child = node.getChild();
         QueryNodeType type = QueryNodeType.get(child.getClass());
-        if (type == QueryNodeType.GROUP) {
+        if (type == GROUP) {
             // The child is a nested group. Examine it.
             return groupConsistsOfUnfieldedTerms((GroupQueryNode) child, fieldedTermFound);
         } else if (type == junction.getType()) {
@@ -224,15 +229,52 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
         List<QueryNode> children = node.getChildren();
         boolean unfieldedTermsFound = false;
         boolean fieldTermFoundInGroupSibling = false;
+        String prevField = "";
+
+        QueryNode noSameFields = null;
         // Examine the children.
         for (QueryNode child : children) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
             // If the child is a group, check if it consists of ambiguously ORed phrases.
+            // If the child is a group, check if it consists of ambiguous phrases.
             if (type == QueryNodeType.GROUP) {
                 // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambigously ORed unfielded phrases.
                 // Instead, we have something like ((FOO:abc OR def) OR (aaa OR bbb)) which cannot be flattened to FOO:(abc OR def OR aaa OR bbb).
                 if (fieldTermFoundInGroupSibling) {
                     return false;
+                }
+                if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
+                    // If it does, we know the group is something like: FOO:(abc def ghi)
+                    // maybe use the loop to make a new group to be used by AmbiguousGroupedUnquotedPhrasesRule.java
+                    // depending on if it is a) a group b) using AND junction c) using repeated fields
+               // new test parent; query = FOO:(abc def ghi)
+//<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+//<boolean operation="and">
+//
+//    <field end="8" field="FOO" start="5" text="abc"/>
+//
+//    <field end="12" field="FOO" start="9" text="def"/>
+//
+//    <field end="16" field="FOO" start="13" text="ghi"/>
+//
+//</boolean>
+                    // FOO: abc def ghi
+//<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+//<boolean operation="and">
+//
+//    <field end="7" field="FOO" start="4" text="abc"/>
+//
+//    <field end="11" field="" start="8" text="def"/>
+//
+//    <field end="15" field="" start="12" text="ghi"/>
+//
+//</boolean>
+                    ((FieldQueryNode) child).setField("");
+                    // noSameFields.set();
+                    unfieldedTermsFound = true;
+                } else {
+                    prevField = ((FieldQueryNode) child).getFieldAsString();
+                    //noSameFields.add(child);
                 }
                 if (groupConsistsOfUnfieldedTerms((GroupQueryNode) child, fieldedTermFound)) {
                     // If it does, we know the group is something like one of the following:
@@ -253,7 +295,14 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                     // If the field name is not empty, and we have not found a fielded term yet, mark that we've found one.
                     if (!fieldedTermFound) {
                         fieldedTermFound = true;
+                        prevField = ((FieldQueryNode) child).getFieldAsString();
+                    } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
+                        // If it does, we know the group is something like: FOO:(abc def ghi)
+                        // ( FOO:abc AND def AND ghi ). needs to be FIELD GROUP JUNCTIONS
+                        ((FieldQueryNode) child).setField("");
+                        unfieldedTermsFound = true;
                     } else {
+                        prevField = ((FieldQueryNode) child).getFieldAsString();
                         // If a fielded term was found previously, then we have may something like (FOO:abc OR BAR:abc).
                         return false;
                     }
