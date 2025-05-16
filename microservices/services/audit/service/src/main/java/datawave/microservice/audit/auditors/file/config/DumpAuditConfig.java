@@ -24,31 +24,31 @@ import datawave.webservice.common.audit.Auditor;
 @Configuration
 @ConditionalOnProperty(name = "audit.auditors.dump.enabled", havingValue = "true")
 public class DumpAuditConfig {
-    
+
     @Bean("dumpAuditProperties")
     @Valid
     @ConfigurationProperties("audit.auditors.dump")
     public FileAuditProperties dumpAuditProperties() {
         return new FileAuditProperties();
     }
-    
+
     @Resource(name = "msgHandlerAuditParams")
     private AuditParameters msgHandlerAuditParams;
-    
+
     @Bean
     public AuditMessageConsumer dumpAuditSink(Auditor dumpAuditor) {
         return new AuditMessageConsumer(msgHandlerAuditParams, dumpAuditor);
     }
-    
+
     @Bean
     public Auditor dumpAuditor(AuditProperties auditProperties, @Qualifier("dumpAuditProperties") FileAuditProperties dumpAuditProperties) throws Exception {
         List<String> fsConfigResources = (dumpAuditProperties.getFsConfigResources() != null) ? dumpAuditProperties.getFsConfigResources()
                         : auditProperties.getFsConfigResources();
-        
+
         String subPath = dumpAuditProperties.getSubPath();
         if (subPath == null && dumpAuditProperties.getSubPathEnvVar() != null)
             subPath = System.getenv(dumpAuditProperties.getSubPathEnvVar());
-        
+
         // @formatter:off
         return new FileAuditor.Builder()
                 .setPath(dumpAuditProperties.getPathUri())

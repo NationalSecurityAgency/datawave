@@ -13,18 +13,18 @@ import datawave.microservice.cached.LockableCacheInspector;
 @CacheConfig(cacheNames = CACHE_NAME)
 public class MapReduceQueryIdByJobIdCache extends LockableCache<String> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "mapReduceQueryIdByJobIdCache";
-    
+
     public MapReduceQueryIdByJobIdCache(LockableCacheInspector cacheInspector) {
         super(cacheInspector, CACHE_NAME);
     }
-    
+
     @Override
     public String get(String jobId) {
         return cacheInspector.list(CACHE_NAME, String.class, jobId);
     }
-    
+
     @Override
     @CachePut(key = "#jobId")
     public String update(String jobId, String id) {
@@ -33,7 +33,7 @@ public class MapReduceQueryIdByJobIdCache extends LockableCache<String> {
         }
         return id;
     }
-    
+
     @CacheEvict(key = "#jobId")
     public void remove(String jobId) {
         if (log.isDebugEnabled()) {

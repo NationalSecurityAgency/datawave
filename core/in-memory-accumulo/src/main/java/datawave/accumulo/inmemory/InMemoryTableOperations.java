@@ -84,46 +84,46 @@ class InMemoryTableOperations extends TableOperationsHelper {
     private static final byte[] ZERO = {0};
     private final InMemoryAccumulo acu;
     private final String username;
-    
+
     InMemoryTableOperations(InMemoryAccumulo acu, String username) {
         this.acu = acu;
         this.username = username;
     }
-    
+
     @Override
     public SortedSet<String> list() {
         return new TreeSet<>(acu.tables.keySet());
     }
-    
+
     @Override
     public boolean exists(String tableName) {
         return acu.tables.containsKey(tableName);
     }
-    
+
     private boolean namespaceExists(String namespace) {
         return acu.namespaces.containsKey(namespace);
     }
-    
+
     @Override
     public void create(String tableName) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         create(tableName, new NewTableConfiguration());
     }
-    
+
     @Override
     public void create(String tableName, boolean versioningIter) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         create(tableName, versioningIter, TimeType.MILLIS);
     }
-    
+
     @Override
     public void create(String tableName, boolean versioningIter, TimeType timeType) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         NewTableConfiguration ntc = new NewTableConfiguration().setTimeType(timeType);
-        
+
         if (versioningIter)
             create(tableName, ntc);
         else
             create(tableName, ntc.withoutDefaultIterators());
     }
-    
+
     @Override
     public void create(String tableName, NewTableConfiguration ntc) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         String namespace = TableNameUtil.qualify(tableName).getFirst();
@@ -133,43 +133,43 @@ class InMemoryTableOperations extends TableOperationsHelper {
         checkArgument(namespaceExists(namespace), "Namespace (" + namespace + ") does not exist, create it first");
         acu.createTable(username, tableName, ntc.getTimeType(), ntc.getProperties());
     }
-    
+
     @Override
     public void addSplits(String tableName, SortedSet<Text> partitionKeys) throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         acu.addSplits(tableName, partitionKeys);
     }
-    
+
     @Override
     public Collection<Text> getSplits(String tableName) throws TableNotFoundException {
         return listSplits(tableName);
     }
-    
+
     @Override
     public Collection<Text> getSplits(String tableName, int maxSplits) throws TableNotFoundException {
         return listSplits(tableName);
     }
-    
+
     @Override
     public Collection<Text> listSplits(String tableName) throws TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         return acu.getSplits(tableName);
     }
-    
+
     @Override
     public Collection<Text> listSplits(String tableName, int maxSplits) throws TableNotFoundException {
         return listSplits(tableName);
     }
-    
+
     @Override
     public void delete(String tableName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         acu.tables.remove(tableName);
     }
-    
+
     @Override
     public void rename(String oldTableName, String newTableName)
                     throws AccumuloSecurityException, TableNotFoundException, AccumuloException, TableExistsException {
@@ -188,32 +188,32 @@ class InMemoryTableOperations extends TableOperationsHelper {
         acu.namespaces.put(namespace, n);
         acu.tables.put(newTableName, t);
     }
-    
+
     @Override
     public void flush(String tableName) throws AccumuloException, AccumuloSecurityException {}
-    
+
     @Override
     public void setProperty(String tableName, String property, String value) throws AccumuloException, AccumuloSecurityException {
         acu.tables.get(tableName).settings.put(property, value);
     }
-    
+
     @Override
     public Map<String,String> modifyProperties(String tableName, Consumer<Map<String,String>> mapMutator)
                     throws AccumuloException, AccumuloSecurityException, IllegalArgumentException, ConcurrentModificationException {
         mapMutator.accept(acu.tables.get(tableName).settings);
         return acu.tables.get(tableName).settings;
     }
-    
+
     @Override
     public void removeProperty(String tableName, String property) throws AccumuloException, AccumuloSecurityException {
         acu.tables.get(tableName).settings.remove(property);
     }
-    
+
     @Override
     public Iterable<Entry<String,String>> getProperties(String tableName) throws AccumuloException, TableNotFoundException {
         return getConfiguration(tableName).entrySet();
     }
-    
+
     @Override
     public Map<String,String> getConfiguration(String tableName) throws AccumuloException, TableNotFoundException {
         String namespace = TableNameUtil.qualify(tableName).getFirst();
@@ -232,26 +232,26 @@ class InMemoryTableOperations extends TableOperationsHelper {
         }
         return conf;
     }
-    
+
     @Override
     public Map<String,String> getTableProperties(String tableName) throws AccumuloException, TableNotFoundException {
         return getConfiguration(tableName);
     }
-    
+
     @Override
     public void setLocalityGroups(String tableName, Map<String,Set<Text>> groups) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         acu.tables.get(tableName).setLocalityGroups(groups);
     }
-    
+
     @Override
     public Map<String,Set<Text>> getLocalityGroups(String tableName) throws AccumuloException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         return acu.tables.get(tableName).getLocalityGroups();
     }
-    
+
     @Override
     public Set<Range> splitRangeByTablets(String tableName, Range range, int maxSplits)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -259,7 +259,7 @@ class InMemoryTableOperations extends TableOperationsHelper {
             throw new TableNotFoundException(tableName, tableName, "");
         return Collections.singleton(range);
     }
-    
+
     @Override
     public void importDirectory(String tableName, String dir, String failureDir, boolean setTime)
                     throws IOException, AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -270,7 +270,7 @@ class InMemoryTableOperations extends TableOperationsHelper {
         }
         Path importPath = new Path(dir);
         Path failurePath = new Path(failureDir);
-        
+
         FileSystem fs = acu.getFileSystem();
         /*
          * check preconditions
@@ -347,40 +347,40 @@ class InMemoryTableOperations extends TableOperationsHelper {
             fs.delete(importStatus.getPath(), true);
         }
     }
-    
+
     @Override
     public void offline(String tableName) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         offline(tableName, false);
     }
-    
+
     @Override
     public void offline(String tableName, boolean wait) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
     }
-    
+
     @Override
     public void online(String tableName) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         online(tableName, false);
     }
-    
+
     @Override
     public void online(String tableName, boolean wait) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
     }
-    
+
     @Override
     public boolean isOnline(String s) throws AccumuloException, TableNotFoundException {
         return false;
     }
-    
+
     @Override
     public void clearLocatorCache(String tableName) throws TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
     }
-    
+
     @Override
     public Map<String,String> tableIdMap() {
         Map<String,String> result = new HashMap<>();
@@ -395,23 +395,23 @@ class InMemoryTableOperations extends TableOperationsHelper {
         }
         return result;
     }
-    
+
     @Override
     public List<DiskUsage> getDiskUsage(Set<String> tables) throws AccumuloException, AccumuloSecurityException {
-        
+
         List<DiskUsage> diskUsages = new ArrayList<>();
         diskUsages.add(new DiskUsage(new TreeSet<>(tables), 0l));
-        
+
         return diskUsages;
     }
-    
+
     @Override
     public void merge(String tableName, Text start, Text end) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         acu.merge(tableName, start, end);
     }
-    
+
     @Override
     public void deleteRows(String tableName, Text start, Text end) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!exists(tableName))
@@ -428,88 +428,88 @@ class InMemoryTableOperations extends TableOperationsHelper {
         Set<Key> keep = new TreeSet<>(t.table.subMap(new Key(startText), new Key(endText)).keySet());
         t.table.keySet().removeAll(keep);
     }
-    
+
     @Override
     public void compact(String tableName, Text start, Text end, boolean flush, boolean wait)
                     throws AccumuloSecurityException, TableNotFoundException, AccumuloException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
     }
-    
+
     @Override
     public void compact(String tableName, Text start, Text end, List<IteratorSetting> iterators, boolean flush, boolean wait)
                     throws AccumuloSecurityException, TableNotFoundException, AccumuloException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
-        
+
         if (iterators != null && iterators.size() > 0)
             throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void compact(String tableName, CompactionConfig config) throws AccumuloSecurityException, TableNotFoundException, AccumuloException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
-        
+
         if (config.getIterators().size() > 0 || config.getCompactionStrategy() != null)
             throw new UnsupportedOperationException("InMemory does not support iterators or compaction strategies for compactions");
     }
-    
+
     @Override
     public void cancelCompaction(String tableName) throws AccumuloSecurityException, TableNotFoundException, AccumuloException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
     }
-    
+
     @Override
     public void clone(String srcTableName, String newTableName, boolean flush, Map<String,String> propertiesToSet, Set<String> propertiesToExclude)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void clone(String s, String s1, CloneConfiguration cloneConfiguration)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void flush(String tableName, Text start, Text end, boolean wait) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
     }
-    
+
     @Override
     public Text getMaxRow(String tableName, Authorizations auths, Text startRow, boolean startInclusive, Text endRow, boolean endInclusive)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
         InMemoryTable table = acu.tables.get(tableName);
         if (table == null)
             throw new TableNotFoundException(tableName, tableName, "no such table");
-        
+
         return FindMax.findMax(new InMemoryScanner(table, auths), startRow, startInclusive, endRow, endInclusive);
     }
-    
+
     @Override
     public void importTable(String tableName, String exportDir) throws TableExistsException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void importTable(String tableName, Set<String> importDirs, ImportConfiguration ic)
                     throws TableExistsException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     public void importTable(String tableName, String importDir, boolean keepMappings, boolean skipOnline)
                     throws TableExistsException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void exportTable(String tableName, String exportDir) throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public boolean testClassLoad(String tableName, String className, String asTypeName)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -521,23 +521,23 @@ class InMemoryTableOperations extends TableOperationsHelper {
         }
         return true;
     }
-    
+
     @Override
     public void setSamplerConfiguration(String tableName, SamplerConfiguration samplerConfiguration)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void clearSamplerConfiguration(String tableName) throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public SamplerConfiguration getSamplerConfiguration(String tableName) throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public Locations locate(String tableName, Collection<Range> ranges) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
@@ -545,21 +545,21 @@ class InMemoryTableOperations extends TableOperationsHelper {
         List<Range> ignore = locator.binRanges(null, new ArrayList<>(ranges), binnedRanges);
         return new LocationsImpl(binnedRanges);
     }
-    
+
     private static class LocationsImpl implements Locations {
-        
+
         private Map<Range,List<TabletId>> groupedByRanges;
         private Map<TabletId,List<Range>> groupedByTablets;
         private Map<TabletId,String> tabletLocations;
-        
+
         public LocationsImpl(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
             groupedByTablets = new HashMap<>();
             groupedByRanges = null;
             tabletLocations = new HashMap<>();
-            
+
             for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
                 String location = entry.getKey();
-                
+
                 for (Entry<KeyExtent,List<Range>> entry2 : entry.getValue().entrySet()) {
                     TabletIdImpl tabletId = new TabletIdImpl(entry2.getKey());
                     tabletLocations.put(tabletId, location);
@@ -569,20 +569,20 @@ class InMemoryTableOperations extends TableOperationsHelper {
                     }
                 }
             }
-            
+
             groupedByTablets = Collections.unmodifiableMap(groupedByTablets);
         }
-        
+
         @Override
         public String getTabletLocation(TabletId tabletId) {
             return tabletLocations.get(tabletId);
         }
-        
+
         @Override
         public Map<Range,List<TabletId>> groupByRange() {
             if (groupedByRanges == null) {
                 Map<Range,List<TabletId>> tmp = new HashMap<>();
-                
+
                 for (Entry<TabletId,List<Range>> entry : groupedByTablets.entrySet()) {
                     for (Range range : entry.getValue()) {
                         List<TabletId> tablets = tmp.get(range);
@@ -590,22 +590,22 @@ class InMemoryTableOperations extends TableOperationsHelper {
                             tablets = new ArrayList<>();
                             tmp.put(range, tablets);
                         }
-                        
+
                         tablets.add(entry.getKey());
                     }
                 }
-                
+
                 Map<Range,List<TabletId>> tmp2 = new HashMap<>();
                 for (Entry<Range,List<TabletId>> entry : tmp.entrySet()) {
                     tmp2.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
                 }
-                
+
                 groupedByRanges = Collections.unmodifiableMap(tmp2);
             }
-            
+
             return groupedByRanges;
         }
-        
+
         @Override
         public Map<TabletId,List<Range>> groupByTablet() {
             return groupedByTablets;

@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 public class ResponseHeaderServletFilter extends OncePerRequestFilter {
     private final String origin;
-    
+
     public ResponseHeaderServletFilter(String systemName) {
         String origin;
         try {
@@ -30,7 +30,7 @@ public class ResponseHeaderServletFilter extends OncePerRequestFilter {
         }
         this.origin = origin;
     }
-    
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
                     throws ServletException, IOException {
@@ -39,7 +39,7 @@ public class ResponseHeaderServletFilter extends OncePerRequestFilter {
         if (request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE) == null) {
             request.setAttribute(REQUEST_START_TIME_NS_ATTRIBUTE, System.nanoTime());
         }
-        
+
         HeaderWriterResponse headerWriterResponse = new HeaderWriterResponse(response, request, origin);
         try {
             filterChain.doFilter(request, headerWriterResponse);
@@ -47,30 +47,30 @@ public class ResponseHeaderServletFilter extends OncePerRequestFilter {
             headerWriterResponse.writeHeaders();
         }
     }
-    
+
     private static class HeaderWriterResponse extends OnCommittedResponseWrapper {
         private final HttpServletRequest request;
         private final String origin;
-        
+
         private HeaderWriterResponse(HttpServletResponse response, HttpServletRequest request, String origin) {
             super(response);
             this.request = request;
             this.origin = origin;
         }
-        
+
         @Override
         protected void onResponseCommitted() {
             writeHeaders();
             disableOnResponseCommitted();
         }
-        
+
         protected void writeHeaders() {
             if (isDisableOnResponseCommitted()) {
                 return;
             }
-            
+
             getHttpResponse().setHeader(RESPONSE_ORIGIN_HEADER, origin);
-            
+
             // Add the operation time if we didn't already do it when writing a response out. Even though this might be
             // a slightly more accurate operation time, we don't want it to disagree with the value that was written in
             // to the response.
@@ -80,7 +80,7 @@ public class ResponseHeaderServletFilter extends OncePerRequestFilter {
                 getHttpResponse().setHeader(OPERATION_TIME_MS_HEADER, Long.toString(operationTimeMillis));
             }
         }
-        
+
         private HttpServletResponse getHttpResponse() {
             return (HttpServletResponse) getResponse();
         }

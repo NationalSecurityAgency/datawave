@@ -3,7 +3,7 @@ package datawave.data.type;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.OneToManyNormalizer;
@@ -14,32 +14,33 @@ import datawave.data.type.util.Geometry;
  * values during ingest.
  */
 public class GeometryType extends AbstractGeometryType<Geometry> implements OneToManyNormalizerType<Geometry> {
-    
+
     protected List<String> normalizedValues;
-    
+
     public GeometryType() {
         super(Normalizer.GEOMETRY_NORMALIZER);
     }
-    
+
     public List<Pair<String,Category>> normalizeToMany(String in) {
+
         return ((OneToManyNormalizer<Geometry>) normalizer).normalizeToMany(in);
     }
-    
+
     public void setNormalizedValues(List<String> normalizedValues) {
         this.normalizedValues = normalizedValues;
         setNormalizedValue(this.normalizedValues.toString());
     }
-    
+
     @Override
     public void normalizeAndSetNormalizedValue(Geometry valueToNormalize) {
-        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(valueToNormalize).stream().map(Pair::getFirst)
+        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(valueToNormalize).stream().map(Pair::getLeft)
                         .collect(Collectors.toList()));
     }
-    
+
     public List<String> getNormalizedValues() {
         return normalizedValues;
     }
-    
+
     @Override
     public boolean expandAtQueryTime() {
         return false;

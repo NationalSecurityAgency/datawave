@@ -13,16 +13,16 @@ import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class DescriptionBase<T> implements HasMarkings, Message<T> {
-    
+
     @XmlElement(name = "description")
     protected String description;
-    
+
     @XmlElement(name = "markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)
     protected Map<String,String> markings;
-    
+
     public abstract String getDescription();
-    
+
     public abstract void setDescription(String description);
-    
+
 }

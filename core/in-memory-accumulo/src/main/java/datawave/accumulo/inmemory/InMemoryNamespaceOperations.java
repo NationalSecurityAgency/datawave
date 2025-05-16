@@ -38,27 +38,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
-    
+
     private static final Logger log = LoggerFactory.getLogger(InMemoryNamespaceOperations.class);
-    
+
     final private InMemoryAccumulo acu;
     final private String username;
-    
+
     InMemoryNamespaceOperations(InMemoryAccumulo acu, String username) {
         this.acu = acu;
         this.username = username;
     }
-    
+
     @Override
     public SortedSet<String> list() {
         return new TreeSet<>(acu.namespaces.keySet());
     }
-    
+
     @Override
     public boolean exists(String namespace) {
         return acu.namespaces.containsKey(namespace);
     }
-    
+
     @Override
     public void create(String namespace) throws AccumuloException, AccumuloSecurityException, NamespaceExistsException {
         Validators.NEW_NAMESPACE_NAME.validate(namespace);
@@ -67,7 +67,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
         else
             acu.createNamespace(username, namespace);
     }
-    
+
     @Override
     public void delete(String namespace) throws AccumuloException, AccumuloSecurityException, NamespaceNotFoundException, NamespaceNotEmptyException {
         if (acu.namespaces.get(namespace).getTables(acu).size() > 0) {
@@ -75,7 +75,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
         }
         acu.namespaces.remove(namespace);
     }
-    
+
     @Override
     public void rename(String oldNamespaceName, String newNamespaceName)
                     throws AccumuloSecurityException, NamespaceNotFoundException, AccumuloException, NamespaceExistsException {
@@ -83,7 +83,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
             throw new NamespaceNotFoundException(oldNamespaceName, oldNamespaceName, "");
         if (exists(newNamespaceName))
             throw new NamespaceExistsException(newNamespaceName, newNamespaceName, "");
-        
+
         InMemoryNamespace n = acu.namespaces.get(oldNamespaceName);
         for (String t : n.getTables(acu)) {
             String tt = newNamespaceName + "." + TableNameUtil.qualify(t).getSecond();
@@ -91,30 +91,30 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
         }
         acu.namespaces.put(newNamespaceName, acu.namespaces.remove(oldNamespaceName));
     }
-    
+
     @Override
     public void setProperty(String namespace, String property, String value) throws AccumuloException, AccumuloSecurityException {
         acu.namespaces.get(namespace).settings.put(property, value);
     }
-    
+
     @Override
     public Map<String,String> modifyProperties(String namespace, Consumer<Map<String,String>> mapMutator)
                     throws AccumuloException, AccumuloSecurityException, NamespaceNotFoundException {
         mapMutator.accept(acu.namespaces.get(namespace).settings);
         return acu.namespaces.get(namespace).settings;
     }
-    
+
     @Override
     public void removeProperty(String namespace, String property) throws AccumuloException, AccumuloSecurityException {
         acu.namespaces.get(namespace).settings.remove(property);
     }
-    
+
     @Override
     public Iterable<Entry<String,String>> getProperties(String namespace) throws AccumuloException, AccumuloSecurityException, NamespaceNotFoundException {
         EXISTING_NAMESPACE_NAME.validate(namespace);
         return getConfiguration(namespace).entrySet();
     }
-    
+
     @Override
     public Map<String,String> namespaceIdMap() {
         Map<String,String> result = new HashMap<>();
@@ -123,7 +123,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
         }
         return result;
     }
-    
+
     @Override
     public boolean testClassLoad(String namespace, String className, String asTypeName)
                     throws AccumuloException, AccumuloSecurityException, NamespaceNotFoundException {
@@ -135,7 +135,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
         }
         return true;
     }
-    
+
     @Override
     public Map<String,String> getConfiguration(String namespace) throws AccumuloException, AccumuloSecurityException, NamespaceNotFoundException {
         if (!exists(namespace)) {
@@ -143,7 +143,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
         }
         return acu.namespaces.get(namespace).settings;
     }
-    
+
     @Override
     public Map<String,String> getNamespaceProperties(String namespace) throws AccumuloException, AccumuloSecurityException, NamespaceNotFoundException {
         return getConfiguration(namespace);

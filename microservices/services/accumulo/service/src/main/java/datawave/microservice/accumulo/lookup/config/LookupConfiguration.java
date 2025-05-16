@@ -17,13 +17,13 @@ import datawave.marking.SecurityMarking;
 @EnableConfigurationProperties({LookupProperties.class, LookupAuditProperties.class})
 @ConditionalOnProperty(name = "accumulo.lookup.enabled", havingValue = "true", matchIfMissing = true)
 public class LookupConfiguration {
-    
+
     @Bean
     @ConditionalOnMissingBean
     public ResponseObjectFactory responseObjectFactory() {
         return new ResponseObjectFactory() {};
     }
-    
+
     @Bean
     @RefreshScope
     @RequestScope

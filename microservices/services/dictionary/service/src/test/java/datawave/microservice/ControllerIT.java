@@ -33,28 +33,28 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ControllerIT {
-    
+
     @LocalServerPort
     protected int webServicePort;
-    
+
     @Autowired
     @Qualifier("warehouse")
     protected AccumuloClient accumuloClient;
-    
+
     protected DatawaveUserDetails adminUser;
     protected DatawaveUserDetails regularUser;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     protected JWTRestTemplate jwtRestTemplate;
-    
+
     @Autowired
     private ObjectMapper objectMapper;
-    
+
     @BeforeAll
     public void oneTimeSetup() {
-        
+
         // Allow 403 responses through without throwing an exception so tests can assert the response appropriately.
         ResponseErrorHandler errorHandler = new DefaultResponseErrorHandler() {
             @Override
@@ -62,9 +62,9 @@ public class ControllerIT {
                 return super.hasError(statusCode) && statusCode.value() != 403;
             }
         };
-        
+
         jwtRestTemplate = restTemplateBuilder.errorHandler(errorHandler).build(JWTRestTemplate.class);
-        
+
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         HashSet<String> auths = Sets.newHashSet("PUBLIC", "PRIVATE");
         HashSet<String> roles = Sets.newHashSet("AuthorizedUser", "Administrator");
@@ -76,5 +76,5 @@ public class ControllerIT {
                                         new DatawaveUser(dn, DatawaveUser.UserType.USER, auths, Collections.singleton("AuthorizedUser"), null, createTime)),
                         createTime);
     }
-    
+
 }

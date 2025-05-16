@@ -20,22 +20,22 @@ import datawave.query.language.parser.QueryParser;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class HitHighlightsConfiguration {
-    
+
     @Autowired
     private ApplicationContext appContext;
-    
+
     @Bean
     @ConfigurationProperties("datawave.query.logic.logics.hit-highlights")
     public ShardQueryLogicProperties hitHighlightsProperties() {
         return new ShardQueryLogicProperties();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<IvaratorCacheDirConfig> hitHighlightsIvaratorCacheDirConfigs() {
         return hitHighlightsProperties().getIvaratorCacheDirConfigs();
     }
-    
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,QueryParser> hitHighlightsSyntaxParsers() {

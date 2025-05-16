@@ -21,11 +21,11 @@ import datawave.metrics.MetricsReporterFactory;
 @EnableMetrics
 public class DatawaveMetricsConfig extends MetricsConfigurerAdapter {
     private final MetricsConfigurationProperties configProps;
-    
+
     public DatawaveMetricsConfig(MetricsConfigurationProperties configProps) {
         this.configProps = configProps;
     }
-    
+
     @Override
     public void configureReporters(MetricRegistry metricRegistry) {
         try {

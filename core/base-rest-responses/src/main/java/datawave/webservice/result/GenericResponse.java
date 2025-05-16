@@ -24,54 +24,54 @@ import io.protostuff.UninitializedMessageException;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class GenericResponse<T> extends BaseResponse implements Message<GenericResponse<T>> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "Result")
     private T result = null;
-    
+
     public T getResult() {
         return result;
     }
-    
+
     public void setResult(T result) {
         this.result = result;
     }
-    
+
     @Override
     public Schema<GenericResponse<T>> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private Schema<GenericResponse<T>> SCHEMA = new GenericResponseSchema();
-    
+
     public class GenericResponseSchema implements Schema<GenericResponse<T>> {
-        
+
         public GenericResponse<T> newMessage() {
             return new GenericResponse<>();
         }
-        
+
         @SuppressWarnings("rawtypes")
         public Class<GenericResponse> typeClass() {
             return GenericResponse.class;
         }
-        
+
         public String messageName() {
             return GenericResponse.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return GenericResponse.class.getName();
         }
-        
+
         public boolean isInitialized(GenericResponse<T> message) {
             return result != null;
         }
-        
+
         public void writeTo(Output output, GenericResponse<T> message) throws IOException {
             output.writeUInt64(1, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -79,7 +79,7 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
                         output.writeString(2, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -87,7 +87,7 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
                         output.writeObject(3, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
             if (message.result != null) {
                 output.writeString(4, message.result.getClass().getName(), false);
                 if (message.result instanceof String)
@@ -108,7 +108,7 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
                 throw new UninitializedMessageException(message);
             }
         }
-        
+
         @SuppressWarnings("unchecked")
         public void mergeFrom(Input input, GenericResponse<T> message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
@@ -150,7 +150,7 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
                     case 11:
                         message.result = (T) input.readByteArray();
                         break;
-                    
+
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -159,7 +159,7 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -190,12 +190,12 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number;
         }
-        
+
         final HashMap<String,Integer> fieldMap = new HashMap<>();
         {
             fieldMap.put("operationTimeMs", 1);

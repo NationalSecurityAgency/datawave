@@ -7,17 +7,17 @@ public class TimelyMetricsReporterFactory implements MetricsReporterFactory {
     public MetricsReporterBuilder forRegistry(MetricRegistry registry) {
         return new Builder(registry);
     }
-    
+
     public static class Builder extends MetricsReporterBuilder {
-        
+
         protected Builder(MetricRegistry registry) {
             super(registry);
         }
-        
+
         @Override
         public TimelyMetricsReporter build(String host, int port) {
             return new TimelyMetricsReporter(host, port, registry, "timely-reporter", filter, rateUnit, durationUnit);
         }
-        
+
     }
 }

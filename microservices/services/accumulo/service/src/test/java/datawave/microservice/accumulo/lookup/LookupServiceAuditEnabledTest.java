@@ -62,36 +62,36 @@ import datawave.webservice.common.audit.Auditor;
 @ComponentScan(basePackages = "datawave.microservice")
 @ActiveProfiles({"mock", "lookup-with-audit-enabled"})
 public class LookupServiceAuditEnabledTest {
-    
+
     public static final String BASE_PATH = "/accumulo/v1";
-    
+
     private static final String EXPECTED_AUDIT_URI = "http://localhost:11111/audit/v1/audit";
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     @Qualifier("warehouse")
     private AccumuloClient connector;
-    
+
     @Autowired
     private MockAccumuloDataService mockDataService;
-    
+
     private String testTableName;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     @Autowired
     private LookupService lookupService;
-    
+
     private JWTRestTemplate jwtRestTemplate;
     private MockRestServiceServer mockAuditServer;
     private DatawaveUserDetails defaultUserDetails;
-    
+
     @BeforeEach
     public void setup() {
         defaultUserDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
@@ -99,7 +99,7 @@ public class LookupServiceAuditEnabledTest {
         testTableName = MockAccumuloDataService.WAREHOUSE_MOCK_TABLE;
         setupMockAuditServer();
     }
-    
+
     @Test
     public void verifyAutoConfig() {
         assertTrue(context.containsBean("auditServiceConfiguration"), "auditServiceConfiguration bean not found");
@@ -107,34 +107,34 @@ public class LookupServiceAuditEnabledTest {
         assertTrue(context.containsBean("auditLookupSecurityMarking"), "auditLookupSecurityMarking bean not found");
         assertTrue(context.containsBean("lookupService"), "lookupService bean not found");
         assertTrue(context.containsBean("lookupController"), "lookupController bean not found");
-        
+
         assertFalse(context.containsBean("statsService"), "statsService bean should not have been found");
         assertFalse(context.containsBean("statsController"), "statsController bean should not have been found");
         assertFalse(context.containsBean("adminService"), "adminService bean should not have been found");
         assertFalse(context.containsBean("adminController"), "adminController bean should not have been found");
     }
-    
+
     @Test
     public void testLookupRow1AndVerifyAuditURI() {
         testLookupAndVerifyAuditUriWithSuccess(testTableName, "row1", Auditor.AuditType.ACTIVE);
     }
-    
+
     @Test
     public void testLookupRow2AndVerifyAuditURI() {
         testLookupAndVerifyAuditUriWithSuccess(testTableName, "row2", Auditor.AuditType.PASSIVE);
     }
-    
+
     @Test
     public void testLookupRow3AndVerifyAuditURI() {
         testLookupAndVerifyAuditUriWithSuccess(testTableName, "row3", Auditor.AuditType.ACTIVE);
     }
-    
+
     @Test
     public void testLookupAndVerifyLOCALONLY() throws Exception {
         mockDataService.setupMockTable(connector, "localonlyAuditTable");
         testLookupAndVerifyAuditUriWithSuccess("localonlyAuditTable", "row1", Auditor.AuditType.LOCALONLY);
     }
-    
+
     /**
      * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
@@ -147,7 +147,7 @@ public class LookupServiceAuditEnabledTest {
         assertExceptionMessage(AssertionError.class, "\n0 request(s) executed",
                         () -> testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule1", "row3", Auditor.AuditType.ACTIVE));
     }
-    
+
     /**
      * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
@@ -160,7 +160,7 @@ public class LookupServiceAuditEnabledTest {
         assertExceptionMessage(AssertionError.class, "\n0 request(s) executed",
                         () -> testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule2", "row3", Auditor.AuditType.PASSIVE));
     }
-    
+
     /**
      * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
@@ -173,7 +173,7 @@ public class LookupServiceAuditEnabledTest {
         assertExceptionMessage(AssertionError.class, "\n0 request(s) executed",
                         () -> testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule3", "row3", Auditor.AuditType.NONE));
     }
-    
+
     /**
      * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
@@ -186,20 +186,20 @@ public class LookupServiceAuditEnabledTest {
         assertExceptionMessage(AssertionError.class, "\n0 request(s) executed",
                         () -> testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule4", "row3", Auditor.AuditType.LOCALONLY));
     }
-    
+
     @Test
     public void testErrorOnMissingColVizParam() {
         DatawaveUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Collections.singletonList("A"));
         assertHttpException(HttpClientErrorException.class, 400, () -> doLookup(userDetails, path(testTableName + "/row2"), "NotColumnVisibility=foo"));
     }
-    
+
     private void testLookupAndVerifyAuditUriWithSuccess(String targetTable, String targetRow, Auditor.AuditType expectedAuditType) {
-        
+
         String auditColViz = "foo";
         String queryAuths = "A,C,E,G,I";
         String queryUseAuths = "useAuthorizations=" + queryAuths;
         String queryColumnViz = "columnVisibility=" + auditColViz;
-        
+
         MultiValueMap<String,String> expectedFormData = new LinkedMultiValueMap<>();
         expectedFormData.set("useAuthorizations", queryAuths);
         expectedFormData.set("columnVisibility", auditColViz);
@@ -209,24 +209,24 @@ public class LookupServiceAuditEnabledTest {
         expectedFormData.set("auditType", expectedAuditType.name());
         expectedFormData.set("auditColumnVisibility", auditColViz);
         expectedFormData.set("logicClass", "AccumuloLookup");
-        
+
         //@formatter:off
         mockAuditServer.expect(requestTo(EXPECTED_AUDIT_URI))
             .andExpect(content().formData(expectedFormData))
             .andRespond(withSuccess()
         );
         //@formatter:on
-        
+
         String queryString = String.join("&", queryUseAuths, queryColumnViz);
         doLookup(defaultUserDetails, path(targetTable + "/" + targetRow), queryString);
-        
+
         mockAuditServer.verify();
     }
-    
+
     private String path(String pathParams) {
         return BASE_PATH + "/lookup/" + pathParams;
     }
-    
+
     /**
      * Mocks the AuditClient jwtRestTemplate field within the internal AuditClient employed by our LookupService instance
      */
@@ -239,7 +239,7 @@ public class LookupServiceAuditEnabledTest {
         assertNotNull(auditorRestTemplate);
         mockAuditServer = MockRestServiceServer.createServer(auditorRestTemplate);
     }
-    
+
     /**
      * Lookups here should return one or more valid Accumulo table entries. If not, an exception is thrown
      */

@@ -33,29 +33,29 @@ import datawave.data.normalizer.regex.ZeroOrMoreNode;
  * @see datawave.data.type.util.NumericalEncoder
  */
 public class NegativeNumberPatternInverter extends CopyVisitor {
-    
+
     private static final int TEN = 10;
     private static final int NINE = 9;
-    
+
     public static Node invert(Node node) {
         if (node == null) {
             return null;
         }
-        
+
         NegativeNumberPatternInverter visitor = new NegativeNumberPatternInverter();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     public Object visitEncodedPattern(EncodedPatternNode node, Object data) {
         // Operate on a copy of the pattern tree.
         Node copy = copy(node);
-        
+
         // If the first character is not !, this is not a negative number pattern. Return the copy.
         if (!RegexUtils.isChar(copy.getFirstChild(), RegexConstants.EXCLAMATION_POINT)) {
             return copy;
         }
-        
+
         // Create an initial encoded pattern node with all the leading bin info.
         EncodedPatternNode encodedPattern = new EncodedPatternNode();
         List<Node> children = copy.getChildren();
@@ -67,35 +67,35 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 break;
             }
         }
-        
+
         // Invert the remaining nodes and add them to the encoded pattern node.
         List<Node> nodesToInvert = new ArrayList<>(children.subList(startOfNodesToInvert, children.size()));
         encodedPattern.addChildren(new PatternInverter(nodesToInvert).invert());
         return encodedPattern;
     }
-    
+
     private static class PatternInverter {
-        
+
         // The node iterator.
         protected final NodeListIterator iter;
-        
+
         // The currently inverted nodes.
         protected final List<Node> inverted = new ArrayList<>();
-        
+
         // The most recent element.
         protected Node currentElement;
-        
+
         // The most recent quantifier.
         protected Node currentQuantifier;
-        
+
         // The most recent question mark.
         protected Node currentQuestionMark;
-        
+
         public PatternInverter(List<Node> nodes) {
             Collections.reverse(nodes);
             this.iter = new NodeListIterator(nodes);
         }
-        
+
         public List<Node> invert() {
             invertEndingPermutations();
             while (iter.hasNext()) {
@@ -105,11 +105,11 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             Collections.reverse(inverted);
             return inverted;
         }
-        
+
         private void invertEndingPermutations() {
             // Fetch the first element.
             captureNext();
-            
+
             // If the first element can occur zero times, e.g. it could match the '0' character (which would not show up in an encoded number), or it has a
             // quantifier that allows for zero occurrences, e.g. {0,4}, then we must identify all possible trailing elements that may not occur, and create
             // ending permutations that allow for the possibility of each successive element not occurring. The last element of each permutation must be
@@ -151,17 +151,17 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                     // Wrap the alternation in a group before adding it to the inverted nodes list.
                     inverted.add(new GroupNode(alternation));
                 }
-                
+
             } else {
                 // The last-most element must occur at least once, and cannot match the character '0'. Invert it with a minuend of 10, and add it to the
                 // inverted nodes list.
                 inverted.addAll(subtractCurrentFromTen());
             }
         }
-        
+
         /**
          * Return whether the current element represents something that may match against a trailing zero, or may occur zero times.
-         * 
+         *
          * @return whether the current element could occur zero times in target matches
          */
         private boolean currentCanOccurZeroTimes() {
@@ -180,7 +180,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 }
             }
         }
-        
+
         private boolean currentMatchesZeroOnly() {
             if (currentElement.getType() != NodeType.GROUP) {
                 return RegexUtils.matchesZeroOnly(currentElement);
@@ -188,19 +188,19 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 return RegexUtils.matchesZeroOnly(currentElement.getFirstChild());
             }
         }
-        
+
         /**
          * Return the current element inverted with a minuend of 10.
-         * 
+         *
          * @return the inverted nodes.
          */
         private List<Node> subtractCurrentFromTen() {
             return ElementInverter.forType(currentElement).subtractFromTen(currentElement, currentQuantifier, currentQuestionMark, true);
         }
-        
+
         /**
          * Return the current element inverted with a minuend of 9.
-         * 
+         *
          * @param endingElement
          *            whether the current element is an ending permutation element
          * @return the inverted nodes
@@ -208,14 +208,14 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
         private List<Node> subtractCurrentFromNine(boolean endingElement) {
             return ElementInverter.forType(currentElement).subtractFromNine(currentElement, currentQuantifier, currentQuestionMark, endingElement);
         }
-        
+
         /**
          * Capture the next element, quantifier, and current question mark.
          */
         protected void captureNext() {
             // Reset the current elements to null.
             setCurrentToNull();
-            
+
             // Extract the next element, quantifier, and question mark if present.
             while (iter.hasNext()) {
                 if (iter.isNextQuestionMark()) {
@@ -228,7 +228,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 }
             }
         }
-        
+
         /**
          * Set the current element, quantifier, and question mark to null.
          */
@@ -238,17 +238,17 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             currentQuestionMark = null;
         }
     }
-    
+
     private interface ElementInverter {
-        
+
         ElementInverter NON_MODIFYING_INVERTER = new NonModifyingInverter();
         ElementInverter SINGLE_CHAR_INVERTER = new SingleCharInverter();
         ElementInverter CHAR_CLASS_INVERTER = new CharClassInverter();
         ElementInverter GROUP_INVERTER = new GroupInverter();
-        
+
         /**
          * Return the appropriate {@link ElementInverter} for the element's type.
-         * 
+         *
          * @param element
          *            the element
          * @return the inverter
@@ -269,17 +269,17 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                     throw new IllegalArgumentException("Unhandled element type " + element.getType());
             }
         }
-        
+
         List<Node> subtractFromNine(Node element, Node quantifier, Node questionMark, boolean endingElement);
-        
+
         List<Node> subtractFromTen(Node element, Node quantifier, Node questionMark, boolean endingElement);
     }
-    
+
     /**
      * Abstract implementation of {@link ElementInverter} with some shared functionality.
      */
     private static abstract class AbstractInverter implements ElementInverter {
-        
+
         protected List<Node> asList(Node... nodes) {
             List<Node> list = new ArrayList<>();
             for (Node node : nodes) {
@@ -289,20 +289,20 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             }
             return list;
         }
-        
+
         protected SingleCharNode subtractSingleCharFrom(SingleCharNode node, int minuend) {
             char digit = node.getCharacter();
             int value = minuend - RegexUtils.toInt(digit);
             return value < 10 ? new SingleCharNode(RegexUtils.toChar(value)) : null;
         }
-        
+
     }
-    
+
     /**
      * Handles elements that do not need to go through inversion, like wildcards or the digit character class {@code \d}.
      */
     private static class NonModifyingInverter extends AbstractInverter {
-        
+
         @Override
         public List<Node> subtractFromNine(Node element, Node quantifier, Node questionMark, boolean endingElement) {
             // If this is an ending permutation element, and the element is marked optional, make it non-optional.
@@ -312,7 +312,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             // Return the elements in reverse order.
             return asList(questionMark, quantifier, element);
         }
-        
+
         @Override
         public List<Node> subtractFromTen(Node element, Node quantifier, Node questionMark, boolean endingElement) {
             // If this is an ending permutation element, and the element is marked optional, make it non-optional.
@@ -326,14 +326,14 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             // Return the elements in reverse order.
             return asList(questionMark, quantifier, element);
         }
-        
+
     }
-    
+
     /**
      * Handles inverting single characters.
      */
     private static class SingleCharInverter extends AbstractInverter {
-        
+
         /**
          * Return the given element inverted with a minuend of nine.
          */
@@ -348,7 +348,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             // Return the elements in reverse order.
             return asList(questionMark, quantifier, newElement);
         }
-        
+
         /**
          * Return the given char inverted with a minuend of ten.
          */
@@ -398,12 +398,12 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             }
         }
     }
-    
+
     /**
      * Handles inverting character classes.
      */
     private static class CharClassInverter extends AbstractInverter {
-        
+
         @Override
         public List<Node> subtractFromNine(Node element, Node quantifier, Node questionMark, boolean endingElement) {
             // Subtract each element in the character class from 9 and return the elements in reverse order.
@@ -414,7 +414,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             }
             return asList(questionMark, quantifier, newElement);
         }
-        
+
         @Override
         public List<Node> subtractFromTen(Node element, Node quantifier, Node questionMark, boolean endingElement) {
             Node fromTen = subtractFrom((CharClassNode) element, TEN);
@@ -459,7 +459,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 }
             }
         }
-        
+
         private Node subtractFrom(CharClassNode node, int minuend) {
             List<Node> children = new ArrayList<>();
             for (Node child : node.getChildren()) {
@@ -500,12 +500,12 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             }
         }
     }
-    
+
     /**
      * Handles inverting groups that were inserted into the pattern by {@link ZeroTrimmer}.
      */
     private static class GroupInverter extends AbstractInverter {
-        
+
         @Override
         public List<Node> subtractFromNine(Node element, Node quantifier, Node questionMark, boolean endingElement) {
             List<Node> children = invertGroup(element, NINE, endingElement);
@@ -517,7 +517,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 return createGroup(children, quantifier, questionMark);
             }
         }
-        
+
         @Override
         public List<Node> subtractFromTen(Node element, Node quantifier, Node questionMark, boolean endingElement) {
             List<Node> children = invertGroup(element, TEN, endingElement);
@@ -529,7 +529,7 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 return createGroup(children, quantifier, questionMark);
             }
         }
-        
+
         // Return the children of the given group inverted.
         private List<Node> invertGroup(Node group, int minuend, boolean endingElement) {
             // Any group seen here was created by the ZeroTrimmer visitor, and will have at most one element, one quantifier, and one question mark. Fetch them
@@ -538,10 +538,10 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
             Node element = iter.next();
             Node quantifier = iter.hasNext() && iter.isNextQuantifier() ? iter.next() : null;
             Node questionMark = iter.hasNext() && iter.isNextQuestionMark() ? iter.next() : null;
-            
+
             // Fetch the appropriate inverter for the element type.
             ElementInverter inverter = ElementInverter.forType(element);
-            
+
             // Invert the elements based on the minuend.
             List<Node> inverted;
             switch (minuend) {
@@ -554,11 +554,11 @@ public class NegativeNumberPatternInverter extends CopyVisitor {
                 default:
                     throw new IllegalArgumentException("Invalid minuend " + minuend);
             }
-            
+
             // Return the inverted nodes. We do not need to return them as groups, but can flatten it instead.
             return inverted;
         }
-        
+
         private List<Node> createGroup(List<Node> children, Node quantifier, Node questionMark) {
             Collections.reverse(children);
             return asList(questionMark, quantifier, new GroupNode(children));

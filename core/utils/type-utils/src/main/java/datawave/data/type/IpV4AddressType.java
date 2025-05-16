@@ -6,17 +6,17 @@ import datawave.data.type.util.IpV4Address;
 import datawave.data.type.util.IpV6Address;
 
 public class IpV4AddressType extends BaseType<IpAddress> {
-    
+
     private static final long serialVersionUID = 7214683578627273557L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE;
-    
+
     public IpV4AddressType() {
         super(Normalizer.IP_ADDRESS_NORMALIZER);
     }
-    
+
     /**
      * one String + either IpV4Address or IpV6Address + reference
-     * 
+     *
      * @return
      */
     @Override

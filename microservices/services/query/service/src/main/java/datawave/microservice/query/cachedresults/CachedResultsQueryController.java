@@ -42,13 +42,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping(path = "/v1/cachedresults", produces = MediaType.APPLICATION_JSON_VALUE)
 @ConditionalOnProperty(name = "datawave.query.cached-results.enabled", havingValue = "true", matchIfMissing = true)
 public class CachedResultsQueryController {
-    
+
     private final CachedResultsQueryService cachedResultsQueryService;
-    
+
     public CachedResultsQueryController(CachedResultsQueryService cachedResultsQueryService) {
         this.cachedResultsQueryService = cachedResultsQueryService;
     }
-    
+
     // @see CachedResultsQueryService#load(String, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(summary = "Loads a query into MySQL using the given defined query ID and parameters.")
@@ -64,7 +64,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.load(definedQueryId, alias, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#create(String, MultiValueMap, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -106,7 +106,7 @@ public class CachedResultsQueryController {
                     throws QueryException {
         return cachedResultsQueryService.create(key, parameters, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#loadAndCreate(String, MultiValueMap, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -148,7 +148,7 @@ public class CachedResultsQueryController {
                     throws QueryException {
         return cachedResultsQueryService.loadAndCreate(definedQueryId, parameters, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#getRows(String, Integer, Integer, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -167,7 +167,7 @@ public class CachedResultsQueryController {
                     throws QueryException {
         return cachedResultsQueryService.getRows(key, rowBegin, rowEnd, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#status(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -185,7 +185,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.status(key, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#describe(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -201,7 +201,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.describe(key, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#cancel(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(summary = "Cancels the specified query.")
@@ -214,7 +214,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.cancel(key, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#adminCancel(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(summary = "Cancels the specified query using admin privileges.")
@@ -226,7 +226,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.adminCancel(key, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#close(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(summary = "Closes the specified query.")
@@ -239,7 +239,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.close(key, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#adminClose(String, DatawaveUserDetails)
     // @formatter:off
     @Operation(summary = "Closes the specified query using admin privileges.")
@@ -251,7 +251,7 @@ public class CachedResultsQueryController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.adminClose(key, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#setAlias(String, String, DatawaveUserDetails)
     // @formatter:off
     @Operation(
@@ -269,7 +269,7 @@ public class CachedResultsQueryController {
                     @RequestParam String alias, @AuthenticationPrincipal DatawaveUserDetails currentUser) throws QueryException {
         return cachedResultsQueryService.setAlias(key, alias, currentUser);
     }
-    
+
     // @see CachedResultsQueryService#update(String, String, String, String, String, Integer, DatawaveUserDetails)
     // @formatter:off
     @Operation(

@@ -19,42 +19,42 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class StatsResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "servers")
     @XmlElement(name = "server")
     private List<Server> servers = null;
-    
+
     @XmlElementWrapper(name = "tables")
     @XmlElement(name = "table")
     private List<Table> tables = null;
-    
+
     @XmlElement
     private Totals totals = null;
-    
+
     public List<Server> getServers() {
         return servers;
     }
-    
+
     public List<Table> getTables() {
         return tables;
     }
-    
+
     public Totals getTotals() {
         return totals;
     }
-    
+
     public void setServers(List<Server> servers) {
         this.servers = servers;
     }
-    
+
     public void setTables(List<Table> tables) {
         this.tables = tables;
     }
-    
+
     public void setTotals(Totals totals) {
         this.totals = totals;
     }
-    
+
 }

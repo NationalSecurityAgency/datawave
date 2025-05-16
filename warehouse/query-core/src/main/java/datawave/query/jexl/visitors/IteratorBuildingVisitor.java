@@ -94,6 +94,7 @@ import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
@@ -150,6 +151,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     protected String queryId;
     protected String scanId;
+    protected WaitWindowObserver waitWindowObserver;
     protected String ivaratorCacheSubDirPrefix = "";
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
@@ -387,6 +389,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // Create an AndIterator and recursively add the children
             AbstractIteratorBuilder andItr = new AndIteratorBuilder();
             andItr.negateAsNeeded(data);
+            andItr.setWaitWindowObserver(this.waitWindowObserver);
             and.childrenAccept(this, andItr);
 
             // If there is no parent
@@ -486,7 +489,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setField(identifier);
 
             NestedIterator<Key> tfIterator = builder.build();
-            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator));
+            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator), null, waitWindowObserver);
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
@@ -537,6 +540,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             // Create an OrIterator and recursively add the children
             AbstractIteratorBuilder orItr = new OrIteratorBuilder();
+            orItr.setWaitWindowObserver(waitWindowObserver);
             orItr.setSortedUIDs(sortedUIDs);
             orItr.negateAsNeeded(data);
             or.childrenAccept(this, orItr);
@@ -1439,6 +1443,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         builder.setQueryId(queryId);
+        builder.setScanId(scanId);
+        builder.setWaitWindowObserver(waitWindowObserver);
         builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
@@ -1763,6 +1769,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setScanId(String scanId) {
         this.scanId = scanId;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setWaitWindowObserver(WaitWindowObserver waitWindowObserver) {
+        this.waitWindowObserver = waitWindowObserver;
         return this;
     }
 

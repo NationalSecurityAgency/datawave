@@ -6,25 +6,25 @@ import java.io.Serializable;
  * This normalizer is aiming to remove non-digits from phone numbers.
  */
 public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
-    
+
     private String originalPhoneNumber = "";
     private String normalizedPhoneNumber = "";
-    
+
     /**
      * A valid phone number must contain at least 7 digits.
      */
     private static int MIN_LENGTH = 7;
-    
+
     /**
      * Phone numbers cannot have more than 15 digits.
      */
     private static int MAX_LENGTH = 15;
-    
+
     /**
      * Valid digits.
      */
     private static String DIGITS = "0123456789";
-    
+
     /**
      * @param number
      *            the phone number string
@@ -32,7 +32,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
     public PhoneNumber(String number) {
         this(number, number);
     }
-    
+
     /**
      * @param number
      *            the original phone number string
@@ -43,19 +43,19 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         this.originalPhoneNumber = number;
         this.normalizedPhoneNumber = normalizedNumber;
     }
-    
+
     /**
      * The only normalization this method does is removing spaces and punctuation from the phone number string.
-     * 
+     *
      * @return the normalized phone number
      */
     public String toNormalizedString() {
         return this.normalizedPhoneNumber;
     }
-    
+
     /**
      * Parse a string and pull out a valid phone number if it exists.
-     * 
+     *
      * @param number
      *            string to look for a phone number in
      * @return PhoneNumber object for found phone number
@@ -64,13 +64,13 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
      */
     public static PhoneNumber parse(String number) {
         String num = basicPhoneNumberCheck(number);
-        
+
         return isValid(num);
     }
-    
+
     /**
      * Perform checks to see if there's a valid phone number.
-     * 
+     *
      * @param number
      *            the phone number to check. Should be pre-processed to remove leading/trailing words.
      * @return PhoneNumber object for found phone number
@@ -95,7 +95,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         int maxDigitSpan = 0;
         int start = 0;
         int end = data.length - 1;
-        
+
         /**
          * This normalizer is just worrying about stripping punctuation from phone numbers, so if this is a string of digits, just return instead of doing the
          * other checks.
@@ -103,7 +103,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         if (number.matches("^\\d+$")) {
             return new PhoneNumber(number);
         }
-        
+
         for (int i = 0; i < data.length; i++) {
             if (isDigit(data[i])) {
                 currentSpanLength++;
@@ -112,28 +112,28 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
                         throw new IllegalArgumentException("No more than 4 in a row of the same digit is permitted.");
                     }
                 }
-                
+
                 num[pos++] = data[i];
-                
+
                 continue;
             }
-            
+
             if (currentSpanLength > maxDigitSpan) {
                 maxDigitSpan = currentSpanLength;
             }
-            
+
             if (currentSpanLength == 1) {
                 if (num[pos - 1] == '0') {
                     ++numSingleZeroSpans;
                 } else {
                     ++numSingleDigitSpans;
                 }
-                
+
                 if (numSingleZeroSpans > 1 || numSingleDigitSpans > 1) {
                     throw new IllegalArgumentException("No more than one single digit and one single zero spans are permitted.");
                 }
             }
-            
+
             currentSpanLength = 0;
             if (i > start && (!isDigit(data[i - 1]) && !(data[i - 1] == ' ' || data[i] == ' ')
                             && !((data[i - 1] == '+' && data[i] == '(') || (data[i - 1] == '(' && data[i] == '+')))) {
@@ -141,7 +141,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
                     throw new IllegalArgumentException("No more than one consecutive punctuation charachter is permitted except for '+(' or '(+'");
                 }
             }
-            
+
             if (data[i] == ' ') {
                 if (i > 3 && data[i - 1] == '-' && data[i - 2] == ' ') {
                     --spaceCount;
@@ -153,11 +153,11 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
                     }
                 }
             }
-            
+
             if (i > 0 && data[i] == ' ' && data[i - 1] == ' ') {
                 throw new IllegalArgumentException("No more than one consecutive space is permitted.");
             }
-            
+
             if (data[i] == '(') {
                 openCount++;
             } else if (data[i] == ')') {
@@ -169,26 +169,26 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
             } else if (data[i] == '.' && ++dotCount > 2) {
                 throw new IllegalArgumentException("Only two dots are allowed.");
             }
-            
+
             if (++nonDigitCount > 7) {
                 throw new IllegalArgumentException("Only seven non-digit characters are allowed.");
             }
         }
-        
+
         String s = new String(num, 0, pos);
-        
+
         if (dotCount > 0 && dashCount > 0) {
             throw new IllegalArgumentException("Only one of dots or dashes can be used.");
         } else if (pos == MAX_LENGTH && num[0] != '0') {
             throw new IllegalArgumentException("With max length number there must be a leading zero");
         }
-        
+
         int countLeadingZeroOrOne = 0;
         int ix = 0;
         while (ix < pos && (num[ix] == '0' || num[ix] == '1')) {
             ix++;
         }
-        
+
         if (pos < MIN_LENGTH + ix) {
             throw new IllegalArgumentException("Ignoring leading zeroes and ones, the number is not long enough");
         } else if (ix + 3 < pos && num[ix] == num[ix + 1] && num[ix] == num[ix + 2] && num[ix] == num[ix + 3] && num[ix] != 8) {
@@ -207,7 +207,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         } else if (currentSpanLength < 3 && pos < 10) {
             throw new IllegalArgumentException("Valid numbers must be longer to end in a digit span of one or two.");
         }
-        
+
         if (data[start] != '+' && isISBN(s) && (spaceCount > 0 || dashCount > 0 || dotCount > 0) && (openCount + closCount) == 0) {
             throw new IllegalArgumentException("Looks like an ISBN");
         } else if (number.matches("^\\d\\d\\d([ \\-])\\d\\d\\1\\d\\d\\d\\d$")) {
@@ -229,13 +229,13 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         } else if (number.matches("^(19|20)\\d\\d([\\-\\. ])([0-2]\\d\\d|3[0-5]\\d|36[0-6])$")) {
             throw new IllegalArgumentException(number + " looks like a yyyy jjj date");
         }
-        
+
         return new PhoneNumber(number, s);
     }
-    
+
     /**
      * This will go through the data string looking for a phone number.
-     * 
+     *
      * @param number
      *            The data to look for phone numbers in
      * @return A string containing what is believed to be a phone number
@@ -250,38 +250,38 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         if (number.matches("^\\d+$")) {
             return number;
         }
-        
+
         char[] data = number.toCharArray();
-        
+
         if (data == null) {
             throw new IllegalArgumentException("The character array of the string argument is null");
         } else if (data.length < MIN_LENGTH) {
             throw new IllegalArgumentException("The data must be at least " + MIN_LENGTH + " characters long.  Found " + data.length + " characters.");
         }
-        
+
         // trim down the string to pick out phone numbers
         for (int i = MIN_LENGTH; i < data.length; i++) {
             if (!isDigit(data[i])) {
                 continue;
             }
             int start = i - 1;
-            
+
             while (start >= 0 && isPhoneNumberCharacter(data[start]) && (i - start) <= MAX_LENGTH) {
                 if ((!isDigit(data[start])) && data[start] == data[start + 1]) {
                     break;
                 }
                 start--;
             }
-            
+
             if (start == -1 || !isPhoneNumberCharacter(data[start])) {
                 start++;
             }
-            
+
             int seqlen = countDigits(data, start, i);
             if (seqlen < MIN_LENGTH || seqlen > MAX_LENGTH) {
                 continue;
             }
-            
+
             if (start > 1 && data[start - 1] == ':' && isDigit(data[start - 2])) {
                 boolean spaceok = false;
                 for (int j = start; j < i; j++) {
@@ -295,34 +295,34 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
                     continue;
                 }
             }
-            
+
             while (data[start] == ')' || data[start] == ' ' || data[start] == '.' || data[start] == '-') {
                 start++;
             }
-            
+
             while (i + 1 < data.length && isPhoneNumberCharacter(data[i + 1])) {
                 i++;
             }
-            
+
             while (data[i] == ' ') {
                 i--;
             }
-            
+
             int lastSpace = i;
             while (lastSpace > start && data[lastSpace] != ' ') {
                 lastSpace--;
             }
-            
+
             if (lastSpace < i && lastSpace > start) {
                 while (!isDigit(data[i]) && i >= lastSpace) {
                     i--;
                 }
-                
+
                 while (data[i] == ' ') {
                     i--;
                 }
             }
-            
+
             String rawString = new String(data, start, i - start + 1);
             if (start > 0 && Character.isLetter(data[start - 1])) {
                 continue;
@@ -333,15 +333,15 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
             } else if (countDigits(data, start, i) > MAX_LENGTH) {
                 continue;
             }
-            
+
             if (data[start] == '+' && data[start + 1] == '+') {
                 start++;
             }
-            
+
             if (data[i] == '.') {
                 i--;
             }
-            
+
             if (i < data.length - 1 && ((Character.isLetter(data[i + 1]) && data[i + 1] != 'x' && data[i] != 'X') || data[i + 1] == '_' || data[i + 1] == '='
                             || data[i + 1] == '?' || data[i + 1] == '\\')) {
                 continue;
@@ -354,22 +354,22 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
                             || (i + 1 < data.length && data[start - 1] == '.' && data[i + 1] == '.') || (data[start - 1] == '.' && data[i] == '.'))) {
                 continue;
             }
-            
+
             return new String(data, start, i - start + 1);
         }
         throw new IllegalArgumentException("Did not find a phone number!");
     }
-    
+
     @Override
     public String toString() {
         return this.originalPhoneNumber;
     }
-    
+
     @Override
     public int compareTo(PhoneNumber o) {
         return this.toNormalizedString().compareTo(o.toNormalizedString());
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof PhoneNumber) {
@@ -381,15 +381,15 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
             return false;
         }
     }
-    
+
     @Override
     public int hashCode() {
         return this.toNormalizedString().hashCode();
     }
-    
+
     /**
      * Test if character is a digit.
-     * 
+     *
      * @param d
      *            the character to test
      * @return whether or not the character is a digit
@@ -400,10 +400,10 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         }
         return false;
     }
-    
+
     /**
      * Tests if character is a phone number character (digits, spaces, parens, dash, plus, dot).
-     * 
+     *
      * @param c
      *            the character to test
      * @return whether or not the character is a phone number character
@@ -411,10 +411,10 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
     private static boolean isPhoneNumberCharacter(char c) {
         return ((isDigit(c) || c == ' ' || c == '(' || c == ')' || c == '-' || c == '+' || c == '.'));
     }
-    
+
     /**
      * Count the number of digits in a character array.
-     * 
+     *
      * @param data
      *            The character array to count digits in
      * @param start
@@ -434,10 +434,10 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
         }
         return count;
     }
-    
+
     /**
      * Test if string is an ISBN.
-     * 
+     *
      * @param s
      *            The string to test
      * @return whether or not the string is an ISBN

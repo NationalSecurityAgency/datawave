@@ -23,9 +23,9 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryMetricsSummaryResponse extends BaseResponse {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "OneHour")
     protected QueryMetricSummary hour1 = new QueryMetricSummary();
     @XmlElement(name = "SixHours")
@@ -48,89 +48,89 @@ public class QueryMetricsSummaryResponse extends BaseResponse {
     protected String header;
     @XmlTransient
     protected String footer;
-    
+
     private String basePath = "/querymetric";
-    
+
     public void setBasePath(String basePath) {
         this.basePath = basePath;
     }
-    
+
     public QueryMetricSummary getHour1() {
         return hour1;
     }
-    
+
     public void setHour1(QueryMetricSummary hour1) {
         this.hour1 = hour1;
     }
-    
+
     public QueryMetricSummary getHour6() {
         return hour6;
     }
-    
+
     public void setHour6(QueryMetricSummary hour6) {
         this.hour6 = hour6;
     }
-    
+
     public QueryMetricSummary getHour12() {
         return hour12;
     }
-    
+
     public void setHour12(QueryMetricSummary hour12) {
         this.hour12 = hour12;
     }
-    
+
     public QueryMetricSummary getDay1() {
         return day1;
     }
-    
+
     public void setDay1(QueryMetricSummary day1) {
         this.day1 = day1;
     }
-    
+
     public QueryMetricSummary getDay7() {
         return day7;
     }
-    
+
     public void setDay7(QueryMetricSummary day7) {
         this.day7 = day7;
     }
-    
+
     public QueryMetricSummary getDay30() {
         return day30;
     }
-    
+
     public void setDay30(QueryMetricSummary day30) {
         this.day30 = day30;
     }
-    
+
     public QueryMetricSummary getDay60() {
         return day60;
     }
-    
+
     public void setDay60(QueryMetricSummary day60) {
         this.day60 = day60;
     }
-    
+
     public QueryMetricSummary getDay90() {
         return day90;
     }
-    
+
     public void setDay90(QueryMetricSummary day90) {
         this.day90 = day90;
     }
-    
+
     public QueryMetricSummary getAll() {
         return all;
     }
-    
+
     public void setAll(QueryMetricSummary all) {
         this.all = all;
     }
-    
+
     protected void addSummary(List<Map<String,String>> summaryTableContent, QueryMetricSummary summary, String interval) {
         NumberFormat formatter = NumberFormat.getInstance();
         Map<String,String> summaryData = new HashMap<>();
-        
+
         summaryData.put("interval", interval);
         summaryData.put("queryCount", formatter.format(summary.getQueryCount()));
         summaryData.put("totalPages", formatter.format(summary.getTotalPages()));
@@ -144,22 +144,22 @@ public class QueryMetricsSummaryResponse extends BaseResponse {
         summaryData.put("avgPageResponseTime", formatter.format(summary.getAvgPageResponseTime()));
         summaryData.put("avgResultsPerSecond", formatter.format(summary.getAverageResultsPerSecond()));
         summaryData.put("avgPagesPerSecond", formatter.format(summary.getAveragePagesPerSecond()));
-        
+
         summaryTableContent.add(summaryData);
     }
-    
+
     public ModelAndView createModelAndView() {
         List<Map<String,String>> summaryTableContent = new ArrayList<>();
         ModelAndView mav = new ModelAndView();
-        
+
         if (getExceptions() == null || getExceptions().isEmpty()) {
             mav.setViewName("querymetricsummary");
-            
+
             NumberFormat formatter = NumberFormat.getInstance();
             formatter.setGroupingUsed(true);
             formatter.setMaximumFractionDigits(2);
             formatter.setParseIntegerOnly(false);
-            
+
             addSummary(summaryTableContent, hour1, "1 hour");
             addSummary(summaryTableContent, hour6, "6 hours");
             addSummary(summaryTableContent, hour12, "12 hours");
@@ -181,11 +181,11 @@ public class QueryMetricsSummaryResponse extends BaseResponse {
         mav.addObject("footer", footer);
         return mav;
     }
-    
+
     public void setHeader(String header) {
         this.header = header;
     }
-    
+
     public void setFooter(String footer) {
         this.footer = footer;
     }

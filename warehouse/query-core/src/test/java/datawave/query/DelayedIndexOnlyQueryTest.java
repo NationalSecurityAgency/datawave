@@ -192,7 +192,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     public void testCompositeRangeIndexOnlyEventOnlyDelayed() throws Exception {
         log.info("------  testCompositeRangeIndexOnlyEventOnlyDelayed  ------");
 
-        String query = "STATE == 'ohio' && ((NUM > '0' && NUM < '200' && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
+        String query = "STATE == 'ohio' && ((((_Bounded_ = true) && (NUM > '0' && NUM < '200')) && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
         String expectedQuery = "STATE == 'ohio' && ((NUM > '0' && NUM < 200 && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
         runTest(query, expectedQuery);
     }
