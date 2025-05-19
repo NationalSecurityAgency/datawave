@@ -133,7 +133,7 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
             // If the event date is more than one day before the event actually happened,
             // then skip it, unless time-travel has been enabled.
             if (!timeTravelEnabled && tk.getColumnFamily().toString().equals(TIME_TRAVEL_FIELD)) {
-                String row = getRowSansShard(tk);
+                String row = getRowWithoutShard(tk);
                 if (parts[0].compareTo(row) < 0) {
                     tk = null;
                     tv = null;
@@ -146,7 +146,14 @@ public class DateIndexIterator implements SortedKeyValueIterator<Key,Value> {
         }
     }
 
-    private String getRowSansShard(Key key) {
+    /**
+     * Get the row, removing the sharded portion if necessary.
+     *
+     * @param key
+     *            the key
+     * @return the row
+     */
+    private String getRowWithoutShard(Key key) {
         String row = key.getRow().toString();
         int index = row.indexOf('_');
         if (index > 0) {
