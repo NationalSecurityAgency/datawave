@@ -62,7 +62,7 @@ public class MetadataHelperTest {
         File targetDir = dir.getParentFile();
         System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
     }
-    
+
     @BeforeEach
     public void setup() throws AccumuloException, TableExistsException, AccumuloSecurityException {
         accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance(MetadataHelperTest.class.toString()));
@@ -73,14 +73,14 @@ public class MetadataHelperTest {
         helper = new MetadataHelper(createAllFieldMetadataHelper(), Collections.emptySet(), accumuloClient, TABLE_METADATA, AUTHORIZATIONS,
                         Collections.emptySet());
     }
-    
+
     private AllFieldMetadataHelper createAllFieldMetadataHelper() {
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, accumuloClient, TABLE_METADATA, AUTHORIZATIONS, false);
         CompositeMetadataHelper cmh = new CompositeMetadataHelper(accumuloClient, TABLE_METADATA, AUTHORIZATIONS);
         return new AllFieldMetadataHelper(tmh, cmh, accumuloClient, TABLE_METADATA, AUTHORIZATIONS, allMetadataAuths);
     }
-    
+
     @AfterEach
     void tearDown() throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         accumuloClient.tableOperations().delete(TABLE_METADATA);

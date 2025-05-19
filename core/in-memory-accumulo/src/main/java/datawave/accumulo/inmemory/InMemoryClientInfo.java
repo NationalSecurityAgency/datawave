@@ -11,7 +11,7 @@ public class InMemoryClientInfo extends ClientInfoImpl {
     public InMemoryClientInfo(Credentials credentials) {
         super(toProperties(credentials), credentials.getToken());
     }
-    
+
     private static Properties toProperties(Credentials credentials) {
         Properties props = new Properties();
         props.put(ClientProperty.INSTANCE_NAME.getKey(), new InMemoryInstance().instanceName);

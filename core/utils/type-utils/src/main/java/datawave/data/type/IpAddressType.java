@@ -7,25 +7,25 @@ import datawave.data.type.util.IpV4Address;
 import datawave.data.type.util.IpV6Address;
 
 public class IpAddressType extends BaseType<IpAddress> {
-    
+
     private static final long serialVersionUID = -6512690642978201801L;
     private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE;
-    
+
     public IpAddressType() {
         super(Normalizer.IP_ADDRESS_NORMALIZER);
     }
-    
+
     public IpAddressType(String delegateString) {
         super(delegateString, Normalizer.IP_ADDRESS_NORMALIZER);
     }
-    
+
     public String[] normalizeCidrToRange(String cidr) {
         return ((IpAddressNormalizer) normalizer).normalizeCidrToRange(cidr);
     }
-    
+
     /**
      * calculate the size based on the type of ip address type this is. Do not include the normalizer except a reference
-     * 
+     *
      * @return
      */
     @Override

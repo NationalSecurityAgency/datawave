@@ -174,7 +174,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         if (!isValid) {
             // short circuit if the tree is already marked invalid
             return data;
-        } else if (node.jjtGetChild(0) instanceof ASTReferenceExpression) {
+        } else if (node.jjtGetNumChildren() > 0 && node.jjtGetChild(0) instanceof ASTReferenceExpression) {
             // found a double paren
             invalidate(node, reason.DOUBLE_PAREN);
             return data;

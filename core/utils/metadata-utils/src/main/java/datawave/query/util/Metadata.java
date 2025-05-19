@@ -18,7 +18,7 @@ import com.google.common.collect.Sets;
 import datawave.util.StringUtils;
 
 public class Metadata implements Serializable, OptionDescriber {
-    
+
     private static final long serialVersionUID = -3666313025240388292L;
     Set<String> datatypes = new HashSet<>(0);
     Set<String> termFrequencyFields = new HashSet<>(0);
@@ -26,7 +26,7 @@ public class Metadata implements Serializable, OptionDescriber {
     Set<String> indexedFields = new HashSet<>(0);
     Set<String> indexOnlyFields = new HashSet<>(0);
     Set<String> normalizedFields = new HashSet<>(0);
-    
+
     public static final String DATA_TYPES = "metadata.datatypes";
     public static final String TERM_FREQ_FIELDS = "metadata.termfrequency.fields";
     public static final String ALL_FIELDS = "metadata.all.fields";
@@ -35,9 +35,9 @@ public class Metadata implements Serializable, OptionDescriber {
     public static final String NORMALIZED_FIELDS = "metadata.normalized.fields";
     public static final char PARAM_VALUE_SEP = ',';
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {PARAM_VALUE_SEP});
-    
+
     public Metadata() {}
-    
+
     /**
      * @param other
      */
@@ -45,7 +45,7 @@ public class Metadata implements Serializable, OptionDescriber {
         this(Sets.newHashSet(other.datatypes), Sets.newHashSet(other.termFrequencyFields), Sets.newHashSet(other.allFields),
                         Sets.newHashSet(other.indexedFields), Sets.newHashSet(other.indexOnlyFields));
     }
-    
+
     /**
      * @param helper
      * @throws ExecutionException
@@ -56,7 +56,7 @@ public class Metadata implements Serializable, OptionDescriber {
                         Sets.newHashSet(helper.getAllFields(datatypeFilter)), Sets.newHashSet(helper.getIndexedFields(datatypeFilter)),
                         Sets.newHashSet(helper.getIndexOnlyFields(datatypeFilter)));
     }
-    
+
     protected Metadata(Set<String> datatypes, Set<String> termFrequencyFields, Set<String> allFields, Set<String> indexedFields, Set<String> indexOnlyFields) {
         this.datatypes = datatypes;
         this.termFrequencyFields = termFrequencyFields;
@@ -64,48 +64,48 @@ public class Metadata implements Serializable, OptionDescriber {
         this.indexedFields = indexedFields;
         this.indexOnlyFields = indexOnlyFields;
     }
-    
+
     /**
      * Get the {@link Set} of all fields contained in the database.
      */
     public Set<String> getAllFields() {
         return Collections.unmodifiableSet(this.allFields);
     }
-    
+
     /**
      * Get the {@link Set} of all indexed fields contained in the database.
-     * 
+     *
      * @return
      */
     public Set<String> getIndexedFields() {
         return Collections.unmodifiableSet(this.indexedFields);
     }
-    
+
     public Set<String> getNormalizedFields() {
         return Collections.unmodifiableSet(this.normalizedFields);
     }
-    
+
     /**
      * Get the {@link Set} of index-only fields.
      */
     public Set<String> getIndexOnlyFields() {
         return Collections.unmodifiableSet(this.indexOnlyFields);
     }
-    
+
     /**
      * Get the Set of all fields marked as containing term frequency information, {@link datawave.data.ColumnFamilyConstants#COLF_TF}.
      */
     public Set<String> getTermFrequencyFields() {
         return Collections.unmodifiableSet(this.termFrequencyFields);
     }
-    
+
     /**
      * Get the data types
      */
     public Set<String> getDatatypes() {
         return Collections.unmodifiableSet(this.datatypes);
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -117,13 +117,13 @@ public class Metadata implements Serializable, OptionDescriber {
         options.put(NORMALIZED_FIELDS, "list of fields that are normalized separated by '" + PARAM_VALUE_SEP + "'");
         return new IteratorOptions(getClass().getSimpleName(), "contains the information derived from the metadata table", options, null);
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         // all options are optional
         return true;
     }
-    
+
     public void init(Map<String,String> options) {
         this.datatypes = parse(options.get(DATA_TYPES));
         this.termFrequencyFields = parse(options.get(TERM_FREQ_FIELDS));
@@ -132,7 +132,7 @@ public class Metadata implements Serializable, OptionDescriber {
         this.allFields = parse(options.get(ALL_FIELDS));
         this.normalizedFields = parse(options.get(NORMALIZED_FIELDS));
     }
-    
+
     public Map<String,String> getOptions() {
         Map<String,String> options = new HashMap<>();
         if (!this.datatypes.isEmpty()) {
@@ -155,7 +155,7 @@ public class Metadata implements Serializable, OptionDescriber {
         }
         return options;
     }
-    
+
     private static String toString(Collection<String> values) {
         StringBuilder buffer = new StringBuilder();
         if (values != null) {
@@ -167,7 +167,7 @@ public class Metadata implements Serializable, OptionDescriber {
         }
         return buffer.toString();
     }
-    
+
     private static Set<String> parse(String value) {
         if (value == null) {
             return new HashSet<>(0);
@@ -175,5 +175,5 @@ public class Metadata implements Serializable, OptionDescriber {
             return new HashSet<>(Arrays.asList(StringUtils.split(value, PARAM_VALUE_SEP)));
         }
     }
-    
+
 }

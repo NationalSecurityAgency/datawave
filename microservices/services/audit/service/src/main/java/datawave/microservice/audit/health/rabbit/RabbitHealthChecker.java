@@ -58,49 +58,49 @@ import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties.Q
  */
 public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
     private static Logger log = LoggerFactory.getLogger(RabbitHealthChecker.class);
-    
+
     private static final String DEFAULT_VHOST = "/";
-    
+
     static final Status RABBITMQ_UNHEALTHY = new Status("RABBITMQ_UNHEALTHY");
-    
+
     private final RabbitHealthProperties rabbitHealthProperties;
-    
+
     // rabbit cluster info
     private String host;
     private String username;
     private String password;
-    
+
     private Client rabbitClient;
-    
+
     private List<ExchangeInfo> exchanges;
     private List<QueueInfo> queues;
     private List<BindingInfo> bindings;
-    
+
     // cluster health
     private boolean clusterHealthy = false;
     private int numNodesMissing = 0;
     private int numTimesMissingNode = 0;
-    
+
     // exchanges health
     private boolean exchangesHealthy = false;
     private List<ExchangeInfo> missingExchanges;
     private List<InvalidPairing<ExchangeInfo>> invalidExchanges;
-    
+
     // queues health
     private boolean queuesHealthy = false;
     private List<QueueInfo> missingQueues;
     private List<InvalidPairing<QueueInfo>> invalidQueues;
-    
+
     // bindings health
     private boolean bindingsHealthy = false;
     private List<BindingInfo> missingBindings;
     private List<InvalidPairing<BindingInfo>> invalidBindings;
-    
+
     // outage stats
     private Date lastSuccessfulHealthCheck;
     private RabbitOutageStats currentOutageStats;
     private TreeSet<RabbitOutageStats> outageStats = new TreeSet<>();
-    
+
     /**
      * This is a convenience class used to link a desired configuration with a detected invalid configuration.
      *
@@ -110,37 +110,37 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
     private static class InvalidPairing<T> {
         public T desired;
         public T detected;
-        
+
         public InvalidPairing(T desired, T detected) {
             this.desired = desired;
             this.detected = detected;
         }
     }
-    
+
     public RabbitHealthChecker(RabbitHealthProperties rabbitHealthProperties, CachingConnectionFactory rabbitConnectionFactory) {
         this(rabbitHealthProperties, rabbitConnectionFactory.getHost(), rabbitConnectionFactory.getUsername(),
                         rabbitConnectionFactory.getRabbitConnectionFactory().getPassword());
     }
-    
+
     public RabbitHealthChecker(RabbitHealthProperties rabbitHealthProperties, String host, String username, String password) {
         this.rabbitHealthProperties = rabbitHealthProperties;
-        
+
         ManagementProperties mgmtProps = rabbitHealthProperties.getManagement();
         this.host = (!mgmtProps.getHost().isEmpty()) ? mgmtProps.getHost() : host;
         this.username = (!mgmtProps.getUsername().isEmpty()) ? mgmtProps.getUsername() : username;
         this.password = (!mgmtProps.getPassword().isEmpty()) ? mgmtProps.getPassword() : password;
-        
+
         init();
     }
-    
+
     private void init() {
         initRabbitClient();
-        
+
         exchanges = rabbitHealthProperties.getExchanges().stream().map(RabbitHealthChecker::createExchange).collect(Collectors.toList());
         queues = rabbitHealthProperties.getQueues().stream().map(RabbitHealthChecker::createQueue).collect(Collectors.toList());
         bindings = rabbitHealthProperties.getBindings().stream().map(RabbitHealthChecker::createBinding).collect(Collectors.toList());
     }
-    
+
     /**
      * This method is used to establish a {@link Client}. In the event that the RabbitMQ cluster is unavailable at startup, we will attempt to initialize the
      * client once per health check.
@@ -157,7 +157,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             }
         }
     }
-    
+
     /**
      * Creates an {@link ExchangeInfo} from the configured {@link ExchangeProperties}
      *
@@ -170,7 +170,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         exchangeInfo.setName(ep.getName());
         return exchangeInfo;
     }
-    
+
     /**
      * Creates an {@link QueueInfo} from the configured {@link QueueProperties}
      *
@@ -183,7 +183,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         queue.setName(qp.getName());
         return queue;
     }
-    
+
     /**
      * Creates an {@link BindingInfo} from the configured {@link BindingProperties}
      *
@@ -207,7 +207,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         bindingInfo.setArguments(bp.getArguments());
         return bindingInfo;
     }
-    
+
     /**
      * Determines which poll interval should be used, based on the overall RabbitMQ health
      *
@@ -220,7 +220,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         else
             return rabbitHealthProperties.getUnhealthyPollIntervalMillis();
     }
-    
+
     /**
      * Performs a health check of RabbitMQ.
      * <p>
@@ -234,27 +234,27 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
     @Override
     public void runHealthCheck() {
         initRabbitClient();
-        
+
         if (rabbitClient != null) {
             synchronized (this) {
                 log.trace("RabbitMQ Health Check - Started");
-                
+
                 boolean wasHealthy = isHealthy();
-                
+
                 // check the cluster
                 clusterHealthCheck();
-                
+
                 // check the exchanges
                 exchangesHealthCheck();
-                
+
                 // check the queues
                 queuesHealthCheck();
-                
+
                 // check the bindings
                 bindingsHealthCheck();
-                
+
                 boolean isHealthy = isHealthy();
-                
+
                 if (wasHealthy) {
                     if (isHealthy) {
                         log.debug("RabbitMQ is still healthy.");
@@ -284,12 +284,12 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                         }
                     }
                 }
-                
+
                 log.trace("RabbitMQ Health Check - Complete");
             }
         }
     }
-    
+
     /**
      * Checks that the correct number of nodes are present in the RabbitMQ cluster.
      * <p>
@@ -301,51 +301,51 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
      */
     private void clusterHealthCheck() {
         ClusterProperties clusterProps = rabbitHealthProperties.getCluster();
-        
+
         List<NodeInfo> rabbitNodes = null;
         try {
             rabbitNodes = rabbitClient.getNodes();
         } catch (Exception e) {
             log.trace("Unable to get RabbitMQ node info.", e);
         }
-        
+
         if (rabbitNodes != null) {
             // only count the running nodes
             rabbitNodes = rabbitNodes.stream().filter(NodeInfo::isRunning).collect(Collectors.toList());
             numNodesMissing = (rabbitNodes.size() < clusterProps.getExpectedNodes()) ? (clusterProps.getExpectedNodes() - rabbitNodes.size()) : 0;
         } else
             numNodesMissing = clusterProps.getExpectedNodes();
-        
+
         if (numNodesMissing > 0) {
             numTimesMissingNode++;
-            
+
             if (clusterProps.isFailIfNodeMissing() && numTimesMissingNode > clusterProps.getNumChecksBeforeFailure())
                 clusterHealthy = false;
         } else {
             numTimesMissingNode = 0;
             clusterHealthy = true;
         }
-        
+
         if (clusterHealthy)
             log.trace("RabbitMQ Cluster is healthy");
         else
             log.trace("RabbitMQ Cluster is unhealthy");
     }
-    
+
     /**
      * Checks that the desired exchanges are present, and correctly configured.
      */
     private void exchangesHealthCheck() {
         List<ExchangeInfo> missingExchanges = new ArrayList<>();
         List<InvalidPairing<ExchangeInfo>> invalidExchanges = new ArrayList<>();
-        
+
         List<ExchangeInfo> returnedExchanges = null;
         try {
             returnedExchanges = rabbitClient.getExchanges();
         } catch (Exception e) {
             log.trace("Unable to get RabbitMQ exchange info.", e);
         }
-        
+
         if (returnedExchanges != null) {
             Map<String,ExchangeInfo> detectedExchanges = returnedExchanges.stream().collect(Collectors.toMap(ExchangeInfo::getName, e -> e));
             for (ExchangeInfo exchange : exchanges) {
@@ -357,31 +357,31 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         } else {
             missingExchanges.addAll(exchanges);
         }
-        
+
         exchangesHealthy = missingExchanges.isEmpty() && invalidExchanges.isEmpty();
         this.missingExchanges = missingExchanges;
         this.invalidExchanges = invalidExchanges;
-        
+
         if (exchangesHealthy)
             log.trace("RabbitMQ Exchanges are healthy");
         else
             log.trace("RabbitMQ Exchanges are unhealthy");
     }
-    
+
     /**
      * Checks that the desired queues are present, and correctly configured.
      */
     private void queuesHealthCheck() {
         List<QueueInfo> missingQueues = new ArrayList<>();
         List<InvalidPairing<QueueInfo>> invalidQueues = new ArrayList<>();
-        
+
         List<QueueInfo> returnedQueues = null;
         try {
             returnedQueues = rabbitClient.getQueues();
         } catch (Exception e) {
             log.trace("Unable to get RabbitMQ queue info.", e);
         }
-        
+
         if (returnedQueues != null) {
             Map<String,QueueInfo> detectedQueues = returnedQueues.stream().collect(Collectors.toMap(QueueInfo::getName, q -> q));
             for (QueueInfo queue : queues) {
@@ -393,31 +393,31 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         } else {
             missingQueues.addAll(queues);
         }
-        
+
         queuesHealthy = missingQueues.isEmpty() && invalidQueues.isEmpty();
         this.missingQueues = missingQueues;
         this.invalidQueues = invalidQueues;
-        
+
         if (queuesHealthy)
             log.trace("RabbitMQ Queues are healthy");
         else
             log.trace("RabbitMQ Queues are unhealthy");
     }
-    
+
     /**
      * Checks that the desired bindings are present, and correctly configured.
      */
     private void bindingsHealthCheck() {
         List<BindingInfo> missingBindings = new ArrayList<>();
         List<InvalidPairing<BindingInfo>> invalidBindings = new ArrayList<>();
-        
+
         List<BindingInfo> returnedBindings = null;
         try {
             returnedBindings = rabbitClient.getBindings();
         } catch (Exception e) {
             log.trace("Unable to get RabbitMQ binding info.", e);
         }
-        
+
         if (returnedBindings != null) {
             Map<String,BindingInfo> detectedBindings = returnedBindings.stream()
                             .collect(Collectors.toMap(b -> b.getSource() + "_" + b.getDestination(), b -> b));
@@ -431,17 +431,17 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         } else {
             missingBindings.addAll(bindings);
         }
-        
+
         bindingsHealthy = missingBindings.isEmpty() && invalidBindings.isEmpty();
         this.missingBindings = missingBindings;
         this.invalidBindings = invalidBindings;
-        
+
         if (bindingsHealthy)
             log.trace("RabbitMQ Bindings are healthy");
         else
             log.trace("RabbitMQ Bindings are unhealthy");
     }
-    
+
     /**
      * Attempts to restore the desired RabbitMQ configuration to the cluster.
      * <p>
@@ -451,10 +451,10 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
     @Override
     public void recover() {
         initRabbitClient();
-        
+
         if (rabbitClient != null && rabbitHealthProperties.isAttemptRecovery() && !isHealthy()) {
             log.trace("RabbitMQ Recovery - Started");
-            
+
             // create missing exchanges
             if (rabbitHealthProperties.isFixMissing()) {
                 for (ExchangeInfo exchange : missingExchanges) {
@@ -466,7 +466,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                     }
                 }
             }
-            
+
             // recreate invalid exchanges
             if (rabbitHealthProperties.isFixInvalid()) {
                 for (InvalidPairing<ExchangeInfo> exchanges : invalidExchanges) {
@@ -479,7 +479,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                     }
                 }
             }
-            
+
             // create missing queues
             if (rabbitHealthProperties.isFixMissing()) {
                 for (QueueInfo queue : missingQueues) {
@@ -491,19 +491,19 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                     }
                 }
             }
-            
+
             // recreate invalid queues
             if (rabbitHealthProperties.isFixInvalid()) {
                 for (InvalidPairing<QueueInfo> queues : invalidQueues) {
                     log.trace("Fixing invalid queue: [{}]", queues.desired);
-                    
+
                     QueueInfo queueInfo = null;
                     try {
                         queueInfo = rabbitClient.getQueue(DEFAULT_VHOST, queues.detected.getName());
                     } catch (Exception e) {
                         log.trace("Unable to get queue info", e);
                     }
-                    
+
                     if (queueInfo != null) {
                         if (queueInfo.getTotalMessages() == 0) {
                             try {
@@ -517,7 +517,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                     }
                 }
             }
-            
+
             // create missing bindings
             if (rabbitHealthProperties.isFixMissing()) {
                 for (BindingInfo binding : missingBindings) {
@@ -534,7 +534,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                     }
                 }
             }
-            
+
             // recreate invalid bindings
             if (rabbitHealthProperties.isFixInvalid()) {
                 for (InvalidPairing<BindingInfo> bindings : invalidBindings) {
@@ -547,7 +547,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                         else if (bindings.desired.getDestinationType().equalsIgnoreCase(Binding.DestinationType.QUEUE.name()))
                             rabbitClient.unbindQueue(DEFAULT_VHOST, bindings.detected.getDestination(), bindings.detected.getSource(),
                                             bindings.detected.getRoutingKey());
-                        
+
                         // add correct bindings
                         if (bindings.desired.getDestinationType().equalsIgnoreCase(Binding.DestinationType.EXCHANGE.name()))
                             rabbitClient.bindExchange(DEFAULT_VHOST, bindings.desired.getDestination(), bindings.desired.getSource(),
@@ -563,7 +563,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             log.trace("RabbitMQ Recovery - Complete");
         }
     }
-    
+
     /**
      * Used to determine whether RabbitMQ is healthy.
      * <p>
@@ -578,20 +578,20 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             return rabbitClient != null && clusterHealthy && exchangesHealthy && queuesHealthy && bindingsHealthy;
         }
     }
-    
+
     private void updateOutageStats(RabbitOutageStats outageStats) {
         if (numNodesMissing > 0)
             outageStats.setNumNodesMissing(Math.max(outageStats.getNumNodesMissing(), numNodesMissing));
-        
+
         missingExchanges.forEach(e -> outageStats.getMissingExchanges().add(e.getName()));
         missingQueues.forEach(q -> outageStats.getMissingQueues().add(q.getName()));
         missingBindings.forEach(b -> outageStats.getMissingBindings().put(b.getSource(), b.getDestination()));
-        
+
         invalidExchanges.forEach(e -> outageStats.getInvalidExchanges().add(e.desired.getName()));
         invalidQueues.forEach(q -> outageStats.getInvalidQueues().add(q.desired.getName()));
         invalidBindings.forEach(b -> outageStats.getInvalidBindings().put(b.desired.getSource(), b.desired.getDestination()));
     }
-    
+
     /**
      * Collects a list of stats for outages experienced by the audit service.
      *
@@ -603,7 +603,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             return outageStats.stream().map(RabbitOutageStats::getOutageParams).collect(Collectors.toList());
         return Collections.emptyList();
     }
-    
+
     /**
      * Provides information for the audit service health endpoint.
      * <p>
@@ -625,7 +625,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                         log.trace("Unable to get queue info", e);
                     }
                 }
-                
+
                 if (queueInfo != null) {
                     Map<String,Object> sizeStats = new LinkedHashMap<>();
                     sizeStats.put("ready", queueInfo.getMessagesReady());
@@ -637,7 +637,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                 }
             }
         }
-        
+
         if (!isHealthy()) {
             Health.Builder builder = Health.status(RABBITMQ_UNHEALTHY);
             if (currentOutageStats != null)
@@ -652,19 +652,19 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             return builder.build();
         }
     }
-    
+
     private boolean isExchangeValid(ExchangeInfo desiredExchange, ExchangeInfo detectedExchange) {
         return desiredExchange.getName().equals(detectedExchange.getName()) && desiredExchange.getType().equals(detectedExchange.getType())
                         && desiredExchange.isDurable() == detectedExchange.isDurable() && desiredExchange.isAutoDelete() == detectedExchange.isAutoDelete()
                         && desiredExchange.isInternal() == detectedExchange.isInternal();
     }
-    
+
     private boolean isQueueValid(QueueInfo desiredQueue, QueueInfo detectedQueue) {
         return desiredQueue.getName().equals(detectedQueue.getName()) && desiredQueue.isDurable() == detectedQueue.isDurable()
                         && desiredQueue.isExclusive() == detectedQueue.isExclusive() && desiredQueue.isAutoDelete() == detectedQueue.isAutoDelete()
                         && areArgumentsValid(desiredQueue.getArguments(), detectedQueue.getArguments());
     }
-    
+
     private boolean isBindingValid(BindingInfo desiredBinding, BindingInfo detectedBinding) {
         return desiredBinding.getDestination().equals(detectedBinding.getDestination())
                         && desiredBinding.getDestinationType().equals(detectedBinding.getDestinationType())
@@ -672,7 +672,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                         && desiredBinding.getRoutingKey().equals(detectedBinding.getRoutingKey())
                         && areArgumentsValid(desiredBinding.getArguments(), detectedBinding.getArguments());
     }
-    
+
     private boolean areArgumentsValid(Map<String,Object> desiredArguments, Map<String,Object> detectedArguments) {
         if (desiredArguments != null && detectedArguments != null)
             for (String arg : desiredArguments.keySet())

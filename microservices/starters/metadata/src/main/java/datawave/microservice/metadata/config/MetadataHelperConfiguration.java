@@ -36,25 +36,25 @@ public class MetadataHelperConfiguration {
     public MetadataHelperProperties metadataHelperProperties() {
         return new MetadataHelperProperties();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public MetadataHelperFactory metadataHelperFactory(BeanFactory beanFactory, TypeMetadataHelper.Factory typeMetadataHelperFactory) {
         return new MetadataHelperFactory(beanFactory, typeMetadataHelperFactory);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public TypeMetadataHelper.Factory typeMetadataHelperFactory(BeanFactory beanFactory) {
         return new TypeMetadataHelper.Factory(beanFactory);
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public MetadataCacheManager metadataCacheManager(@Qualifier("metadataHelperCacheManager") CacheManager cacheManager) {
         return new MetadataCacheManager(cacheManager);
     }
-    
+
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
@@ -62,7 +62,7 @@ public class MetadataHelperConfiguration {
                     AccumuloClient accumuloClient, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
         return new MetadataHelper(allFieldMetadataHelper, allMetadataAuths, accumuloClient, metadataTableName, auths, fullUserAuths);
     }
-    
+
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
@@ -70,14 +70,14 @@ public class MetadataHelperConfiguration {
                     AccumuloClient accumuloClient, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
         return new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper, accumuloClient, metadataTableName, auths, fullUserAuths);
     }
-    
+
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
     public CompositeMetadataHelper compositeMetadataHelper(AccumuloClient accumuloClient, String metadataTableName, Set<Authorizations> auths) {
         return new CompositeMetadataHelper(accumuloClient, metadataTableName, auths);
     }
-    
+
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
@@ -86,19 +86,19 @@ public class MetadataHelperConfiguration {
                     Set<Authorizations> auths, boolean useTypeSubstitution) {
         return new TypeMetadataHelper(typeSubstitutions, allMetadataAuths, accumuloClient, metadataTableName, auths, useTypeSubstitution);
     }
-    
+
     @Bean(name = "typeSubstitutions")
     @ConditionalOnMissingBean(name = "typeSubstitutions")
     public Map<String,String> typeSubstitutions(MetadataHelperProperties metadataHelperProperties) {
         return metadataHelperProperties.getTypeSubstitutions();
     }
-    
+
     @Bean(name = "allMetadataAuths")
     @ConditionalOnMissingBean(name = "allMetadataAuths")
     public Set<Authorizations> allMetadataAuths(MetadataHelperProperties metadataHelperProperties) {
         return metadataHelperProperties.getAllMetadataAuths();
     }
-    
+
     @Bean(name = "metadataHelperCacheManager")
     @ConditionalOnMissingBean(name = "metadataHelperCacheManager")
     public CacheManager metadataHelperCacheManager() {
@@ -106,7 +106,7 @@ public class MetadataHelperConfiguration {
         caffeineCacheManager.setCaffeineSpec(CaffeineSpec.parse("maximumSize=100, expireAfterAccess=24h, expireAfterWrite=24h"));
         return caffeineCacheManager;
     }
-    
+
     @Bean(name = "metadataHelperCacheResolver")
     @ConditionalOnMissingBean(name = "metadataHelperCacheManager")
     public CacheResolver metadataHelperCacheResolver(@Qualifier("metadataHelperCacheManager") CacheManager metadataHelperCacheManager) {

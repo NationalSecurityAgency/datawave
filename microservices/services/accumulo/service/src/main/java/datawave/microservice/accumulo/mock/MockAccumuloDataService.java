@@ -28,19 +28,19 @@ import datawave.microservice.accumulo.lookup.LookupService;
 @Service
 @Profile("mock")
 public class MockAccumuloDataService {
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String WAREHOUSE_MOCK_TABLE = "warehouseTestTable";
-    
+
     private final AccumuloClient warehouseAccumuloClient;
-    
+
     @Autowired
     public MockAccumuloDataService(@Qualifier("warehouse") AccumuloClient warehouseAccumuloClient) {
         this.warehouseAccumuloClient = warehouseAccumuloClient;
         setupMockWarehouseTables();
     }
-    
+
     /**
      * Adds a couple of tables with identical data that are tailored for testing {@link LookupService} and its table-specific audit configs.
      */
@@ -53,7 +53,7 @@ public class MockAccumuloDataService {
             throw new RuntimeException(e);
         }
     }
-    
+
     /**
      * Initializes a new table having the specified name with a static dataset for testing. Note that the data here is coupled to audit settings in
      * test/resources/config/application.yml, and coupled to assertions for many unit tests
@@ -68,11 +68,11 @@ public class MockAccumuloDataService {
     public void setupMockTable(AccumuloClient accumuloClient, String tableName) throws Exception {
         if (accumuloClient.tableOperations().exists(tableName))
             accumuloClient.tableOperations().delete(tableName);
-        
+
         Preconditions.checkState(!accumuloClient.tableOperations().exists(tableName), tableName + " already exists");
-        
+
         accumuloClient.tableOperations().create(tableName);
-        
+
         BatchWriterConfig bwc = new BatchWriterConfig().setMaxLatency(1l, TimeUnit.SECONDS).setMaxMemory(1024l).setMaxWriteThreads(1);
         try (BatchWriter bw = accumuloClient.createBatchWriter(tableName, bwc)) {
             // Write 3 rows to the test table
@@ -94,7 +94,7 @@ public class MockAccumuloDataService {
             }
         }
     }
-    
+
     public AccumuloClient getWarehouseAccumuloClient() {
         return this.warehouseAccumuloClient;
     }

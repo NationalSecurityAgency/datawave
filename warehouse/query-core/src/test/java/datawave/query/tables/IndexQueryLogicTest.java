@@ -42,7 +42,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 
 /**
  * See {@link GenericCarFields#index} for which fields are indexed in the data set used by this test.
- *
+ * <p>
  * Also see {@link GenericCarFields#reverse} for reverse indices.
  */
 public class IndexQueryLogicTest extends AbstractFunctionalQuery {

@@ -86,63 +86,63 @@ import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 
 public class QueryMetricTestBase {
-    
+
     protected Logger log = LoggerFactory.getLogger(getClass());
-    
+
     protected static final SubjectIssuerDNPair ALLOWED_CALLER = SubjectIssuerDNPair.of("cn=test a. user, ou=example developers, o=example corp, c=us",
                     "cn=example corp ca, o=example corp, c=us");
-    
+
     protected static final String getMetricsUrl = "/querymetric/v1/id/%s";
-    
+
     @Autowired
     protected QueryMetricOperations queryMetricOperations;
-    
+
     @Autowired
     protected RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     protected JWTTokenHandler jwtTokenHandler;
-    
+
     @Autowired
     protected ObjectMapper objectMapper;
-    
+
     @Autowired
     protected ShardTableQueryMetricHandler shardTableQueryMetricHandler;
-    
+
     @Autowired
     protected QueryMetricCombiner queryMetricCombiner;
-    
+
     @Autowired
     @Named("queryMetricCacheManager")
     protected CacheManager cacheManager;
-    
+
     @Autowired
     protected @Qualifier("warehouse") AccumuloClientPool accumuloClientPool;
-    
+
     @Autowired
     protected QueryMetricHandlerProperties queryMetricHandlerProperties;
-    
+
     @Autowired
     protected QueryMetricFactory queryMetricFactory;
-    
+
     @Autowired
     protected QueryMetricClient client;
-    
+
     @Autowired
     private QueryMetricClientProperties queryMetricClientProperties;
-    
+
     @Autowired
     private DnUtils dnUtils;
-    
+
     @Autowired
     @Qualifier("lastWrittenQueryMetrics")
     protected Cache lastWrittenQueryMetricCache;
-    
+
     protected Cache incomingQueryMetricsCache;
-    
+
     @LocalServerPort
     protected int webServicePort;
-    
+
     protected RestTemplate restTemplate;
     protected DatawaveUserDetails adminUser;
     protected DatawaveUserDetails nonAdminUser;
@@ -152,23 +152,23 @@ public class QueryMetricTestBase {
     protected List<String> tables;
     protected Collection<String> auths;
     protected AccumuloClient accumuloClient;
-    
+
     static {
         metricMarkings = new HashMap<>();
         metricMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "A&C");
     }
-    
+
     @AfterAll
     public static void afterClass() {
         ((HazelcastCacheManager) staticCacheManager).getHazelcastInstance().shutdown();
     }
-    
+
     @BeforeEach
     public void setup() {
         this.queryMetricClientProperties.setPort(webServicePort);
         this.restTemplate = restTemplateBuilder.build(RestTemplate.class);
         this.auths = Arrays.asList("PUBLIC", "A", "B", "C");
-        
+
         Collection<String> roles = Arrays.asList("Administrator");
         DatawaveUser adminDWUser = new DatawaveUser(ALLOWED_CALLER, USER, null, auths, roles, null, System.currentTimeMillis());
         DatawaveUser nonAdminDWUser = new DatawaveUser(ALLOWED_CALLER, USER, null, auths, null, null, System.currentTimeMillis());
@@ -203,7 +203,7 @@ public class QueryMetricTestBase {
         baseQueryMetricDeserializer.addAbstractTypeMapping(BaseQueryMetricListResponse.class, QueryMetricListResponse.class);
         this.objectMapper.registerModule(baseQueryMetricDeserializer);
     }
-    
+
     @AfterEach
     public void cleanup() {
         deleteAccumuloEntries(this.accumuloClient, this.tables, this.auths);
@@ -211,18 +211,18 @@ public class QueryMetricTestBase {
         this.lastWrittenQueryMetricCache.clear();
         this.accumuloClientPool.returnObject(this.accumuloClient);
     }
-    
+
     protected EventBase toEvent(BaseQueryMetric metric) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
-        
+
         long createTime = metric.getCreateDate().getTime();
-        
+
         DefaultEvent event = new DefaultEvent();
         List<DefaultField> fields = new ArrayList<>();
-        
+
         event.setMarkings(metric.getMarkings());
-        
+
         addStringField(fields, "QUERY_ID", metric.getColumnVisibility(), createTime, metric.getQueryId());
         addDateField(fields, "BEGIN_DATE", metric.getColumnVisibility(), createTime, metric.getBeginDate(), sdf_date_time1);
         addDateField(fields, "END_DATE", metric.getColumnVisibility(), createTime, metric.getEndDate(), sdf_date_time1);
@@ -249,12 +249,12 @@ public class QueryMetricTestBase {
         addPredictionField(fields, metric.getColumnVisibility(), createTime, metric.getPredictions());
         addStringField(fields, "PLAN", metric.getColumnVisibility(), createTime, metric.getPlan());
         addPageMetricsField(fields, metric.getColumnVisibility(), createTime, metric.getPageTimes());
-        
+
         event.setFields(fields);
-        
+
         return event;
     }
-    
+
     protected void addPageMetricsField(List<DefaultField> fields, String columnVisibility, long timestamp, List<BaseQueryMetric.PageMetric> pageMetrics) {
         if (pageMetrics != null) {
             int page = 1;
@@ -263,31 +263,31 @@ public class QueryMetricTestBase {
             }
         }
     }
-    
+
     protected void addStringField(List<DefaultField> fields, String field, String columnVisibility, long timestamp, String value) {
         if (value != null) {
             fields.add(new DefaultField(field, columnVisibility, timestamp, value));
         }
     }
-    
+
     protected void addLifecycleField(List<DefaultField> fields, String field, String columnVisibility, long timestamp, BaseQueryMetric.Lifecycle value) {
         if (value != null) {
             fields.add(new DefaultField(field, columnVisibility, timestamp, value.name()));
         }
     }
-    
+
     protected void addLongField(List<DefaultField> fields, String field, String columnVisibility, long timestamp, Long value) {
         if (value != null) {
             fields.add(new DefaultField(field, columnVisibility, timestamp, Long.toString(value)));
         }
     }
-    
+
     protected void addDateField(List<DefaultField> fields, String field, String columnVisibility, long timestamp, Date value, SimpleDateFormat sdf) {
         if (value != null) {
             fields.add(new DefaultField(field, columnVisibility, timestamp, sdf.format(value)));
         }
     }
-    
+
     protected void addPredictionField(List<DefaultField> fields, String columnVisibility, long timestamp, Set<BaseQueryMetric.Prediction> value) {
         if (value != null) {
             for (BaseQueryMetric.Prediction prediction : value) {
@@ -298,25 +298,25 @@ public class QueryMetricTestBase {
             }
         }
     }
-    
+
     protected BaseQueryMetric createMetric() {
         return createMetric(createQueryId());
     }
-    
+
     protected static BaseQueryMetric createMetric(QueryMetricFactory queryMetricFactory) {
         return createMetric(createQueryId(), queryMetricFactory);
     }
-    
+
     protected BaseQueryMetric createMetric(String queryId) {
         return createMetric(queryId, this.queryMetricFactory);
     }
-    
+
     protected static BaseQueryMetric createMetric(String queryId, QueryMetricFactory queryMetricFactory) {
         BaseQueryMetric m = queryMetricFactory.createMetric();
         populateMetric(m, queryId);
         return m;
     }
-    
+
     protected static void populateMetric(BaseQueryMetric m, String queryId) {
         long now = System.currentTimeMillis();
         Date nowDate = new Date(now);
@@ -341,7 +341,7 @@ public class QueryMetricTestBase {
         m.setUserDN(ALLOWED_CALLER.subjectDN());
         m.addPrediction(new BaseQueryMetric.Prediction("PredictionTest", 200.0));
     }
-    
+
     public static String createQueryId() {
         StringBuilder sb = new StringBuilder();
         sb.append(RandomStringUtils.randomNumeric(4));
@@ -353,9 +353,9 @@ public class QueryMetricTestBase {
         sb.append(RandomStringUtils.randomNumeric(4));
         return sb.toString();
     }
-    
+
     protected HttpEntity createRequestEntity(DatawaveUserDetails trustedUser, DatawaveUserDetails jwtUser, Object body) throws JsonProcessingException {
-        
+
         HttpHeaders headers = new HttpHeaders();
         if (this.jwtTokenHandler != null && jwtUser != null) {
             String token = this.jwtTokenHandler.createTokenFromUsers(jwtUser.getUsername(), jwtUser.getProxiedUsers());
@@ -372,11 +372,11 @@ public class QueryMetricTestBase {
             return new HttpEntity<>(this.objectMapper.writeValueAsString(body), headers);
         }
     }
-    
+
     public static void metricAssertEquals(BaseQueryMetric m1, BaseQueryMetric m2) {
         metricAssertEquals("", m1, m2);
     }
-    
+
     /*
      * This method compares the fields of BaseQueryMetric one by one so that the discrepancy is obvious It also rounds all Date objects to
      */
@@ -425,7 +425,7 @@ public class QueryMetricTestBase {
             assertEquals(m1.getVersionMap(), m2.getVersionMap(), message + "versionMap");
         }
     }
-    
+
     public static boolean assertObjectsEqual(Object o1, Object o2) {
         if (o1 == null && o2 == null) {
             return true;
@@ -441,17 +441,17 @@ public class QueryMetricTestBase {
             return o1.equals(o2);
         }
     }
-    
+
     public static boolean datesEqual(Date d1, Date d2) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
         return sdf.format(d1).equals(sdf.format(d2));
     }
-    
+
     public static String formatDate(Date d) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
         return sdf.format(d);
     }
-    
+
     protected Collection<String> getAllAccumuloEntries() {
         List<String> entries = new ArrayList<>();
         List<String> tables = new ArrayList<>();
@@ -463,11 +463,11 @@ public class QueryMetricTestBase {
         });
         return entries;
     }
-    
+
     protected Collection<String> getMetadataEntries() {
         return getAccumuloEntryStrings(this.queryMetricHandlerProperties.getMetadataTableName());
     }
-    
+
     protected Collection<String> getAccumuloEntryStrings(String table) {
         List<String> entryStrings = new ArrayList<>();
         try {
@@ -480,11 +480,11 @@ public class QueryMetricTestBase {
         }
         return entryStrings;
     }
-    
+
     protected void printAllAccumuloEntries() {
         getAllAccumuloEntries().forEach(s -> System.out.println(s));
     }
-    
+
     public Collection<Map.Entry<Key,Value>> getAccumuloEntries(AccumuloClient accumuloClient, String table, Collection<String> authorizations)
                     throws Exception {
         Collection<Map.Entry<Key,Value>> entries = new ArrayList<>();
@@ -500,7 +500,7 @@ public class QueryMetricTestBase {
         }
         return entries;
     }
-    
+
     public void deleteAccumuloEntries(AccumuloClient accumuloClient, List<String> tables, Collection<String> authorizations) {
         try {
             String[] authArray = new String[authorizations.size()];
@@ -534,7 +534,7 @@ public class QueryMetricTestBase {
             log.error(e.getMessage(), e);
         }
     }
-    
+
     protected void ensureDataStored(Cache incomingCache, String queryId) {
         long now = System.currentTimeMillis();
         int writeDelaySeconds = 1000;
@@ -549,7 +549,7 @@ public class QueryMetricTestBase {
             }
         }
     }
-    
+
     protected void ensureDataWritten(Cache incomingCache, Cache lastWrittenCache, String queryId) {
         long now = System.currentTimeMillis();
         Config config = ((HazelcastCacheManager) this.cacheManager).getHazelcastInstance().getConfig();
@@ -565,7 +565,7 @@ public class QueryMetricTestBase {
             }
         }
     }
-    
+
     public Collection<Map.Entry<Key,Value>> getEventEntriesFromAccumulo(String queryId) {
         Collection<Map.Entry<Key,Value>> entries = new ArrayList<>();
         try {
@@ -607,14 +607,14 @@ public class QueryMetricTestBase {
         }
         return entries;
     }
-    
+
     public void printEventEntriesFromAccumulo(String queryId) {
         Collection<Map.Entry<Key,Value>> entries = getEventEntriesFromAccumulo(queryId);
         for (Map.Entry<Key,Value> e : entries) {
             System.out.println(e.getKey().toString());
         }
     }
-    
+
     public void assertNoDuplicateFields(String queryId) {
         Collection<Map.Entry<Key,Value>> entries = getEventEntriesFromAccumulo(queryId);
         Set<String> fields = new HashSet<>();
@@ -631,7 +631,7 @@ public class QueryMetricTestBase {
                 }
             }
         }
-        
+
         if (!duplicateFields.isEmpty()) {
             for (Map.Entry<Key,Value> e : entries) {
                 System.out.println(e.getKey().toString());
@@ -639,7 +639,7 @@ public class QueryMetricTestBase {
             fail("Duplicate field values found for:" + duplicateFields);
         }
     }
-    
+
     @Configuration
     @Profile("MessageRouting")
     @ComponentScan(basePackages = "datawave.microservice")

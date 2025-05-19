@@ -29,10 +29,10 @@ import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.security.NamespacePermission;
 
 public class InMemoryNamespace {
-    
+
     final HashMap<String,String> settings;
     Map<String,EnumSet<NamespacePermission>> userPermissions = new HashMap<>();
-    
+
     public InMemoryNamespace() {
         settings = new HashMap<>();
         for (Entry<String,String> entry : DefaultConfiguration.getInstance()) {
@@ -42,7 +42,7 @@ public class InMemoryNamespace {
             }
         }
     }
-    
+
     public List<String> getTables(InMemoryAccumulo acu) {
         List<String> l = new LinkedList<>();
         for (String t : acu.tables.keySet()) {

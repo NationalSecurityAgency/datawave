@@ -38,25 +38,25 @@ import datawave.microservice.querymetric.function.QueryMetricSupplier;
 @ActiveProfiles({"NonWebApplicationMessagingTest", "QueryMetricTest"})
 @ContextConfiguration(classes = {NonWebApplicationMessagingTest.QueryMetricHttpTestConfiguration.class, QueryMetricService.class})
 public class NonWebApplicationMessagingTest {
-    
+
     @Autowired
     private QueryMetricClient client;
-    
+
     @Autowired
     private QueryMetricFactory queryMetricFactory;
-    
+
     @Autowired
     public List<QueryMetricUpdate> storedMetricUpdates;
-    
+
     private Map<String,String> metricMarkings;
-    
+
     @BeforeEach
     public void setup() {
         this.metricMarkings = new HashMap<>();
         this.metricMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "A&C");
         this.storedMetricUpdates.clear();
     }
-    
+
     /*
      * Ensure that a metric with only the queryId set will still be accepted
      */

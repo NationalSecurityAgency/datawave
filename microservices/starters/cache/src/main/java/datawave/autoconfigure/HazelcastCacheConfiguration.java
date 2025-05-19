@@ -21,11 +21,11 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
 @ConditionalOnSingleCandidate(HazelcastInstance.class)
 public class HazelcastCacheConfiguration {
     private final CacheManagerCustomizers customizers;
-    
+
     HazelcastCacheConfiguration(CacheManagerCustomizers customizers) {
         this.customizers = customizers;
     }
-    
+
     @Bean
     @Primary
     public HazelcastCacheManager cacheManager(HazelcastInstance existingHazelcastInstance) throws IOException {

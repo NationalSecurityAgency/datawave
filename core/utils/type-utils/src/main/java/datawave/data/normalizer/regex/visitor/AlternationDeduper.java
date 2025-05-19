@@ -7,7 +7,7 @@ import datawave.data.normalizer.regex.ExpressionNode;
 import datawave.data.normalizer.regex.Node;
 
 public class AlternationDeduper extends CopyVisitor {
-    
+
     public static Node dedupe(Node node) {
         if (node == null) {
             return null;
@@ -15,7 +15,7 @@ public class AlternationDeduper extends CopyVisitor {
         AlternationDeduper visitor = new AlternationDeduper();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     public Object visitExpression(ExpressionNode node, Object data) {
         // If the node holds an alternation, dedupe the alternation's children.
@@ -33,7 +33,7 @@ public class AlternationDeduper extends CopyVisitor {
             return copy(node);
         }
     }
-    
+
     @Override
     public Object visitAlternation(AlternationNode node, Object data) {
         // Use LinkedHashMap to preserve insertion order.
@@ -46,7 +46,7 @@ public class AlternationDeduper extends CopyVisitor {
                 uniquePatterns.put(childPattern, copy(child));
             }
         }
-        
+
         // If only one
         if (uniquePatterns.size() == 1) {
             return uniquePatterns.values().iterator().next();

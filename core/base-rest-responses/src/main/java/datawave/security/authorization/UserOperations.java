@@ -18,11 +18,11 @@ import datawave.webservice.result.GenericResponse;
  * A user operations service is one that can pass calls off to another external user operations endpoint
  */
 public interface UserOperations {
-    
+
     AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException;
-    
+
     GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException;
-    
+
     default <T extends ProxiedUserDetails> T getRemoteUser(T currentUser) throws AuthorizationException {
         // get the effective authorizations for this user
         AuthorizationsListBase auths = listEffectiveAuthorizations(currentUser);
@@ -30,7 +30,7 @@ public interface UserOperations {
         List<DatawaveUser> mappedUsers = new ArrayList<>();
         Map<SubjectIssuerDNPair,DatawaveUser> localUsers = currentUser.getProxiedUsers().stream()
                         .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity(), (v1, v2) -> v2));
-        
+
         // create a mapped user for the primary user with the auths returned by listEffectiveAuthorizations
         SubjectIssuerDNPair primaryDn = SubjectIssuerDNPair.of(auths.getUserDn(), auths.getIssuerDn());
         DatawaveUser localUser = localUsers.get(primaryDn);
@@ -44,15 +44,15 @@ public interface UserOperations {
                 mappedUsers.add(new DatawaveUser(pair, DatawaveUser.UserType.SERVER, entry.getValue(), null, null, System.currentTimeMillis()));
             }
         }
-        
+
         // return a proxied user details with the mapped users
         return currentUser.newInstance(mappedUsers);
     }
-    
+
     static Multimap<String,String> toMultimap(Map<String,Collection<String>> map) {
         Multimap<String,String> multimap = HashMultimap.create();
         map.forEach(multimap::putAll);
         return multimap;
     }
-    
+
 }

@@ -983,6 +983,161 @@ public class JexlASTHelper {
     }
 
     /**
+     * <b>NOTE: Do NOT use this method with a rebuilding visitor. You cannot guarantee parentage will remain the same.</b>
+     * <p>
+     * Swaps the original node with the replacement, following rules for reference expressions, single terms and junctions
+     * <p>
+     * This method prevents reference expressions from having a single child.
+     * <p>
+     * This method also allows for merging similar junctions.
+     *
+     * @param original
+     *            the original node
+     * @param replacement
+     *            the replacement node
+     */
+    public static void replaceNodeSafely(JexlNode original, JexlNode replacement) {
+        JexlNode parent = original.jjtGetParent();
+
+        if (parent == null) {
+            return; // cannot do anything in this case
+        }
+
+        boolean multiValue = isJunction(replacement);
+        if (multiValue) {
+            replaceNodeWithMultiValue(parent, original, replacement);
+        } else {
+            replaceNodeWithSingleValue(parent, original, replacement);
+        }
+    }
+
+    /**
+     * This method accepts a multivalued replacement node (ASTAndNode or ASTOrNode) and attempts to merge it cleanly into the parent or grandparent node with a
+     * preference for a reference expression as the new parent.
+     *
+     * @param parent
+     *            the parent node
+     * @param original
+     *            the original node
+     * @param replacement
+     *            the replacement node
+     */
+    private static void replaceNodeWithMultiValue(JexlNode parent, JexlNode original, JexlNode replacement) {
+
+        // similar junctions, merge children
+        if (isEquivalentJunctions(parent, replacement)) {
+            mergeJunctions(parent, original, replacement);
+            return;
+        }
+
+        // if no 'legal' rewrite could occur with the parent, try the grandparent
+        JexlNode grandParent = parent.jjtGetParent();
+        if (grandParent != null) {
+            // reference expression, straight replacement
+            if (grandParent instanceof ASTReferenceExpression) {
+                JexlNodes.replaceChild(grandParent, parent, replacement);
+                return;
+            }
+
+            // similar junctions, merge children
+            if (isEquivalentJunctions(grandParent, replacement)) {
+                mergeJunctions(grandParent, parent, replacement);
+                return;
+            }
+        }
+
+        // if no optimal rewrite occurred, fall back to a simple replacement
+        JexlNodes.replaceChild(parent, original, replacement);
+    }
+
+    /**
+     * This method accepts a single replacement node (leaf node) and attempts to merge it cleanly into the parent or grandparent while avoiding a reference
+     * expression as the new parent.
+     *
+     * @param parent
+     *            the parent node
+     * @param original
+     *            the original node
+     * @param replacement
+     *            the replacement node
+     */
+    private static void replaceNodeWithSingleValue(JexlNode parent, JexlNode original, JexlNode replacement) {
+
+        if (!(parent instanceof ASTReferenceExpression)) {
+            // straight replacement
+            JexlNodes.replaceChild(parent, original, replacement);
+            return;
+        }
+
+        // otherwise we have a reference expression and we need to go up a layer
+        JexlNode grandParent = parent.jjtGetParent();
+
+        if (grandParent != null) {
+            // check for the negated single term case: !(term)
+            // it is also unlikely that two reference expressions would sit next to each other in the tree, but it's
+            // not impossible
+            if (!(grandParent instanceof ASTNotNode) && !(grandParent instanceof ASTReferenceExpression)) {
+                JexlNodes.replaceChild(grandParent, parent, replacement);
+                return;
+            }
+        }
+
+        // if no optimal rewrite occurred fallback to a simple replacement
+        JexlNodes.replaceChild(parent, original, replacement);
+    }
+
+    /**
+     * Determines if the provided JexlNode is a junction
+     *
+     * @param node
+     *            the JexlNode
+     * @return true if the node is a junction
+     */
+    public static boolean isJunction(JexlNode node) {
+        return !QueryPropertyMarker.findInstance(node).isAnyType() && (node instanceof ASTOrNode || node instanceof ASTAndNode);
+    }
+
+    /**
+     * Determines if the two JexlNodes are similar junction types (both And nodes or both Or nodes)
+     *
+     * @param a
+     *            first JexlNode
+     * @param b
+     *            second JexlNode
+     * @return true if the two nodes are equivalent junctions
+     */
+    public static boolean isEquivalentJunctions(JexlNode a, JexlNode b) {
+        if (QueryPropertyMarker.findInstance(a).isAnyType() || QueryPropertyMarker.findInstance(b).isAnyType()) {
+            return false;
+        }
+
+        return (a instanceof ASTOrNode && b instanceof ASTOrNode) || (a instanceof ASTAndNode && b instanceof ASTAndNode);
+    }
+
+    /**
+     * Given two equivalent junctions per {@link #isEquivalentJunctions(JexlNode, JexlNode)}, merges the children for node B into the children of node A
+     *
+     * @param parent
+     *            the parent
+     * @param a
+     *            first JexlNode
+     * @param b
+     *            second JexlNode
+     */
+    private static void mergeJunctions(JexlNode parent, JexlNode a, JexlNode b) {
+        List<JexlNode> nodes = new ArrayList<>();
+        for (JexlNode child : JexlNodes.getChildren(parent)) {
+            if (child == a) {
+                // preserves node order
+                nodes.addAll(List.of(JexlNodes.getChildren(b)));
+            } else {
+                nodes.add(child);
+            }
+        }
+        JexlNodes.setChildren(parent, nodes.toArray(new JexlNode[0]));
+    }
+
+    /**
      * Ranges: A range prior to being "tagged" must be of the form "(term1 &amp;&amp; term2)" where term1 and term2 refer to the same field and denote two sides
      * of the range ((LE or LT) and (GE or GT)). A tagged range is of the form "(BoundedRange=true) &amp;&amp; (term1 &amp;&amp; term2))"
      *
@@ -1796,7 +1951,8 @@ public class JexlASTHelper {
                     JexlNode child = node.jjtGetChild(i);
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
-                            String message = "Tree included child " + child + " with a null parent";
+                            String nodeString = JexlStringBuildingVisitor.buildQuery(child);
+                            String message = "Tree included child " + child + " [" + nodeString + "] with a null parent";
                             recordViolation(message, failHard, validation);
                         } else if (child.jjtGetParent() != node) {
                             String message = "Included a child " + child + " with conflicting parent. Expected " + node + " but was " + child.jjtGetParent();

@@ -20,53 +20,53 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryExceptionType implements Serializable, Message<QueryExceptionType> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "Message")
     private String message;
-    
+
     @XmlElement(name = "Cause")
     private String cause;
-    
+
     @XmlElement(name = "Code")
     private String code;
-    
+
     public QueryExceptionType() {
         super();
     }
-    
+
     public QueryExceptionType(String message, String cause, String code) {
         super();
         this.message = message;
         this.cause = cause;
         this.code = code;
     }
-    
+
     public String getMessage() {
         return message;
     }
-    
+
     public String getCause() {
         return cause;
     }
-    
+
     public String getCode() {
         return code;
     }
-    
+
     public void setMessage(String message) {
         this.message = message;
     }
-    
+
     public void setCause(String cause) {
         this.cause = cause;
     }
-    
+
     public void setCode(String code) {
         this.code = code;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -76,54 +76,54 @@ public class QueryExceptionType implements Serializable, Message<QueryExceptionT
         QueryExceptionType that = (QueryExceptionType) o;
         return Objects.equals(message, that.message) && Objects.equals(cause, that.cause) && Objects.equals(code, that.code);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(message, cause, code);
     }
-    
+
     @Override
     public String toString() {
         return "QueryExceptionType{" + "message='" + message + '\'' + ", cause='" + cause + '\'' + ", code='" + code + '\'' + '}';
     }
-    
+
     public static Schema<QueryExceptionType> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<QueryExceptionType> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<QueryExceptionType> SCHEMA = new Schema<QueryExceptionType>() {
-        
+
         @Override
         public QueryExceptionType newMessage() {
             return new QueryExceptionType();
         }
-        
+
         @Override
         public Class<? super QueryExceptionType> typeClass() {
             return QueryExceptionType.class;
         }
-        
+
         @Override
         public String messageName() {
             return QueryExceptionType.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return QueryExceptionType.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(QueryExceptionType message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, QueryExceptionType message) throws IOException {
             if (message.message != null)
@@ -133,7 +133,7 @@ public class QueryExceptionType implements Serializable, Message<QueryExceptionT
             if (message.code != null)
                 output.writeString(3, message.code, false);
         }
-        
+
         @Override
         public void mergeFrom(Input input, QueryExceptionType message) throws IOException {
             int number;
@@ -154,7 +154,7 @@ public class QueryExceptionType implements Serializable, Message<QueryExceptionT
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -168,13 +168,13 @@ public class QueryExceptionType implements Serializable, Message<QueryExceptionT
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put("message", 1);

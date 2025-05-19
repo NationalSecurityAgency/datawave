@@ -229,9 +229,9 @@ public class RangeStreamQueryTest {
 
     @Test
     public void testQueriesWithBoundedRangeMarkers() throws Exception {
-        test("((_Bounded_ = true) && (FOO > '3' && FOO < 7))", DELAYED);
-        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) && ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", DELAYED_INTERSECT);
-        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) || ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", DELAYED_UNION);
+        test("((_Bounded_ = true) && (FOO > '3' && FOO < 7))", ANCHOR);
+        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) && ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", ANCHOR_INTERSECT);
+        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) || ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", ANCHOR_UNION);
     }
 
     @Test

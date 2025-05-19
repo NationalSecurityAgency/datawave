@@ -19,37 +19,37 @@ public class EdgeModelProperties {
     private Map<String,String> keyUtilFieldMap;
     @NotNull
     private Map<String,String> transformFieldMap;
-    
+
     private List<FieldMapping> fieldMappings;
-    
+
     public Map<String,String> getBaseFieldMap() {
         return baseFieldMap;
     }
-    
+
     public void setBaseFieldMap(Map<String,String> baseFieldMap) {
         this.baseFieldMap = baseFieldMap;
     }
-    
+
     public Map<String,String> getKeyUtilFieldMap() {
         return keyUtilFieldMap;
     }
-    
+
     public void setKeyUtilFieldMap(Map<String,String> keyUtilFieldMap) {
         this.keyUtilFieldMap = keyUtilFieldMap;
     }
-    
+
     public Map<String,String> getTransformFieldMap() {
         return transformFieldMap;
     }
-    
+
     public void setTransformFieldMap(Map<String,String> transformFieldMap) {
         this.transformFieldMap = transformFieldMap;
     }
-    
+
     public List<FieldMapping> getFieldMappings() {
         return fieldMappings;
     }
-    
+
     public void setFieldMappings(List<FieldMapping> fieldMappings) {
         this.fieldMappings = fieldMappings;
     }

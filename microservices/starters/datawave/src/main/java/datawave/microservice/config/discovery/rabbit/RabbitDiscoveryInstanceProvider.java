@@ -11,11 +11,11 @@ import org.springframework.retry.annotation.Retryable;
 public class RabbitDiscoveryInstanceProvider {
     private static Logger logger = LoggerFactory.getLogger(RabbitDiscoveryInstanceProvider.class);
     private final DiscoveryClient client;
-    
+
     public RabbitDiscoveryInstanceProvider(DiscoveryClient client) {
         this.client = client;
     }
-    
+
     @Retryable(interceptor = "rabbitDiscoveryRetryInterceptor")
     public ServiceInstance getRabbitMQServerInstance(String serviceId) {
         logger.debug("Locating rabbitmq server (" + serviceId + ") via discovery");

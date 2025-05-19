@@ -64,33 +64,33 @@ import datawave.webservice.response.StatsResponse;
 @ContextConfiguration(classes = StatsServiceTest.TestConfig.class)
 @ActiveProfiles({"StatsServiceTest", "stats-service-enabled"})
 public class StatsServiceTest {
-    
+
     private static final String ZK_MONITOR_PATH = "/accumulo/%s/monitor/http_addr";
     private static final String ZK_MONITOR_DATA = "localhost:9995";
-    
+
     private static final String EXPECTED_MONITOR_URI = String.format("http://%s/rest/xml", ZK_MONITOR_DATA);
-    
+
     private static String expectedMonitorResponse;
-    
+
     private static TestingServer server;
-    
+
     @LocalServerPort
     private int webServicePort;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     private StatsService statsService;
-    
+
     private JWTRestTemplate jwtRestTemplate;
     private DatawaveUserDetails defaultUserDetails;
     private MockRestServiceServer mockMonitorServer;
     private TestHelper th;
-    
+
     @BeforeAll
     public static void setupZK() throws Exception {
         //@formatter:off
@@ -114,28 +114,28 @@ public class StatsServiceTest {
             StatsServiceTest.class.getClassLoader().getResource("accumulo-monitor-stats.xml").toURI())));
         //@formatter:on
     }
-    
+
     @AfterAll
     public static void tearDownZK() throws Exception {
         server.stop();
     }
-    
+
     @BeforeEach
     public void setup() {
         // REST api user must have Administrator role
         defaultUserDetails = TestHelper.userDetails(Collections.singleton("Administrator"), null);
         jwtRestTemplate = restTemplateBuilder.build(JWTRestTemplate.class);
-        
+
         th = new TestHelper(jwtRestTemplate, defaultUserDetails, webServicePort, "/accumulo/v1");
-        
+
         setupMockMonitorServer();
     }
-    
+
     @Test
     public void verifyAutoConfig() {
         assertTrue(context.containsBean("statsService"), "statsService bean not found");
         assertTrue(context.containsBean("statsController"), "statsController bean not found");
-        
+
         assertFalse(context.containsBean("auditServiceConfiguration"), "auditServiceConfiguration bean should not have been found");
         assertFalse(context.containsBean("auditServiceInstanceProvider"), "auditServiceInstanceProvider bean should not have been found");
         assertFalse(context.containsBean("auditLookupSecurityMarking"), "auditLookupSecurityMarking bean should not have been found");
@@ -144,15 +144,15 @@ public class StatsServiceTest {
         assertFalse(context.containsBean("adminService"), "adminService bean should not have been found");
         assertFalse(context.containsBean("adminController"), "adminController bean should not have been found");
     }
-    
+
     @Test
     public void testStatsService() {
         mockMonitorServer.expect(requestTo(EXPECTED_MONITOR_URI)).andRespond(withSuccess(expectedMonitorResponse, MediaType.APPLICATION_XML));
-        
+
         StatsResponse response = th.assert200Status(th.createGetRequest("/stats"), StatsResponse.class);
-        
+
         mockMonitorServer.verify();
-        
+
         // Spot-check deserialized response...
         assertNotNull(response);
         assertNotNull(response.getServers());
@@ -165,7 +165,7 @@ public class StatsServiceTest {
         assertEquals("36977.0", response.getTotals().getNumentries().toString());
         assertEquals("2.783203125000025E-13", response.getTotals().getIngestrate().toString());
     }
-    
+
     /**
      * Mocks the {@link StatsService#restTemplate} field in order to control the response from {@link #EXPECTED_MONITOR_URI}
      */
@@ -177,7 +177,7 @@ public class StatsServiceTest {
         //@formatter:on
         mockMonitorServer = MockRestServiceServer.createServer(monitorRestTemplate);
     }
-    
+
     @Configuration
     @Profile("StatsServiceTest")
     @ComponentScan(basePackages = "datawave.microservice")
@@ -187,7 +187,7 @@ public class StatsServiceTest {
          * {@link datawave.microservice.accumulo.config.AccumuloConfiguration}
          * <p>
          * Also, we use the bean's Instance ID to initialize the monitor data that we need in ZK (our {@link TestingServer})
-         * 
+         *
          * @return "warehouse" Instance for mocked ZK server
          */
         @Bean
@@ -209,7 +209,7 @@ public class StatsServiceTest {
                     .forPath(String.format(ZK_MONITOR_PATH, accumuloClient.instanceOperations().getInstanceId()), ZK_MONITOR_DATA.getBytes());
             }
             //@formatter:on
-            
+
             return accumuloClient;
         }
     }

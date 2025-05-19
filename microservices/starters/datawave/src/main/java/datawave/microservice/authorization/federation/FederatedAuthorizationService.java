@@ -30,13 +30,13 @@ import reactor.util.retry.Retry;
 
 public class FederatedAuthorizationService implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(FederatedAuthorizationService.class);
-    
+
     public static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
-    
+
     private FederatedAuthorizationServiceProperties federatedAuthorizationProperties;
     private final WebClient webClient;
     private AuthorizationsListSupplier authorizationsListSupplier;
-    
+
     public FederatedAuthorizationService(FederatedAuthorizationServiceProperties federatedAuthorizationProperties, WebClient.Builder webClientBuilder,
                     AuthorizationsListSupplier authorizationsListSupplier) {
         this.federatedAuthorizationProperties = federatedAuthorizationProperties;
@@ -52,15 +52,15 @@ public class FederatedAuthorizationService implements UserOperations {
         // @formatter:on
         this.authorizationsListSupplier = authorizationsListSupplier;
     }
-    
+
     private String getProxiedEntities(ProxiedUserDetails currentUser) {
         return getProxiedDN(currentUser, (user) -> user.getDn().subjectDN());
     }
-    
+
     private String getProxiedIssuers(ProxiedUserDetails currentUser) {
         return getProxiedDN(currentUser, (user) -> user.getDn().issuerDN());
     }
-    
+
     private String getProxiedDN(ProxiedUserDetails currentUser, Function<DatawaveUser,String> getDN) {
         StringBuilder builder = new StringBuilder();
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
@@ -68,22 +68,22 @@ public class FederatedAuthorizationService implements UserOperations {
         }
         return builder.toString();
     }
-    
+
     @Override
     @Cacheable(value = "getRemoteUser", key = "{#currentUser}", cacheManager = "remoteOperationsCacheManager")
     public <T extends ProxiedUserDetails> T getRemoteUser(T currentUser) throws AuthorizationException {
         return UserOperations.super.getRemoteUser(currentUser);
     }
-    
+
     @Override
     @Cacheable(value = "listEffectiveAuthorizations", key = "{#currentUser}", cacheManager = "remoteOperationsCacheManager")
     public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails currentUser) throws AuthorizationException {
         return listEffectiveAuthorizations(currentUser, true);
     }
-    
+
     public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails currentUser, boolean federate) throws AuthorizationException {
         log.info("FederatedAuthorizationService listEffectiveAuthorizations (federate: {}) for {}", federate, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             //noinspection rawtypes,unchecked
@@ -94,11 +94,11 @@ public class FederatedAuthorizationService implements UserOperations {
                     "listEffectiveAuthorizations",
                     authorizationsListSupplier.get().getClass());
             // @formatter:on
-            
+
             AuthorizationException authorizationException;
             if (authorizationsListBaseResponseEntity != null) {
                 AuthorizationsListBase authorizationsListBase = authorizationsListBaseResponseEntity.getBody();
-                
+
                 if (authorizationsListBaseResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return authorizationsListBase;
                 } else {
@@ -115,15 +115,15 @@ public class FederatedAuthorizationService implements UserOperations {
             throw new AuthorizationException("Timed out waiting for federated listEffectiveAuthorizations response", e);
         }
     }
-    
+
     @Override
     public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails currentUser) throws AuthorizationException {
         return flushCachedCredentials(currentUser, true);
     }
-    
+
     public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails currentUser, boolean federate) throws AuthorizationException {
         log.info("FederatedAuthorizationService flushCachedCredentials (federate: {}) for {}", federate, currentUser.getPrimaryUser());
-        
+
         try {
             // @formatter:off
             //noinspection rawtypes,unchecked
@@ -134,11 +134,11 @@ public class FederatedAuthorizationService implements UserOperations {
                     "flushCachedCredentials",
                     GenericResponse.class);
             // @formatter:on
-            
+
             AuthorizationException authorizationException;
             if (genericResponseEntity != null) {
                 GenericResponse genericResponse = genericResponseEntity.getBody();
-                
+
                 if (genericResponseEntity.getStatusCode() == HttpStatus.OK) {
                     return genericResponse;
                 } else {
@@ -155,7 +155,7 @@ public class FederatedAuthorizationService implements UserOperations {
             throw new AuthorizationException("Timed out waiting for federated flushCachedCredentials response", e);
         }
     }
-    
+
     protected ResponseEntity<?> getResponseEntity(ProxiedUserDetails currentUser, boolean federate, RetryTimeoutProperties retry, String endpoint,
                     Class entityClass) {
         // @formatter:off
@@ -182,10 +182,10 @@ public class FederatedAuthorizationService implements UserOperations {
                 .block(Duration.ofMillis(retry.getTimeoutMillis()));
         // @formatter:on
     }
-    
+
     public class ServiceException extends RuntimeException {
         int statusCode;
-        
+
         public ServiceException(String message, int statusCode) {
             super(message);
             this.statusCode = statusCode;

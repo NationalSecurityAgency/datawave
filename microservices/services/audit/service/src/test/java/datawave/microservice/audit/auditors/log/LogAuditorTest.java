@@ -38,15 +38,15 @@ import datawave.webservice.common.audit.Auditor;
 @ContextConfiguration(classes = LogAuditorTest.LogAuditorTestConfiguration.class)
 @ActiveProfiles({"LogAuditorTest", "log-enabled"})
 public class LogAuditorTest {
-    
+
     @Autowired
     private Auditor logAuditor;
-    
+
     @Autowired
     private ApplicationContext context;
-    
+
     private TestAppender testAppender;
-    
+
     @PostConstruct
     public void LogAuditorTestInit() {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
@@ -60,17 +60,17 @@ public class LogAuditorTest {
         config.addLogger("datawave.microservice.audit.auditors.log", loggerConfig);
         ctx.updateLoggers();
     }
-    
+
     @Test
     public void testBeansPresent() {
         assertTrue(context.containsBean("logAuditSink"));
         assertTrue(context.containsBean("logAuditor"));
     }
-    
+
     @Test
     public void testActiveAudit() throws Exception {
         testAppender.clear();
-        
+
         AuditParameters auditParams = new AuditParameters();
         auditParams.setUserDn("someUser");
         auditParams.setAuths("AUTH1,AUTH2");
@@ -78,19 +78,19 @@ public class LogAuditorTest {
         auditParams.setAuditType(Auditor.AuditType.ACTIVE);
         auditParams.setColviz(new ColumnVisibility("ALL"));
         auditParams.setQueryDate(new Date());
-        
+
         logAuditor.audit(auditParams);
-        
+
         assertEquals(1, testAppender.getLog().size());
         LogEvent logEvent = testAppender.getLog().get(0);
         assertEquals(auditParams.toString(), logEvent.getMessage().getFormattedMessage());
         assertEquals(Level.INFO, logEvent.getLevel());
     }
-    
+
     @Test
     public void testNoneAudit() throws Exception {
         testAppender.clear();
-        
+
         AuditParameters auditParams = new AuditParameters();
         auditParams.setUserDn("someUser");
         auditParams.setAuths("AUTH1,AUTH2");
@@ -98,33 +98,33 @@ public class LogAuditorTest {
         auditParams.setAuditType(Auditor.AuditType.NONE);
         auditParams.setColviz(new ColumnVisibility("ALL"));
         auditParams.setQueryDate(new Date());
-        
+
         logAuditor.audit(auditParams);
-        
+
         assertEquals(0, testAppender.getLog().size());
     }
-    
+
     @Configuration
     @Profile("LogAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class LogAuditorTestConfiguration {}
-    
+
     static class TestAppender extends AbstractAppender {
         private final List<LogEvent> log = new ArrayList<>();
-        
+
         protected TestAppender() {
             super("TestAppender", null, null, false, null);
         }
-        
+
         @Override
         public void append(LogEvent event) {
             log.add(event);
         }
-        
+
         public List<LogEvent> getLog() {
             return log;
         }
-        
+
         public void clear() {
             log.clear();
         }
