@@ -4,11 +4,11 @@ public class XMLUtil {
     private XMLUtil() {
         // prevent construction
     }
-    
+
     public static boolean isValidXML(String s) {
         return s.codePoints().allMatch(XMLUtil::isValidXMLChar);
     }
-    
+
     // XML 1.0 spec says the following are valid XML characters:
     // #x9 | #xA | #xD | #x20-#xD7FF | #xE000-#xFFFD | #x10000-#x10FFFF
     //

@@ -14,7 +14,7 @@ import datawave.microservice.query.stream.StreamingProperties;
 @Configuration
 @EnableConfigurationProperties({QueryProperties.class, MapReduceQueryProperties.class, StreamingProperties.class, EdgeDictionaryProviderProperties.class})
 public class QueryStarterConfiguration {
-    
+
     @Bean
     public CaffeineCacheManager dateIndexHelperCacheManager() {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();

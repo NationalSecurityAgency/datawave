@@ -14,7 +14,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
  */
 public class FlattenedVisibilityCache {
     private static Map<ColumnVisibility,byte[]> flattenedVisCache = Collections.synchronizedMap(new HashMap<>());
-    
+
     /**
      * Create a flattened visibility, using the cache if possible
      *
@@ -30,11 +30,11 @@ public class FlattenedVisibilityCache {
         }
         return visBytes;
     }
-    
+
     public static byte[] flatten(ByteSequence bytes) {
         return flatten(ColumnVisibilityCache.get(bytes));
     }
-    
+
     public static boolean equals(ColumnVisibility left, ColumnVisibility right) {
         return Arrays.equals(flatten(left), flatten(right));
     }

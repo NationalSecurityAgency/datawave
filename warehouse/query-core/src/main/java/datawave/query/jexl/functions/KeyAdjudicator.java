@@ -4,11 +4,12 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
  * Key adjudicator, will take an accumulo key based entry whose value is specified by T.
@@ -19,24 +20,21 @@ import com.google.common.collect.Maps;
 public class KeyAdjudicator<T> implements Iterator<Entry<Key,T>>, Function<Entry<Key,T>,Entry<Key,T>> {
 
     public static final Text COLUMN_QUALIFIER_SUFFIX = new Text("\uffff");
-    public static final Text EMPTY_COLUMN_QUALIFIER = new Text();
 
     private final Text colQualRef;
     private final Iterator<Entry<Key,T>> source;
-    private final YieldCallback<Key> yield;
 
-    public KeyAdjudicator(Iterator<Entry<Key,T>> source, Text colQualRef, YieldCallback<Key> yield) {
+    public KeyAdjudicator(Iterator<Entry<Key,T>> source, Text colQualRef) {
         this.colQualRef = colQualRef;
         this.source = source;
-        this.yield = yield;
     }
 
-    public KeyAdjudicator(Iterator<Entry<Key,T>> source, YieldCallback<Key> yield) {
-        this(source, COLUMN_QUALIFIER_SUFFIX, yield);
+    public KeyAdjudicator(Iterator<Entry<Key,T>> source) {
+        this(source, COLUMN_QUALIFIER_SUFFIX);
     }
 
     public KeyAdjudicator(Text colQualRef) {
-        this(null, colQualRef, null);
+        this(null, colQualRef);
     }
 
     public KeyAdjudicator() {
@@ -46,17 +44,20 @@ public class KeyAdjudicator<T> implements Iterator<Entry<Key,T>>, Function<Entry
     @Override
     public Entry<Key,T> apply(Entry<Key,T> entry) {
         final Key entryKey = entry.getKey();
-        return Maps.immutableEntry(new Key(entryKey.getRow(), entryKey.getColumnFamily(), colQualRef, entryKey.getColumnVisibility(), entryKey.getTimestamp()),
-                        entry.getValue());
+        // if the key has a YIELD_AT_BEGIN or YIELD_AT_END marker, then don't modify the key
+        // because doing so will adversely affect the subsequent yield and re-seek position
+        if (WaitWindowObserver.hasMarker(entryKey)) {
+            return entry;
+        } else {
+            return Maps.immutableEntry(
+                            new Key(entryKey.getRow(), entryKey.getColumnFamily(), colQualRef, entryKey.getColumnVisibility(), entryKey.getTimestamp()),
+                            entry.getValue());
+        }
     }
 
     @Override
     public boolean hasNext() {
-        boolean hasNext = source.hasNext();
-        if (yield != null && yield.hasYielded()) {
-            yield.yield(apply((Entry<Key,T>) Maps.immutableEntry(yield.getPositionAndReset(), null)).getKey());
-        }
-        return hasNext;
+        return source.hasNext();
     }
 
     @Override

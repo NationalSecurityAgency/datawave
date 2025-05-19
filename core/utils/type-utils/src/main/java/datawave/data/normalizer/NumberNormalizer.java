@@ -8,10 +8,10 @@ import datawave.data.normalizer.regex.NumericRegexEncoder;
 import datawave.data.type.util.NumericalEncoder;
 
 public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
-    
+
     private static final long serialVersionUID = -2781476072987375820L;
     private Logger log = Logger.getLogger(NumberNormalizer.class);
-    
+
     public String normalize(String fv) {
         if (NumericalEncoder.isPossiblyEncoded(fv)) {
             try {
@@ -27,7 +27,7 @@ public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
             throw new IllegalArgumentException("Failed to normalize value as a number: " + fv);
         }
     }
-    
+
     /**
      * We can support regex against numbers.
      */
@@ -39,18 +39,18 @@ public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
             return fieldRegex;
         }
     }
-    
+
     public boolean normalizedRegexIsLossy(String untrimmedRegex) {
         ZeroRegexStatus status = NumericRegexEncoder.getZeroRegexStatus(untrimmedRegex);
-        
+
         return (status.equals(ZeroRegexStatus.LEADING) || status.equals(ZeroRegexStatus.TRAILING));
     }
-    
+
     @Override
     public String normalizeDelegateType(BigDecimal delegateIn) {
         return normalize(delegateIn.toString());
     }
-    
+
     @Override
     public BigDecimal denormalize(String in) {
         if (NumericalEncoder.isPossiblyEncoded(in)) {
@@ -62,5 +62,5 @@ public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
         }
         return new BigDecimal(in);
     }
-    
+
 }

@@ -15,32 +15,32 @@ import datawave.microservice.query.storage.TaskKey;
 
 public class ResultsTask extends ExecutorTask {
     private static final Logger log = Logger.getLogger(ResultsTask.class);
-    
+
     public ResultsTask(QueryExecutor source, QueryTask task) {
         super(source, task);
     }
-    
+
     @Override
     public boolean executeTask(QueryStatus queryStatus) throws Exception {
-        
+
         assert (QueryRequest.Method.NEXT.equals(task.getAction()));
-        
+
         AccumuloClient client = null;
-        
+
         boolean taskComplete = false;
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         Query query = queryStatus.getQuery();
-        
+
         QueryLogic<?> queryLogic = getQueryLogic(query, queryStatus.getCurrentUser());
         try {
             if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
                 CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-                
+
                 client = borrowClient(queryStatus, queryLogic.getConnPoolName(), AccumuloConnectionFactory.Priority.LOW);
-                
+
                 cpQueryLogic.setupQuery(client, queryStatus.getConfig(), task.getQueryCheckpoint());
-                
+
                 log.debug("Pulling results for  " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
                 taskComplete = pullResults(queryLogic, query, false);
                 if (!taskComplete) {
@@ -54,15 +54,15 @@ public class ResultsTask extends ExecutorTask {
             }
         } finally {
             returnClient(client);
-            
+
             try {
                 queryLogic.close();
             } catch (Exception e) {
                 log.error("Failed to close query logic", e);
             }
         }
-        
+
         return taskComplete;
     }
-    
+
 }

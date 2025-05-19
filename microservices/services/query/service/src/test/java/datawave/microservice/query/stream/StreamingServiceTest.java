@@ -51,27 +51,27 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 @Execution(SAME_THREAD)
 public class StreamingServiceTest extends AbstractQueryServiceTest {
-    
+
     @Test
     public void testExecuteSuccess() throws Throwable {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         // create a valid query
         String queryId = createQuery(authUser, createParams());
-        
+
         // pump enough results into the queue to trigger a complete page
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         int pageSize = queryStatus.getQuery().getPagesize();
-        
+
         // test field value pairings
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add("LOKI", "ALLIGATOR");
         fieldValues.add("LOKI", "CLASSIC");
-        
+
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
-        
+
         // @formatter:off
         publishEventsToQueue(
                 queryId,
@@ -79,21 +79,23 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                 fieldValues,
                 "ALL");
         // @formatter:on
-        
+
         // make the execute call asynchronously
         Future<ResponseEntity<String>> future = execute(authUser, queryId);
-        
+
         // the response should come back right away
         ResponseEntity<String> response = future.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         // verify some headers
         Assertions.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
-        
+
         int pageNumber = 1;
-        
-        List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(response.getBody());
+
+        String body = response.getBody();
+        Assertions.assertNotNull(body, "expected response body: " + response);
+        List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(body);
         for (DefaultEventQueryResponse queryResponse : queryResponses) {
             // verify the query response
             // @formatter:off
@@ -108,7 +110,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                     pageSize,
                     Objects.requireNonNull(queryResponse));
             // @formatter:on
-            
+
             // validate one of the events
             DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
             // @formatter:off
@@ -118,7 +120,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                     event);
             // @formatter:on
         }
-        
+
         // verify that the next event was published
         Assertions.assertEquals(6, queryRequestEvents.size());
         // @formatter:off
@@ -154,19 +156,19 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     @Test
     public void testCreateAndExecuteSuccess() throws Throwable {
         DatawaveUserDetails authUser = createUserDetails();
-        
+
         final String query = TEST_QUERY_STRING + " CREATE_AND_NEXT:TEST";
-        
+
         MultiValueMap<String,String> params = createParams();
         params.set(DefaultQueryParameters.QUERY_STRING, query);
-        
+
         // make the execute call asynchronously
         Future<ResponseEntity<String>> future = createAndExecute(authUser, params);
-        
+
         long startTime = System.currentTimeMillis();
         QueryStatus queryStatus = null;
         while (queryStatus == null && (System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS) {
@@ -175,21 +177,22 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                 Thread.sleep(500);
             }
         }
-        
+
+        Assertions.assertNotNull(queryStatus);
         String queryId = queryStatus.getQueryKey().getQueryId();
-        
+
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStatus.getQuery().getPagesize();
-        
+
         // test field value pairings
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add("LOKI", "ALLIGATOR");
         fieldValues.add("LOKI", "CLASSIC");
-        
+
         // add a config object to the query status, which would normally be added by the executor service
         queryStatus.setConfig(new GenericQueryConfiguration());
         queryStorageCache.updateQueryStatus(queryStatus);
-        
+
         // @formatter:off
         publishEventsToQueue(
                 queryId,
@@ -197,19 +200,20 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                 fieldValues,
                 "ALL");
         // @formatter:on
-        
+
         // the response should come back right away
         ResponseEntity<String> response = future.get();
-        
+
         Assertions.assertEquals(200, response.getStatusCodeValue());
-        
+
         // verify some headers
         Assertions.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
-        
+
         int pageNumber = 1;
-        
-        Assertions.assertNotNull("expected response body: " + response, response.getBody());
-        List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(response.getBody());
+
+        String body = response.getBody();
+        Assertions.assertNotNull(body, "expected response body: " + response);
+        List<DefaultEventQueryResponse> queryResponses = parseXMLBaseQueryResponses(body);
         for (DefaultEventQueryResponse queryResponse : queryResponses) {
             // verify the query response
             // @formatter:off
@@ -224,7 +228,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                     pageSize,
                     Objects.requireNonNull(queryResponse));
             // @formatter:on
-            
+
             // validate one of the events
             DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
             // @formatter:off
@@ -234,7 +238,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                     event);
             // @formatter:on
         }
-        
+
         // verify that the next event was published
         Assertions.assertEquals(6, queryRequestEvents.size());
         // @formatter:off
@@ -270,37 +274,37 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
-    
+
     protected Future<ResponseEntity<String>> createAndExecute(DatawaveUserDetails authUser, MultiValueMap<String,String> map) {
         UriComponents uri = createUri("EventQuery/createAndExecute");
-        
+
         // not testing audit with this method
         auditIgnoreSetup();
-        
+
         MultiValueMap<String,String> headers = new LinkedMultiValueMap<>();
         headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE);
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, headers, HttpMethod.POST, uri);
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, String.class));
     }
-    
+
     protected Future<ResponseEntity<String>> execute(DatawaveUserDetails authUser, String queryId) {
         UriComponents uri = createUri(queryId + "/execute");
-        
+
         MultiValueMap<String,String> headers = new LinkedMultiValueMap<>();
         headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE);
-        
+
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, headers, HttpMethod.GET, uri);
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, String.class));
     }
-    
+
     private ObjectMapper createJSONObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JaxbAnnotationModule());
         mapper.configure(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME, true);
         return mapper;
     }
-    
+
     protected List<DefaultEventQueryResponse> parseJSONBaseQueryResponses(String responseBody) throws JsonProcessingException {
         String delimiter = "}{";
         ObjectMapper mapper = createJSONObjectMapper();
@@ -318,7 +322,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         }
         return baseResponses;
     }
-    
+
     protected List<DefaultEventQueryResponse> parseXMLBaseQueryResponses(String responseBody) throws JAXBException {
         String delimiter = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>";
         List<DefaultEventQueryResponse> baseResponses = new ArrayList<>();
@@ -326,11 +330,11 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         int end = responseBody.indexOf(delimiter, start + delimiter.length());
         while (end > start) {
             String stringResponse = responseBody.substring(start, end);
-            
+
             JAXBContext jaxbContext = JAXBContext.newInstance(DefaultEventQueryResponse.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             baseResponses.add((DefaultEventQueryResponse) unmarshaller.unmarshal(new StringReader(stringResponse)));
-            
+
             start = end;
             end = responseBody.indexOf(delimiter, start + delimiter.length());
             if (end == -1) {

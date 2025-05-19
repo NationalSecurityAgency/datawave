@@ -20,11 +20,11 @@ import datawave.security.util.ProxiedEntityUtils;
  */
 public class DatawaveUser implements Serializable {
     private static final long serialVersionUID = -6676807246749142999L;
-    
+
     public enum UserType {
         USER, SERVER
     }
-    
+
     public static final DatawaveUser ANONYMOUS_USER = new DatawaveUser(SubjectIssuerDNPair.of("ANONYMOUS"), UserType.USER, null, null, null, null, -1L);
     private final String name;
     private final String commonName;
@@ -39,17 +39,17 @@ public class DatawaveUser implements Serializable {
     private final Multimap<String,String> roleToAuthMapping;
     private final long creationTime;
     private final long expirationTime;
-    
+
     public DatawaveUser(SubjectIssuerDNPair dn, UserType userType, Collection<String> auths, Collection<String> roles,
                     Multimap<String,String> roleToAuthMapping, long creationTime) {
         this(dn, userType, null, auths, roles, roleToAuthMapping, creationTime, -1L);
     }
-    
+
     public DatawaveUser(SubjectIssuerDNPair dn, UserType userType, String email, Collection<String> auths, Collection<String> roles,
                     Multimap<String,String> roleToAuthMapping, long creationTime) {
         this(dn, userType, email, auths, roles, roleToAuthMapping, creationTime, -1L);
     }
-    
+
     @JsonCreator
     public DatawaveUser(@JsonProperty(value = "dn", required = true) SubjectIssuerDNPair dn,
                     @JsonProperty(value = "userType", required = true) UserType userType, @JsonProperty("email") String email,
@@ -72,64 +72,64 @@ public class DatawaveUser implements Serializable {
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     @JsonIgnore
     public String getCommonName() {
         return commonName;
     }
-    
+
     public String getLogin() {
         return login;
     }
-    
+
     public String getEmail() {
         return email;
     }
-    
+
     public SubjectIssuerDNPair getDn() {
         return dn;
     }
-    
+
     public UserType getUserType() {
         return userType;
     }
-    
+
     public Collection<String> getAuths() {
         return unmodifiableAuths;
     }
-    
+
     public Collection<String> getRoles() {
         return unmodifiableRoles;
     }
-    
+
     public Multimap<String,String> getRoleToAuthMapping() {
         return roleToAuthMapping;
     }
-    
+
     public long getCreationTime() {
         return creationTime;
     }
-    
+
     public long getExpirationTime() {
         return expirationTime;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         DatawaveUser that = (DatawaveUser) o;
-        
+
         return creationTime == that.creationTime && dn.equals(that.dn) && userType == that.userType && auths.equals(that.auths) && roles.equals(that.roles);
     }
-    
+
     @Override
     public int hashCode() {
         int result = dn.hashCode();
@@ -139,7 +139,7 @@ public class DatawaveUser implements Serializable {
         result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         return result;
     }
-    
+
     @Override
     public String toString() {
         return "DatawaveUser{" + "name='" + getName() + "'" + ", userType=" + getUserType() + ", auths=" + getAuths() + ", roles=" + getRoles()

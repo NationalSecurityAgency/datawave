@@ -396,7 +396,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 }
             }).collect(Collectors.toSet());
         } else {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
     }
 

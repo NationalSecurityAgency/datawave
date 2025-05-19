@@ -97,7 +97,10 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                         .withCompositeSeekThreshold(compositeSeekThreshold)
                         .withTypeMetadata(typeMetadata)
                         .withIvaratorSourcePool(ivaratorSourcePool)
-                        .withIteratorEnv(env);
+                        .withIteratorEnv(env)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver);
                 // @formatter:on
                 if (values != null) {
                     builder = builder.withValues(values);

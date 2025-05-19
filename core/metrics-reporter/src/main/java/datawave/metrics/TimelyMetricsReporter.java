@@ -42,13 +42,13 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     protected PrintWriter out;
     protected long connectTime = 0L;
     protected long backoff = 2000;
-    
+
     protected TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit) {
         super(registry, name, filter, rateUnit, durationUnit);
         this.timelyHost = timelyHost;
         this.timelyPort = timelyPort;
-        
+
         String host = "unknown";
         String rack = "unknown";
         try {
@@ -63,43 +63,43 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         } catch (UnknownHostException ignored) {
             // ignore - we just won't report our host name
         }
-        
+
         hostname = host;
         rackname = rack;
     }
-    
+
     @Override
     public void report(SortedMap<String,Gauge> gauges, SortedMap<String,Counter> counters, SortedMap<String,Histogram> histograms,
                     SortedMap<String,Meter> meters, SortedMap<String,Timer> timers) {
         final long time = System.currentTimeMillis();
-        
+
         if (!connect()) {
             return;
         }
-        
+
         for (Entry<String,Gauge> entry : gauges.entrySet()) {
             reportGauge(entry.getKey(), entry.getValue(), time);
         }
-        
+
         for (Entry<String,Counter> entry : counters.entrySet()) {
             reportCounter(entry.getKey(), entry.getValue(), time);
         }
-        
+
         for (Entry<String,Histogram> entry : histograms.entrySet()) {
             reportHistogram(entry.getKey(), entry.getValue(), time);
         }
-        
+
         for (Entry<String,Meter> entry : meters.entrySet()) {
             reportMeter(entry.getKey(), entry.getValue(), time);
         }
-        
+
         for (Entry<String,Timer> entry : timers.entrySet()) {
             reportTimer(entry.getKey(), entry.getValue(), time);
         }
-        
+
         flush();
     }
-    
+
     private void reportGauge(String name, Gauge<?> gauge, long time) {
         name = name.replaceAll(" ", "_");
         Object value = gauge.getValue();
@@ -113,12 +113,12 @@ public class TimelyMetricsReporter extends ScheduledReporter {
             }
         }
     }
-    
+
     private void reportCounter(String name, Counter value, long time) {
         name = name.replaceAll(" ", "_");
         reportMetric(name, "value", value.getCount(), "COUNTER", null, time);
     }
-    
+
     private void reportHistogram(String name, Histogram histogram, long time) {
         name = name.replaceAll(" ", "_");
         Snapshot snapshot = histogram.getSnapshot();
@@ -134,7 +134,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         reportMetric(name, "p99", snapshot.get99thPercentile(), "GAUGE", null, time);
         reportMetric(name, "p999", snapshot.get999thPercentile(), "GAUGE", null, time);
     }
-    
+
     private void reportMeter(String name, Metered meter, long time) {
         name = name.replaceAll(" ", "_");
         reportMetric(name, "count", meter.getCount(), "COUNTER", null, time);
@@ -143,7 +143,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         reportMetric(name, "m15_rate", convertRate(meter.getFifteenMinuteRate()), "GAUGE", getRateUnit(), time);
         reportMetric(name, "mean_rate", convertRate(meter.getMeanRate()), "GAUGE", getRateUnit(), time);
     }
-    
+
     private void reportTimer(String name, Timer timer, long time) {
         name = name.replaceAll(" ", "_");
         Snapshot snapshot = timer.getSnapshot();
@@ -157,18 +157,18 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         reportMetric(name, "p98", convertDuration(snapshot.get98thPercentile()), "GAUGE", getDurationUnit(), time);
         reportMetric(name, "p99", convertDuration(snapshot.get99thPercentile()), "GAUGE", getDurationUnit(), time);
         reportMetric(name, "p999", convertDuration(snapshot.get999thPercentile()), "GAUGE", getDurationUnit(), time);
-        
+
         reportMeter(name, timer, time);
     }
-    
+
     protected void reportMetric(String metricName, String sampleName, double value, String sampleType, String units, long time) {
         reportMetric(metricName, sampleName, String.format("%f", value), sampleType, units, time);
     }
-    
+
     protected void reportMetric(String metricName, String sampleName, long value, String sampleType, String units, long time) {
         reportMetric(metricName, sampleName, String.format("%d", value), sampleType, units, time);
     }
-    
+
     protected void reportMetric(String metricName, String sampleName, String value, String sampleType, String units, long time) {
         StringBuilder message = new StringBuilder();
         message.append(String.format("put %s %d %s host=%s rack=%s sample=%s sampleType=%s", metricName, time, value, hostname, rackname, sampleName,
@@ -177,20 +177,20 @@ public class TimelyMetricsReporter extends ScheduledReporter {
             message.append(" units=").append(units);
         }
         message.append("\n");
-        
+
         reportMetric(message.toString());
     }
-    
+
     protected synchronized void reportMetric(String timelyMetric) {
         out.write(timelyMetric);
     }
-    
+
     protected synchronized void flush() {
         if (out != null) {
             out.flush();
         }
     }
-    
+
     protected synchronized boolean connect() {
         boolean connected = true;
         if (sock == null || !sock.isConnected() || out.checkError()) {
@@ -216,7 +216,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         }
         return connected;
     }
-    
+
     @Override
     public void stop() {
         try {

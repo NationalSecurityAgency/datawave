@@ -24,7 +24,7 @@ import datawave.microservice.query.executor.status.cache.ExecutorStatusCache;
 @ConditionalOnProperty(name = "datawave.query.executor.status.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class ExecutorStatusCacheConfiguration {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     @Bean
     public ExecutorStatusCache executorStatusCache(@Qualifier("cacheInspectorFactory") Function<CacheManager,CacheInspector> cacheInspectorFactory,
                     CacheManager cacheManager) {

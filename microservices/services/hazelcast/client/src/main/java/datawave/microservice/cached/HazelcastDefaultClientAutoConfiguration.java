@@ -31,7 +31,7 @@ public class HazelcastDefaultClientAutoConfiguration extends HazelcastBaseClient
     public ClientConfig clientConfig(HazelcastClientProperties clientProperties) {
         return createClientConfig(clientProperties);
     }
-    
+
     /**
      * Normally, just producing a Hazelcast Config object would be enough for Spring Boot to use it and create a {@link HazelcastInstance}. However, that code
      * doesn't handle a {@link ClientConfig}, so we must produce our own instance with the client configuration we produce.

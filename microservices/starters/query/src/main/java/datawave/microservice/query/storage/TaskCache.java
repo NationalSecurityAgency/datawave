@@ -22,15 +22,15 @@ import datawave.microservice.query.remote.QueryRequest;
 @CacheConfig(cacheNames = TaskCache.CACHE_NAME)
 public class TaskCache {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String CACHE_NAME = "TaskCache";
-    
+
     private final LockableCacheInspector cacheInspector;
-    
+
     public TaskCache(LockableCacheInspector cacheInspector) {
         this.cacheInspector = cacheInspector;
     }
-    
+
     /**
      * This will create and store a new query task.
      *
@@ -48,10 +48,10 @@ public class TaskCache {
         logTask("Adding task", task);
         return task;
     }
-    
+
     /**
      * Update a stored query task with an updated checkpoint
-     * 
+     *
      * @param taskKey
      *            The task key to update
      * @param checkpoint
@@ -71,10 +71,10 @@ public class TaskCache {
         logTask("Updating task", task);
         return task;
     }
-    
+
     /**
      * Delete a task
-     * 
+     *
      * @param taskKey
      *            The task key
      */
@@ -84,10 +84,10 @@ public class TaskCache {
             log.debug("Deleted task " + taskKey);
         }
     }
-    
+
     /**
      * Return the task for a given task id and query key
-     * 
+     *
      * @param taskKey
      *            The task key
      * @return The query task
@@ -97,7 +97,7 @@ public class TaskCache {
         logTask("Retrieved", task, taskKey);
         return task;
     }
-    
+
     /**
      * Get the tasks for a query
      *
@@ -115,7 +115,7 @@ public class TaskCache {
         }
         return tasks;
     }
-    
+
     /**
      * Get the tasks for a query
      *
@@ -133,7 +133,7 @@ public class TaskCache {
         }
         return tasks;
     }
-    
+
     /**
      * Get the tasks counts for a query
      *
@@ -152,7 +152,7 @@ public class TaskCache {
         }
         return taskCounts.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
     }
-    
+
     /**
      * Get all tasks
      *
@@ -165,7 +165,7 @@ public class TaskCache {
         }
         return tasks.stream().filter(o -> o instanceof QueryTask).map(QueryTask.class::cast).collect(Collectors.toList());
     }
-    
+
     /**
      * Get the task descriptions for a specified query
      *
@@ -180,10 +180,10 @@ public class TaskCache {
         }
         return tasks;
     }
-    
+
     /**
      * For a list of tasks, return a list of task descriptions
-     * 
+     *
      * @param tasks
      *            A list of query tasks
      * @return A list of TaskDescription
@@ -195,7 +195,7 @@ public class TaskCache {
         }
         return descriptions;
     }
-    
+
     /**
      * Delete all tasks for a query
      *
@@ -210,7 +210,7 @@ public class TaskCache {
         }
         return deleted;
     }
-    
+
     /**
      * Clear out the cache
      *
@@ -220,10 +220,10 @@ public class TaskCache {
     public String clear() {
         return "Cleared " + CACHE_NAME + " cache";
     }
-    
+
     /**
      * A convenience method for logging a task
-     * 
+     *
      * @param msg
      *            The message
      * @param task
@@ -236,7 +236,7 @@ public class TaskCache {
             log.debug(msg + ' ' + (task == null ? "null task" : task.toDebug()));
         }
     }
-    
+
     /**
      * A convenience method for logging a task
      *
@@ -254,5 +254,5 @@ public class TaskCache {
             log.debug(msg + ' ' + (task == null ? "null task for " + key : task.toDebug()));
         }
     }
-    
+
 }

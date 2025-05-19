@@ -42,16 +42,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
                         MediaType.TEXT_HTML_VALUE, "text/x-yaml", "application/x-yaml"})
 @EnableConfigurationProperties(DataDictionaryProperties.class)
 public class DataDictionaryControllerV1<DESC extends DescriptionBase<DESC>,DICT extends DataDictionaryBase<DICT,META>,META extends MetadataFieldBase<META,DESC>,FIELD extends DictionaryFieldBase<FIELD,DESC>,FIELDS extends FieldsBase<FIELDS,FIELD,DESC>> {
-    
+
     private DataDictionaryControllerLogic dataDictionaryControllerLogic;
-    
+
     public DataDictionaryControllerV1(DataDictionaryProperties dataDictionaryConfiguration, DataDictionary<META,DESC,FIELD> dataDictionary,
                     ResponseObjectFactory<DESC,DICT,META,FIELD,FIELDS> responseObjectFactory, AccumuloConnectionService accumloConnectionService,
                     DictionaryServiceProperties dictionaryServiceProperties) {
         dataDictionaryControllerLogic = new DataDictionaryControllerLogic<>(dataDictionaryConfiguration, dataDictionary, responseObjectFactory,
                         accumloConnectionService, dictionaryServiceProperties);
     }
-    
+
     @GetMapping("/")
     @Timed(name = "dw.dictionary.data.get", absolute = true)
     public DataDictionaryBase<DICT,META> get(@RequestParam(required = false) String modelName, @RequestParam(required = false) String modelTableName,
@@ -59,14 +59,14 @@ public class DataDictionaryControllerV1<DESC extends DescriptionBase<DESC>,DICT 
                     @RequestParam(defaultValue = "") String dataTypeFilters, @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return dataDictionaryControllerLogic.get(modelName, modelTableName, metadataTableName, queryAuthorizations, dataTypeFilters, currentUser);
     }
-    
+
     @PostMapping(path = "/Descriptions", consumes = {MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     @Timed(name = "dw.dictionary.data.uploadDescriptions", absolute = true)
     public VoidResponse uploadDescriptions(@RequestBody FIELDS fields, @RequestParam(required = false) String modelName,
                     @RequestParam(required = false) String modelTable, @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return dataDictionaryControllerLogic.uploadDescriptions(fields, modelName, modelTable, currentUser);
     }
-    
+
     @Secured({"Administrator", "JBossAdministrator"})
     @PutMapping("/Descriptions/{datatype}/{fieldName}/{description}")
     @Timed(name = "dw.dictionary.data.setDescriptionPut", absolute = true)
@@ -75,7 +75,7 @@ public class DataDictionaryControllerV1<DESC extends DescriptionBase<DESC>,DICT 
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return dataDictionaryControllerLogic.setDescriptionPost(fieldName, datatype, description, modelName, modelTable, columnVisibility, currentUser);
     }
-    
+
     @Secured({"Administrator", "JBossAdministrator"})
     @PostMapping("/Descriptions")
     @Timed(name = "dw.dictionary.data.setDescriptionPost", absolute = true)
@@ -84,28 +84,28 @@ public class DataDictionaryControllerV1<DESC extends DescriptionBase<DESC>,DICT 
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return dataDictionaryControllerLogic.setDescriptionPost(fieldName, datatype, description, modelName, modelTable, columnVisibility, currentUser);
     }
-    
+
     @GetMapping("/Descriptions")
     @Timed(name = "dw.dictionary.data.allDescriptions", absolute = true)
     public FIELDS allDescriptions(@RequestParam(required = false) String modelName, @RequestParam(required = false) String modelTable,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return (FIELDS) dataDictionaryControllerLogic.allDescriptions(modelName, modelTable, currentUser);
     }
-    
+
     @GetMapping("/Descriptions/{datatype}")
     @Timed(name = "dw.dictionary.data.datatypeDescriptions", absolute = true)
     public FIELDS datatypeDescriptions(@PathVariable("datatype") String datatype, @RequestParam(required = false) String modelName,
                     @RequestParam(required = false) String modelTable, @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return (FIELDS) dataDictionaryControllerLogic.datatypeDescriptions(datatype, modelName, modelTable, currentUser);
     }
-    
+
     @GetMapping("/Descriptions/{datatype}/{fieldName}")
     @Timed(name = "dw.dictionary.data.fieldNameDescription", absolute = true)
     public FIELDS fieldNameDescription(@PathVariable String fieldName, @PathVariable String datatype, @RequestParam(required = false) String modelName,
                     @RequestParam(required = false) String modelTable, @AuthenticationPrincipal DatawaveUserDetails currentUser) throws Exception {
         return (FIELDS) dataDictionaryControllerLogic.fieldNameDescription(fieldName, datatype, modelName, modelTable, currentUser);
     }
-    
+
     @Secured({"Administrator", "JBossAdministrator"})
     @DeleteMapping("/Descriptions/{datatype}/{fieldName}")
     @Timed(name = "dw.dictionary.data.deleteDescription", absolute = true)

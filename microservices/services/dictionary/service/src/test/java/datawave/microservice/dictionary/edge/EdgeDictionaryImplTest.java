@@ -46,7 +46,7 @@ import datawave.webservice.dictionary.edge.MetadataBase;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
 public class EdgeDictionaryImplTest {
-    
+
     public static final String EDGE_TYPE = "TYPE";
     public static final String SOURCE_RELATIONSHIP = "OWNER";
     public static final String SINK_RELATIONSHIP = "PET";
@@ -57,17 +57,17 @@ public class EdgeDictionaryImplTest {
     public static final String SOURCE_FIELD = "M_E_123";
     public static final String SINK_FIELD = "M_E_123";
     public static final String EARLY_DATE_FIELD = "20130318";
-    
+
     private static final List<Key> EDGE_KEYS = createEdgeKeys();
     private static final Value EDGE_VALUE = createEdgeValue();
     private static final Collection<DefaultMetadata> METADATA = createMetadata();
-    
+
     SetMultimap<Key,Value> edgeMetadataRows;
     Method transformResultsMethod;
-    
+
     @Autowired
     private EdgeDictionary<DefaultEdgeDictionary,DefaultMetadata> impl;
-    
+
     @BeforeEach
     public void setUp() {
         edgeMetadataRows = HashMultimap.create();
@@ -76,7 +76,7 @@ public class EdgeDictionaryImplTest {
         }
         transformResultsMethod = getPrivateMethod("transformResults");
     }
-    
+
     private static List<Map.Entry<Key,Value>> permuteKeysAndEdges(List<Key> edgeKeys, Value... edgeValue) {
         ArrayList<Map.Entry<Key,Value>> list = new ArrayList<>();
         for (Key key : edgeKeys) {
@@ -86,7 +86,7 @@ public class EdgeDictionaryImplTest {
         }
         return list;
     }
-    
+
     @Test
     public void testNoOp() throws InvocationTargetException, IllegalAccessException {
         if (null == transformResultsMethod)
@@ -94,7 +94,7 @@ public class EdgeDictionaryImplTest {
         DefaultEdgeDictionary dictionary = (DefaultEdgeDictionary) transformResultsMethod.invoke(impl, HashMultimap.create());
         assertEquals(dictionary.getTotalResults(), 0L, "Should be empty");
     }
-    
+
     @Test
     public void testWorked() throws InvocationTargetException, IllegalAccessException {
         if (null == transformResultsMethod)
@@ -105,23 +105,23 @@ public class EdgeDictionaryImplTest {
         assertTrue(dictionary.getMetadataList().containsAll(METADATA),
                         "METADATA not in list.  returned list: " + dictionary.getMetadataList() + " expected: " + METADATA);
     }
-    
+
     @Test
     public void earliestDateFound() throws InvocationTargetException, IllegalAccessException {
         if (null == transformResultsMethod)
             fail();
-        
+
         DefaultEdgeDictionary dictionary = (DefaultEdgeDictionary) transformResultsMethod.invoke(impl, edgeMetadataRows);
-        
+
         List<? extends MetadataBase<DefaultMetadata>> metadata = dictionary.getMetadataList();
-        
+
         // Make sure that all Metadata in EdgeDictionary have the start date set to the EARLY_DATE_FIELD
         for (MetadataBase<DefaultMetadata> meta : metadata) {
             assertEquals(EARLY_DATE_FIELD, meta.getStartDate(), "Incorrect start date. Expected: " + EARLY_DATE_FIELD + " Found: " + meta.getStartDate());
-            
+
         }
     }
-    
+
     private Method getPrivateMethod(String methodName) {
         Class clas = EdgeDictionaryImpl.class;
         for (Method method : clas.getDeclaredMethods()) {
@@ -132,7 +132,7 @@ public class EdgeDictionaryImplTest {
         }
         return null;
     }
-    
+
     private static Value createEdgeValue() {
         // Extra Metadata values with different dates to ensure that the earliest date is chosen to be the start date
         // of collection. Early Date = 20130318
@@ -141,17 +141,17 @@ public class EdgeDictionaryImplTest {
         MetadataValue.Metadata value3 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate(EARLY_DATE_FIELD).build();
         MetadataValue.Metadata value4 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20140314").build();
         MetadataValue.Metadata value5 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130319").build();
-        
+
         MetadataValue.Builder valueBuilder = MetadataValue.newBuilder();
         valueBuilder.addAllMetadata(Collections.singletonList(value1));
         valueBuilder.addAllMetadata(Collections.singletonList(value2));
         valueBuilder.addAllMetadata(Collections.singletonList(value3));
         valueBuilder.addAllMetadata(Collections.singletonList(value4));
         valueBuilder.addAllMetadata(Collections.singletonList(value5));
-        
+
         return new Value(valueBuilder.build().toByteArray());
     }
-    
+
     private static ArrayList<Key> createEdgeKeys() {
         ArrayList<Key> result = new ArrayList<>();
         for (String currAttribute1 : SOURCE_ATTRIBUTE1) {
@@ -159,16 +159,16 @@ public class EdgeDictionaryImplTest {
         }
         return result;
     }
-    
+
     private static Key generateKeyForEdgeMetadata(String source_attribute1) {
         Text row = new Text(EDGE_TYPE + EdgeDictionary.COL_SEPARATOR + SOURCE_RELATIONSHIP + "-" + SINK_RELATIONSHIP);
         Text colf = ColumnFamilyConstants.COLF_EDGE;
         Text colq = new Text(source_attribute1 + "-" + SINK_ATTRIBUTE1);
         Text colv = new Text("");
-        
+
         return new Key(row, colf, colq, colv, Long.MAX_VALUE);
     }
-    
+
     private static Collection<DefaultMetadata> createMetadata() {
         Collection<DefaultMetadata> metadataList = new LinkedList<>();
         for (String source_attribute1 : SOURCE_ATTRIBUTE1) {
@@ -179,14 +179,14 @@ public class EdgeDictionaryImplTest {
             EventField field = new EventField();
             field.setSourceField(SOURCE_FIELD);
             field.setSinkField(SINK_FIELD);
-            
+
             metadata.setEventFields(Collections.singletonList(field));
             metadata.setStartDate(EARLY_DATE_FIELD);
             metadataList.add(metadata);
         }
         return metadataList;
     }
-    
+
     @ComponentScan(basePackages = "datawave.microservice")
     @Configuration
     public static class DefaultDatawaveEdgeDictionaryImplTestConfiguration {

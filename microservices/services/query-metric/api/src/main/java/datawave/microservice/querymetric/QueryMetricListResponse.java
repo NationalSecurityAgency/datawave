@@ -20,9 +20,9 @@ import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryMetricListResponse extends BaseQueryMetricListResponse<QueryMetric> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Creates the ModelAndView for the detailed query metrics page (querymetric.html)
      *
@@ -31,17 +31,17 @@ public class QueryMetricListResponse extends BaseQueryMetricListResponse<QueryMe
     @Override
     public ModelAndView createModelAndView() {
         ModelAndView mav = new ModelAndView();
-        
+
         mav.setViewName(viewName);
-        
+
         TreeMap<Date,QueryMetric> metricMap = new TreeMap<>(Collections.reverseOrder());
-        
+
         for (QueryMetric metric : this.getResult()) {
             metricMap.put(metric.getCreateDate(), metric);
         }
-        
+
         List<QueryMetricModel> metricModelList = new ArrayList<>();
-        
+
         for (QueryMetric metric : metricMap.values()) {
             QueryMetricModel metricModel = new QueryMetricModel(metric, basePath);
             for (PageMetric p : metric.getPageTimes()) {
