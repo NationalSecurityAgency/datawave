@@ -17,9 +17,9 @@ import datawave.query.model.DateFrequencyMap;
 import datawave.util.time.DateHelper;
 
 public class TestUtils {
-
+    
     private static final String NULL_BYTE = "\0";
-
+    
     /**
      * Write the given mutations to the specified table via the accumulo client.
      */
@@ -33,10 +33,10 @@ public class TestUtils {
             throw new RuntimeException(e);
         }
     }
-
+    
     /**
      * Return the set of dates contained within the start and end date
-     *
+     * 
      * @param startDateStr
      * @param endDateStr
      * @return
@@ -44,10 +44,10 @@ public class TestUtils {
     public static List<String> getDatesInRange(String startDateStr, String endDateStr) {
         Date startDate = DateHelper.parse(startDateStr);
         Date endDate = DateHelper.parse(endDateStr);
-
+        
         List<String> dates = new ArrayList<>();
         dates.add(startDateStr);
-
+        
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(startDate);
         while (true) {
@@ -59,10 +59,10 @@ public class TestUtils {
                 break;
             }
         }
-
+        
         return dates;
     }
-
+    
     /**
      * Create and a return a {@link DateFrequencyMap} map with the specified dates and counts. The args are expected to be alternating String dates and long
      * counts. For example:
@@ -75,7 +75,7 @@ public class TestUtils {
      * </pre>
      *
      * will result in a map with a count of 12 for the date 01-01-2020, 34 for the date 01-02-2020, and 55 for the date 01-03-2020.
-     *
+     * 
      * @param entries
      *            the entries
      * @return the date frequency map
@@ -91,7 +91,7 @@ public class TestUtils {
         }
         return map;
     }
-
+    
     /**
      * Create and a return a {@link DateFrequencyMap} map with counts for the specified date ranges. The args are expected to be alternating String date ranges
      * and long counts. For example:
@@ -104,7 +104,7 @@ public class TestUtils {
      *
      * will result in a map with a count of 12 for the dates 01-01-2020 to 01-05-2020, 34 for the dates 01-06-2020 to 01-10-2020, and 55 for the dates
      * 01-11-2020 to 01-15-2020.
-     *
+     * 
      * @param entries
      *            the entries
      * @return the date frequency map
@@ -125,7 +125,7 @@ public class TestUtils {
         }
         return map;
     }
-
+    
     private TestUtils() {
         throw new UnsupportedOperationException();
     }

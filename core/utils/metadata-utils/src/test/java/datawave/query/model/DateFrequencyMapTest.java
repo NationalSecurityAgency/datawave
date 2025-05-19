@@ -13,7 +13,7 @@ import java.util.Random;
 import org.junit.Test;
 
 public class DateFrequencyMapTest {
-
+    
     @Test
     public void testSetAndGet() {
         DateFrequencyMap map = new DateFrequencyMap();
@@ -46,7 +46,7 @@ public class DateFrequencyMapTest {
         assertNull(map.get("20200202"));
         assertNull(map.get("20200203"));
     }
-
+    
     @Test
     public void testSerialization() throws IOException {
         DateFrequencyMap map = new DateFrequencyMap();
@@ -58,9 +58,9 @@ public class DateFrequencyMapTest {
         DateFrequencyMap newMap = new DateFrequencyMap(serialized);
         assertEquals(map, newMap);
     }
-
+    
     private static final SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
-
+    
     private static String randomDate(Random rand) {
         long millis = rand.nextLong() % System.currentTimeMillis();
         Date d = new Date(millis);
