@@ -1303,18 +1303,18 @@ public class MetadataHelper {
             Key startKey = new Key(row);
             bs.setRange(new Range(startKey, startKey.followingKey(PartialKey.ROW)));
             bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
-            
+
             // If a datatype was specified, add a regex filter to only include entries with the datatype.
             if (datatype != null) {
                 IteratorSetting colqRegex = new IteratorSetting(50, RegExFilter.class);
                 RegExFilter.setRegexs(colqRegex, null, null, datatype + "\u0000.*", null, false);
                 bs.addScanIterator(colqRegex);
             }
-            
+
             for (Entry<Key,Value> entry : bs) {
                 Text colq = entry.getKey().getColumnQualifier();
                 int index = colq.find(NULL_BYTE);
-                
+
                 String remainder;
                 try {
                     remainder = Text.decode(colq.getBytes(), index + 1, colq.getLength() - (index + 1));
@@ -1322,7 +1322,7 @@ public class MetadataHelper {
                     log.warn("Could not deserialize colqual: {} ", entry.getKey());
                     continue;
                 }
-                
+
                 // This is an aggregated entry.
                 if (remainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
                     try {
@@ -1544,7 +1544,7 @@ public class MetadataHelper {
         try (Scanner scanner = ScannerHelper.createScanner(client, metadataTableName, auths)) {
             scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
-            
+
             // It's possible to find rows with column qualifiers in the format <datatype>\0AGGREGATED (aggregated entries) and/or <datatype>\0<date>
             // (non-aggregated entries). Filter out any non-aggregated entries that do not have the date in the column qualifier.
             IteratorSetting cqRegex = new IteratorSetting(50, RegExFilter.class);
@@ -1560,10 +1560,10 @@ public class MetadataHelper {
                 if (wrappedClient != null && client == wrappedClient.getReal()) {
                     writer = updateCache(entry, writer, wrappedClient);
                 }
-                
+
                 entry.getKey().getColumnQualifier(holder);
                 int offset = holder.find(NULL_BYTE);
-                
+
                 String datatype = Text.decode(holder.getBytes(), 0, offset);
                 String remainder;
                 try {
@@ -1572,7 +1572,7 @@ public class MetadataHelper {
                     log.warn("Could not deserialize colqual: {} ", entry.getKey());
                     continue;
                 }
-                
+
                 // This is an aggregated entry.
                 if (remainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
                     DateFrequencyMap map = new DateFrequencyMap(entry.getValue().get());
@@ -1810,7 +1810,7 @@ public class MetadataHelper {
             }
 
             final Text holder = new Text();
-            
+
             for (Entry<Key,Value> entry : scanner) {
                 // if this is the real connector, and wrapped connector is not null, it means
                 // that we didn't get a hit in the cache. So, we will update the cache with the
@@ -1821,7 +1821,7 @@ public class MetadataHelper {
 
                 entry.getKey().getColumnQualifier(holder);
                 int offset = holder.find(NULL_BYTE);
-                
+
                 // Extract the datatype and the remainder of the colq.
                 String datatype;
                 String remainder;
@@ -1832,14 +1832,14 @@ public class MetadataHelper {
                     log.trace("Could not deserialize colqual: {} ", entry.getKey());
                     continue;
                 }
-                
+
                 // If this is the first datatype we've seen, or a new datatype (if a datatype filter was not specified) was seen, update the prev datatype seen
                 // and do not skip to the next aggregated entry.
                 if (prevDatatype == null || !prevDatatype.equals(datatype)) {
                     prevDatatype = datatype;
                     skipToAggregated = false;
                 }
-                
+
                 // This is an aggregated entry with counts for multiple dates. These entries have the colq format <datatype>\0AGGREGATED, and will thus be
                 // sorted after entries with the colq format <datatype>\0<yyyyMMdd>. Check if the earliest date in the aggregated counts map is earlier than
                 // any dates seen thus far.
@@ -1877,7 +1877,7 @@ public class MetadataHelper {
                 }
             }
         }
-        
+
         // Parse and return the date.
         Date date = null;
         if (earliestDate != null) {
@@ -1904,7 +1904,7 @@ public class MetadataHelper {
         Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_I, minThreshold);
         return filteredFieldIndexHoles(allHoles, fields, datatypes);
     }
-    
+
     private Map<String,Map<String,IndexFieldHole>> filteredFieldIndexHoles(Map<String,Map<String,IndexFieldHole>> allHoles, Set<String> fields,
                     Set<String> datatypes) {
         if (fields.isEmpty() || fields == null) {
@@ -1923,7 +1923,7 @@ public class MetadataHelper {
             }
         }
     }
-    
+
     private Map.Entry<String,Map<String,IndexFieldHole>> filterDatatypes(Map.Entry<String,Map<String,IndexFieldHole>> holes, Set<String> datatypes) {
         return new UnmodifiableMapEntry(holes.getKey(), holes.getValue().entrySet().stream().filter(e -> datatypes.contains(e.getKey()))
                         .collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue())));
