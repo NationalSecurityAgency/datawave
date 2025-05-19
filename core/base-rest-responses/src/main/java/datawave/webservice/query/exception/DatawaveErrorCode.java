@@ -1,7 +1,5 @@
 package datawave.webservice.query.exception;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Enum to define error codes for the web service
  *
