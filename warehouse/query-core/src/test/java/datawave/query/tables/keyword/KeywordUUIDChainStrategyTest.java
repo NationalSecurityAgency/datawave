@@ -33,7 +33,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.function.serializer.DocumentSerializer;
-import datawave.query.util.keyword.KeywordResults;
+import datawave.util.keyword.KeywordResults;
 
 public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 

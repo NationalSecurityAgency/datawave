@@ -26,6 +26,7 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
     private int maxKeywords = YakeKeywordExtractor.DEFAULT_KEYWORD_COUNT;
     private float maxScore = YakeKeywordExtractor.DEFAULT_MAX_SCORE_THRESHOLD;
     private int maxContentChars = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
+    private int maxCloudTags = 0; // no limit by default
 
     private List<String> viewNameList = List.of(KeywordExtractingIterator.DEFAULT_VIEW_NAMES);
 
@@ -110,6 +111,14 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
 
     public void setPreferredViews(List<String> viewNameList) {
         this.viewNameList = viewNameList;
+    }
+
+    public int getMaxCloudTags() {
+        return maxCloudTags;
+    }
+
+    public void setMaxCloudTags(int maxCloudTags) {
+        this.maxCloudTags = maxCloudTags;
     }
 
     /**
