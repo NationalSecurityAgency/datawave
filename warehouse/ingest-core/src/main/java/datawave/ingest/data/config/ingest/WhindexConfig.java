@@ -1,5 +1,7 @@
 package datawave.ingest.data.config.ingest;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -37,8 +39,9 @@ public class WhindexConfig {
     private final boolean overloaded;
 
     private WhindexConfig(Builder builder) {
+
         this.valueField = builder.valueField;
-        this.values = builder.values;
+        this.values = ImmutableList.copyOf(builder.values);
         this.sourceField = builder.sourceField;
         this.destField = builder.destField;
         this.overloaded = builder.overloaded;

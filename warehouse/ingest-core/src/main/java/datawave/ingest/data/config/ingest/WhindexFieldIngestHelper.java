@@ -64,10 +64,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     /**
      * Maps a value-field name to the set of WhindexConfig instances that should fire when that field's values match.
      */
-    private final Multimap<String,WhindexConfig> valueFieldsToWhindexConfigs = HashMultimap.create();
+    private ImmutableMultimap<String,WhindexConfig> valueFieldsToWhindexConfigs;
 
     /** All destination fields produced by any built configs (used in {@link #isWhindexField(String)}). */
-    private final Set<String> destinationFields = new HashSet<>();
+    private ImmutableSet<String> destinationFields;
 
     /**
      * Create a new helper bound to the given data type.
@@ -91,6 +91,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     @Override
     public void setup(Configuration config) {
         try {
+
+            HashMultimap<String, WhindexConfig> vfToWindexCfg = HashMultimap.create();
+            Set<String> dstFields = new HashSet<>();
+
             String prefix = type.typeName() + "." + WHINDEX_RULES + ".";
             Map<String,String> properties = config.getPropsWithPrefix(prefix);
             Map<String,WhindexConfig.Builder> builders = new HashMap<>();
@@ -123,7 +127,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
 
                     case DST_FIELD:
                         builder.withDestField(val);
-                        destinationFields.add(val);
+                        dstFields.add(val);
                         break;
 
                     case VALUES:
@@ -138,8 +142,11 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
 
             // Build all configs and populate the multimap
             for (WhindexConfig cfg : builders.values().stream().map(WhindexConfig.Builder::build).collect(Collectors.toList())) {
-                valueFieldsToWhindexConfigs.put(cfg.getValueField(), cfg);
+                vfToWindexCfg.put(cfg.getValueField(), cfg);
             }
+
+            valueFieldsToWhindexConfigs = ImmutableMultimap.<String, WhindexConfig>builder().putAll(vfToWindexCfg).build();
+            destinationFields = ImmutableSet.<String>builder().addAll(dstFields).build();
 
             log.debug("Loaded Whindex configs: " + valueFieldsToWhindexConfigs.entries());
         } catch (Exception e) {
@@ -148,8 +155,10 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * Applies all configured Whindex rules to the given event map. For each config whose <code>valueField</code> has a triggering value, copies all entries
-     * from the <code>sourceField</code> into the new <code>destField</code>, optionally deleting the source.
+     * Parses the {@param eventMap} applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b>
+     * their requirements met by the entries in the {@param eventMap}. Once these rules have been applied,
+     * all srcFields that were used to create a new whindexField and are marked as overloaded are removed
+     * from the eventMap.
      *
      * @param eventMap
      *            the original multimap of field -> values
@@ -213,7 +222,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
      */
     @Override
     public ImmutableMultimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
-        return ImmutableMultimap.copyOf(valueFieldsToWhindexConfigs);
+        return valueFieldsToWhindexConfigs;
     }
 
     /**
