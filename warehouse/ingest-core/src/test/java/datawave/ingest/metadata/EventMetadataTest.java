@@ -570,7 +570,6 @@ public class EventMetadataTest {
         private final ArrayListMultimap<String,datawave.data.type.Type<?>> dataTypes = ArrayListMultimap.create();
         private final Set<String> whindexFields = new HashSet<>();
 
-
         public IngestHelper(Multimap<String,NormalizedContentInterface> fieldValues) {
             super(fieldValues);
         }
