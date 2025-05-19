@@ -4,11 +4,13 @@ FROM ${docker.image.prefix}datawave-stack-accumulo:${docker.image.accumulo.tag}
 
 USER root
 
+# Keep one non-COPY operation between COPY operations. A failure may occur if the destination dir is unchanged and
+# is followed by a second COPY operation. This is related to OverlayFS and its native overlay diff feature.
 COPY --from=hadoop  /usr/local/hadoop/  /usr/local/hadoop/
-COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
-
 RUN adduser datawave -g hadoop \
     --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
+COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
+
 RUN yum -y install epel-release && \
  yum install -y pdsh && \
  yum install -y genders && \

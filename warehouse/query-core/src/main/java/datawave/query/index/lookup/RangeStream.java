@@ -486,6 +486,17 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         } else if (instance.isType(INDEX_HOLE)) {
             return ScannerStream.delayed(node);
         } else if (instance.isType(BOUNDED_RANGE)) {
+            LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
+            if (range == null) {
+                throw new RuntimeException("BoundedRange was null");
+            }
+
+            if (isIndexed(range.getFieldName(), config.getIndexedFields())) {
+                JexlNode wrapped = JexlNodes.wrap(node);
+                ShardSpecificIndexIterator iter = new ShardSpecificIndexIterator(wrapped, getNumShardFinder(), config.getBeginDate(), config.getEndDate());
+                return ScannerStream.withData(iter, wrapped);
+            }
+
             // here we must have a bounded range that was not expanded, so it must not be expandable via the index
             return ScannerStream.delayed(node);
         } else {
@@ -908,6 +919,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             }
             try (Scanner scanner = client.createScanner(TableName.METADATA)) {
                 scanner.setRange(Range.exact(NumShards.NUM_SHARDS, NumShards.NUM_SHARDS_CF));
+                int scannedKeys = 0;
                 for (Map.Entry<Key,Value> entry : scanner) {
                     // num_shards ns:date_shards
                     // num_shards ns:20050207_17
@@ -917,8 +929,13 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                         continue;
                     }
 
+                    scannedKeys++;
                     String[] parts = cq.split("_");
                     cache.put(parts[0], Integer.parseInt(parts[1]));
+                }
+
+                if (scannedKeys == 0) {
+                    log.fatal("no entries in num_shards cache");
                 }
             } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
                 // an exception here shouldn't kill the query

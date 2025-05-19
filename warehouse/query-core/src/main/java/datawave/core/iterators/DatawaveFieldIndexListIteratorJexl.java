@@ -101,13 +101,17 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     }
 
     @Override
-    public String toString() {
+    protected String toStringImpl(boolean includeQueryId) {
         StringBuilder builder = new StringBuilder();
-        if (fst != null)
+        if (fst != null) {
             builder.append("DatawaveFieldIndexFSTIteratorJexl");
-        else
+        } else {
             builder.append("DatawaveFieldIndexListIteratorJexl");
-        builder.append(" (").append(queryId).append(") {fName=").append(getFieldName()).append(", negated=").append(isNegated()).append("}");
+        }
+        if (includeQueryId) {
+            builder.append(" (").append(queryId).append(")");
+        }
+        builder.append(" {fName=").append(getFieldName()).append(", negated=").append(isNegated()).append("}");
         return builder.toString();
     }
 

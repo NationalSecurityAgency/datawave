@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>7.22.0-SNAPSHOT</version>
+        <version>7.23.0-SNAPSHOT</version>
     </parent>
     <artifactId>spring-framework-integration</artifactId>
     <packaging>pom</packaging>
@@ -210,6 +210,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skipTests>${skipUTs}</skipTests>
                     <argLine>@{argLine}</argLine>
                     <reuseForks>false</reuseForks>
                     <additionalClasspathElements>

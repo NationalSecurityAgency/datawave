@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.22.0-SNAPSHOT</version>
+        <version>7.23.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
@@ -510,6 +510,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
+                        <skipTests>${skipUTs}</skipTests>
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
