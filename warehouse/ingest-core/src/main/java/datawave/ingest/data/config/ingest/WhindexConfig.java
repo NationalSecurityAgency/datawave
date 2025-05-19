@@ -1,9 +1,9 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 import java.util.Objects;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Container class for keeping track of configuration rules related to Whindex entries.

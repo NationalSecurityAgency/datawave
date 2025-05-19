@@ -17,9 +17,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.LinkedListMultimap;
-import datawave.data.type.StringType;
-import datawave.ingest.data.config.ingest.WhindexFieldIngestHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -32,6 +29,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.IdentityDataType;
@@ -39,11 +37,13 @@ import datawave.TestAbstractContentIngestHelper;
 import datawave.TestBaseIngestHelper;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.data.type.StringType;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.data.config.ingest.WhindexFieldIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class EventMetadataTest {
@@ -426,11 +426,9 @@ public class EventMetadataTest {
     @Test
     public void testWhindexFieldsInfo() {
 
-        /** QUESTION CHUNK 1:
-         *  How does `givenFieldValue()` relate to whindex data?
-         *  Does `field` == `row_id`?
-         *  If so, where does `wiki` vs `wiki.whindex.rules` vs `wiki.whindex.rules.<id>.<cfg>` go?
-         *  `value` is not referenced anywhere in the other test. What is its purpose?
+        /**
+         * QUESTION CHUNK 1: How does `givenFieldValue()` relate to whindex data? Does `field` == `row_id`? If so, where does `wiki` vs `wiki.whindex.rules` vs
+         * `wiki.whindex.rules.<id>.<cfg>` go? `value` is not referenced anywhere in the other test. What is its purpose?
          */
         givenFieldValue("wiki.whindex.rules.1.value_field", "xValueField");
         givenFieldValue("wiki.whindex.rules.1.src_field", "xSourceField");
@@ -447,7 +445,6 @@ public class EventMetadataTest {
         givenFieldValue("dst_field", "xDestField");
         givenFieldValue("values", "xTestValue1,xTestValue2,xTestValue3,xTestValue4");
 
-
         long loadDate = getMillis("20140404");
         givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
 
@@ -455,11 +452,10 @@ public class EventMetadataTest {
         WhindexIngestHelper helper = createWhindexIngestHelper();
         // Type type = new Type("wiki", null, null, null, 0, null);
 
-
         helper.addDataType("wiki", new StringType());
 
-        /** QUESTION CHUNK 2:
-         * Am I safe to assume that this creates a wiki.whindex.rules.<id>.<cfg> for each cfg value for each datatype?
+        /**
+         * QUESTION CHUNK 2: Am I safe to assume that this creates a wiki.whindex.rules.<id>.<cfg> for each cfg value for each datatype?
          */
         // Init the event metadata and add the event.
         initEventMetadata();
@@ -471,8 +467,8 @@ public class EventMetadataTest {
         long eventDate2 = getMillis("20140403");
         eventMetadata.addEvent(helper, createMockEvent("wiki", eventDate2, helper), fieldValues, loadDate);
 
-        /** QUESTION CHUNK 3:
-         *  How are the entries supposed to look in the metadata table after ingest?
+        /**
+         * QUESTION CHUNK 3: How are the entries supposed to look in the metadata table after ingest?
          */
         // Validate the resulting bulk entries.
         collectBulkEntries();
@@ -520,7 +516,7 @@ public class EventMetadataTest {
         return new ContentIngestHelper(fieldValues);
     }
 
-    private WhindexIngestHelper createWhindexIngestHelper(){
+    private WhindexIngestHelper createWhindexIngestHelper() {
         return new WhindexIngestHelper(fieldValues);
     }
 

@@ -92,7 +92,7 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     public void setup(Configuration config) {
         try {
 
-            HashMultimap<String, WhindexConfig> vfToWindexCfg = HashMultimap.create();
+            HashMultimap<String,WhindexConfig> vfToWindexCfg = HashMultimap.create();
             Set<String> dstFields = new HashSet<>();
 
             String prefix = type.typeName() + "." + WHINDEX_RULES + ".";
@@ -145,8 +145,8 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
                 vfToWindexCfg.put(cfg.getValueField(), cfg);
             }
 
-            valueFieldsToWhindexConfigs = ImmutableMultimap.<String, WhindexConfig>builder().putAll(vfToWindexCfg).build();
-            destinationFields = ImmutableSet.<String>builder().addAll(dstFields).build();
+            valueFieldsToWhindexConfigs = ImmutableMultimap.<String,WhindexConfig> builder().putAll(vfToWindexCfg).build();
+            destinationFields = ImmutableSet.<String> builder().addAll(dstFields).build();
 
             log.debug("Loaded Whindex configs: " + valueFieldsToWhindexConfigs.entries());
         } catch (Exception e) {
@@ -155,10 +155,9 @@ public class WhindexFieldIngestHelper implements WhindexIngest {
     }
 
     /**
-     * Parses the {@param eventMap} applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b>
-     * their requirements met by the entries in the {@param eventMap}. Once these rules have been applied,
-     * all srcFields that were used to create a new whindexField and are marked as overloaded are removed
-     * from the eventMap.
+     * Parses the {@param eventMap} applying each Whindex rule initalized via {@link #setup(Configuration)} that have <b>all</b> their requirements met by the
+     * entries in the {@param eventMap}. Once these rules have been applied, all srcFields that were used to create a new whindexField and are marked as
+     * overloaded are removed from the eventMap.
      *
      * @param eventMap
      *            the original multimap of field -> values
