@@ -45,7 +45,7 @@ import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
