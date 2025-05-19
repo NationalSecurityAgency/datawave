@@ -423,7 +423,7 @@ public class EventMetadata implements RawRecordMetadata {
         addIndexedFieldToMetadata(bulkData, this.compositeFieldsInfo);
         addIndexedFieldToMetadata(bulkData, this.compositeSeparators);
 
-        addIndexedFieldToMetadata(bulkData, this.whindexFieldsInfo);
+        addWhindexFieldsToMetadata(bulkData, this.whindexFieldsInfo);
 
         addToLoadDates(bulkData, this.indexedFieldsLoadDateCounts);
         addToLoadDates(bulkData, this.reverseIndexedFieldsLoadDateCounts);
@@ -481,7 +481,7 @@ public class EventMetadata implements RawRecordMetadata {
      * @param earliestDates
      *            metadata containing a mapping of field names to their earliest dates.
      */
-    protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithEarliestDate earliestDates) {
+    protected void addWhindexFieldsToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithEarliestDate earliestDates) {
         for (MetadataWithEarliestDate.Components entry : earliestDates.entries()) {
             long earliestDate = entry.getEarliestDate();
             Text fieldName = new Text(entry.getFieldName());

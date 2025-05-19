@@ -421,66 +421,69 @@ public class EventMetadataTest {
     }
 
     /**
-     * Test ingesting an event for a field that should be targeted for term frequencies.
+     * Test ingesting a single event with a whindex field.
      */
     @Test
-    public void testWhindexFieldsInfo() {
-
-        /** QUESTION CHUNK 1:
-         *  How does `givenFieldValue()` relate to whindex data?
-         *  Does `field` == `row_id`?
-         *  If so, where does `wiki` vs `wiki.whindex.rules` vs `wiki.whindex.rules.<id>.<cfg>` go?
-         *  `value` is not referenced anywhere in the other test. What is its purpose?
-         */
-        givenFieldValue("wiki.whindex.rules.1.value_field", "xValueField");
-        givenFieldValue("wiki.whindex.rules.1.src_field", "xSourceField");
-        givenFieldValue("wiki.whindex.rules.1.delete_src_field", "true");
-        givenFieldValue("wiki.whindex.rules.1.dst_field", "xDestField");
-        givenFieldValue("wiki.whindex.rules.1.values", "xTestValue1,xTestValue2,xTestValue3,xTestValue4");
-
-        /**
-         * Upon further inspection, this seems like it may be the correct way to do it.
-         */
-        givenFieldValue("value_field", "xValueField");
-        givenFieldValue("src_field", "xSourceField");
-        givenFieldValue("delete_src_field", "true");
-        givenFieldValue("dst_field", "xDestField");
-        givenFieldValue("values", "xTestValue1,xTestValue2,xTestValue3,xTestValue4");
-
-
+    public void testSingleWhindexEvent() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
         long loadDate = getMillis("20140404");
         givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
 
         // Configure the helper interface.
-        WhindexIngestHelper helper = createWhindexIngestHelper();
-        // Type type = new Type("wiki", null, null, null, 0, null);
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+        helper.addWhindexField("FIELD_1");
 
-
-        helper.addDataType("wiki", new StringType());
-
-        /** QUESTION CHUNK 2:
-         * Am I safe to assume that this creates a wiki.whindex.rules.<id>.<cfg> for each cfg value for each datatype?
-         */
         // Init the event metadata and add the event.
         initEventMetadata();
-        long eventDate1 = getMillis("20140402");
-        eventMetadata.addEvent(helper, createMockEvent("wiki", eventDate1, helper), fieldValues, loadDate);
-        eventMetadata.addEvent(helper, createMockEvent("wiki", eventDate1, helper), fieldValues, loadDate);
-        eventMetadata.addEvent(helper, createMockEvent("wiki", eventDate1, helper), fieldValues, loadDate);
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
 
-        long eventDate2 = getMillis("20140403");
-        eventMetadata.addEvent(helper, createMockEvent("wiki", eventDate2, helper), fieldValues, loadDate);
-
-        /** QUESTION CHUNK 3:
-         *  How are the entries supposed to look in the metadata table after ingest?
-         */
         // Validate the resulting bulk entries.
         collectBulkEntries();
-        assertTotalBulkEntries(3);
-        assertContainsMetadataTableEntry("APPLE", "f", "wiki" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
-        assertContainsMetadataTableEntry("APPLE", "i", "wiki" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
-        assertContainsMetadataTableEntry("APPLE", "wcd", "wiki" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertTotalBulkEntries(5);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "wcd", "xyzabc" + DELIMITER + "20140402", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+    }
 
+    /**
+     * Test ingesting multiple events with the same whindex field/datatype combo, but different event dates.
+     */
+    @Test
+    public void testOnlyEarliestWhindexEventsRetained() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+        helper.addWhindexField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long earlierEventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", earlierEventDate, helper), fieldValues, loadDate);
+        long laterEventDate = getMillis("20150512");
+        long laterLoadDate = getMillis("20150510");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", laterEventDate, helper), fieldValues, laterLoadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(7);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", laterEventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", earlierEventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20150512", laterEventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", laterEventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", earlierEventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20150512", laterEventDate, encodeCount(1L));
+        // Whindex entry (wcd) only created for FIELD_1 with earliest event date
+        assertContainsMetadataTableEntry("FIELD_1", "wcd", "xyzabc" + DELIMITER + "20140402", earlierEventDate, NULL_VALUE);
     }
 
     // Return the given date as millis.
@@ -518,10 +521,6 @@ public class EventMetadataTest {
     // Return a new ContentIngestHelper.
     private ContentIngestHelper createContentIngestHelper() {
         return new ContentIngestHelper(fieldValues);
-    }
-
-    private WhindexIngestHelper createWhindexIngestHelper(){
-        return new WhindexIngestHelper(fieldValues);
     }
 
     // Collect the bulk metadata entries from the event metadata instance.
@@ -569,6 +568,8 @@ public class EventMetadataTest {
     private static class IngestHelper extends TestBaseIngestHelper {
 
         private final ArrayListMultimap<String,datawave.data.type.Type<?>> dataTypes = ArrayListMultimap.create();
+        private final Set<String> whindexFields = new HashSet<>();
+
 
         public IngestHelper(Multimap<String,NormalizedContentInterface> fieldValues) {
             super(fieldValues);
@@ -581,6 +582,15 @@ public class EventMetadataTest {
 
         private void addDataType(String field, datawave.data.type.Type<?> dataType) {
             dataTypes.put(field, dataType);
+        }
+
+        @Override
+        public boolean isWhindexField(String field) {
+            return whindexFields.contains(field);
+        }
+
+        private void addWhindexField(String field) {
+            this.whindexFields.add(field);
         }
     }
 
@@ -613,34 +623,6 @@ public class EventMetadataTest {
 
         private void addIndexListField(String field) {
             this.indexListFields.add(field);
-        }
-
-        @Override
-        public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-            return dataTypes.get(fieldName);
-        }
-
-        private void addDataType(String field, datawave.data.type.Type<?> dataType) {
-            dataTypes.put(field, dataType);
-        }
-    }
-
-    private static class WhindexIngestHelper extends TestAbstractContentIngestHelper {
-
-        private final ArrayListMultimap<String,datawave.data.type.Type<?>> dataTypes = ArrayListMultimap.create();
-        private final Set<String> whindexFields = new HashSet<>();
-
-        public WhindexIngestHelper(Multimap<String,NormalizedContentInterface> fieldValues) {
-            super(fieldValues);
-        }
-
-        @Override
-        public boolean isWhindexField(String field) {
-            return whindexFields.contains(field);
-        }
-
-        private void addWhindexField(String field) {
-            this.whindexFields.add(field);
         }
 
         @Override
