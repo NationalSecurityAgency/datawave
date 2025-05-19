@@ -45,17 +45,17 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class MetadataHelperTest {
-    
+
     private static final String TABLE_METADATA = "metadata";
     private static final String[] AUTHS = {"FOO"};
     private static final Set<Authorizations> AUTHORIZATIONS = Collections.singleton(new Authorizations(AUTHS));
     private static final String NULL_BYTE = "\0";
-    
+
     private AccumuloClient accumuloClient;
     private MetadataHelper helper;
-    
+
     private final List<Mutation> mutations = new ArrayList<>();
-    
+
     @BeforeAll
     static void beforeAll() throws URISyntaxException {
         File dir = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(".")).toURI());
@@ -69,7 +69,7 @@ public class MetadataHelperTest {
         if (!accumuloClient.tableOperations().exists(TABLE_METADATA)) {
             accumuloClient.tableOperations().create(TABLE_METADATA);
         }
-        
+
         helper = new MetadataHelper(createAllFieldMetadataHelper(), Collections.emptySet(), accumuloClient, TABLE_METADATA, AUTHORIZATIONS,
                         Collections.emptySet());
     }
@@ -86,24 +86,24 @@ public class MetadataHelperTest {
         accumuloClient.tableOperations().delete(TABLE_METADATA);
         this.mutations.clear();
     }
-    
+
     /**
      * Write the given mutations to the metadata table.
      */
     private void writeMutations() {
         TestUtils.writeMutations(accumuloClient, TABLE_METADATA, mutations);
     }
-    
+
     private void givenMutation(Mutation mutation) {
         this.mutations.add(mutation);
     }
-    
+
     private void givenMutation(String row, String columnFamily, String columnQualifier, Value value) {
         Mutation mutation = new Mutation(row);
         mutation.put(columnFamily, columnQualifier, value);
         givenMutation(mutation);
     }
-    
+
     private void givenNonAggregatedFrequencyRows(String row, Text colf, String datatype, String startDate, String endDate, long count) {
         Mutation mutation = new Mutation(row);
         Value value = new Value(VAR_LEN_ENCODER.encode(count));
@@ -111,14 +111,14 @@ public class MetadataHelperTest {
         dates.forEach((date) -> mutation.put(colf, new Text(datatype + NULL_BYTE + date), value));
         givenMutation(mutation);
     }
-    
+
     private void givenAggregatedFrequencyRow(String row, Text colf, String datatype, DateFrequencyMap map) {
         Mutation mutation = new Mutation(row);
         Value value = new Value(WritableUtils.toByteArray(map));
         mutation.put(colf, new Text(datatype + NULL_BYTE + FrequencyMetadataAggregator.AGGREGATED), value);
         givenMutation(mutation);
     }
-    
+
     /**
      * Tests for {@link MetadataHelper#getAllFields(Set)}.
      */
@@ -127,47 +127,47 @@ public class MetadataHelperTest {
         @Test
         public void testSingleFieldFilter() throws TableNotFoundException {
             givenMutation("rowA", "t", "dataTypeA", new Value("value"));
-            
+
             writeMutations();
-            
+
             Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.singleton("dataTypeA")));
             Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(null));
             Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.emptySet()));
         }
-        
+
         @Test
         public void testMultipleFieldFilter() throws TableNotFoundException {
             givenMutation("rowA", "t", "dataTypeA", new Value("value"));
             givenMutation("rowB", "t", "dataTypeB", new Value("value"));
-            
+
             writeMutations();
-            
+
             Assertions.assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
             Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(null));
             Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(Collections.emptySet()));
         }
-        
+
         @Test
         public void testMultipleFieldFilter2() throws TableNotFoundException {
             givenMutation("rowA", "t", "dataTypeA", new Value("value"));
             givenMutation("rowB", "t", "dataTypeB", new Value("value"));
             givenMutation("rowC", "t", "dataTypeC", new Value("value"));
-            
+
             writeMutations();
-            
+
             Assertions.assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
             Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(null));
             Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(Collections.emptySet()));
         }
     }
-    
+
     /**
      * Tests for {@link MetadataHelper#getCardinalityForField(String, Date, Date)} and
      * {@link MetadataHelper#getCardinalityForField(String, String, Date, Date)}.
      */
     @Nested
     public class GetCardinalityForFieldTests {
-        
+
         /**
          * Test against a table that has only non-aggregated entries as matches.
          */
@@ -179,13 +179,13 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "data", "20200101", "20200102", 1L); // No entries within date range.
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "csv", "20200101", "20200120", 1L); // Field does not match.
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 1L); // Field does not match.
-            
+
             writeMutations();
-            
+
             Assertions.assertEquals(24L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
             Assertions.assertEquals(12L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
         }
-        
+
         /**
          * Test against a table that has only aggregated entries as matches.
          */
@@ -207,11 +207,11 @@ public class MetadataHelperTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L)); // Field does not
                                                                                                                                                // match.
             writeMutations();
-            
+
             Assertions.assertEquals(33L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
             Assertions.assertEquals(12L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
         }
-        
+
         /**
          * Test against a table that has both aggregated and non-aggregated entries as matches.
          */
@@ -234,18 +234,18 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Assertions.assertEquals(51L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
             Assertions.assertEquals(21L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
         }
     }
-    
+
     /**
      * Tests for {@link MetadataHelper#getCountsByFieldInDayWithTypes(String, String, AccumuloClient, WrappedAccumuloClient)} (Map.Entry)}.
      */
     @Nested
     public class CountsByFieldInDayWithTypesTests {
-        
+
         /**
          * Test against a table that has only non-aggregated entries as matches.
          */
@@ -259,17 +259,17 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Map<String,Long> expected = new HashMap<>();
             expected.put("csv", 1L);
             expected.put("wiki", 2L);
             expected.put("maze", 3L);
-            
+
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes("NAME", "20200110", accumuloClient, null);
-            
+
             Assertions.assertEquals(expected, actual);
         }
-        
+
         /**
          * Test against a table that has only aggregated entries as matches.
          */
@@ -283,17 +283,17 @@ public class MetadataHelperTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             writeMutations();
-            
+
             Map<String,Long> expected = new HashMap<>();
             expected.put("csv", 5L);
             expected.put("wiki", 15L);
             expected.put("maze", 55L);
-            
+
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes("NAME", "20200102", accumuloClient, null);
-            
+
             Assertions.assertEquals(expected, actual);
         }
-        
+
         /**
          * Test against a table that has both aggregated and non-aggregated entries as matches.
          */
@@ -314,24 +314,24 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Map<String,Long> expected = new HashMap<>();
             expected.put("csv", 6L);
             expected.put("wiki", 15L);
             expected.put("maze", 55L);
-            
+
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes("NAME", "20200102", accumuloClient, null);
-            
+
             Assertions.assertEquals(expected, actual);
         }
     }
-    
+
     /**
      * Tests for {@link MetadataHelper#getEarliestOccurrenceOfFieldWithType(String, String, AccumuloClient, WrappedAccumuloClient)}.
      */
     @Nested
     public class GetEarliestOccurrenceOfFieldWithTypeTests {
-        
+
         /**
          * Test against a table that has only non-aggregated entries as matches.
          */
@@ -345,11 +345,11 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
             Assertions.assertEquals(DateHelper.parse("20200105"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }
-        
+
         /**
          * Test against a table that has only aggregated entries as matches.
          */
@@ -363,11 +363,11 @@ public class MetadataHelperTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             writeMutations();
-            
+
             Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
             Assertions.assertEquals(DateHelper.parse("20200102"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }
-        
+
         /**
          * Test against a table that has both aggregated and non-aggregated entries as matches.
          */
@@ -387,7 +387,7 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
             Assertions.assertEquals(DateHelper.parse("20200103"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }

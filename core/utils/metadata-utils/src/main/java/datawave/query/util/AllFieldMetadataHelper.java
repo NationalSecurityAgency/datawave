@@ -849,7 +849,7 @@ public class AllFieldMetadataHelper {
         String date = identifier.getValue();
 
         final HashMap<String,Long> datatypeToCounts;
-        
+
         AccumuloClient clientToUse = accumuloClient;
         if (clientToUse instanceof WrappedAccumuloClient) {
             clientToUse = ((WrappedAccumuloClient) clientToUse).getReal();
@@ -857,7 +857,7 @@ public class AllFieldMetadataHelper {
         try (Scanner scanner = ScannerHelper.createScanner(clientToUse, metadataTableName, auths)) {
             scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
-            
+
             // It's possible to find rows with column qualifiers in the format <datatype> (aggregated entries) and/or <datatype>\0<date> (non-aggregated
             // entries).
             // Filter out any non-aggregated entries that does not have the date in the column qualifier.
@@ -865,13 +865,13 @@ public class AllFieldMetadataHelper {
             // Allow any entries that do not contain the null byte delimiter, or contain it with the target date directly afterwards.
             RegExFilter.setRegexs(cqRegex, null, null, "^(.*\u0000" + FrequencyMetadataAggregator.AGGREGATED + ")$|^(.*\u0000" + date + ")$", null, false);
             scanner.addScanIterator(cqRegex);
-            
+
             datatypeToCounts = Maps.newHashMap();
             for (Entry<Key,Value> countEntry : scanner) {
                 String colq = countEntry.getKey().getColumnQualifier().toString();
                 int offset = colq.indexOf(NULL_BYTE);
                 String datatype = colq.substring(0, offset);
-                
+
                 String remainder = colq.substring((offset + 1));
                 if (remainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
                     DateFrequencyMap countMap = new DateFrequencyMap(countEntry.getValue().get());
@@ -882,7 +882,7 @@ public class AllFieldMetadataHelper {
                 } else {
                     datatypeToCounts.merge(datatype, MetadataHelper.readLongFromValue(countEntry.getValue()), Long::sum);
                 }
-                
+
             }
         }
 
@@ -1279,7 +1279,7 @@ public class AllFieldMetadataHelper {
         Multimap<String,String> indexedFieldMap = (targetColumnFamily == ColumnFamilyConstants.COLF_I ? loadIndexedFields() : loadReverseIndexedFields());
         Set<String> indexedFields = new HashSet<>();
         indexedFields.addAll(indexedFieldMap.values());
-        
+
         // Ensure the minThreshold is a percentage in the range 0%-100%.
         if (minThreshold > 1.0d) {
             minThreshold = 1.0d;
@@ -1302,7 +1302,7 @@ public class AllFieldMetadataHelper {
 
             // Determine which range to use.
             bs.setRange(new Range());
-            
+
             FieldIndexHoleFinder finder = new FieldIndexHoleFinder(bs, minThreshold, indexedFields, Collections.emptySet());
             indexHoles = finder.findHoles();
         }
@@ -1435,7 +1435,7 @@ public class AllFieldMetadataHelper {
             long currCount;
             BOUNDARY_TYPE currBoundaryType;
             DateFrequencyMap currAggregatedCounts;
-            
+
             for (Map.Entry<Key,Value> entry : scanner) {
 
                 // Parse the current row.
@@ -1616,7 +1616,7 @@ public class AllFieldMetadataHelper {
                 fieldCount.increment(entry.getValue().getValue());
             }
         }
-        
+
         /**
          * Add the current date and count to the current target map for the given datatype.
          */

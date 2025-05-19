@@ -57,22 +57,22 @@ import datawave.query.model.IndexFieldHole;
 import datawave.util.time.DateHelper;
 
 class IndexFieldHoleTest {
-    
+
     private static final String TABLE_METADATA = "metadata";
     private static final String[] AUTHS = {"FOO"};
     private static final String NULL_BYTE = "\0";
     private AccumuloClient accumuloClient;
     private MetadataHelper helper;
-    
+
     private final List<Mutation> mutations = new ArrayList<>();
-    
+
     @BeforeAll
     static void beforeAll() throws URISyntaxException {
         File dir = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(".")).toURI());
         File targetDir = dir.getParentFile();
         System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
     }
-    
+
     /**
      * Set up the accumulo client and initialize the helper.
      */
@@ -90,7 +90,7 @@ class IndexFieldHoleTest {
                         allMetadataAuths);
         helper = new MetadataHelper(allHelper, allMetadataAuths, accumuloClient, TABLE_METADATA, auths, allMetadataAuths);
     }
-    
+
     /**
      * Clear the metadata table after each test.
      */
@@ -98,7 +98,7 @@ class IndexFieldHoleTest {
     void tearDown() throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         accumuloClient.tableOperations().deleteRows(TABLE_METADATA, null, null);
     }
-    
+
     /**
      * Write the given mutations to the metadata table.
      */
@@ -112,18 +112,18 @@ class IndexFieldHoleTest {
             throw new RuntimeException(e);
         }
     }
-    
+
     /**
      * Write the given mutations to the metadata table.
      */
     private void writeMutations() {
         TestUtils.writeMutations(accumuloClient, TABLE_METADATA, mutations);
     }
-    
+
     private void givenNonAggregatedFrequencyRows(String row, String colf, String datatype, String startDate, String endDate, long count) {
         givenNonAggregatedFrequencyRows(row, new Text(colf), datatype, startDate, endDate, count);
     }
-    
+
     private void givenNonAggregatedFrequencyRows(String row, Text colf, String datatype, String startDate, String endDate, long count) {
         Mutation mutation = new Mutation(row);
         Value value = new Value(VAR_LEN_ENCODER.encode(count));
@@ -131,46 +131,46 @@ class IndexFieldHoleTest {
         dates.forEach((date) -> mutation.put(colf, new Text(datatype + NULL_BYTE + date), value));
         givenMutation(mutation);
     }
-    
+
     private void givenIndexMarkerMutation(String row, String colf, String datatype, String date, boolean indexed) {
         Mutation mutation = new Mutation(row);
         mutation.put(colf, datatype + NULL_BYTE + date + NULL_BYTE + indexed, new Value());
         mutations.add(mutation);
     }
-    
+
     private void givenIndexMarkerMutation(String row, String colf, String datatype, String date) {
         Mutation mutation = new Mutation(row);
         mutation.put(colf, datatype, DateHelper.parse(date).getTime(), new Value());
         mutations.add(mutation);
     }
-    
+
     private void givenIndexMarkerMutation(String row, String colf, String datatype, String date, Class<?> typeClass) {
         Mutation mutation = new Mutation(row);
         mutation.put(colf, datatype + NULL_BYTE + typeClass.getName(), DateHelper.parse(date).getTime(), new Value());
         mutations.add(mutation);
     }
-    
+
     private void givenAggregatedFrequencyRow(String row, String colf, String datatype, DateFrequencyMap map) {
         givenAggregatedFrequencyRow(row, new Text(colf), datatype, map);
     }
-    
+
     private void givenAggregatedFrequencyRow(String row, Text colf, String datatype, DateFrequencyMap map) {
         Mutation mutation = new Mutation(row);
         Value value = new Value(WritableUtils.toByteArray(map));
         mutation.put(colf, new Text(datatype + NULL_BYTE + FrequencyMetadataAggregator.AGGREGATED), value);
         givenMutation(mutation);
     }
-    
+
     private void givenMutation(Mutation mutation) {
         this.mutations.add(mutation);
     }
-    
+
     /**
      * Tests for {@link AllFieldMetadataHelper#getCountsByFieldInDayWithTypes(Map.Entry)}.
      */
     @Nested
     public class CountsByFieldInDayWithTypesTests {
-        
+
         /**
          * Test against a table that has only non-aggregated entries as matches.
          */
@@ -184,17 +184,17 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Map<String,Long> expected = new HashMap<>();
             expected.put("csv", 1L);
             expected.put("wiki", 2L);
             expected.put("maze", 3L);
-            
+
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200110"));
-            
+
             Assertions.assertEquals(expected, actual);
         }
-        
+
         /**
          * Test against a table that has only aggregated entries as matches.
          */
@@ -208,17 +208,17 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             writeMutations();
-            
+
             Map<String,Long> expected = new HashMap<>();
             expected.put("csv", 5L);
             expected.put("wiki", 15L);
             expected.put("maze", 55L);
-            
+
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200102"));
-            
+
             Assertions.assertEquals(expected, actual);
         }
-        
+
         /**
          * Test against a table that has both aggregated and non-aggregated entries as matches.
          */
@@ -238,27 +238,27 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
-            
+
             Map<String,Long> expected = new HashMap<>();
             expected.put("csv", 6L);
             expected.put("wiki", 15L);
             expected.put("maze", 55L);
-            
+
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200102"));
-            
+
             Assertions.assertEquals(expected, actual);
         }
     }
-    
+
     /**
      * Base class for field index hole tests.
      */
     public abstract class AbstractIndexFieldHoleTests {
-        
+
         protected Set<String> fields = new HashSet<>();
         protected Set<String> datatypes = new HashSet<>();
         protected double minimumThreshold = 1.0d;
-        
+
         protected final Supplier<Map<String,Map<String,IndexFieldHole>>> INDEX_FUNCTION = () -> {
             try {
                 return helper.getFieldIndexHoles(fields, datatypes, minimumThreshold);
@@ -266,7 +266,7 @@ class IndexFieldHoleTest {
                 throw new RuntimeException(e);
             }
         };
-        
+
         protected final Supplier<Map<String,Map<String,IndexFieldHole>>> REVERSED_INDEX_FUNCTION = () -> {
             try {
                 return helper.getReversedFieldIndexHoles(fields, datatypes, minimumThreshold);
@@ -274,30 +274,30 @@ class IndexFieldHoleTest {
                 throw new RuntimeException(e);
             }
         };
-        
+
         protected Supplier<Map<String,Map<String,IndexFieldHole>>> getIndexHoleFunction(String cf) {
             return cf.equals("i") ? INDEX_FUNCTION : REVERSED_INDEX_FUNCTION;
         }
-        
+
         @AfterEach
         void tearDown() {
             fields.clear();
             datatypes.clear();
             givenMinimumThreshold(1.0d);
         }
-        
+
         protected void givenFields(String... fields) {
             this.fields = Sets.newHashSet(fields);
         }
-        
+
         protected void givenDatatypes(String... datatypes) {
             this.datatypes = Sets.newHashSet(datatypes);
         }
-        
+
         protected void givenMinimumThreshold(double minimumThreshold) {
             this.minimumThreshold = minimumThreshold;
         }
-        
+
         protected Map<String,Map<String,IndexFieldHole>> createIndexFieldHoleMap(IndexFieldHole... holes) {
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = new HashMap<>();
             for (IndexFieldHole hole : holes) {
@@ -306,23 +306,23 @@ class IndexFieldHoleTest {
             }
             return IndexFieldHoles;
         }
-        
+
         @SafeVarargs
         protected final IndexFieldHole createIndexFieldHole(String field, String datatype, Pair<Date,Date>... dateRanges) {
             return new IndexFieldHole(field, datatype, Sets.newHashSet(dateRanges));
         }
-        
+
         protected Pair<Date,Date> dateRange(String start, String end) {
             return Pair.of(DateHelper.parse(start), DateHelper.parse(end));
         }
     }
-    
+
     /**
      * Tests for {@link MetadataHelper#getFieldIndexHoles(Set, Set, double)} and {@link MetadataHelper#getReversedFieldIndexHoles(Set, Set, double)}.
      */
     @Nested
     public class IndexFieldHoleTestsForNonAggregatedEntries extends AbstractIndexFieldHoleTests {
-        
+
         /**
          * Test against data that has no field index holes.
          */
@@ -343,12 +343,12 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 1L);
             givenNonAggregatedFrequencyRows("EVENT_DATE", cf, "maze", "20200101", "20200120", 1L);
             writeMutations();
-            
+
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             Assertions.assertTrue(IndexFieldHoles.isEmpty());
         }
-        
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on date gaps.
          */
@@ -359,14 +359,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-    
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on the threshold requirement.
          */
@@ -378,14 +378,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-        
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -397,14 +397,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-    
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-    
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on the
          * threshold requirement.
@@ -418,14 +418,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 5L);
             writeMutations();
-        
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the end of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -480,14 +480,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-    
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-    
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -605,7 +605,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on both date
          * gaps and the threshold.
@@ -620,14 +620,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on date gaps.
          */
@@ -639,7 +639,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200110", "20200113", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200117", "20200118", 1L);
             writeMutations();
-    
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -650,7 +650,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on the threshold.
          */
@@ -666,7 +666,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200117", "20200118", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200119", "20200120", 1L); // Will not meet threshold.
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -677,7 +677,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * date gaps.
@@ -690,7 +690,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("ZETA", COLF_F, "csv", "20200101", "20200105", 1L);
             givenNonAggregatedFrequencyRows("ZETA", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -698,7 +698,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * the threshold.
@@ -712,7 +712,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("ZETA", COLF_F, "csv", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("ZETA", cf, "csv", "20200101", "20200105", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -720,7 +720,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on date gaps.
          */
@@ -732,7 +732,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200101", "20200103", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200113", "20200115", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -740,7 +740,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on the threshold.
          */
@@ -754,7 +754,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200110", "20200112", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200113", "20200115", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -762,7 +762,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on date gaps.
          */
@@ -774,7 +774,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200120", "20200125", 1L);
             givenNonAggregatedFrequencyRows("URI", COLF_F, "maze", "20200216", "20200328", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -785,7 +785,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on the threshold.
          */
@@ -801,7 +801,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("URI", COLF_F, "maze", "20200216", "20200328", 5L);
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200216", "20200328", 1L); // Will not meet threshold.
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -812,7 +812,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on date gaps.
          */
@@ -838,7 +838,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200304", "20200315", 1L);
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200317", "20200328", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -850,7 +850,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on the threshold.
          */
@@ -884,7 +884,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200316", "20200316", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200317", "20200328", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -896,7 +896,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on both dates and the threshold.
          */
@@ -927,7 +927,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200316", "20200316", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200317", "20200328", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -939,7 +939,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying a minimum percentage threshold other than the default of 1.0.
          */
@@ -947,7 +947,7 @@ class IndexFieldHoleTest {
         @ValueSource(strings = {"i", "ri"})
         void testMinimumThresholdPercentageBelow100(String cf) {
             givenMinimumThreshold(0.75); // Index count must meet 75% of frequency count to not be considered field index hole.
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "wiki", "20200101", "20200105", 100L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200101", "20200102", 75L); // Meets 75% threshold.
@@ -972,7 +972,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200316", "20200316", 74L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200317", "20200328", 99L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -984,7 +984,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying one field to filter on.
          */
@@ -993,7 +993,7 @@ class IndexFieldHoleTest {
         void testOneFieldSpecified(String cf) {
             // Retrieve field index holes for field NAME.
             givenFields("NAME");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "wiki", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200101", "20200102", 5L);
@@ -1018,7 +1018,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200316", "20200316", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200317", "20200328", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1027,7 +1027,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying multiple fields to filter on.
          */
@@ -1036,7 +1036,7 @@ class IndexFieldHoleTest {
         void testMultipleFieldsSpecified(String cf) {
             // Retrieve field index holes for fields URI and EVENT_DATE.
             givenFields("URI", "EVENT_DATE");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "wiki", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200101", "20200102", 5L);
@@ -1069,7 +1069,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("ZETA", cf, "wiki", "20200122", "20200122", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("ZETA", cf, "wiki", "20200123", "20200125", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1079,7 +1079,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying datatypes.
          */
@@ -1088,7 +1088,7 @@ class IndexFieldHoleTest {
         void testDatatypesSpecified(String cf) {
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "wiki", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200101", "20200102", 5L);
@@ -1137,7 +1137,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("ZETA", cf, "imdb", "20200122", "20200122", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("ZETA", cf, "imdb", "20200123", "20200125", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1148,7 +1148,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying fields and datatypes.
          */
@@ -1159,7 +1159,7 @@ class IndexFieldHoleTest {
             givenFields("NAME", "ZETA");
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "wiki", "20200101", "20200105", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200101", "20200102", 5L);
@@ -1208,7 +1208,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("ZETA", cf, "imdb", "20200122", "20200122", 1L); // Will not meet threshold.
             givenNonAggregatedFrequencyRows("ZETA", cf, "imdb", "20200123", "20200125", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1218,14 +1218,14 @@ class IndexFieldHoleTest {
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
     }
-    
+
     /**
      * Tests for {@link AllFieldMetadataHelper#getFieldIndexHoles(Set, Set, double)} and
      * {@link AllFieldMetadataHelper#getReversedFieldIndexHoles(Set, Set, double)} where the metadata table contains aggregated entries only.
      */
     @Nested
     public class IndexFieldHoleTestsForAggregatedEntries extends AbstractIndexFieldHoleTests {
-        
+
         /**
          * Test against data that has no field index holes.
          */
@@ -1246,12 +1246,12 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createRangedDateFrequencyMap("20200101", "20200120", 1L));
             givenAggregatedFrequencyRow("EVENT_DATE", cf, "maze", createRangedDateFrequencyMap("20200101", "20200120", 1L));
             writeMutations();
-            
+
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             Assertions.assertTrue(IndexFieldHoles.isEmpty());
         }
-        
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on date gaps.
          */
@@ -1262,14 +1262,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on the threshold requirement.
          */
@@ -1281,14 +1281,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -1300,14 +1300,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on the
          * threshold requirement.
@@ -1320,14 +1320,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the end of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -1339,14 +1339,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the end of a frequency date range for a given fieldName-dataType combination based on the
          * threshold requirement.
@@ -1359,14 +1359,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on date gaps.
          * This uses a negative index marker.
@@ -1381,14 +1381,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -1403,14 +1403,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -1425,14 +1425,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -1447,14 +1447,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         @ParameterizedTest
         @ValueSource(strings = {"i", "ri"})
         void testIndexFieldHoleWithIndexedMarkerAndMissingFrequency(String cf) {
@@ -1465,14 +1465,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on date gaps.
          */
@@ -1484,14 +1484,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -1504,14 +1504,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on both date
          * gaps and the threshold.
@@ -1524,14 +1524,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on date gaps.
          */
@@ -1541,7 +1541,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200120", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200104", "20200106", 1L, "20200110", "20200113", 1L, "20200117", "20200118", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1552,7 +1552,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on the threshold.
          */
@@ -1563,7 +1563,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200103", 1L, "20200104", "20200106", 5L, "20200107",
                             "20200109", 1L, "20200110", "20200113", 5L, "20200114", "20200116", 1L, "20200117", "20200118", 5L, "20200119", "20200120", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1574,7 +1574,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * date gaps.
@@ -1587,7 +1587,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("ZETA", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1595,7 +1595,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * the threshold.
@@ -1608,7 +1608,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("ZETA", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1616,7 +1616,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on date gaps.
          */
@@ -1626,7 +1626,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 1L, "20200110", "20200115", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200103", 1L, "20200113", "20200115", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1634,7 +1634,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on the threshold.
          */
@@ -1645,7 +1645,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200103", 5L, "20200104", "20200105", 1L, "20200110",
                             "20200112", 1L, "20200113", "20200115", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1653,7 +1653,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on date gaps.
          */
@@ -1665,7 +1665,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createRangedDateFrequencyMap("20200120", "20200125", 1L));
             givenAggregatedFrequencyRow("URI", COLF_F, "maze", createRangedDateFrequencyMap("20200216", "20200328", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1676,7 +1676,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on the threshold.
          */
@@ -1692,7 +1692,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", COLF_F, "maze", createRangedDateFrequencyMap("20200216", "20200328", 5L));
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200328", 1L)); // Will not meet threshold.
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1703,7 +1703,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on date gaps.
          */
@@ -1724,7 +1724,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 1L, "20200222", "20200302", 1L, "20200304",
                             "20200315", 1L, "20200317", "20200328", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1736,7 +1736,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on the threshold.
          */
@@ -1760,7 +1760,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 5L, "20200221", "20200221", 1L, "20200222",
                             "20200302", 5L, "20200303", "20200303", 1L, "20200304", "20200315", 5L, "20200316", "20200316", 1L, "20200317", "20200328", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1772,7 +1772,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on both dates and the threshold.
          */
@@ -1796,7 +1796,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 5L, "20200221", "20200221", 1L, "20200222",
                             "20200302", 5L, "20200304", "20200315", 5L, "20200316", "20200316", 1L, "20200317", "20200328", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1808,7 +1808,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying a minimum percentage threshold other than the default of 1.0.
          */
@@ -1816,7 +1816,7 @@ class IndexFieldHoleTest {
         @ValueSource(strings = {"i", "ri"})
         void testMinimumThresholdPercentageBelow100(String cf) {
             givenMinimumThreshold(0.75); // Index count must meet 75% of frequency count to not be considered field index hole.
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 100L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki",
@@ -1834,7 +1834,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 100L, "20200221", "20200221", 74L, "20200222",
                             "20200302", 90L, "20200304", "20200315", 75L, "20200316", "20200316", 74L, "20200317", "20200328", 99L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1846,7 +1846,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying one field to filter on.
          */
@@ -1855,7 +1855,7 @@ class IndexFieldHoleTest {
         void testOneFieldSpecified(String cf) {
             // Retrieve field index holes for field NAME.
             givenFields("NAME");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki",
@@ -1873,7 +1873,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 5L, "20200221", "20200221", 1L, "20200222",
                             "20200302", 5L, "20200304", "20200315", 5L, "20200316", "20200316", 1L, "20200317", "20200328", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1882,7 +1882,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying multiple fields to filter on.
          */
@@ -1891,7 +1891,7 @@ class IndexFieldHoleTest {
         void testMultipleFieldsSpecified(String cf) {
             // Retrieve field index holes for fields URI and EVENT_DATE.
             givenFields("URI", "EVENT_DATE");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L, "20200104",
@@ -1913,7 +1913,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", cf, "wiki",
                             createRangedDateFrequencyMap("20200120", "20200121", 5L, "20200122", "20200122", 1L, "20200123", "20200125", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1923,7 +1923,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying datatypes.
          */
@@ -1932,7 +1932,7 @@ class IndexFieldHoleTest {
         void testDatatypesSpecified(String cf) {
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L, "20200104",
@@ -1966,7 +1966,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", cf, "imdb",
                             createRangedDateFrequencyMap("20200120", "20200121", 5L, "20200122", "20200122", 1L, "20200123", "20200125", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -1977,7 +1977,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying fields and datatypes.
          */
@@ -1988,7 +1988,7 @@ class IndexFieldHoleTest {
             givenFields("NAME", "ZETA");
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L, "20200104",
@@ -2022,7 +2022,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", cf, "imdb",
                             createRangedDateFrequencyMap("20200120", "20200121", 5L, "20200122", "20200122", 1L, "20200123", "20200125", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2032,14 +2032,14 @@ class IndexFieldHoleTest {
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
     }
-    
+
     /**
      * Tests for {@link AllFieldMetadataHelper#getFieldIndexHoles(Set, Set, double)} and
      * {@link AllFieldMetadataHelper#getReversedFieldIndexHoles(Set, Set, double)} where the metadata table contains both aggregated and non-aggregated entries.
      */
     @Nested
     public class IndexFieldHoleTestsForMixedAggregatedAndNonAggregatedEntries extends AbstractIndexFieldHoleTests {
-        
+
         /**
          * Test against data that has no field index holes.
          */
@@ -2062,12 +2062,12 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("EVENT_DATE", cf, "maze", createRangedDateFrequencyMap("20200101", "20200114", 1L));
             givenNonAggregatedFrequencyRows("EVENT_DATE", cf, "maze", "20200115", "20200120", 1L);
             writeMutations();
-            
+
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             Assertions.assertTrue(IndexFieldHoles.isEmpty());
         }
-        
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on date gaps.
          */
@@ -2079,14 +2079,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has field index holes for an entire fieldName-datatype combination based on the threshold requirement.
          */
@@ -2099,14 +2099,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -2119,14 +2119,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the start of a frequency date range for a given fieldName-dataType combination based on the
          * threshold requirement.
@@ -2140,14 +2140,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the end of a frequency date range for a given fieldName-dataType combination based on date gaps.
          */
@@ -2159,14 +2159,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole at the end of a frequency date range for a given fieldName-dataType combination based on the
          * threshold requirement.
@@ -2180,14 +2180,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on date gaps.
          * This uses a negative index marker.
@@ -2202,14 +2202,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -2224,14 +2224,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -2246,14 +2246,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -2268,14 +2268,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         @ParameterizedTest
         @ValueSource(strings = {"i", "ri"})
         void testIndexFieldHoleWithIndexedMarkerAndMissingFrequency(String cf) {
@@ -2286,14 +2286,14 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200101", "20200105", 1L);
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on date gaps.
          */
@@ -2306,14 +2306,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on the
          * threshold.
@@ -2327,14 +2327,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenNonAggregatedFrequencyRows("NAME", cf, "csv", "20200101", "20200105", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has a field index hole in the middle of a frequency date range for a given fieldName-datatype combination based on both date
          * gaps and the threshold.
@@ -2349,14 +2349,14 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on date gaps.
          */
@@ -2369,7 +2369,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200110", "20200113", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200117", "20200118", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2380,7 +2380,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data that has multiple field index holes for a given fieldName-datatype combination based on the threshold.
          */
@@ -2394,7 +2394,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200117", "20200118", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200119", "20200120", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2405,7 +2405,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * date gaps.
@@ -2418,7 +2418,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("ZETA", COLF_F, "csv", "20200101", "20200105", 1L);
             givenNonAggregatedFrequencyRows("ZETA", cf, "csv", "20200101", "20200105", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2426,7 +2426,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole occurs for the end of a frequency range right before a new fieldName-datatype combination based on
          * the threshold.
@@ -2440,7 +2440,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", COLF_F, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("ZETA", cf, "csv", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2448,7 +2448,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on date gaps.
          */
@@ -2460,7 +2460,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200103", 1L));
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200113", "20200115", 1L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2468,7 +2468,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where the expected index hole spans across multiple frequency ranges based on the threshold.
          */
@@ -2480,7 +2480,7 @@ class IndexFieldHoleTest {
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200110", "20200112", 1L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200113", "20200115", 5L);
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2488,7 +2488,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on date gaps.
          */
@@ -2500,7 +2500,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createRangedDateFrequencyMap("20200120", "20200125", 1L));
             givenAggregatedFrequencyRow("URI", COLF_F, "maze", createRangedDateFrequencyMap("20200216", "20200328", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2511,7 +2511,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where everything is an index hole based on the threshold.
          */
@@ -2527,7 +2527,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", COLF_F, "maze", createRangedDateFrequencyMap("20200216", "20200328", 5L));
             givenNonAggregatedFrequencyRows("URI", cf, "maze", "20200216", "20200328", 1L); // Will not meet threshold.
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2538,7 +2538,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on date gaps.
          */
@@ -2562,7 +2562,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 1L, "20200222", "20200302", 1L, "20200304",
                             "20200315", 1L, "20200317", "20200328", 1L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2574,7 +2574,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on the threshold.
          */
@@ -2599,7 +2599,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 5L, "20200221", "20200221", 1L, "20200222",
                             "20200302", 5L, "20200303", "20200303", 1L, "20200304", "20200315", 5L, "20200316", "20200316", 1L, "20200317", "20200328", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2611,7 +2611,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test against data where we have a number of index holes that span just a day based on both dates and the threshold.
          */
@@ -2636,7 +2636,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 5L, "20200221", "20200221", 1L, "20200222",
                             "20200302", 5L, "20200304", "20200315", 5L, "20200316", "20200316", 1L, "20200317", "20200328", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2648,7 +2648,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying a minimum percentage threshold other than the default of 1.0.
          */
@@ -2656,7 +2656,7 @@ class IndexFieldHoleTest {
         @ValueSource(strings = {"i", "ri"})
         void testMinimumThresholdPercentageBelow100(String cf) {
             givenMinimumThreshold(0.75); // Index count must meet 75% of frequency count to not be considered field index hole.
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 100L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki",
@@ -2675,7 +2675,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 100L, "20200221", "20200221", 74L, "20200222",
                             "20200302", 90L, "20200304", "20200315", 75L, "20200316", "20200316", 74L, "20200317", "20200328", 99L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2687,7 +2687,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying one field to filter on.
          */
@@ -2696,7 +2696,7 @@ class IndexFieldHoleTest {
         void testOneFieldSpecified(String cf) {
             // Retrieve field index holes for field NAME.
             givenFields("NAME");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki",
@@ -2715,7 +2715,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("URI", cf, "maze", createRangedDateFrequencyMap("20200216", "20200220", 5L, "20200221", "20200221", 1L, "20200222",
                             "20200302", 5L, "20200304", "20200315", 5L, "20200316", "20200316", 1L, "20200317", "20200328", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2724,7 +2724,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying multiple fields to filter on.
          */
@@ -2733,7 +2733,7 @@ class IndexFieldHoleTest {
         void testMultipleFieldsSpecified(String cf) {
             // Retrieve field index holes for fields URI and EVENT_DATE.
             givenFields("URI", "EVENT_DATE");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L, "20200104",
@@ -2756,9 +2756,9 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", cf, "wiki", createRangedDateFrequencyMap("20200120", "20200121", 5L));
             givenNonAggregatedFrequencyRows("ZETA", cf, "wiki", "20200122", "20200122", 1L);
             givenNonAggregatedFrequencyRows("ZETA", cf, "wiki", "20200123", "20200125", 5L);
-            
+
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2768,7 +2768,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying datatypes.
          */
@@ -2777,13 +2777,13 @@ class IndexFieldHoleTest {
         void testDatatypesSpecified(String cf) {
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L));
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200104", "20200104", 5L);
             givenNonAggregatedFrequencyRows("NAME", cf, "wiki", "20200105", "20200105", 1L);
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "maze", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "maze", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L, "20200104",
@@ -2815,7 +2815,7 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", cf, "imdb",
                             createRangedDateFrequencyMap("20200120", "20200121", 5L, "20200122", "20200122", 1L, "20200123", "20200125", 5L));
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
@@ -2826,7 +2826,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Assertions.assertEquals(expected, IndexFieldHoles);
         }
-        
+
         /**
          * Test specifying fields and datatypes.
          */
@@ -2837,7 +2837,7 @@ class IndexFieldHoleTest {
             givenFields("NAME", "ZETA");
             // Retrieve field index holes for datatypes wiki and csv.
             givenDatatypes("wiki", "csv");
-            
+
             // Index holes for NAME-wiki on 20200103 and 20200105.
             givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createRangedDateFrequencyMap("20200101", "20200105", 5L));
             givenAggregatedFrequencyRow("NAME", cf, "wiki", createRangedDateFrequencyMap("20200101", "20200102", 5L, "20200103", "20200103", 1L));
@@ -2871,9 +2871,9 @@ class IndexFieldHoleTest {
             givenAggregatedFrequencyRow("ZETA", COLF_F, "imdb", createRangedDateFrequencyMap("20200120", "20200125", 5L));
             givenAggregatedFrequencyRow("ZETA", cf, "imdb", createRangedDateFrequencyMap("20200120", "20200121", 5L, "20200122", "20200122", 1L));
             givenNonAggregatedFrequencyRows("ZETA", cf, "imdb", "20200123", "20200125", 5L);
-            
+
             writeMutations();
-            
+
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
             // @formatter:off
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
