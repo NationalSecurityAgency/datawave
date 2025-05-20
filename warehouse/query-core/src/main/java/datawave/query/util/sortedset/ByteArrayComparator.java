@@ -3,7 +3,7 @@ package datawave.query.util.sortedset;
 import java.util.Comparator;
 
 public class ByteArrayComparator implements Comparator<byte[]> {
-    
+
     @Override
     public int compare(byte[] data, byte[] term) {
         int minSize = data.length;

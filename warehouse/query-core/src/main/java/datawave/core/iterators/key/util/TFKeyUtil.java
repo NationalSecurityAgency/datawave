@@ -11,11 +11,11 @@ import org.apache.accumulo.core.data.Key;
  * A TermFrequency key structure is row:tf:datatype\0uid\0value\0FIELD
  */
 public class TFKeyUtil {
-    
+
     private TFKeyUtil() {
         // static utility
     }
-    
+
     /**
      * Determines if the provided key is an instance of a TermFrequency key
      *
@@ -27,10 +27,10 @@ public class TFKeyUtil {
         ByteSequence bytes = k.getColumnFamilyData();
         return bytes != null && bytes.length() == 2 && bytes.byteAt(0) == 't' && bytes.byteAt(1) == 'f';
     }
-    
+
     /**
      * Parses the field as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the field
@@ -44,19 +44,19 @@ public class TFKeyUtil {
         }
         return null;
     }
-    
+
     /**
      * Parses the value as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the value
      */
     public static String getValueString(Key k) {
-        
+
         // value could contain nulls, so find the start and stop indices separately
         ByteSequence bytes = k.getColumnQualifierData();
-        
+
         // find stop index
         int stop = -1;
         for (int i = bytes.length() - 1; i >= 0; i--) {
@@ -65,7 +65,7 @@ public class TFKeyUtil {
                 break;
             }
         }
-        
+
         // find start index
         int start = -1;
         for (int i = 0; i < bytes.length(); i++) {
@@ -78,20 +78,20 @@ public class TFKeyUtil {
                 }
             }
         }
-        
+
         return bytes.subSequence(start + 1, stop).toString();
     }
-    
+
     /**
      * Parses the datatype as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the datatype
      */
     public static String getDatatypeString(Key k) {
         ByteSequence bytes = k.getColumnQualifierData();
-        
+
         for (int i = 0; i < bytes.length(); i++) {
             if (bytes.byteAt(i) == 0x00) {
                 return bytes.subSequence(0, i).toString();
@@ -99,10 +99,10 @@ public class TFKeyUtil {
         }
         return null;
     }
-    
+
     /**
      * Parses the uid as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the uid

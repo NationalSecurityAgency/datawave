@@ -20,19 +20,19 @@ import org.apache.abdera.model.Service;
 @Provider
 @Produces({"application/atomsvc+xml", "application/atomcat+xml", "application/atom+xml", "application/atom+xml;type=entry"})
 public class AtomMessageBodyWriter implements MessageBodyWriter<Object> {
-    
+
     @Override
     public long getSize(Object message, Class<?> clazz, Type type, Annotation[] annotations, MediaType media) {
         // -1 means size unknown
         return -1;
     }
-    
+
     @Override
     public boolean isWriteable(Class<?> clazz, Type type, Annotation[] annotations, MediaType mediaType) {
-        return (Entry.class.isAssignableFrom(clazz) || Feed.class.isAssignableFrom(clazz) || Service.class.isAssignableFrom(clazz) || Categories.class
-                        .isAssignableFrom(clazz));
+        return (Entry.class.isAssignableFrom(clazz) || Feed.class.isAssignableFrom(clazz) || Service.class.isAssignableFrom(clazz)
+                        || Categories.class.isAssignableFrom(clazz));
     }
-    
+
     @Override
     public void writeTo(Object message, Class<?> clazz, Type type, Annotation[] annotations, MediaType media, MultivaluedMap<String,Object> httpHeaders,
                     OutputStream out) throws IOException, WebApplicationException {
@@ -50,5 +50,5 @@ public class AtomMessageBodyWriter implements MessageBodyWriter<Object> {
             categories.writeTo(out);
         }
     }
-    
+
 }

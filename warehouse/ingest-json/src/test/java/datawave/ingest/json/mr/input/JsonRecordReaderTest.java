@@ -3,60 +3,58 @@ package datawave.ingest.json.mr.input;
 import java.io.File;
 import java.net.URL;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-
 import org.junit.Assert;
 import org.junit.Test;
 
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
+
 public class JsonRecordReaderTest {
-    
+
     protected JsonRecordReader init(boolean parseHeaderOnly, FlattenMode mode) throws Exception {
-        
+
         Configuration conf = null;
         TaskAttemptContext ctx = null;
         InputSplit split = null;
         File dataFile = null;
-        
+
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/ingest/json-ingest-config.xml"));
-        
+
         conf.set("myjson.data.json.flattener.mode", mode.name());
         conf.set("myjson.data.process.extra.fields", String.valueOf(!parseHeaderOnly));
-        
+
         URL data = JsonRecordReaderTest.class.getResource("/input/my.json");
         Assert.assertNotNull(data);
-        
+
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
-        
+
         dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
         split = new FileSplit(p, 0, dataFile.length(), null);
         ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        
+
         JsonRecordReader reader = new JsonRecordReader();
         reader.initialize(split, ctx);
         return reader;
     }
-    
+
     @Test
     public void testInitialize() throws Exception {
         JsonRecordReader reader = init(true, FlattenMode.NORMAL);
         reader.close();
     }
-    
+
     @Test
     public void testOneRecordAllFieldsNORMAL() throws Exception {
         JsonRecordReader reader = init(false, FlattenMode.NORMAL);
@@ -67,7 +65,7 @@ public class JsonRecordReaderTest {
         Assert.assertEquals(14, reader.getCurrentFields().keySet().size());
         reader.close();
     }
-    
+
     @Test
     public void testOneRecordHeaderFieldsOnlySIMPLE() throws Exception {
         JsonRecordReader reader = init(true, FlattenMode.SIMPLE);
@@ -78,12 +76,12 @@ public class JsonRecordReaderTest {
         Assert.assertEquals(6, reader.getCurrentFields().keySet().size());
         reader.close();
     }
-    
+
     @Test
     public void testGetAllRecordsNORMAL() throws Exception {
         JsonRecordReader reader = init(false, FlattenMode.NORMAL);
         reader.setInputDate(System.currentTimeMillis());
-        
+
         // Record 1
         Assert.assertTrue(reader.nextKeyValue());
         Assert.assertNotNull(reader.getEvent());
@@ -109,19 +107,19 @@ public class JsonRecordReaderTest {
         Assert.assertNotNull(reader.getEvent());
         Assert.assertEquals(10, reader.getCurrentFields().keySet().size());
         Assert.assertEquals(11, reader.getCurrentFields().values().size());
-        
+
         // EOF
         Assert.assertFalse(reader.nextKeyValue());
-        
+
         reader.close();
     }
-    
+
     @Test
     public void testGetAllRecordsSIMPLE() throws Exception {
-        
+
         JsonRecordReader reader = init(false, FlattenMode.SIMPLE);
         reader.setInputDate(System.currentTimeMillis());
-        
+
         // Record 1
         Assert.assertTrue(reader.nextKeyValue());
         RawRecordContainer rrc = reader.getEvent();
@@ -148,19 +146,19 @@ public class JsonRecordReaderTest {
         Assert.assertNotNull(reader.getEvent());
         Assert.assertEquals(10, reader.getCurrentFields().keySet().size());
         Assert.assertEquals(11, reader.getCurrentFields().values().size());
-        
+
         // EOF
         Assert.assertFalse(reader.nextKeyValue());
-        
+
         reader.close();
     }
-    
+
     @Test
     public void testGetAllRecordsGROUPED() throws Exception {
-        
+
         JsonRecordReader reader = init(false, FlattenMode.GROUPED);
         reader.setInputDate(System.currentTimeMillis());
-        
+
         // Record 1
         Assert.assertTrue(reader.nextKeyValue());
         Assert.assertNotNull(reader.getEvent());
@@ -186,19 +184,19 @@ public class JsonRecordReaderTest {
         Assert.assertNotNull(reader.getEvent());
         Assert.assertEquals(10, reader.getCurrentFields().keySet().size());
         Assert.assertEquals(11, reader.getCurrentFields().values().size());
-        
+
         // EOF
         Assert.assertFalse(reader.nextKeyValue());
-        
+
         reader.close();
     }
-    
+
     @Test
     public void testGetAllRecordsGROUPED_AND_NORMAL() throws Exception {
-        
+
         JsonRecordReader reader = init(false, FlattenMode.GROUPED_AND_NORMAL);
         reader.setInputDate(System.currentTimeMillis());
-        
+
         // Record 1
         Assert.assertTrue(reader.nextKeyValue());
         Assert.assertNotNull(reader.getEvent());
@@ -224,10 +222,10 @@ public class JsonRecordReaderTest {
         Assert.assertNotNull(reader.getEvent());
         Assert.assertEquals(10, reader.getCurrentFields().keySet().size());
         Assert.assertEquals(11, reader.getCurrentFields().values().size());
-        
+
         // EOF
         Assert.assertFalse(reader.nextKeyValue());
-        
+
         reader.close();
     }
 }

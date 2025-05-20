@@ -10,21 +10,21 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 /**
- * 
+ *
  */
 public class DocWriter implements Runnable {
     private static final Logger log = Logger.getLogger(DocWriter.class);
-    
+
     Key k;
     byte[] shardId;
     byte[] visibility;
     Value value;
     BatchWriter docWriter;
-    
+
     public DocWriter(BatchWriter docWriter) {
         this.docWriter = docWriter;
     }
-    
+
     @Override
     public void run() {
         log.debug("Writing out a document of size " + value.get().length + " bytes.");

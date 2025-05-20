@@ -1,5 +1,14 @@
 package datawave.query.language.builder.jexl;
 
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.RangeQueryNode;
+import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
+import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
+import org.apache.lucene.search.TermRangeQuery;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,38 +25,28 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import datawave.query.language.parser.jexl.JexlNode;
 import datawave.query.language.parser.jexl.JexlRangeNode;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.RangeQueryNode;
-import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
-import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
-import org.apache.lucene.search.TermRangeQuery;
 
 /**
  * Builds a {@link TermRangeQuery} object from a {@link RangeQueryNode} object.
  */
 public class RangeQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         TermRangeQueryNode rangeNode = (TermRangeQueryNode) queryNode;
         FieldQueryNode lower = rangeNode.getLowerBound();
         FieldQueryNode upper = rangeNode.getUpperBound();
-        
+
         boolean lowerWildcard = lower.getTextAsString().equals("*");
         boolean upperWildcard = upper.getTextAsString().equals("*");
         if (lowerWildcard && upperWildcard) {
             throw new QueryNodeException(new MessageImpl("Wildcard of lower and upper bouds not allowed"));
         }
-        
+
         String field = rangeNode.getField().toString();
-        
+
         return new JexlRangeNode(field, lower.getTextAsString(), upper.getTextAsString(), rangeNode.isLowerInclusive(), rangeNode.isUpperInclusive());
     }
-    
+
 }

@@ -13,13 +13,13 @@ import org.apache.hadoop.mapreduce.lib.input.CombineFileSplit;
 
 /**
  * An implementation of CombineFileInputFormat that can read NullWritable/Counters pairs from sequence files.
- * 
+ *
  */
 public class NullWritableSequenceFileCombinerFormat extends CombineFileInputFormat<NullWritable,Counters> {
-    
+
     @Override
     public RecordReader<NullWritable,Counters> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
         return new CombineFileRecordReader<>((CombineFileSplit) split, context, NullRecordReader.class);
     }
-    
+
 }

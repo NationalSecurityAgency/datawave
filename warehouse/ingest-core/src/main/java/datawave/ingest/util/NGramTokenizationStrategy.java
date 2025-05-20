@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.MemberShipTest;
-
-import datawave.util.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
@@ -17,47 +13,51 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 import com.google.common.hash.BloomFilter;
 
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.MemberShipTest;
+import datawave.util.StringUtils;
+
 /**
  * Base implementation for tokenizing normalized content into n-grams, which are applied as an update to a BloomFilter
- * 
+ *
  * @see com.google.common.hash.BloomFilter
  * @see datawave.ingest.util.BloomFilterUtil
  */
 public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy {
     private final Logger log = Logger.getLogger(NGramTokenizationStrategy.class);
     private boolean loggedInvalidMaxNGramLength;
-    
+
     /**
      * Constructor
      */
     public NGramTokenizationStrategy() {
         super();
     }
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param filter
      *            Updated with n-grams tokenized from normalized content
      */
     public NGramTokenizationStrategy(final BloomFilter<String> filter) {
         super(filter);
     }
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param source
      *            strategy with which to delegate tokenization operations
      */
     public NGramTokenizationStrategy(final AbstractNGramTokenizationStrategy source) {
         super(source);
     }
-    
+
     /**
      * Increments the tokenizer and returns the next n-gram in the stream, or null at some termination state, such as EOS.
-     * 
-     * 
+     *
+     *
      * @param tokenizer
      *            The tokenizer responsible for generating the next available n-gram
      * @return the next n-gram in the stream, or null at some termination state, such as EOS
@@ -81,13 +81,13 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                 throw new TokenizationException("Could not get next n-gram from NGramTokenizer", e);
             }
         }
-        
+
         return ngram;
     }
-    
+
     /**
      * Creates n-grams based on normalized content. N-gram strings will be no longer than the specified length.
-     * 
+     *
      * @param content
      *            Normalized field name and value
      * @param maxNGramLength
@@ -99,7 +99,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
     public int tokenize(final NormalizedContentInterface content, int maxNGramLength) throws TokenizationException {
         // Initialize return value and try tokenization using the parent
         int ngramCount = super.tokenize(content, maxNGramLength);
-        
+
         // If the parent did not tokenize, try it below
         if (ngramCount < 0) {
             // Validate max n-gram length
@@ -116,7 +116,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                 } else {
                     fieldValue = null;
                 }
-                
+
                 // Tokenize
                 NGramTokenizer tokenizer = null;
                 TokenStream tokenStream = null;
@@ -129,7 +129,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                     } else {
                         reader = new StringReader(StringUtils.EMPTY_STRING);
                     }
-                    
+
                     // Create the tokenizer and tokenizing stream
                     tokenizer = new NGramTokenizer(2, maxNGramLength);
                     tokenizer.setReader(reader);
@@ -137,10 +137,10 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                     tokenStream = new ClassicFilter(tokenizer);
                     tokenStream = new LowerCaseFilter(tokenStream);
                     tokenStream.addAttribute(CharTermAttribute.class);
-                    
+
                     // Reset the n-gram count
                     ngramCount = 0;
-                    
+
                     // Increment the tokenizer and applied any generated n-grams
                     String ngram = null;
                     while (null != (ngram = this.increment(tokenizer))) {
@@ -176,13 +176,13 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                 }
             }
         }
-        
+
         return ngramCount;
     }
-    
+
     /**
      * Applies a tokenized n-gram to the BloomFilter based on the specified normalized content
-     * 
+     *
      * @param ngram
      *            An n-gram generated from the specified normalized content
      * @param content
@@ -200,7 +200,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                 updated = false;
             }
         }
-        
+
         return updated;
     }
 }

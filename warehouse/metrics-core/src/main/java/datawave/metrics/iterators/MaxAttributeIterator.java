@@ -12,18 +12,18 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 /**
  * Scans over a row and returns the maximum column family and column qualifier values.
- * 
+ *
  * For simplicity's sake, this iterator assumes that the column family and column qualifier are integers.
- * 
+ *
  */
 public class MaxAttributeIterator extends RowIterator {
-    
+
     private static final Map<String,String> esm = Collections.emptyMap();
     private static final List<String> esl = Collections.emptyList();
     private static final IteratorOptions OPTIONS = new IteratorOptions("MaxAttributeIterator",
                     "This iterator scans a row and returns a Key with the maximal column family and qualifier values.", esm, esl);
     private static final Value emptyValue = new Value(new byte[0]);
-    
+
     /**
      * Returns a description and no configuration options.
      */
@@ -31,7 +31,7 @@ public class MaxAttributeIterator extends RowIterator {
     public IteratorOptions describeOptions() {
         return OPTIONS;
     }
-    
+
     /**
      * There are no options for this iterator.
      */
@@ -39,7 +39,7 @@ public class MaxAttributeIterator extends RowIterator {
     public boolean validateOptions(Map<String,String> arg0) {
         return true;
     }
-    
+
     @Override
     protected void processRow(SortedMap<Key,Value> row) {
         String rowId = row.firstKey().getRow().toString();
@@ -58,12 +58,12 @@ public class MaxAttributeIterator extends RowIterator {
         row.clear();
         row.put(myKey, emptyValue);
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         MaxAttributeIterator itr = new MaxAttributeIterator();
         itr.setSource(this.getSource().deepCopy(env));
         return itr;
     }
-    
+
 }

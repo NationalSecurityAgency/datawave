@@ -16,11 +16,11 @@ import datawave.util.flag.config.FlagDataTypeConfig;
  * in lifo or fifo order as configured.
  */
 public class DateFolderFlagDistributor extends AbstractSliceDistributor<DateFolderFlagDistributor.DFKey> {
-    
+
     String grouping;
     DateUtils util = new DateUtils();
     List<String> folders;
-    
+
     @Override
     public void setup(FlagDataTypeConfig fdtc) {
         super.setup(fdtc);
@@ -33,7 +33,7 @@ public class DateFolderFlagDistributor extends AbstractSliceDistributor<DateFold
             throw new IllegalArgumentException("Invalid number of flags for this datatype provided (" + fc.getMaxFlags() + ")");
         buckets.clear();
     }
-    
+
     @Override
     public boolean addInputFile(InputFile inputFile) throws UnusableFileException {
         String path = inputFile.getDirectory();
@@ -54,17 +54,17 @@ public class DateFolderFlagDistributor extends AbstractSliceDistributor<DateFold
         }
         return bucketList.add(inputFile);
     }
-    
+
     protected class DFKey implements Comparable<DFKey> {
-        
+
         long group;
         String folder;
-        
+
         public DFKey(long group, String folder) {
             this.group = group;
             this.folder = folder;
         }
-        
+
         @Override
         public boolean equals(Object obj) {
             if (obj == null) {
@@ -82,7 +82,7 @@ public class DateFolderFlagDistributor extends AbstractSliceDistributor<DateFold
             }
             return true;
         }
-        
+
         @Override
         public int hashCode() {
             int hash = 7;
@@ -90,10 +90,10 @@ public class DateFolderFlagDistributor extends AbstractSliceDistributor<DateFold
             hash = 97 * hash + (this.folder != null ? this.folder.hashCode() : 0);
             return hash;
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see java.lang.Comparable#compareTo(java.lang.Object)
          */
         @Override

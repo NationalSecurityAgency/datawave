@@ -7,9 +7,9 @@ import datawave.util.StringUtils;
  */
 
 public class EventField {
-    
+
     private static final char GROUPING_SEPARATOR = '.';
-    
+
     public static String[] getGroupAndSubgroup(String field) {
         String[] splits = StringUtils.split(field, GROUPING_SEPARATOR);
         if (splits.length >= 3) {
@@ -18,21 +18,21 @@ public class EventField {
         }
         return null;
     }
-    
+
     public static String getBaseFieldName(String field) {
         String[] splits = StringUtils.split(field, GROUPING_SEPARATOR);
         return splits[0];
     }
-    
+
     public static String getSubgroup(String field) {
-        
+
         String[] splits = StringUtils.split(field, GROUPING_SEPARATOR);
         if (splits.length >= 3) {
             return splits[splits.length - 1];
         }
         return null;
     }
-    
+
     public static String getGroup(String field) {
         String[] splits = StringUtils.split(field, GROUPING_SEPARATOR);
         if (splits.length >= 3) {
@@ -40,5 +40,5 @@ public class EventField {
         }
         return null;
     }
-    
+
 }

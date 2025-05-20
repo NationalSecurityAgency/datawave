@@ -7,7 +7,7 @@ package datawave.query.planner.rules;
 public class RegexDotallTransformRule extends RegexReplacementTransformRule {
     private static final String PATTERN = "\\((\\\\s\\|\\.|\\.\\|\\\\s)\\)";
     private static final String REPLACEMENT = ".";
-    
+
     public RegexDotallTransformRule() {
         super(PATTERN, REPLACEMENT);
     }

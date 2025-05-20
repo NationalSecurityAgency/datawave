@@ -10,33 +10,33 @@ public class QueryLogicFactoryConfiguration {
     private Map<String,String> logicMap = null;
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
-    
+
     public Map<String,String> getLogicMap() {
         return logicMap;
     }
-    
+
     public void setLogicMap(Map<String,String> logicMap) {
         this.logicMap = logicMap;
     }
-    
+
     public boolean hasLogicMap() {
         return logicMap != null && !logicMap.isEmpty();
     }
-    
+
     public int getMaxPageSize() {
         return maxPageSize;
     }
-    
+
     public void setMaxPageSize(int maxPageRecords) {
         this.maxPageSize = maxPageRecords;
     }
-    
+
     public long getPageByteTrigger() {
         return pageByteTrigger;
     }
-    
+
     public void setPageByteTrigger(long pageByteTrigger) {
         this.pageByteTrigger = pageByteTrigger;
     }
-    
+
 }

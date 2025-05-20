@@ -7,17 +7,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import datawave.webservice.query.result.EdgeQueryResponseBase;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -34,7 +25,18 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 
-import javax.net.ssl.SSLContext;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+
+import datawave.webservice.query.result.EdgeQueryResponseBase;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * An example showing a simple query to the DATAWAVE web service, using the client classes to simplify parsing the query response.
@@ -43,7 +45,7 @@ public class JacksonQueryExample {
     private static final String CREATE_PATH = "{0}/DataWave/Query/{1}/create";
     private static final String NEXT_PATH = "{0}/DataWave/Query/{1}/next";
     private static final String CLOSE_PATH = "{0}/DataWave/Query/{1}/close";
-    
+
     public static void main(String[] args) throws Exception {
         Options options = new Options();
         JCommander jCommander = new JCommander(options);
@@ -58,43 +60,40 @@ public class JacksonQueryExample {
             jCommander.usage();
             System.exit(-1);
         }
-        
+
         if (args.length < 1) {
             System.err.println("usage: " + JacksonQueryExample.class.getName() + " baseURI [pagesize]");
             System.exit(-1);
         }
-        
+
         String baseURI = options.baseURI;
         if (baseURI.endsWith("/"))
             baseURI = baseURI.substring(0, baseURI.length() - 1);
-        
+
         KeyStore ts = KeyStore.getInstance(System.getProperty("javax.net.ssl.trustStoreType"));
         ts.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
-        
-        SSLContext sslContext = SSLContextBuilder
-                        .create()
-                        .setProtocol("TLSv1.2")
-                        .setKeyStoreType(System.getProperty("javax.net.ssl.keyStoreType"))
+
+        SSLContext sslContext = SSLContextBuilder.create().setProtocol("TLSv1.2").setKeyStoreType(System.getProperty("javax.net.ssl.keyStoreType"))
                         .loadKeyMaterial(new File(System.getProperty("javax.net.ssl.keyStore")),
                                         System.getProperty("javax.net.ssl.keyStorePassword").toCharArray(),
                                         System.getProperty("javax.net.ssl.keyStorePassword").toCharArray())
                         .loadTrustMaterial(ts, new TrustSelfSignedStrategy()).build();
-        
+
         Class<? extends BaseQueryResponse> responseClass = Class.forName(options.responseClass).asSubclass(BaseQueryResponse.class);
-        
+
         // Tell Jackson that it should honor JAX-B annotations when de-serializing the JSON response.
         ObjectMapper mapper = new ObjectMapper();
         AnnotationIntrospector introspector = new JaxbAnnotationIntrospector(mapper.getTypeFactory());
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         mapper.setAnnotationIntrospector(introspector);
-        
+
         // Set default headers so all requests ask for JSON content.
         List<Header> defaultHeaders = new ArrayList<>();
         defaultHeaders.add(new BasicHeader("Accept", "application/json"));
-        
+
         CloseableHttpClient client = HttpClients.custom().setDefaultHeaders(defaultHeaders).setSSLContext(sslContext)
                         .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
-        
+
         // Create the query
         HttpPost create = new HttpPost(MessageFormat.format(CREATE_PATH, baseURI, options.queryLogic));
         List<NameValuePair> formparams = new ArrayList<>();
@@ -110,7 +109,7 @@ public class JacksonQueryExample {
         }
         UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formparams);
         create.setEntity(entity);
-        
+
         HttpResponse response = client.execute(create);
         int responseCode = response.getStatusLine().getStatusCode();
         if (responseCode != HttpStatus.SC_OK) {
@@ -119,12 +118,12 @@ public class JacksonQueryExample {
             System.err.println();
             System.exit(-1);
         }
-        
+
         @SuppressWarnings("unchecked")
         GenericResponse<String> createResponse = mapper.readValue(response.getEntity().getContent(), GenericResponse.class);
         String queryId = createResponse.getResult();
         System.out.println("Query ID: " + queryId);
-        
+
         // Iterate over results
         HttpGet next = new HttpGet(MessageFormat.format(NEXT_PATH, baseURI, queryId));
         do {
@@ -150,7 +149,7 @@ public class JacksonQueryExample {
                 }
             }
         } while (true);
-        
+
         // Close the query to release server resources.
         HttpPut close = new HttpPut(MessageFormat.format(CLOSE_PATH, baseURI, queryId));
         response = client.execute(close);

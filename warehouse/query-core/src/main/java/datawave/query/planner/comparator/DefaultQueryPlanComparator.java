@@ -1,8 +1,8 @@
 package datawave.query.planner.comparator;
 
-import datawave.query.planner.QueryPlan;
-
 import java.util.Comparator;
+
+import datawave.query.planner.QueryPlan;
 
 /**
  * Sorts QueryPlan objects according to their shard id (i.e. starting row)

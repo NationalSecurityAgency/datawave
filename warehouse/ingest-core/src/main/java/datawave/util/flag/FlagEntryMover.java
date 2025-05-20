@@ -5,34 +5,34 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import datawave.util.flag.InputFile.TrackedDir;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.Cache;
 
+import datawave.util.flag.InputFile.TrackedDir;
+
 /**
  * Handles stage 1 of the job creation flow. Checks for destination directories, creates as needed, and returns information on whether it was successful.
  */
 public class FlagEntryMover extends SimpleMover {
-    
+
     private static final Logger log = Logger.getLogger(FlagEntryMover.class);
     private static final int CHKSUM_MAX = 10 * 1024 * 1000; // 10M
-    
+
     public FlagEntryMover(Cache<Path,Path> directoryCache, FileSystem fs, InputFile entry) {
         super(directoryCache, entry, TrackedDir.FLAGGING_DIR, fs);
     }
-    
+
     @Override
     public InputFile call() throws IOException {
-        
+
         // Create the flagging, flagged and loaded directory if they do not exist
         Path dstFlagging = checkParent(entry.getFlagging());
         Path dstFlagged = checkParent(entry.getFlagged());
         Path dstLoaded = checkParent(entry.getLoaded());
-        
+
         // Check for existence of the file already in the flagging, flagged, or loaded directories
         Path src = entry.getPath();
         boolean doMove = true;
@@ -43,15 +43,15 @@ public class FlagEntryMover extends SimpleMover {
         } else if (fs.exists(dstLoaded)) {
             doMove = resolveConflict(src, dstLoaded);
         }
-        
+
         // do the move
         if (doMove) {
             super.call();
         }
-        
+
         return entry;
     }
-    
+
     /**
      * Resolves the ingest file name to a unique file name for ingestion.
      *
@@ -77,7 +77,7 @@ public class FlagEntryMover extends SimpleMover {
         } else {
             resolved = true;
         }
-        
+
         if (resolved) {
             // rename tracked locations
             log.warn("duplicate ingest file name with different payload(" + src.toUri().toString() + ") - appending timestamp to destination file name");
@@ -88,10 +88,10 @@ public class FlagEntryMover extends SimpleMover {
                 log.error("unable to delete duplicate ingest file (" + src.toUri().toString() + ")");
             }
         }
-        
+
         return resolved;
     }
-    
+
     /**
      * Calculates a checksum for a file.
      *
@@ -112,13 +112,13 @@ public class FlagEntryMover extends SimpleMover {
                 digest.update(buf, 0, len);
                 totalLen += len;
             }
-            
+
             byte[] mdBytes = digest.digest();
             final StringBuilder sb = new StringBuilder();
             for (int n = 0; n < mdBytes.length; n++) {
                 sb.append(Integer.toString((mdBytes[n] & 0xff) + 0x100, 16).substring(1));
             }
-            
+
             return sb.toString();
         } catch (NoSuchAlgorithmException ae) {
             throw new IOException(ae);

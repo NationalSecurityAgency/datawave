@@ -1,22 +1,5 @@
 package datawave.query;
 
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
-import datawave.query.testframework.CitiesDataType;
-import datawave.query.testframework.CitiesDataType.CityEntry;
-import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.DataTypeHadoopConfig;
-import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.FileType;
-import datawave.query.testframework.GenericCityFields;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.GTE_OP;
@@ -26,31 +9,53 @@ import static datawave.query.testframework.RawDataManager.LT_OP;
 import static datawave.query.testframework.RawDataManager.NE_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
+import datawave.query.testframework.AbstractFunctionalQuery;
+import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CitiesDataType.CityEntry;
+import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
+
 public class JexlNumericQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(JexlNumericQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CityField.NUM.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public JexlNumericQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     // ============================================
     // unit tests
-    
+
     @Test
     public void testNumInQuotes() throws Exception {
         log.info("------  testNumInQuotes  ------");
@@ -60,7 +65,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect);
         }
     }
-    
+
     @Test
     public void testNumWithoutQuotes() throws Exception {
         log.info("------  testNumWithoutQuotes  ------");
@@ -69,7 +74,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testNumWithoutQuotesAndNot() throws Exception {
         log.info("------  testNumWithoutQuotesAndNot  ------");
@@ -78,28 +83,28 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testLteGteBound() throws Exception {
         log.info("------  testLteGteBound  ------");
-        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "20 " + AND_OP + CityField.NUM.name() + GTE_OP + "20))";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "21 " + AND_OP + CityField.NUM.name() + GTE_OP + "20))";
         runTest(query, query);
     }
-    
+
     @Test
     public void testGteLteBound() throws Exception {
         log.info("------  testGteLteBound  ------");
         String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GTE_OP + "20 " + AND_OP + CityField.NUM.name() + LTE_OP + "40))";
         runTest(query, query);
     }
-    
+
     @Test
     public void testGtLtBound() throws Exception {
         log.info("------  testGtLtBound  ------");
         String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GT_OP + "24 " + AND_OP + CityField.NUM.name() + LT_OP + "105))";
         runTest(query, query);
     }
-    
+
     @Test
     public void testMultiBound() throws Exception {
         log.info("------  testMultiBound  ------");
@@ -107,7 +112,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
                         + "((_Bounded_ = true) && (" + CityField.NUM.name() + GT_OP + "31 and " + CityField.NUM.name() + LT_OP + "42))";
         runTest(query, query);
     }
-    
+
     @Test
     public void testAnd() throws Exception {
         log.info("------  testAnd  ------");
@@ -117,7 +122,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testOr() throws Exception {
         log.info("------  testOr  ------");
@@ -127,7 +132,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testOrMulti() throws Exception {
         log.info("------  testOrMulti  ------");
@@ -137,7 +142,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testAndGteLte() throws Exception {
         log.info("------  testAndGteLte  ------");
@@ -147,7 +152,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testOrGtLt() throws Exception {
         log.info("------  testOrGtLt  ------");
@@ -157,7 +162,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testOrNotEq() throws Exception {
         log.info("------  testOrNotEq  ------");
@@ -167,8 +172,15 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
-    @Test
+
+    /**
+     * This test is now expected to fail because the {@link UnmarkedBoundedRangeDetectionVisitor} was corrected to examine {@link ASTAndNode} instead of
+     * {@link ASTReference} nodes.
+     *
+     * @throws Exception
+     *             because the query is wrong
+     */
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testLtGtNotEq() throws Exception {
         log.info("------  testLtGtNotEq  ------");
         for (final TestCities city : TestCities.values()) {
@@ -177,14 +189,14 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CityField.EVENT_ID.name();
     }
-    
+
     // ============================================
     // private methods
 }

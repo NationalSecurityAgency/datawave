@@ -17,6 +17,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
 import datawave.annotation.Required;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
@@ -25,8 +28,6 @@ import datawave.webservice.mr.state.MapReduceStatePersisterBean;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
 
 @Path("/MapReduceStatus")
 @RunAs("InternalUser")
@@ -35,12 +36,12 @@ import org.jboss.resteasy.annotations.GZIP;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class MapReduceStatusUpdateBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private MapReduceStatePersisterBean mapReduceState;
-    
+
     /**
      * This method is meant to be a callback from the Hadoop infrastructure and is not protected. When a BulkResults job is submitted the
      * "job.end.notification.url" property is set to public URL endpoint for this servlet. The Hadoop infrastructure will call back to this servlet. If the call
@@ -68,7 +69,7 @@ public class MapReduceStatusUpdateBean {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     public VoidResponse updateState(@Required("jobId") @QueryParam("jobId") String jobId, @Required("jobStatus") @QueryParam("jobStatus") String jobStatus) {
         log.info("Received MapReduce status update for job: " + jobId + ", new status: " + jobStatus);
-        
+
         VoidResponse response = new VoidResponse();
         try {
             mapReduceState.updateState(jobId, MapReduceState.valueOf(jobStatus));
@@ -80,5 +81,5 @@ public class MapReduceStatusUpdateBean {
             throw new DatawaveWebApplicationException(qe, response);
         }
     }
-    
+
 }

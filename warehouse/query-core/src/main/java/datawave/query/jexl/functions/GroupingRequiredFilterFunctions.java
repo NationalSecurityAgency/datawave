@@ -1,8 +1,5 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.attributes.ValueTuple;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,17 +9,19 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.apache.log4j.Logger;
+
+import datawave.query.attributes.ValueTuple;
+
 /**
- * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GroupingRequiredFilterFunctionsDescriptor. This is kept as a separate class to reduce
- * accumulo dependencies on other jars.
- * 
+ * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link GroupingRequiredFilterFunctionsDescriptor}. This is kept as a separate class
+ * to reduce accumulo dependencies on other jars.
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor")
 public class GroupingRequiredFilterFunctions {
     public static final String GROUPING_REQUIRED_FUNCTION_NAMESPACE = "grouping";
-    
-    protected static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
-    
+    private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
+
     /**
      * <pre>
      * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
@@ -30,7 +29,7 @@ public class GroupingRequiredFilterFunctions {
      * FOO.1 with a index of '0' will split off '1'
      * FOO.BLAH.ZIP.0 with an index of '2' will split off 'BLAH.ZIP.0'
      * If no index is supplied, the default is 0
-     * 
+     *
      * The return is a collection of 'groups' that matched: [0, 1, 5] for example.
      * This collection of groups may be passed as the argument to the method getValuesForGroups.
      * For example: AGE.getValuesForGroups(getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')
@@ -38,7 +37,7 @@ public class GroupingRequiredFilterFunctions {
      * the supplied parameters
      * If the return of the getGroupsForMatchesInGroup call was [0, 1, 5] then the values for AGE.0, AGE.1, AGE.5] will be returned
      * </pre>
-     * 
+     *
      * @param args
      *            set of arguments
      * @return a collection of the groups that matched.
@@ -54,24 +53,24 @@ public class GroupingRequiredFilterFunctions {
         String regex = args[1].toString();
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
-            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
+            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable<?>) fieldValue1, regex);
         } else {
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-        
+
         leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'context' (.2) that I found above
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
-            if (context != null && !context.isEmpty()) {
+            if (!context.isEmpty()) {
                 groups.add(context);
             }
             for (int i = 2; i < args.length; i++) {
-                
+
                 if (args[i] instanceof Iterable) {
                     boolean contextHasMatch = false;
-                    for (Object fieldValue : (Iterable) args[i]) {
+                    for (Object fieldValue : (Iterable<?>) args[i]) {
                         // do not change the value of contextHasMatch from true back to false.
                         if (manageGroupsForMatchesInGroupRemainingArgs(fieldValue, args[i + 1].toString(), context, allMatches, currentMatch)) {
                             contextHasMatch = true;
@@ -87,7 +86,7 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-        
+
         if (args.length != 2) { // if they passed in only 2 args, then get the groups for whatever was in the first (only) arg pair
             // if there was a match found at all levels, then the matches.size will be equal to the
             // number of field/regex pairs
@@ -100,10 +99,10 @@ public class GroupingRequiredFilterFunctions {
         }
         return groups;
     }
-    
+
     /**
      * helper function for getGroupsForMatchesInGroup.
-     * 
+     *
      * @param fieldValue
      *            the field value
      * @param regex
@@ -137,7 +136,7 @@ public class GroupingRequiredFilterFunctions {
             return false;
         }
     }
-    
+
     // move all these kinds of methods into a central utility once we refactor this
     private static String getSubgroup(String fieldName) {
         int index = fieldName.lastIndexOf('.');
@@ -145,20 +144,20 @@ public class GroupingRequiredFilterFunctions {
             return fieldName.substring(index + 1);
         }
         return null;
-        
+
     }
-    
+
     /**
-     * <pre>
-     * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
-     * in which case the integer is a zero based value to determine where to split off the 'group'.
-     * FOO.1 with a index of '0' will split off '1'
-     * FOO.BLAH.ZIP.0 with an index of '2' will split off 'BLAH.ZIP.0'
-     * If no index is supplied, the default is 0
-     * </pre>
+     * Finds and returns matches across the given arguments. The arguments are expected to be alternating field/regex pairs, optionally followed by a grouping
+     * context index integer as the very last argument. The integer will be a zero-based value used to determine where to split off the 'group' from each field.
+     * If no index is supplied, a default index of 0 will be used. Examples of splitting off groups:
+     * <ul>
+     * <li>{@code FOO.1} with an index of 0 will split off {@code '1'}.</li>
+     * <li>{@code FOO.BLAH.ZIP.0} with an index of 2 will split off {@code 'BLAH.ZIP.0'}.</li>
+     * </ul>
      *
      * @param args
-     *            suuplies field/regex pairs with an optional index as the last arg
+     *            alternating field/regex pairs with an optional index as the last arg
      * @return a collection of matches
      */
     public static Collection<?> matchesInGroup(Object... args) {
@@ -175,15 +174,15 @@ public class GroupingRequiredFilterFunctions {
         } else {
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-        
+
         leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'tail' (.2) that I found above
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
-            
+
             for (int i = 2; i < args.length; i += 2) {
-                
+
                 if (args[i] instanceof Iterable) {
                     for (Object fv : (Iterable) args[i]) {
                         manageMatchesInGroupRemainingArgs(fv, args[i + 1].toString(), context, allMatches, currentMatch);
@@ -193,16 +192,20 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-        
+
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs
         if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
             allMatches.clear();
         }
+
+        if (log.isTraceEnabled()) {
+            log.trace("matchesInGroup(" + Arrays.toString(args) + ") returning " + allMatches);
+        }
         return Collections.unmodifiableCollection(allMatches);
-        
+
     }
-    
+
     /**
      * helper function for matchesInGroup
      *
@@ -231,7 +234,7 @@ public class GroupingRequiredFilterFunctions {
             }
         }
     }
-    
+
     /**
      * <pre>
      * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
@@ -258,7 +261,7 @@ public class GroupingRequiredFilterFunctions {
         String regex = args[1].toString();
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
-            firstMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
+            firstMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable<?>) fieldValue1, regex);
         } else {
             firstMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
@@ -269,9 +272,9 @@ public class GroupingRequiredFilterFunctions {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my firstMatches will be a collection that looks like [NAME.grandparent_0.parent_0.child_0:SANTINO]
             String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
-            
+
             for (int i = 2; i < args.length; i += 2) {
-                
+
                 if (args[i] instanceof Iterable) {
                     // args[i] is a collection that looks like:
                     // [[NAME.grandparent_0.parent_1.child_0,LUCA,luca],
@@ -285,7 +288,7 @@ public class GroupingRequiredFilterFunctions {
                     // grandparent_0.parent_0, then I will see if the name matches my regex (FREDO)
                     // If the positionFromLeft were 1, I would consider all of the above that include grandparent.0, and then
                     // look for a match on FREDO
-                    for (Object fieldValue : (Iterable) args[i]) {
+                    for (Object fieldValue : (Iterable<?>) args[i]) {
                         String fieldName = ValueTuple.getFieldName(fieldValue);
                         // @formatter:off
                         manageMatchesInGroupLeftRemainingArgs(fieldValue,
@@ -315,21 +318,21 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-        
+
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs
         if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
             allMatches.clear();
         }
         if (log.isTraceEnabled()) {
-            log.trace("returning matches:" + allMatches);
+            log.trace("matchesInGroupLeft(" + args + ") returning " + allMatches);
         }
         return Collections.unmodifiableCollection(allMatches);
     }
-    
+
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
                     String theNextMatch, ValueTuple currentMatch) {
-        
+
         if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
             if (log.isTraceEnabled()) {
                 log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
@@ -338,63 +341,55 @@ public class GroupingRequiredFilterFunctions {
             allMatches.add(currentMatch);
         }
     }
-    
+
     /**
-     * test that fields (field names) have values that match within the same grouping context.
-     * 
+     * Delegates to {@link #atomValuesMatch(Iterable[])} after converting any non-iterable args to a singleton collection containing the original arg.
+     *
      * @param fields
-     *            field names
-     * @return a collection of matches
-     * */
+     *            the fields to match on
+     * @return the matches
+     */
     public static Collection<ValueTuple> atomValuesMatch(Object... fields) {
         List<Iterable<?>> iterableFields = new ArrayList<>();
-        
         for (Object field : fields) {
-            if (field instanceof Iterable == false) {
+            if (!(field instanceof Iterable)) {
                 field = Collections.singleton(field);
             }
             iterableFields.add((Iterable<?>) field);
         }
-        return atomValuesMatch(iterableFields.toArray(new Iterable[iterableFields.size()]));
+        return atomValuesMatch(iterableFields.toArray(new Iterable[0]));
     }
-    
+
     /**
-     * test that fields have values that match within the same grouping context.
-     * 
+     * Examines and returns any matches across each of the given iterable args. A match is considered such for a field if that field is found in each iterable
+     * with the same value and the same grouping context. To optimize matching performance, the first argument should be the smallest iterable.
+     *
      * @param fields
-     *            list of fields
-     * @return a collection of matches
+     *            the vararg iterables of fields
+     * @return the matches
      */
     public static Collection<ValueTuple> atomValuesMatch(Iterable<?>... fields) {
         Set<ValueTuple> matches = new HashSet<>();
         if (fields.length == 0 || Arrays.asList(fields).contains(null)) {
             return matches;
         }
-        // save off the first member iterable to use its values as the regexen
-        Iterable<?> firstFields = fields[0];
-        Set<String> normalizedFirstValues = new HashSet<>();
-        for (Object field : firstFields) {
-            normalizedFirstValues.add(ValueTuple.getNormalizedStringValue(field));
-        }
-        for (String regex : normalizedFirstValues) {
-            List<Object> argsList = new ArrayList();
-            for (int i = 0; i < fields.length; i++) {
-                Iterable<?> nextFields = fields[i];
-                argsList.add(nextFields);
+
+        // Look for matches in all given iterables against each normalized field value found in the first iterable of fields.
+        for (Object field : fields[0]) {
+            // The normalized value will be treated as a regex pattern when identifying matches.
+            String regex = ValueTuple.getNormalizedStringValue(field);
+            // Construct the args list that will be passed to matchesInGroup().
+            List<Object> argsList = new ArrayList<>();
+            for (Iterable<?> iterable : fields) {
+                argsList.add(iterable);
                 argsList.add(regex);
             }
-            if (log.isTraceEnabled()) {
-                log.trace("argsList:" + argsList);
-            }
             Collection<ValueTuple> migMatches = (Collection<ValueTuple>) matchesInGroup(argsList.toArray());
-            if (log.isTraceEnabled()) {
-                log.trace("migMatches:" + migMatches);
-            }
             matches.addAll(migMatches);
         }
-        
+
         if (log.isTraceEnabled()) {
-            log.trace("matches:" + matches);
+            log.trace("atomValuesMatch(" + fields + ") returning " + matches);
         }
         return matches;
     }

@@ -9,7 +9,7 @@ public class QueryConfigHandler extends StandardQueryConfigHandler {
         // Add listener that will build the FieldConfig attributes.
         addFieldConfigListener(new FieldBoostMapFCListener(this));
         addFieldConfigListener(new FieldDateResolutionFCListener(this));
-        
+
         set(ConfigurationKeys.DEFAULT_OPERATOR, Operator.AND);
         // This config no longer exists and is apparently (?) no longer needed....
         // See 28/Jun/2016 comment from Adrien Grand on https://jira.apache.org/jira/browse/LUCENE-7355

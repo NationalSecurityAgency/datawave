@@ -13,15 +13,15 @@ public class NotEqualPropertyExpressionInterpreter implements ExpressionInterpre
         if (expression == null) {
             return false;
         }
-        
+
         String[] values = expression.split("!=");
-        
+
         if (values.length != 2) {
             throw new IllegalArgumentException("'" + expression + "' is not a supported syntax");
         }
-        
+
         String configuredValue = ConfigResolver.getPropertyValue(values[0], null);
-        
+
         // exclude if null or the configured value is different
         return configuredValue == null || !values[1].trim().equalsIgnoreCase(configuredValue);
     }

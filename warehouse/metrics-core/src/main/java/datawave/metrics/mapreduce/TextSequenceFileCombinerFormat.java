@@ -13,13 +13,13 @@ import org.apache.hadoop.mapreduce.lib.input.CombineFileSplit;
 
 /**
  * An implementation of CombineFileInputFormat that can read Text/Counters pairs from sequence files.
- * 
+ *
  */
 public class TextSequenceFileCombinerFormat extends CombineFileInputFormat<Text,Counters> {
-    
+
     @Override
     public RecordReader<Text,Counters> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
         return new CombineFileRecordReader<>((CombineFileSplit) split, context, TextRecordReader.class);
     }
-    
+
 }

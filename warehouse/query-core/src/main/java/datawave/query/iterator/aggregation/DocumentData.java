@@ -10,9 +10,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
  * A "struct" containing the Key and Iterator&lt;Entry&lt;Key,Value&gt;&gt; for a Document
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class DocumentData implements Comparable<DocumentData> {
     // the master doc key
@@ -23,42 +23,42 @@ public class DocumentData implements Comparable<DocumentData> {
     private List<Entry<Key,Value>> data;
     // whether the data originated from the index
     private final boolean fromIndex;
-    
+
     public DocumentData(Key key, Set<Key> docKeys, List<Entry<Key,Value>> data, boolean fromIndex) {
         this.setKey(key);
         this.setDocKeys(docKeys);
         this.setData(data);
         this.fromIndex = fromIndex;
     }
-    
+
     public Key getKey() {
         return key;
     }
-    
+
     public void setKey(Key key) {
         this.key = key;
     }
-    
+
     public Set<Key> getDocKeys() {
         return docKeys;
     }
-    
+
     public void setDocKeys(Set<Key> docKeys) {
         this.docKeys = docKeys;
     }
-    
+
     public List<Entry<Key,Value>> getData() {
         return data;
     }
-    
+
     public void setData(List<Entry<Key,Value>> data) {
         this.data = data;
     }
-    
+
     public boolean isFromIndex() {
         return fromIndex;
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(7, 11);
@@ -66,18 +66,18 @@ public class DocumentData implements Comparable<DocumentData> {
         hcb.append(data.hashCode());
         return hcb.toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof DocumentData) {
             DocumentData other = (DocumentData) o;
-            
+
             return key.equals(other.key) && docKeys.equals(other.docKeys) && data.equals(other.data);
         }
-        
+
         return false;
     }
-    
+
     @Override
     public int compareTo(DocumentData o) {
         int keyCompare = key.compareTo(o.getKey());
@@ -88,10 +88,10 @@ public class DocumentData implements Comparable<DocumentData> {
                 return -1;
             }
         }
-        
+
         return keyCompare;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

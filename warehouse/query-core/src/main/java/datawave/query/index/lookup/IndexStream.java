@@ -1,14 +1,14 @@
 package datawave.query.index.lookup;
 
-import org.apache.commons.jexl2.parser.JexlNode;
-
-import datawave.query.util.Tuple2;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.collect.PeekingIterator;
 
+import datawave.query.util.Tuple2;
+
 /**
  * IndexStreams must support the PeekingIterator interface.
- *
+ * <p>
  * All inheriting classes must support the ability to seek to a specific shard.
  */
 public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
@@ -22,7 +22,8 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         PRESENT,
         /**
-         * ABSENT means that we expected data to exist, but did not find any.
+         * ABSENT means that we expected data to exist, but did not find any. This could be an indexed field that simply has no value in the global index, or it
+         * could be that the value exists but not for the specified field, or neither the field nor the value is present in the global index.
          */
         ABSENT,
         /**
@@ -34,47 +35,25 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         NO_OP,
         /**
-         * DELAYED_FIELD means this term or junction of terms is delayed
+         * DELAYED means this term or junction of terms is delayed for any number of reasons
          */
-        DELAYED_FIELD,
-        /**
-         * UNINDEXED means that the given field is not present for any value in the index.
-         */
-        UNINDEXED,
-        /**
-         * UKNOWN_FIELD means that the field has never been tracked by the system.
-         */
-        UNKNOWN_FIELD,
-        /**
-         * EXCEEDED_TERM_THRESHOLD means that we exceeded a term threshold somewhere
-         */
-        EXCEEDED_TERM_THRESHOLD,
-        /**
-         * EXCEEDED_VALUE_THRESHOLD means that we exceeded a value threshold somewhere. The RangeStream will generate a list of day ranges that covers the date
-         * range of the query.
-         */
-        EXCEEDED_VALUE_THRESHOLD,
-        /**
-         * At some point in the processing chain, we determined that a node (range or regex) did not need to be expanded to satisfy the query using the field
-         * index
-         */
-        IGNORED
+        DELAYED,
     }
-    
+
     StreamContext context();
-    
+
     /**
      * This method is used to get an explanation of how we arrived at the provided context().
-     * 
+     *
      * @return the context string
      */
     String getContextDebug();
-    
+
     JexlNode currentNode();
-    
+
     /**
      * Advance the underlying iterator to the first element that is greater than or equal to the <code>seekShard</code>.
-     *
+     * <p>
      * If no data exists beyond the <code>seekShard</code> then a null value is returned, signifying the end of this index stream.
      *
      * @param seekShard
@@ -82,7 +61,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
      * @return the top shard after seeking, or null if no more values exist
      */
     String seek(String seekShard);
-    
+
     /**
      * Additional context is required for nested unions that have a VARIABLE stream context.
      * <p>

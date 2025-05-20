@@ -9,7 +9,7 @@ import org.apache.accumulo.core.data.Range;
 public interface SeekingFilter {
     /**
      * Get the next seek range suggested by the filter
-     * 
+     *
      * @param current
      *            the current key at the top of the source iterator
      * @param endKey
@@ -19,7 +19,7 @@ public interface SeekingFilter {
      * @return the new seek range, or null if the filter does not suggest a seek
      */
     Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive);
-    
+
     /**
      *
      * @return the max next() calls before a seek() is triggered

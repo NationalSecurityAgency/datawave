@@ -1,23 +1,21 @@
 package datawave.query.util;
 
-import datawave.webservice.common.cache.SharedCacheCoordinator;
-import datawave.webservice.common.cache.SharedTriState;
-import datawave.webservice.common.cache.SharedTriStateListener;
-import datawave.webservice.common.cache.SharedTriStateReader;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
-import datawave.webservice.util.EnvProvider;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import datawave.core.common.cache.SharedCacheCoordinator;
+import datawave.core.common.cache.SharedTriState;
+import datawave.core.common.cache.SharedTriStateListener;
+import datawave.core.common.cache.SharedTriStateReader;
+import datawave.core.common.util.EnvProvider;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be
@@ -27,18 +25,18 @@ import java.util.concurrent.TimeUnit;
  * class is created by the MetadataHelperCacheListenerContext.xml which is not loaded in unit tests
  */
 public class MetadataHelperUpdateHdfsListener {
-    
+
     private static final Logger log = Logger.getLogger(MetadataHelperUpdateHdfsListener.class);
-    
+
     private final String zookeepers;
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
     private final Set<Authorizations> allMetadataAuths;
-    
+
     private final String instance;
     private final String username;
     private final String password;
     private final long lockWaitTime;
-    
+
     /**
      * Default constructor
      *
@@ -68,12 +66,12 @@ public class MetadataHelperUpdateHdfsListener {
         this.username = username;
         this.password = resolvePassword(password);
         this.lockWaitTime = lockWaitTime;
-        
+
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
         }
     }
-    
+
     /**
      * Gets a password, either hard coded or from the environment
      *
@@ -106,7 +104,7 @@ public class MetadataHelperUpdateHdfsListener {
                         maybeUpdateTypeMetadataInHdfs(watcher, triStateName, metadataTableName);
                     }
                 }
-                
+
                 @Override
                 public void stateChanged(CuratorFramework client, ConnectionState newState) {
                     if (log.isTraceEnabled())
@@ -117,14 +115,14 @@ public class MetadataHelperUpdateHdfsListener {
             if (!watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
                 watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
             }
-            
+
         } catch (Exception e) {
             log.error(e);
         }
     }
-    
+
     private void maybeUpdateTypeMetadataInHdfs(final SharedCacheCoordinator watcher, String triStateName, String metadataTableName) throws Exception {
-        
+
         boolean locked = false;
         InterProcessMutex lock = (InterProcessMutex) watcher.getMutex("lock");
         try {
@@ -137,7 +135,7 @@ public class MetadataHelperUpdateHdfsListener {
         } catch (Exception e) {
             log.warn("table:" + metadataTableName + " Got Exception trying to acquire lock to update " + metadataTableName + ".", e);
         }
-        
+
         try {
             if (locked) {
                 try {
@@ -161,10 +159,7 @@ public class MetadataHelperUpdateHdfsListener {
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
                         if (log.isDebugEnabled()) {
-                            log.debug("table:"
-                                            + metadataTableName
-                                            + " "
-                                            + this
+                            log.debug("table:" + metadataTableName + " " + this
                                             + "  STATE is not NEEDS_UPDATE! Someone else may be writing or has already written the TypeMetadata map, just release the lock");
                         }
                     }
@@ -174,7 +169,7 @@ public class MetadataHelperUpdateHdfsListener {
                     if (log.isDebugEnabled()) {
                         log.debug("After exception, set the SharedTriState STATE to NEEDS_UPDATE");
                     }
-                    
+
                 }
             }
         } finally {
@@ -182,7 +177,7 @@ public class MetadataHelperUpdateHdfsListener {
                 lock.release();
                 if (log.isTraceEnabled())
                     log.trace("table:" + metadataTableName + " " + this + " released the lock for " + metadataTableName);
-                
+
             }
         }
     }

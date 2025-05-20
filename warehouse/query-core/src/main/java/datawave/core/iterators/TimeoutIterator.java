@@ -15,25 +15,25 @@ import org.apache.log4j.Logger;
 
 /**
  * Purpose: Enforces a timeout within this scan session
- * 
+ *
  * Design: Upon calls to next, seek, and even init ( in the case where we have filters ) we will check if we have reached an unfair execution event in which we
  * have exceed our timeout
  */
 public class TimeoutIterator extends WrappingIterator {
-    
+
     private static final Logger log = Logger.getLogger(TimeoutIterator.class);
     /**
      * Maximum consecutive keys visited.
      */
     public static final String MAX_SESSION_TIME = "max.session.time";
-    
+
     /**
      * Maximum consecutive keys visited.
      */
     protected long maxSessionTime = Long.MAX_VALUE;
-    
+
     protected long currentSession = -1;
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         TimeoutIterator to = new TimeoutIterator();
@@ -42,11 +42,11 @@ public class TimeoutIterator extends WrappingIterator {
         to.currentSession = currentSession;
         return to;
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        
+
         final String maxSessionOpt = options.get(MAX_SESSION_TIME);
         if (null != maxSessionOpt) {
             try {
@@ -57,41 +57,41 @@ public class TimeoutIterator extends WrappingIterator {
                 }
             }
         }
-        
+
         currentSession = System.currentTimeMillis();
-        
+
     }
-    
+
     @Override
     public void next() throws IOException {
-        
+
         if (isUnfairExecution()) {
-            
+
             throw new IteratorTimeoutException("Exception next()");
         }
-        
+
         super.next();
-        
+
     }
-    
+
     /**
      * identifies if we have exceeded the time prescribed by max.session.time
-     * 
+     *
      * @return whether the time has been exceeded
      */
     protected boolean isUnfairExecution() {
         return ((System.currentTimeMillis() - currentSession) >= maxSessionTime);
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        
+
         if (isUnfairExecution()) {
             throw new IteratorTimeoutException("Exception seek()");
         }
-        
+
         super.seek(range, columnFamilies, inclusive);
-        
+
     }
-    
+
 }

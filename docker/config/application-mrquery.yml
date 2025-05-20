@@ -1,0 +1,54 @@
+datawave:
+  query:
+    mapreduce:
+      fsConfigResources:
+        - ${HADOOP_CONF_DIR:/etc/hadoop/conf}/core-site.xml
+        - ${HADOOP_CONF_DIR:/etc/hadoop/conf}/hdfs-site.xml
+        - ${HADOOP_CONF_DIR:/etc/hadoop/conf}/mapred-site.xml
+        - ${HADOOP_CONF_DIR:/etc/hadoop/conf}/yarn-site.xml
+      callbackServletURL: "http://query:8080/query/v1/mapreduce/updateState"
+      mapReduceBaseDirectory: "/datawave/MapReduceService"
+      restrictInputFormats: true
+      validInputFormats:
+        - "org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat"
+        - "datawave.mr.bulk.BulkInputFormat"
+      jobs:
+        'BulkResultsJob':
+          startingClass: datawave.microservice.query.mapreduce.MapReduce
+          jobJarName: "MapReduceQueryCoreJob.jar"
+          description: "MapReduce job that runs a query and either puts the results into a table or files in HDFS"
+          hdfsUri: "hdfs://${HADOOP_HOST}:9000/"
+          jobTracker: "${HADOOP_HOST}:8021"
+          requiredRuntimeParameters:
+            queryId: java.lang.String
+            format: datawave.microservice.mapreduce.bulkresults.map.SerializationFormat
+          optionalRuntimeParameters:
+            outputTableName: java.lang.String
+            outputFormat: java.lang.String
+          jobConfigurationProperties:
+            "mapreduce.map.speculative": "false"
+            "mapreduce.map.output.compress": "false"
+            "mapreduce.output.fileoutputformat.compress": "false"
+            "mapreduce.job.user.classpath.first": "true"
+          # NOTE: Disable spring components which should not be run in a map-reduce context
+          jobSystemProperties:
+            "datawave.table.cache.enabled": "false"
+            "spring.profiles.active": "query,mrquery"
+            "spring.cloud.bus.enabled": "false"
+            "spring.cloud.discovery.enabled": "false"
+            "spring.cloud.consul.enabled": "false"
+            "spring.rabbitmq.discovery.enabled": "false"
+            "datawave.query.messaging.backend": "none"
+            "datawave.query.messaging.claimCheck.enabled": "false"
+            "datawave.query.storage.cache.enabled": "false"
+            "hazelcast.client.enabled": "false"
+            "spring.cloud.config.enabled": "false"
+            "datawave.query.metric.client.enabled": "false"
+          accumulo:
+            zookeepers: '${accumulo.zookeepers}'
+            instanceName: '${accumulo.instanceName}'
+            username: '${accumulo.username}'
+            password: '${accumulo.password}'
+        'OozieJob':
+          hdfsUri: "hdfs://${HADOOP_HOST}:9000/"
+          jobTracker: "${HADOOP_HOST}:8021"

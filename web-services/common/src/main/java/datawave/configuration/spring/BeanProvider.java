@@ -14,10 +14,10 @@ import javax.enterprise.inject.spi.InjectionTarget;
 public class BeanProvider {
     private static BeanProvider instance = null;
     private BeanManager beanManager;
-    
+
     /**
      * Perform CDI injection on the non-managed object {@code bean}.
-     * 
+     *
      * @param bean
      *            - a bean
      */
@@ -25,7 +25,7 @@ public class BeanProvider {
         if (instance == null) {
             throw new IllegalStateException("BeanManager is null. Cannot perform injection.");
         }
-        
+
         BeanManager beanManager = instance.getBeanManager();
         CreationalContext creationalContext = beanManager.createCreationalContext(null);
         AnnotatedType annotatedType = beanManager.createAnnotatedType(bean.getClass());
@@ -33,19 +33,19 @@ public class BeanProvider {
         // noinspection unchecked
         injectionTarget.inject(bean, creationalContext);
     }
-    
+
     public static boolean isActive() {
         return instance != null;
     }
-    
+
     static void initializeBeanProvider(BeanManager beanManager) {
         instance = new BeanProvider(beanManager);
     }
-    
+
     private BeanProvider(BeanManager beanManager) {
         this.beanManager = beanManager;
     }
-    
+
     public BeanManager getBeanManager() {
         return beanManager;
     }

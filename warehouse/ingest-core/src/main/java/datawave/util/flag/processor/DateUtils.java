@@ -15,20 +15,20 @@ import java.util.regex.Pattern;
  *
  */
 public class DateUtils {
-    
+
     static final HashSet<String> GROUPS = new HashSet<>(Arrays.asList("none", "year", "month", "day"));
     // Pattern: /YYYY/MM/DD followed by a / or the end of the string, (?: ) is a non-capturing group....
     public static final Pattern pattern = Pattern.compile("/([0-9]{4})((/[0-9]{2}){2})(?:/|$)");
     public static final long A_MINUTE = 1000L * 60L;
     public static final long ADAY = A_MINUTE * 60L * 24L;
     static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-    
+
     /**
      * Factory method to generate new Bucket objects based on group and searching the path. It is assumed that the path ends with a year, month, and date in the
      * format:<br>
      * YYYY/MM/DD<br>
      * The month and date fields are optional
-     * 
+     *
      * @param group
      *            the group
      * @param path
@@ -41,7 +41,7 @@ public class DateUtils {
         if (group == null || "none".equals(group)) {
             return 0L;
         }
-        
+
         Matcher m = pattern.matcher(path);
         if (m.find()) {
             Calendar c = Calendar.getInstance(GMT);
@@ -50,7 +50,7 @@ public class DateUtils {
             c.set(Calendar.MINUTE, 0);
             c.set(Calendar.SECOND, 0);
             c.set(Calendar.MILLISECOND, 0);
-            
+
             int year = Integer.parseInt(m.group(1));
             c.set(year, Calendar.JANUARY, 1);
             if ("year".equals(group))
@@ -70,10 +70,10 @@ public class DateUtils {
             throw new UnusableFileException("Could not pull yyyy/mm/dd from " + path);
         }
     }
-    
+
     /**
      * Factory method to determine the timestamp for a file from the folder that contains it. This will be the yyyy/mm/dd pulled from the folder.
-     * 
+     *
      * @param path
      *            file path
      * @return the folder timestamp

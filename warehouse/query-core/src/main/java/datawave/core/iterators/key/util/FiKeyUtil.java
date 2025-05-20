@@ -11,14 +11,14 @@ import org.apache.accumulo.core.data.Key;
  * A FieldIndex key structure is row:fi\0FIELD:value\0datatype\0uid
  */
 public class FiKeyUtil {
-    
+
     private FiKeyUtil() {
         // static utility
     }
-    
+
     /**
      * Determines if the provided key is an instance of a FieldIndex key
-     * 
+     *
      * @param k
      *            the key
      * @return true if this a FieldIndex key
@@ -27,10 +27,10 @@ public class FiKeyUtil {
         ByteSequence bytes = k.getColumnFamilyData();
         return bytes != null && bytes.length() > 3 && bytes.byteAt(2) == '\u0000' && bytes.byteAt(1) == 'i' && bytes.byteAt(0) == 'f';
     }
-    
+
     /**
      * Parses the field as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the field
@@ -39,10 +39,10 @@ public class FiKeyUtil {
         ByteSequence bytes = k.getColumnFamilyData();
         return bytes.subSequence(3, bytes.length()).toString();
     }
-    
+
     /**
      * Parses the value as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the value
@@ -57,10 +57,10 @@ public class FiKeyUtil {
         }
         return throwParseException(k);
     }
-    
+
     /**
      * Parses the datatype as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the datatype
@@ -75,15 +75,15 @@ public class FiKeyUtil {
                 } else {
                     return bytes.subSequence(i + 1, stop).toString();
                 }
-                
+
             }
         }
         return throwParseException(k);
     }
-    
+
     /**
      * Parses the uid as a String
-     * 
+     *
      * @param k
      *            the key
      * @return the uid
@@ -97,10 +97,10 @@ public class FiKeyUtil {
         }
         return throwParseException(k);
     }
-    
+
     /**
      * Utility method for throwing an illegal argument exception
-     * 
+     *
      * @param k
      *            the key
      * @return nothing

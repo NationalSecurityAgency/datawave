@@ -19,20 +19,23 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.google.gson.Gson;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.factory.Persister;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.QueryMetricSummary;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.result.QueryImplListResponse;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.resteasy.annotations.GZIP;
+
+import com.google.gson.Gson;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.query.Query;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricSummary;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.result.QueryImplListResponse;
 
 @Path("/Query/queryhud")
 @GZIP
@@ -60,7 +63,7 @@ public class HudBean {
 
     /**
      * Return true if there is at least one log in the last 60 minutes.
-     * 
+     *
      * @param userId
      *            the userid
      * @return true if there is at least one log in the last 60 minutes.
@@ -89,19 +92,21 @@ public class HudBean {
 
             List<? extends BaseQueryMetric> queryMetricsList;
 
-            queryMetricsList = queryMetrics.query(queryId).getResult();
+            BaseQueryMetricListResponse response = queryMetrics.query(queryId);
+            if (response != null) {
+                queryMetricsList = response.getResult();
+                if (queryMetricsList != null && !queryMetricsList.isEmpty()) {
+                    BaseQueryMetric qm = queryMetricsList.get(0);
 
-            if (queryMetricsList != null && !queryMetricsList.isEmpty()) {
-                BaseQueryMetric qm = queryMetricsList.get(0);
+                    List<PageMetric> pageMetrics = qm.getPageTimes();
+                    summary.setPageMetrics(pageMetrics);
 
-                List<PageMetric> pageMetrics = qm.getPageTimes();
-                summary.setPageMetrics(pageMetrics);
-
-                summary.setCreateDate(qm.getCreateDate().getTime());
-                summary.setNumPages(qm.getNumPages());
-                summary.setNumResults(qm.getNumResults());
-                summary.setLastUpdated(qm.getLastUpdated().getTime());
-                summary.setLifeCycle(qm.getLifecycle().toString());
+                    summary.setCreateDate(qm.getCreateDate().getTime());
+                    summary.setNumPages(qm.getNumPages());
+                    summary.setNumResults(qm.getNumResults());
+                    summary.setLastUpdated(qm.getLastUpdated().getTime());
+                    summary.setLifeCycle(qm.getLifecycle().toString());
+                }
             }
 
             querySummaryList.add(summary);
@@ -123,20 +128,24 @@ public class HudBean {
     @Path("/summaryall")
     @GET
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
-    public String getSummaryQueryStats() throws Exception {
+    public String getSummaryQueryStats() {
         QueryMetricsSummaryResponse summaryResp = queryMetrics.getQueryMetricsSummary(null, null);
-        QueryMetricSummary hour1 = summaryResp.getHour1();
-        QueryMetricSummary hour6 = summaryResp.getHour6();
-        QueryMetricSummary hour12 = summaryResp.getHour12();
-        QueryMetricSummary day1 = summaryResp.getDay1();
+        if (summaryResp == null) {
+            return null;
+        } else {
+            QueryMetricSummary hour1 = summaryResp.getHour1();
+            QueryMetricSummary hour6 = summaryResp.getHour6();
+            QueryMetricSummary hour12 = summaryResp.getHour12();
+            QueryMetricSummary day1 = summaryResp.getDay1();
 
-        List<HudMetricSummary> metricSummaryList = new ArrayList<>();
-        metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(1L, hour1));
-        metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(6L, hour6));
-        metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(12L, hour12));
-        metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(24L, day1));
+            List<HudMetricSummary> metricSummaryList = new ArrayList<>();
+            metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(1L, hour1));
+            metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(6L, hour6));
+            metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(12L, hour12));
+            metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(24L, day1));
 
-        return gson.toJson(metricSummaryList);
+            return gson.toJson(metricSummaryList);
+        }
     }
 
     @Path("/activeusers")

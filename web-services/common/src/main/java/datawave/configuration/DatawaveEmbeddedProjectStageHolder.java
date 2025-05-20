@@ -10,7 +10,7 @@ public class DatawaveEmbeddedProjectStageHolder implements ProjectStageHolder {
     public static final class DatawaveEmbedded extends ProjectStage {
         private static final long serialVersionUID = 1029094387976167179L;
     }
-    
+
     @SuppressWarnings("unused")
     public static final DatawaveEmbedded DatawaveEmbedded = new DatawaveEmbedded();
 }

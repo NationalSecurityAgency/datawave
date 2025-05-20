@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+    <property>
+        <name>error.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>error.shard.table.name</name>
+        <value>${table.name.errors.shard}</value>
+    </property>
+
+    <property>
+        <name>error.shard.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>error.shard.global.index.table.name</name>
+        <value>${table.name.errors.shardIndex}</value>
+    </property>
+
+    <property>
+        <name>error.shard.global.index.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>error.shard.global.rindex.table.name</name>
+        <value>${table.name.errors.shardReverseIndex}</value>
+    </property>
+
+    <property>
+        <name>error.shard.global.rindex.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>error.shard.enable.bloom.filters</name>
+        <value>false</value>
+        <description>Whether or not to add bloom filters on the index tables. Default is false</description>
+    </property>
+
+    <property>
+        <name>error.shard.table.locality.groups</name>
+        <value>fullcontent:d</value>
+        <description>The list of locality groups in the form groupname:columnfamily, comma separated</description>
+    </property>
+
+    <property>
+        <name>error.metadata.table.name</name>
+        <value>${table.name.errors.metadata}</value>
+    </property>
+
+    <property>
+        <name>error.metadata.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>error.metadata.term.frequency.enabled</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>${table.name.errors.shard}.table.config.class</name>
+        <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>${table.name.errors.shardIndex}.table.config.class</name>
+        <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>${table.name.errors.shardReverseIndex}.table.config.class</name>
+        <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>${table.name.errors.metadata}.table.config.class</name>
+        <value>datawave.ingest.table.config.ErrorMetadataTableConfigHelper</value>
+    </property>
+
+    <!-- Marker property to indicate that we've supplied configuration for 
+        the "ERROR" type and the event mapper will pick this up and configure the 
+        default type handlers for the "ERROR" data type. -->
+
+    <property>
+        <name>error.table.ageoff.ttl</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>error.data.default.type.class</name>
+        <value>datawave.data.type.LcNoDiacriticsType</value>
+    </property>
+
+    <property>
+        <name>error.table.ageoff.ttlunits</name>
+        <value>d</value>
+    </property>
+
+
+    <property>
+        <name>error.use.default.type.handlers</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>error.ingest.helper.class</name>
+        <value>datawave.ingest.data.config.ingest.ErrorShardedIngestHelper</value>
+    </property>
+
+    <property>
+        <name>error.reader.class</name>
+        <value></value>
+    </property>
+
+    <property>
+        <name>error.handler.classes</name>
+        <value>datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler,${ADDITIONAL_ERROR_HANDLER_CLASSES}</value>
+    </property>
+    
+    <property>
+        <name>error.data.category.marking.default</name>
+        <value>PRIVATE</value>
+        <description>Default ColumnVisibility to be applied to fields/records if none provided in the data</description>
+    </property>
+
+    <property>
+        <name>error.data.replace.malformed.utf8</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>partitioner.category.member.${table.name.errors.shard}</name>
+        <value>shardedTables</value>
+    </property>
+</configuration>

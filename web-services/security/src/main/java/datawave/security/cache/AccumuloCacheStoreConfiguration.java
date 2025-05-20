@@ -20,19 +20,19 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     public static final AttributeDefinition<String> USERNAME = AttributeDefinition.builder("username", null, String.class).immutable().build();
     public static final AttributeDefinition<String> PASSWORD = AttributeDefinition.builder("password", null, String.class).immutable().build();
     public static final AttributeDefinition<String> TABLE_NAME = AttributeDefinition.builder("tableName", "AuthorizationServiceCache").immutable().build();
-    public static final AttributeDefinition<List<String>> AUTHORIZATIONS = AttributeDefinition
-                    .builder("authorizations", (List<String>) new ArrayList<String>()).immutable().build();
+    public static final AttributeDefinition<List<String>> AUTHORIZATIONS = AttributeDefinition.builder("authorizations", (List<String>) new ArrayList<String>())
+                    .immutable().build();
     public static final AttributeDefinition<Integer> WRITE_THREADS = AttributeDefinition.builder("writeThreads", 4).immutable().build();
     public static final AttributeDefinition<Long> MAX_LATENCY = AttributeDefinition.builder("maxLatencySeconds", 5L).immutable().build();
     public static final AttributeDefinition<Long> MAX_MEMORY = AttributeDefinition.builder("maxMemoryBytes", 262144L).immutable().build();
     public static final AttributeDefinition<Integer> AGEOFF_TTL = AttributeDefinition.builder("ageoffTTLhours", 24).immutable().build();
     public static final AttributeDefinition<Integer> AGEOFF_PRIORITY = AttributeDefinition.builder("ageoffPriority", 19).immutable().build();
-    
+
     public static AttributeSet attributeDefinitionSet() {
-        return new AttributeSet(AccumuloCacheStoreConfiguration.class, AbstractStoreConfiguration.attributeDefinitionSet(), INSTANCE_NAME, ZOOKEEPERS,
-                        USERNAME, PASSWORD, TABLE_NAME, AUTHORIZATIONS, WRITE_THREADS, MAX_LATENCY, MAX_MEMORY, AGEOFF_TTL, AGEOFF_PRIORITY);
+        return new AttributeSet(AccumuloCacheStoreConfiguration.class, AbstractStoreConfiguration.attributeDefinitionSet(), INSTANCE_NAME, ZOOKEEPERS, USERNAME,
+                        PASSWORD, TABLE_NAME, AUTHORIZATIONS, WRITE_THREADS, MAX_LATENCY, MAX_MEMORY, AGEOFF_TTL, AGEOFF_PRIORITY);
     }
-    
+
     private Attribute<String> instanceName;
     private Attribute<String> zookeepers;
     private Attribute<String> username;
@@ -44,7 +44,7 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     private Attribute<Long> maxMemory;
     private Attribute<Integer> ageoffTTLhours;
     private Attribute<Integer> ageoffPriority;
-    
+
     public AccumuloCacheStoreConfiguration(AttributeSet attributes, AsyncStoreConfiguration async, SingletonStoreConfiguration singletonStore) {
         super(attributes, async, singletonStore);
         instanceName = attributes.attribute(INSTANCE_NAME);
@@ -59,51 +59,51 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
         ageoffTTLhours = attributes.attribute(AGEOFF_TTL);
         ageoffPriority = attributes.attribute(AGEOFF_PRIORITY);
     }
-    
+
     public String instanceName() {
         return instanceName.get();
     }
-    
+
     public String zookeepers() {
         return zookeepers.get();
     }
-    
+
     public String username() {
         return username.get();
     }
-    
+
     public String password() {
         return password.get();
     }
-    
+
     public String tableName() {
         return tableName.get();
     }
-    
+
     public List<String> auths() {
         return auths.get();
     }
-    
+
     public int writeThreads() {
         return writeThreads.get();
     }
-    
+
     public long maxLatency() {
         return maxLatency.get();
     }
-    
+
     public long maxMemory() {
         return maxMemory.get();
     }
-    
+
     public int ageoffTTLhours() {
         return ageoffTTLhours.get();
     }
-    
+
     public int ageoffPriority() {
         return ageoffPriority.get();
     }
-    
+
     @Override
     @SuppressWarnings("RedundantIfStatement")
     public boolean equals(Object o) {
@@ -113,9 +113,9 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
             return false;
         if (!super.equals(o))
             return false;
-        
+
         AccumuloCacheStoreConfiguration that = (AccumuloCacheStoreConfiguration) o;
-        
+
         if (instanceName != null ? !instanceName.equals(that.instanceName) : that.instanceName != null)
             return false;
         if (zookeepers != null ? !zookeepers.equals(that.zookeepers) : that.zookeepers != null)
@@ -138,10 +138,10 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
             return false;
         if (ageoffPriority != null ? !ageoffPriority.equals(that.ageoffPriority) : that.ageoffPriority != null)
             return false;
-        
+
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         int result = super.hashCode();
@@ -158,7 +158,7 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
         result = 31 * result + (ageoffPriority != null ? ageoffPriority.hashCode() : 0);
         return result;
     }
-    
+
     @Override
     public String toString() {
         return "AccumuloCacheStoreConfiguration [attributes=" + attributes + "]";

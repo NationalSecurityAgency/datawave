@@ -7,22 +7,23 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.util.flag.processor.DateUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.util.flag.processor.DateUtils;
+
 /**
  * Wrapper for input file meta data
  */
 public class InputFile implements Comparable<InputFile> {
-    
+
     private static final Logger log = LoggerFactory.getLogger(InputFile.class);
     static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "HH";
     // our yyyy/MM/dd{/HH{/mm{/ss}}} pattern for most things.
     public static final Pattern PATTERN = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2,5})(?:/.*|$)");
-    
+
     /**
      * Defines the tracked directory locations within the flag hdfs.
      */
@@ -33,34 +34,34 @@ public class InputFile implements Comparable<InputFile> {
         FLAGGED_DIR("flagged"),
         LOADED_DIR("loaded");
         // @formatter:on
-        
+
         private final String path;
-        
+
         TrackedDir(String path) {
             this.path = path;
         }
     }
-    
+
     private long blocksize;
     private long filesize;
     private Path path;
     private long timestamp;
     private String folder;
-    
+
     // flag file paths
     private Path flagging;
     private Path flagged;
     private Path loaded;
-    
+
     // state variables
     private TrackedDir currentDir;
     private boolean moved;
-    
+
     // public InputFile() {}
-    
+
     /**
      * Create an InputFile
-     * 
+     *
      * @param folder
      *            The folder that was originally searched in
      * @param path
@@ -80,79 +81,79 @@ public class InputFile implements Comparable<InputFile> {
         this.blocksize = blocksize;
         this.filesize = filesize;
         this.timestamp = timestamp;
-        
+
         this.flagging = getDestPath(path, TrackedDir.FLAGGING_DIR.path, baseDir, folder);
         this.flagged = getDestPath(path, TrackedDir.FLAGGED_DIR.path, baseDir, folder);
         this.loaded = getDestPath(path, TrackedDir.LOADED_DIR.path, baseDir, folder);
         this.currentDir = TrackedDir.PATH_DIR;
     }
-    
+
     InputFile(String folder, FileStatus status, String baseDir, boolean useFolderTimestamp) {
-        this(folder, status.getPath(), status.getBlockSize(), status.getLen(), createTimestamp(status.getPath(), status.getModificationTime(),
-                        useFolderTimestamp), baseDir);
+        this(folder, status.getPath(), status.getBlockSize(), status.getLen(),
+                        createTimestamp(status.getPath(), status.getModificationTime(), useFolderTimestamp), baseDir);
     }
-    
+
     public long getTimestamp() {
         return timestamp;
     }
-    
+
     public long getBlocksize() {
         return blocksize;
     }
-    
+
     public String getFileName() {
         return path.getName();
     }
-    
+
     public long getFilesize() {
         return filesize;
     }
-    
+
     public void setFilesize(long filesize) {
         this.filesize = filesize;
     }
-    
+
     public String getDirectory() {
         return path.getParent().toString();
     }
-    
+
     Path getFlagging() {
         return flagging;
     }
-    
+
     public Path getFlagged() {
         return flagged;
     }
-    
+
     public Path getLoaded() {
         return loaded;
     }
-    
+
     public Path getPath() {
         return path;
     }
-    
+
     public String getFolder() {
         return folder;
     }
-    
+
     public int getMaps() {
         double maps = (blocksize == 0 ? 1 : (double) filesize / blocksize);
         return (int) Math.ceil(maps);
     }
-    
+
     public Path getCurrentDir() {
         return getTrackedDir(this.currentDir);
     }
-    
+
     public boolean isMoved() {
         return moved;
     }
-    
+
     void setMoved(boolean moved) {
         this.moved = moved;
     }
-    
+
     // ===============================================
     // utility methods
     /**
@@ -165,10 +166,10 @@ public class InputFile implements Comparable<InputFile> {
         this.currentDir = update;
         this.moved = true;
     }
-    
+
     /**
      * Returns the {@link Path} for the file in the specific tracked directory.
-     * 
+     *
      * @param loc
      *            tracked directory
      * @return path for the file
@@ -188,13 +189,13 @@ public class InputFile implements Comparable<InputFile> {
             case LOADED_DIR:
                 file = this.loaded;
         }
-        
+
         return file;
     }
-    
+
     /**
      * Returns the {@link Path} for the file in the specific tracked directory.
-     * 
+     *
      * @param loc
      *            tracked directory
      * @return path for the file in the specific tracked directory.
@@ -203,7 +204,7 @@ public class InputFile implements Comparable<InputFile> {
         Path file = getTrackedDir(loc);
         return file.toUri().toString().length();
     }
-    
+
     /**
      * Updates the tracked locations to use the current timestamp to resolve naming conflicts.
      */
@@ -213,7 +214,7 @@ public class InputFile implements Comparable<InputFile> {
         this.flagging = this.flagging.suffix(now);
         this.loaded = this.loaded.suffix(now);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -237,7 +238,7 @@ public class InputFile implements Comparable<InputFile> {
         }
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 5;
@@ -247,7 +248,7 @@ public class InputFile implements Comparable<InputFile> {
         hash = 53 * hash + (this.path != null ? this.path.hashCode() : 0);
         return hash;
     }
-    
+
     @Override
     public String toString() {
         // @formatter:off
@@ -265,7 +266,7 @@ public class InputFile implements Comparable<InputFile> {
                 '}';
         // @formatter:on
     }
-    
+
     /**
      * A FIFO comparator
      */
@@ -295,7 +296,7 @@ public class InputFile implements Comparable<InputFile> {
         }
         return comparison;
     };
-    
+
     /**
      * A LIFO comparator
      */
@@ -303,17 +304,17 @@ public class InputFile implements Comparable<InputFile> {
         // simply a reverse of the FIFO comparison
         return FIFO.compare(o2, o1);
     };
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
     public int compareTo(InputFile o) {
         return FIFO.compare(this, o);
     }
-    
+
     /**
      * if it matches the date pattern, use that, otherwise use a pattern of now
      *
@@ -340,7 +341,7 @@ public class InputFile implements Comparable<InputFile> {
         }
         return new Path(appendWithSep(dstPath, inFile.getName()).toString());
     }
-    
+
     private static StringBuilder appendWithSep(StringBuilder b, String next) {
         if (b.charAt(b.length() - 1) != File.separatorChar) {
             b.append(File.separatorChar);
@@ -348,7 +349,7 @@ public class InputFile implements Comparable<InputFile> {
         b.append(next);
         return b;
     }
-    
+
     /**
      * Returns a timestamp to use for the specified {@link Path} entry.
      *

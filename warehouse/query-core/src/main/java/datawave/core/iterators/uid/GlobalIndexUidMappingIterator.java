@@ -1,7 +1,5 @@
 package datawave.core.iterators.uid;
 
-import datawave.ingest.protobuf.Uid;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Value;
@@ -10,26 +8,28 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.ingest.protobuf.Uid;
+
 /**
  * <p>
  * An iterator that will map uids in shard index and reverse index table entries per a configured UidMapper.
  * </p>
- * 
- * 
+ *
+ *
  * @see datawave.core.iterators.uid.UidMapper
- * 
+ *
  */
 public class GlobalIndexUidMappingIterator extends UidMappingIterator {
-    
+
     public GlobalIndexUidMappingIterator() {}
-    
+
     public GlobalIndexUidMappingIterator(GlobalIndexUidMappingIterator iter, IteratorEnvironment env) {
         super(iter, env);
     }
-    
+
     /**
      * Map the uid in the supplied value. The formats expected are for the shard table only.
-     * 
+     *
      * @param keyValue
      *            the key value
      * @param startKey
@@ -74,7 +74,7 @@ public class GlobalIndexUidMappingIterator extends UidMappingIterator {
         }
         return keyValue;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new GlobalIndexUidMappingIterator(this, env);

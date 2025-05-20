@@ -16,13 +16,9 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import datawave.query.language.parser.jexl.JexlBooleanNode;
-import datawave.query.language.parser.jexl.JexlNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -38,6 +34,9 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 
+import datawave.query.language.parser.jexl.JexlBooleanNode;
+import datawave.query.language.parser.jexl.JexlNode;
+
 /**
  * Builds a {@link BooleanQuery} object from a {@link BooleanQueryNode} object. Every children in the {@link BooleanQueryNode} object must be already tagged
  * using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} with a {@link Query} object. <br>
@@ -45,19 +44,19 @@ import org.apache.lucene.search.Query;
  * It takes in consideration if the children is a {@link ModifierQueryNode} to define the {@link BooleanClause}.
  */
 public class BooleanQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;
-        
+
         JexlNode bNode = null;
         List<QueryNode> children = booleanNode.getChildren();
-        
+
         if (children != null) {
             List<JexlNode> childrenList = new ArrayList<>();
-            
+
             LinkedList<QueryNode> extraNodeList = new LinkedList<>();
             boolean isNegation = false;
-            
+
             for (QueryNode child : children) {
                 Object obj = child.getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
                 if (obj != null) {
@@ -65,18 +64,18 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
                     childrenList.add(query);
                 }
             }
-            
+
             bNode = createNode(queryNode, childrenList, isNegation, extraNodeList);
         }
-        
+
         return bNode;
-        
+
     }
-    
+
     private JexlNode createNode(QueryNode queryNode, List<JexlNode> children, boolean isNegation, LinkedList<QueryNode> extraNodeList)
                     throws QueryNodeException {
         JexlNode bNode = null;
-        
+
         if (queryNode instanceof AndQueryNode) {
             bNode = new JexlBooleanNode(JexlBooleanNode.Type.AND, children);
         } else if (queryNode instanceof OrQueryNode) {
@@ -90,8 +89,8 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new QueryNodeException(new MessageImpl("Unknown class: " + queryNode.getClass().getName()));
         }
-        
+
         return bNode;
     }
-    
+
 }

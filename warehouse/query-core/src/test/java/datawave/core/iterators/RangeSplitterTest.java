@@ -1,27 +1,31 @@
 package datawave.core.iterators;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * 
+ *
  */
 public class RangeSplitterTest {
-    
+
     Logger log = Logger.getLogger(RangeSplitterTest.class);
-    
+
     @Before
     public void setUp() throws Exception {}
-    
+
     @After
     public void tearDown() throws Exception {}
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -35,19 +39,19 @@ public class RangeSplitterTest {
         int count = 0;
         for (Range range : splitter) {
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -63,19 +67,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -91,19 +95,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -119,19 +123,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -147,19 +151,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -175,19 +179,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -203,19 +207,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -231,19 +235,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(1, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(1, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -259,19 +263,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(1, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(1, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -287,19 +291,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertNull(lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertNull(lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -315,19 +319,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertNull(range.getStartKey());
+                assertNull(range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -343,19 +347,19 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -371,17 +375,17 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            assertTrue(range.isStartKeyInclusive());
+            assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assertEquals(end, lastRange.getEndKey());
+        assertEquals(10, count);
     }
-    
+
 }

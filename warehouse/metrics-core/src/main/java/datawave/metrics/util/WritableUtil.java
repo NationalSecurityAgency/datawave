@@ -5,25 +5,25 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import datawave.metrics.mapreduce.util.EmptyValue;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
+import datawave.metrics.mapreduce.util.EmptyValue;
+
 /**
  * A utility class that provides static methods that make dealing with Writables, and primarily Text, easier when dealing with parsing into primitive types.
- * 
+ *
  */
 public class WritableUtil {
     public static final Text EmptyText = new Text(new byte[0]);
-    
+
     public static Text getLong(long l) {
         return new Text(Long.toString(l));
     }
-    
+
     /**
      * Natively parses a text object into a long in base 10.
-     * 
+     *
      * @param t
      *            the text object
      * @return a parsed long
@@ -33,10 +33,10 @@ public class WritableUtil {
     public static long parseLong(Text t) {
         return parseLong(t, 10);
     }
-    
+
     /**
      * Natively parses a text object into a long with the specified radix.
-     * 
+     *
      * @param text
      *            the text object
      * @param radix
@@ -49,21 +49,21 @@ public class WritableUtil {
         if (text == null) {
             throw new NumberFormatException("null");
         }
-        
+
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix + " less than Character.MIN_RADIX");
         }
         if (radix > Character.MAX_RADIX) {
             throw new NumberFormatException("radix " + radix + " greater than Character.MAX_RADIX");
         }
-        
+
         long result = 0;
         boolean negative = false;
         int i = 0, max = text.getLength();
         long limit;
         long multmin;
         int digit;
-        
+
         if (max > 0) {
             if (text.charAt(0) == '-') {
                 negative = true;
@@ -109,10 +109,10 @@ public class WritableUtil {
             return -result;
         }
     }
-    
+
     /**
      * A convenience method for serializing a long into a byte array.
-     * 
+     *
      * @param l
      *            the specified long
      * @return a byte array
@@ -126,15 +126,15 @@ public class WritableUtil {
             return EmptyValue.getEmptyBytes();
         }
     }
-    
+
     public static int find(Text what, Text in) {
         return find(what, in, 0);
     }
-    
+
     /**
      * Modified from Hadoop's text to search for text within text. I'm surprised they don't support this natively, as it's safer with regards to types and
      * slightly faster since there's no conversion from UTF-16 to UTF-8.
-     * 
+     *
      * @param in
      *            the input text
      * @param start
@@ -148,7 +148,7 @@ public class WritableUtil {
         ByteBuffer tgt = ByteBuffer.wrap(what.getBytes(), 0, what.getLength());
         byte b = tgt.get();
         src.position(start);
-        
+
         while (src.hasRemaining()) {
             if (b == src.get()) { // matching first byte
                 src.mark(); // save position in loop
@@ -175,10 +175,10 @@ public class WritableUtil {
         }
         return -1; // not found
     }
-    
+
     /**
      * Finds the nth occurance of b in a given Text object.
-     * 
+     *
      * @param t
      *            the text
      * @param nth

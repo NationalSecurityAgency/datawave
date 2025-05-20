@@ -1,21 +1,24 @@
 package datawave.query.attributes;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.Set;
+
+import org.apache.commons.lang.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
+
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.lang.StringUtils;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  * Represents a set of fields that have been specified within a {@code #unique()} function, as well any specified granularity levels for each individual field
@@ -23,10 +26,13 @@ import java.util.Set;
  * captured as a parameter string using {@link UniqueFields#toString()}, and transformed back into a {@link UniqueFields} instance via
  * {@link UniqueFields#from(String)}.
  */
-public class UniqueFields implements Serializable {
-    
-    private Multimap<String,UniqueGranularity> fieldMap;
-    
+public class UniqueFields implements Serializable, Cloneable {
+    private static final long serialVersionUID = 2269249452109902433L;
+
+    private final TreeMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+    private boolean mostRecent = false;
+    private static String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
+
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
      * {@link UniqueFields#toString()}. Any fields not specified with a {@link UniqueGranularity} name will be added with the default ALL granularity. All
@@ -49,15 +55,15 @@ public class UniqueFields implements Serializable {
         }
         // Strip whitespaces.
         string = StringUtils.deleteWhitespace(string);
-        
+
         if (string.isEmpty()) {
             return new UniqueFields();
         }
-        
+
         UniqueFields uniqueFields = new UniqueFields();
         final int finalIndex = string.length() - 1;
         int currentIndex = 0;
-        
+
         while (currentIndex < finalIndex) {
             int nextComma = string.indexOf(Constants.COMMA, currentIndex);
             int nextStartBracket = string.indexOf(Constants.BRACKET_START, currentIndex);
@@ -70,8 +76,12 @@ public class UniqueFields implements Serializable {
             if (nextComma == -1 && nextStartBracket == -1) {
                 String field = string.substring(currentIndex);
                 if (!field.isEmpty()) {
-                    // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
-                    uniqueFields.put(field, UniqueGranularity.ALL);
+                    if (field.equals(MOST_RECENT_UNIQUE)) {
+                        uniqueFields.setMostRecent(true);
+                    } else {
+                        // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
+                        uniqueFields.put(field, UniqueGranularity.ALL);
+                    }
                 }
                 break; // There are no more fields to be parsed.
             } else if (nextComma != -1 && (nextStartBracket == -1 || nextComma < nextStartBracket)) {
@@ -85,8 +95,12 @@ public class UniqueFields implements Serializable {
                 // Add the field with the ALL granularity.
                 String field = string.substring(currentIndex, nextComma);
                 if (!field.isEmpty()) {
-                    // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
-                    uniqueFields.put(field, UniqueGranularity.ALL);
+                    if (field.equals(MOST_RECENT_UNIQUE)) {
+                        uniqueFields.setMostRecent(true);
+                    } else {
+                        // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
+                        uniqueFields.put(field, UniqueGranularity.ALL);
+                    }
                 }
                 currentIndex = nextComma + 1; // Advance to the start of the next field.
             } else {
@@ -98,24 +112,28 @@ public class UniqueFields implements Serializable {
                 String field = string.substring(currentIndex, nextStartBracket);
                 int nextEndBracket = string.indexOf(Constants.BRACKET_END, currentIndex);
                 if (!field.isEmpty()) {
-                    String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
-                    // An empty granularity list, e.g. field[] is equivalent to field[ALL].
-                    if (granularityList.isEmpty()) {
-                        uniqueFields.put(field, UniqueGranularity.ALL);
+                    if (field.equals(MOST_RECENT_UNIQUE)) {
+                        uniqueFields.setMostRecent(true);
                     } else {
-                        String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
-                        for (String granularity : granularities) {
-                            uniqueFields.put(field, parseGranularity(granularity));
+                        String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
+                        // An empty granularity list, e.g. field[] is equivalent to field[ALL].
+                        if (granularityList.isEmpty()) {
+                            uniqueFields.put(field, UniqueGranularity.ALL);
+                        } else {
+                            String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
+                            for (String granularity : granularities) {
+                                uniqueFields.put(field, parseGranularity(granularity));
+                            }
                         }
                     }
                 }
                 currentIndex = nextEndBracket + 1; // Advance to the start of the next field.
             }
         }
-        
+
         return uniqueFields;
     }
-    
+
     // Return the parsed granularity instance, or throw an exception if one could not be parsed.
     private static UniqueGranularity parseGranularity(String granularity) {
         try {
@@ -124,27 +142,22 @@ public class UniqueFields implements Serializable {
             throw new IllegalArgumentException("Invalid unique granularity given: " + granularity);
         }
     }
-    
+
     /**
-     * Return a copy of the given {@link UniqueFields}.
+     * Return a clone of this class
      *
-     * @param other
-     *            the other instance to copy
      * @return the copy
      */
-    public static UniqueFields copyOf(UniqueFields other) {
-        if (other == null) {
-            return null;
-        }
-        UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.fieldMap = TreeMultimap.create(other.fieldMap);
-        return uniqueFields;
+    @Override
+    public UniqueFields clone() {
+        UniqueFields newFields = new UniqueFields();
+        newFields.fieldMap.putAll(this.fieldMap);
+        newFields.mostRecent = this.mostRecent;
+        return newFields;
     }
-    
-    public UniqueFields() {
-        fieldMap = TreeMultimap.create();
-    }
-    
+
+    public UniqueFields() {}
+
     /**
      * Create a new {@link UniqueFields} with the provided map as the underlying field map.
      *
@@ -152,9 +165,26 @@ public class UniqueFields implements Serializable {
      *            the field map to use
      */
     public UniqueFields(SortedSetMultimap<String,UniqueGranularity> fieldMap) {
-        this.fieldMap = fieldMap;
+        putAll(fieldMap);
     }
-    
+
+    /**
+     * Clear out the field map
+     */
+    public UniqueFields clear() {
+        this.fieldMap.clear();
+        return this;
+    }
+
+    /**
+     * Set the field map
+     *
+     * @param fields
+     */
+    public UniqueFields set(Multimap<String,UniqueGranularity> fields) {
+        return clear().putAll(fields);
+    }
+
     /**
      * Put a field-{@link UniqueGranularity} key pair into this {@link UniqueFields}.
      *
@@ -163,59 +193,62 @@ public class UniqueFields implements Serializable {
      * @param uniqueGranularity
      *            the granularity
      */
-    public void put(String field, UniqueGranularity uniqueGranularity) {
-        fieldMap.put(field, uniqueGranularity);
+    public UniqueFields put(String field, UniqueGranularity uniqueGranularity) {
+        fieldMap.put(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), uniqueGranularity);
+        return this;
     }
-    
+
     /**
      * Put all field-granularity pairings from the provided field map into this {@link UniqueFields}.
-     * 
+     *
      * @param fieldMap
      *            the field map to add entries from
      */
-    public void putAll(Multimap<String,UniqueGranularity> fieldMap) {
+    public UniqueFields putAll(Multimap<String,UniqueGranularity> fieldMap) {
         if (fieldMap != null) {
-            this.fieldMap.putAll(fieldMap);
-        }
-    }
-    
-    /**
-     * Return a copy of the fields within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}.
-     * 
-     * @return the
-     */
-    public Set<String> getFields() {
-        return Sets.newHashSet(fieldMap.keySet());
-    }
-    
-    /**
-     * Return the underlying field-granularity map from this {@link UniqueFields}.
-     * 
-     * @return the field map
-     */
-    public Multimap<String,UniqueGranularity> getFieldMap() {
-        return fieldMap;
-    }
-    
-    /**
-     * Replace any identifier fields with their deconstructed version.
-     */
-    public void deconstructIdentifierFields() {
-        Multimap<String,UniqueGranularity> newFieldMap = TreeMultimap.create();
-        for (String field : fieldMap.keySet()) {
-            String newField = JexlASTHelper.deconstructIdentifier(field);
-            if (newField.equals(field)) {
-                newFieldMap.putAll(field, fieldMap.get(field));
-            } else {
-                newFieldMap.putAll(newField, fieldMap.get(field));
+            for (String field : fieldMap.keySet()) {
+                this.fieldMap.putAll(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), fieldMap.get(field));
             }
         }
-        this.fieldMap = newFieldMap;
+        return this;
     }
-    
+
+    /**
+     * Replace a field mapping with another field
+     *
+     * @param field
+     *            the field
+     * @param replacement
+     *            the replacement
+     */
+    public void replace(String field, String replacement) {
+        Collection<UniqueGranularity> value = fieldMap.removeAll(field);
+        if (value != null && !value.isEmpty()) {
+            fieldMap.putAll(replacement, value);
+        }
+    }
+
+    /**
+     * Return the fields within this {@link UniqueFields}. Modifications to this set will modify the fields in this {@link UniqueFields}.
+     *
+     * @return a copy of the fields
+     */
+    public NavigableSet<String> getFields() {
+        return fieldMap.keySet();
+    }
+
+    /**
+     * Return the underlying field-granularity map from this {@link UniqueFields}.
+     *
+     * @return the field map
+     */
+    public TreeMultimap<String,UniqueGranularity> getFieldMap() {
+        return fieldMap;
+    }
+
     /**
      * Remap all fields to include any matches from the provided model. The original field entries will be retained.
-     * 
+     *
      * @param model
      *            the model to find mappings from
      */
@@ -223,14 +256,13 @@ public class UniqueFields implements Serializable {
         Multimap<String,UniqueGranularity> newFieldMap = TreeMultimap.create(fieldMap);
         for (String field : fieldMap.keySet()) {
             Collection<UniqueGranularity> granularities = fieldMap.get(field);
-            field = field.toUpperCase();
             if (model.containsKey(field)) {
                 model.get(field).forEach((newField) -> newFieldMap.putAll(newField, granularities));
             }
         }
-        this.fieldMap = newFieldMap;
+        set(newFieldMap);
     }
-    
+
     /**
      * Returns whether or not this {@link UniqueFields} contains any fields.
      *
@@ -239,11 +271,11 @@ public class UniqueFields implements Serializable {
     public boolean isEmpty() {
         return fieldMap.isEmpty();
     }
-    
+
     /**
      * Returns a set that contains the result of each value transformed by each granularity defined for specified field. If no granularity is found, a copy of
      * the original value set will be returned.
-     * 
+     *
      * @param field
      *            the field
      * @param values
@@ -263,7 +295,7 @@ public class UniqueFields implements Serializable {
             return transformedValues;
         }
     }
-    
+
     public String transformValue(String field, String value) {
         Collection<UniqueGranularity> granularities = fieldMap.get(field);
         // If there is no granularity, or only the ALL granularity was specified, return the original values.
@@ -278,7 +310,7 @@ public class UniqueFields implements Serializable {
             return combinedValue.toString();
         }
     }
-    
+
     /**
      * Returns this {@link UniqueFields} as a formatted string that can later be parsed back into a {@link UniqueFields} using {@link UniqueFields#from(String)}
      * . This is also what will be used when serializing a {@link UniqueFields} to JSON/XML. The string will have the format
@@ -290,6 +322,10 @@ public class UniqueFields implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if (mostRecent) {
+            sb.append(MOST_RECENT_UNIQUE);
+            sb.append(Constants.COMMA);
+        }
         Iterator<String> fieldIterator = fieldMap.keySet().iterator();
         while (fieldIterator.hasNext()) {
             // Write the field.
@@ -310,7 +346,16 @@ public class UniqueFields implements Serializable {
         }
         return sb.toString();
     }
-    
+
+    public boolean isMostRecent() {
+        return mostRecent;
+    }
+
+    public UniqueFields setMostRecent(boolean mostRecent) {
+        this.mostRecent = mostRecent;
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -320,12 +365,12 @@ public class UniqueFields implements Serializable {
             return false;
         }
         UniqueFields that = (UniqueFields) o;
-        return Objects.equals(fieldMap, that.fieldMap);
+        return Objects.equals(fieldMap, that.fieldMap) && mostRecent == that.mostRecent;
     }
-    
+
     @Override
     public int hashCode() {
-        return Objects.hash(fieldMap);
+        return Objects.hash(fieldMap, mostRecent);
     }
-    
+
 }

@@ -55,6 +55,8 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         </property>
     </bean>
 
+    <bean id="csv" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper" parent="mycsv"/>
+
    <!-- Define the set of valid 'relationship' values -->
    <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>

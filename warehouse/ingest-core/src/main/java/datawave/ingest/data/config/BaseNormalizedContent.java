@@ -2,10 +2,10 @@ package datawave.ingest.data.config;
 
 import java.util.Map;
 
-import datawave.data.type.Type;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import datawave.data.type.Type;
 
 /**
  * Base container class implementation of the NormalizedContentInterface. This class is utilized to retain the original and transformed content and labels for a
@@ -14,37 +14,37 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 public class BaseNormalizedContent implements NormalizedContentInterface, Cloneable {
     /** The original field label of data. */
     protected String _fieldName = null;
-    
+
     /** The original field value of data. */
     protected String _eventFieldValue = null;
-    
+
     /** The transformed field value of data. */
     protected String _indexedFieldValue = null;
-    
+
     /** The security markings for the field value pair. */
     protected Map<String,String> _markings = null;
-    
+
     /** The field processing error if any. */
     protected Throwable error = null;
-    
+
     // a cached hash code. This must be reset to null if anything changes that would affect its contents
     protected transient Integer hashCode = null;
-    
+
     public BaseNormalizedContent() {
-        
+
     }
-    
+
     public BaseNormalizedContent(String field, String value) {
         _fieldName = field;
         _eventFieldValue = value;
         _indexedFieldValue = value;
     }
-    
+
     public BaseNormalizedContent(String field, String value, Map<String,String> markings) {
         this(field, value);
         _markings = markings;
     }
-    
+
     public BaseNormalizedContent(NormalizedContentInterface n) {
         setFieldName(n.getIndexedFieldName());
         setIndexedFieldValue(n.getIndexedFieldValue());
@@ -52,10 +52,10 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         setMarkings(n.getMarkings());
         setError(n.getError());
     }
-    
+
     /**
      * Setter for field label
-     * 
+     *
      * @param fieldName
      *            the value to set
      */
@@ -63,37 +63,37 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         hashCode = null;
         _fieldName = fieldName;
     }
-    
+
     /**
      * Getter for field label
-     * 
+     *
      * @return the field lavel
      */
     public String getIndexedFieldName() {
         return _fieldName;
     }
-    
+
     /**
      * Getter for field label
-     * 
+     *
      * @return the field lavel
      */
     public String getEventFieldName() {
         return _fieldName;
     }
-    
+
     /**
      * Getter for the normalized field value
-     * 
+     *
      * @return the normalized field value
      */
     public String getIndexedFieldValue() {
         return _indexedFieldValue;
     }
-    
+
     /**
      * Setter for normalized field value
-     * 
+     *
      * @param normalizedFieldValue
      *            the value to set
      */
@@ -101,35 +101,35 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         hashCode = null;
         _indexedFieldValue = normalizedFieldValue;
     }
-    
+
     /**
      * Getter for the original field value
-     * 
+     *
      * @return the original field value
      */
     public String getEventFieldValue() {
         return _eventFieldValue;
     }
-    
+
     public void setEventFieldValue(String originalFieldValue) {
         hashCode = null;
         _eventFieldValue = originalFieldValue;
     }
-    
+
     @Override
     public Map<String,String> getMarkings() {
         return _markings;
     }
-    
+
     @Override
     public void setMarkings(Map<String,String> markings) {
         hashCode = null;
         this._markings = markings;
     }
-    
+
     /**
      * Setter for the processing error
-     * 
+     *
      * @param error
      *            The processing error
      */
@@ -137,16 +137,16 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         hashCode = null;
         this.error = error;
     }
-    
+
     /**
      * Getter for the processing error
-     * 
+     *
      * @return the processing error
      */
     public Throwable getError() {
         return error;
     }
-    
+
     public int hashCode() {
         if (hashCode == null) {
             HashCodeBuilder b = new HashCodeBuilder();
@@ -159,7 +159,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         }
         return hashCode;
     }
-    
+
     public boolean equals(Object o) {
         if (o instanceof BaseNormalizedContent) {
             BaseNormalizedContent n = (BaseNormalizedContent) o;
@@ -173,7 +173,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         }
         return false;
     }
-    
+
     public Object clone() {
         Object clone = null;
         try {
@@ -183,7 +183,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         }
         return clone;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("fieldName=").append(this._fieldName);
@@ -195,10 +195,10 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         }
         return sb.toString();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.ingest.data.config.NormalizedContentInterface#normalize(datawave.data.type.Type)
      */
     @Override

@@ -1,5 +1,24 @@
 package datawave.query.tables;
 
+import static java.lang.Thread.sleep;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -25,62 +44,51 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 /**
  * This test spins up a mini accumulo to accurately test the effect of underlying Scanner/Batch scanners against the ScannerSession. InMemoryAccumulo makes some
  * simplifications that in the past have masked bugs
  */
 public class ScannerSessionTest {
-    
+
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
-    
+
     private static final String PASSWORD = "password";
-    
+
     private static MiniAccumuloCluster instance;
     private static AccumuloClient client;
     private static ResourceQueue resourceQueue;
-    
+
     @BeforeClass
-    public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
-                    InterruptedException {
+    public static void setupClass()
+                    throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException, InterruptedException {
         instance = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
         instance.start();
-        
+
         client = instance.createAccumuloClient("root", new PasswordToken(PASSWORD));
-        
+
         setupTable();
     }
-    
+
     @AfterClass
     public static void teardownClass() throws IOException, InterruptedException {
         instance.stop();
     }
-    
-    private static void setupTable() throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException, InterruptedException,
-                    IOException {
+
+    private static void setupTable()
+                    throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException, InterruptedException, IOException {
         client.tableOperations().create("testTable");
-        
+
         // create splits 1 to 99
         SortedSet<Text> splits = new TreeSet<>();
         for (int i = 0; i < 100; i++) {
             splits.add(new Text(String.valueOf(i)));
         }
         client.tableOperations().addSplits("testTable", splits);
-        
+
         // give the table a chance to be split
-        Thread.sleep(10000);
-        
+        sleep(10000);
+
         // force writing all the data or fail
         try {
             writeData();
@@ -89,10 +97,10 @@ public class ScannerSessionTest {
             throw new RuntimeException("failed to write data", e);
         }
     }
-    
+
     private static void writeData() throws TableNotFoundException, MutationsRejectedException {
         BatchWriter bw = client.createBatchWriter("testTable", new BatchWriterConfig());
-        
+
         // add CF 1000 to 1099 with CQ 10000 to 10099, or 10000 entries per row
         for (int i = 0; i < 100; i++) {
             Mutation m = new Mutation(new Text(String.valueOf(i)));
@@ -103,71 +111,113 @@ public class ScannerSessionTest {
             }
             bw.addMutation(m);
         }
-        
+
         bw.flush();
         bw.close();
     }
-    
+
     @Before
     public void setup() throws Exception {
         resourceQueue = new ResourceQueue(100, client);
     }
-    
+
     @Test
     public void testScannerSessionLowMaxResults() throws TableNotFoundException {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations());
         ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 5, null);
-        
+
         validate(ss);
     }
-    
+
     @Test
     public void testScannerSessionHighMaxResults() throws TableNotFoundException {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations());
         ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 5000000, null);
-        
+
         validate(ss);
     }
-    
+
     @Test
     public void testScannerSessionWithBatchResourceLowMaxResults() throws TableNotFoundException {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations());
         ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 5, null);
         ss.setResourceClass(BatchResource.class);
-        
+
         validate(ss);
     }
-    
+
     @Test
     public void testScannerSessionWithBatchResourceHighMaxResults() throws TableNotFoundException {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations());
         ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 5000000, null);
         ss.setResourceClass(BatchResource.class);
-        
+
         validate(ss);
     }
-    
+
     @Test(expected = RuntimeException.class)
     public void testScannerSessionWithRuntimeExceptionResource() throws TableNotFoundException {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations());
         ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 5000000, null);
         ss.setResourceClass(StubbedRuntimeExceptionResource.class);
-        
+
         validate(ss);
     }
-    
+
+    @Test
+    public void testScannerSessionThreadCleanupWaitingOnClient() {
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations());
+        // set maxResults to 1 so that the ScannerSession will block adding results to the queue not allowing the scanner to close
+        ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 1, null);
+
+        List<Range> ranges = Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
+                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false),
+                        new Range(new Text(String.valueOf(98)), true, new Text(String.valueOf(99)), false));
+
+        ss.setRanges(ranges);
+
+        // this should kick off scanner in another thread and put one result on the resultQueue, forcing it to loop attempting
+        // to offer further results
+        ss.hasNext();
+
+        long startWait = System.currentTimeMillis();
+        AtomicBoolean forceClose = new AtomicBoolean(false);
+        Executors.newScheduledThreadPool(1).schedule(() -> {
+            // this should cause a shutdown
+            ss.close();
+        }, 5, TimeUnit.SECONDS);
+
+        Executors.newScheduledThreadPool(1).schedule(() -> {
+            forceClose.set(true);
+        }, 10, TimeUnit.SECONDS);
+
+        // this should block until the internal thread finishes
+        Duration d = Duration.of(12, ChronoUnit.SECONDS);
+        try {
+            ss.awaitTerminated(d);
+        } catch (TimeoutException e) {
+            // no-op
+        }
+        long endWait = System.currentTimeMillis();
+        // didn't end before the close
+        Assert.assertTrue(endWait - startWait >= 5000);
+        // ended before the force kill
+        Assert.assertFalse(forceClose.get());
+    }
+
     private void validate(ScannerSession ss) throws TableNotFoundException {
         List<Range> ranges = Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
-                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false), new Range(new Text(String.valueOf(98)), true,
-                                        new Text(String.valueOf(99)), false));
-        
+                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false),
+                        new Range(new Text(String.valueOf(98)), true, new Text(String.valueOf(99)), false));
+
         ss.setRanges(ranges);
-        
+
         int count = 0;
         Map<Integer,Integer> results = new HashMap<>();
         while (ss.hasNext()) {
@@ -177,26 +227,26 @@ public class ScannerSessionTest {
             if (rowCount == null) {
                 rowCount = new Integer(0);
             }
-            
+
             rowCount = rowCount.intValue() + 1;
             results.put(row, rowCount);
             count++;
         }
-        
+
         int batchScannerCount = 0;
         BatchScanner scanner = client.createBatchScanner("testTable", new Authorizations(), 12);
         scanner.setRanges(Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
-                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false), new Range(new Text(String.valueOf(98)), true,
-                                        new Text(String.valueOf(99)), false)));
+                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false),
+                        new Range(new Text(String.valueOf(98)), true, new Text(String.valueOf(99)), false)));
         for (Map.Entry<Key,Value> entry : scanner) {
             batchScannerCount++;
         }
-        
+
         scanner.close();
-        
+
         // direct batch scanner count should equal count
         Assert.assertEquals(batchScannerCount, count);
-        
+
         // 14 total rows covered at 10000 per row (100 CF * 100 CQ per row)
         // 1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 25, 26, 98
         Assert.assertEquals(140000, count);
@@ -204,20 +254,20 @@ public class ScannerSessionTest {
         for (Integer row : results.keySet()) {
             Assert.assertEquals(new Integer(10000), results.get(row));
         }
-        
+
         ss.close();
     }
-    
+
     private static class StubbedRuntimeExceptionResource extends AccumuloResource {
-        
+
         public StubbedRuntimeExceptionResource(AccumuloClient cxn) {
             super(cxn);
         }
-        
+
         public StubbedRuntimeExceptionResource(AccumuloResource other) {
             super(other);
         }
-        
+
         @Override
         public Iterator<Map.Entry<Key,Value>> iterator() {
             return new Iterator<Map.Entry<Key,Value>>() {
@@ -225,7 +275,7 @@ public class ScannerSessionTest {
                 public boolean hasNext() {
                     return true;
                 }
-                
+
                 @Override
                 public Map.Entry<Key,Value> next() {
                     throw new RuntimeException("test exception");

@@ -11,29 +11,29 @@ import java.util.Set;
  * class and implement any needed functionality.
  */
 abstract class BaseTestManager extends AbstractDataManager {
-    
+
     private final List<String> baseHeaders;
-    
+
     BaseTestManager(final String keyField, final String shardField, final List<String> hdrs) {
         super(keyField, shardField);
         this.baseHeaders = hdrs;
     }
-    
+
     @Override
     public List<String> getHeaders() {
         return baseHeaders;
     }
-    
+
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
-        
+
     }
-    
+
     @Override
     public Date[] getRandomStartEndDate() {
         return new Date[0];
     }
-    
+
     @Override
     public Date[] getShardStartEndDate() {
         return new Date[0];

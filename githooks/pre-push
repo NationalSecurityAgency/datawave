@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Format files
+mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat

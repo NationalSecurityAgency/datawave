@@ -20,6 +20,11 @@
 </property>
 
 <property>
+    <name>shard.index.create.uids</name>
+    <value>${SHARD_INDEX_CREATE_UIDS}</value>
+</property>
+
+<property>
   <name>shard.table.loader.priority</name>
   <value>30</value>
 </property>
@@ -63,6 +68,15 @@
 <property>
 	<name>${table.name.shardReverseIndex}.table.config.class</name>
 	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+</property>
+
+<property>
+	<name>${table.name.shardIndex}.disable.versioning.iterator</name>
+	<value>true</value>
+</property>
+<property>
+	<name>${table.name.shardReverseIndex}.disable.versioning.iterator</name>
+	<value>true</value>
 </property>
 
 <property>

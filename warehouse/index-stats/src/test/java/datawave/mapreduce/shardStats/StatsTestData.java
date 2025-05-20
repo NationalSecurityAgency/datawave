@@ -1,11 +1,7 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,8 +11,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 /**
  * Manager for test data for the {@link StatsHyperLogMapperTest} and {@link StatsHyperLogReducerTest}.
@@ -36,12 +38,12 @@ enum StatsTestData {
     FThree_VUno("20010911", "fn-three", "t-3", "v-uno"),
     FThree_VDos("20010911", "fn-three", "t-3", "v-dos"),
     FThree_VTres("20010911", "fn-three", "t-3", "v-tres");
-    
+
     private static final Logger log = Logger.getLogger(StatsTestData.class);
-    
+
     /**
      * Generates a list of keys for input into the mapper.
-     * 
+     *
      * @param eValues
      *            enum value to include in test
      * @return list of mapper input keys
@@ -53,10 +55,10 @@ enum StatsTestData {
         }
         return inKeys;
     }
-    
+
     /**
      * Generates the expected output data based upon the enum values used for the test.
-     * 
+     *
      * @param eValues
      *            enum values to include in test
      * @return mapping of {@link BulkIngestKey} to serialized {@link HyperLogLogPlus} object
@@ -64,7 +66,7 @@ enum StatsTestData {
      */
     static Map<BulkIngestKey,Value> generateMapOutput(List<StatsTestData> eValues) throws IOException {
         final Map<BulkIngestKey,Value> output = new HashMap<>();
-        
+
         // create values for test entries
         final Map<BulkIngestKey,List<String>> keyValues = new HashMap<>();
         final Map<BulkIngestKey,HyperLogLogPlus> logPlusEntries = new HashMap<>();
@@ -81,7 +83,7 @@ enum StatsTestData {
             values.add(eVal.value);
             hllp.offer(eVal.value);
         }
-        
+
         // set output data
         for (Map.Entry<BulkIngestKey,List<String>> entry : keyValues.entrySet()) {
             List<String> values = entry.getValue();
@@ -92,14 +94,14 @@ enum StatsTestData {
             Value serialized = new Value(stats.toByteArray());
             output.put(entry.getKey(), serialized);
         }
-        
+
         return output;
     }
-    
+
     private final Key mapperInputKey;
     private final Key mapperOutputKey;
     private final String value;
-    
+
     /**
      *
      * @param date
@@ -117,20 +119,20 @@ enum StatsTestData {
         Text colFam = new Text("fi" + StatsInit.NUL_SEPERATOR + fieldName);
         Text colQual = new Text(fieldValue + StatsInit.NUL_SEPERATOR + type + StatsInit.NUL_SEPERATOR + "uid");
         this.mapperInputKey = new Key(rowId, colFam, colQual);
-        
+
         // create mapper output key
         Text outRow = new Text(fieldName);
         Text outFam = new Text(date);
         Text outQual = new Text(type);
         this.mapperOutputKey = new Key(outRow, outFam, outQual, StatsInit.TEST_VISIBILITY, 0);
-        
+
         this.value = fieldValue;
     }
-    
+
     Key getMapperInputKey() {
         return mapperInputKey;
     }
-    
+
     Key getMapperOutputKey() {
         return mapperOutputKey;
     }

@@ -9,5 +9,5 @@ public interface FacetedEstimator<T> {
      * @return a FacetValue
      */
     FacetValue estimate(T input);
-    
+
 }

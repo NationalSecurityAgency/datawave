@@ -21,7 +21,7 @@ import org.apache.accumulo.core.data.Key;
  * </ul>
  */
 public interface KeyParser {
-    
+
     /**
      * Clear existing state and set key for lazy parsing
      *
@@ -29,46 +29,46 @@ public interface KeyParser {
      *            a key
      */
     void parse(Key k);
-    
+
     /**
      * Clears existing state
      */
     void clearState();
-    
+
     /**
      * Get the datatype
      *
      * @return the datatype
      */
     String getDatatype();
-    
+
     /**
      *
      * @return the uid
      */
     String getUid();
-    
+
     /**
      * Get the uid
-     * 
+     *
      * @return the root uid
      */
     String getRootUid();
-    
+
     /**
      * Get the field name
      *
      * @return the field name
      */
     String getField();
-    
+
     /**
      * Get the field value
-     * 
+     *
      * @return the field value
      */
     String getValue();
-    
+
     /**
      * Get the backing key
      *
