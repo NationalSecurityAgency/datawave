@@ -162,13 +162,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
 
         // encode the password because that's how the AccumuloRecordWriter
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
-<<<<<<< HEAD
-        byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
-        conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
-=======
         conf.set("AccumuloRecordWriter.password", Base64.getEncoder().encodeToString(accumuloPassword.getBytes()));
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
->>>>>>> 1183ec2496 (updated test split cache files to use valid base64)
     }
 
     @PostConstruct
