@@ -238,7 +238,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
             // If the child is a group, check if it consists of ambiguously ORed phrases.
             // If the child is a group, check if it consists of ambiguous phrases.
             if (type == QueryNodeType.GROUP) {
-                // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambigously ORed unfielded phrases.
+                // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambiguously ORed unfielded phrases.
                 // Instead, we have something like ((FOO:abc OR def) OR (aaa OR bbb)) which cannot be flattened to FOO:(abc OR def OR aaa OR bbb).
                 if (fieldTermFoundInGroupSibling) {
                     return false;
@@ -289,7 +289,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                     // If it does not, the top-level group does not consist solely of ambiguous phrases.
                     return false;
                 }
-            } else if (type == QueryNodeType.FIELD) {
+            } else if (type == QueryNodeType.FIELD) { // this is where the test case goes through
                 // If the child is a field term, check if it is fielded or unfielded.
                 if (!((FieldQueryNode) child).getFieldAsString().isEmpty()) {
                     // If the field name is not empty, and we have not found a fielded term yet, mark that we've found one.
@@ -298,7 +298,7 @@ public class AmbiguousGroupedUnfieldedTermsVisitor extends BaseVisitor {
                         prevField = ((FieldQueryNode) child).getFieldAsString();
                     } else if (Objects.equals(((FieldQueryNode) child).getFieldAsString(), prevField)) {
                         // If it does, we know the group is something like: FOO:(abc def ghi)
-                        // ( FOO:abc AND def AND ghi ). needs to be FIELD GROUP JUNCTIONS
+                        // ( FOO:abc AND def AND ghi ). needs to be FIELD -> GROUP -> JUNCTIONS
                         ((FieldQueryNode) child).setField("");
                         unfieldedTermsFound = true;
                     } else {
