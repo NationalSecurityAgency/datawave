@@ -138,8 +138,8 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     }
 
     private boolean sanityCheck(Long dateLong) {
-        // between 1900/01/01 and 4000/01/01      
-        // Note: Removing this check can be dangerous as the current time in L successfully matches the yyyyMMddHHmmss pattern 
+        // between 1900/01/01 and 4000/01/01
+        // Note: Removing this check can be dangerous as the current time in L successfully matches the yyyyMMddHHmmss pattern
         return -2208970800000L <= dateLong && dateLong < 64060588800000L;
     }
 
