@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
 
-import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;

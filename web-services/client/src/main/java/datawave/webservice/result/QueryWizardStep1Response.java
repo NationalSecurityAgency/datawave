@@ -9,8 +9,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.commons.lang.StringUtils;
-
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 
@@ -19,7 +17,7 @@ import datawave.webservice.query.result.logic.QueryLogicDescription;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryWizardStep1Response extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1107865326905859504L;
     private static final String TITLE = "Query Wizard Step 1", EMPTY = "";
     private static final String HEADER = "<img src=\"/DataWave/doc/images/dwquery_logo.png\" width=\"429px\" height=\"38px\"\n"
                     + " style=\"padding-left: 10px; padding-right: 40px; padding-top: 10px;padding-bottom: 20px\">";

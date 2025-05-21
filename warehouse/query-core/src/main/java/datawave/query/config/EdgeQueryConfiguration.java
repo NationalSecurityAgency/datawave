@@ -109,7 +109,9 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
      * needs to be copied over here.
      *
      * @param other
+     *            the other configuration
      * @param queries
+     *            the collection of queries
      */
     public EdgeQueryConfiguration(EdgeQueryConfiguration other, Collection<QueryData> queries) {
         this(other);

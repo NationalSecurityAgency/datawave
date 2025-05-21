@@ -8,7 +8,7 @@ public class OrIteratorBuilder extends AbstractIteratorBuilder {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public <T> NestedIterator<T> build() {
-        return new OrIterator(includes, excludes);
+        return new OrIterator(includes, excludes, waitWindowObserver);
     }
 
 }

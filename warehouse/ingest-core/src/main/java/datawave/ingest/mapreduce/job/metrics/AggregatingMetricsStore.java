@@ -60,6 +60,9 @@ public class AggregatingMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
                     byte[] countAsBytes = TextUtil.toUtf8(String.valueOf(entry.getValue().get()));
                     Key key = KeyConverter.fromString(entry.getKey());
                     contextWriter.write(new BulkIngestKey(table, key), new Value(countAsBytes), context);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.error("Could not flush metrics, dropping them", e);
                 } catch (Exception e) {
                     logger.error("Could not flush metrics, dropping them", e);
                 }

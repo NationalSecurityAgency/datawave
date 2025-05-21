@@ -58,7 +58,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     private static DataSource datasource = null;
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 9093679062966451008L;
 
     private static ResponseObjectFactory responseObjectFactory;
     private transient Connection connection = null;
@@ -67,7 +67,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     private transient CacheableLogic cacheableLogic = null;
     private transient QueryLogic<?> queryLogic = null;
-    private transient QueryLogicTransformer transformer = null;
+    private transient QueryLogicTransformer<?,?> transformer = null;
 
     // gets set in previous and next
     private transient int lastPageNumber = 0;
@@ -306,7 +306,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     public CachedRunningQuery(Connection connection, Query query, QueryLogic<?> queryLogic, String queryId, String alias, String user, String view,
                     String fields, String conditions, String grouping, String order, int pagesize, Set<String> variableFields, Set<String> fixedFieldsInEvent,
-                    QueryMetricFactory metricFactory) throws SQLException {
+                    QueryMetricFactory metricFactory) throws SQLException, QueryException {
         super(metricFactory);
 
         this.variableFields.clear();
@@ -574,7 +574,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         return columns;
     }
 
-    public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException {
+    public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException, QueryException {
 
         this.connection = connection;
         this.transformer = queryLogic.getEnrichedTransformer(this.query);
@@ -922,7 +922,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         return totalRows;
     }
 
-    public QueryLogicTransformer getTransformer() {
+    public QueryLogicTransformer<?,?> getTransformer() {
         return transformer;
     }
 
@@ -1118,6 +1118,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static CachedRunningQuery retrieveFromDatabase(String id, Principal principal, QueryMetricFactory metricFactory) {
 
         verifyCrqTableExists();
@@ -1170,7 +1171,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                         crq.variableFields.addAll(Arrays.asList(varFields.split(" ")));
                     }
 
-                    Query query = crq.responseObjectFactory.getQueryImpl();
+                    Query query = CachedRunningQuery.responseObjectFactory.getQueryImpl();
 
                     query.setQuery(resultSet.getString(x++));
                     Timestamp bDate = resultSet.getTimestamp(x++);

@@ -1,0 +1,23 @@
+# Use this file to override properties from the QueryStarterDefaults profile (found in the datawave query starter).
+# Make sure that you add the QueryStarterOverrides profile to your tests after the QueryStarterDefaults profile.
+
+warehouse:
+  accumulo:
+    zookeepers: ''
+  defaults:
+    ivaratorFstHdfsBaseURIs: ''
+  tables:
+    metadata:
+      name: 'metadata'
+
+datawave:
+  query:
+    logic:
+      factory:
+        xmlBeansPath: "classpath:TestQueryLogicFactory.xml"
+        queryLogicsByName:
+          "LegacyEventQuery": "LegacyEventQuery"
+    logics:
+      BaseEventQuery:
+        ivaratorCacheDirConfigs:
+          - basePathURI: ''

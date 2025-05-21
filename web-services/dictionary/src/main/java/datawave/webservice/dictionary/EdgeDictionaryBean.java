@@ -12,7 +12,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.client.utils.URIBuilder;
 import org.xbill.DNS.TextParseException;
 

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <bean id="KeywordUUIDQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.keyword.KeywordChainedUUIDQueryLogic">
+        <property name="logic1">
+            <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+            </bean>
+        </property>
+        <property name="logic2" ref="KeywordQuery"/>
+        <property name="auditType" value="NONE"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
+        </property>
+    </bean>
+
+    <!-- Query Logic that consumes document UIDs and returns extracted keywords -->
+    <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
+        <property name="tableName" value="${shard.table.name}" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns keywords from content" />
+        <property name="queryThreads" value="100" />
+        <property name="maxContentChars" value="32768"/>
+        <property name="maxKeywords" value="10"/>
+        <property name="maxNgrams" value="3"/>
+        <property name="minNgrams" value="1"/>
+        <property name="maxScore" value="0.6f"/>
+        <property name="preferredViews">
+            <util:list>
+                <value>REVISION_TEXT</value>
+            </util:list>
+        </property>
+    </bean>
+</beans>

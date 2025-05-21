@@ -59,6 +59,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
 
         Assert.assertEquals(null, node.jjtAccept(visitor, null));
+        Assert.assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
     /**
@@ -94,6 +95,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertNotEquals(null, nestedIterator);
         Assert.assertEquals(1, nestedIterator.leaves().size());
         Assert.assertTrue(nestedIterator.leaves().iterator().next().toString().contains("FOO"));
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     /**
@@ -110,6 +112,37 @@ public class IteratorBuildingVisitorTest {
 
         // this should never be reached
         Assert.assertFalse(true);
+    }
+
+    @Test
+    public void testIntersectionOfRepeatedTermsDoesNotProduceAdditionalSourceDeepCopies() throws Exception {
+        String query = "FIELD == 'value' && FIELD == 'value' && FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+    }
+
+    @Test
+    public void testUnionOfRepeatedTermsDoesNotProduceAdditionalSourceDeepCopies() throws Exception {
+        String query = "FIELD == 'value' || FIELD == 'value' || FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+    }
+
+    @Test
+    public void testIteratorForIndexHole() throws ParseException {
+        String query = "((_Hole_ = true) && (FIELD == 'value'))";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        IteratorBuildingVisitor visitor = getDefault();
+        script.jjtAccept(visitor, null);
+        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     @Test
@@ -178,7 +211,7 @@ public class IteratorBuildingVisitorTest {
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
 
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.emptySet(), Collections.emptySet(),
                         Collections.singleton("F2"));
 
     }
@@ -195,7 +228,7 @@ public class IteratorBuildingVisitorTest {
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "fi" + Constants.NULL + "F2", "v2" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
 
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.emptySet(), Collections.emptySet(),
                         Collections.singleton("F2"));
     }
 
@@ -211,7 +244,7 @@ public class IteratorBuildingVisitorTest {
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "fi" + Constants.NULL + "F2", "v3" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
 
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.emptySet(), Collections.emptySet(),
                         Collections.singleton("F2"));
     }
 
@@ -231,7 +264,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
 
         List<String> expected = new ArrayList<>();
@@ -259,7 +292,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         termFrequencyFields);
 
         List<String> expected = new ArrayList<>();
@@ -287,7 +320,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
 
         List<String> expected = new ArrayList<>();
@@ -315,7 +348,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         termFrequencyFields);
 
         List<String> expected = new ArrayList<>();
@@ -343,7 +376,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
 
         List<String> expected = new ArrayList<>();
@@ -371,7 +404,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         termFrequencyFields);
 
         List<String> expected = new ArrayList<>();
@@ -398,7 +431,7 @@ public class IteratorBuildingVisitorTest {
 
         // create bounded range filter
         // value outside upper bound so no document found
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
     }
 
@@ -417,7 +450,7 @@ public class IteratorBuildingVisitorTest {
 
         // create bounded range filter
         // value outside upper bound so no document found
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.emptySet(),
                         termFrequencyFields);
     }
 
@@ -436,7 +469,7 @@ public class IteratorBuildingVisitorTest {
 
         // create bounded range filter
         // value outside lower bound so no document found
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
     }
 
@@ -455,7 +488,7 @@ public class IteratorBuildingVisitorTest {
 
         // create bounded range filter
         // value outside lower bound so no document found
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.emptySet(),
                         termFrequencyFields);
     }
 
@@ -475,7 +508,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values that match regex
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
     }
 
@@ -495,7 +528,7 @@ public class IteratorBuildingVisitorTest {
 
         // must have doc to get tf field values that match regex
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.emptySet(),
                         Collections.emptySet());
     }
 
@@ -899,7 +932,7 @@ public class IteratorBuildingVisitorTest {
         NestedIterator result = visitor.root();
         Assert.assertTrue(result != null);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
-        seekableNestedIterator.seek(docRange, null, true);
+        seekableNestedIterator.seek(docRange, Collections.emptySet(), true);
         seekableNestedIterator.initialize();
 
         // asserts for a hit or miss
@@ -952,7 +985,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class SourceFactory implements datawave.query.iterator.SourceFactory<Key,Value> {
-        private Iterator<Map.Entry<Key,Value>> iterator;
+        private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
             this.iterator = iterator;
@@ -960,6 +993,11 @@ public class IteratorBuildingVisitorTest {
 
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
+            return new SortedListKeyValueIterator(iterator);
+        }
+
+        @Override
+        public SortedKeyValueIterator<Key,Value> getSourceDeepCopy(String stage) {
             return new SortedListKeyValueIterator(iterator);
         }
     }

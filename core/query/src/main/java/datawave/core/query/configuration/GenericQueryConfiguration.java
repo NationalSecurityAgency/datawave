@@ -123,7 +123,8 @@ public class GenericQueryConfiguration implements Serializable {
         this.setEndDate(other.getEndDate());
         this.setMaxWork(other.getMaxWork());
         this.setQueries(other.getQueries());
-        this.setQueriesIter(other.getQueriesIter());
+        // copying the query iterators can cause issues if the query is running.
+        // this.setQueriesIter(other.getQueriesIter());
         this.setQueryString(other.getQueryString());
         this.setTableName(other.getTableName());
         this.setReduceResults(other.isReduceResults());
