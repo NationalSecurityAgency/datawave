@@ -18,7 +18,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 
 public class MergeLockLifecycleListener implements LifecycleListener, HazelcastInstanceAware {
-    
+
     private static Logger log = LoggerFactory.getLogger(MergeLockLifecycleListener.class);
     public WriteLockRunnable writeLockRunnable;
     private ReentrantReadWriteLock clusterLock;
@@ -27,13 +27,13 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
     private String localMemberUuid;
     private AtomicBoolean allowReadLock = new AtomicBoolean(false);
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
-    
+
     public MergeLockLifecycleListener() {
         this.clusterLock = new ReentrantReadWriteLock(true);
         this.writeLockRunnable = new WriteLockRunnable(this.clusterLock);
         this.writeLockRunnableFuture = Executors.newSingleThreadExecutor().submit(this.writeLockRunnable);
     }
-    
+
     @PreDestroy
     public void preDestroy() {
         makeServiceUnavailable();
@@ -43,24 +43,24 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
             this.writeLockRunnableFuture.cancel(true);
         }
     }
-    
+
     public void setAllowReadLock(boolean allowReadLock) {
         this.allowReadLock.set(allowReadLock);
     }
-    
+
     public boolean isAllowedReadLock() {
         return this.allowReadLock.get();
     }
-    
+
     public boolean isShuttingDown() {
         return shuttingDown.get();
     }
-    
+
     @Override
     public void setHazelcastInstance(HazelcastInstance instance) {
         this.instance = instance;
     }
-    
+
     private String getLocalMemberUuid() {
         try {
             if (this.instance != null) {
@@ -73,16 +73,16 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
         }
         return (this.localMemberUuid == null) ? "" : this.localMemberUuid;
     }
-    
+
     private void makeServiceAvailable() {
         setAllowReadLock(true);
     }
-    
+
     private void makeServiceUnavailable() {
         this.setAllowReadLock(false);
         this.shuttingDown.set(true);
     }
-    
+
     // A writeLock around STARTING and STARTED is taken care of in HazelcastMetricCacheConfiguration.hazelcastInstance to
     // ensure that the lastWrittenQueryMetricCache is set into the MapStore before the instance is active and the writeLock is released
     // multiple log lines are used to keep log/lock sequencing consistent (lock, log, <do stuff>, log, unlock) for paired events
@@ -115,13 +115,13 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
                 log.info(event + " [" + getLocalMemberUuid() + "]");
         }
     }
-    
+
     public void lock() {
         while (!this.allowReadLock.get()) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                
+
             }
         }
         if (log.isTraceEnabled()) {
@@ -132,7 +132,7 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
             log.trace("locked for read");
         }
     }
-    
+
     public void unlock() {
         if (log.isTraceEnabled()) {
             log.trace("unlocking for read");
@@ -142,18 +142,18 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
             log.trace("unlocked for read");
         }
     }
-    
+
     public class WriteLockRunnable implements Runnable {
-        
+
         private ReentrantReadWriteLock clusterLock;
         private AtomicBoolean requestLock = new AtomicBoolean();
         private AtomicBoolean requestUnlock = new AtomicBoolean();
         private long scheduledUnlockTime = Long.MAX_VALUE;
-        
+
         public WriteLockRunnable(ReentrantReadWriteLock clusterLock) {
             this.clusterLock = clusterLock;
         }
-        
+
         @Override
         public void run() {
             while (!isShuttingDown()) {
@@ -189,11 +189,11 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
                 }
             }
         }
-        
+
         public void lock(LifecycleEvent.LifecycleState state) {
             lock(state, -1, TimeUnit.MILLISECONDS);
         }
-        
+
         public void lock(LifecycleEvent.LifecycleState state, long maxDuration, TimeUnit timeUnit) {
             log.info("locking for write [" + state + "]");
             // prompt run() method to lock the writeLock
@@ -214,7 +214,7 @@ public class MergeLockLifecycleListener implements LifecycleListener, HazelcastI
             }
             log.info("locked for write [" + state + "]");
         }
-        
+
         public void unlock(LifecycleEvent.LifecycleState state) {
             log.info("unlocking for write [" + state + "]");
             // cancel any scheduled unlock

@@ -26,20 +26,20 @@ import com.google.common.base.Predicate;
 
 class InMemoryConfiguration extends AccumuloConfiguration {
     Map<String,String> map;
-    
+
     InMemoryConfiguration(Map<String,String> settings) {
         map = settings;
     }
-    
+
     public void put(String k, String v) {
         map.put(k, v);
     }
-    
+
     @Override
     public String get(Property property) {
         return map.get(property.getKey());
     }
-    
+
     @Override
     public void getProperties(Map<String,String> props, java.util.function.Predicate<String> filter) {
         map.keySet().forEach(k -> {
@@ -48,7 +48,7 @@ class InMemoryConfiguration extends AccumuloConfiguration {
             }
         });
     }
-    
+
     @Override
     public boolean isPropertySet(Property property) {
         return map.containsKey(property);

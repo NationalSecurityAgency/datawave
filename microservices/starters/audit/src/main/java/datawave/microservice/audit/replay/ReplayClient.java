@@ -31,9 +31,9 @@ import datawave.microservice.authorization.user.DatawaveUserDetails;
 @Service
 @ConditionalOnProperty(name = "audit-client.enabled", havingValue = "true", matchIfMissing = true)
 public class ReplayClient {
-    
+
     private static final String DEFAULT_REQUEST_BASE_PATH = "/v1/replay";
-    
+
     private enum ReplayMethod {
         CREATE("create", HttpMethod.POST, String.class),
         CREATE_AND_START("createAndStart", HttpMethod.POST, String.class),
@@ -49,40 +49,40 @@ public class ReplayClient {
         RESUME_ALL("resumeAll", HttpMethod.PUT, String.class),
         DELETE("delete", HttpMethod.DELETE, String.class),
         DELETE_ALL("deleteAll", HttpMethod.DELETE, String.class);
-        
+
         private String name;
         private HttpMethod httpMethod;
         private Class responseClass;
-        
+
         ReplayMethod(String name, HttpMethod httpMethod, Class responseClass) {
             this.name = name;
             this.httpMethod = httpMethod;
             this.responseClass = responseClass;
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         public HttpMethod getHttpMethod() {
             return httpMethod;
         }
-        
+
         public Class getResponseClass() {
             return responseClass;
         }
     }
-    
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final AuditServiceProvider serviceProvider;
     private final JWTRestTemplate jwtRestTemplate;
-    
+
     @Autowired
     public ReplayClient(RestTemplateBuilder builder, AuditServiceProvider serviceProvider) {
         this.jwtRestTemplate = builder.build(JWTRestTemplate.class);
         this.serviceProvider = serviceProvider;
     }
-    
+
     /**
      * Creates an audit replay request
      *
@@ -96,10 +96,10 @@ public class ReplayClient {
         validateRequest(request);
         Preconditions.checkNotNull(request.paramMap, "pathUri cannot be null");
         Preconditions.checkNotNull(request.paramMap.get("pathUri"), "pathUri cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.CREATE, request);
     }
-    
+
     /**
      * Creates an audit replay request, and starts it
      *
@@ -113,10 +113,10 @@ public class ReplayClient {
         validateRequest(request);
         Preconditions.checkNotNull(request.paramMap, "pathUri cannot be null");
         Preconditions.checkNotNull(request.paramMap.get("pathUri"), "pathUri cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.CREATE_AND_START, request);
     }
-    
+
     /**
      * Starts an audit replay
      *
@@ -128,10 +128,10 @@ public class ReplayClient {
     public String start(Request request) {
         validateRequest(request);
         Preconditions.checkNotNull(request.id, "id cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.START, request);
     }
-    
+
     /**
      * Starts all audit replays
      *
@@ -141,10 +141,10 @@ public class ReplayClient {
      */
     public String startAll(Request request) {
         validateRequest(request);
-        
+
         return (String) submitRequest(ReplayMethod.START_ALL, request);
     }
-    
+
     /**
      * Gets the status of an audit replay
      *
@@ -156,10 +156,10 @@ public class ReplayClient {
     public Status status(Request request) {
         validateRequest(request);
         Preconditions.checkNotNull(request.id, "id cannot be null");
-        
+
         return (Status) submitRequest(ReplayMethod.STATUS, request);
     }
-    
+
     /**
      * Lists the status for all audit replays
      *
@@ -169,10 +169,10 @@ public class ReplayClient {
      */
     public Status[] statusAll(Request request) {
         validateRequest(request);
-        
+
         return (Status[]) submitRequest(ReplayMethod.STATUS_ALL, request);
     }
-    
+
     /**
      * Updates an audit replay
      *
@@ -186,10 +186,10 @@ public class ReplayClient {
         Preconditions.checkNotNull(request.id, "id cannot be null");
         Preconditions.checkNotNull(request.paramMap, "sendRate cannot be null");
         Preconditions.checkNotNull(request.paramMap.get("sendRate"), "sendRate cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.UPDATE, request);
     }
-    
+
     /**
      * Updates all audit replays
      *
@@ -202,10 +202,10 @@ public class ReplayClient {
         validateRequest(request);
         Preconditions.checkNotNull(request.paramMap, "sendRate cannot be null");
         Preconditions.checkNotNull(request.paramMap.get("sendRate"), "sendRate cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.UPDATE_ALL, request);
     }
-    
+
     /**
      * Stops an audit replay
      *
@@ -217,10 +217,10 @@ public class ReplayClient {
     public String stop(Request request) {
         validateRequest(request);
         Preconditions.checkNotNull(request.id, "id cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.STOP, request);
     }
-    
+
     /**
      * Stops all audit replays
      *
@@ -230,10 +230,10 @@ public class ReplayClient {
      */
     public String stopAll(Request request) {
         validateRequest(request);
-        
+
         return (String) submitRequest(ReplayMethod.STOP_ALL, request);
     }
-    
+
     /**
      * Resumes an audit replay
      *
@@ -245,10 +245,10 @@ public class ReplayClient {
     public String resume(Request request) {
         validateRequest(request);
         Preconditions.checkNotNull(request.id, "id cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.RESUME, request);
     }
-    
+
     /**
      * Resumes all audit replays
      *
@@ -258,10 +258,10 @@ public class ReplayClient {
      */
     public String resumeAll(Request request) {
         validateRequest(request);
-        
+
         return (String) submitRequest(ReplayMethod.RESUME_ALL, request);
     }
-    
+
     /**
      * Deletes an audit replay
      *
@@ -273,10 +273,10 @@ public class ReplayClient {
     public String delete(Request request) {
         validateRequest(request);
         Preconditions.checkNotNull(request.id, "id cannot be null");
-        
+
         return (String) submitRequest(ReplayMethod.DELETE, request);
     }
-    
+
     /**
      * Deletes all audit replays
      *
@@ -288,17 +288,17 @@ public class ReplayClient {
         validateRequest(request);
         return (String) submitRequest(ReplayMethod.DELETE_ALL, request);
     }
-    
+
     protected void validateRequest(Request request) {
         Preconditions.checkNotNull(request, "request cannot be null");
         Preconditions.checkNotNull(request.datawaveUserDetails, "DatawaveUserDetails cannot be null");
     }
-    
+
     private Object submitRequest(ReplayMethod replayMethod, Request request) {
         log.debug("Submitting {} request: {}", replayMethod.getName(), request.paramMap);
-        
+
         String subPath = (request.id != null) ? request.id + "/" + replayMethod.getName() : replayMethod.getName();
-        
+
         //@formatter:off
         ServiceInstance auditService = serviceProvider.getServiceInstance();
         UriComponents uri = UriComponentsBuilder.fromUri(auditService.getUri())
@@ -325,10 +325,10 @@ public class ReplayClient {
             throw new RuntimeException(errorMessage);
         }
         //@formatter:on
-        
+
         return response.getBody();
     }
-    
+
     /**
      * Replay request for a given query
      *
@@ -338,11 +338,11 @@ public class ReplayClient {
         protected DatawaveUserDetails datawaveUserDetails;
         protected String id;
         protected MultiValueMap<String,String> paramMap;
-        
+
         private Request() {
-            
+
         }
-        
+
         /**
          * Used to construct replay requests
          *
@@ -352,7 +352,7 @@ public class ReplayClient {
         protected Request(Builder builder) {
             this.datawaveUserDetails = builder.datawaveUserDetails;
             this.id = builder.id;
-            
+
             MultiValueMap<String,String> paramMap = new LinkedMultiValueMap<>();
             if (builder.pathUri != null) {
                 paramMap.add("pathUri", builder.pathUri);
@@ -367,7 +367,7 @@ public class ReplayClient {
                 this.paramMap = paramMap;
             }
         }
-        
+
         /**
          * Builder for replay requests
          */
@@ -377,32 +377,32 @@ public class ReplayClient {
             protected Long sendRate;
             protected Boolean replayUnfinishedFiles;
             protected String id;
-            
+
             public Builder withDatawaveUserDetails(DatawaveUserDetails datawaveUserDetails) {
                 this.datawaveUserDetails = datawaveUserDetails;
                 return this;
             }
-            
+
             public Builder withPathUri(String pathUri) {
                 this.pathUri = pathUri;
                 return this;
             }
-            
+
             public Builder withSendRate(Long sendRate) {
                 this.sendRate = sendRate;
                 return this;
             }
-            
+
             public Builder withReplayUnfinishedFiles(Boolean replayUnfinishedFiles) {
                 this.replayUnfinishedFiles = replayUnfinishedFiles;
                 return this;
             }
-            
+
             public Builder withId(String id) {
                 this.id = id;
                 return this;
             }
-            
+
             public Request build() {
                 return new Request(this);
             }

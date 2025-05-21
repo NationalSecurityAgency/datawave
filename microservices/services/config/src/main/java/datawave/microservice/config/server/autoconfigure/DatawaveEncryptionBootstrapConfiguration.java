@@ -20,13 +20,13 @@ import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
 public class DatawaveEncryptionBootstrapConfiguration {
     private final KeyProperties keyProperties;
     private final RsaProperties rsaProperties;
-    
+
     @Autowired
     public DatawaveEncryptionBootstrapConfiguration(KeyProperties keyProperties, RsaProperties rsaProperties) {
         this.keyProperties = keyProperties;
         this.rsaProperties = rsaProperties;
     }
-    
+
     @Bean
     public TextEncryptor textEncryptor() {
         KeyProperties.KeyStore keyStore = this.keyProperties.getKeyStore();
@@ -37,10 +37,10 @@ public class DatawaveEncryptionBootstrapConfiguration {
                                                 keyStore.getSecret().toCharArray()),
                                 this.rsaProperties.getAlgorithm(), this.rsaProperties.getSalt(), this.rsaProperties.isStrong());
             }
-            
+
             throw new IllegalStateException("Invalid keystore location");
         }
-        
+
         return new EncryptorFactory(this.keyProperties.getSalt()).create(this.keyProperties.getKey());
     }
 }

@@ -29,11 +29,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryExecutorController {
     private final QueryExecutor queryExecutor;
-    
+
     public QueryExecutorController(QueryExecutor queryExecutor) {
         this.queryExecutor = queryExecutor;
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns metrics for the AccumuloConnectionFactory
      *
@@ -58,7 +58,7 @@ public class QueryExecutorController {
         response.setQueryToTask(null);
         return response;
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns metrics for the Executor thread pool
      *
@@ -83,7 +83,7 @@ public class QueryExecutorController {
         response.setQueryToTask(null);
         return response;
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns queries being serviced
      *
@@ -108,7 +108,7 @@ public class QueryExecutorController {
         response.setQueryToTask(getQueryToTask(queryExecutor.getQueryToTasks()));
         return response;
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns all metrics and queries for the executor
      *
@@ -133,7 +133,7 @@ public class QueryExecutorController {
         response.setQueryToTask(getQueryToTask(queryExecutor.getQueryToTasks()));
         return response;
     }
-    
+
     private Map<String,String> getThreadPoolStatus(ThreadPoolExecutor threadPoolExecutor) {
         Map<String,String> status = new HashMap<>();
         status.put("status", getStatus(threadPoolExecutor));
@@ -143,7 +143,7 @@ public class QueryExecutorController {
         status.put("completed tasks", String.valueOf(threadPoolExecutor.getCompletedTaskCount()));
         return status;
     }
-    
+
     private String getStatus(ThreadPoolExecutor threadPoolExecutor) {
         if (threadPoolExecutor.isShutdown())
             return "Shutdown";
@@ -154,7 +154,7 @@ public class QueryExecutorController {
         else
             return "Running";
     }
-    
+
     private Map<String,Collection<QueryTaskDescription>> getQueryToTask(Multimap<String,ExecutorTask> queryTasks) {
         Map<String,Collection<QueryTaskDescription>> queryToTask = new HashMap<>();
         for (Map.Entry<String,Collection<ExecutorTask>> entry : queryTasks.asMap().entrySet()) {
@@ -163,7 +163,7 @@ public class QueryExecutorController {
         }
         return queryToTask;
     }
-    
+
     private String getStatus(ExecutorTask task) {
         if (task.isTaskComplete()) {
             return "Complete";
@@ -177,5 +177,5 @@ public class QueryExecutorController {
             return "Queued";
         }
     }
-    
+
 }

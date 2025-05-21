@@ -3,7 +3,6 @@ package datawave.query.tables.keyword;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,6 +22,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -40,14 +40,15 @@ import datawave.query.QueryParameters;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.transformer.KeywordQueryTransformer;
+import datawave.query.transformer.TagCloudTransformer;
+import datawave.query.util.keyword.KeywordResults;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.EventBase;
 
 /**
- * This query table implementation returns a QueryResults object that contains keywords extracted from documents from the Shard table. The query will contain
- * the shard id, datatype, and UID of each desired event so that we can seek directly to its respective document. Each document is stored as base64 compressed
- * binary in the Accumulo table. We will decompress the data and run the keyword extraction algorithm on it. Results are returned in JSON format for now.
+ * This query implementation returns a QueryResults object that contains keywords extracted from content stored in the d column of the shard table. The query
+ * will contain the shard id, datatype, and UID of each desired event so that we can seek directly to its respective document. Each document is stored as base64
+ * compressed binary in the Accumulo table. We will decompress the data and run the keyword extraction algorithm on it. Results are returned in a
+ * TagCloudResponse.
  * <p>
  * The query that needs to be passed to the web service is:
  * </p>
@@ -63,8 +64,8 @@ import datawave.webservice.query.result.event.EventBase;
  *     DOCUMENT:shardId/datatype/uid!ID_FIELD:ID_VALUE%LANGUAGE:ENGLISH
  * </pre>
  *
- * The optional parameter content.view.name can be used to retrieve an alternate view of the document, assuming one is stored with that name. The optional
- * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together
+ * The optional parameter content.view.names can be used provide a prioritized list of views to use to find content. This list of preferred views can also be
+ * configured as a part of the logic configuration.
  */
 public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
@@ -73,7 +74,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     /**
      * Used to pull back specific views of the data - expected to be a comma-delimited list of one or more views, if present.
      */
-    public static final String CONTENT_VIEW_NAMES = "content.view.names";
+    public static final String PREFERRED_VIEW_NAMES = "content.view.names";
 
     /**
      * Used to embed document language in query term
@@ -85,7 +86,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     private int queryThreads = 100;
 
-    ScannerFactory scannerFactory;
+    @VisibleForTesting
+    protected ScannerFactory scannerFactory;
 
     private KeywordQueryConfiguration config;
 
@@ -124,26 +126,38 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     @Override
     public GenericQueryConfiguration initialize(final AccumuloClient client, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
-        // NOTE: This needs to set the class-level config object. Do not use a local instance!
-        config = new KeywordQueryConfiguration(this, settings);
+        // NOTE: This needs to set the class-level config object. Do not use a local instance
+        final KeywordQueryConfiguration config = getConfig();
+        config.setQuery(settings);
         config.setClient(client);
         config.setAuthorizations(auths);
-        config.setState(new KeywordQueryState());
 
-        // Get the BYPASS_ACCUMULO parameter if given
+        // Get the BYPASS_ACCUMULO parameter if given - currently broken, don't use
         String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
         if (StringUtils.isNotBlank(bypassAccumuloString)) {
             boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
             config.setBypassAccumulo(bypassAccumuloBool);
         }
-
         this.scannerFactory = new ScannerFactory(config);
 
-        // Configure the view names.
-        Parameter p = settings.findParameter(CONTENT_VIEW_NAMES);
+        // Set up the internal state for this query
+        final KeywordQueryState state = new KeywordQueryState();
+        config.setState(state);
+
+        // Configure the view names for this query.
+        final List<String> preferredViews = state.getPreferredViews();
+
+        // add the default view names from the config
+        preferredViews.clear();
+
+        // add view names from the parameters with greater priority.
+        Parameter p = settings.findParameter(PREFERRED_VIEW_NAMES);
         if (null != p && !StringUtils.isEmpty(p.getParameterValue())) {
-            config.getState().getViewNames().add(p.getParameterValue());
+            preferredViews.add(p.getParameterValue());
         }
+
+        // add the views from the config with lower priority.
+        preferredViews.addAll(getPreferredViews());
 
         // Determine whether we include the content of child events
         String end;
@@ -154,16 +168,20 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             end = PARENT_ONLY;
         }
 
-        // Extract the list of individual documents we're looking for.
+        // tag cloud creation should default to true if the parameter is empty (e.g., is not set)
+        String tagCloudCreateString = settings.findParameter(QueryParameters.TAG_CLOUD_CREATE).getParameterValue().trim();
+        boolean generateTagCloud = tagCloudCreateString.isEmpty() || Boolean.parseBoolean(tagCloudCreateString);
+        state.setGenerateCloud(generateTagCloud);
+
+        // Execute the query logic.
         final Collection<String> queryTerms = extractQueryTerms(settings);
 
-        // Configure the documentLanguageMap based on the data included for each document
-        final Map<String,String> documentLanguageMap = createDocumentLanguageMap(queryTerms);
-        config.getState().getDocumentLanguageMap().putAll(documentLanguageMap);
+        // Populate the identifier and language maps based on the data included for each document in the query.
+        extractIdentifiersAndLanguages(queryTerms, state.getIdentifierMap(), state.getLanguageMap());
 
         // Configure ranges for finding content.
         final Collection<Range> ranges = createRanges(queryTerms, end);
-        config.getState().setRanges(ranges);
+        state.setRanges(ranges);
 
         return config;
     }
@@ -187,7 +205,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
             final IteratorSetting cfg = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
             KeywordExtractingIterator.setOptions(cfg, config.getMinNgrams(), config.getMaxNgrams(), config.getMaxKeywords(), config.getMaxScore(),
-                            config.getMaxContentChars(), config.getState().getViewNames(), config.getState().getDocumentLanguageMap(), false);
+                            config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
             scanner.addScanIterator(cfg);
 
             this.iterator = scanner.iterator();
@@ -213,22 +231,6 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                 .map(String::trim)
                 .collect(Collectors.toSet());
         //@formatter:on
-    }
-
-    private static Map<String,String> createDocumentLanguageMap(Collection<String> queryTerms) {
-        Map<String,String> documentLanguageMap = new HashMap<>();
-
-        for (String term : queryTerms) {
-            int pos;
-            if ((pos = term.indexOf(LANGUAGE_TOKEN)) > 0) {
-                String language = term.substring(pos + LANGUAGE_TOKEN.length());
-                String cleanTerm = term.substring(0, pos);
-                String[] parts = extractUIDParts(cleanTerm);
-                documentLanguageMap.put(parts[1] + "/" + parts[2], language);
-            }
-        }
-
-        return documentLanguageMap;
     }
 
     /**
@@ -262,9 +264,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
 
     /**
-     * Parse a term into parts that will be used for setting up scan ranges. Expecting something like: DOCUMENT:shard/datatype/uid!optionalthings
+     * Parse a term into parts that will be used for setting up scan ranges. Expecting something like: DOCUMENT:shard/datatype/uid!optionalThings
      * <p>
-     * The leading 'DOCUMENT:' and '!optionalthings' are not required to be present.
+     * The leading 'DOCUMENT:' and '!optionalThings' are not required to be present.
      * </p>
      *
      * @param term
@@ -322,10 +324,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public QueryLogicTransformer<Entry<Key,Value>,EventBase> getTransformer(Query settings) {
-        return new KeywordQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+    public QueryLogicTransformer<Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
+        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory);
     }
 
     @Override
@@ -361,6 +362,54 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             this.config = KeywordQueryConfiguration.create();
         }
         return this.config;
+    }
+
+    public int getMaxContentChars() {
+        return getConfig().getMaxContentChars();
+    }
+
+    public void setMaxContentChars(int maxContentChars) {
+        getConfig().setMaxContentChars(maxContentChars);
+    }
+
+    public int getMaxKeywords() {
+        return getConfig().getMaxKeywords();
+    }
+
+    public void setMaxKeywords(int maxKeywords) {
+        getConfig().setMaxNgrams(maxKeywords);
+    }
+
+    public int getMaxNgrams() {
+        return getConfig().getMaxNgrams();
+    }
+
+    public void setMaxNgrams(int maxNgrams) {
+        getConfig().setMaxNgrams(maxNgrams);
+    }
+
+    public float getMaxScore() {
+        return getConfig().getMaxScore();
+    }
+
+    public void setMaxScore(float maxScore) {
+        getConfig().setMaxScore(maxScore);
+    }
+
+    public int getMinNgrams() {
+        return getConfig().getMinNgrams();
+    }
+
+    public void setMinNgrams(int minNgrams) {
+        getConfig().setMinNgrams(minNgrams);
+    }
+
+    public List<String> getPreferredViews() {
+        return getConfig().getPreferredViews();
+    }
+
+    public void setPreferredViews(List<String> preferredViews) {
+        getConfig().setPreferredViews(preferredViews);
     }
 
     @Override
@@ -409,5 +458,54 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         scannerFactory = new ScannerFactory(client);
 
         setupQuery(contentQueryConfig);
+    }
+
+    /**
+     * Extract optional identifiers and languages from query terms. Expected query format is:
+     * <p>
+     * 'DOCUMENT:shard/datatype/uid!optionalIdentifier1 DOCUMENT:shard/datatype/uid!optionalIdentifier2 ... DOCUMENT:shard/datatype/uid!optionalIdentifier3'
+     * <p>
+     * The identifiers are not required, so this will parse 'DOCUMENT:shard/datatype/uid' as well.
+     * <p>
+     * This also supports language tags in the form: 'DOCUMENT:shard/datatype/uid!optionalIdentifier1%LANGUAGE:ENGLISH'
+     * </p>
+     *
+     * @param queryTerms
+     *            the current query for which we are transforming results.
+     * @param identifierMap
+     *            used to store mappings between document UIDs and identifiers
+     * @param languageMap
+     *            used to store mappings between document UIDs and languages
+     */
+    public static void extractIdentifiersAndLanguages(Collection<String> queryTerms, Map<String,String> identifierMap, Map<String,String> languageMap) {
+        for (String term : queryTerms) {
+            // trim off the field if there is one and discard
+            final int fieldSeparation = term.indexOf(':');
+            final String valueIdentifierLanguage = fieldSeparation > 0 ? term.substring(fieldSeparation + 1) : term;
+
+            // trim off the language if there is one and preserve it.
+            final int languageSeparation = valueIdentifierLanguage.indexOf(LANGUAGE_TOKEN);
+            final String valueIdentifier = languageSeparation > 0 ? valueIdentifierLanguage.substring(0, languageSeparation) : valueIdentifierLanguage;
+            final String language = languageSeparation > 0 ? valueIdentifierLanguage.substring(languageSeparation + LANGUAGE_TOKEN.length()) : null;
+
+            // trim off the identifier if there is one and preserve it.
+            final int identifierSeparation = valueIdentifier.indexOf("!");
+            final String value = identifierSeparation > 0 ? valueIdentifier.substring(0, identifierSeparation) : valueIdentifier;
+            final String identifier = identifierSeparation > 0 ? valueIdentifier.substring(identifierSeparation + 1) : null;
+
+            // extract shard/dt/uid from the value and store it in a metadata object.
+            final String[] parts = extractUIDParts(value);
+            final String key = parts[0] + "/" + parts[1] + "/" + parts[2];
+
+            if (language != null) {
+                languageMap.put(key, language);
+                log.debug("Added language " + language + "for key: " + key);
+            }
+
+            if (identifier != null) {
+                identifierMap.put(key, identifier);
+                log.debug("Added identifier " + identifier + "for key: " + key);
+            }
+        }
     }
 }

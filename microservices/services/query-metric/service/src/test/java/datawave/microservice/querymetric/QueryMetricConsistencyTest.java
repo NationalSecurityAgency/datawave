@@ -44,20 +44,20 @@ import datawave.webservice.query.result.event.FieldBase;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryMetricConsistencyTest", "QueryMetricTest", "MessageRouting", "hazelcast-writethrough"})
 public class QueryMetricConsistencyTest extends QueryMetricTestBase {
-    
+
     @Autowired
     AccumuloMapStore mapStore;
-    
+
     @BeforeEach
     public void setup() {
         super.setup();
     }
-    
+
     @AfterEach
     public void cleanup() {
         super.cleanup();
     }
-    
+
     @Test
     public void PageMetricTest() throws Exception {
         int port = this.webServicePort;
@@ -66,7 +66,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         UriComponents metricUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(port).path(String.format(getMetricsUrl, queryId))
                         .build();
         HttpEntity metricRequestEntity = createRequestEntity(null, this.adminUser, null);
-        
+
         int numPages = 10;
         for (int i = 0; i < numPages; i++) {
             long now = System.currentTimeMillis();
@@ -87,7 +87,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         }
         assertNoDuplicateFields(queryId);
     }
-    
+
     @Test
     public void OutOfOrderLifecycleTest() throws Exception {
         int port = this.webServicePort;
@@ -106,12 +106,12 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         HttpEntity metricRequestEntity = createRequestEntity(null, this.adminUser, null);
         ResponseEntity<BaseQueryMetricListResponse> metricResponse = this.restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity,
                         BaseQueryMetricListResponse.class);
-        
+
         assertEquals(1, metricResponse.getBody().getNumResults());
         BaseQueryMetric returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
         assertEquals(BaseQueryMetric.Lifecycle.CLOSED, returnedMetric.getLifecycle(), "lifecycle incorrect");
         metricAssertEquals(m, returnedMetric);
-        
+
         // send an update with out-of-sequence lifecycle
         m = createMetric(queryId);
         m.setLifecycle(BaseQueryMetric.Lifecycle.INITIALIZED);
@@ -124,14 +124,14 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         // @formatter:on
         metricRequestEntity = createRequestEntity(null, this.adminUser, null);
         metricResponse = restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity, BaseQueryMetricListResponse.class);
-        
+
         assertEquals(1, metricResponse.getBody().getNumResults());
         returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
         // metric should have been updated without backtracking on the lifecycle
         assertEquals(BaseQueryMetric.Lifecycle.CLOSED, returnedMetric.getLifecycle(), "lifecycle incorrect");
         assertNoDuplicateFields(queryId);
     }
-    
+
     @Test
     public void SetupTimeTest() throws Exception {
         String queryId = createQueryId();
@@ -147,7 +147,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         // @formatter:on
         BaseQueryMetric returnedMetric = shardTableQueryMetricHandler.getQueryMetric(queryId);
         metricAssertEquals(m, returnedMetric);
-        
+
         m.setSetupTime(4000);
         m.setLifecycle(BaseQueryMetric.Lifecycle.INITIALIZED);
         // @formatter:off
@@ -160,7 +160,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         returnedMetric = shardTableQueryMetricHandler.getQueryMetric(queryId);
         metricAssertEquals(m, returnedMetric);
     }
-    
+
     @Test
     public void ChangePlanTest() throws Exception {
         int port = this.webServicePort;
@@ -185,24 +185,24 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
                 .withUser(this.adminUser)
                 .build(), QueryMetricTransportType.MESSAGE);
         // @formatter:on
-        
+
         HttpEntity metricRequestEntity = createRequestEntity(null, this.adminUser, null);
         ResponseEntity<BaseQueryMetricListResponse> metricResponse = this.restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity,
                         BaseQueryMetricListResponse.class);
-        
+
         assertEquals(1, metricResponse.getBody().getNumResults());
         BaseQueryMetric returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
         assertEquals(m.getPlan(), returnedMetric.getPlan(), "plan incorrect");
         assertNoDuplicateFields(queryId);
     }
-    
+
     @Test
     public void DistributedUpdateTest() throws Exception {
         int port = this.webServicePort;
         String queryId = createQueryId();
         UriComponents metricUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(port).path(String.format(getMetricsUrl, queryId))
                         .build();
-        
+
         long now = System.currentTimeMillis();
         BaseQueryMetric m = createMetric(queryId);
         m.setCreateDate(new Date(now));
@@ -246,7 +246,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         HttpEntity metricRequestEntity = createRequestEntity(null, this.adminUser, null);
         ResponseEntity<BaseQueryMetricListResponse> metricResponse = this.restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity,
                         BaseQueryMetricListResponse.class);
-        
+
         assertEquals(1, metricResponse.getBody().getNumResults());
         BaseQueryMetric returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
         assertEquals(formatDate(new Date(now)), formatDate(returnedMetric.getCreateDate()), "create date should be the first received of the two values");
@@ -259,7 +259,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         assertEquals(200, returnedMetric.getFiRanges(), "fi ranges should be additive");
         long lastPageNumReturned = queryMetricCombiner.getLastPageNumber(returnedMetric);
         assertEquals(2, lastPageNumReturned, "distributed update should append pages");
-        
+
         m.setLastUpdated(new Date(now + 1000));
         m.setSourceCount(1000);
         m.setNextCount(1000);
@@ -276,7 +276,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         // @formatter:on
         metricRequestEntity = createRequestEntity(null, this.adminUser, null);
         metricResponse = restTemplate.exchange(metricUri.toUri(), HttpMethod.GET, metricRequestEntity, BaseQueryMetricListResponse.class);
-        
+
         assertEquals(1, metricResponse.getBody().getNumResults());
         returnedMetric = (BaseQueryMetric) metricResponse.getBody().getResult().get(0);
         assertEquals(formatDate(new Date(now + 1000)), formatDate(returnedMetric.getLastUpdated()), "last updated should only increase");
@@ -288,14 +288,14 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         assertEquals(1000, returnedMetric.getFiRanges(), "latest fi ranges should be used");
         assertNoDuplicateFields(queryId);
     }
-    
+
     @Test
     public void ToMetricTest() {
-        
+
         ContentQueryMetricsIngestHelper.HelperDelegate<QueryMetric> helper = new ContentQueryMetricsIngestHelper.HelperDelegate<>();
         QueryMetric queryMetric = (QueryMetric) createMetric();
         Multimap<String,String> fieldsToWrite = helper.getEventFieldsToWrite(queryMetric, null);
-        
+
         EventBase event = new DefaultEvent();
         long now = System.currentTimeMillis();
         List<FieldBase> fields = new ArrayList<>();
@@ -309,7 +309,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         BaseQueryMetric newMetric = this.shardTableQueryMetricHandler.toMetric(event);
         metricAssertEquals("metrics are not equal", queryMetric, newMetric);
     }
-    
+
     /*
      * Check that the last updated time (which is used to calculate the elapsed time) does not get changed when being written to Accumulo
      */
@@ -322,14 +322,14 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         queryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
         incomingQueryMetricsCache.put(queryId, new QueryMetricUpdateHolder(queryMetric.duplicate()));
         ensureDataWritten(incomingQueryMetricsCache, lastWrittenQueryMetricCache, queryId);
-        
+
         QueryMetricUpdateHolder storedMetricHolder = lastWrittenQueryMetricCache.get(queryId, QueryMetricUpdateHolder.class);
         assertNotNull(storedMetricHolder, "storedQueryMetric is null");
         metricAssertEquals("metric should not change", queryMetric, storedMetricHolder.getMetric());
         assertEquals(60000, storedMetricHolder.getMetric().getElapsedTime(), "Elapsed time incorrect");
         assertEquals(lastUpdated, storedMetricHolder.getMetric().getLastUpdated(), "Last updated incorrect");
     }
-    
+
     @Test
     public void CombineMetricsTest() throws Exception {
         QueryMetric storedQueryMetric = (QueryMetric) createMetric();
@@ -337,7 +337,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         QueryMetric updatedQueryMetric = (QueryMetric) storedQueryMetric.duplicate();
         updatedQueryMetric.addPageTime(100, 1000, 5000, 10000);
         updatedQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
-        
+
         BaseQueryMetric storedQueryMetricCopy = storedQueryMetric.duplicate();
         BaseQueryMetric updatedQueryMetricCopy = updatedQueryMetric.duplicate();
         BaseQueryMetric combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(storedQueryMetric, updatedQueryMetric, QueryMetricType.COMPLETE);
@@ -346,7 +346,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetric.getLifecycle());
         assertEquals(2, combinedMetric.getNumPages());
     }
-    
+
     @Test
     public void MetricUpdateTest() throws Exception {
         String queryId = createQueryId();
@@ -357,11 +357,11 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         updatedQueryMetric.setDocRanges(400);
         updatedQueryMetric.setNextCount(400);
         updatedQueryMetric.setSeekCount(400);
-        
+
         Date now = new Date();
         this.shardTableQueryMetricHandler.writeMetric(storedQueryMetric, Collections.emptyList(), now.getTime(), false);
         this.shardTableQueryMetricHandler.writeMetric(updatedQueryMetric, Collections.singletonList(storedQueryMetric), now.getTime(), true);
-        
+
         Collection<Map.Entry<Key,Value>> entries = getEventEntriesFromAccumulo(queryId);
         Map<String,String> updatedFields = new HashMap();
         updatedFields.put("NUM_RESULTS", "2000");
@@ -378,7 +378,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
                 }
             }
         }
-        
+
         shardTableQueryMetricHandler.writeMetric(updatedQueryMetric, Collections.singletonList(storedQueryMetric), now.getTime(), false);
         entries = getEventEntriesFromAccumulo(queryId);
         assertFalse(entries.isEmpty(), "There should be entries in Accumulo");
@@ -393,7 +393,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         }
         assertNoDuplicateFields(storedQueryMetric.getQueryId());
     }
-    
+
     @Test
     public void DuplicateAccumuloEntryTest() throws Exception {
         String queryId = createQueryId();
@@ -404,24 +404,24 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         updatedQueryMetric.setDocRanges(400);
         updatedQueryMetric.setNextCount(400);
         updatedQueryMetric.setSeekCount(400);
-        
+
         QueryMetricUpdateHolder holder = new QueryMetricUpdateHolder(storedQueryMetric, QueryMetricType.COMPLETE);
         mapStore.store(queryId, holder);
         QueryMetricUpdateHolder lastWrittenMetricUpdate = this.lastWrittenQueryMetricCache.get(queryId, QueryMetricUpdateHolder.class);
         metricAssertEquals(storedQueryMetric, lastWrittenMetricUpdate.getMetric());
-        
+
         holder.setMetric(updatedQueryMetric);
         mapStore.store(queryId, holder);
         lastWrittenMetricUpdate = this.lastWrittenQueryMetricCache.get(queryId, QueryMetricUpdateHolder.class);
         // all fields that were changed should be reflected in the updated metric
         metricAssertEquals(updatedQueryMetric, lastWrittenMetricUpdate.getMetric());
-        
+
         Collection<Map.Entry<Key,Value>> entries = getEventEntriesFromAccumulo(queryId);
         assertFalse(entries.isEmpty(), "There should be entries in Accumulo");
-        
+
         assertNoDuplicateFields(queryId);
     }
-    
+
     private String fieldSplit(Map.Entry<Key,Value> entry, int part) {
         String cq = entry.getKey().getColumnQualifier().toString();
         return StringUtils.split(cq, "\u0000")[part];

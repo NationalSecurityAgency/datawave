@@ -20,21 +20,21 @@ import datawave.marking.SecurityMarking;
  */
 @Configuration
 public class MarkingConfig {
-    
+
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "datawave.defaults.MarkingFunctions.enabled", havingValue = "true", matchIfMissing = true)
     public MarkingFunctions markingFunctions() {
         return new MarkingFunctions.Default();
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "datawave.defaults.SecurityMarking.enabled", havingValue = "true", matchIfMissing = true)
     public SecurityMarking securityMarking() {
         return new ColumnVisibilitySecurityMarking();
     }
-    
+
     @Bean(name = "markings-cache-manager")
     @ConditionalOnMissingBean(name = "markings-cache-manager")
     public CacheManager markingsCacheManager() {
@@ -42,7 +42,7 @@ public class MarkingConfig {
         caffeineCacheManager.setCaffeineSpec(CaffeineSpec.parse("maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h"));
         return caffeineCacheManager;
     }
-    
+
     @Bean
     @ConditionalOnMissingBean
     public CollectionSafeKeyGenerator collectionSafeKeyGenerator() {

@@ -9,7 +9,7 @@ import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 public class NumericalEncoderTest {
-    
+
     @Test
     public void testIsPossiblyEncoded() {
         assertFalse(NumericalEncoder.isPossiblyEncoded(null));
@@ -43,9 +43,9 @@ public class NumericalEncoderTest {
         assertTrue(NumericalEncoder.isPossiblyEncoded(NumericalEncoder.encode("-1000001")));
         assertTrue(NumericalEncoder.isPossiblyEncoded(NumericalEncoder.encode("-100000001")));
         assertTrue(NumericalEncoder.isPossiblyEncoded(NumericalEncoder.encode("-100000008")));
-        
+
     }
-    
+
     @Test
     public void testEncode() {
         assertEquals("+aE5", NumericalEncoder.encode("5"));
@@ -58,15 +58,15 @@ public class NumericalEncoderTest {
         assertEquals("+iE1.00000001", NumericalEncoder.encode("100000001"));
         assertEquals("+iE1.00000008", NumericalEncoder.encode("100000008"));
     }
-    
+
     @Test
     public void testDecode() {
         for (long i = 0; i < 10000; i++) {
             assertEquals(i, NumericalEncoder.decode(NumericalEncoder.encode(Long.valueOf(i).toString())).longValue());
         }
-        
+
     }
-    
+
     @Test
     public void testDecodeBigNums() {
         for (long i = 5; i < Long.MAX_VALUE; i *= 1.0002) {
@@ -74,7 +74,7 @@ public class NumericalEncoderTest {
             i++;
         }
     }
-    
+
     @Test
     public void testDecodeBigNumsRandomIncrement() {
         int increment = new Random().nextInt(9) + 1;
@@ -82,6 +82,6 @@ public class NumericalEncoderTest {
             assertEquals(i, NumericalEncoder.decode(NumericalEncoder.encode(Long.valueOf(i).toString())).longValue());
             i += increment;
         }
-        
+
     }
 }

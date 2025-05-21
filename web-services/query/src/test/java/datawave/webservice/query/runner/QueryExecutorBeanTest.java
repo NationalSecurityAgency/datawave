@@ -683,6 +683,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(null).anyTimes();
+        persister.remove(q);
+        EasyMock.expectLastCall().anyTimes();
 
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         metric.populate(q);

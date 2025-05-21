@@ -19,12 +19,12 @@ import datawave.webservice.result.BaseQueryResponse;
 @ControllerAdvice
 @ConditionalOnClass(BaseQueryResponse.class)
 public class BaseQueryResponseAdvice implements ResponseBodyAdvice<BaseQueryResponse> {
-    
+
     @Override
     public boolean supports(@NonNull MethodParameter returnType, @NonNull Class converterType) {
         return BaseQueryResponse.class.isAssignableFrom(returnType.getParameterType());
     }
-    
+
     @Override
     public BaseQueryResponse beforeBodyWrite(BaseQueryResponse baseQueryResponse, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
                     @NonNull Class selectedConverterType, @NonNull ServerHttpRequest request, ServerHttpResponse response) {

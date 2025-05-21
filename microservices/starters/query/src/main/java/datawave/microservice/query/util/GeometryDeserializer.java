@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 
 public class GeometryDeserializer extends JsonDeserializer<Geometry> {
     private WKTReader wktReader = new WKTReader();
-    
+
     @Override
     public Geometry deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         try {

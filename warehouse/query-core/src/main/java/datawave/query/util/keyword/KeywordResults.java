@@ -12,49 +12,100 @@ import java.util.Map;
 
 import org.apache.hadoop.io.Writable;
 
+import com.google.gson.Gson;
+
 /**
- * Encapsulates results from a keyword extraction algorithm and provides serialization and deserialization mechanism
+ * Encapsulates results from a keyword extraction algorithm for a single document and provides serialization and deserialization mechanism
  */
 public class KeywordResults implements Writable {
 
+    private static final Gson gson = new Gson();
+
+    /** the identifier for the source document */
     String source;
-    final LinkedHashMap<String,Double> results;
+
+    /** the name of the view from which the keywords were extracted */
+    String view;
+
+    /** the language of the source document used for keyword extraction */
+    String language;
+
+    /** the keywords and scores produced by the extraction algorithm */
+    final LinkedHashMap<String,Double> keywords;
 
     public KeywordResults() {
-        this("", new LinkedHashMap<>());
+        this("", "", "", new LinkedHashMap<>());
     }
 
-    public KeywordResults(String source, LinkedHashMap<String,Double> results) {
+    public KeywordResults(String source, String view, String language, LinkedHashMap<String,Double> results) {
         this.source = source;
-        this.results = results;
+        this.view = view;
+        this.language = language;
+        this.keywords = results;
     }
 
     public String getSource() {
         return source;
     }
 
-    public int size() {
-        return results.size();
+    public void setSource(String source) {
+        this.source = source;
     }
 
-    public LinkedHashMap<String,Double> get() {
-        return results;
+    public String getView() {
+        return view;
+    }
+
+    public void setView(String view) {
+        this.view = view;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public int getKeywordCount() {
+        return keywords.size();
+    }
+
+    public LinkedHashMap<String,Double> getKeywords() {
+        return keywords;
+    }
+
+    public String getKeywordsAsJson() {
+        return gson.toJson(keywords);
+    }
+
+    public String toJson() {
+        return gson.toJson(this);
+    }
+
+    public static KeywordResults fromJson(String json) {
+        return gson.fromJson(json, KeywordResults.class);
     }
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         int sz = dataInput.readInt();
         this.source = dataInput.readUTF();
+        this.view = dataInput.readUTF();
+        this.language = dataInput.readUTF();
         for (int i = 0; i < sz; i++) {
-            results.put(dataInput.readUTF(), dataInput.readDouble());
+            keywords.put(dataInput.readUTF(), dataInput.readDouble());
         }
     }
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
-        dataOutput.writeInt(results.size());
+        dataOutput.writeInt(keywords.size());
         dataOutput.writeUTF(source == null ? "" : source);
-        for (Map.Entry<String,Double> e : results.entrySet()) {
+        dataOutput.writeUTF(view == null ? "" : view);
+        dataOutput.writeUTF(language == null ? "" : language);
+        for (Map.Entry<String,Double> e : keywords.entrySet()) {
             dataOutput.writeUTF(e.getKey());
             dataOutput.writeDouble(e.getValue());
         }

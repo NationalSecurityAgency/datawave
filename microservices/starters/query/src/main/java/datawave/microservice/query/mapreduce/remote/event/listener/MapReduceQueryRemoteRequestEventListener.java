@@ -17,15 +17,15 @@ import datawave.microservice.query.remote.QueryRequestHandler;
 @ConditionalOnBusEnabled
 public class MapReduceQueryRemoteRequestEventListener implements ApplicationListener<RemoteMapReduceQueryRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     private final List<MapReduceQueryRequestHandler> mapReduceQueryRequestHandlers;
     private final ServiceMatcher serviceMatcher;
-    
+
     public MapReduceQueryRemoteRequestEventListener(List<MapReduceQueryRequestHandler> mapReduceQueryRequestHandlers, ServiceMatcher serviceMatcher) {
         this.mapReduceQueryRequestHandlers = mapReduceQueryRequestHandlers;
         this.serviceMatcher = serviceMatcher;
     }
-    
+
     @Override
     public void onApplicationEvent(RemoteMapReduceQueryRequestEvent event) {
         // Ignore events that this service instance published, since we publish from a place
@@ -34,7 +34,7 @@ public class MapReduceQueryRemoteRequestEventListener implements ApplicationList
         if (isSelfRequest) {
             log.debug("Received a self-request {}.", event);
         }
-        
+
         // process the event using each query request handler.
         // By default, for parallelStreams java uses threads equal to the number of cores.
         // if we need more than that, we can specify our own ForkJoinPool.
@@ -46,11 +46,11 @@ public class MapReduceQueryRemoteRequestEventListener implements ApplicationList
                 .forEach(h -> handleRequest(h, event));
         // @formatter:on
     }
-    
+
     private boolean shouldHandleRequest(MapReduceQueryRequestHandler handler, boolean isSelfRequest) {
         return !isSelfRequest || handler instanceof QueryRequestHandler.QuerySelfRequestHandler;
     }
-    
+
     private void handleRequest(MapReduceQueryRequestHandler mapReducequeryRequestHandler, RemoteMapReduceQueryRequestEvent mapReducequeryRequestEvent) {
         try {
             mapReducequeryRequestHandler.handleRemoteRequest(mapReducequeryRequestEvent.getRequest(), mapReducequeryRequestEvent.getOriginService(),

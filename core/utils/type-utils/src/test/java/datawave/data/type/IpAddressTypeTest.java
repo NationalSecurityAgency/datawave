@@ -16,7 +16,7 @@ import datawave.data.type.util.IpV4Address;
 
 public class IpAddressTypeTest {
     private static Logger log = Logger.getLogger(IpAddressTypeTest.class);
-    
+
     @Test
     public void testIpNormalizer01() {
         String ip = "1.2.3.4";
@@ -26,14 +26,14 @@ public class IpAddressTypeTest {
         assertEquals(expected, result);
         log.debug("result: " + result);
     }
-    
+
     @Test
     public void testIpNormalizer02() {
         String ip = "1.2.3";
         IpAddressType norm = new IpAddressType();
         assertThrows(IllegalArgumentException.class, () -> norm.normalize(ip));
     }
-    
+
     @Test
     public void testIpNormalizer03() {
         IpAddressType norm = new IpAddressType();
@@ -45,7 +45,7 @@ public class IpAddressTypeTest {
             log.debug(norm.normalize("1.2..*"));
             log.debug(norm.normalize("1.*"));
             log.debug(norm.normalize("1..*"));
-            
+
         }
         assertEquals("001.002.003.*", norm.normalize("1.2.3.*"));
         assertEquals("001.002.003.*", norm.normalize("1.2.3..*"));
@@ -54,7 +54,7 @@ public class IpAddressTypeTest {
         assertEquals("001.*", norm.normalize("1.*"));
         assertEquals("001.*", norm.normalize("1..*"));
     }
-    
+
     @Test
     public void testIpNormalizer04() {
         log.debug("testIpNormalizer04");
@@ -64,7 +64,7 @@ public class IpAddressTypeTest {
         assertEquals("*.002.013.004", norm.normalize("*.2.13.4"));
         assertEquals("*.013.004", norm.normalize("*.13.4"));
     }
-    
+
     // TEST IS TURNED OFF
     @Test
     @Disabled
@@ -78,7 +78,7 @@ public class IpAddressTypeTest {
             log.debug(ip.toReverseZeroPaddedString());
         }
     }
-    
+
     /*
      * NOTE: call toReverseString() on a wildcarded ip doesn't work right although this is not much of an issue.
      */

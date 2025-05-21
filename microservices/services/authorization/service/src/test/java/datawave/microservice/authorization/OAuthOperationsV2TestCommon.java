@@ -62,25 +62,25 @@ import datawave.security.authorization.oauth.OAuthUserInfo;
 import datawave.security.util.ProxiedEntityUtils;
 
 public class OAuthOperationsV2TestCommon {
-    
+
     @LocalServerPort
     protected int webServicePort;
-    
+
     @Autowired
     protected RestTemplateBuilder restTemplateBuilder;
-    
+
     @Autowired
     protected JWTTokenHandler jwtTokenHandler;
-    
+
     @Autowired
     protected SSLContext sslContext;
-    
+
     @Autowired
     protected RestClientProperties restClientProperties;
-    
+
     protected RestTemplate restTemplate;
     protected AuthorizationTestUtils testUtils;
-    
+
     protected static Map<SubjectIssuerDNPair,DatawaveUser> userMap = new LinkedHashMap<>();
     protected final SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("cn=Test User, ou=testing, ou=development, o=testcorp, c=us",
                     "cn=testcorp ca, ou=security, o=testcorp, c=us");
@@ -88,26 +88,26 @@ public class OAuthOperationsV2TestCommon {
                     "cn=notallowedcaller.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us", "cn=testcorp ca, ou=security, o=testcorp, c=us");
     protected final SubjectIssuerDNPair serverDN = SubjectIssuerDNPair.of("cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us",
                     "cn=testcorp ca, ou=security, o=testcorp, c=us");
-    
+
     public DatawaveUser dwServer = new DatawaveUser(serverDN, SERVER, null, Arrays.asList("A", "B", "C", "D"), Arrays.asList("AuthorizedServer"), null,
                     System.currentTimeMillis());
-    
+
     public DatawaveUser notAllowedDwUser = new DatawaveUser(notAllowedUserDN, USER, null, Arrays.asList("A", "B", "E"), Arrays.asList("AuthorizedUser"), null,
                     System.currentTimeMillis());
-    
+
     public DatawaveUser dwUser = new DatawaveUser(userDN, USER, null, Arrays.asList("A", "B", "E"), Arrays.asList("AuthorizedUser"), null,
                     System.currentTimeMillis());
-    
+
     private final String CLIENT_ID = "123456789";
     private final String CLIENT_SECRET = "secret";
     private final String REDIRECT_URI = "https://localhost/redirect";
-    
+
     public enum AUTH_TYPE {
         TRUSTED_HEADER, JWT, NONE
     }
-    
+
     public void TestCodeFlowValid(DatawaveUser dwUser, AUTH_TYPE authType) throws Exception {
-        
+
         // Application redirects user's browser to the authorize endpoint (redirect not shown)
         // The user calls authorize with own credentials and gets redirected back to the application
         // This test is set up to not follow the redirect so that we can test the response
@@ -117,31 +117,31 @@ public class OAuthOperationsV2TestCommon {
         List<String> valueList = authorizeEntity.getHeaders().get("Location");
         assertEquals(1, valueList.size());
         assertTrue(valueList.get(0).startsWith(REDIRECT_URI), "Redirect location should start with redirect_uri");
-        
+
         Map<String,List<String>> queryParams = splitQuery(new URL(valueList.get(0)));
         List<String> stateList = queryParams.get("state");
         assertEquals(1, stateList.size());
         assertEquals(state, stateList.get(0), "If state parameter is send, it should be returned");
         List<String> codeList = queryParams.get("code");
         assertEquals(1, codeList.size());
-        
+
         // This is the short-lived code that an application needs to get a user's token
         String code = codeList.get(0);
-        
+
         // After the user's browser gets redirected to the application, the application now has the code
         // and can call the token endpoint to get this user's token
         ResponseEntity<OAuthTokenResponse> tokenEntity = token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, REDIRECT_URI, null);
         assertEquals(200, tokenEntity.getStatusCode().value());
-        
+
         OAuthTokenResponse oAuthTokenResponse = tokenEntity.getBody();
         assertEquals(200, tokenEntity.getStatusCode().value());
-        
+
         String access_token = oAuthTokenResponse.getAccess_token();
         Collection<DatawaveUser> usersFromToken = jwtTokenHandler.createUsersFromToken(access_token);
         // The DatawaveUser of both the user and the server should be in the token
         // The server is proxying for the user and must also be authenticated
         assertEquals(2, usersFromToken.size());
-        
+
         // Call the user endpoint with the access_token to get the primary user
         ResponseEntity<OAuthUserInfo> userResponse = user(access_token, JWTTokenHandler.PRINCIPALS_CLAIM);
         OAuthUserInfo oAuthUserInfo = userResponse.getBody();
@@ -150,21 +150,21 @@ public class OAuthOperationsV2TestCommon {
         assertEquals(dwUser.getEmail(), oAuthUserInfo.getEmail());
         assertEquals(dwUser.getDn(), oAuthUserInfo.getDn());
         assertEquals(dwUser.getCreationTime(), oAuthUserInfo.getCreationTime());
-        
+
         // Call the users endpoint with the access_token to get the all users
         ResponseEntity<OAuthUserInfo[]> usersResponse = users(access_token, JWTTokenHandler.PRINCIPALS_CLAIM);
         OAuthUserInfo[] users = usersResponse.getBody();
         assertNotNull(users);
         assertEquals(2, users.length, "Primary and proxying user should be returned");
-        
+
         // Call the token endpoint with the refresh token id
         String refresh_token = oAuthTokenResponse.getRefresh_token();
         ResponseEntity<OAuthTokenResponse> refreshedTokenEntity = token(dwServer, GRANT_REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, null, null, refresh_token);
         assertEquals(200, refreshedTokenEntity.getStatusCode().value());
     }
-    
+
     public void TestCodeFlowInvalidClientId(DatawaveUser dwUser, AUTH_TYPE authType) {
-        
+
         // Application redirects user's browser to the authorize endpoint (redirect not shown)
         // The user calls authorize with own credentials and gets redirected back to the application
         // This test is set up to not follow the redirect so that we can test the response
@@ -173,16 +173,16 @@ public class OAuthOperationsV2TestCommon {
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, "00000000", CLIENT_SECRET, "wrongcode", REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
     }
-    
+
     public void TestCodeFlowMissingResponseType(DatawaveUser dwUser, AUTH_TYPE authType) {
-        
+
         // Application redirects user's browser to the authorize endpoint (redirect not shown)
         // The user calls authorize with own credentials and gets redirected back to the application
         // This test is set up to not follow the redirect so that we can test the response
@@ -192,9 +192,9 @@ public class OAuthOperationsV2TestCommon {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
     }
-    
+
     public void TestCodeFlowMissingRedirectUri(DatawaveUser dwUser, AUTH_TYPE authType) {
-        
+
         // Application redirects user's browser to the authorize endpoint (redirect not shown)
         // The user calls authorize with own credentials and gets redirected back to the application
         // This test is set up to not follow the redirect so that we can test the response
@@ -204,18 +204,18 @@ public class OAuthOperationsV2TestCommon {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
     }
-    
+
     public void TestCodeFlowWrongCode() {
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, "wrongcode", REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
     }
-    
+
     public void TestCodeFlowRightCodeWrongOtherParameters(DatawaveUser dwUser, AUTH_TYPE authType) throws Exception {
-        
+
         // Application redirects user's browser to the authorize endpoint (redirect not shown)
         // The user calls authorize with own credentials and gets redirected back to the application
         // This test is set up to not follow the redirect so that we can test the response
@@ -224,47 +224,47 @@ public class OAuthOperationsV2TestCommon {
         List<String> valueList = authorizeEntity.getHeaders().get("Location");
         assertEquals(1, valueList.size());
         assertTrue(valueList.get(0).startsWith(REDIRECT_URI));
-        
+
         Map<String,List<String>> queryParams = splitQuery(new URL(valueList.get(0)));
         List<String> codeList = queryParams.get("code");
         assertEquals(1, codeList.size());
-        
+
         // This is the short-lived code that an application needs to get a user's token
         String code = codeList.get(0);
-        
+
         try {
             token(dwServer, "invalid_grant_type", CLIENT_ID, CLIENT_SECRET, code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, "invalidClientId", CLIENT_SECRET, code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, "wrongsecret", code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, "https://different_redirect", null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
     }
-    
+
     public void TestCodeFlowUseCodeTwice(DatawaveUser dwUser, AUTH_TYPE authType) throws Exception {
-        
+
         // Application redirects user's browser to the authorize endpoint (redirect not shown)
         // The user calls authorize with own credentials and gets redirected back to the application
         // This test is set up to not follow the redirect so that we can test the response
@@ -273,58 +273,58 @@ public class OAuthOperationsV2TestCommon {
         List<String> valueList = authorizeEntity.getHeaders().get("Location");
         assertEquals(1, valueList.size());
         assertTrue(valueList.get(0).startsWith(REDIRECT_URI));
-        
+
         Map<String,List<String>> queryParams = splitQuery(new URL(valueList.get(0)));
         List<String> codeList = queryParams.get("code");
         assertEquals(1, codeList.size());
-        
+
         // This is the short-lived code that an application needs to get a user's token
         String code = codeList.get(0);
-        
+
         // After the user's browser gets redirected to the application, the application now has the code
         // and can call the token endpoint to get this user's token
         ResponseEntity<OAuthTokenResponse> tokenEntity = token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, REDIRECT_URI, null);
         assertEquals(200, tokenEntity.getStatusCode().value());
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode(), "Code should only be valid for one call");
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, "invalidClientId", CLIENT_SECRET, code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, "wrongsecret", code, REDIRECT_URI, null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
-        
+
         try {
             token(dwServer, GRANT_AUTHORIZATION_CODE, CLIENT_ID, CLIENT_SECRET, code, "https://different_redirect", null);
         } catch (HttpStatusCodeException e) {
             assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
     }
-    
+
     private ResponseEntity<String> authorize(DatawaveUser dwUser, AUTH_TYPE authType, String response_type, String client_id, String redirect_uri,
                     String state) {
-        
+
         DatawaveUserDetails trustedHeaderUser = authType.equals(AUTH_TYPE.TRUSTED_HEADER)
                         ? new DatawaveUserDetails(Collections.singleton(dwUser), dwUser.getCreationTime())
                         : null;
         DatawaveUserDetails jwtUser = authType.equals(AUTH_TYPE.JWT) ? new DatawaveUserDetails(Collections.singleton(dwUser), dwUser.getCreationTime()) : null;
-        
+
         MultiValueMap<String,String> queryParams = new LinkedMultiValueMap<>();
         if (response_type != null) {
             queryParams.put("response_type", Collections.singletonList(response_type));
@@ -343,7 +343,7 @@ public class OAuthOperationsV2TestCommon {
         RequestEntity requestEntity = testUtils.createRequestEntity(trustedHeaderUser, jwtUser, HttpMethod.GET, authorizeUri);
         return restTemplate.exchange(requestEntity, String.class);
     }
-    
+
     private ResponseEntity<OAuthTokenResponse> token(DatawaveUser dwServer, String grant_type, String client_id, String client_secret, String code,
                     String redirect_uri, String refresh_token) {
         DatawaveUserDetails authServer = new DatawaveUserDetails(Collections.singleton(dwServer), dwServer.getCreationTime());
@@ -368,12 +368,12 @@ public class OAuthOperationsV2TestCommon {
         }
         UriComponents tokenUri = UriComponentsBuilder.newInstance().scheme(testUtils.getScheme()).host("localhost").port(webServicePort)
                         .path("/authorization/v2/oauth/token").queryParams(queryParams).build();
-        
+
         // both http and https requests should find the JWT first even if calling with a client certificate
         RequestEntity requestEntity = testUtils.createRequestEntity(null, authServer, HttpMethod.POST, tokenUri);
         return restTemplate.exchange(requestEntity, OAuthTokenResponse.class);
     }
-    
+
     private ResponseEntity<OAuthUserInfo> user(String token, String claim) {
         Collection<DatawaveUser> dwUsers = jwtTokenHandler.createUsersFromToken(token, claim);
         DatawaveUserDetails authUser = new DatawaveUserDetails(dwUsers, dwUsers.stream().findFirst().get().getCreationTime());
@@ -382,7 +382,7 @@ public class OAuthOperationsV2TestCommon {
         RequestEntity requestEntity = testUtils.createRequestEntity(null, authUser, HttpMethod.GET, userUri);
         return restTemplate.exchange(requestEntity, OAuthUserInfo.class);
     }
-    
+
     private ResponseEntity<OAuthUserInfo[]> users(String token, String claim) {
         Collection<DatawaveUser> dwUsers = jwtTokenHandler.createUsersFromToken(token, claim);
         DatawaveUserDetails authUser = new DatawaveUserDetails(dwUsers, dwUsers.stream().findFirst().get().getCreationTime());
@@ -391,7 +391,7 @@ public class OAuthOperationsV2TestCommon {
         RequestEntity requestEntity = testUtils.createRequestEntity(null, authUser, HttpMethod.GET, userUri);
         return restTemplate.exchange(requestEntity, OAuthUserInfo[].class);
     }
-    
+
     public static Map<String,List<String>> splitQuery(URL url) throws UnsupportedEncodingException {
         final Map<String,List<String>> query_pairs = new LinkedHashMap<>();
         final String[] pairs = url.getQuery().split("&");
@@ -406,7 +406,7 @@ public class OAuthOperationsV2TestCommon {
         }
         return query_pairs;
     }
-    
+
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
     @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
@@ -417,7 +417,7 @@ public class OAuthOperationsV2TestCommon {
         public CachedDatawaveUserService oauthCachedDatawaveUserService() {
             return new AuthorizationTestUserService(OAuthOperationsV2TestCommon.userMap, false);
         }
-        
+
         @Bean
         public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
@@ -425,13 +425,13 @@ public class OAuthOperationsV2TestCommon {
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
         }
-        
+
         @Bean
         public BusProperties busProperties() {
             return new BusProperties();
         }
     }
-    
+
     /*
      * Only used for the OAuth tests so that we can ignore redirect responses and check the response values at each step of the OAuth process
      */

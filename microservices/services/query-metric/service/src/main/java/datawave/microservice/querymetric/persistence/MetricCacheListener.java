@@ -14,15 +14,15 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricUpdate;
 
 public class MetricCacheListener implements RemovalListener {
-    
+
     private Logger log = LoggerFactory.getLogger(MetricCacheListener.class);
-    
+
     private final String cacheName;
-    
+
     public MetricCacheListener(String cacheName) {
         this.cacheName = cacheName;
     }
-    
+
     @Override
     public void onRemoval(@Nullable Object key, @Nullable Object value, @NonNull RemovalCause cause) {
         if (!cause.equals(RemovalCause.REPLACED)) {

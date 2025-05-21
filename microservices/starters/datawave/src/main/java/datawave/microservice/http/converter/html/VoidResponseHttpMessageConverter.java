@@ -22,12 +22,12 @@ import datawave.webservice.result.VoidResponse;
  * converting to an {@link VoidResponse}.
  */
 public class VoidResponseHttpMessageConverter extends AbstractDatawaveHttpMessageConverter<VoidResponse> {
-    
+
     public VoidResponseHttpMessageConverter(DatawaveServerProperties datawaveServerProperties, @Nullable BannerProvider bannerProvider) {
         super(datawaveServerProperties, bannerProvider);
         setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_HTML, MediaType.TEXT_PLAIN));
     }
-    
+
     @Override
     protected void writeInternal(VoidResponse voidResponse, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
         MediaType contentType = outputMessage.getHeaders().getContentType();
@@ -35,36 +35,36 @@ public class VoidResponseHttpMessageConverter extends AbstractDatawaveHttpMessag
             contentType = getDefaultContentType(voidResponse);
             state(contentType != null, "No content type");
         }
-        
+
         if (MediaType.TEXT_PLAIN.isCompatibleWith(contentType)) {
             outputMessage.getBody().write(voidResponse.toString().getBytes(UTF_8));
         } else {
             super.writeInternal(voidResponse, outputMessage);
         }
     }
-    
+
     @Override
     protected boolean supports(Class<?> clazz) {
         return VoidResponse.class.isAssignableFrom(clazz);
     }
-    
+
     @Override
     public String getTitle(VoidResponse voidResponse) {
         return "Void Response";
     }
-    
+
     @Override
     public String getHeadContent(VoidResponse voidResponse) {
         return "";
     }
-    
+
     @Override
     public String getPageHeader(VoidResponse voidResponse) {
         return VoidResponse.class.getName();
     }
-    
+
     public static final String BR = "<br/>";
-    
+
     @Override
     public String getMainContent(VoidResponse voidResponse) {
         StringBuilder builder = new StringBuilder();
@@ -76,7 +76,7 @@ public class VoidResponseHttpMessageConverter extends AbstractDatawaveHttpMessag
                     builder.append(msg).append(BR);
             }
         }
-        
+
         builder.append("<b>EXCEPTIONS:</b>").append(BR);
         List<QueryExceptionType> exceptions = voidResponse.getExceptions();
         if (exceptions != null) {

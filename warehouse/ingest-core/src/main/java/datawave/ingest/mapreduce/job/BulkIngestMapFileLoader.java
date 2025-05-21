@@ -656,12 +656,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // that when copying across clusters.
             //@formatter:off
             DistCpOptions options = new DistCpOptions.Builder(srcPath, destPath)
-                .withLogPath(logPath)
-                .withSyncFolder(true)
-                .preserve(DistCpOptions.FileAttribute.USER)
-                .preserve(DistCpOptions.FileAttribute.GROUP)
-                .preserve(DistCpOptions.FileAttribute.PERMISSION)
-                .build();
+                    .withLogPath(logPath)
+                    .withSyncFolder(true)
+                    .preserve(DistCpOptions.FileAttribute.USER)
+                    .preserve(DistCpOptions.FileAttribute.GROUP)
+                    .preserve(DistCpOptions.FileAttribute.PERMISSION)
+                    .build();
             //@formatter:on
             String[] args = (jobtracker == null) ? new String[0] : new String[] {"-jt", jobtracker};
             int res = ToolRunner.run(conf, new DistCp(conf, options), args);
@@ -788,7 +788,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             if (jobDirectories.size() + delayedJobDirs.size() <= MAX_DIRECTORIES) {
                 jobDirectories.addAll(delayedJobDirs);
             } else {
-                while (jobDirectories.size() + delayedJobDirs.size() < MAX_DIRECTORIES) {
+                while (jobDirectories.size() < MAX_DIRECTORIES) {
                     jobDirectories.add(delayedJobDirs.remove(0));
                 }
             }

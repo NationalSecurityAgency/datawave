@@ -20,7 +20,7 @@ import datawave.data.normalizer.regex.SingleCharNode;
  * Regexes with leading wildcards that have a negative sign in front of them will not require any expansion.
  */
 public class NegativeVariantExpander extends SubExpressionVisitor {
-    
+
     public static Node expand(Node node) {
         if (node == null) {
             return null;
@@ -28,7 +28,7 @@ public class NegativeVariantExpander extends SubExpressionVisitor {
         NegativeVariantExpander visitor = new NegativeVariantExpander();
         return (Node) node.accept(visitor, null);
     }
-    
+
     @Override
     protected Object visitSubExpression(Node node) {
         if (node.getFirstChild() instanceof AnyCharNode) {
@@ -37,10 +37,10 @@ public class NegativeVariantExpander extends SubExpressionVisitor {
             return copy(node);
         }
     }
-    
+
     /**
      * Return an expression that contains the original expression, as well as a negative variant of it.
-     * 
+     *
      * @param node
      *            the expression to expand
      * @return the expanded expression
@@ -48,16 +48,16 @@ public class NegativeVariantExpander extends SubExpressionVisitor {
     private Node expandLeadingWildcard(Node node) {
         // Create a copy of the original expression.
         Node negativeCopy = copy(node);
-        
+
         // Insert a negative sign directly before the wildcard character.
         SingleCharNode negativeSign = new SingleCharNode(RegexConstants.HYPHEN);
         negativeCopy.addChild(negativeSign, 0);
-        
+
         // Create an alternation node with a copy of the original expression and the negative copy as its children.
         AlternationNode alternation = new AlternationNode();
         alternation.addChild(copy(node));
         alternation.addChild(negativeCopy);
-        
+
         // Return the alternation as the child of a new expression node.
         return new ExpressionNode(alternation);
     }
