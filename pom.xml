@@ -56,6 +56,7 @@
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
+        <version.dnsjava>3.6.3</version.dnsjava>
         <version.commons-codec>1.12</version.commons-codec>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.3</version.commons-collections4>
@@ -249,6 +250,11 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${version.mysql-connector}</version>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>com.spotify</groupId>
