@@ -40,11 +40,11 @@ public class ReferencedValue {
         if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
             byte[] incoming = null;
             String decoded = null;
-            
+
             incoming = value.getBytes(StandardCharsets.UTF_8);
             byte[] decodedBytes = Base64.decodeBase64(incoming);
             decoded = new String(decodedBytes, Charset.forName("UTF-8"));
-            
+
             return decoded;
         } else {
             return value;
@@ -52,7 +52,7 @@ public class ReferencedValue {
     }
 
     public byte[] getValueAsBytes() {
-        
+
         byte[] incoming = value.getBytes(StandardCharsets.UTF_8);
         if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
             return Base64.decodeBase64(incoming);
