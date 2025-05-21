@@ -7,6 +7,8 @@ import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVER
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -38,6 +40,7 @@ import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.security.authorization.DatawavePrincipal;
@@ -104,6 +107,38 @@ public class SSDeepSimilarityQueryTest {
     @Test
     public void testSingleQueryMinScore() throws Exception {
         runSingleQuery(true);
+    }
+
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testMaxResultsLimit() throws Exception {
+        logic.setMaxResults(2);
+        runSingleQuery(false);
+    }
+
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testMaxHashLimit() throws Exception {
+        logic.setMaxHashes(1);
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3];
+        runSSDeepQuery(query, 0);
+    }
+
+    @Test
+    public void testMaxHashesPerNGram() throws Exception {
+        // block all hashes
+        logic.setMaxHashesPerNGram(0);
+        // this normally would have results [see below]
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+        // no ngrams in similarity means no results
+        EventQueryResponseBase response = runSSDeepQuery(query, 0);
+        assertNull(response.getEvents());
+
+        // verify with the value reset its fine
+        logic.setMaxHashesPerNGram(10);
+        // provate this now has results
+        query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+        // no ngrams in similarity means no results
+        response = runSSDeepQuery(query, 0);
+        assertNotNull(response.getEvents());
     }
 
     private static void logSSDeepTestData() throws TableNotFoundException {

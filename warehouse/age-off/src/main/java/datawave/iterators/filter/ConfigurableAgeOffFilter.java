@@ -35,7 +35,6 @@ import datawave.ingest.util.cache.watch.FileRuleCacheLoader;
 import datawave.ingest.util.cache.watch.FileRuleCacheValue;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterRule;
 import datawave.util.CompositeTimestamp;
 
 /**

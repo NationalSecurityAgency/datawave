@@ -121,6 +121,12 @@ public class TestLuceneToJexlQueryParserVariants {
         assertEquals(expected, parseQuery("TOKFIELD:\"from foo@bar.com to bar@foo.com address\""));
     }
 
+    @Test
+    public void testDroppedTokenSlop() throws ParseException {
+        String expected = "(content:within(TOKFIELD, 5, termOffsetMap, 'often', 'my', 'dog', '-', 'likes', 'scratches') || content:within(TOKFIELD, 4, termOffsetMap, 'often', 'my', 'dog', 'likes', 'scratches'))";
+        assertEquals(expected, parseQuery("TOKFIELD:\"often my dog - likes scratches\"~5"));
+    }
+
     private String parseQuery(String query) throws ParseException {
         String parsedQuery = null;
         try {

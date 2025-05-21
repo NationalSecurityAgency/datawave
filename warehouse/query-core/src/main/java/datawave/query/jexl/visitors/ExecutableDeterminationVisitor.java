@@ -999,9 +999,18 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 output.writeLine(data, node, "( delayed/eval only predicate )", state, true);
             }
         }
-        // if we got to a bounded range, then this was expanded and is not executable against the index
+        // if we got to a bounded range, then it was not expanded via the index but is still executable via
+        // the ShardSpecificIndexIterator
         else if (instance.isType(BOUNDED_RANGE)) {
-            state = STATE.NON_EXECUTABLE;
+            if (isUnindexed(node)) {
+                state = STATE.NON_EXECUTABLE;
+            } else if (isUnOrNoFielded(node)) {
+                // bounded range should not be NO_FIELD or ANY_FIELD
+                state = STATE.ERROR;
+            } else {
+                state = STATE.EXECUTABLE;
+            }
+
             if (output != null) {
                 output.writeLine(data, node, "( bounded range )", state, true);
             }
