@@ -2680,7 +2680,7 @@ public class QueryOptions implements OptionDescriber {
         } else if (value instanceof Enum<?>) {
             addOption(setting, option, value, (v) -> ((Enum<?>) v).name(), allowBlankValues);
         } else {
-            addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
+            addOption(setting, option, value, (v) -> v != null ? v.toString(): "", allowBlankValues);
         }
     }
 
