@@ -16,8 +16,8 @@ public class DateType extends BaseType<Date> {
 
     public DateType(String dateString) {
         super(Normalizer.DATE_NORMALIZER);
-        super.setNormalizedValue(dateString);
-        super.setDelegate(normalizer.denormalize(dateString));
+        this.normalizedValue = normalizer.normalize(dateString);
+        this.delegate = normalizer.denormalize(dateString);
     }
 
     @Override
