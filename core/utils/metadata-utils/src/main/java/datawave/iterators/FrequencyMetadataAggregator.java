@@ -1,7 +1,6 @@
 package datawave.iterators;
 
 import java.io.IOException;
-import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
