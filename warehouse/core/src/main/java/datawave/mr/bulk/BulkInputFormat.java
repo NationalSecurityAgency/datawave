@@ -6,8 +6,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,6 +20,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -32,7 +36,6 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
@@ -51,12 +54,11 @@ import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.singletons.SingletonReservation;
+import org.apache.accumulo.core.singletons.SingletonManager;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.core.util.UtilWaitThread;
-import org.apache.accumulo.core.util.format.DefaultFormatter;
+import org.apache.accumulo.core.util.format.DateFormatSupplier;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -89,10 +91,14 @@ import datawave.mr.bulk.split.DefaultSplitStrategy;
 import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
+import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
     protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
+
+    private static final ThreadLocal<Date> tmpDate = ThreadLocal.withInitial(Date::new);
+    private static final ThreadLocal<DateFormat> formatter = DateFormatSupplier.createDefaultFormatSupplier();
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -109,6 +115,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String RACKSTRATEGY = PREFIX + ".rack.strategy.class";
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
     protected static final String MOCK = ".useInMemoryInstance";
+
+    protected static final String UTF8 = "UTF-8";
 
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
@@ -242,7 +250,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Configure a {@link ZooKeeperInstance} for this configuration object.
+     * Configure the zookeeper servers for this configuration object.
      *
      * @param conf
      *            the Hadoop configuration object
@@ -579,7 +587,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static Set<Pair<Text,Text>> getFetchedColumns(Configuration conf) {
         Set<Pair<Text,Text>> columns = new HashSet<>();
         for (String col : conf.getStringCollection(COLUMNS)) {
-            int idx = col.indexOf(":");
+            int idx = col.indexOf(':');
             Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
             Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
             columns.add(new Pair<>(cf, cq));
@@ -956,7 +964,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
     Map<String,Map<KeyExtent,List<Range>>> binOfflineTable(JobContext job, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
-
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
 
         try (AccumuloClient client = getClient(job.getConfiguration())) {
@@ -1060,8 +1067,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         try {
             Class<? extends LocationStrategy> clazz = Class.forName(conf.get(RACKSTRATEGY, DefaultLocationStrategy.class.getCanonicalName()))
                             .asSubclass(LocationStrategy.class);
-            return clazz.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
         return new DefaultLocationStrategy();
@@ -1085,7 +1092,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+                        Threads.UEH);
         return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
 
@@ -1116,7 +1124,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
                 while (binnedRanges == null) {
                     // Some tablets were still online, try again
-                    UtilWaitThread.sleep(100L + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                    TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
@@ -1126,8 +1134,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                                    Threads.UEH);
+                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
+                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
@@ -1139,7 +1147,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         }
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
-                        UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                        TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
                         tl.invalidateCache();
                     }
 
@@ -1289,8 +1297,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             StringTokenizer tokenizer = new StringTokenizer(iteratorOption, FIELD_SEP);
             this.iteratorName = tokenizer.nextToken();
             try {
-                this.key = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
-                this.value = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
+                this.key = URLDecoder.decode(tokenizer.nextToken(), UTF8);
+                this.value = URLDecoder.decode(tokenizer.nextToken(), UTF8);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -1311,7 +1319,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         @Override
         public String toString() {
             try {
-                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF-8") + FIELD_SEP + URLEncoder.encode(value, "UTF-8");
+                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF8") + FIELD_SEP + URLEncoder.encode(value, "UTF8");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -1323,6 +1331,22 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) {
 
         return new RecordReaderBase<Key,Value>() {
+
+            // helper function for formatting. Rewritten from DefaultFormatter.appendBytes()
+            private StringBuilder appendBytes(StringBuilder sb, byte[] ba, int offset, int len) {
+                for (int i = 0; i < len; i++) {
+                    int c = 0xff & ba[offset + i];
+                    if (c == '\\') {
+                        sb.append("\\\\");
+                    } else if (c >= 32 && c <= 126) {
+                        sb.append((char) c);
+                    } else {
+                        sb.append("\\x").append(String.format("%02X", c));
+                    }
+                }
+                return sb;
+            }
+
             @Override
             public boolean nextKeyValue() throws IOException, InterruptedException {
                 if (scannerIterator.hasNext()) {
@@ -1330,8 +1354,37 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     Entry<Key,Value> entry = scannerIterator.next();
                     currentK = currentKey = entry.getKey();
                     currentV = currentValue = entry.getValue();
-                    if (log.isTraceEnabled())
-                        log.trace("Processing key/value pair: " + DefaultFormatter.formatEntry(entry, true));
+                    if (log.isTraceEnabled()) {
+
+                        // rewritten from DefaultFormatter.formatEntry()
+                        StringBuilder sb = new StringBuilder();
+                        Text buffer = new Text();
+
+                        // append row0
+                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(" ");
+
+                        // append column family
+                        appendBytes(sb, currentK.getColumnFamily(buffer).getBytes(), 0, currentK.getColumnFamily(buffer).getLength()).append(":");
+
+                        // append column qualifier
+                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(" ");
+
+                        // append visibility expression
+                        sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));
+
+                        // append timestamp
+                        tmpDate.get().setTime(entry.getKey().getTimestamp());
+                        sb.append(" ").append(formatter.get().format(tmpDate.get()));
+
+                        // append value
+                        if (currentV != null && currentV.getSize() > 0) {
+                            sb.append("\t");
+                            appendBytes(sb, currentV.get(), 0, currentV.getSize());
+                        }
+
+                        log.trace("Processing key/value pair: " + sb);
+                    }
+
                     return true;
                 } else if (numKeysRead < 0) {
                     numKeysRead = 0;
@@ -1340,5 +1393,4 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             }
         };
     }
-
 }

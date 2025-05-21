@@ -77,6 +77,21 @@ public class JexlNodes {
     }
 
     /**
+     * Get the children of the provided node as an array. Children are NOT copied, direct references to the children are returned.
+     *
+     * @param node
+     *            a Jexl node
+     * @return an array of the node's children
+     */
+    public static JexlNode[] getChildren(JexlNode node) {
+        JexlNode[] children = new JexlNode[node.jjtGetNumChildren()];
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            children[i] = node.jjtGetChild(i);
+        }
+        return children;
+    }
+
+    /**
      * Sets the supplied child array as the children member of {node} and sets the parent reference of each element in {children} to {node}.
      *
      * @param node

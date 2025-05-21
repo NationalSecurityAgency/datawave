@@ -25,6 +25,7 @@ import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.LimitedSortedKeyValueIterator;
 import datawave.query.iterator.Util;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.SeekingFilter;
@@ -32,9 +33,12 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 
 /**
- * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
- * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet
- *
+ * Scans a bounds within a column qualifier. This iterator needs to:
+ * <ol>
+ * <li>Be given a global Range (ie, [-inf,+inf])</li>
+ * <li>Select an arbitrary column family (ie, "fi\u0000FIELD")</li>
+ * <li>Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet</li>
+ * </ol>
  */
 public class IndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
     private static final Logger log = Logger.getLogger(IndexIterator.class);
@@ -424,10 +428,17 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * @return the field index range
      */
     protected Range buildIndexRange(Range r) {
-        Key startKey = permuteRangeKey(r.getStartKey(), r.isStartKeyInclusive());
-        Key endKey = permuteRangeKey(r.getEndKey(), r.isEndKeyInclusive());
+        // include startKey if we yielded to the beginning of a document range
+        Key startKey = r.getStartKey();
+        Key endKey = r.getEndKey();
+        boolean startKeyInclusive = r.isStartKeyInclusive();
+        if (startKey != null && WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier())) {
+            startKeyInclusive = true;
+        }
 
-        return new Range(startKey, r.isStartKeyInclusive(), endKey, r.isEndKeyInclusive());
+        startKey = permuteRangeKey(startKey, startKeyInclusive);
+        endKey = permuteRangeKey(endKey, r.isEndKeyInclusive());
+        return new Range(startKey, startKeyInclusive, endKey, r.isEndKeyInclusive());
     }
 
     /**

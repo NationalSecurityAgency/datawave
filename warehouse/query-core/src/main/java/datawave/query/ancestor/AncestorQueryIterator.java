@@ -40,6 +40,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.function.RangeProvider;
 import datawave.query.iterator.NestedQueryIterator;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -127,15 +128,40 @@ public class AncestorQueryIterator extends QueryIterator {
 
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (evaluationFilter == null && script != null) {
+        if (evaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             evaluationFilter = new AncestorEventDataFilter(expressionFilters);
         }
         // return a new filter each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;
+    }
+
+    /**
+     * In the Ancestor case replace the {@link QueryOptions#eventFilter} with an evaluation filter
+     *
+     * @return an evaluation filter
+     */
+    public EventDataQueryFilter getEventFilter() {
+        return getEvaluationFilter();
+    }
+
+    @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null) {
+            fiEvaluationFilter = getEvaluationFilter();
+        }
+        return fiEvaluationFilter.clone();
+    }
+
+    @Override
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (eventEvaluationFilter == null) {
+            eventEvaluationFilter = getEvaluationFilter();
+        }
+        return eventEvaluationFilter.clone();
     }
 
     @Override

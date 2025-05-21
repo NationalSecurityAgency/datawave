@@ -44,11 +44,12 @@ public class EdgeKey {
 
     private static final Logger log = Logger.getLogger(EdgeKey.class);
 
+    private static final String UNKNOWN_EDGE_KEY_FORMAT_MSG = "Can't encode unknown edge key format.";
+
     // use the builder, not this nightmare constructor
     private EdgeKey(EDGE_FORMAT format, STATS_TYPE statsType, String sourceData, String sinkData, String family, String sourceRelationship,
                     String sinkRelationship, String sourceAttribute1, String sinkAttribute1, String yyyymmdd, String attribute3, String attribute2, Text colvis,
                     long timestamp, boolean deleted, DATE_TYPE dateType) {
-
         this.format = format;
         this.statsType = statsType;
         this.sourceData = sourceData;
@@ -926,7 +927,7 @@ public class EdgeKey {
                 return encode(EDGE_VERSION.DATE_PROTOBUF);
             } else {
                 // EDGE_FORMAT.UNKNOWN
-                throw new IllegalStateException("Can't encode unknown edge key format." + this);
+                throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
             }
         }
 
@@ -939,7 +940,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.PROTOBUF);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException("Can't encode unknown edge key format." + this);
+            throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
         }
     }
 
@@ -950,7 +951,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.BASE_ATTRIBUTE2);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException("Can't encode unknown edge key format." + this);
+            throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
         }
     }
 
@@ -961,7 +962,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.BASE);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException("Can't encode unknown edge key format." + this);
+            throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
         }
     }
 

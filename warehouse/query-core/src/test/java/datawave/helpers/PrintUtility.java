@@ -1,5 +1,7 @@
 package datawave.helpers;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,6 +15,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -20,6 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.ExtendedHyperLogLogPlus;
 import datawave.ingest.protobuf.Uid;
+import datawave.util.CompositeTimestamp;
 
 /**
  * A set of static methods for printing tables in mock Accumulo instance.
@@ -58,8 +62,10 @@ public class PrintUtility {
             final Scanner scanner = client.createScanner(tableName, authorizations);
             for (final Entry<Key,Value> e : scanner) {
                 sb.append(e.getKey().toStringNoTime());
-                sb.append(' ');
-                sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
+                sb.append(" EventDate ");
+                sb.append(dateFormat.format(new Date(CompositeTimestamp.getEventDate(e.getKey().getTimestamp()))));
+                sb.append(" AgeOffDate ");
+                sb.append(dateFormat.format(new Date(CompositeTimestamp.getAgeOffDate(e.getKey().getTimestamp()))));
                 sb.append('\t');
                 sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
                 sb.append("\n");
@@ -82,8 +88,10 @@ public class PrintUtility {
         final Scanner scanner = client.createScanner(tableName, authorizations);
         for (final Entry<Key,Value> e : scanner) {
             sb.append(e.getKey().toStringNoTime());
-            sb.append(' ');
-            sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
+            sb.append(" EventDate ");
+            sb.append(dateFormat.format(new Date(CompositeTimestamp.getEventDate(e.getKey().getTimestamp()))));
+            sb.append(" AgeOffDate ");
+            sb.append(dateFormat.format(new Date(CompositeTimestamp.getAgeOffDate(e.getKey().getTimestamp()))));
             sb.append('\t');
             sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
             sb.append("\n");
@@ -138,7 +146,16 @@ public class PrintUtility {
             final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
             return (String.valueOf(ehllp.getCardinality()));
         } catch (final Exception e) {
-            logger.trace("Deserialization as ExtendedHyperLogLogPlus failed", e);
+            logger.trace("Deserialization as ExtendedHyperLogLogPlus failed, trying other methods", e);
+            lastError = e.getMessage();
+        }
+
+        try {
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(value.get());
+            DataInputStream inputStream = new DataInputStream(byteStream);
+            return String.valueOf(WritableUtils.readVLong(inputStream));
+        } catch (final Exception e) {
+            logger.trace("Deserialization as long value failed", e);
             lastError = e.getMessage();
         }
 

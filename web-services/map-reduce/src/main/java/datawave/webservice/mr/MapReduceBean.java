@@ -67,6 +67,9 @@ import org.jboss.security.JSSESecurityDomain;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.audit.PrivateAuditConstants;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.marking.SecurityMarking;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
@@ -74,8 +77,6 @@ import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -101,7 +102,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -265,6 +266,7 @@ public class MapReduceBean {
         OozieClient oozieClient = null;
         Properties oozieConf = null;
 
+        BadRequestException exception = null;
         try {
             oozieClient = new OozieClient((String) job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
             oozieConf = oozieClient.createConfiguration();
@@ -297,18 +299,21 @@ public class MapReduceBean {
                     if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
                         queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                     }
-                    auditor.audit(queryParameters);
+                    auditor.audit(MapUtils.toMultiValueMap(queryParameters));
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
                     response.addException(qe);
-                    throw new BadRequestException(qe, response);
+                    exception = new BadRequestException(qe, response);
                 } catch (Exception e) {
                     log.error("Error auditing query", e);
                     response.addMessage("Error auditing query - " + e.getMessage());
-                    throw new BadRequestException(e, response);
+                    exception = new BadRequestException(e, response);
                 }
             }
+        }
+        if (null != exception) {
+            throw exception;
         }
         // Submit the Oozie workflow.
         try {
@@ -507,6 +512,9 @@ public class MapReduceBean {
         try {
             j.submit();
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_START_ERROR, e);
             log.error(qe.getMessage(), qe);
             response.addException(qe.getBottomQueryException());
@@ -762,7 +770,7 @@ public class MapReduceBean {
 
         FSDataInputStream fis;
         try {
-            if (!fs.exists(resultFile) || !fs.isFile(resultFile)) {
+            if (!fs.exists(resultFile) || !fs.getFileStatus(resultFile).isFile()) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND,
                                 MessageFormat.format("{0} at path {1}", fileName, resultsDir));
                 response.addException(qe);

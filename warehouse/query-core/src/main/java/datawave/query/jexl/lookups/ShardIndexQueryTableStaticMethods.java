@@ -1,6 +1,7 @@
 package datawave.query.jexl.lookups;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.ColumnQualifierRangeIterator;
@@ -52,6 +54,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -65,6 +68,9 @@ public class ShardIndexQueryTableStaticMethods {
     private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
+
+    // name reserved for executor pools
+    public static final String EXPANSION_HINT_KEY = "expansion";
 
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
@@ -220,7 +226,9 @@ public class ShardIndexQueryTableStaticMethods {
             return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
-            throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                            "Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
+            throw new IllegalArgumentException(qe);
         }
     }
 
@@ -437,63 +445,74 @@ public class ShardIndexQueryTableStaticMethods {
      * @param limitToUniqueTerms
      *            check for limiting unique terms
      * @return the scanner session
-     * @throws Exception
-     *             if there are issues
+     * @throws InvocationTargetException
+     *             if no target exists
+     * @throws NoSuchMethodException
+     *             if no method exists
+     * @throws InstantiationException
+     *             if there is a problem initializing
+     * @throws IllegalAccessException
+     *             if there is an illegal access
+     * @throws IOException
+     *             dates can't be formatted
      */
     public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
-        try (SessionOptions options = new SessionOptions()) {
-            IteratorSetting setting = configureDateRangeIterator(config);
+        SessionOptions options = new SessionOptions();
+
+        IteratorSetting setting = configureDateRangeIterator(config);
+        options.addScanIterator(setting);
+
+        setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
+        if (setting != null) {
             options.addScanIterator(setting);
-
-            setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
-            if (setting != null) {
-                options.addScanIterator(setting);
-            }
-
-            bs.setOptions(options);
         }
+
+        bs.setOptions(options);
 
         return bs;
     }
 
     public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
             return null;
         }
 
-        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : tableName;
+
+        ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery(), hintKey);
 
         bs.setRanges(ranges);
 
-        try (SessionOptions options = new SessionOptions()) {
-            options.addScanIterator(configureDateRangeIterator(config));
-            IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
-            if (setting != null) {
-                options.addScanIterator(setting);
-            }
-            setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
-            if (setting != null) {
-                options.addScanIterator(setting);
-            }
-
-            bs.setOptions(options);
+        SessionOptions options = new SessionOptions();
+        options.addScanIterator(configureDateRangeIterator(config));
+        IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
+        if (setting != null) {
+            options.addScanIterator(setting);
         }
+        setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
+        if (setting != null) {
+            options.addScanIterator(setting);
+        }
+
+        bs.setOptions(options);
 
         return bs;
     }
@@ -506,6 +525,13 @@ public class ShardIndexQueryTableStaticMethods {
         }
         IteratorSetting cfg = configureGlobalIndexDateRangeFilter(config, dateRange);
         bs.addScanIterator(cfg);
+
+        // unused method, but we'll still configure execution hints if possible
+        String executionHintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+        if (config.getTableHints().containsKey(executionHintKey)) {
+            bs.setExecutionHints(config.getTableHints().get(executionHintKey));
+        }
     }
 
     public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
@@ -540,9 +566,6 @@ public class ShardIndexQueryTableStaticMethods {
         }
 
         IteratorSetting cfg = configureGlobalIndexDataTypeFilter(config, dataTypes);
-        if (cfg == null) {
-            return;
-        }
 
         bs.addScanIterator(cfg);
     }
@@ -575,11 +598,27 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.addScanIterator(cfg);
 
+        // unused method, but we'll still configure execution hints if possible
+        if (!reverseIndex) {
+            // only apply hints to the global index
+            String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+
+            if (config.getTableHints().containsKey(hintKey)) {
+                bs.setExecutionHints(config.getTableHints().get(hintKey));
+            }
+        }
+
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }
 
     public static final void setExpansionFields(ShardQueryConfiguration config, ScannerBase bs, boolean reverseIndex, Collection<String> expansionFields) {
+        for (String field : getColumnFamilies(config, reverseIndex, expansionFields)) {
+            bs.fetchColumnFamily(new Text(field));
+        }
+    }
 
+    public static final List<String> getColumnFamilies(ShardQueryConfiguration config, boolean reverseIndex, Collection<String> expansionFields) {
+        List<String> cfs = Lists.newLinkedList();
         // Now restrict the fields returned to those that are specified and then only those that are indexed or reverse indexed
         if (expansionFields == null || expansionFields.isEmpty()) {
             expansionFields = (reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
@@ -588,16 +627,14 @@ public class ShardIndexQueryTableStaticMethods {
             expansionFields.retainAll(reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
         }
         if (expansionFields.isEmpty()) {
-            bs.fetchColumnFamily(new Text(Constants.NO_FIELD));
+            cfs.add(Constants.NO_FIELD);
         } else {
-            for (String field : expansionFields) {
-                bs.fetchColumnFamily(new Text(field));
-            }
+            cfs.addAll(expansionFields);
         }
-
+        return cfs;
     }
 
-    private static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
+    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
         if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return null;

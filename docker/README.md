@@ -7,11 +7,9 @@ out the [prereqs](#prereqs) at a minimum):
 ## TLDR
 
 ```shell
-# from the base datawave project directory check out the microservice submodules
-git submodule update --init --recursive
-
 # build docker images for datawave and all of the microservices
-mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
+# optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
+mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 
 # bootstrap the services, and bring them up using docker compose
 cd docker
@@ -63,25 +61,88 @@ You will need to build the docker image for this service on your local machine f
 
 You will need to build the docker image for this service on your local machine following the instructions in the audit service README.
 
-### Dictionary
-
-[Datawave Dictionary Service](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
-
-You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
-
 ### Metrics
 
 [Datawave Query Metric Service](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/main) provides metrics caching, storage, and retrieval capabilities for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the query metrics service README.
 
+### Zookeeper
+
+Zookeeper is a prepacked docker image used for distributed synchronization.
+
+### Kafka
+
+Kafka is a prepacked docker image used for messaging between the various services.
+
+### Query
+
+Datawave Query Service v1.0-SNAPSHOT is a user-facing interface for Datawave query.
+
+This microservice is in development, and can be found in this repo. 
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Executor Pool 1
+
+Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Executor Pool 2
+
+Enabled via the 'pool2', or 'full' profile.
+
+Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Query Storage
+
+Enabled via the 'storage', or 'full' profile.
+
+Datawave Query Storage Service v1.0-SNAPSHOT is a utility service used to inspect the storage cache.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
 ## Optional Components
+
+### Kafdrop
+
+Enabled via the 'management', or 'full' profile.
+
+Kafdrop is a prepacked docker image used for kafka cluster management.
 
 ### Hazelcast Management Center
 
 Enabled via the 'management', or 'full' profile.
 
 Hazelcast Management Center v4.2021.06 is a prepacked docker image used for hazelcast cluster management.
+
+### Dictionary
+
+Enabled via the 'dictionary', or 'full' profile.
+
+[Datawave Dictionary Service](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
+
+You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
+
+### File Provider
+
+Enabled via the 'file-provider', or 'full' profile.
+
+This microservice is in development, and can be found in this repo.
+
+[Datawave File Provider Service](https://github.com/NationalSecurityAgency/datawave-file-provider-service/tree/main) provides file management and access to Datawave and it's services.
+
+You will need to build the docker image for this service on your local machine following the instructions in the file provider service README.
+
 
 ## Usage
 
@@ -125,10 +186,10 @@ Build the Datawave Quickstart docker image using the following build command:
 
 ```
 # To build the quickstart docker image, and all of the microservice images, run this
-mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install -T1C
 
 # To build just the quickstart docker image, run this
-mvn -Pcompose -DskipServices -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install -T1C
 ```
 Note that the quickstart-docker property is set.  This property is a shortcut which activates the `docker` and `quickstart` profiles without activating the `docker` profile for the microservices.
 
@@ -140,10 +201,31 @@ This command also prevents the microservice services from building with `-DskipS
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
 your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
 
-If desired, you can start and test the wildfly deployment embedded in the Datawave Quickstart by running the following command:
+If desired, you can ensure wildfly is started when creating the containers via `docker compose up -d` by changing the datawave-bootstrap.sh argument `--accumulo` to `--web` for the quickstart service in the docker-compose.yml file:
+
 ```
-docker run -m 8g datawave/quickstart-compose datawave-bootstrap.sh --test
+services:
+  quickstart:
+    profiles:
+      - quickstart
+    # To run the wildfly webservice, change `--accumulo` to `--web`
+    command: ["datawave-bootstrap.sh", "--web"]
 ```
+
+Alternatively, you can start and test the wildfly deployment after creating the containers:
+
+```
+# Enter the docker-quickstart container shell.
+docker exec -ti docker-quickstart-1 bash
+
+# Start wildfly and test it.
+[root@e80487d9f063 datawave-quickstart]# datawaveWebStart && datawaveWebTest
+
+# Exit the docker container shell.
+[root@e80487d9f063 datawave-quickstart]# exit
+```
+
+To stop the wildfly deployment, repeat the steps above using the command `datawaveWebStop` instead of `datawaveWebStart  && datawaveWebTest`.
 
 #### Hybrid Datawave Quickstart Setup
 
@@ -155,7 +237,7 @@ export DW_BIND_HOST=0.0.0.0
 
 This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
 
-What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md).
+What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../contrib/datawave-quickstart/README.md).
 
 ```
 # Add the quickstart env.sh to your .bashrc
@@ -188,7 +270,7 @@ datawaveWebStop
 If you haven't done so already, you can build the Datawave Microservice docker images using the following build command:
 
 ```
-mvn -Pcompose -Dmicroservice-docker -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dservices -Dmicroservice-docker -Ddist -DskipTests -DskipITs clean install -T1C
 ```
 
 Note that the microservice-docker property is set.  This property is a shortcut which activates the `docker` profile for just the microservices.
@@ -197,7 +279,7 @@ This command can be combined with default Datawave Quickstart build command to b
 
 ### Bootstrap
 
-The audit, dictionary, and query metric services all need to connect to Zookeeper, Hadoop and/or Accumulo.  In order to make that work, there are some environment variables which need to be configured.  
+The audit, dictionary, query executor, and query metric services all need to connect to Zookeeper, Hadoop and/or Accumulo.  In order to make that work, there are some environment variables which need to be configured.  
 
 #### Default Bootstrap
 
@@ -255,13 +337,29 @@ DW_HADOOP_HOST="<Your hostname>"
 
 ### Start services
 
-Start the default services:
+Start the default services (with the Kafka as the backend):
 
 ```docker compose up -d```
+
+Start the default services (with RabbitMQ as the backend):
+
+```BACKEND=rabbitmq docker compose up -d```
+
+Start the default services (with Hazelcast as the backend):
+
+```BACKEND=hazelcast docker compose up -d```
 
 Start the default services, and the dictionary service:
 
 ```docker compose --profile quickstart --profile dictionary up -d```
+
+Start the default services, the kafka services, and the dictionary service:
+
+```docker compose --profile quickstart --profile dictionary --profile kafka up -d```
+
+Start the default services, and the file provider service:
+
+```docker compose --profile quickstart --profile file-provider up -d```
 
 Start all services:
 

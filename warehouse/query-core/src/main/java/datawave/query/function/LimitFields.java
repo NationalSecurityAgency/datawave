@@ -1,6 +1,7 @@
 package datawave.query.function;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -12,7 +13,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
@@ -75,6 +75,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
         Document document = entry.getValue();
         Multimap<String,String> hitTermMap = this.getHitTermMap(document);
+        Set<Attribute<?>> hitTermAttributes = getHitTermAttributes(document);
 
         CountMap countForFieldMap = new CountMap();
         CountMap countMissesRemainingForFieldMap = new CountMap();
@@ -108,7 +109,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        if (isHit(keyWithGrouping, value, hitTermMap)) {
+                        if (isHit(keyWithGrouping, value, hitTermMap, hitTermAttributes)) {
                             keepers++;
                             matchingFieldGroups.addHit(keyNoGrouping, value);
                         } else {
@@ -120,7 +121,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                         total++;
                     }
                 } else {
-                    if (isHit(keyWithGrouping, attr, hitTermMap)) {
+                    if (isHit(keyWithGrouping, attr, hitTermMap, hitTermAttributes)) {
                         keepers++;
                         matchingFieldGroups.addHit(keyNoGrouping, attr);
                     } else {
@@ -258,7 +259,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 int keepers = countKeepersForFieldMap.get(keyNoGrouping);
                 int originalCount = countForFieldMap.get(keyNoGrouping);
                 if (originalCount > keepers) {
-                    document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true, false);
+                    document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true);
 
                     // some sanity checks
                     int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
@@ -286,26 +287,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the attribute
      * @param hitTermMap
      *            the hit term map
+     * @param hitTermAttributes
+     *            hit term attributes from the document
      * @return true if a hit
      */
-    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap) {
-        if (hitTermMap.containsKey(keyWithGrouping)) {
-            Object s = attr.getData();
-            Class<?> clazz = attr.getData().getClass();
-            for (Object hitValue : hitTermMap.get(keyWithGrouping)) {
-                try {
-                    if (Type.class.isAssignableFrom(clazz)) {
-                        Type<?> thing = (Type<?>) clazz.newInstance();
-                        thing.setDelegateFromString(String.valueOf(hitValue));
-                        hitValue = thing;
-                    } else { // otherwise, s is not a Type, just compare as string values
-                        s = String.valueOf(s);
-                    }
-                    if (s.equals(hitValue)) {
-                        return true;
-                    }
-                } catch (Exception e) {}
-            }
+    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes) {
+        if (hitTermMap.containsKey(keyWithGrouping) && hitTermAttributes.contains(attr)) {
+            return true;
         }
 
         // if not already returned as a value match, then lets include those that are
@@ -348,6 +336,29 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         return attrMap;
     }
 
+    private Set<Attribute<?>> getHitTermAttributes(Document document) {
+        Set<Attribute<?>> attributesSet = new HashSet<>();
+        Attribute<?> attributes = document.get(JexlEvaluation.HIT_TERM_FIELD);
+        fillHitTermSet(attributes, attributesSet);
+        return attributesSet;
+    }
+
+    private void fillHitTermSet(Attribute<?> attr, Set<Attribute<?>> attributesSet) {
+        if (attr != null) {
+            if (attr instanceof Attributes) {
+                Attributes attrs = (Attributes) attr;
+                for (Attribute<?> at : attrs.getAttributes()) {
+                    fillHitTermSet(at, attributesSet);
+                }
+            } else if (attr instanceof Content) {
+                Content content = (Content) attr;
+                if (content.getSource() != null) {
+                    attributesSet.add(content.getSource());
+                }
+            }
+        }
+    }
+
     private void fillHitTermMap(Attribute<?> attr, Multimap<String,String> attrMap) {
         if (attr != null) {
             if (attr instanceof Attributes) {
@@ -359,7 +370,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 Content content = (Content) attr;
                 // split the content into its fieldname:value
                 String contentString = content.getContent();
-                attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));
+                attrMap.put(contentString.substring(0, contentString.indexOf(':')), contentString.substring(contentString.indexOf(':') + 1));
             }
         }
     }
@@ -377,6 +388,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * A map that assumes a value for missing keys.
      */
     public static class CountMap extends HashMap<String,Integer> {
+        private static final long serialVersionUID = -736880224574416162L;
         private static final Integer ZERO = Integer.valueOf(0);
 
         @Override
@@ -395,5 +407,4 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             }
         }
     }
-
 }

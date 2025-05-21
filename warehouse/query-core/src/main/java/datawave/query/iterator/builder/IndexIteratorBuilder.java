@@ -1,7 +1,5 @@
 package datawave.query.iterator.builder;
 
-import java.util.Set;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -29,7 +27,6 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected FieldIndexAggregator keyTform;
-    protected Set<String> fieldsToAggregate;
 
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -41,14 +38,6 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
 
     public void setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
-    }
-
-    public Set<String> getFieldsToAggregate() {
-        return fieldsToAggregate;
-    }
-
-    public void setFieldsToAggregate(Set<String> fields) {
-        fieldsToAggregate = fields;
     }
 
     public Predicate<Key> getDatatypeFilter() {
@@ -77,20 +66,23 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
 
     public IndexIterator newIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        return IndexIterator.builder(field, value, source).withTimeFilter(timeFilter).withTypeMetadata(typeMetadata).shouldBuildDocument(buildDocument)
-                        .withDatatypeFilter(datatypeFilter).withAggregation(aggregator).build();
+        //  @formatter:off
+        return IndexIterator.builder(field, value, source)
+                        .withTimeFilter(timeFilter)
+                        .withTypeMetadata(typeMetadata)
+                        .shouldBuildDocument(buildDocument)
+                        .withDatatypeFilter(datatypeFilter)
+                        .withAggregation(aggregator)
+                        .build();
+        //  @formatter:on
     }
 
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter, getField(), getNode())) {
-
-            boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-            if (forceDocumentBuild) {
-                canBuildDocument = true;
-            }
-            IndexIteratorBridge itr = new IndexIteratorBridge(newIndexIterator(new Text(field), new Text(value), source, this.timeFilter, this.typeMetadata,
-                            canBuildDocument, this.datatypeFilter, this.keyTform), getNode(), getField());
+            IndexIterator iterator = newIndexIterator(new Text(field), new Text(value), source, this.timeFilter, this.typeMetadata, buildDocument,
+                            this.datatypeFilter, this.keyTform);
+            IndexIteratorBridge bridge = new IndexIteratorBridge(iterator, getNode(), getField());
             field = null;
             value = null;
             source = null;
@@ -98,7 +90,7 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
             datatypeFilter = null;
             keyTform = null;
             node = null;
-            return itr;
+            return bridge;
         } else {
             StringBuilder msg = new StringBuilder(256);
             msg.append("Cannot build iterator-- a field was null!\n");

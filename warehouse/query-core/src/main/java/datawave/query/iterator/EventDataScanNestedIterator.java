@@ -16,11 +16,12 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Predicate;
 
 import datawave.query.attributes.Document;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
- *
+ * This iterator supports a full table scan over the event column
  */
-public class EventDataScanNestedIterator implements NestedIterator<Key>, SeekableIterator {
+public class EventDataScanNestedIterator implements NestedIterator<Key> {
     private static final Logger log = Logger.getLogger(EventDataScanNestedIterator.class);
     protected SortedKeyValueIterator<Key,Value> source;
     protected Key topKey = null;
@@ -51,7 +52,7 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     @Override
     public Key move(Key minimum) {
         if (totalRange != null) {
-            Range newRange = totalRange;
+            Range newRange;
             if (totalRange.contains(minimum)) {
                 newRange = new Range(minimum, true, totalRange.getEndKey(), totalRange.isEndKeyInclusive());
             } else {
@@ -112,7 +113,7 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
         this.inclusive = inclusive;
 
         // determine if we have been torn down and rebuilt
-        if (!range.isInfiniteStartKey() && !range.isStartKeyInclusive()) {
+        if (!range.isInfiniteStartKey() && !range.isStartKeyInclusive() && !WaitWindowObserver.hasMarker(range.getStartKey())) {
             move(nextStartKey(range.getStartKey()));
         } else {
             source.seek(range, columnFamilies, inclusive);
@@ -196,5 +197,15 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     @Override
     public void setContext(Key context) {
         // no-op
+    }
+
+    /**
+     * By definition this iterator only scans event keys
+     *
+     * @return false
+     */
+    @Override
+    public boolean isNonEventField() {
+        return false;
     }
 }

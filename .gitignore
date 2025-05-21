@@ -51,4 +51,4 @@ web-services/geoserver/geoserver-application/overlays/
 services/sample_configuration/*-dev.yml
 /.metadata/
 /.dockerignore
-/.maven-dockerignore
+/.jkube-dockerignore

@@ -10,7 +10,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.junit.Assert;
 
 class MockMapContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends MapContextImpl<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
 

@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,9 +12,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -30,6 +27,7 @@ import datawave.query.jexl.JexlASTHelper;
  * {@link GroupFields#from(String)}.
  */
 public class GroupFields implements Serializable {
+    private static final long serialVersionUID = -5206581051889027175L;
 
     private static final String GROUP = "GROUP";
     private static final String SUM = "SUM";
@@ -314,7 +312,7 @@ public class GroupFields implements Serializable {
 
     // Return a copy of the given set with all identifiers deconstructed.
     private Set<String> deconstructIdentifiers(Set<String> set) {
-        return set.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+        return set.stream().map(JexlASTHelper::deconstructIdentifier).map(String::toUpperCase).collect(Collectors.toSet());
     }
 
     /**

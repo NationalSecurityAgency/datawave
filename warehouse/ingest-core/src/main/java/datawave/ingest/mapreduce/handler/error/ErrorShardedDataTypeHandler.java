@@ -102,7 +102,6 @@ import datawave.marking.MarkingFunctions;
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-
     private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
 
     public static final String ERROR_PROP_PREFIX = "error.";
@@ -312,7 +311,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         // ShardId 'd' DataType\0UID\0Name for document content event using Event.Writable
         String colq = record.getDataType().outputName() + '\0' + record.getId() + '\0' + EVENT_CONTENT_FIELD;
         Key k = createKey(getShardId(record), new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), new Text(colq), getVisibility(record, null),
-                        record.getDate(), this.helper.getDeleteMode());
+                        record.getTimestamp(), this.helper.getDeleteMode());
         BulkIngestKey ebKey = new BulkIngestKey(getShardTableName(), k);
         contextWriter.write(ebKey, value, context);
 

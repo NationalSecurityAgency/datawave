@@ -21,6 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import datawave.core.query.configuration.QueryData;
 import datawave.data.type.NumberType;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
@@ -34,7 +35,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import datawave.webservice.query.configuration.QueryData;
 
 public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
 
@@ -67,8 +67,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         log.info("------  testNumericTerm  ------");
 
         String min = "115";
-        String iowa = "'indiana'";
-        String query = CityField.STATE.name() + EQ_OP + iowa + AND_OP + CityField.NUM.name() + GT_OP + min;
+        String query = "STATE == 'indiana' and NUM > 115";
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);
         // verify NUM is NumberType
@@ -82,7 +81,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         NumberType nt = new NumberType();
         String norm90 = nt.normalize(min);
 
-        Iterator<QueryData> queries = config.getQueries();
+        Iterator<QueryData> queries = config.getQueriesIter();
         Assert.assertTrue(queries.hasNext());
         QueryData data = queries.next();
         for (IteratorSetting it : data.getSettings()) {
@@ -118,7 +117,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         String norm90 = nt.normalize(min);
         String norm122 = nt.normalize(max);
 
-        Iterator<QueryData> queries = config.getQueries();
+        Iterator<QueryData> queries = config.getQueriesIter();
         Assert.assertTrue(queries.hasNext());
         QueryData data = queries.next();
         for (IteratorSetting it : data.getSettings()) {

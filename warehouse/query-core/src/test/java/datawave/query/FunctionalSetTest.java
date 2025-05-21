@@ -34,8 +34,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
@@ -46,8 +48,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
@@ -71,6 +71,12 @@ public abstract class FunctionalSetTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
@@ -91,6 +97,12 @@ public abstract class FunctionalSetTest {
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override
@@ -117,13 +129,12 @@ public abstract class FunctionalSetTest {
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
-
     }
 
     @AfterClass
@@ -158,7 +169,7 @@ public abstract class FunctionalSetTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
-        logic.setMaxDepthThreshold(6);
+        logic.setMaxDepthThreshold(7);
 
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
@@ -258,12 +269,12 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList(),
 
-                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE", "TATTAGLIA"),
                 Arrays.asList("CORLEONE", "CAPONE"),
 
                 Arrays.asList("CAPONE"),
@@ -291,9 +302,9 @@ public abstract class FunctionalSetTest {
         // @formatter:off
         String[] queryStrings = {
 
-                "10 <= AG && AG <= 18",
-                "AG <= 18 && AG >= 10",
-                "18 >= AG && 10 <= AG",
+                "((_Bounded_ = true) && (10 <= AG && AG <= 18))",
+                "((_Bounded_ = true) && (AG <= 18 && AG >= 10))",
+                "((_Bounded_ = true) && (18 >= AG && 10 <= AG))",
                 // "AG <= 18",
                 // "18 >= AG",
                 "AG == 18",
@@ -307,22 +318,22 @@ public abstract class FunctionalSetTest {
 
                 // the next one matches Meadow Soprano, age 18, because the 'MAGIC' value is 18 (we don't know/care what the actual value
                 // of MAGIC is, only that whatever it is, it matches AGE in the same group as the other matches)
-                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
 
                 // the next one matches Meadow Soprano, GENDER female, age 18 but not Constanza Corleone, Gender female, age 18
                 // the < part of this is what is special. Other comparison operators should work the same way
-                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
 
                 // the next 2 queries are equivalent. the reason for the functional query stuff is for when we
                 // want to query with an operator other than '=='
-                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
-                "AG > 10 && AG < 100 && grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
 
-                "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will
                                                                                                                                                      // match
                                                                                                                                                      // only the
                                                                                                                                                      // sopranos
-                "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '19').size() + filter:getAllMatches(AG, '18').size())" // will
+                "((_Bounded_ = true) && (AG > 10 && AG < 100)) && filter:occurrence(AG, '==', filter:getAllMatches(AG, '19').size() + filter:getAllMatches(AG, '18').size())" // will
                                                                                                                                                     // match
                                                                                                                                                     // none
         };
@@ -349,6 +360,11 @@ public abstract class FunctionalSetTest {
         };
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
+            // stat must be reset between each run when pruning ingest types
+            logic.getConfig().setDatatypeFilter(Collections.emptySet());
+            logic.getConfig().setIntermediateMaxTermThreshold(25);
+            logic.getConfig().setIndexedMaxTermThreshold(25);
+            logic.getConfig().setFinalMaxTermThreshold(25);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

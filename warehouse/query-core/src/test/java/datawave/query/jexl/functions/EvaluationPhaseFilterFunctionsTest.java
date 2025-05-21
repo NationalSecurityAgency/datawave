@@ -1055,13 +1055,12 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertResult("second");
         }
 
-        // Verify that an exception is thrown for an invalid position.
+        // Verify that null is returned for an invalid position.
         @Test
         public void testInvalidPosition() {
             givenPosition(2);
 
-            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter"))
-                            .withMessage("Input second.third.fourth does not have a '.' at position " + position + " from the left.");
+            assertResult(null);
         }
 
         private void givenPosition(int position) {
@@ -1094,13 +1093,12 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertResult("second.third.fourth");
         }
 
-        // Verify that an exception is thrown for an invalid position.
+        // Verify that null is returned for an invalid position.
         @Test
         public void testInvalidPosition() {
             givenPosition(3);
 
-            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter"))
-                            .withMessage("Input " + input + " does not have a '.' at position " + position + " from the right.");
+            assertResult(null);
         }
 
         private void givenPosition(int position) {
@@ -1269,8 +1267,8 @@ public class EvaluationPhaseFilterFunctionsTest {
 
         @Test
         public void testInvalidDate() {
-            assertThatExceptionOfType(ParseException.class).isThrownBy(() -> nextTime("notavaliddate"))
-                            .withMessage("Unable to parse value using known date formats: notavaliddate");
+            assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> nextTime("notavaliddate")).withMessage(
+                            "datawave.webservice.query.exception.BadRequestQueryException: Could not parse JEXL query. Unable to parse value using known date formats: notavaliddate [Error offset: 0]");
         }
 
         private void givenExpectedTime(long expectedTime) {

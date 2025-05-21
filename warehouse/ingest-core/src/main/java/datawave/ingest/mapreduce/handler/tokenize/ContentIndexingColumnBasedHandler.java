@@ -195,7 +195,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 log.fatal("IOException", ex);
             } catch (InterruptedException ex) {
                 log.warn("Interrupted!", ex);
-                Thread.interrupted();
+                Thread.currentThread().interrupt();
             }
 
             tokenOffsetCache.clear();
@@ -238,7 +238,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, helper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getDate(), helper.getDeleteMode());
+        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         values.put(bKey, NULL_VALUE);
     }
@@ -294,7 +294,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     termPosition = 0;
                     lastFieldName = indexedFieldName;
                 } else {
-                    termPosition = tokenHelper.getInterFieldPositionIncrement();
+                    termPosition += tokenHelper.getInterFieldPositionIncrement();
                 }
 
                 boolean indexField = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
@@ -303,6 +303,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 if (indexField || reverseIndexField) {
                     try {
                         tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(ex);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
@@ -598,7 +601,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
                         new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
-                                        event.getDate(), helper.getDeleteMode()));
+                                        event.getTimestamp(), helper.getDeleteMode()));
 
         values.put(bKey, value);
     }

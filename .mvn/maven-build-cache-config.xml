@@ -23,7 +23,7 @@
      -->
 
     <configuration>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <hashAlgorithm>SHA-256</hashAlgorithm>
         <validateXml>true</validateXml>
         <local>
@@ -71,6 +71,22 @@
                         <goal>install</goal>
                     </goals>
                 </goalsList>
+                <goalsList artifactId="kubernetes-maven-plugin">
+                    <goals>
+                        <goal>build</goal>
+                        <goal>push</goal>
+                    </goals>
+                </goalsList>
+                <goalsList artifactId="maven-resources-plugin">
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                </goalsList>
+                <goalsList artifactId="spring-boot-maven-plugin">
+                    <goals>
+                        <goal>repackage</goal>
+                    </goals>
+                </goalsList>
             </goalsLists>
         </runAlways>
         <reconcile logAllProperties="true">
@@ -82,6 +98,14 @@
                         <reconcile propertyName="skipTests" skipValue="true"/>
                         <reconcile propertyName="testFailureIgnore" skipValue="true"/>
                     </reconciles>
+                </plugin>
+                <plugin artifactId="maven-enforcer-plugin" goal="enforce">
+                    <reconciles>
+                        <reconcile propertyName="skip" skipValue="true"/>
+                    </reconciles>
+                    <nologs>
+                        <nolog propertyName="commandLineRules"/>
+                    </nologs>
                 </plugin>
             </plugins>
         </reconcile>

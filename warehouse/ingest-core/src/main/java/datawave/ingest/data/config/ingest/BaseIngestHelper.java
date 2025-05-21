@@ -25,6 +25,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -40,13 +41,13 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.XMLFieldConfigHelper;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
  * fields values from the datatypes that they represent.
  */
 public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
+
     /**
      * Configuration parameter to specify that data should be marked for delete on ingest.
      */
@@ -137,6 +138,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_FAILED_NORMALIZATION_POLICY = ".data.field.normalization.failure.policy";
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
+
+    private static final String PROPERTY_MALFORMED = " property malformed: ";
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
 
@@ -520,8 +523,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // if this type already has a '.', then we have a malformed property
         // name
         if (dataType.typeName().indexOf('.') >= 0) {
-            log.error(propertyPattern + " property malformed: " + property);
-            throw new IllegalArgumentException(propertyPattern + " property malformed: " + property);
+            log.error(propertyPattern + PROPERTY_MALFORMED + property);
+            throw new IllegalArgumentException(propertyPattern + PROPERTY_MALFORMED + property);
         }
 
         String fieldName = property.substring(dataType.typeName().length() + 1, property.length() - propertyPattern.length());
@@ -543,8 +546,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // if this type already has a '.', then we have a malformed property
         // name
         if (dataType.typeName().indexOf('.') >= 0) {
-            log.error(propertyPattern + " property malformed: " + property);
-            throw new IllegalArgumentException(propertyPattern + " property malformed: " + property);
+            log.error(propertyPattern + PROPERTY_MALFORMED + property);
+            throw new IllegalArgumentException(propertyPattern + PROPERTY_MALFORMED + property);
         }
 
         String fieldName = property.substring(dataType.typeName().length() + 1, property.length() - propertyPattern.length());
@@ -745,9 +748,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 value.setEventFieldValue(null);
             }
             values.add(value);
-            if (log.isDebugEnabled()) {
-                log.debug("added normalized field " + value + " to values set.");
-            }
+            logNormalizedField(normalizedContent, values);
         }
         return values;
     }
@@ -795,9 +796,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 } else {
                     values.add(normalize(normalizedContent, dataType));
                 }
-                if (log.isDebugEnabled()) {
-                    log.debug("added normalized field " + normalizedContent + " to values " + values);
-                }
+                logNormalizedField(normalizedContent, values);
             }
             return values;
         }
@@ -812,9 +811,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
                 values.add(normalizeFieldValue(normalizedContent, dataType));
-                if (log.isDebugEnabled()) {
-                    log.debug("added normalized field " + normalizedContent + " to values " + values);
-                }
+                logNormalizedField(normalizedContent, values);
             }
             return values;
         } else {
@@ -826,11 +823,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
                 values.add(normalize(normalizedContent, dataType));
-                if (log.isDebugEnabled()) {
-                    log.debug("added normalized field " + normalizedContent + " to values " + values);
-                }
+                logNormalizedField(normalizedContent, values);
             }
             return values;
+        }
+    }
+
+    private void logNormalizedField(NormalizedContentInterface normalizedContent, HashSet<NormalizedContentInterface> values) {
+        if (log.isDebugEnabled()) {
+            log.debug("added normalized field " + normalizedContent + " to values " + values);
         }
     }
 
@@ -985,8 +986,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
                             break;
                         case DROP:
-                            // for the leave policy, only add a failed normalization
-                            // field
+                            // for the drop policy, clear out the exception,
+                            // clear out the indexed field value and add
+                            // a failed normalization field
+                            n.setError(null);
+                            n.setIndexedFieldValue(null);
+                            results.put(n.getIndexedFieldName(), n);
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
                             break;
                         case FAIL:

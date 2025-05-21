@@ -131,8 +131,6 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
 
-        this.logic.setEventPerDayThreshold(1);
-
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
         String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
         runTest(query, expect, qOptions);
@@ -145,9 +143,6 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-
-        this.logic.setEventPerDayThreshold(1);
-        this.logic.setShardsPerDayThreshold(1);
 
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
         String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
@@ -163,7 +158,9 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
 
         for (String num : TEST_NUMS) {
-            String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
+            int lower = Integer.parseInt(num);
+            int upper = lower + 1;
+            String query = CityField.NUM.name() + GTE_OP + lower + AND_OP + CityField.NUM.name() + LTE_OP + upper;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
             query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);
@@ -180,7 +177,9 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
 
         for (String num : TEST_NUMS) {
-            String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
+            int lower = Integer.parseInt(num);
+            int upper = lower + 1;
+            String query = CityField.NUM.name() + GTE_OP + lower + AND_OP + CityField.NUM.name() + LTE_OP + upper;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
             query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);

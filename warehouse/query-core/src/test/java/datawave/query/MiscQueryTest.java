@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl3.JexlException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -97,6 +96,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
                 "ldn-fra-lle-11",
                 "rom-usa-ms-10",
                 "par-usa-oh-8",
+                "abc-ab-9",
                 "par-usa-oh-9",
                 "ldn-uk-7",
                 "par-usa-mo-8",
@@ -127,8 +127,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testEventThreshold() throws Exception {
         log.info("------  testEventThreshold  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'";
         String query = Constants.ANY_FIELD + phrase;
         String expect = this.dataManager.convertAnyField(phrase);
@@ -138,8 +136,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test(expected = InvalidQueryException.class)
     public void testFieldIgnoreParam1() throws Exception {
         log.info("------  testFieldIgnoreParam1  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
         String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
         String expect = this.dataManager.convertAnyField(phrase);
@@ -155,8 +151,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testFieldIgnoreParam2() throws Exception {
         log.info("------  testFieldIgnoreParam2  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
         String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
         String expect = this.dataManager.convertAnyField(phrase);
@@ -172,8 +166,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testFieldIgnoreParam3() throws Exception {
         log.info("------  testFieldIgnoreParam3  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a' && STATE == 'sta'";
         String query = Constants.ANY_FIELD + phrase + "&& STATE == 'sta'";
         String expect = this.dataManager.convertAnyField(phrase);
@@ -188,8 +180,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testShardThreshold() throws Exception {
         log.info("------  testShardThreshold  ------");
-        // setting shards per day does not alter results -
-        this.logic.setShardsPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'";
         String query = Constants.ANY_FIELD + phrase;
         String expect = this.dataManager.convertAnyField(phrase);
@@ -304,7 +294,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         String state = "'ohio'";
         for (TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP
-                            + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
+                            + "'ohio~'" + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
 
             this.logic.setInitialMaxTermThreshold(3);
             this.logic.setFinalMaxTermThreshold(3);

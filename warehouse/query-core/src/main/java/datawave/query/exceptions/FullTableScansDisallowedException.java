@@ -5,7 +5,7 @@ package datawave.query.exceptions;
  */
 public class FullTableScansDisallowedException extends DatawaveQueryException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8671244431369372767L;
 
     public FullTableScansDisallowedException() {
         super();

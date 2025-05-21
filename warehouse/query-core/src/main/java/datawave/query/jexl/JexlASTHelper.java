@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTAssignment;
@@ -77,11 +78,13 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -135,6 +138,12 @@ public class JexlASTHelper {
         return TreeFlatteningRebuildingVisitor.flatten(script);
     }
 
+    /**
+     * Utility method that creates a new {@link JexlFeatures}, disabling features that are not required for common datawave use cases. Many of these features
+     * have an adverse impact on application performance.
+     *
+     * @return a configured JexlFeatures
+     */
     public static JexlFeatures jexlFeatures() {
         // @formatter:off
         return new JexlFeatures()
@@ -184,6 +193,17 @@ public class JexlASTHelper {
     }
 
     /**
+     * Utility method that avoids an expensive constructor.
+     * <p>
+     * The no-args constructor for {@link JexlInfo} creates a new {@link Throwable} which makes an expensive call to {@link Throwable#fillInStackTrace()}. This is not desirable.
+     * @param stage the stage name
+     * @return a JexlInfo
+     */
+    public static JexlInfo jexlInfo(String stage){
+        return new JexlInfo(stage, 1, 1);
+    }
+
+    /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
      *
@@ -206,14 +226,18 @@ public class JexlASTHelper {
             try {
                 return parseQueryWithBackslashes(query, parser);
             } catch (Exception e) {
-                throw new ParseException("Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+                throw new IllegalArgumentException(qe);
             }
         } else {
             // Parse the original query
             try {
-                return parser.parse(null, jexlFeatures(), caseFixQuery, null);
+                return parser.parse(jexlInfo("parseJexlQuery"), jexlFeatures(), caseFixQuery, null);
             } catch (TokenMgrException | JexlException e) {
-                throw new ParseException(e.getMessage());
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse the query: " + e.getMessage());
+                throw new IllegalArgumentException(qe);
             }
         }
     }
@@ -243,9 +267,11 @@ public class JexlASTHelper {
         // Parse the query with the placeholders
         ASTJexlScript jexlScript;
         try {
-            jexlScript = parser.parse(null, jexlFeatures(), query, null);
+            jexlScript = parser.parse(jexlInfo("parseQueryWithBackslashes"), jexlFeatures(), query, null);
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                    "Unable to parse the query: " + e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
 
         Deque<JexlNode> workingStack = new LinkedList<>();
@@ -285,10 +311,11 @@ public class JexlASTHelper {
             }
         }
 
-        if (numFound != numReplaced)
-            throw new ParseException(
-                            "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
-
+        if (numFound != numReplaced) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                    "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
+            throw new IllegalArgumentException(qe);
+        }
         return jexlScript;
     }
 
@@ -953,6 +980,161 @@ public class JexlASTHelper {
         }
 
         return assignments;
+    }
+
+    /**
+     * <b>NOTE: Do NOT use this method with a rebuilding visitor. You cannot guarantee parentage will remain the same.</b>
+     * <p>
+     * Swaps the original node with the replacement, following rules for reference expressions, single terms and junctions
+     * <p>
+     * This method prevents reference expressions from having a single child.
+     * <p>
+     * This method also allows for merging similar junctions.
+     *
+     * @param original
+     *            the original node
+     * @param replacement
+     *            the replacement node
+     */
+    public static void replaceNodeSafely(JexlNode original, JexlNode replacement) {
+        JexlNode parent = original.jjtGetParent();
+
+        if (parent == null) {
+            return; // cannot do anything in this case
+        }
+
+        boolean multiValue = isJunction(replacement);
+        if (multiValue) {
+            replaceNodeWithMultiValue(parent, original, replacement);
+        } else {
+            replaceNodeWithSingleValue(parent, original, replacement);
+        }
+    }
+
+    /**
+     * This method accepts a multivalued replacement node (ASTAndNode or ASTOrNode) and attempts to merge it cleanly into the parent or grandparent node with a
+     * preference for a reference expression as the new parent.
+     *
+     * @param parent
+     *            the parent node
+     * @param original
+     *            the original node
+     * @param replacement
+     *            the replacement node
+     */
+    private static void replaceNodeWithMultiValue(JexlNode parent, JexlNode original, JexlNode replacement) {
+
+        // similar junctions, merge children
+        if (isEquivalentJunctions(parent, replacement)) {
+            mergeJunctions(parent, original, replacement);
+            return;
+        }
+
+        // if no 'legal' rewrite could occur with the parent, try the grandparent
+        JexlNode grandParent = parent.jjtGetParent();
+        if (grandParent != null) {
+            // reference expression, straight replacement
+            if (grandParent instanceof ASTReferenceExpression) {
+                JexlNodes.replaceChild(grandParent, parent, replacement);
+                return;
+            }
+
+            // similar junctions, merge children
+            if (isEquivalentJunctions(grandParent, replacement)) {
+                mergeJunctions(grandParent, parent, replacement);
+                return;
+            }
+        }
+
+        // if no optimal rewrite occurred, fall back to a simple replacement
+        JexlNodes.replaceChild(parent, original, replacement);
+    }
+
+    /**
+     * This method accepts a single replacement node (leaf node) and attempts to merge it cleanly into the parent or grandparent while avoiding a reference
+     * expression as the new parent.
+     *
+     * @param parent
+     *            the parent node
+     * @param original
+     *            the original node
+     * @param replacement
+     *            the replacement node
+     */
+    private static void replaceNodeWithSingleValue(JexlNode parent, JexlNode original, JexlNode replacement) {
+
+        if (!(parent instanceof ASTReferenceExpression)) {
+            // straight replacement
+            JexlNodes.replaceChild(parent, original, replacement);
+            return;
+        }
+
+        // otherwise we have a reference expression and we need to go up a layer
+        JexlNode grandParent = parent.jjtGetParent();
+
+        if (grandParent != null) {
+            // check for the negated single term case: !(term)
+            // it is also unlikely that two reference expressions would sit next to each other in the tree, but it's
+            // not impossible
+            if (!(grandParent instanceof ASTNotNode) && !(grandParent instanceof ASTReferenceExpression)) {
+                JexlNodes.replaceChild(grandParent, parent, replacement);
+                return;
+            }
+        }
+
+        // if no optimal rewrite occurred fallback to a simple replacement
+        JexlNodes.replaceChild(parent, original, replacement);
+    }
+
+    /**
+     * Determines if the provided JexlNode is a junction
+     *
+     * @param node
+     *            the JexlNode
+     * @return true if the node is a junction
+     */
+    public static boolean isJunction(JexlNode node) {
+        return !QueryPropertyMarker.findInstance(node).isAnyType() && (node instanceof ASTOrNode || node instanceof ASTAndNode);
+    }
+
+    /**
+     * Determines if the two JexlNodes are similar junction types (both And nodes or both Or nodes)
+     *
+     * @param a
+     *            first JexlNode
+     * @param b
+     *            second JexlNode
+     * @return true if the two nodes are equivalent junctions
+     */
+    public static boolean isEquivalentJunctions(JexlNode a, JexlNode b) {
+        if (QueryPropertyMarker.findInstance(a).isAnyType() || QueryPropertyMarker.findInstance(b).isAnyType()) {
+            return false;
+        }
+
+        return (a instanceof ASTOrNode && b instanceof ASTOrNode) || (a instanceof ASTAndNode && b instanceof ASTAndNode);
+    }
+
+    /**
+     * Given two equivalent junctions per {@link #isEquivalentJunctions(JexlNode, JexlNode)}, merges the children for node B into the children of node A
+     *
+     * @param parent
+     *            the parent
+     * @param a
+     *            first JexlNode
+     * @param b
+     *            second JexlNode
+     */
+    private static void mergeJunctions(JexlNode parent, JexlNode a, JexlNode b) {
+        List<JexlNode> nodes = new ArrayList<>();
+        for (JexlNode child : JexlNodes.getChildren(parent)) {
+            if (child == a) {
+                // preserves node order
+                nodes.addAll(List.of(JexlNodes.getChildren(b)));
+            } else {
+                nodes.add(child);
+            }
+        }
+        JexlNodes.setChildren(parent, nodes.toArray(new JexlNode[0]));
     }
 
     /**
@@ -1769,7 +1951,8 @@ public class JexlASTHelper {
                     JexlNode child = node.jjtGetChild(i);
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
-                            String message = "Tree included child " + child + " with a null parent";
+                            String nodeString = JexlStringBuildingVisitor.buildQuery(child);
+                            String message = "Tree included child " + child + " [" + nodeString + "] with a null parent";
                             recordViolation(message, failHard, validation);
                         } else if (child.jjtGetParent() != node) {
                             String message = "Included a child " + child + " with conflicting parent. Expected " + node + " but was " + child.jjtGetParent();
@@ -1862,9 +2045,23 @@ public class JexlASTHelper {
     public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
         boolean valid = JunctionValidatingVisitor.validate(node);
         if (!valid && failHard) {
-            throw new RuntimeException("Instance of AND/OR node found with less than 2 children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "Instance of AND/OR node found with less than 2 children");
+            throw new RuntimeException(qe);
         }
         return valid;
+    }
+
+    public static NodeTypeCount getIvarators(JexlNode node) {
+        return NodeTypeCountVisitor.countNodes(node, QueryPropertyMarker.getIvaratorTypes());
+    }
+
+    public static int getIvaratorCount(NodeTypeCount nodeCount) {
+        int count = 0;
+        for (QueryPropertyMarker.MarkerType marker : QueryPropertyMarker.getIvaratorTypes()) {
+            count += nodeCount.getTotal(marker);
+        }
+
+        return count;
     }
 
     private JexlASTHelper() {}

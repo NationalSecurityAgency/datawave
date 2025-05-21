@@ -261,8 +261,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
         runTest(original, expected);
     }
 
-    // scored phrase does not support 'scoredPhrase(Iterable, ...)'
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void expandContentScoredPhraseFunctionIntoMultipleFields_exception() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
@@ -337,7 +336,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
 
         // Execute the test.
         String original = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
-        String expected = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100703_0,20100704_0,20100704_2,20100705_1'))";
+        String expected = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100704_0,20100704_2,20100705_1'))";
 
         runTest(original, expected);
     }

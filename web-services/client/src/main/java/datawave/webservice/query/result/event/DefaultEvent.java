@@ -29,7 +29,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implements Serializable, Message<DefaultEvent>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2390592143914560317L;
 
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)
@@ -53,6 +53,15 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     @Override
     public String toString() {
         return getMarkings() + ": " + (this.fields != null ? this.fields.toString() : "fields are null");
+    }
+
+    @Override
+    public Map<String,String> getMarkings() {
+        if (markings != null) {
+            return markings;
+        } else {
+            return super.getMarkings();
+        }
     }
 
     public void setMarkings(Map<String,String> markings) {

@@ -18,6 +18,7 @@ import org.locationtech.jts.geom.Geometry;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
@@ -29,7 +30,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * This visitor should be run after bounded ranges have been expanded in order to check for expanded GeoWave terms which do not intersect with the original
@@ -52,9 +52,15 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         return pruneTree(node, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         GeoWavePruningVisitor pruningVisitor = new GeoWavePruningVisitor(prunedTerms, metadataHelper);
-        return (T) node.jjtAccept(pruningVisitor, null);
+        T result = (T) node.jjtAccept(pruningVisitor, null);
+
+        RemoveExtraReferenceExpressionsVisitor.remove(result);
+        MergeAdjacentJunctionsVisitor.merge(result);
+
+        return result;
     }
 
     @Override

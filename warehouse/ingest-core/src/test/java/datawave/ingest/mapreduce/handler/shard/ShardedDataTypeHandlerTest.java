@@ -5,8 +5,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
@@ -17,8 +19,7 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.type.GeometryType;
-import datawave.data.type.NumberType;
+import datawave.data.hash.HashUID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -27,15 +28,14 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.model.Direction;
+import datawave.util.CompositeTimestamp;
 import datawave.util.TableName;
 
 public class ShardedDataTypeHandlerTest {
@@ -47,6 +47,8 @@ public class ShardedDataTypeHandlerTest {
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
+
+    private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
 
     Configuration configuration;
 
@@ -140,6 +142,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        record.setDate(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -160,6 +163,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        record.setDate(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -189,6 +193,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        record.setDate(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -218,6 +223,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        record.setDate(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -246,6 +252,7 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        record.setDate(System.currentTimeMillis());
 
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
@@ -259,6 +266,60 @@ public class ShardedDataTypeHandlerTest {
         for (BulkIngestKey k : termIndex.keySet()) {
             byte[] keyBytes = k.getKey().getColumnVisibility().getBytes();
             assertTrue(Arrays.equals(keyBytes, maskVisibility));
+        }
+    }
+
+    @Test
+    public void testAgeOffDate() {
+        Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
+        String entry = "testingtesting";
+        RawRecordContainer record = new RawRecordContainerImpl();
+        record.setDataType(dataType);
+        record.setRawFileName("data_" + 0 + ".dat");
+        record.setRawRecordNumber(1);
+        record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        record.setId(HashUID.builder().newId(record.getRawData()));
+        record.setVisibility(new ColumnVisibility("PUBLIC"));
+        long expectedEventDate = System.currentTimeMillis();
+        record.setDate(expectedEventDate);
+        Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
+
+        assertEquals(expectedEventDate, record.getDate());
+        assertEquals(expectedEventDate, record.getAgeOffDate());
+        assertEquals(expectedEventDate, record.getTimestamp());
+
+        Multimap<BulkIngestKey,Value> data = handler.processBulk(null, record, fields, null);
+
+        long expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(expectedEventDate, expectedEventDate);
+        long tsToDay = (expectedEventDate / MS_PER_DAY) * MS_PER_DAY;
+        long expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, tsToDay);
+        for (BulkIngestKey key : data.keySet()) {
+            if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
+                assertEquals(key.toString(), expectedIndexTimestamp, key.getKey().getTimestamp());
+            } else {
+                assertEquals(key.toString(), expectedTimestamp, key.getKey().getTimestamp());
+            }
+        }
+
+        // now get an ageoff date (must be a multiple of MS_PER_DAY past the event date)
+        long expectedAgeOffDate = expectedEventDate + (MS_PER_DAY * 11);
+        expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(expectedEventDate, expectedAgeOffDate);
+        record.setTimestamp(expectedTimestamp);
+
+        assertEquals(expectedEventDate, record.getDate());
+        assertEquals(expectedAgeOffDate, record.getAgeOffDate());
+        assertEquals(expectedTimestamp, record.getTimestamp());
+
+        data = handler.processBulk(null, record, fields, null);
+
+        long ageOffToDay = (expectedAgeOffDate / MS_PER_DAY) * MS_PER_DAY;
+        expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
+        for (BulkIngestKey key : data.keySet()) {
+            if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
+                assertEquals(key.toString(), expectedIndexTimestamp, key.getKey().getTimestamp());
+            } else {
+                assertEquals(key.toString(), expectedTimestamp, key.getKey().getTimestamp());
+            }
         }
     }
 

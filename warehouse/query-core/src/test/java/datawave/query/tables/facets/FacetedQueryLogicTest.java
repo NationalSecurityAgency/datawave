@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
@@ -48,7 +49,6 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 
 public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
 
@@ -135,7 +135,8 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("CITY; rome -- rome//8"); // although there are 8 entries for rome, only 7 doc ids are unique in the test data.
         expected.add("CITY; turin -- turin//1");
         expected.add("CITY; venice -- venice//1");
-        expected.add("CONTINENT; europe -- europe//26");
+        expected.add("CITY; 12345 -- 12345//1");
+        expected.add("CONTINENT; europe -- europe//27");
         expected.add("STATE; campania -- campania//1");
         expected.add("STATE; castilla y leon -- castilla y leon//1");
         expected.add("STATE; gelderland -- gelderland//1");
@@ -151,6 +152,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("STATE; toscana -- toscana//1");
         expected.add("STATE; veneto -- veneto//1");
         expected.add("STATE; viana do castelo -- viana do castelo//1");
+        expected.add("STATE; 12345 -- 12345//1");
 
         String query = CityField.CONTINENT.name() + " == 'Europe'";
 
@@ -164,11 +166,8 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         // TODO: this test isn't working properly. I would expect a query for Italy that is configured to facet
         // the CITY field - to return a facet for rome and paris, but also return a field name.
         Set<String> expected = new TreeSet<>();
-
-        // @formatter:off
         expected.add("null; paris -- paris//1");
         expected.add("null; rome -- rome//2");
-        // @formatter:on
 
         String query = CityField.COUNTRY.name() + " == 'Italy'";
 

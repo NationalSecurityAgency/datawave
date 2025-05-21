@@ -1,13 +1,13 @@
 package datawave.query;
 
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.microservice.query.QueryParameters.QUERY_END;
+import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
+import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -75,6 +75,9 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
@@ -86,10 +89,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 
@@ -100,7 +99,7 @@ public class MixedGeoAndGeoWaveTest {
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private static final int NUM_CIRCLE_POINTS = 60;
-    private static final int NUM_SHARDS = 100;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "MixedGeo";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
@@ -182,9 +181,10 @@ public class MixedGeoAndGeoWaveTest {
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
+                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
+                                        "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -284,6 +284,9 @@ public class MixedGeoAndGeoWaveTest {
     private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
         final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
+
+        Set<String> loadedShards = new HashSet<>();
+
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
             if (!tops.exists(tableName))
@@ -295,8 +298,17 @@ public class MixedGeoAndGeoWaveTest {
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
                                 biKey.getKey().getTimestamp(), val);
                 writer.addMutation(mutation);
+                if (biKey.getTableName().toString().equals("shard")) {
+                    loadedShards.add(biKey.getKey().getRow().toString());
+                }
             }
             writer.close();
+        }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_" + NUM_SHARDS, new Value());
+            bw.addMutation(m);
         }
     }
 
@@ -378,9 +390,8 @@ public class MixedGeoAndGeoWaveTest {
 
     @Test
     public void intersectsSmallBoundingBoxEvaluationOnlyTest() throws Exception {
-        String query = "geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
+        String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((_Eval_ = true) && geowave:intersects("
+                        + GEO_FIELD + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(2, events.size());
@@ -485,7 +496,7 @@ public class MixedGeoAndGeoWaveTest {
     @Test
     public void intersectsLargeBoundingBoxEvaluationOnlyTest() throws Exception {
         String query = "geowave:intersects(" + GEO_FIELD
-                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((_Eval_ = true) && geowave:intersects(" + GEO_FIELD
                         + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))'))";
 
         List<DefaultEvent> events = getQueryResults(query);
@@ -590,8 +601,8 @@ public class MixedGeoAndGeoWaveTest {
 
     @Test
     public void intersectsLargeCircleEvaluationOnlyTest() throws Exception {
-        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((ASTEvaluationOnly = true) && geowave:intersects("
-                        + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "'))";
+        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((_Eval_ = true) && geowave:intersects(" + GEO_FIELD
+                        + ", '" + createCircle(0, 0, 90).toText() + "'))";
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(12, events.size());
@@ -704,7 +715,7 @@ public class MixedGeoAndGeoWaveTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
 
-        QueryParameters queryParams = new QueryParametersImpl();
+        datawave.microservice.query.QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
 
         Set<Authorizations> auths = new HashSet<>();

@@ -26,6 +26,8 @@ public class NGramGenerator implements Serializable {
      */
     public static final int DEFAULT_MIN_HASH_SIZE = 64;
 
+    private static final long serialVersionUID = 8930666415965604405L;
+
     private static final Logger log = LoggerFactory.getLogger(NGramGenerator.class);
 
     final int ngramSize;
@@ -149,7 +151,7 @@ public class NGramGenerator implements Serializable {
      */
     public void generateNgrams(int chunkSize, String chunk, Set<NGramTuple> output) {
         final int ngramCount = chunk.length() - ngramSize;
-        for (int i = 0; i < ngramCount; i++) {
+        for (int i = 0; i <= ngramCount; i++) {
             final String ngram = chunk.substring(i, i + ngramSize);
             output.add(new NGramTuple(chunkSize, ngram));
         }

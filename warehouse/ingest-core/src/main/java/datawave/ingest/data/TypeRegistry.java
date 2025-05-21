@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeOverrideHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
@@ -24,7 +25,6 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class TypeRegistry extends HashMap<String,Type> {
 
@@ -53,9 +53,9 @@ public class TypeRegistry extends HashMap<String,Type> {
 
     public static final String OUTPUT_NAME = ".output.name";
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -9186653395229072139L;
 
-    private static volatile TypeRegistry registry = null;
+    private static TypeRegistry registry = null;
 
     private static final Object lock = new Object();
 

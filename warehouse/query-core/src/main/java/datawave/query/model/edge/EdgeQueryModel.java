@@ -2,11 +2,12 @@ package datawave.query.model.edge;
 
 import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.Set;
 
-import datawave.edge.model.EdgeModelAware;
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.model.QueryModel;
-import datawave.query.model.util.LoadModelFromXml;
+import datawave.query.model.util.LoadModel;
 
 /**
  * This class defines a typical QueryModel, allowing the query syntax for edge queries to be easily customized for an external client's needs/preferences.
@@ -16,7 +17,7 @@ import datawave.query.model.util.LoadModelFromXml;
  * <br>
  * (1) Unlike event-based query models, edge field names don't exist on disk in the way that internal event attributes do. The edge data model is relatively
  * simple and static with respect to the set of all possible field names. And because we're not constrained by the physical representation of field names on
- * disk, we have the flexibility to choose an internal naming scheme to suit the targeted deployment environment. See {@link EdgeModelAware}. For example, with
+ * disk, we have the flexibility to choose an internal naming scheme to suit the targeted deployment environment. See {@link EdgeModelFields}. For example, with
  * respect to the superclass method {@code addTermToModel(String alias, String nameOnDisk)}, 'nameOnDisk' can be whatever we want and can be managed with
  * configuration as needed. <br>
  * <br>
@@ -27,43 +28,79 @@ import datawave.query.model.util.LoadModelFromXml;
  * <br>
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
-public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
+public class EdgeQueryModel extends QueryModel {
+    private static final long serialVersionUID = -590763583662768646L;
+
+    private final EdgeModelFields fields;
 
     /**
      * This constructor allows the class to be used in conjunction with existing QueryModel loaders.
      *
      * @param other
      *            the other model
+     * @param fields
+     *            the edge model fields
      * @throws InvalidModelException
      *             if the model is invalid
      */
-    public EdgeQueryModel(QueryModel other) throws InvalidModelException {
+    public EdgeQueryModel(QueryModel other, EdgeModelFields fields) throws InvalidModelException {
         super(other);
+        this.fields = fields;
         validateModel(this);
     }
 
-    /** This constructor should never be used */
-    @SuppressWarnings("unused")
-    private EdgeQueryModel() {}
+    public EdgeModelFields getFields() {
+        return fields;
+    }
 
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      *
      * @param queryModelXml
      *            the model xml
+     * @param fields
+     *            the fields
      * @return EdgeQueryModel instance
      * @throws Exception
      *             if there is an issue
      */
+    public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFields fields) throws Exception {
+        return new EdgeQueryModel(LoadModel.loadModelFromXml(queryModelXml), fields);
+    }
+
+    /**
+     * Simple factory method to load a query model from the specified classpath resource.
+     *
+     * @param queryModelXml
+     *            the query model as xml
+     * @param fieldsFactory
+     *            the edge model fields factory
+     * @return EdgeQueryModel instance
+     * @throws Exception
+     *             if there is an issue
+     */
+    public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFieldsFactory fieldsFactory) throws Exception {
+        return loadModel(queryModelXml, fieldsFactory.createFields());
+    }
+
+    /**
+     * Simple factory method to load a query model from the specified classpath resource.
+     *
+     * @param queryModelXml
+     *            the query model as an xml String
+     * @return EdgeQueryModel instance
+     * @throws Exception
+     *             if unable to load the model
+     */
     public static EdgeQueryModel loadModel(String queryModelXml) throws Exception {
-        return new EdgeQueryModel(LoadModelFromXml.loadModel(queryModelXml));
+        return loadModel(queryModelXml, new DefaultEdgeModelFieldsFactory());
     }
 
     /**
      * Thrown whenever an invalid edge query model is detected.
      */
     public static class InvalidModelException extends Exception {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -312834628767055149L;
 
         public InvalidModelException() {
             super();
@@ -119,6 +156,6 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     }
 
     public Collection<String> getAllInternalFieldNames() {
-        return Fields.getInstance().getBaseFieldNames();
+        return fields.getBaseFieldNames();
     }
 }

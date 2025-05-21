@@ -1,17 +1,19 @@
 package datawave.query.jexl.lookups;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Abstract index lookup which provides a framework for creating and populating the {@link IndexLookupMap} asynchronously in a separate thread. Async index
@@ -41,12 +43,13 @@ public abstract class AsyncIndexLookup extends IndexLookup {
         return Math.max(0L, config.getMaxIndexScanTimeMillis() - (System.currentTimeMillis() - startTimeMillis));
     }
 
-    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, CountDownLatch stoppedLatch, long startTimeMillis, long timeout) {
+    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, CountDownLatch stoppedLatch, AtomicLong startTimeMillis, long timeout) {
         // this ensures that we don't wait for the future response until the task has started
         if (startedLatch != null) {
             try {
                 startedLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new UnsupportedOperationException("Interrupted while waiting for IndexLookup to start", e);
             }
         } else {
@@ -68,7 +71,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             // timeout exception and except ( a max lookup specified ) 3) we receive a value under timeout and we break
             while (!execService.isShutdown() && !execService.isTerminated()) {
                 try {
-                    future.get((swallowTimeout) ? maxLookup : getRemainingTimeMillis(startTimeMillis), TimeUnit.MILLISECONDS);
+                    future.get((swallowTimeout) ? maxLookup : getRemainingTimeMillis(startTimeMillis.get()), TimeUnit.MILLISECONDS);
                 } catch (TimeoutException e) {
                     if (swallowTimeout) {
                         continue;
@@ -79,14 +82,18 @@ public abstract class AsyncIndexLookup extends IndexLookup {
                 break;
             }
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-        } catch (TimeoutException e) {
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException | CancellationException e) {
             future.cancel(true);
 
             try {
                 stoppedLatch.await();
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
                 log.error("Interrupted waiting for canceled AsyncIndexLookup to complete.");
                 throw new RuntimeException(ex);
             }

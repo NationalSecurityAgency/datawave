@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshEvent;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.metric.QueryMetricHandler;
 import datawave.metrics.remote.RemoteQueryMetricService;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
@@ -114,7 +115,9 @@ public class QueryMetricsWriter {
             try {
                 Thread.sleep(200);
             } catch (Exception e) {
-
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
         this.shutDownMetricProcessors = true;
@@ -122,7 +125,9 @@ public class QueryMetricsWriter {
             try {
                 f.get(Math.max(500, maxShutDownMs - (System.currentTimeMillis() - start)), TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
         log.info(String.format("shut down with %d metric updates in queue", blockingQueue.size()));
@@ -188,6 +193,7 @@ public class QueryMetricsWriter {
      *            maximum latency
      * @return list of query metric holders
      */
+    @SuppressWarnings("unchecked")
     private List<QueryMetricHolder> getMetricsFromQueue(int batchSize, long maxLatency) {
         List metricHolderList = new ArrayList<>();
         long start = System.currentTimeMillis();
@@ -198,7 +204,7 @@ public class QueryMetricsWriter {
                     metricHolderList.add(holder);
                 }
             } catch (InterruptedException e) {
-
+                Thread.currentThread().interrupt();
             }
         }
         if (metricHolderList.size() > 0 || blockingQueue.size() > 0) {
@@ -216,7 +222,6 @@ public class QueryMetricsWriter {
         /**
          * FailureRecord tracks the number and type of failures to send the query metric update so we can make decisions on whether to retry sending or drop the
          * query metric update.
-         *
          *
          * @param metric
          *            the metric
@@ -312,6 +317,9 @@ public class QueryMetricsWriter {
                         }
                     }
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     log.error(e.getMessage(), e);
                 }
             }
@@ -497,8 +505,9 @@ public class QueryMetricsWriter {
          *            list of metrics to process
          * @return list of failed query metrics
          */
+        @SuppressWarnings("unchecked")
         private List<QueryMetricHolder> writeMetricsToHandler(QueryMetricHandler queryMetricHandler, List<QueryMetricHolder> metricQueue) {
-            List<QueryMetricHolder> failedMetrics = new ArrayList<>();
+            List<QueryMetricHolder> failedMetricsHolder = new ArrayList<>();
             if (!metricQueue.isEmpty()) {
                 for (QueryMetricHolder metricHolder : metricQueue) {
                     try {
@@ -510,11 +519,11 @@ public class QueryMetricsWriter {
                         }
                     } catch (Exception e) {
                         log.error(String.format("metric update write to QueryMetricHandler failed: %s", e.getMessage()));
-                        failedMetrics.add(metricHolder);
+                        failedMetricsHolder.add(metricHolder);
                     }
                 }
             }
-            return failedMetrics;
+            return failedMetricsHolder;
         }
 
         /**

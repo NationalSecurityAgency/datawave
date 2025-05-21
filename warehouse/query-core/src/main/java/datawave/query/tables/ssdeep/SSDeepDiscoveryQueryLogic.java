@@ -1,37 +1,35 @@
 package datawave.query.tables.ssdeep;
 
-import java.security.Principal;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.audit.SelectorExtractor;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.core.query.logic.AbstractQueryLogicTransformer;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResponseEnricherBuilder;
 import datawave.marking.MarkingFunctions;
-import datawave.query.discovery.DiscoveredThing;
+import datawave.microservice.query.Query;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.discovery.DiscoveryTransformer;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.iterator.DatawaveTransformIterator;
-import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.ResponseEnricherBuilder;
-import datawave.webservice.query.logic.RoleManager;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -76,14 +74,21 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                 ResponseObjectFactory responseObjectFactory = discoveryDelegate.getResponseObjectFactory();
                 ScoredSSDeepPair scoredSSDeepPair = discoveredSSDeep.getScoredSSDeepPair();
                 if (scoredSSDeepPair != null) {
-                    List<FieldBase<?>> fields = eventBase.getFields();
-                    Optional<FieldBase<?>> valueFieldOptional = fields.stream().filter(field -> "VALUE".equals(field.getName())).findFirst();
+                    List<FieldBase<?>> originalFields = eventBase.getFields();
+                    Optional<FieldBase<?>> valueFieldOptional = originalFields.stream().filter(field -> "VALUE".equals(field.getName())).findFirst();
 
                     if (valueFieldOptional.isEmpty()) {
                         throw new IllegalStateException("Could not find value field in event");
                     }
 
                     FieldBase<?> valueField = valueFieldOptional.get();
+
+                    // Handles the case where the DiscoveryQuery returns a down-cased ssdeep. To do this, we remove the
+                    // original VALUE field from the discovery result and create a new one from the scoredSSDeepPair
+                    // which was returned from the original similarity query. This also updates the list stored in the
+                    // event with the filtered version.
+                    final List<FieldBase<?>> newFields = originalFields.stream().filter(field -> !"VALUE".equals(field.getName())).collect(Collectors.toList());
+                    eventBase.setFields(newFields);
 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
@@ -92,7 +97,18 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getQueryHash().toString());
-                        fields.add(field);
+                        newFields.add(field);
+                    }
+
+                    {
+                        // add a new value field that preserves the case of the original matched ssdeep.
+                        FieldBase<?> field = responseObjectFactory.getField();
+                        field.setName("VALUE");
+                        field.setMarkings(valueField.getMarkings());
+                        field.setColumnVisibility(valueField.getColumnVisibility());
+                        field.setTimestamp(valueField.getTimestamp());
+                        field.setValue(scoredSSDeepPair.getMatchingHash().toString());
+                        newFields.add(field);
                     }
 
                     {
@@ -102,11 +118,29 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getWeightedScore());
-                        fields.add(field);
+                        newFields.add(field);
                     }
 
-                }
+                    {
+                        FieldBase<?> field = responseObjectFactory.getField();
+                        field.setName("OVERLAP_SCORE");
+                        field.setMarkings(valueField.getMarkings());
+                        field.setColumnVisibility(valueField.getColumnVisibility());
+                        field.setTimestamp(valueField.getTimestamp());
+                        field.setValue(scoredSSDeepPair.getOverlapScore());
+                        newFields.add(field);
+                    }
 
+                    {
+                        FieldBase field = responseObjectFactory.getField();
+                        field.setName("OVERLAP_SSDEEP_NGRAMS");
+                        field.setMarkings(valueField.getMarkings());
+                        field.setColumnVisibility(valueField.getColumnVisibility());
+                        field.setTimestamp(valueField.getTimestamp());
+                        field.setValue(scoredSSDeepPair.getOverlapsAsString());
+                        newFields.add(field);
+                    }
+                }
                 return eventBase;
             }
         };
@@ -149,6 +183,14 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
 
     public void setModelName(String modelName) {
         discoveryDelegate.setModelName(modelName);
+    }
+
+    public void setMetadataTableName(String metadataTableName) {
+        discoveryDelegate.setMetadataTableName(metadataTableName);
+    }
+
+    public String getIndexTableName() {
+        return discoveryDelegate.getIndexTableName();
     }
 
     public void setQueryModel(QueryModel model) {
@@ -239,13 +281,13 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public Principal getPrincipal() {
-        return discoveryDelegate.getPrincipal();
+    public ProxiedUserDetails getCurrentUser() {
+        return discoveryDelegate.getCurrentUser();
     }
 
     @Override
-    public void setPrincipal(Principal principal) {
-        discoveryDelegate.setPrincipal(principal);
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
+        discoveryDelegate.setCurrentUser(currentUser);
     }
 
     @Override
@@ -369,13 +411,13 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public RoleManager getRoleManager() {
-        return discoveryDelegate.getRoleManager();
+    public Set<String> getRequiredRoles() {
+        return discoveryDelegate.getRequiredRoles();
     }
 
     @Override
-    public void setRoleManager(RoleManager roleManager) {
-        discoveryDelegate.setRoleManager(roleManager);
+    public void setRequiredRoles(Set<String> requiredRoles) {
+        discoveryDelegate.setRequiredRoles(requiredRoles);
     }
 
     @Override
@@ -389,13 +431,8 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public boolean canRunQuery() {
-        return discoveryDelegate.canRunQuery();
-    }
-
-    @Override
-    public boolean canRunQuery(Principal principal) {
-        return discoveryDelegate.canRunQuery(principal);
+    public boolean canRunQuery(Collection<String> userRoles) {
+        return discoveryDelegate.canRunQuery(userRoles);
     }
 
     @Override

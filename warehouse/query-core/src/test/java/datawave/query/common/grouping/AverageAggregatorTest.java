@@ -12,7 +12,6 @@ import org.junit.Test;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Content;
-import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TypeAttribute;
 
 /**
@@ -43,7 +42,7 @@ public class AverageAggregatorTest {
         Content content = new Content("i am content", new Key(), true);
 
         IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
-        assertEquals("Unable to calculate an average with non-numerical value 'i am content'", exception.getMessage());
+        assertEquals("Character i is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.", exception.getMessage());
     }
 
     /**

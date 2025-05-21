@@ -106,8 +106,6 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
 
         try {
             range.write(d);
-        } catch (Exception e) {
-            throw new IOException(e);
         } finally {
             d.close();
             b.close();
@@ -122,8 +120,6 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
         Range range = new Range();
         try {
             range.readFields(in);
-        } catch (Exception e2) {
-            throw new IOException(e2);
         } finally {
             in.close();
             b.close();
@@ -194,6 +190,7 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
     }
 
     public static class ScanLimitReached extends RuntimeException {
+        private static final long serialVersionUID = -4309625828059464853L;
         private final Key lastKey;
 
         public ScanLimitReached(Key key, String message) {

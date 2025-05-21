@@ -3,6 +3,7 @@ package datawave.webservice.query.model;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -50,14 +51,14 @@ import org.jboss.resteasy.annotations.GZIP;
 import com.google.common.collect.Sets;
 
 import datawave.annotation.Required;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.query.model.FieldMapping;
 import datawave.query.model.ModelKeyParser;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
@@ -100,6 +101,10 @@ public class ModelBean {
     @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
     private String dataTablesUri;
 
+    @Inject
+    @ConfigProperty(name = "cluster.name", defaultValue = "unknown")
+    private String systemName;
+
     @EJB
     private AccumuloConnectionFactory connectionFactory;
 
@@ -132,7 +137,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
 
-        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName, systemName);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -151,7 +156,7 @@ public class ModelBean {
         HashSet<String> modelNames = new HashSet<>();
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
                 for (Entry<Key,Value> entry : scanner) {
                     String colf = entry.getKey().getColumnFamily().toString();
@@ -166,8 +171,8 @@ public class ModelBean {
             }
 
         } catch (Exception e) {
+            log.error(String.format("Exception when listing models from table %s : %s", modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_NAME_LIST_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -336,7 +341,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
 
-        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri);
+        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri, systemName);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -354,7 +359,7 @@ public class ModelBean {
         AccumuloClient client = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
                 IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
@@ -365,8 +370,8 @@ public class ModelBean {
                 }
             }
         } catch (Exception e) {
+            log.error(String.format("Exception when getting model %s from table %s : %s", name, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_FETCH_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -420,9 +425,10 @@ public class ModelBean {
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
+        DatawaveWebApplicationException exception = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
                             .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
@@ -430,7 +436,8 @@ public class ModelBean {
                 writer.addMutation(m);
             }
         } catch (Exception e) {
-            log.error("Could not insert mapping.", e);
+            String modelName = model == null ? null : model.getName();
+            log.error(String.format("Exception when inserting model %s into table %s : %s", modelName, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.INSERT_MAPPING_ERROR, e);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
@@ -442,7 +449,7 @@ public class ModelBean {
                     QueryException qe = new QueryException(DatawaveErrorCode.WRITER_CLOSE_ERROR, e1);
                     log.error(qe);
                     response.addException(qe);
-                    throw new DatawaveWebApplicationException(qe, response);
+                    exception = new DatawaveWebApplicationException(qe, response);
                 }
             }
             if (null != client) {
@@ -453,7 +460,10 @@ public class ModelBean {
                 }
             }
         }
-        cache.reloadCache(tableName);
+        if (null != exception) {
+            throw exception;
+        }
+        cache.reloadTableCache(tableName);
         return response;
     }
 
@@ -493,9 +503,10 @@ public class ModelBean {
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
+        DatawaveWebApplicationException exception = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
                             .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
@@ -503,7 +514,8 @@ public class ModelBean {
                 writer.addMutation(m);
             }
         } catch (Exception e) {
-            log.error("Could not delete mapping.", e);
+            String modelName = model == null ? null : model.getName();
+            log.error(String.format("Exception when deleting model %s from table %s : %s", modelName, modelTableName, e.getMessage()), e);
             QueryException qe = new QueryException(DatawaveErrorCode.MAPPING_DELETION_ERROR, e);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
@@ -515,7 +527,7 @@ public class ModelBean {
                     QueryException qe = new QueryException(DatawaveErrorCode.WRITER_CLOSE_ERROR, e1);
                     log.error(qe);
                     response.addException(qe);
-                    throw new DatawaveWebApplicationException(qe, response);
+                    exception = new DatawaveWebApplicationException(qe, response);
                 }
             }
             if (null != client) {
@@ -526,8 +538,12 @@ public class ModelBean {
                 }
             }
         }
+        if (null != exception) {
+            throw exception;
+        }
+
         if (reloadCache)
-            cache.reloadCache(tableName);
+            cache.reloadTableCache(tableName);
         return response;
     }
 
@@ -543,4 +559,28 @@ public class ModelBean {
         else
             return tableName;
     }
+
+    public String getCurrentUserDN() {
+
+        String currentUserDN = null;
+        Principal p = ctx.getCallerPrincipal();
+
+        if (p != null && p instanceof DatawavePrincipal) {
+            currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
+        }
+
+        return currentUserDN;
+    }
+
+    public Collection<String> getCurrentProxyServers() {
+        List<String> currentProxyServers = null;
+        Principal p = ctx.getCallerPrincipal();
+
+        if (p != null && p instanceof DatawavePrincipal) {
+            currentProxyServers = ((DatawavePrincipal) p).getProxyServers();
+        }
+
+        return currentProxyServers;
+    }
+
 }

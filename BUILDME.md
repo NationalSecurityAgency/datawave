@@ -26,7 +26,7 @@ The id of the server matters, and should match what is used in the datawave pare
 To perform a full (non-release) 'dev' build  without unit tests:
 
 ```bash
-mvn -Pdev -Ddeploy -Dtar -DskipTests clean install
+mvn -Pdev -Ddeploy -Dtar -DskipTests -DskipITs clean install
 ```
 
 This command will produce the following deployment archives:
@@ -39,7 +39,7 @@ This command will produce the following deployment archives:
 In order to build a release, you must also define the dist variable by adding `-Ddist` to the command-line as follows:
 
 ```bash
-mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests clean install
+mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 ```
 
 ### Building a Docker web image
@@ -47,7 +47,7 @@ mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests clean install
 In order to build a Docker container for the web services, you can run with the following maven profiles: `-Pdeploy-ws,docker`
 
 ```bash
-mvn clean package -Pdev,assemble,deploy-ws -Pdocker -DskipTests  
+mvn clean package -Pdev,assemble,deploy-ws -Pdocker -DskipTests -DskipITs  
 ```
 
 Note that this will build javadocs and source jars.
@@ -57,15 +57,15 @@ Note that this will build javadocs and source jars.
 To build the RPM specify both the assemble and rpm profiles should be specified, as follows:
 
 ```bash
-mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests clean install
+mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 ```
 
 # Building Microservices
 
 Datawave web services utilize several microservices at runtime (currently authorization and auditing, although that
 list will expand soon). Datawave depends on api modules for some of these services, and the dependencies are set in
-the parent pom (see `version.microservice.*` properties) to released versions. If you wish to build the microservices
-for some reason, you can simply add `-Dservices` to your maven build command.
+the parent pom (see `version.datawave.*` properties) to released versions. If you wish to build the microservices
+for some reason, you can simply add `-Dservices` to your maven build command.  If you wish to build the starters you can add `-Dstarters` and for the utility modules add `-Dutils`.
 
 ### Releasing Microservices
 
@@ -95,7 +95,7 @@ the authorization service API version 1.0 is tagged with `svc_authorization-api_
 
 Note that simply building a new API or service release won't ensure that it is used anywhere. You will need to update
 build properties in either the datawave parent pom or within other service poms (for cross-service dependencies) to
-ensure that the new version is used. Look for properties starting with `version.microservice.` to see what to update.
+ensure that the new version is used. Look for properties starting with `version.datawave.` to see what to update.
 If you are updating an API module, you should be careful. In general, the associated service will need to be updated as
 well to support the API changes. The service should _add_ a new version of the API and continue to support the old
 version until it can be ensured that there are no more consumers of the old API.

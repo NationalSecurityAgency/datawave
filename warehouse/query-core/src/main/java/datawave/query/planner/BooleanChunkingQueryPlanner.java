@@ -1,6 +1,5 @@
 package datawave.query.planner;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -10,6 +9,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -24,8 +25,6 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 
 public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     private static final Logger log = Logger.getLogger(BooleanChunkingQueryPlanner.class);

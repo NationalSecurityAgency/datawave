@@ -3,8 +3,12 @@ package datawave.util.ssdeep;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.log4j.Logger;
 
-/** Implements functions to calculate a similarity score for a pair of SSDeepHashes */
-public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
+/**
+ * Implements functions to calculate a similarity score for a pair of SSDeepHashes. This implementation will calculate an edit distance between two hashes and
+ * then create a normalized score between 0-100, with 100 being a great match and 0 being a horrible match. This is designed to give relatively equal footing to
+ * hash comparisons that have different lenghts.
+ */
+public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer<Integer> {
     private static final Logger log = Logger.getLogger(SSDeepHash.class);
 
     private final int maxRepeatedCharacters;
@@ -27,7 +31,7 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
      *            the second object to be compared.
      * @return an integer between 0 and 100
      */
-    public int apply(SSDeepHash signature1, SSDeepHash signature2) {
+    public Integer apply(SSDeepHash signature1, SSDeepHash signature2) {
         if ((null == signature1) || (null == signature2)) {
             return -1;
         }
@@ -72,6 +76,15 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
     /**
      * This is the low level chunk scoring algorithm. It takes two chunks and scores them on a scale of 0-100 where 0 is a terrible match and 100 is a great
      * match. The chunkSize is used to cope with very small messages.
+     *
+     * @param s1
+     *            the first chunk
+     * @param s2
+     *            the second chunk
+     * @param chunkSize
+     *            size of the chunk
+     *
+     * @return the new score
      */
     private static int scoreChunks(final String s1, final String s2, final int chunkSize) {
         final int len1 = s1.length();
@@ -109,7 +122,7 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
         score = 100 - score;
 
         // When the chunk size is small we don't want to exaggerate the match.
-        final int threshold = (int) (chunkSize / SSDeepHash.MIN_CHUNK_SIZE * Math.min(len1, len2));
+        final int threshold = (chunkSize / SSDeepHash.MIN_CHUNK_SIZE * Math.min(len1, len2));
         if (score > threshold) {
             score = threshold;
         }

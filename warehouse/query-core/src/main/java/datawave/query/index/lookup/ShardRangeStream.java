@@ -1,5 +1,6 @@
 package datawave.query.index.lookup;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -12,15 +13,17 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.collections4.iterators.PeekingIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Function;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Multimap;
 
+import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -65,7 +68,7 @@ public class ShardRangeStream extends RangeStream {
             DefaultQueryPlanner.addOption(cfg, QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString(), false);
             DefaultQueryPlanner.addOption(cfg, QueryOptions.END_TIME, Long.toString(config.getEndDate().getTime()), false);
 
-            DefaultQueryPlanner.configureTypeMappings(config, cfg, metadataHelper, true);
+            configureTypeMappings(config, cfg, metadataHelper);
 
             scanner.setRanges(Collections.singleton(rangeForTerm(null, null, config)));
 
@@ -80,13 +83,7 @@ public class ShardRangeStream extends RangeStream {
                 Entry<Key,Value> peekKey = peeking.peek();
                 ErrorKey errorKey = ErrorKey.getErrorKey(peekKey.getKey());
                 if (errorKey != null) {
-                    switch (errorKey.getErrorType()) {
-                        case UNINDEXED_FIELD:
-                            this.context = StreamContext.UNINDEXED;
-                            break;
-                        case UNKNOWN:
-                            this.context = StreamContext.ABSENT;
-                    }
+                    this.context = StreamContext.ABSENT;
                 } else {
                     itr = Iterators.transform(peeking, new FieldIndexParser(node));
                     this.context = StreamContext.PRESENT;
@@ -96,7 +93,8 @@ public class ShardRangeStream extends RangeStream {
                 this.context = StreamContext.ABSENT;
 
             }
-        } catch (TableNotFoundException | DatawaveQueryException e) {
+
+        } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         } finally {
             // shut down the executor as all threads have completed
@@ -127,9 +125,35 @@ public class ShardRangeStream extends RangeStream {
             Range range = new Range(start, true, end, false);
             //  @formatter:off
             return new QueryPlan()
+                            .withTableName(config.getShardTableName())
                             .withQueryTree(node)
                             .withRanges(Collections.singleton(range));
             //  @formatter:on
         }
+    }
+
+    /**
+     * Lift and shift from DefaultQueryPlanner to avoid reliance on static methods
+     */
+    private void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper) {
+        DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(true), false);
+
+        Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());
+        nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
+        String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
+        DefaultQueryPlanner.addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
+
+        try {
+            String serializedTypeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
+            DefaultQueryPlanner.addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
+
+            String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
+            requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
+            DefaultQueryPlanner.addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
+        } catch (TableNotFoundException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        DefaultQueryPlanner.addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
     }
 }

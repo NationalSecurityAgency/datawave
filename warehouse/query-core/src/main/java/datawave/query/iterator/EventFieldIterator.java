@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -79,6 +80,11 @@ public class EventFieldIterator implements NestedIterator<Key> {
     }
 
     @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        source.seek(range, columnFamilies, inclusive);
+    }
+
+    @Override
     public Collection<NestedIterator<Key>> leaves() {
         return Collections.emptySet();
     }
@@ -101,6 +107,11 @@ public class EventFieldIterator implements NestedIterator<Key> {
     @Override
     public void setContext(Key context) {
         // no-op
+    }
+
+    @Override
+    public boolean isNonEventField() {
+        return false;
     }
 
     @Override

@@ -18,8 +18,10 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.util.CompositeTimestamp;
 import datawave.util.TableName;
 
 /**
@@ -49,6 +51,17 @@ public class CommonalityTokenTestDataIngest {
         Mutation mutation = null;
 
         String myUID = UID.builder().newId("MyUid".getBytes(), (Date) null).toString();
+        String myUID2 = UID.builder().newId("MyUid2".getBytes(), (Date) null).toString();
+        String myUID3 = UID.builder().newId("MyUid3".getBytes(), (Date) null).toString();
+
+        long indexTS = ShardedDataTypeHandler.getIndexTimestamp(timeStamp);
+
+        long ageOffTimestamp = 1699041441288l;
+        long timeStamp2 = CompositeTimestamp.getCompositeTimeStamp(timeStamp, ageOffTimestamp);
+        long indexTS2 = ShardedDataTypeHandler.getIndexTimestamp(timeStamp2);
+
+        long timeStamp3 = CompositeTimestamp.getCompositeTimeStamp(ageOffTimestamp, ageOffTimestamp);
+        long indexTS3 = ShardedDataTypeHandler.getIndexTimestamp(timeStamp3);
 
         try {
             // write the shard table :
@@ -113,6 +126,14 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(datatype + "\u0000" + myUID, "DOG.WILD.1" + "\u0000" + "coyote", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "REPTILE.PET.1" + "\u0000" + "snake", columnVisibility, timeStamp, emptyValue);
 
+            // add an event with a composite timestamp that should return
+            mutation.put(datatype + "\u0000" + myUID2, "CAT.PET.50" + "\u0000" + "sphynx", columnVisibility, timeStamp2, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID2, "CANINE.PET.50" + "\u0000" + "doberman", columnVisibility, timeStamp2, emptyValue);
+
+            // add an event with a composite timestamp that should NOT return
+            mutation.put(datatype + "\u0000" + myUID3, "CAT.PET.60" + "\u0000" + "manx", columnVisibility, timeStamp3, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID3, "CANINE.PET.60" + "\u0000" + "doberman", columnVisibility, timeStamp3, emptyValue);
+
             bw.addMutation(mutation);
 
         } finally {
@@ -127,161 +148,175 @@ public class CommonalityTokenTestDataIngest {
 
             // all the cats
             mutation = new Mutation(lcNoDiacriticsType.normalize("tabby"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
+            mutation = new Mutation(lcNoDiacriticsType.normalize("sphynx"));
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS2,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID2));
+            bw.addMutation(mutation);
+            mutation = new Mutation(lcNoDiacriticsType.normalize("manx"));
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS3,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID3));
+            bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("calico"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("tom"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("siamese"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("cougar"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("tiger"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("leopard"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("puma"));
-            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CAT", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
 
             // all the canines
             mutation = new Mutation(lcNoDiacriticsType.normalize("beagle"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("basset"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("chihuahua"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("dachshund"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("bernese"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("shepherd"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
+            mutation = new Mutation(lcNoDiacriticsType.normalize("doberman"));
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS2,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID2));
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS3,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID3));
+            bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("wolf"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("coyote"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("fox"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("dingo"));
-            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation((numberType.normalize("90")));
-            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("26.5"));
-            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation((numberType.normalize("20")));
-            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("12.5"));
-            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
 
             // all the fish
             mutation = new Mutation(lcNoDiacriticsType.normalize("beta"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("goldfish"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("angelfish"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("guppy"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("shark"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("tuna"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("mackerel"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("salmon"));
-            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("FISH", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
 
             // all the birds
             mutation = new Mutation(lcNoDiacriticsType.normalize("parakeet"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("canary"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("parrot"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("budgie"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("eagle"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("hawk"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("crow"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("buzzard"));
-            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put("BIRD", shard + "\u0000" + datatype, columnVisibility, indexTS,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
 
@@ -300,6 +335,8 @@ public class CommonalityTokenTestDataIngest {
             mutation = new Mutation(shard);
             // cats
             mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("tabby") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("tabby") + "\u0000" + datatype + "\u0000" + myUID2, columnVisibility, timeStamp2,
                             emptyValue);
             mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("calico") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
                             emptyValue);
@@ -328,6 +365,8 @@ public class CommonalityTokenTestDataIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("shepherd") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
                             emptyValue);
+            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("shepherd") + "\u0000" + datatype + "\u0000" + myUID2, columnVisibility,
+                            timeStamp2, emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("wolf") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
                             emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("coyote") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,

@@ -60,9 +60,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * This visitor prunes unnecessary 'is not null' functions from the query tree.
@@ -217,17 +217,25 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
      * @return the original node, or null if it is pruned
      */
     private JexlNode pruneUnion(JexlNode node, Set<String> fields) {
+        // if there is a isNotNull in the union, and we know we have an equality node involving one of the isNotNull nodes,
+        // we have the means to prune the entire union.
+        boolean willPrune = false;
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
-            if (!isIsNotNullFunction(deref)) {
-                return node;
+            if (isIsNotNullFunction(deref) && !willPrune) {
+                String field = fieldForNode(deref);
+                if (fields.contains(field)) {
+                    willPrune = true;
+                }
             }
 
-            String field = fieldForNode(deref);
-            if (!fields.contains(field)) {
-                return node;
-            }
         }
+
+        if (!willPrune) {
+            return node;
+        }
+
         return null;
     }
 

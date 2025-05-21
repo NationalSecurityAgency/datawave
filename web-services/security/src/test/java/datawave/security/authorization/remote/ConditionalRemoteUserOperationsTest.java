@@ -9,9 +9,12 @@ import org.wildfly.common.Assert;
 
 import com.google.common.collect.HashMultimap;
 
+import datawave.microservice.query.Query;
 import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.ConditionalRemoteUserOperations;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
@@ -20,7 +23,6 @@ import datawave.webservice.dictionary.data.DataDictionaryBase;
 import datawave.webservice.dictionary.data.DescriptionBase;
 import datawave.webservice.dictionary.data.FieldsBase;
 import datawave.webservice.metadata.MetadataFieldBase;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
@@ -41,13 +43,13 @@ public class ConditionalRemoteUserOperationsTest {
         boolean invoked = false;
 
         @Override
-        public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+        public AuthorizationsListBase<?> listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
             invoked = true;
             return new DefaultAuthorizationsList();
         }
 
         @Override
-        public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+        public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) {
             invoked = true;
             return new GenericResponse<>();
         }
@@ -58,7 +60,7 @@ public class ConditionalRemoteUserOperationsTest {
         MockRemoteUserOperations testOperations = new MockRemoteUserOperations();
         ConditionalRemoteUserOperations testObj = new ConditionalRemoteUserOperations();
         testObj.setDelegate(testOperations);
-        testObj.setResponseObjectFactory(new MockResponseObjectFactory());
+        testObj.setAuthorizationsListBaseSupplier(() -> new MockResponseObjectFactory().getAuthorizationsList());
         testObj.setCondition(a -> a.getProxiedUsers().size() == 1);
 
         List<DatawaveUser> users = new ArrayList<>();

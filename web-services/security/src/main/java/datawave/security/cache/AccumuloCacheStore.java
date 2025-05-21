@@ -191,7 +191,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             } catch (MutationsRejectedException e) {
                 throw new PersistenceException("Unable to write cache value to Accumulo", e);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
+            throw new PersistenceException("Unable to serialize key: " + key, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new PersistenceException("Unable to serialize key: " + key, e);
         }
     }
@@ -207,16 +210,18 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             scanner = accumuloClient.createScanner(tableName, authorizations);
             byte[] keyBytes = ctx.getMarshaller().objectToByteBuffer(key);
             scanner.setRange(new Range(new Text(keyBytes)));
-
-            Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
-            Map.Entry<Key,Value> entry = iterator.hasNext() ? iterator.next() : null;
-            return decodeEntry(entry, key, loadValue, loadMetadata);
-
         } catch (TableNotFoundException e) {
             throw new PersistenceException(e);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
+            throw new PersistenceException("Unable to serialize key " + key, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new PersistenceException("Unable to serialize key " + key, e);
         }
+
+        Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
+        Map.Entry<Key,Value> entry = iterator.hasNext() ? iterator.next() : null;
+        return decodeEntry(entry, key, loadValue, loadMetadata);
     }
 
     private MarshalledEntry<K,V> decodeEntry(Map.Entry<Key,Value> entry, Object key, boolean loadValue, boolean loadMetadata) {
@@ -297,6 +302,9 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
                             task.processEntry(marshalledEntry, taskContext);
                         }
                     } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
                         throw new PersistenceException(e);
                     }
                 }
