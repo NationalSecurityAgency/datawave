@@ -1,0 +1,8 @@
+file-provider:
+  files:
+    - label: AIRPORTS_DEFINITIONS
+      name: airports.csv
+      download:
+        method: URL
+        source: some_url
+        schedule: some_schedule

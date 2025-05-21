@@ -13,6 +13,7 @@ import org.apache.commons.jexl3.parser.ASTAssignment;
 import org.apache.commons.jexl3.parser.ASTDivNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEWNode;
 import org.apache.commons.jexl3.parser.ASTFalseNode;
 import org.apache.commons.jexl3.parser.ASTGENode;
 import org.apache.commons.jexl3.parser.ASTGTNode;
@@ -25,13 +26,16 @@ import org.apache.commons.jexl3.parser.ASTMethodNode;
 import org.apache.commons.jexl3.parser.ASTModNode;
 import org.apache.commons.jexl3.parser.ASTMulNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNEWNode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNSWNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTNullLiteral;
 import org.apache.commons.jexl3.parser.ASTNumberLiteral;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTSWNode;
 import org.apache.commons.jexl3.parser.ASTSizeFunction;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ASTSubNode;
@@ -39,7 +43,6 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -188,148 +191,54 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         return data;
     }
 
-    public Object visit(ASTEQNode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
+    private StringBuilder buildSimpleExpression(JexlNode node, String operand, StringBuilder sb) {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTEQNode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR,
+                            "An " + node.getClass().getSimpleName() + " must have exactly two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
 
-        sb.append(" == ");
+        sb.append(' ').append(operand).append(' ');
 
         node.jjtGetChild(1).jjtAccept(this, sb);
 
         return sb;
+    }
+
+    public Object visit(ASTEQNode node, Object data) {
+        return buildSimpleExpression(node, "==", (StringBuilder) data);
     }
 
     public Object visit(ASTNENode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTNENode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" != ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, "!=", (StringBuilder) data);
     }
 
     public Object visit(ASTLTNode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTLTNode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" < ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, "<", (StringBuilder) data);
     }
 
     public Object visit(ASTGTNode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTGTNode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" > ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, ">", (StringBuilder) data);
     }
 
     public Object visit(ASTLENode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTLENode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" <= ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, "<=", (StringBuilder) data);
     }
 
     public Object visit(ASTGENode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTGENode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" >= ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, ">=", (StringBuilder) data);
     }
 
     public Object visit(ASTERNode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTERNode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" =~ ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, "=~", (StringBuilder) data);
     }
 
     public Object visit(ASTNRNode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-
-        int numChildren = node.jjtGetNumChildren();
-
-        if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTERNode has more than two children");
-        }
-
-        node.jjtGetChild(0).jjtAccept(this, sb);
-
-        sb.append(" !~ ");
-
-        node.jjtGetChild(1).jjtAccept(this, sb);
-
-        return sb;
+        return buildSimpleExpression(node, "!~", (StringBuilder) data);
     }
 
     public Object visit(ASTNotNode node, Object data) {
@@ -506,6 +415,26 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         }
 
         return sb;
+    }
+
+    @Override
+    protected Object visit(ASTSWNode node, Object data) {
+        return buildSimpleExpression(node, "=^", (StringBuilder) data);
+    }
+
+    @Override
+    protected Object visit(ASTNSWNode node, Object data) {
+        return buildSimpleExpression(node, "!^", (StringBuilder) data);
+    }
+
+    @Override
+    protected Object visit(ASTEWNode node, Object data) {
+        return buildSimpleExpression(node, "=$", (StringBuilder) data);
+    }
+
+    @Override
+    protected Object visit(ASTNEWNode node, Object data) {
+        return buildSimpleExpression(node, "!$", (StringBuilder) data);
     }
 
     @Override

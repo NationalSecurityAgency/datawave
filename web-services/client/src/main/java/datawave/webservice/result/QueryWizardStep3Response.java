@@ -1,7 +1,5 @@
 package datawave.webservice.result;
 
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -9,17 +7,14 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.commons.lang.StringUtils;
-
 import datawave.webservice.HtmlProvider;
-import datawave.webservice.query.result.logic.QueryLogicDescription;
 
 @XmlRootElement(name = "QueryWizardStep3")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryWizardStep3Response extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5620693247455844728L;
     private static final String TITLE = "Query Plan", EMPTY = "";
     @XmlElement(name = "plan")
     private String plan = null;

@@ -3,7 +3,6 @@ package datawave.query.index.lookup;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -143,7 +142,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 src.next();
             }
             if (ignore) {
-                tv = new IndexInfo(count);
+                tv = new IndexInfo(count > 0 ? count : -1);
             } else {
                 if (parseTldUids) {
                     // For each uid in the list of uids, parse out the tld portion from the whole uid.

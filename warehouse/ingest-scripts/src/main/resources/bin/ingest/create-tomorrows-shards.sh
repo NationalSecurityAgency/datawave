@@ -11,13 +11,14 @@
 # Generating 1/1 of 250 = 250 error table shards for 20230809
 # Generating 1/1 of 100 = 100 query metric shards for 20230809
 
-if [[ `uname` == "Darwin" ]]; then
-        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-        THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 . ./ingest-libs.sh
 
@@ -51,7 +52,7 @@ shardTableNumShards=$((numshardsOrg * numerator / divisor))
 errorTableNumShards=$((errorTableShards * numerator / divisor))
 queryMetricTableNumShards=$((queryMetricShards * numerator / divisor))
 
-DATE=`date -d tomorrow +%Y%m%d`
+DATE=$(date -d tomorrow +%Y%m%d)
 
 echo "Generating ${numerator}/${divisor} of ${numshardsOrg} = $shardTableNumShards shards for $DATE"
 echo "Generating ${numerator}/${divisor} of ${errorTableShards} = $errorTableNumShards shards for $DATE"

@@ -14,7 +14,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -50,26 +50,21 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testAnyFieldText() throws Exception {
         log.info("------  testAnyFieldText  ------");
-        String code = "europe";
         // must be same case as original value in event
-        String state = "Lazio";
-        String phrase = EQ_OP + "'" + state + "'";
-        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(" + state + ")";
-        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + this.dataManager.convertAnyField(phrase);
+        String query = "CONTINENT:europe and #TEXT(Lazio)";
+        String expect = "CONTINENT == 'europe' and (CITY  == 'Lazio'  or  CONTINENT  == 'Lazio'  or  STATE  == 'Lazio')";
         runTest(query, expect);
 
-        // testing that incorrect case misses results
-        state = "lazio";
-        query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(" + state + ")";
-        // should return the empty set
-        runTestQuery(Collections.EMPTY_SET, query);
+        // testing that incorrect case misses results, query should return an empty set
+        query = "CONTINENT:\"europe\" and #TEXT(lazio)";
+        runTestQuery(Collections.emptySet(), query);
     }
 
     @Test
     public void testAnyFieldTextNoHits() throws Exception {
         log.info("------  testAnyFieldTextNoHits  ------");
 
-        ((FederatedQueryPlanner) this.logic.getQueryPlanner()).getQueryPlanner().setReduceQuery(true);
+        ((DatePartitionedQueryPlanner) this.logic.getQueryPlanner()).getQueryPlanner().setReduceQuery(true);
 
         String code = "europe";
         // must be same case as original value in event
@@ -94,27 +89,19 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMultiFieldText() throws Exception {
         log.info("------  testMultiFieldText  ------");
-        String code = "europe";
-        String state1 = "Lazio";
-        String state2 = "London";
-        String phrase1 = EQ_OP + "'" + state1 + "'";
-        String phrase2 = EQ_OP + "'" + state2 + "'";
-        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(OR, STATE," + state1 + ", STATE, " + state2 + ")";
-        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + "( STATE" + phrase1 + OR_OP + "STATE" + phrase2 + " )";
+
+        String query = "CONTINENT:europe and #TEXT(OR, STATE, Lazio, STATE, London)";
+        String expect = "CONTINENT == 'europe' and ( STATE == 'Lazio' or STATE == 'London' )";
         runTest(query, expect);
 
-        // testing that incorrect case misses results
-        state2 = "london";
-        query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(OR, STATE," + state1 + ", STATE, " + state2 + ")";
-        // should return only the Lazio events, and not the London events
-        expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + "STATE" + phrase1;
+        // lowercase 'london' will fail to return all of those events, leaving only the 'Lazio' events
+        query = "CONTINENT:europe and #TEXT(OR, STATE, Lazio, STATE, london)";
+        expect = "CONTINENT == 'europe' and STATE == 'Lazio'";
         runTest(query, expect);
 
-        // testing that incorrect case misses results
-        state1 = "lazio";
-        query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(OR, STATE," + state1 + ", STATE, " + state2 + ")";
-        // should return the empty set
-        runTestQuery(Collections.EMPTY_SET, query);
+        // incorrect case for 'lazio' and 'london' will find zero hits
+        query = "CONTINENT:\"europe\" and #TEXT(OR, STATE,lazio, STATE, london)";
+        runTestQuery(Collections.emptySet(), query);
     }
 
     // ============================================

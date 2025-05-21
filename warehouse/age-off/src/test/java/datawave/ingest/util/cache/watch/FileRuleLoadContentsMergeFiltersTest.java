@@ -1,8 +1,6 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -104,30 +102,30 @@ public class FileRuleLoadContentsMergeFiltersTest {
         List<FilterRule> childRules = (List<FilterRule>) childValue.loadFilterRules(null);
 
         // should have one extra rule in child
-        assertThat(childRules.size(), is(equalTo(parentRules.size() + 1)));
+        assertEquals(childRules.size(), parentRules.size() + 1);
 
         // parent classes are
         // TestTrieFilter
         // TestFieldFilter
         // TestFilter
         // This order should be maintained!!!!!
-        assertThat(simpleName(parentRules, 0), is("TestTrieFilter"));
-        assertThat(simpleName(parentRules, 1), is("TestFieldFilter"));
-        assertThat(simpleName(parentRules, 2), is("TestFilter"));
+        assertEquals(simpleName(parentRules, 0), "TestTrieFilter");
+        assertEquals(simpleName(parentRules, 1), "TestFieldFilter");
+        assertEquals(simpleName(parentRules, 2), "TestFilter");
 
         // verify order of filters in child matches parent
         for (int i = 0; i < parentRules.size(); i++) {
             FilterRule parent = parentRules.get(i);
             FilterRule child = childRules.get(i);
 
-            assertThat(child.getClass().getSimpleName(), is(equalTo(parent.getClass().getSimpleName())));
+            assertEquals(child.getClass().getSimpleName(), parent.getClass().getSimpleName());
         }
 
         // also verify that child inherited ttl from parent
         TestTrieFilter mergedParent = (TestTrieFilter) parentRules.get(0);
         TestTrieFilter mergedChild = (TestTrieFilter) childRules.get(0);
-        assertThat(mergedChild.options.getTTL(), is(equalTo(mergedParent.options.getTTL())));
-        assertThat(mergedChild.options.getTTLUnits(), is(equalTo(mergedParent.options.getTTLUnits())));
+        assertEquals(mergedChild.options.getTTL(), mergedParent.options.getTTL());
+        assertEquals(mergedChild.options.getTTLUnits(), mergedParent.options.getTTLUnits());
     }
 
     private String simpleName(List<FilterRule> parentRules, int i) {
@@ -159,8 +157,8 @@ public class FileRuleLoadContentsMergeFiltersTest {
         long timestamp = anchorTime - (offsetInDays * MILLIS_IN_DAY) + 1;
         Key key = TestTrieFilter.create(data, timestamp);
         // @formatter:off
-        assertThat(failedExpectationMessage(data, offsetInDays, expectation),
-            filter.accept(filterOptions.getAgeOffPeriod(anchorTime), key, value), is(expectation));
+        assertEquals(failedExpectationMessage(data, offsetInDays, expectation),
+            filter.accept(filterOptions.getAgeOffPeriod(anchorTime), key, value), expectation);
         // @formatter:on
     }
 
@@ -189,7 +187,7 @@ public class FileRuleLoadContentsMergeFiltersTest {
     private static FilterRule loadRulesFromFile(FileSystem fs, Path filePath, int expectedNumRules) throws IOException {
         FileRuleCacheValue cacheValue = new FileRuleCacheValue(fs, filePath, 1);
         Collection<FilterRule> rules = cacheValue.loadFilterRules(null);
-        assertThat(rules.size(), is(expectedNumRules));
+        assertEquals(rules.size(), expectedNumRules);
         // only return the TestTrieFilter for this test
         Optional<FilterRule> first = rules.stream().filter(r -> r instanceof TestTrieFilter).findFirst();
         return first.get();

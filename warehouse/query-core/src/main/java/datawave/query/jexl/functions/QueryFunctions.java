@@ -25,9 +25,12 @@ public class QueryFunctions {
 
     public static final String QUERY_FUNCTION_NAMESPACE = "f";
     public static final String OPTIONS_FUNCTION = "options";
+
+    public static final String MOST_RECENT_PREFIX = "most_recent_";
     public static final String UNIQUE_FUNCTION = "unique";
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
+    public static final String SUMMARY_FUNCTION = "summary";
     public static final String LENIENT_FIELDS_FUNCTION = "lenient";
     public static final String STRICT_FIELDS_FUNCTION = "strict";
     public static final String MATCH_REGEX = "matchRegex";

@@ -33,7 +33,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class SimpleField extends FieldBase<SimpleField> implements Serializable, Message<SimpleField> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -7551833653666011136L;
 
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;

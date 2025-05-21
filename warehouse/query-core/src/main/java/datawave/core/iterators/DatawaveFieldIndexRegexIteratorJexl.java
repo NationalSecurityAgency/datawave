@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -12,7 +11,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.query.Constants;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -81,10 +79,14 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     }
 
     @Override
-    public String toString() {
+    protected String toStringImpl(boolean includeQueryId) {
         StringBuilder builder = new StringBuilder();
-        builder.append("DatawaveFieldIndexRegexIteratorJexl (").append(queryId).append(") fName=").append(getFieldName()).append(", fValue=")
-                        .append(getFieldValue()).append(", regex=").append(regex).append(", negated=").append(isNegated()).append("}");
+        builder.append(getClass().getSimpleName());
+        if (includeQueryId) {
+            builder.append(" (").append(queryId).append(")");
+        }
+        builder.append(" {fName=").append(getFieldName()).append(", fValue=").append(getFieldValue()).append(", regex=").append(regex).append(", negated=")
+                        .append(isNegated()).append("}");
         return builder.toString();
     }
 
@@ -127,15 +129,11 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
      */
     @Override
     protected boolean matches(Key k) throws IOException {
-        boolean matches = false;
         String colq = k.getColumnQualifier().toString();
-
         // search backwards for the null bytes to expose the value in value\0datatype\0UID
         int index = colq.lastIndexOf('\0');
         index = colq.lastIndexOf('\0', index - 1);
-        matches = (pattern.get().matcher(colq.substring(0, index)).matches());
-
-        return matches;
+        return (pattern.get().matcher(colq.substring(0, index)).matches());
     }
 
 }

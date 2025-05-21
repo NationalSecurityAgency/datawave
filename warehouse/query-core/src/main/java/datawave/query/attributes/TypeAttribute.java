@@ -26,7 +26,7 @@ import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7264249641813898860L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
 
@@ -58,13 +58,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeString(out, datawaveType.getClass().toString());
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -131,13 +126,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeString(datawaveType.getClass().getName());
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.datawaveType.getDelegateAsString());
         output.writeBoolean(this.toKeep);
     }

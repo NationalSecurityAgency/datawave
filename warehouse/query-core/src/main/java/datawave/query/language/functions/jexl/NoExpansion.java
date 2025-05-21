@@ -2,7 +2,6 @@ package datawave.query.language.functions.jexl;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.List;
 
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
