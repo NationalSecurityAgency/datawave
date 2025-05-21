@@ -4153,7 +4153,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         queryParameters.set("valid", "param");
 
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();

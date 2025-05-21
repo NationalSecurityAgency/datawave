@@ -66,7 +66,6 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -95,7 +94,6 @@ import datawave.security.util.DnUtils;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameterBuilder;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.AuditService;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.DefaultAuditParameterBuilder;
@@ -373,7 +371,7 @@ public class QueryExecutorBeanTest {
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
 
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
-        this.persister.save(anyObject(QueryImpl.class), anyObject(QueryParametersImpl.class));
+        this.persister.save(anyObject(QueryImpl.class), anyObject(DefaultQueryParameters.class));
 
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
@@ -478,7 +476,7 @@ public class QueryExecutorBeanTest {
         Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
-        persister.save(anyObject(QueryImpl.class), anyObject(QueryParametersImpl.class));
+        persister.save(anyObject(QueryImpl.class), anyObject(DefaultQueryParameters.class));
 
         EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions);
 
@@ -675,7 +673,7 @@ public class QueryExecutorBeanTest {
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
-        persister.save(anyObject(QueryImpl.class), anyObject(QueryParametersImpl.class));
+        persister.save(anyObject(QueryImpl.class), anyObject(DefaultQueryParameters.class));
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(null).anyTimes();
         persister.remove(q);
         EasyMock.expectLastCall().anyTimes();
