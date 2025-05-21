@@ -25,8 +25,6 @@ public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>
     private TreeMultimap<Key,Value> map;
     private Range range;
 
-    private int interruptCheckCount = 0;
-
     public SortedMultiMapIterator deepCopy(IteratorEnvironment env) {
         return new SortedMultiMapIterator(map);
     }
