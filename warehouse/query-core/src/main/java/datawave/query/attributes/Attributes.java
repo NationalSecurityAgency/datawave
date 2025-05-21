@@ -23,6 +23,7 @@ import com.esotericsoftware.kryo.io.Output;
 import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.cache.ClassCache;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
@@ -32,7 +33,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
-    private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
+
+    private static final ClassCache classCache = new ClassCache();
 
     /**
      * Should sizes of documents be tracked
@@ -132,15 +134,10 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         int numAttrs = WritableUtils.readVInt(in);
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            String attrClassName = WritableUtils.readString(in);
-            Class<?> clz;
-
             // Get the name of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new IOException(e);
-            }
+
+            String attrClassName = WritableUtils.readString(in);
+            Class<?> clz = classCache.get(attrClassName);
 
             if (!Attribute.class.isAssignableFrom(clz)) {
                 throw new ClassCastException("Found class that was not an instance of Attribute");
@@ -301,16 +298,9 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
-            String attrClassName = input.readString();
-            Class<?> clz;
-
             // Get the name of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                log.error("could not find class for \"" + attrClassName + "\"");
-                throw new RuntimeException(e);
-            }
+            String attrClassName = input.readString();
+            Class<?> clz = classCache.get(attrClassName);
 
             if (!Attribute.class.isAssignableFrom(clz)) {
                 throw new ClassCastException("Found class that was not an instance of Attribute");
